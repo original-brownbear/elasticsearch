@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
 
 import static org.elasticsearch.xpack.watcher.trigger.schedule.Schedules.daily;
 import static org.elasticsearch.xpack.watcher.trigger.schedule.Schedules.interval;
@@ -79,19 +78,16 @@ public class TickerScheduleEngineTests extends ESTestCase {
         }
         final BitSet bits = new BitSet(count);
 
-        engine.register(new Consumer<Iterable<TriggerEvent>>() {
-            @Override
-            public void accept(Iterable<TriggerEvent> events) {
-                for (TriggerEvent event : events) {
-                    int index = Integer.parseInt(event.jobName());
-                    if (bits.get(index) == false) {
-                        logger.info("job [{}] first fire", index);
-                        bits.set(index);
-                        firstLatch.countDown();
-                    } else {
-                        logger.info("job [{}] second fire", index);
-                        secondLatch.countDown();
-                    }
+        engine.register(events -> {
+            for (TriggerEvent event : events) {
+                int index = Integer.parseInt(event.jobName());
+                if (bits.get(index) == false) {
+                    logger.info("job [{}] first fire", index);
+                    bits.set(index);
+                    firstLatch.countDown();
+                } else {
+                    logger.info("job [{}] second fire", index);
+                    secondLatch.countDown();
                 }
             }
         });
@@ -114,15 +110,12 @@ public class TickerScheduleEngineTests extends ESTestCase {
         final String name = "job_name";
         final CountDownLatch latch = new CountDownLatch(1);
         engine.start(Collections.emptySet());
-        engine.register(new Consumer<Iterable<TriggerEvent>>() {
-            @Override
-            public void accept(Iterable<TriggerEvent> events) {
-                for (TriggerEvent event : events) {
-                    assertThat(event.jobName(), is(name));
-                    logger.info("triggered job on [{}]", clock);
-                }
-                latch.countDown();
+        engine.register(events -> {
+            for (TriggerEvent event : events) {
+                assertThat(event.jobName(), is(name));
+                logger.info("triggered job on [{}]", clock);
             }
+            latch.countDown();
         });
 
         int randomMinute = randomIntBetween(0, 59);
@@ -148,14 +141,11 @@ public class TickerScheduleEngineTests extends ESTestCase {
         final CountDownLatch latch = new CountDownLatch(1);
         engine.start(Collections.emptySet());
 
-        engine.register(new Consumer<Iterable<TriggerEvent>>() {
-            @Override
-            public void accept(Iterable<TriggerEvent> events) {
-                for (TriggerEvent event : events) {
-                    assertThat(event.jobName(), is(name));
-                    logger.info("triggered job on [{}]", clock.instant().atZone(ZoneOffset.UTC));
-                    latch.countDown();
-                }
+        engine.register(events -> {
+            for (TriggerEvent event : events) {
+                assertThat(event.jobName(), is(name));
+                logger.info("triggered job on [{}]", clock.instant().atZone(ZoneOffset.UTC));
+                latch.countDown();
             }
         });
 
@@ -184,15 +174,12 @@ public class TickerScheduleEngineTests extends ESTestCase {
         final String name = "job_name";
         final CountDownLatch latch = new CountDownLatch(1);
         engine.start(Collections.emptySet());
-        engine.register(new Consumer<Iterable<TriggerEvent>>() {
-            @Override
-            public void accept(Iterable<TriggerEvent> events) {
-                for (TriggerEvent event : events) {
-                    assertThat(event.jobName(), is(name));
-                    logger.info("triggered job");
-                }
-                latch.countDown();
+        engine.register(events -> {
+            for (TriggerEvent event : events) {
+                assertThat(event.jobName(), is(name));
+                logger.info("triggered job");
             }
+            latch.countDown();
         });
 
         int randomHour = randomIntBetween(0, 23);
@@ -235,18 +222,13 @@ public class TickerScheduleEngineTests extends ESTestCase {
         final CountDownLatch firstLatch = new CountDownLatch(1);
         final CountDownLatch secondLatch = new CountDownLatch(1);
         AtomicInteger counter = new AtomicInteger(0);
-        engine.register(new Consumer<Iterable<TriggerEvent>>() {
-            @Override
-            public void accept(Iterable<TriggerEvent> events) {
-                events.forEach(event -> {
-                    if (counter.getAndIncrement() == 0) {
-                        firstLatch.countDown();
-                    } else {
-                        secondLatch.countDown();
-                    }
-                });
+        engine.register(events -> events.forEach(event -> {
+            if (counter.getAndIncrement() == 0) {
+                firstLatch.countDown();
+            } else {
+                secondLatch.countDown();
             }
-        });
+        }));
 
         int times = scaledRandomIntBetween(3, 30);
         for (int i = 0; i < times; i++) {

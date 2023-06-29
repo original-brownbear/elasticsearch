@@ -237,12 +237,7 @@ public class PrioritizedExecutorsTests extends ESTestCase {
             public String toString() {
                 return "the waiting";
             }
-        }, TimeValue.timeValueMillis(100) /* enough timeout to catch them in the pending list... */, new Runnable() {
-            @Override
-            public void run() {
-                timedOut.countDown();
-            }
-        });
+        }, TimeValue.timeValueMillis(100) /* enough timeout to catch them in the pending list... */, timedOut::countDown);
 
         pending = executor.getPending();
         assertThat(pending.length, equalTo(2));
@@ -269,17 +264,9 @@ public class PrioritizedExecutorsTests extends ESTestCase {
             timer
         );
         final CountDownLatch invoked = new CountDownLatch(1);
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                invoked.countDown();
-            }
-        }, TimeValue.timeValueHours(1), new Runnable() {
-            @Override
-            public void run() {
-                // We should never get here
-                timeoutCalled.set(true);
-            }
+        executor.execute(invoked::countDown, TimeValue.timeValueHours(1), () -> {
+            // We should never get here
+            timeoutCalled.set(true);
         });
         invoked.await();
 

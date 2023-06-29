@@ -431,15 +431,12 @@ public class RemoteScrollableHitSourceTests extends ESTestCase {
                 any(HttpClientContext.class),
                 any(FutureCallback.class)
             )
-        ).then(new Answer<Future<HttpResponse>>() {
-            @Override
-            public Future<HttpResponse> answer(InvocationOnMock invocationOnMock) throws Throwable {
-                HeapBufferedAsyncResponseConsumer consumer = (HeapBufferedAsyncResponseConsumer) invocationOnMock.getArguments()[1];
-                FutureCallback callback = (FutureCallback) invocationOnMock.getArguments()[3];
-                assertEquals(new ByteSizeValue(100, ByteSizeUnit.MB).bytesAsInt(), consumer.getBufferLimit());
-                callback.failed(tooLong);
-                return null;
-            }
+        ).then((Answer<Future<HttpResponse>>) invocationOnMock -> {
+            HeapBufferedAsyncResponseConsumer consumer = (HeapBufferedAsyncResponseConsumer) invocationOnMock.getArguments()[1];
+            FutureCallback callback = (FutureCallback) invocationOnMock.getArguments()[3];
+            assertEquals(new ByteSizeValue(100, ByteSizeUnit.MB).bytesAsInt(), consumer.getBufferLimit());
+            callback.failed(tooLong);
+            return null;
         });
         RemoteScrollableHitSource source = sourceWithMockedClient(true, httpClient);
 

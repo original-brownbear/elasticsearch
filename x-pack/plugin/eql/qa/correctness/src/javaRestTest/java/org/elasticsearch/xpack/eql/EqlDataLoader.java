@@ -12,12 +12,10 @@ import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
 import org.apache.logging.log4j.core.config.plugins.util.PluginManager;
 import org.elasticsearch.action.admin.cluster.repositories.put.PutRepositoryRequest;
 import org.elasticsearch.client.Request;
 import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestClientBuilder.HttpClientConfigCallback;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.logging.LogConfigurator;
 import org.elasticsearch.common.settings.Settings;
@@ -42,12 +40,7 @@ public class EqlDataLoader {
         credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials("admin", "admin-password"));
         try (
             RestClient client = RestClient.builder(new HttpHost("localhost", 9200))
-                .setHttpClientConfigCallback(new HttpClientConfigCallback() {
-                    @Override
-                    public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder httpClientBuilder) {
-                        return httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
-                    }
-                })
+                .setHttpClientConfigCallback(httpClientBuilder -> httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider))
                 .setRequestConfigCallback(
                     requestConfigBuilder -> requestConfigBuilder.setConnectTimeout(30000000)
                         .setConnectionRequestTimeout(30000000)

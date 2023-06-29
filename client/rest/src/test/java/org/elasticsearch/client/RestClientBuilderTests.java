@@ -22,7 +22,6 @@ package org.elasticsearch.client;
 import org.apache.http.Header;
 import org.apache.http.HttpHost;
 import org.apache.http.client.config.RequestConfig;
-import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
 import org.apache.http.message.BasicHeader;
 
 import java.io.IOException;
@@ -126,20 +125,10 @@ public class RestClientBuilderTests extends RestClientTestCase {
         }
         RestClientBuilder builder = RestClient.builder(hosts);
         if (randomBoolean()) {
-            builder.setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback() {
-                @Override
-                public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder httpClientBuilder) {
-                    return httpClientBuilder;
-                }
-            });
+            builder.setHttpClientConfigCallback(httpClientBuilder -> httpClientBuilder);
         }
         if (randomBoolean()) {
-            builder.setRequestConfigCallback(new RestClientBuilder.RequestConfigCallback() {
-                @Override
-                public RequestConfig.Builder customizeRequestConfig(RequestConfig.Builder requestConfigBuilder) {
-                    return requestConfigBuilder;
-                }
-            });
+            builder.setRequestConfigCallback(requestConfigBuilder -> requestConfigBuilder);
         }
         if (randomBoolean()) {
             int numHeaders = randomIntBetween(1, 5);
@@ -252,15 +241,12 @@ public class RestClientBuilderTests extends RestClientTestCase {
      */
     public void testDefaultConnectionRequestTimeout() throws IOException {
         RestClientBuilder builder = RestClient.builder(new HttpHost("localhost", 9200));
-        builder.setRequestConfigCallback(new RestClientBuilder.RequestConfigCallback() {
-            @Override
-            public RequestConfig.Builder customizeRequestConfig(RequestConfig.Builder requestConfigBuilder) {
-                RequestConfig requestConfig = requestConfigBuilder.build();
-                assertEquals(RequestConfig.DEFAULT.getConnectionRequestTimeout(), requestConfig.getConnectionRequestTimeout());
-                // this way we get notified if the default ever changes
-                assertEquals(-1, requestConfig.getConnectionRequestTimeout());
-                return requestConfigBuilder;
-            }
+        builder.setRequestConfigCallback(requestConfigBuilder -> {
+            RequestConfig requestConfig = requestConfigBuilder.build();
+            assertEquals(RequestConfig.DEFAULT.getConnectionRequestTimeout(), requestConfig.getConnectionRequestTimeout());
+            // this way we get notified if the default ever changes
+            assertEquals(-1, requestConfig.getConnectionRequestTimeout());
+            return requestConfigBuilder;
         });
         try (RestClient restClient = builder.build()) {
             assertNotNull(restClient);

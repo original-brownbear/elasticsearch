@@ -37,7 +37,6 @@ import org.elasticsearch.search.sort.SortOrder;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.mockito.ArgumentCaptor;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import java.util.List;
@@ -87,13 +86,10 @@ public class MockClientBuilder {
 
     @SuppressWarnings("unchecked")
     public MockClientBuilder get(GetResponse response) {
-        doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocationOnMock) {
-                ActionListener<GetResponse> listener = (ActionListener<GetResponse>) invocationOnMock.getArguments()[1];
-                listener.onResponse(response);
-                return null;
-            }
+        doAnswer((Answer<Void>) invocationOnMock -> {
+            ActionListener<GetResponse> listener = (ActionListener<GetResponse>) invocationOnMock.getArguments()[1];
+            listener.onResponse(response);
+            return null;
         }).when(client).get(any(), any());
 
         return this;
@@ -159,13 +155,10 @@ public class MockClientBuilder {
         SearchHits searchHits = new SearchHits(hits, new TotalHits(hits.length, TotalHits.Relation.EQUAL_TO), 0.0f);
         when(response.getHits()).thenReturn(searchHits);
 
-        doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocationOnMock) {
-                ActionListener<SearchResponse> listener = (ActionListener<SearchResponse>) invocationOnMock.getArguments()[1];
-                listener.onResponse(response);
-                return null;
-            }
+        doAnswer((Answer<Void>) invocationOnMock -> {
+            ActionListener<SearchResponse> listener = (ActionListener<SearchResponse>) invocationOnMock.getArguments()[1];
+            listener.onResponse(response);
+            return null;
         }).when(client).search(eq(request), any());
 
         return this;
@@ -198,13 +191,10 @@ public class MockClientBuilder {
         SearchHits searchHits = new SearchHits(hits, new TotalHits(hits.length, TotalHits.Relation.EQUAL_TO), 0.0f);
         when(response.getHits()).thenReturn(searchHits);
 
-        doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocationOnMock) {
-                ActionListener<SearchResponse> listener = (ActionListener<SearchResponse>) invocationOnMock.getArguments()[1];
-                listener.onResponse(response);
-                return null;
-            }
+        doAnswer((Answer<Void>) invocationOnMock -> {
+            ActionListener<SearchResponse> listener = (ActionListener<SearchResponse>) invocationOnMock.getArguments()[1];
+            listener.onResponse(response);
+            return null;
         }).when(client).search(eq(request), any());
 
         return this;

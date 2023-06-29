@@ -46,26 +46,21 @@ public class LegacyDocValuesIterables {
      * @deprecated Consume {@link SortedDocValues} instead. */
     @Deprecated
     public static Iterable<BytesRef> valuesIterable(final SortedDocValues values) {
-        return new Iterable<BytesRef>() {
+        return () -> new Iterator<BytesRef>() {
+            private int nextOrd;
+
             @Override
-            public Iterator<BytesRef> iterator() {
-                return new Iterator<BytesRef>() {
-                    private int nextOrd;
+            public boolean hasNext() {
+                return nextOrd < values.getValueCount();
+            }
 
-                    @Override
-                    public boolean hasNext() {
-                        return nextOrd < values.getValueCount();
-                    }
-
-                    @Override
-                    public BytesRef next() {
-                        try {
-                            return values.lookupOrd(nextOrd++);
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                };
+            @Override
+            public BytesRef next() {
+                try {
+                    return values.lookupOrd(nextOrd++);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
         };
     }
@@ -75,26 +70,21 @@ public class LegacyDocValuesIterables {
      * @deprecated Consume {@link SortedSetDocValues} instead. */
     @Deprecated
     public static Iterable<BytesRef> valuesIterable(final SortedSetDocValues values) {
-        return new Iterable<BytesRef>() {
+        return () -> new Iterator<BytesRef>() {
+            private long nextOrd;
+
             @Override
-            public Iterator<BytesRef> iterator() {
-                return new Iterator<BytesRef>() {
-                    private long nextOrd;
+            public boolean hasNext() {
+                return nextOrd < values.getValueCount();
+            }
 
-                    @Override
-                    public boolean hasNext() {
-                        return nextOrd < values.getValueCount();
-                    }
-
-                    @Override
-                    public BytesRef next() {
-                        try {
-                            return values.lookupOrd(nextOrd++);
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                };
+            @Override
+            public BytesRef next() {
+                try {
+                    return values.lookupOrd(nextOrd++);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
         };
     }
@@ -104,45 +94,42 @@ public class LegacyDocValuesIterables {
      * @deprecated Consume {@link SortedDocValues} instead. */
     @Deprecated
     public static Iterable<Number> sortedOrdIterable(final DocValuesProducer valuesProducer, FieldInfo fieldInfo, int maxDoc) {
-        return new Iterable<Number>() {
-            @Override
-            public Iterator<Number> iterator() {
+        return () -> {
 
-                final SortedDocValues values;
-                try {
-                    values = valuesProducer.getSorted(fieldInfo);
-                } catch (IOException ioe) {
-                    throw new RuntimeException(ioe);
+            final SortedDocValues values;
+            try {
+                values = valuesProducer.getSorted(fieldInfo);
+            } catch (IOException ioe) {
+                throw new RuntimeException(ioe);
+            }
+
+            return new Iterator<Number>() {
+                private int nextDocID;
+
+                @Override
+                public boolean hasNext() {
+                    return nextDocID < maxDoc;
                 }
 
-                return new Iterator<Number>() {
-                    private int nextDocID;
-
-                    @Override
-                    public boolean hasNext() {
-                        return nextDocID < maxDoc;
-                    }
-
-                    @Override
-                    public Number next() {
-                        try {
-                            if (nextDocID > values.docID()) {
-                                values.nextDoc();
-                            }
-                            int result;
-                            if (nextDocID == values.docID()) {
-                                result = values.ordValue();
-                            } else {
-                                result = -1;
-                            }
-                            nextDocID++;
-                            return result;
-                        } catch (IOException ioe) {
-                            throw new RuntimeException(ioe);
+                @Override
+                public Number next() {
+                    try {
+                        if (nextDocID > values.docID()) {
+                            values.nextDoc();
                         }
+                        int result;
+                        if (nextDocID == values.docID()) {
+                            result = values.ordValue();
+                        } else {
+                            result = -1;
+                        }
+                        nextDocID++;
+                        return result;
+                    } catch (IOException ioe) {
+                        throw new RuntimeException(ioe);
                     }
-                };
-            }
+                }
+            };
         };
     }
 
@@ -156,52 +143,48 @@ public class LegacyDocValuesIterables {
         final int maxDoc
     ) {
 
-        return new Iterable<Number>() {
+        return () -> {
 
-            @Override
-            public Iterator<Number> iterator() {
+            final SortedSetDocValues values;
+            try {
+                values = valuesProducer.getSortedSet(fieldInfo);
+            } catch (IOException ioe) {
+                throw new RuntimeException(ioe);
+            }
 
-                final SortedSetDocValues values;
-                try {
-                    values = valuesProducer.getSortedSet(fieldInfo);
-                } catch (IOException ioe) {
-                    throw new RuntimeException(ioe);
+            return new Iterator<Number>() {
+                private int nextDocID;
+                private int ordCount;
+
+                @Override
+                public boolean hasNext() {
+                    return nextDocID < maxDoc;
                 }
 
-                return new Iterator<Number>() {
-                    private int nextDocID;
-                    private int ordCount;
-
-                    @Override
-                    public boolean hasNext() {
-                        return nextDocID < maxDoc;
-                    }
-
-                    @Override
-                    public Number next() {
-                        try {
-                            if (nextDocID > values.docID()) {
-                                if (values.nextDoc() != DocIdSetIterator.NO_MORE_DOCS) {
-                                    ordCount = 0;
-                                    while (values.nextOrd() != SortedSetDocValues.NO_MORE_ORDS) {
-                                        ordCount++;
-                                    }
+                @Override
+                public Number next() {
+                    try {
+                        if (nextDocID > values.docID()) {
+                            if (values.nextDoc() != DocIdSetIterator.NO_MORE_DOCS) {
+                                ordCount = 0;
+                                while (values.nextOrd() != SortedSetDocValues.NO_MORE_ORDS) {
+                                    ordCount++;
                                 }
                             }
-                            int result;
-                            if (nextDocID == values.docID()) {
-                                result = ordCount;
-                            } else {
-                                result = 0;
-                            }
-                            nextDocID++;
-                            return result;
-                        } catch (IOException ioe) {
-                            throw new RuntimeException(ioe);
                         }
+                        int result;
+                        if (nextDocID == values.docID()) {
+                            result = ordCount;
+                        } else {
+                            result = 0;
+                        }
+                        nextDocID++;
+                        return result;
+                    } catch (IOException ioe) {
+                        throw new RuntimeException(ioe);
                     }
-                };
-            }
+                }
+            };
         };
     }
 
@@ -211,61 +194,57 @@ public class LegacyDocValuesIterables {
     @Deprecated
     public static Iterable<Number> sortedSetOrdsIterable(final DocValuesProducer valuesProducer, final FieldInfo fieldInfo) {
 
-        return new Iterable<Number>() {
+        return () -> {
 
-            @Override
-            public Iterator<Number> iterator() {
+            final SortedSetDocValues values;
+            try {
+                values = valuesProducer.getSortedSet(fieldInfo);
+            } catch (IOException ioe) {
+                throw new RuntimeException(ioe);
+            }
 
-                final SortedSetDocValues values;
-                try {
-                    values = valuesProducer.getSortedSet(fieldInfo);
-                } catch (IOException ioe) {
-                    throw new RuntimeException(ioe);
+            return new Iterator<Number>() {
+                private boolean nextIsSet;
+                private long nextOrd;
+
+                private void setNext() {
+                    try {
+                        if (nextIsSet == false) {
+                            if (values.docID() == -1) {
+                                values.nextDoc();
+                            }
+                            while (true) {
+                                if (values.docID() == DocIdSetIterator.NO_MORE_DOCS) {
+                                    nextOrd = -1;
+                                    break;
+                                }
+                                nextOrd = values.nextOrd();
+                                if (nextOrd != -1) {
+                                    break;
+                                }
+                                values.nextDoc();
+                            }
+                            nextIsSet = true;
+                        }
+                    } catch (IOException ioe) {
+                        throw new RuntimeException(ioe);
+                    }
                 }
 
-                return new Iterator<Number>() {
-                    private boolean nextIsSet;
-                    private long nextOrd;
+                @Override
+                public boolean hasNext() {
+                    setNext();
+                    return nextOrd != -1;
+                }
 
-                    private void setNext() {
-                        try {
-                            if (nextIsSet == false) {
-                                if (values.docID() == -1) {
-                                    values.nextDoc();
-                                }
-                                while (true) {
-                                    if (values.docID() == DocIdSetIterator.NO_MORE_DOCS) {
-                                        nextOrd = -1;
-                                        break;
-                                    }
-                                    nextOrd = values.nextOrd();
-                                    if (nextOrd != -1) {
-                                        break;
-                                    }
-                                    values.nextDoc();
-                                }
-                                nextIsSet = true;
-                            }
-                        } catch (IOException ioe) {
-                            throw new RuntimeException(ioe);
-                        }
-                    }
-
-                    @Override
-                    public boolean hasNext() {
-                        setNext();
-                        return nextOrd != -1;
-                    }
-
-                    @Override
-                    public Number next() {
-                        setNext();
-                        assert nextOrd != -1;
-                        nextIsSet = false;
-                        return nextOrd;
-                    }
-                };
-            }
+                @Override
+                public Number next() {
+                    setNext();
+                    assert nextOrd != -1;
+                    nextIsSet = false;
+                    return nextOrd;
+                }
+            };
         };
     }
 
@@ -274,46 +253,42 @@ public class LegacyDocValuesIterables {
      * @deprecated Consume {@link SortedDocValues} instead. */
     @Deprecated
     public static Iterable<Number> sortedNumericToDocCount(final DocValuesProducer valuesProducer, final FieldInfo fieldInfo, int maxDoc) {
-        return new Iterable<Number>() {
+        return () -> {
 
-            @Override
-            public Iterator<Number> iterator() {
+            final SortedNumericDocValues values;
+            try {
+                values = valuesProducer.getSortedNumeric(fieldInfo);
+            } catch (IOException ioe) {
+                throw new RuntimeException(ioe);
+            }
 
-                final SortedNumericDocValues values;
-                try {
-                    values = valuesProducer.getSortedNumeric(fieldInfo);
-                } catch (IOException ioe) {
-                    throw new RuntimeException(ioe);
+            return new Iterator<Number>() {
+                private int nextDocID;
+
+                @Override
+                public boolean hasNext() {
+                    return nextDocID < maxDoc;
                 }
 
-                return new Iterator<Number>() {
-                    private int nextDocID;
-
-                    @Override
-                    public boolean hasNext() {
-                        return nextDocID < maxDoc;
-                    }
-
-                    @Override
-                    public Number next() {
-                        try {
-                            if (nextDocID > values.docID()) {
-                                values.nextDoc();
-                            }
-                            int result;
-                            if (nextDocID == values.docID()) {
-                                result = values.docValueCount();
-                            } else {
-                                result = 0;
-                            }
-                            nextDocID++;
-                            return result;
-                        } catch (IOException ioe) {
-                            throw new RuntimeException(ioe);
+                @Override
+                public Number next() {
+                    try {
+                        if (nextDocID > values.docID()) {
+                            values.nextDoc();
                         }
+                        int result;
+                        if (nextDocID == values.docID()) {
+                            result = values.docValueCount();
+                        } else {
+                            result = 0;
+                        }
+                        nextDocID++;
+                        return result;
+                    } catch (IOException ioe) {
+                        throw new RuntimeException(ioe);
                     }
-                };
-            }
+                }
+            };
         };
     }
 
@@ -322,62 +297,58 @@ public class LegacyDocValuesIterables {
      * @deprecated Consume {@link SortedDocValues} instead. */
     @Deprecated
     public static Iterable<Number> sortedNumericToValues(final DocValuesProducer valuesProducer, final FieldInfo fieldInfo) {
-        return new Iterable<Number>() {
+        return () -> {
 
-            @Override
-            public Iterator<Number> iterator() {
+            final SortedNumericDocValues values;
+            try {
+                values = valuesProducer.getSortedNumeric(fieldInfo);
+            } catch (IOException ioe) {
+                throw new RuntimeException(ioe);
+            }
 
-                final SortedNumericDocValues values;
-                try {
-                    values = valuesProducer.getSortedNumeric(fieldInfo);
-                } catch (IOException ioe) {
-                    throw new RuntimeException(ioe);
+            return new Iterator<Number>() {
+                private boolean nextIsSet;
+                private int nextCount;
+                private int upto;
+                private long nextValue;
+
+                private void setNext() {
+                    try {
+                        if (nextIsSet == false) {
+                            if (upto == nextCount) {
+                                values.nextDoc();
+                                if (values.docID() == DocIdSetIterator.NO_MORE_DOCS) {
+                                    nextCount = 0;
+                                    nextIsSet = false;
+                                    return;
+                                } else {
+                                    nextCount = values.docValueCount();
+                                }
+                                upto = 0;
+                            }
+                            nextValue = values.nextValue();
+                            upto++;
+                            nextIsSet = true;
+                        }
+                    } catch (IOException ioe) {
+                        throw new RuntimeException(ioe);
+                    }
                 }
 
-                return new Iterator<Number>() {
-                    private boolean nextIsSet;
-                    private int nextCount;
-                    private int upto;
-                    private long nextValue;
+                @Override
+                public boolean hasNext() {
+                    setNext();
+                    return nextCount != 0;
+                }
 
-                    private void setNext() {
-                        try {
-                            if (nextIsSet == false) {
-                                if (upto == nextCount) {
-                                    values.nextDoc();
-                                    if (values.docID() == DocIdSetIterator.NO_MORE_DOCS) {
-                                        nextCount = 0;
-                                        nextIsSet = false;
-                                        return;
-                                    } else {
-                                        nextCount = values.docValueCount();
-                                    }
-                                    upto = 0;
-                                }
-                                nextValue = values.nextValue();
-                                upto++;
-                                nextIsSet = true;
-                            }
-                        } catch (IOException ioe) {
-                            throw new RuntimeException(ioe);
-                        }
-                    }
-
-                    @Override
-                    public boolean hasNext() {
-                        setNext();
-                        return nextCount != 0;
-                    }
-
-                    @Override
-                    public Number next() {
-                        setNext();
-                        assert nextCount != 0;
-                        nextIsSet = false;
-                        return nextValue;
-                    }
-                };
-            }
+                @Override
+                public Number next() {
+                    setNext();
+                    assert nextCount != 0;
+                    nextIsSet = false;
+                    return nextValue;
+                }
+            };
         };
     }
 
@@ -387,51 +358,47 @@ public class LegacyDocValuesIterables {
     @Deprecated
     public static Iterable<Number> normsIterable(final FieldInfo field, final NormsProducer normsProducer, final int maxDoc) {
 
-        return new Iterable<Number>() {
+        return () -> {
 
-            @Override
-            public Iterator<Number> iterator() {
+            final NumericDocValues values;
+            try {
+                values = normsProducer.getNorms(field);
+            } catch (IOException ioe) {
+                throw new RuntimeException(ioe);
+            }
 
-                final NumericDocValues values;
-                try {
-                    values = normsProducer.getNorms(field);
-                } catch (IOException ioe) {
-                    throw new RuntimeException(ioe);
+            return new Iterator<Number>() {
+                private int docIDUpto = -1;
+
+                @Override
+                public boolean hasNext() {
+                    return docIDUpto + 1 < maxDoc;
                 }
 
-                return new Iterator<Number>() {
-                    private int docIDUpto = -1;
-
-                    @Override
-                    public boolean hasNext() {
-                        return docIDUpto + 1 < maxDoc;
-                    }
-
-                    @Override
-                    public Number next() {
-                        docIDUpto++;
-                        if (docIDUpto > values.docID()) {
-                            try {
-                                values.nextDoc();
-                            } catch (IOException ioe) {
-                                throw new RuntimeException(ioe);
-                            }
+                @Override
+                public Number next() {
+                    docIDUpto++;
+                    if (docIDUpto > values.docID()) {
+                        try {
+                            values.nextDoc();
+                        } catch (IOException ioe) {
+                            throw new RuntimeException(ioe);
                         }
-                        Number result;
-                        if (docIDUpto == values.docID()) {
-                            try {
-                                result = values.longValue();
-                            } catch (IOException ioe) {
-                                throw new RuntimeException(ioe);
-                            }
-                        } else {
-                            // Unlike NumericDocValues, norms used to return 0 for missing values:
-                            result = 0;
-                        }
-                        return result;
                     }
-                };
-            }
+                    Number result;
+                    if (docIDUpto == values.docID()) {
+                        try {
+                            result = values.longValue();
+                        } catch (IOException ioe) {
+                            throw new RuntimeException(ioe);
+                        }
+                    } else {
+                        // Unlike NumericDocValues, norms used to return 0 for missing values:
+                        result = 0;
+                    }
+                    return result;
+                }
+            };
         };
     }
 
@@ -440,49 +407,46 @@ public class LegacyDocValuesIterables {
      * @deprecated Consume {@link BinaryDocValues} instead. */
     @Deprecated
     public static Iterable<BytesRef> binaryIterable(final FieldInfo field, final DocValuesProducer valuesProducer, final int maxDoc) {
-        return new Iterable<BytesRef>() {
-            @Override
-            public Iterator<BytesRef> iterator() {
+        return () -> {
 
-                final BinaryDocValues values;
-                try {
-                    values = valuesProducer.getBinary(field);
-                } catch (IOException ioe) {
-                    throw new RuntimeException(ioe);
+            final BinaryDocValues values;
+            try {
+                values = valuesProducer.getBinary(field);
+            } catch (IOException ioe) {
+                throw new RuntimeException(ioe);
+            }
+
+            return new Iterator<BytesRef>() {
+                private int docIDUpto = -1;
+
+                @Override
+                public boolean hasNext() {
+                    return docIDUpto + 1 < maxDoc;
                 }
 
-                return new Iterator<BytesRef>() {
-                    private int docIDUpto = -1;
-
-                    @Override
-                    public boolean hasNext() {
-                        return docIDUpto + 1 < maxDoc;
-                    }
-
-                    @Override
-                    public BytesRef next() {
-                        docIDUpto++;
-                        if (docIDUpto > values.docID()) {
-                            try {
-                                values.nextDoc();
-                            } catch (IOException ioe) {
-                                throw new RuntimeException(ioe);
-                            }
+                @Override
+                public BytesRef next() {
+                    docIDUpto++;
+                    if (docIDUpto > values.docID()) {
+                        try {
+                            values.nextDoc();
+                        } catch (IOException ioe) {
+                            throw new RuntimeException(ioe);
                         }
-                        BytesRef result;
-                        if (docIDUpto == values.docID()) {
-                            try {
-                                result = values.binaryValue();
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
-                            }
-                        } else {
-                            result = null;
-                        }
-                        return result;
                     }
-                };
-            }
+                    BytesRef result;
+                    if (docIDUpto == values.docID()) {
+                        try {
+                            result = values.binaryValue();
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    } else {
+                        result = null;
+                    }
+                    return result;
+                }
+            };
         };
     }
 
@@ -491,49 +455,46 @@ public class LegacyDocValuesIterables {
      * @deprecated Consume {@link NumericDocValues} instead. */
     @Deprecated
     public static Iterable<Number> numericIterable(final FieldInfo field, final DocValuesProducer valuesProducer, final int maxDoc) {
-        return new Iterable<Number>() {
-            @Override
-            public Iterator<Number> iterator() {
+        return () -> {
 
-                final NumericDocValues values;
-                try {
-                    values = valuesProducer.getNumeric(field);
-                } catch (IOException ioe) {
-                    throw new RuntimeException(ioe);
+            final NumericDocValues values;
+            try {
+                values = valuesProducer.getNumeric(field);
+            } catch (IOException ioe) {
+                throw new RuntimeException(ioe);
+            }
+
+            return new Iterator<Number>() {
+                private int docIDUpto = -1;
+
+                @Override
+                public boolean hasNext() {
+                    return docIDUpto + 1 < maxDoc;
                 }
 
-                return new Iterator<Number>() {
-                    private int docIDUpto = -1;
-
-                    @Override
-                    public boolean hasNext() {
-                        return docIDUpto + 1 < maxDoc;
-                    }
-
-                    @Override
-                    public Number next() {
-                        docIDUpto++;
-                        if (docIDUpto > values.docID()) {
-                            try {
-                                values.nextDoc();
-                            } catch (IOException ioe) {
-                                throw new RuntimeException(ioe);
-                            }
+                @Override
+                public Number next() {
+                    docIDUpto++;
+                    if (docIDUpto > values.docID()) {
+                        try {
+                            values.nextDoc();
+                        } catch (IOException ioe) {
+                            throw new RuntimeException(ioe);
                         }
-                        Number result;
-                        if (docIDUpto == values.docID()) {
-                            try {
-                                result = values.longValue();
-                            } catch (IOException ioe) {
-                                throw new RuntimeException(ioe);
-                            }
-                        } else {
-                            result = null;
-                        }
-                        return result;
                     }
-                };
-            }
+                    Number result;
+                    if (docIDUpto == values.docID()) {
+                        try {
+                            result = values.longValue();
+                        } catch (IOException ioe) {
+                            throw new RuntimeException(ioe);
+                        }
+                    } else {
+                        result = null;
+                    }
+                    return result;
+                }
+            };
         };
     }
 }

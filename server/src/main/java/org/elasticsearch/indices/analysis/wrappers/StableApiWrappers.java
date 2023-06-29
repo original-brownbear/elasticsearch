@@ -25,7 +25,6 @@ import org.elasticsearch.plugin.settings.AnalysisSettings;
 import org.elasticsearch.plugins.scanners.PluginInfo;
 import org.elasticsearch.plugins.scanners.StablePluginsRegistry;
 
-import java.io.IOException;
 import java.io.Reader;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -80,17 +79,13 @@ public class StableApiWrappers {
 
     @SuppressWarnings("unchecked")
     private static <F, T> AnalysisModule.AnalysisProvider<T> analysisProviderWrapper(PluginInfo pluginInfo, Function<F, T> wrapper) {
-        return new AnalysisModule.AnalysisProvider<T>() {
-
-            @Override
-            public T get(IndexSettings indexSettings, Environment environment, String name, Settings settings) throws IOException {
-                try {
-                    Class<? extends F> clazz = (Class<? extends F>) pluginInfo.loader().loadClass(pluginInfo.className());
-                    F instance = createInstance(clazz, indexSettings, environment.settings(), settings, environment);
-                    return wrapper.apply(instance);
-                } catch (ClassNotFoundException e) {
-                    throw new IllegalStateException("Plugin classloader cannot find class " + pluginInfo.className(), e);
-                }
+        return (indexSettings, environment, name, settings) -> {
+            try {
+                Class<? extends F> clazz = (Class<? extends F>) pluginInfo.loader().loadClass(pluginInfo.className());
+                F instance = createInstance(clazz, indexSettings, environment.settings(), settings, environment);
+                return wrapper.apply(instance);
+            } catch (ClassNotFoundException e) {
+                throw new IllegalStateException("Plugin classloader cannot find class " + pluginInfo.className(), e);
             }
         };
     }

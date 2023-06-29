@@ -300,16 +300,13 @@ class Elasticsearch {
 
         // listener for windows close event
         if (ctrlHandler) {
-            Natives.addConsoleCtrlHandler(new ConsoleCtrlHandler() {
-                @Override
-                public boolean handle(int code) {
-                    if (CTRL_CLOSE_EVENT == code) {
-                        logger.info("running graceful exit on windows");
-                        shutdown();
-                        return true;
-                    }
-                    return false;
+            Natives.addConsoleCtrlHandler(code -> {
+                if (ConsoleCtrlHandler.CTRL_CLOSE_EVENT == code) {
+                    logger.info("running graceful exit on windows");
+                    shutdown();
+                    return true;
                 }
+                return false;
             });
         }
 

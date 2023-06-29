@@ -1509,24 +1509,18 @@ public class IndexShardTests extends IndexShardTestCase {
             Thread[] thread = new Thread[randomIntBetween(3, 5)];
             CountDownLatch latch = new CountDownLatch(thread.length);
             for (int i = 0; i < thread.length; i++) {
-                thread[i] = new Thread() {
-                    @Override
-                    public void run() {
-                        try {
-                            latch.countDown();
-                            latch.await();
-                            for (int i = 0; i < 10000; i++) {
-                                semaphore.acquire();
-                                shard.syncAfterWrite(
-                                    new Translog.Location(randomLong(), randomLong(), randomInt()),
-                                    e -> semaphore.release()
-                                );
-                            }
-                        } catch (Exception ex) {
-                            throw new RuntimeException(ex);
+                thread[i] = new Thread(() -> {
+                    try {
+                        latch.countDown();
+                        latch.await();
+                        for (int j = 0; j < 10000; j++) {
+                            semaphore.acquire();
+                            shard.syncAfterWrite(new Translog.Location(randomLong(), randomLong(), randomInt()), e -> semaphore.release());
                         }
+                    } catch (Exception ex) {
+                        throw new RuntimeException(ex);
                     }
-                };
+                });
                 thread[i].start();
             }
 
@@ -1572,24 +1566,18 @@ public class IndexShardTests extends IndexShardTestCase {
         Thread[] thread = new Thread[randomIntBetween(3, 5)];
         CountDownLatch latch = new CountDownLatch(thread.length);
         for (int i = 0; i < thread.length; i++) {
-            thread[i] = new Thread() {
-                @Override
-                public void run() {
-                    try {
-                        latch.countDown();
-                        latch.await();
-                        for (int i = 0; i < 10000; i++) {
-                            semaphore.acquire();
-                            shard.syncGlobalCheckpoint(
-                                randomLongBetween(0, shard.getLastKnownGlobalCheckpoint()),
-                                (ex) -> semaphore.release()
-                            );
-                        }
-                    } catch (Exception ex) {
-                        throw new RuntimeException(ex);
+            thread[i] = new Thread(() -> {
+                try {
+                    latch.countDown();
+                    latch.await();
+                    for (int j = 0; j < 10000; j++) {
+                        semaphore.acquire();
+                        shard.syncGlobalCheckpoint(randomLongBetween(0, shard.getLastKnownGlobalCheckpoint()), (ex) -> semaphore.release());
                     }
+                } catch (Exception ex) {
+                    throw new RuntimeException(ex);
                 }
-            };
+            });
             thread[i].start();
         }
 
@@ -2015,17 +2003,14 @@ public class IndexShardTests extends IndexShardTestCase {
         CountDownLatch allPrimaryOperationLocksAcquired = new CountDownLatch(numThreads);
         CyclicBarrier barrier = new CyclicBarrier(numThreads + 1);
         for (int i = 0; i < indexThreads.length; i++) {
-            indexThreads[i] = new Thread() {
-                @Override
-                public void run() {
-                    try (Releasable operationLock = acquirePrimaryOperationPermitBlockingly(shard)) {
-                        allPrimaryOperationLocksAcquired.countDown();
-                        barrier.await();
-                    } catch (InterruptedException | BrokenBarrierException | ExecutionException e) {
-                        throw new RuntimeException(e);
-                    }
+            indexThreads[i] = new Thread(() -> {
+                try (Releasable operationLock = acquirePrimaryOperationPermitBlockingly(shard)) {
+                    allPrimaryOperationLocksAcquired.countDown();
+                    barrier.await();
+                } catch (InterruptedException | BrokenBarrierException | ExecutionException e) {
+                    throw new RuntimeException(e);
                 }
-            };
+            });
             indexThreads[i].start();
         }
         AtomicBoolean relocated = new AtomicBoolean();

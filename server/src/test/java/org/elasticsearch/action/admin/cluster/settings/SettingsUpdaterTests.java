@@ -527,14 +527,11 @@ public class SettingsUpdaterTests extends ESTestCase {
     }
 
     private static Setting<String> invalidInIsolationSetting(int index) {
-        return Setting.simpleString("invalid.setting" + index, new Setting.Validator<>() {
-
-            @Override
-            public void validate(final String value) {
-                throw new IllegalArgumentException("Invalid in isolation setting");
-            }
-
-        }, Property.NodeScope);
+        return Setting.simpleString(
+            "invalid.setting" + index,
+            value -> { throw new IllegalArgumentException("Invalid in isolation setting"); },
+            Property.NodeScope
+        );
     }
 
     private static Setting<String> invalidWithDependenciesSetting(int index) {

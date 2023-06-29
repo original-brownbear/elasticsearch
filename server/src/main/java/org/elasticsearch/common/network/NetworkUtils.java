@@ -102,15 +102,12 @@ public abstract class NetworkUtils {
     @Deprecated
     // only public because of silly multicast
     public static void sortAddresses(List<InetAddress> list) {
-        Collections.sort(list, new Comparator<InetAddress>() {
-            @Override
-            public int compare(InetAddress left, InetAddress right) {
-                int cmp = Integer.compare(sortKey(left, PREFER_V6), sortKey(right, PREFER_V6));
-                if (cmp == 0) {
-                    cmp = new BytesRef(left.getAddress()).compareTo(new BytesRef(right.getAddress()));
-                }
-                return cmp;
+        Collections.sort(list, (left, right) -> {
+            int cmp = Integer.compare(sortKey(left, PREFER_V6), sortKey(right, PREFER_V6));
+            if (cmp == 0) {
+                cmp = new BytesRef(left.getAddress()).compareTo(new BytesRef(right.getAddress()));
             }
+            return cmp;
         });
     }
 

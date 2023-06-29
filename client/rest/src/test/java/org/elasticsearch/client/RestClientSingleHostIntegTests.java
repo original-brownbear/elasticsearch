@@ -176,18 +176,15 @@ public class RestClientSingleHostIntegTests extends RestClientTestCase {
         restClientBuilder.setMetaHeaderEnabled(enableMetaHeader);
 
         if (useAuth) {
-            restClientBuilder.setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback() {
-                @Override
-                public HttpAsyncClientBuilder customizeHttpClient(final HttpAsyncClientBuilder httpClientBuilder) {
-                    if (usePreemptiveAuth == false) {
-                        // disable preemptive auth by ignoring any authcache
-                        httpClientBuilder.disableAuthCaching();
-                        // don't use the "persistent credentials strategy"
-                        httpClientBuilder.setTargetAuthenticationStrategy(new TargetAuthenticationStrategy());
-                    }
-
-                    return httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
+            restClientBuilder.setHttpClientConfigCallback(httpClientBuilder -> {
+                if (usePreemptiveAuth == false) {
+                    // disable preemptive auth by ignoring any authcache
+                    httpClientBuilder.disableAuthCaching();
+                    // don't use the "persistent credentials strategy"
+                    httpClientBuilder.setTargetAuthenticationStrategy(new TargetAuthenticationStrategy());
                 }
+
+                return httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
             });
         }
 

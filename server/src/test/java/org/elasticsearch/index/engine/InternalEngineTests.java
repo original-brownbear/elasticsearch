@@ -1819,39 +1819,36 @@ public class InternalEngineTests extends EngineTestCase {
                 final CountDownLatch startGun = new CountDownLatch(1);
                 final CountDownLatch indexed = new CountDownLatch(1);
 
-                Thread thread = new Thread() {
-                    @Override
-                    public void run() {
+                Thread thread = new Thread(() -> {
+                    try {
                         try {
-                            try {
-                                startGun.await();
-                            } catch (InterruptedException e) {
-                                throw new RuntimeException(e);
-                            }
-                            int i = 0;
-                            while (true) {
-                                int numDocs = randomIntBetween(1, 20);
-                                for (int j = 0; j < numDocs; j++) {
-                                    i++;
-                                    ParsedDocument doc = testParsedDocument(Integer.toString(i), null, testDocument(), B_1, null);
-                                    Engine.Index index = indexForDoc(doc);
-                                    engine.index(index);
-                                }
-                                engine.refresh("test");
-                                indexed.countDown();
-                                try {
-                                    engine.forceMerge(randomBoolean(), 1, false, UUIDs.randomBase64UUID());
-                                } catch (IOException e) {
-                                    return;
-                                }
-                            }
-                        } catch (AlreadyClosedException ex) {
-                            // fine
-                        } catch (IOException e) {
-                            throw new AssertionError(e);
+                            startGun.await();
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
                         }
+                        int i = 0;
+                        while (true) {
+                            int numDocs = randomIntBetween(1, 20);
+                            for (int j1 = 0; j1 < numDocs; j1++) {
+                                i++;
+                                ParsedDocument doc = testParsedDocument(Integer.toString(i), null, testDocument(), B_1, null);
+                                Engine.Index index = indexForDoc(doc);
+                                engine.index(index);
+                            }
+                            engine.refresh("test");
+                            indexed.countDown();
+                            try {
+                                engine.forceMerge(randomBoolean(), 1, false, UUIDs.randomBase64UUID());
+                            } catch (IOException e) {
+                                return;
+                            }
+                        }
+                    } catch (AlreadyClosedException ex) {
+                        // fine
+                    } catch (IOException e) {
+                        throw new AssertionError(e);
                     }
-                };
+                });
 
                 thread.start();
                 startGun.countDown();
@@ -3643,25 +3640,22 @@ public class InternalEngineTests extends EngineTestCase {
     public void testShardNotAvailableExceptionWhenEngineClosedConcurrently() throws IOException, InterruptedException {
         AtomicReference<Exception> exception = new AtomicReference<>();
         String operation = randomFrom("optimize", "refresh", "flush");
-        Thread mergeThread = new Thread() {
-            @Override
-            public void run() {
-                boolean stop = false;
-                logger.info("try with {}", operation);
-                while (stop == false) {
-                    try {
-                        switch (operation) {
-                            case "optimize" -> engine.forceMerge(true, 1, false, UUIDs.randomBase64UUID());
-                            case "refresh" -> engine.refresh("test refresh");
-                            case "flush" -> engine.flush(true, true);
-                        }
-                    } catch (Exception e) {
-                        exception.set(e);
-                        stop = true;
+        Thread mergeThread = new Thread(() -> {
+            boolean stop = false;
+            logger.info("try with {}", operation);
+            while (stop == false) {
+                try {
+                    switch (operation) {
+                        case "optimize" -> engine.forceMerge(true, 1, false, UUIDs.randomBase64UUID());
+                        case "refresh" -> engine.refresh("test refresh");
+                        case "flush" -> engine.flush(true, true);
                     }
+                } catch (Exception e) {
+                    exception.set(e);
+                    stop = true;
                 }
             }
-        };
+        });
         mergeThread.start();
         engine.close();
         mergeThread.join();
@@ -4488,26 +4482,23 @@ public class InternalEngineTests extends EngineTestCase {
 
         AtomicInteger offset = new AtomicInteger(-1);
         for (int i = 0; i < thread.length; i++) {
-            thread[i] = new Thread() {
-                @Override
-                public void run() {
-                    startGun.countDown();
+            thread[i] = new Thread(() -> {
+                startGun.countDown();
+                try {
+                    startGun.await();
+                } catch (InterruptedException e) {
+                    throw new AssertionError(e);
+                }
+                assertThat(engine.getVersionMap().values(), empty());
+                int docOffset;
+                while ((docOffset = offset.incrementAndGet()) < docs.size()) {
                     try {
-                        startGun.await();
-                    } catch (InterruptedException e) {
+                        engine.index(docs.get(docOffset));
+                    } catch (IOException e) {
                         throw new AssertionError(e);
                     }
-                    assertThat(engine.getVersionMap().values(), empty());
-                    int docOffset;
-                    while ((docOffset = offset.incrementAndGet()) < docs.size()) {
-                        try {
-                            engine.index(docs.get(docOffset));
-                        } catch (IOException e) {
-                            throw new AssertionError(e);
-                        }
-                    }
                 }
-            };
+            });
             thread[i].start();
         }
         try (Engine.Searcher searcher = engine.acquireSearcher("test", Engine.SearcherScope.INTERNAL)) {

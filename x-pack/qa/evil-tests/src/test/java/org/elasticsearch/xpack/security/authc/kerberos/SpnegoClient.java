@@ -257,23 +257,16 @@ class SpnegoClient implements AutoCloseable {
         }
     }
 
+    @SuppressForbidden(reason = "For tests where we provide credentials, need to set and reset javax.security.auth.useSubjectCredsOnly")
     private static String getAndSetUseSubjectCredsOnlySystemProperty(final String value) {
         String retVal = null;
         try {
-            retVal = AccessController.doPrivileged(new PrivilegedExceptionAction<String>() {
-
-                @Override
-                @SuppressForbidden(
-                    reason = "For tests where we provide credentials, need to set and reset javax.security.auth.useSubjectCredsOnly"
-                )
-                public String run() throws Exception {
-                    String oldValue = System.getProperty("javax.security.auth.useSubjectCredsOnly");
-                    if (value != null) {
-                        System.setProperty("javax.security.auth.useSubjectCredsOnly", value);
-                    }
-                    return oldValue;
+            retVal = AccessController.doPrivileged((PrivilegedExceptionAction<String>) () -> {
+                String oldValue = System.getProperty("javax.security.auth.useSubjectCredsOnly");
+                if (value != null) {
+                    System.setProperty("javax.security.auth.useSubjectCredsOnly", value);
                 }
-
+                return oldValue;
             });
         } catch (PrivilegedActionException e) {
             throw ExceptionsHelper.convertToRuntime(e);

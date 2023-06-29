@@ -301,23 +301,15 @@ final class Lucene54DocValuesConsumer extends DocValuesConsumer implements Close
                 switch (numberType) {
                     case VALUE:
                         meta.writeByte((byte) 0);
-                        filteredMissingValues = new Iterable<Number>() {
-                            @Override
-                            public Iterator<Number> iterator() {
-                                return StreamSupport.stream(values.spliterator(), false).filter(value -> value != null).iterator();
-                            }
-                        };
+                        filteredMissingValues = () -> StreamSupport.stream(values.spliterator(), false)
+                            .filter(value -> value != null)
+                            .iterator();
                         break;
                     case ORDINAL:
                         meta.writeByte((byte) 1);
-                        filteredMissingValues = new Iterable<Number>() {
-                            @Override
-                            public Iterator<Number> iterator() {
-                                return StreamSupport.stream(values.spliterator(), false)
-                                    .filter(value -> value.longValue() != -1L)
-                                    .iterator();
-                            }
-                        };
+                        filteredMissingValues = () -> StreamSupport.stream(values.spliterator(), false)
+                            .filter(value -> value.longValue() != -1L)
+                            .iterator();
                         break;
                     default:
                         throw new AssertionError();
@@ -761,34 +753,30 @@ final class Lucene54DocValuesConsumer extends DocValuesConsumer implements Close
         }
         assert i == uniqueValueSets.size();
 
-        return new Iterable<Number>() {
+        return () -> {
+            final Iterator<Number> valueCountIterator = docToValueCount.iterator();
+            final Iterator<Number> valueIterator = values.iterator();
+            final LongsRef docValues = new LongsRef(256);
+            return new Iterator<Number>() {
 
-            @Override
-            public Iterator<Number> iterator() {
-                final Iterator<Number> valueCountIterator = docToValueCount.iterator();
-                final Iterator<Number> valueIterator = values.iterator();
-                final LongsRef docValues = new LongsRef(256);
-                return new Iterator<Number>() {
+                @Override
+                public boolean hasNext() {
+                    return valueCountIterator.hasNext();
+                }
 
-                    @Override
-                    public boolean hasNext() {
-                        return valueCountIterator.hasNext();
+                @Override
+                public Number next() {
+                    docValues.length = valueCountIterator.next().intValue();
+                    for (int i1 = 0; i1 < docValues.length; ++i1) {
+                        docValues.longs[i1] = valueIterator.next().longValue();
                     }
+                    final Integer id = setIds.get(docValues);
+                    assert id != null;
+                    return id;
+                }
 
-                    @Override
-                    public Number next() {
-                        docValues.length = valueCountIterator.next().intValue();
-                        for (int i = 0; i < docValues.length; ++i) {
-                            docValues.longs[i] = valueIterator.next().longValue();
-                        }
-                        final Integer id = setIds.get(docValues);
-                        assert id != null;
-                        return id;
-                    }
+            };
 
-                };
-
-            }
         };
     }
 

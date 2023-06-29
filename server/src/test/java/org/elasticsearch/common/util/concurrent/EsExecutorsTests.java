@@ -57,27 +57,21 @@ public class EsExecutorsTests extends ESTestCase {
 
         final CountDownLatch exec1Wait = new CountDownLatch(1);
         final AtomicBoolean executed1 = new AtomicBoolean();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    wait.await();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-                executed1.set(true);
-                exec1Wait.countDown();
+        executor.execute(() -> {
+            try {
+                wait.await();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             }
+            executed1.set(true);
+            exec1Wait.countDown();
         });
 
         final CountDownLatch exec2Wait = new CountDownLatch(1);
         final AtomicBoolean executed2 = new AtomicBoolean();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                executed2.set(true);
-                exec2Wait.countDown();
-            }
+        executor.execute(() -> {
+            executed2.set(true);
+            exec2Wait.countDown();
         });
 
         final AtomicBoolean executed3 = new AtomicBoolean();
@@ -126,37 +120,26 @@ public class EsExecutorsTests extends ESTestCase {
 
         final CountDownLatch exec1Wait = new CountDownLatch(1);
         final AtomicBoolean executed1 = new AtomicBoolean();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    wait.await();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-                executed1.set(true);
-                exec1Wait.countDown();
+        executor.execute(() -> {
+            try {
+                wait.await();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             }
+            executed1.set(true);
+            exec1Wait.countDown();
         });
 
         final CountDownLatch exec2Wait = new CountDownLatch(1);
         final AtomicBoolean executed2 = new AtomicBoolean();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                executed2.set(true);
-                exec2Wait.countDown();
-            }
+        executor.execute(() -> {
+            executed2.set(true);
+            exec2Wait.countDown();
         });
 
         final AtomicBoolean executed3 = new AtomicBoolean();
         try {
-            executor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    executed3.set(true);
-                }
-            });
+            executor.execute(() -> executed3.set(true));
             fail("should be rejected...");
         } catch (EsRejectedExecutionException e) {
             // all is well
@@ -277,14 +260,11 @@ public class EsExecutorsTests extends ESTestCase {
         );
         try {
             for (int i = 0; i < actions; i++) {
-                executor.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            latch.await();
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException(e);
-                        }
+                executor.execute(() -> {
+                    try {
+                        latch.await();
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
                     }
                 });
             }

@@ -253,22 +253,14 @@ public class JvmOptionsParserTests extends ESTestCase {
         for (final String expectedJvmOption : expectedJvmOptions) {
             assertNull(seenJvmOptions.put(expectedJvmOption, new AtomicBoolean()));
         }
-        JvmOptionsParser.parse(javaMajorVersion, br, new JvmOptionsParser.JvmOptionConsumer() {
-            @Override
-            public void accept(final String jvmOption) {
-                final AtomicBoolean seen = seenJvmOptions.get(jvmOption);
-                if (seen == null) {
-                    fail("unexpected JVM option [" + jvmOption + "]");
-                }
-                assertFalse("saw JVM option [" + jvmOption + "] more than once", seen.get());
-                seen.set(true);
+        JvmOptionsParser.parse(javaMajorVersion, br, jvmOption -> {
+            final AtomicBoolean seen = seenJvmOptions.get(jvmOption);
+            if (seen == null) {
+                fail("unexpected JVM option [" + jvmOption + "]");
             }
-        }, new JvmOptionsParser.InvalidLineConsumer() {
-            @Override
-            public void accept(final int lineNumber, final String line) {
-                fail("unexpected invalid line [" + line + "] on line number [" + lineNumber + "]");
-            }
-        });
+            assertFalse("saw JVM option [" + jvmOption + "] more than once", seen.get());
+            seen.set(true);
+        }, (lineNumber, line) -> fail("unexpected invalid line [" + line + "] on line number [" + lineNumber + "]"));
         for (final Map.Entry<String, AtomicBoolean> seenJvmOption : seenJvmOptions.entrySet()) {
             assertTrue("expected JVM option [" + seenJvmOption.getKey() + "]", seenJvmOption.getValue().get());
         }
@@ -276,18 +268,15 @@ public class JvmOptionsParserTests extends ESTestCase {
 
     public void testInvalidLines() throws IOException {
         try (StringReader sr = new StringReader("XX:+UseG1GC"); BufferedReader br = new BufferedReader(sr)) {
-            JvmOptionsParser.parse(randomIntBetween(8, Integer.MAX_VALUE), br, new JvmOptionsParser.JvmOptionConsumer() {
-                @Override
-                public void accept(final String jvmOption) {
-                    fail("unexpected valid JVM option [" + jvmOption + "]");
-                }
-            }, new JvmOptionsParser.InvalidLineConsumer() {
-                @Override
-                public void accept(final int lineNumber, final String line) {
+            JvmOptionsParser.parse(
+                randomIntBetween(8, Integer.MAX_VALUE),
+                br,
+                jvmOption -> fail("unexpected valid JVM option [" + jvmOption + "]"),
+                (lineNumber, line) -> {
                     assertThat(lineNumber, equalTo(1));
                     assertThat(line, equalTo("XX:+UseG1GC"));
                 }
-            });
+            );
         }
 
         final int javaMajorVersion = randomIntBetween(8, Integer.MAX_VALUE);
@@ -330,17 +319,12 @@ public class JvmOptionsParserTests extends ESTestCase {
 
     private void assertInvalidLines(final BufferedReader br, final Map<Integer, String> invalidLines) throws IOException {
         final Map<Integer, String> seenInvalidLines = new HashMap<>(invalidLines.size());
-        JvmOptionsParser.parse(randomIntBetween(8, Integer.MAX_VALUE), br, new JvmOptionsParser.JvmOptionConsumer() {
-            @Override
-            public void accept(final String jvmOption) {
-                fail("unexpected valid JVM options [" + jvmOption + "]");
-            }
-        }, new JvmOptionsParser.InvalidLineConsumer() {
-            @Override
-            public void accept(final int lineNumber, final String line) {
-                seenInvalidLines.put(lineNumber, line);
-            }
-        });
+        JvmOptionsParser.parse(
+            randomIntBetween(8, Integer.MAX_VALUE),
+            br,
+            jvmOption -> fail("unexpected valid JVM options [" + jvmOption + "]"),
+            seenInvalidLines::put
+        );
         assertThat(seenInvalidLines, equalTo(invalidLines));
     }
 
