@@ -33,7 +33,6 @@ import org.elasticsearch.gateway.GatewayService;
 import org.elasticsearch.ingest.IngestMetadata;
 import org.elasticsearch.ingest.PipelineConfiguration;
 import org.elasticsearch.threadpool.ThreadPool;
-import org.elasticsearch.xcontent.NamedXContentRegistry;
 import org.elasticsearch.xcontent.XContentParserConfiguration;
 import org.elasticsearch.xcontent.XContentType;
 import org.elasticsearch.xcontent.json.JsonXContent;
@@ -66,7 +65,6 @@ public abstract class IndexTemplateRegistry implements ClusterStateListener {
     protected final Settings settings;
     protected final Client client;
     protected final ThreadPool threadPool;
-    protected final NamedXContentRegistry xContentRegistry;
     protected final ClusterService clusterService;
     protected final ConcurrentMap<String, AtomicBoolean> templateCreationsInProgress = new ConcurrentHashMap<>();
     protected final ConcurrentMap<String, AtomicBoolean> policyCreationsInProgress = new ConcurrentHashMap<>();
@@ -76,13 +74,11 @@ public abstract class IndexTemplateRegistry implements ClusterStateListener {
         Settings nodeSettings,
         ClusterService clusterService,
         ThreadPool threadPool,
-        Client client,
-        NamedXContentRegistry xContentRegistry
+        Client client
     ) {
         this.settings = nodeSettings;
         this.client = client;
         this.threadPool = threadPool;
-        this.xContentRegistry = xContentRegistry;
         this.clusterService = clusterService;
     }
 

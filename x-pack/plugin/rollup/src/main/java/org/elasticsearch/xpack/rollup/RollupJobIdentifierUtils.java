@@ -104,8 +104,6 @@ public class RollupJobIdentifierUtils {
             if (fieldCaps != null) {
                 for (Map<String, Object> agg : fieldCaps.getAggs()) {
                     if (agg.get(RollupField.AGG).equals(DateHistogramAggregationBuilder.NAME)) {
-                        DateHistogramInterval interval = new DateHistogramInterval((String) agg.get(RollupField.INTERVAL));
-
                         ZoneId thisTimezone = ZoneId.of(((String) agg.get(DateHistogramGroupConfig.TIME_ZONE)), ZoneId.SHORT_IDS);
                         ZoneId sourceTimeZone = source.timeZone() == null
                             ? DateHistogramGroupConfig.DEFAULT_ZONEID_TIMEZONE

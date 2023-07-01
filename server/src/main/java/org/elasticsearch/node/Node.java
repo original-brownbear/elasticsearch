@@ -310,7 +310,6 @@ public class Node implements Closeable {
      * initialized.
      */
     private final Logger logger = LogManager.getLogger(Node.class);
-    private final DeprecationLogger deprecationLogger = DeprecationLogger.getLogger(Node.class);
     private final Injector injector;
     private final Environment environment;
     private final NodeEnvironment nodeEnvironment;
@@ -380,6 +379,7 @@ public class Node implements Closeable {
                     Build.CURRENT.qualifiedVersion()
                 );
             }
+            DeprecationLogger deprecationLogger = DeprecationLogger.getLogger(Node.class);
             if (Environment.PATH_SHARED_DATA_SETTING.exists(tmpSettings)) {
                 // NOTE: this must be done with an explicit check here because the deprecation property on a path setting will
                 // cause ES to fail to start since logging is not yet initialized on first read of the setting

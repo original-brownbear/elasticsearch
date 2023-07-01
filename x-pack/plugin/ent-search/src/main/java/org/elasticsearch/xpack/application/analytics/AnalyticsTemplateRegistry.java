@@ -118,7 +118,7 @@ public class AnalyticsTemplateRegistry extends IndexTemplateRegistry {
         Client client,
         NamedXContentRegistry xContentRegistry
     ) {
-        super(Settings.EMPTY, clusterService, threadPool, client, xContentRegistry);
+        super(Settings.EMPTY, clusterService, threadPool, client);
     }
 
     @Override

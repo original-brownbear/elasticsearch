@@ -102,8 +102,7 @@ public class TransportSqlQueryAction extends HandledTransportAction<SqlQueryRequ
             taskManager,
             SqlQueryAction.INSTANCE.name(),
             this,
-            SqlQueryTask.class,
-            clusterService,
+                clusterService,
             threadPool,
             bigArrays
         );

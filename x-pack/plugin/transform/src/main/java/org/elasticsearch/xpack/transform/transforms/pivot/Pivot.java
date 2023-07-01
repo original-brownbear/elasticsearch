@@ -7,8 +7,6 @@
 
 package org.elasticsearch.xpack.transform.transforms.pivot;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.client.internal.Client;
@@ -51,7 +49,6 @@ import static org.elasticsearch.xcontent.XContentFactory.jsonBuilder;
  * The pivot transform function. This continually searches and pivots results according to the passed {@link PivotConfig}
  */
 public class Pivot extends AbstractCompositeAggFunction {
-    private static final Logger logger = LogManager.getLogger(Pivot.class);
 
     private final PivotConfig config;
     private final SettingsConfig settings;

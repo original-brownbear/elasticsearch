@@ -541,7 +541,7 @@ public abstract class AsyncTwoPhaseIndexer<JobPosition, JobStats extends Indexer
                     JobPosition newPosition = iterationResult.getPosition();
                     position.set(newPosition);
 
-                    onBulkResponse(bulkResponse, newPosition);
+                    onBulkResponse(newPosition);
                 }, this::finishWithIndexingFailure));
             } else {
                 // no documents need to be indexed, continue with search
@@ -563,7 +563,7 @@ public abstract class AsyncTwoPhaseIndexer<JobPosition, JobStats extends Indexer
         }
     }
 
-    private void onBulkResponse(BulkResponse response, JobPosition jobPosition) {
+    private void onBulkResponse(JobPosition jobPosition) {
         stats.markEndIndexing();
 
         // check if we should stop

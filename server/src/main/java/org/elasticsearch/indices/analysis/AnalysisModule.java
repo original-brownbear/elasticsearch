@@ -79,7 +79,7 @@ public final class AnalysisModule {
         );
         NamedRegistry<AnalysisProvider<TokenizerFactory>> tokenizers = setupTokenizers(plugins, stablePluginRegistry);
         NamedRegistry<AnalysisProvider<AnalyzerProvider<?>>> analyzers = setupAnalyzers(plugins, stablePluginRegistry);
-        NamedRegistry<AnalysisProvider<AnalyzerProvider<?>>> normalizers = setupNormalizers(plugins);
+        NamedRegistry<AnalysisProvider<AnalyzerProvider<?>>> normalizers = setupNormalizers();
 
         Map<String, PreConfiguredCharFilter> preConfiguredCharFilters = setupPreConfiguredCharFilters(plugins);
         Map<String, PreConfiguredTokenFilter> preConfiguredTokenFilters = setupPreConfiguredTokenFilters(plugins);
@@ -272,7 +272,7 @@ public final class AnalysisModule {
         return analyzers;
     }
 
-    private static NamedRegistry<AnalysisProvider<AnalyzerProvider<?>>> setupNormalizers(List<AnalysisPlugin> plugins) {
+    private static NamedRegistry<AnalysisProvider<AnalyzerProvider<?>>> setupNormalizers() {
         NamedRegistry<AnalysisProvider<AnalyzerProvider<?>>> normalizers = new NamedRegistry<>("normalizer");
         normalizers.register("lowercase", LowercaseNormalizerProvider::new);
         // TODO: pluggability?

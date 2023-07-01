@@ -73,13 +73,11 @@ public final class IndicesRequestCache implements RemovalListener<IndicesRequest
 
     private final ConcurrentMap<CleanupKey, Boolean> registeredClosedListeners = ConcurrentCollections.newConcurrentMap();
     private final Set<CleanupKey> keysToClean = ConcurrentCollections.newConcurrentSet();
-    private final ByteSizeValue size;
-    private final TimeValue expire;
     private final Cache<Key, BytesReference> cache;
 
     IndicesRequestCache(Settings settings) {
-        this.size = INDICES_CACHE_QUERY_SIZE.get(settings);
-        this.expire = INDICES_CACHE_QUERY_EXPIRE.exists(settings) ? INDICES_CACHE_QUERY_EXPIRE.get(settings) : null;
+        ByteSizeValue size = INDICES_CACHE_QUERY_SIZE.get(settings);
+        TimeValue expire = INDICES_CACHE_QUERY_EXPIRE.exists(settings) ? INDICES_CACHE_QUERY_EXPIRE.get(settings) : null;
         long sizeInBytes = size.getBytes();
         CacheBuilder<Key, BytesReference> cacheBuilder = CacheBuilder.<Key, BytesReference>builder()
             .setMaximumWeight(sizeInBytes)

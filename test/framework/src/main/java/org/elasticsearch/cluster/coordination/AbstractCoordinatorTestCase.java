@@ -952,9 +952,7 @@ public class AbstractCoordinatorTestCase extends ESTestCase {
             private DisruptableClusterApplierService clusterApplierService;
             private ClusterService clusterService;
             TransportService transportService;
-            private MasterHistoryService masterHistoryService;
             CoordinationDiagnosticsService coordinationDiagnosticsService;
-            StableMasterHealthIndicatorService stableMasterHealthIndicatorService;
             private DisruptableMockTransport mockTransport;
             private final NodeHealthService nodeHealthService;
             List<BiConsumer<DiscoveryNode, ClusterState>> extraJoinValidators = new ArrayList<>();
@@ -1088,7 +1086,7 @@ public class AbstractCoordinatorTestCase extends ESTestCase {
                     threadPool
                 );
                 clusterService = new ClusterService(settings, clusterSettings, masterService, clusterApplierService);
-                masterHistoryService = new MasterHistoryService(transportService, threadPool, clusterService);
+                MasterHistoryService masterHistoryService = new MasterHistoryService(transportService, threadPool, clusterService);
                 clusterService.setNodeConnectionsService(
                     new NodeConnectionsService(clusterService.getSettings(), threadPool, transportService)
                 );
@@ -1153,7 +1151,6 @@ public class AbstractCoordinatorTestCase extends ESTestCase {
                     null,
                     getNamedWriteableRegistry()
                 );
-                stableMasterHealthIndicatorService = new StableMasterHealthIndicatorService(coordinationDiagnosticsService, clusterService);
                 masterService.setClusterStatePublisher(coordinator);
                 final GatewayService gatewayService = new GatewayService(
                     settings,
@@ -1764,7 +1761,6 @@ public class AbstractCoordinatorTestCase extends ESTestCase {
         private final String nodeName;
         private final String nodeId;
         private final DeterministicTaskQueue deterministicTaskQueue;
-        private final ThreadPool threadPool;
         ClusterStateApplyResponse clusterStateApplyResponse = ClusterStateApplyResponse.SUCCEED;
         private boolean applicationMayFail;
 
@@ -1780,7 +1776,6 @@ public class AbstractCoordinatorTestCase extends ESTestCase {
             this.nodeName = nodeName;
             this.nodeId = nodeId;
             this.deterministicTaskQueue = deterministicTaskQueue;
-            this.threadPool = threadPool;
             addStateApplier(event -> {
                 switch (clusterStateApplyResponse) {
                     case SUCCEED, HANG -> {

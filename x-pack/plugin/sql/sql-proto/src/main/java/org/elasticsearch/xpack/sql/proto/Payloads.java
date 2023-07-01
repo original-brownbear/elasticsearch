@@ -69,17 +69,6 @@ public final class Payloads {
         )
     );
 
-    private static final ConstructingObjectParser<ColumnInfo, Void> ROWS_PARSER = new ConstructingObjectParser<>(
-        "sql/response/row",
-        true,
-        objects -> new ColumnInfo(
-            objects[0] == null ? "" : (String) objects[0],
-            (String) objects[1],
-            (String) objects[2],
-            (Integer) objects[3]
-        )
-    );
-
     @SuppressWarnings("unchecked")
     public static final ConstructingObjectParser<SqlQueryResponse, Void> QUERY_RESPONSE_PARSER = new ConstructingObjectParser<>(
         "sql/response/query",

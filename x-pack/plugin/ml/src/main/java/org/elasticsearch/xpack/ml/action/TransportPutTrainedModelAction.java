@@ -6,8 +6,6 @@
  */
 package org.elasticsearch.xpack.ml.action;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.ResourceNotFoundException;
@@ -28,7 +26,6 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.ValidationException;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -80,17 +77,14 @@ import static org.elasticsearch.xpack.core.ClientHelper.executeAsyncWithOrigin;
 public class TransportPutTrainedModelAction extends TransportMasterNodeAction<Request, Response> {
 
     private static final ByteSizeValue MAX_NATIVE_DEFINITION_INDEX_SIZE = ByteSizeValue.ofGb(50);
-    private static final Logger logger = LogManager.getLogger(TransportPutTrainedModelAction.class);
 
     private final TrainedModelProvider trainedModelProvider;
     private final XPackLicenseState licenseState;
     private final NamedXContentRegistry xContentRegistry;
     private final OriginSettingClient client;
-    private final Settings settings;
 
     @Inject
     public TransportPutTrainedModelAction(
-        Settings settings,
         TransportService transportService,
         ClusterService clusterService,
         ThreadPool threadPool,
@@ -116,7 +110,6 @@ public class TransportPutTrainedModelAction extends TransportMasterNodeAction<Re
         this.trainedModelProvider = trainedModelProvider;
         this.xContentRegistry = xContentRegistry;
         this.client = new OriginSettingClient(client, ML_ORIGIN);
-        this.settings = settings;
     }
 
     @Override

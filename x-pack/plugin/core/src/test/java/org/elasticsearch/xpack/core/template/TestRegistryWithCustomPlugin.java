@@ -37,7 +37,7 @@ class TestRegistryWithCustomPlugin extends IndexTemplateRegistry {
         Client client,
         NamedXContentRegistry xContentRegistry
     ) {
-        super(nodeSettings, clusterService, threadPool, client, xContentRegistry);
+        super(nodeSettings, clusterService, threadPool, client);
     }
 
     @Override

@@ -116,7 +116,6 @@ public class TransportPrevalidateShardPathAction extends TransportNodesAction<
                     localShards.add(shardId);
                 }
             } catch (IOException e) {
-                final String path = shardPath != null ? shardPath.resolveIndex().toString() : "";
                 logger.error(() -> String.format(Locale.ROOT, "error loading shard path for shard [%s]", shardId), e);
             }
         }

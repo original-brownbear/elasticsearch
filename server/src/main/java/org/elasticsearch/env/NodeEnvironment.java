@@ -305,7 +305,7 @@ public final class NodeEnvironment implements Closeable {
 
             ensureAtomicMoveSupported(dataPaths);
 
-            if (upgradeLegacyNodeFolders(logger, settings, environment, nodeLock)) {
+            if (upgradeLegacyNodeFolders(logger, environment, nodeLock)) {
                 assertCanWrite();
             }
 
@@ -344,7 +344,7 @@ public final class NodeEnvironment implements Closeable {
      * Upgrades all data paths that have been written to by an older ES version to the 8.0+ compatible folder layout,
      * removing the "nodes/${lockId}" folder prefix
      */
-    private static boolean upgradeLegacyNodeFolders(Logger logger, Settings settings, Environment environment, NodeLock nodeLock)
+    private static boolean upgradeLegacyNodeFolders(Logger logger, Environment environment, NodeLock nodeLock)
         throws IOException {
         boolean upgradeNeeded = false;
 

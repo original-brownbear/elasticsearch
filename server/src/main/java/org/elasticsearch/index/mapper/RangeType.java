@@ -149,21 +149,20 @@ public enum RangeType {
 
         @Override
         public Query withinQuery(String field, Object from, Object to, boolean includeFrom, boolean includeTo) {
-            return createQuery(field, from, to, includeFrom, includeTo, (f, t) -> InetAddressRange.newWithinQuery(field, f, t));
+            return createQuery(from, to, includeFrom, includeTo, (f, t) -> InetAddressRange.newWithinQuery(field, f, t));
         }
 
         @Override
         public Query containsQuery(String field, Object from, Object to, boolean includeFrom, boolean includeTo) {
-            return createQuery(field, from, to, includeFrom, includeTo, (f, t) -> InetAddressRange.newContainsQuery(field, f, t));
+            return createQuery(from, to, includeFrom, includeTo, (f, t) -> InetAddressRange.newContainsQuery(field, f, t));
         }
 
         @Override
         public Query intersectsQuery(String field, Object from, Object to, boolean includeFrom, boolean includeTo) {
-            return createQuery(field, from, to, includeFrom, includeTo, (f, t) -> InetAddressRange.newIntersectsQuery(field, f, t));
+            return createQuery(from, to, includeFrom, includeTo, (f, t) -> InetAddressRange.newIntersectsQuery(field, f, t));
         }
 
         private Query createQuery(
-            String field,
             Object lower,
             Object upper,
             boolean includeLower,

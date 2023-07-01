@@ -25,7 +25,6 @@ import static org.elasticsearch.xpack.core.security.support.Automatons.patterns;
 public class Privilege {
 
     public static final Privilege NONE = new Privilege(Collections.singleton("none"), Automatons.EMPTY);
-    public static final Privilege ALL = new Privilege(Collections.singleton("all"), Automatons.MATCH_ALL);
 
     protected final Set<String> name;
     protected final Automaton automaton;

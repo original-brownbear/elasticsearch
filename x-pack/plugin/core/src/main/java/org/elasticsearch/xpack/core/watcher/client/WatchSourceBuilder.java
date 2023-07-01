@@ -112,7 +112,7 @@ public class WatchSourceBuilder implements ToXContentObject {
     }
 
     public WatchSourceBuilder addAction(String id, TimeValue throttlePeriod, Transform aTransform, Action action) {
-        actions.put(id, new TransformedAction(id, action, throttlePeriod, null, aTransform, null));
+        actions.put(id, new TransformedAction(action, throttlePeriod, null, aTransform, null));
         return this;
     }
 
@@ -129,7 +129,7 @@ public class WatchSourceBuilder implements ToXContentObject {
 
     @SuppressWarnings("HiddenField")
     public WatchSourceBuilder addAction(String id, TimeValue throttlePeriod, Condition condition, Transform transform, Action action) {
-        actions.put(id, new TransformedAction(id, action, throttlePeriod, condition, transform, null));
+        actions.put(id, new TransformedAction(action, throttlePeriod, condition, transform, null));
         return this;
     }
 
@@ -142,7 +142,7 @@ public class WatchSourceBuilder implements ToXContentObject {
         String path,
         Action action
     ) {
-        actions.put(id, new TransformedAction(id, action, throttlePeriod, condition, transform, path));
+        actions.put(id, new TransformedAction(action, throttlePeriod, condition, transform, path));
         return this;
     }
 
@@ -222,7 +222,6 @@ public class WatchSourceBuilder implements ToXContentObject {
         private final Transform transform;
 
         TransformedAction(
-            String id,
             Action action,
             @Nullable TimeValue throttlePeriod,
             @Nullable Condition condition,

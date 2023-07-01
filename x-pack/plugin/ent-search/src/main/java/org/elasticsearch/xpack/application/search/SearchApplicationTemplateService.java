@@ -9,8 +9,6 @@ package org.elasticsearch.xpack.application.search;
 
 import org.elasticsearch.common.ValidationException;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
-import org.elasticsearch.logging.LogManager;
-import org.elasticsearch.logging.Logger;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptService;
 import org.elasticsearch.script.TemplateScript;
@@ -29,8 +27,6 @@ public class SearchApplicationTemplateService {
 
     private final ScriptService scriptService;
     private final NamedXContentRegistry xContentRegistry;
-
-    private final Logger logger = LogManager.getLogger(SearchApplicationTemplateService.class);
 
     public SearchApplicationTemplateService(ScriptService scriptService, NamedXContentRegistry xContentRegistry) {
         this.scriptService = scriptService;

@@ -36,7 +36,6 @@ public class RestProfileHasPrivilegesActionTests extends ESTestCase {
         licenseState = MockLicenseState.createMock();
         restProfileHasPrivilegesAction = new RestProfileHasPrivilegesAction(
             Settings.builder().put(XPackSettings.SECURITY_ENABLED.getKey(), true).build(),
-            mock(SecurityContext.class),
             licenseState
         );
     }

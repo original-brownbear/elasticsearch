@@ -29,8 +29,6 @@ import org.apache.lucene.search.MultiTermQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.util.QueryBuilder;
 import org.apache.lucene.util.graph.GraphTokenStreamFiniteStrings;
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.lucene.Lucene;
@@ -79,16 +77,6 @@ public class MatchQueryParser {
 
         Type(int ordinal) {
             this.ordinal = ordinal;
-        }
-
-        public static Type readFromStream(StreamInput in) throws IOException {
-            int ord = in.readVInt();
-            for (Type type : Type.values()) {
-                if (type.ordinal == ord) {
-                    return type;
-                }
-            }
-            throw new ElasticsearchException("unknown serialized type [" + ord + "]");
         }
 
         @Override
@@ -363,7 +351,7 @@ public class MatchQueryParser {
                 } else if (numTokens == 1) {
                     // single term
                     if (type == Type.PHRASE_PREFIX) {
-                        return analyzePhrasePrefix(field, stream, phraseSlop, positionCount);
+                        return analyzePhrasePrefix(field, stream, phraseSlop);
                     } else {
                         return analyzeTerm(field, stream, type == Type.BOOLEAN_PREFIX);
                     }
@@ -385,7 +373,7 @@ public class MatchQueryParser {
                     }
                 } else if (type == Type.PHRASE_PREFIX) {
                     // phrase prefix
-                    return analyzePhrasePrefix(field, stream, phraseSlop, positionCount);
+                    return analyzePhrasePrefix(field, stream, phraseSlop);
                 } else {
                     // boolean
                     if (positionCount == 1) {
@@ -592,7 +580,7 @@ public class MatchQueryParser {
             }
         }
 
-        private Query analyzePhrasePrefix(String field, TokenStream stream, int slop, int positionCount) throws IOException {
+        private Query analyzePhrasePrefix(String field, TokenStream stream, int slop) throws IOException {
             try {
                 return fieldType.phrasePrefixQuery(stream, slop, maxExpansions, context);
             } catch (IllegalArgumentException | IllegalStateException e) {

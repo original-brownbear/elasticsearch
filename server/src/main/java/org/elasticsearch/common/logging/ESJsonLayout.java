@@ -62,11 +62,9 @@ import java.util.Set;
 public class ESJsonLayout extends AbstractStringLayout {
 
     private final PatternLayout patternLayout;
-    private String esmessagefields;
 
     protected ESJsonLayout(String typeName, Charset charset, String[] overrideFields) {
         super(charset);
-        this.esmessagefields = String.join(",", overrideFields);
         this.patternLayout = PatternLayout.newBuilder()
             .withPattern(pattern(typeName, overrideFields))
             .withAlwaysWriteExceptions(false)

@@ -33,8 +33,6 @@ public abstract class Attribute extends NamedExpression {
     // empty - such as a top level attribute in SELECT cause
     // present - table name or a table name alias
     private final String qualifier;
-    // cluster name in the qualifier (if any)
-    private final String cluster;
 
     // can the attr be null - typically used in JOINs
     private final Nullability nullability;
@@ -51,10 +49,8 @@ public abstract class Attribute extends NamedExpression {
         super(source, name, emptyList(), id, synthetic);
         if (qualifier != null) {
             Tuple<String, String> splitQualifier = splitQualifiedIndex(qualifier);
-            this.cluster = splitQualifier.v1();
             this.qualifier = splitQualifier.v2();
         } else {
-            this.cluster = null;
             this.qualifier = null;
         }
         this.nullability = nullability;

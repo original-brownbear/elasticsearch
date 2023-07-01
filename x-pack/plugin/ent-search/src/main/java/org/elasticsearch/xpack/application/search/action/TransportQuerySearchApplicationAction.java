@@ -19,8 +19,6 @@ import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.logging.HeaderWarning;
 import org.elasticsearch.common.util.BigArrays;
-import org.elasticsearch.logging.LogManager;
-import org.elasticsearch.logging.Logger;
 import org.elasticsearch.script.ScriptService;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.tasks.Task;
@@ -31,7 +29,6 @@ import org.elasticsearch.xpack.application.search.SearchApplicationTemplateServi
 
 public class TransportQuerySearchApplicationAction extends HandledTransportAction<SearchApplicationSearchRequest, SearchResponse> {
 
-    private static final Logger logger = LogManager.getLogger(TransportQuerySearchApplicationAction.class);
     protected final SearchApplicationIndexService systemIndexService;
     private final Client client;
 

@@ -86,7 +86,7 @@ public class StableApiWrappers {
             public T get(IndexSettings indexSettings, Environment environment, String name, Settings settings) throws IOException {
                 try {
                     Class<? extends F> clazz = (Class<? extends F>) pluginInfo.loader().loadClass(pluginInfo.className());
-                    F instance = createInstance(clazz, indexSettings, environment.settings(), settings, environment);
+                    F instance = createInstance(clazz, indexSettings, environment.settings(), settings);
                     return wrapper.apply(instance);
                 } catch (ClassNotFoundException e) {
                     throw new IllegalStateException("Plugin classloader cannot find class " + pluginInfo.className(), e);
@@ -181,8 +181,7 @@ public class StableApiWrappers {
         Class<T> clazz,
         IndexSettings indexSettings,
         Settings nodeSettings,
-        Settings analysisSettings,
-        Environment environment
+        Settings analysisSettings
     ) {
         try {
 
@@ -199,7 +198,7 @@ public class StableApiWrappers {
                     Class<?>[] parameterTypes = constructor.getParameterTypes();
                     Object[] parameters = new Object[parameterTypes.length];
                     for (int i = 0; i < parameterTypes.length; i++) {
-                        Object settings = createSettings(parameterTypes[i], indexSettings, nodeSettings, analysisSettings, environment);
+                        Object settings = createSettings(parameterTypes[i], indexSettings, nodeSettings, analysisSettings);
                         parameters[i] = settings;
                     }
                     return (T) constructor.newInstance(parameters);
@@ -219,11 +218,10 @@ public class StableApiWrappers {
         Class<T> settingsClass,
         IndexSettings indexSettings,
         Settings nodeSettings,
-        Settings analysisSettings,
-        Environment environment
+        Settings analysisSettings
     ) {
         if (settingsClass.getAnnotationsByType(AnalysisSettings.class).length > 0) {
-            return SettingsInvocationHandler.create(analysisSettings, settingsClass, environment);
+            return SettingsInvocationHandler.create(analysisSettings, settingsClass);
         }
 
         throw new IllegalArgumentException("Parameter is not instance of a class annotated with settings annotation.");

@@ -27,7 +27,6 @@ import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.logging.ECSJsonLayout;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.logging.RateLimitingFilter;
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.xpack.core.ClientHelper;
 import org.elasticsearch.xpack.core.ilm.IndexLifecycleMetadata;
@@ -68,7 +67,6 @@ public class DeprecationIndexingComponent extends AbstractLifecycleComponent imp
 
     private DeprecationIndexingComponent(
         Client client,
-        Settings settings,
         RateLimitingFilter rateLimitingFilterForIndexing,
         boolean enableDeprecationLogIndexingDefault,
         ClusterService clusterService
@@ -76,7 +74,7 @@ public class DeprecationIndexingComponent extends AbstractLifecycleComponent imp
         this.rateLimitingFilterForIndexing = rateLimitingFilterForIndexing;
         this.clusterService = clusterService;
 
-        this.processor = getBulkProcessor(new OriginSettingClient(client, ClientHelper.DEPRECATION_ORIGIN), settings);
+        this.processor = getBulkProcessor(new OriginSettingClient(client, ClientHelper.DEPRECATION_ORIGIN));
         final Consumer<IndexRequest> consumer = processor::add;
 
         final LoggerContext context = (LoggerContext) LogManager.getContext(false);
@@ -99,14 +97,12 @@ public class DeprecationIndexingComponent extends AbstractLifecycleComponent imp
 
     public static DeprecationIndexingComponent createDeprecationIndexingComponent(
         Client client,
-        Settings settings,
         RateLimitingFilter rateLimitingFilterForIndexing,
         boolean enableDeprecationLogIndexingDefault,
         ClusterService clusterService
     ) {
         final DeprecationIndexingComponent deprecationIndexingComponent = new DeprecationIndexingComponent(
             client,
-            settings,
             rateLimitingFilterForIndexing,
             enableDeprecationLogIndexingDefault,
             clusterService
@@ -186,10 +182,9 @@ public class DeprecationIndexingComponent extends AbstractLifecycleComponent imp
      * Constructs a bulk processor for writing documents
      *
      * @param client   the client to use
-     * @param settings the settings to use
      * @return an initialised bulk processor
      */
-    private BulkProcessor2 getBulkProcessor(Client client, Settings settings) {
+    private BulkProcessor2 getBulkProcessor(Client client) {
         BulkProcessor2.Listener listener = new DeprecationBulkListener();
         return BulkProcessor2.builder((bulkRequest, actionListener) -> {
             /*

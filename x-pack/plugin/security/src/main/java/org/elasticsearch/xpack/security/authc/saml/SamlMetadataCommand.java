@@ -147,7 +147,7 @@ class SamlMetadataCommand extends KeyStoreAwareCommand {
         SamlUtils.initialize(logger);
 
         final EntityDescriptor descriptor = buildEntityDescriptor(terminal, options, env);
-        Element element = possiblySignDescriptor(terminal, options, descriptor, env);
+        Element element = possiblySignDescriptor(terminal, options, descriptor);
 
         final Path xml = writeOutput(terminal, options, element);
         validateXml(terminal, xml);
@@ -252,15 +252,14 @@ class SamlMetadataCommand extends KeyStoreAwareCommand {
     }
 
     // package-protected for testing
-    Element possiblySignDescriptor(Terminal terminal, OptionSet options, EntityDescriptor descriptor, Environment env)
-        throws UserException {
+    Element possiblySignDescriptor(Terminal terminal, OptionSet options, EntityDescriptor descriptor) throws UserException {
         try {
             final EntityDescriptorMarshaller marshaller = new EntityDescriptorMarshaller();
             if (options.has(signingPkcs12PathSpec) || (options.has(signingCertPathSpec) && options.has(signingKeyPathSpec))) {
                 Signature signature = (Signature) XMLObjectProviderRegistrySupport.getBuilderFactory()
                     .getBuilder(Signature.DEFAULT_ELEMENT_NAME)
                     .buildObject(Signature.DEFAULT_ELEMENT_NAME);
-                signature.setSigningCredential(buildSigningCredential(terminal, options, env));
+                signature.setSigningCredential(buildSigningCredential(terminal, options));
                 signature.setSignatureAlgorithm(SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA256);
                 signature.setCanonicalizationAlgorithm(SignatureConstants.ALGO_ID_C14N_EXCL_OMIT_COMMENTS);
                 descriptor.setSignature(signature);
@@ -294,7 +293,7 @@ class SamlMetadataCommand extends KeyStoreAwareCommand {
         return outputFile;
     }
 
-    private Credential buildSigningCredential(Terminal terminal, OptionSet options, Environment env) throws Exception {
+    private Credential buildSigningCredential(Terminal terminal, OptionSet options) throws Exception {
         X509Certificate signingCertificate;
         PrivateKey signingKey;
         char[] password = getChars(keyPasswordSpec.value(options));

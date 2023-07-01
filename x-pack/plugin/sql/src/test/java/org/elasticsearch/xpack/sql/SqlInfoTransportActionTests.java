@@ -59,8 +59,7 @@ public class SqlInfoTransportActionTests extends ESTestCase {
     public void testAvailable() {
         SqlInfoTransportAction featureSet = new SqlInfoTransportAction(
             mock(TransportService.class),
-            mock(ActionFilters.class),
-            licenseState
+            mock(ActionFilters.class)
         );
         assertThat(featureSet.available(), is(true));
     }
@@ -101,8 +100,7 @@ public class SqlInfoTransportActionTests extends ESTestCase {
             null,
             mock(ActionFilters.class),
             null,
-            licenseState,
-            client
+                client
         );
         PlainActionFuture<XPackUsageFeatureResponse> future = new PlainActionFuture<>();
         usageAction.masterOperation(mock(Task.class), null, null, future);

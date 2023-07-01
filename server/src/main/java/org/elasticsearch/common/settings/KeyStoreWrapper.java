@@ -114,8 +114,6 @@ public class KeyStoreWrapper implements SecureSettings {
 
     /** The oldest metadata format version that can be read. */
     private static final int MIN_FORMAT_VERSION = 3;
-    /** Legacy versions of the metadata written before the keystore data. */
-    public static final int V2_VERSION = 2;
     public static final int V3_VERSION = 3;
     public static final int V4_VERSION = 4;
     /** The version where lucene directory API changed from BE to LE. */

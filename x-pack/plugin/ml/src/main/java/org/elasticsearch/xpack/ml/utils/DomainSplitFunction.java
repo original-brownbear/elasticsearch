@@ -27,8 +27,6 @@ public final class DomainSplitFunction {
 
     private static final DeprecationLogger deprecationLogger = DeprecationLogger.getLogger(DomainSplitFunction.class);
 
-    private static final int MAX_DOMAIN_PART_LENGTH = 63;
-
     private static final Map<String, String> exact;
     private static final Map<String, String> under = Map.ofEntries(
         entry("bd", "i"),

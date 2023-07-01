@@ -59,7 +59,6 @@ public final class MockEngineSupport {
 
     private final AtomicBoolean closing = new AtomicBoolean(false);
     private final Logger logger = LogManager.getLogger(Engine.class);
-    private final ShardId shardId;
     private final InFlightSearchers inFlightSearchers;
     private final MockContext mockContext;
     private final boolean disableFlushOnClose;
@@ -84,7 +83,7 @@ public final class MockEngineSupport {
 
     public MockEngineSupport(EngineConfig config, Class<? extends FilterDirectoryReader> wrapper) {
         Settings settings = config.getIndexSettings().getSettings();
-        shardId = config.getShardId();
+        ShardId shardId = config.getShardId();
         final long seed = config.getIndexSettings().getValue(ESIntegTestCase.INDEX_TEST_SEED_SETTING);
         Random random = new Random(seed);
         final double ratio = WRAP_READER_RATIO.get(settings);
@@ -158,11 +157,9 @@ public final class MockEngineSupport {
     }
 
     public abstract static class DirectoryReaderWrapper extends FilterDirectoryReader {
-        protected final SubReaderWrapper subReaderWrapper;
 
         public DirectoryReaderWrapper(DirectoryReader in, SubReaderWrapper subReaderWrapper) throws IOException {
             super(in, subReaderWrapper);
-            this.subReaderWrapper = subReaderWrapper;
         }
 
     }

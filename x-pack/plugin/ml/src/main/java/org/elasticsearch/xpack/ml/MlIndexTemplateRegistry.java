@@ -110,7 +110,7 @@ public class MlIndexTemplateRegistry extends IndexTemplateRegistry {
         boolean useIlm,
         NamedXContentRegistry xContentRegistry
     ) {
-        super(nodeSettings, clusterService, threadPool, client, xContentRegistry);
+        super(nodeSettings, clusterService, threadPool, client);
         this.useIlm = useIlm;
         this.composableIndexTemplateConfigs = parseComposableTemplates(
             anomalyDetectionResultsTemplate(),

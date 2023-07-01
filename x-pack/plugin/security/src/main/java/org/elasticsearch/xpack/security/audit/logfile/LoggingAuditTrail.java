@@ -1793,7 +1793,6 @@ public class LoggingAuditTrail implements AuditTrail, ClusterStateListener {
      * the policy.
      */
     private static final class EventFilterPolicy {
-        private final String name;
         private final Predicate<String> ignorePrincipalsPredicate;
         private final Predicate<String> ignoreRealmsPredicate;
         private final Predicate<String> ignoreRolesPredicate;
@@ -1806,7 +1805,6 @@ public class LoggingAuditTrail implements AuditTrail, ClusterStateListener {
          * a singleton list of the empty string ([""]).
          */
         EventFilterPolicy(String name, Settings settings) {
-            this.name = name;
             // "null" values are "unexpected" and should not match any ignore policy
             this.ignorePrincipalsPredicate = parsePredicate(
                 FILTER_POLICY_IGNORE_PRINCIPALS.getConcreteSettingForNamespace(name).get(settings)

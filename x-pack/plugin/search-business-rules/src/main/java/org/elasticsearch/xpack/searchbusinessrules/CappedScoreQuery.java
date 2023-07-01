@@ -79,12 +79,10 @@ public final class CappedScoreQuery extends Query {
      */
     protected static class CappedBulkScorer extends BulkScorer {
         final BulkScorer bulkScorer;
-        final Weight weight;
         final float maxScore;
 
-        public CappedBulkScorer(BulkScorer bulkScorer, Weight weight, float maxScore) {
+        public CappedBulkScorer(BulkScorer bulkScorer, float maxScore) {
             this.bulkScorer = bulkScorer;
-            this.weight = weight;
             this.maxScore = maxScore;
         }
 
@@ -131,7 +129,7 @@ public final class CappedScoreQuery extends Query {
                     if (innerScorer == null) {
                         return null;
                     }
-                    return new CappedBulkScorer(innerScorer, this, maxScore);
+                    return new CappedBulkScorer(innerScorer, maxScore);
                 }
 
                 @Override

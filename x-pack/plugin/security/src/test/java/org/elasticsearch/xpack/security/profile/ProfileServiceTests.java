@@ -78,7 +78,6 @@ import org.elasticsearch.xpack.core.security.action.profile.SuggestProfilesRespo
 import org.elasticsearch.xpack.core.security.authc.Authentication;
 import org.elasticsearch.xpack.core.security.authc.AuthenticationTestHelper;
 import org.elasticsearch.xpack.core.security.authc.AuthenticationTests;
-import org.elasticsearch.xpack.core.security.authc.DomainConfig;
 import org.elasticsearch.xpack.core.security.authc.RealmConfig;
 import org.elasticsearch.xpack.core.security.authc.RealmDomain;
 import org.elasticsearch.xpack.core.security.authc.Subject;
@@ -207,13 +206,11 @@ public class ProfileServiceTests extends ESTestCase {
         minNodeVersion = VersionUtils.randomVersionBetween(random(), Version.V_7_17_0, Version.CURRENT);
         when(discoveryNodes.getMinNodeVersion()).thenReturn(minNodeVersion);
         this.profileService = new ProfileService(
-            Settings.EMPTY,
-            Clock.systemUTC(),
+                Clock.systemUTC(),
             client,
             profileIndex,
             clusterService,
-            name -> new DomainConfig(name, Set.of(), false, null),
-            threadPool
+                threadPool
         );
     }
 
@@ -487,13 +484,11 @@ public class ProfileServiceTests extends ESTestCase {
     public void testLiteralUsernameWillThrowOnDuplicate() throws IOException {
         final Subject subject = new Subject(AuthenticationTestHelper.randomUser(), AuthenticationTestHelper.randomRealmRef(true));
         final ProfileService service = new ProfileService(
-            Settings.EMPTY,
-            Clock.systemUTC(),
+                Clock.systemUTC(),
             client,
             profileIndex,
             mock(ClusterService.class),
-            domainName -> new DomainConfig(domainName, Set.of(), true, "suffix"),
-            threadPool
+                threadPool
         );
         final PlainActionFuture<Profile> future = new PlainActionFuture<>();
         service.maybeIncrementDifferentiatorAndCreateNewProfile(
@@ -648,13 +643,7 @@ public class ProfileServiceTests extends ESTestCase {
 
     public void testActivateProfileWithDifferentUidFormats() throws IOException {
         final ProfileService service = spy(
-            new ProfileService(Settings.EMPTY, Clock.systemUTC(), client, profileIndex, mock(ClusterService.class), domainName -> {
-                if (domainName.startsWith("hash")) {
-                    return new DomainConfig(domainName, Set.of(), false, null);
-                } else {
-                    return new DomainConfig(domainName, Set.of(), true, "suffix");
-                }
-            }, threadPool)
+            new ProfileService(Clock.systemUTC(), client, profileIndex, mock(ClusterService.class), threadPool)
         );
 
         doAnswer(invocation -> {

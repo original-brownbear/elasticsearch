@@ -369,7 +369,6 @@ public abstract class SortValue implements NamedWriteable, Comparable<SortValue>
 
         public static final String NAME = "empty";
         private static final String EMPTY_STRING = "";
-        private int sortValue = 0;
 
         private EmptySortValue() {}
 
@@ -420,7 +419,7 @@ public abstract class SortValue implements NamedWriteable, Comparable<SortValue>
 
         @Override
         public int typeComparisonKey() {
-            return sortValue;
+            return 0;
         }
 
         @Override

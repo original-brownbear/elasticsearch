@@ -48,8 +48,6 @@ final class FastMath {
     private static final double TWO_POW_N28 = Double.longBitsToDouble(0x3E30000000000000L);
     private static final double TWO_POW_66 = Double.longBitsToDouble(0x4410000000000000L);
     private static final double LOG_DOUBLE_MAX_VALUE = StrictMath.log(Double.MAX_VALUE);
-    // First double value (from zero) such as (value+-1/value == value).
-    private static final double TWO_POW_27 = Double.longBitsToDouble(0x41A0000000000000L);
     private static final double TWO_POW_52 = Double.longBitsToDouble(0x4330000000000000L);
     // Smallest double normal value.
     private static final double MIN_DOUBLE_NORMAL = Double.longBitsToDouble(0x0010000000000000L); // 2.2250738585072014E-308

@@ -212,7 +212,7 @@ public class SqlQueryResponse extends ActionResponse implements ToXContentObject
                 builder.startArray("columns");
 
                 for (ColumnInfo column : columns) {
-                    toXContent(column, builder, params);
+                    toXContent(column, builder);
                 }
                 builder.endArray();
             }
@@ -256,7 +256,7 @@ public class SqlQueryResponse extends ActionResponse implements ToXContentObject
     /**
      * See sql-proto {@link org.elasticsearch.xpack.sql.proto.Payloads#generate(JsonGenerator, ColumnInfo)}
      */
-    private static XContentBuilder toXContent(ColumnInfo info, XContentBuilder builder, Params params) throws IOException {
+    private static XContentBuilder toXContent(ColumnInfo info, XContentBuilder builder) throws IOException {
         builder.startObject();
         String table = info.table();
         if (table != null && table.isEmpty() == false) {

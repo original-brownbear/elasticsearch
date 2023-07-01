@@ -42,8 +42,6 @@ public class TransportPutShutdownNodeAction extends AcknowledgedTransportMasterN
 
     private final MasterServiceTaskQueue<PutShutdownNodeTask> taskQueue;
 
-    private final PutShutdownNodeExecutor executor = new PutShutdownNodeExecutor();
-
     private static boolean putShutdownNodeState(
         Map<String, SingleNodeShutdownMetadata> shutdownMetadata,
         Predicate<String> nodeExists,

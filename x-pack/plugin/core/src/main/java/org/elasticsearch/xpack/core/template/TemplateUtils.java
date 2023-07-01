@@ -16,9 +16,6 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.io.Streams;
 import org.elasticsearch.common.xcontent.XContentHelper;
-import org.elasticsearch.xcontent.XContentFactory;
-import org.elasticsearch.xcontent.XContentParser;
-import org.elasticsearch.xcontent.XContentParserConfiguration;
 import org.elasticsearch.xcontent.XContentType;
 import org.elasticsearch.xcontent.json.JsonXContent;
 
@@ -37,28 +34,6 @@ import static org.elasticsearch.common.xcontent.XContentHelper.convertToMap;
 public class TemplateUtils {
 
     private TemplateUtils() {}
-
-    /**
-     * Loads a JSON template as a resource and puts it into the provided map
-     */
-    public static void loadLegacyTemplateIntoMap(
-        String resource,
-        Map<String, IndexTemplateMetadata> map,
-        String templateName,
-        String version,
-        String versionProperty,
-        Logger logger
-    ) {
-        final String template = loadTemplate(resource, version, versionProperty);
-        try (
-            XContentParser parser = XContentFactory.xContent(XContentType.JSON).createParser(XContentParserConfiguration.EMPTY, template)
-        ) {
-            map.put(templateName, IndexTemplateMetadata.Builder.fromXContent(parser, templateName));
-        } catch (IOException e) {
-            // TODO: should we handle this with a thrown exception?
-            logger.error("Error loading template [{}] as part of metadata upgrading", templateName);
-        }
-    }
 
     /**
      * Loads a built-in template and returns its source.

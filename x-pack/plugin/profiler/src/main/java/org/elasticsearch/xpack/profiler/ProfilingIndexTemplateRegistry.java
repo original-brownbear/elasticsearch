@@ -52,7 +52,7 @@ public class ProfilingIndexTemplateRegistry extends IndexTemplateRegistry {
         Client client,
         NamedXContentRegistry xContentRegistry
     ) {
-        super(nodeSettings, clusterService, threadPool, client, xContentRegistry);
+        super(nodeSettings, clusterService, threadPool, client);
     }
 
     public void setTemplatesEnabled(boolean templatesEnabled) {

@@ -341,7 +341,7 @@ public final class ForUtil {
                 expand8(longs);
                 break;
             case 8:
-                decode8(in, tmp, longs);
+                decode8(in, longs);
                 expand8(longs);
                 break;
             case 9:
@@ -373,7 +373,7 @@ public final class ForUtil {
                 expand16(longs);
                 break;
             case 16:
-                decode16(in, tmp, longs);
+                decode16(in, longs);
                 expand16(longs);
                 break;
             case 17:
@@ -452,7 +452,7 @@ public final class ForUtil {
                 expand8To32(longs);
                 break;
             case 8:
-                decode8(in, tmp, longs);
+                decode8(in, longs);
                 expand8To32(longs);
                 break;
             case 9:
@@ -484,7 +484,7 @@ public final class ForUtil {
                 expand16To32(longs);
                 break;
             case 16:
-                decode16(in, tmp, longs);
+                decode16(in, longs);
                 expand16To32(longs);
                 break;
             case 17:
@@ -602,7 +602,7 @@ public final class ForUtil {
         }
     }
 
-    private static void decode8(DataInput in, long[] tmp, long[] longs) throws IOException {
+    private static void decode8(DataInput in, long[] longs) throws IOException {
         in.readLongs(longs, 0, 16);
     }
 
@@ -756,7 +756,7 @@ public final class ForUtil {
         }
     }
 
-    private static void decode16(DataInput in, long[] tmp, long[] longs) throws IOException {
+    private static void decode16(DataInput in, long[] longs) throws IOException {
         in.readLongs(longs, 0, 32);
     }
 

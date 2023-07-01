@@ -34,8 +34,7 @@ public class RangeAggregatorFactory extends AbstractRangeAggregatorFactory<Range
     ) throws IOException {
         super(
             name,
-            RangeAggregationBuilder.REGISTRY_KEY,
-            config,
+                config,
             ranges,
             keyed,
             rangeFactory,

@@ -55,10 +55,6 @@ public class RetentionLeaseBackgroundSyncAction extends TransportReplicationActi
     public static final String ACTION_NAME = "indices:admin/seq_no/retention_lease_background_sync";
     private static final Logger LOGGER = LogManager.getLogger(RetentionLeaseSyncAction.class);
 
-    protected static Logger getLogger() {
-        return LOGGER;
-    }
-
     @Inject
     public RetentionLeaseBackgroundSyncAction(
         final Settings settings,

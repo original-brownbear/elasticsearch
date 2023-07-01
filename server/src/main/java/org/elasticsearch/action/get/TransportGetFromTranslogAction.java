@@ -27,8 +27,6 @@ import org.elasticsearch.index.get.GetResult;
 import org.elasticsearch.index.shard.IndexShard;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.indices.IndicesService;
-import org.elasticsearch.logging.LogManager;
-import org.elasticsearch.logging.Logger;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
@@ -42,7 +40,6 @@ public class TransportGetFromTranslogAction extends HandledTransportAction<
     TransportGetFromTranslogAction.Response> {
 
     public static final String NAME = "internal:data/read/get_from_translog";
-    public static final Logger logger = LogManager.getLogger(TransportGetFromTranslogAction.class);
 
     private final IndicesService indicesService;
 

@@ -67,7 +67,6 @@ public class TransportEqlSearchAction extends HandledTransportAction<EqlSearchRe
     private final SecurityContext securityContext;
     private final ClusterService clusterService;
     private final PlanExecutor planExecutor;
-    private final ThreadPool threadPool;
     private final TransportService transportService;
     private final AsyncTaskManagementService<EqlSearchRequest, EqlSearchResponse, EqlSearchTask> asyncTaskManagementService;
 
@@ -90,7 +89,6 @@ public class TransportEqlSearchAction extends HandledTransportAction<EqlSearchRe
             : null;
         this.clusterService = clusterService;
         this.planExecutor = planExecutor;
-        this.threadPool = threadPool;
         this.transportService = transportService;
 
         this.asyncTaskManagementService = new AsyncTaskManagementService<>(
@@ -101,8 +99,7 @@ public class TransportEqlSearchAction extends HandledTransportAction<EqlSearchRe
             taskManager,
             EqlSearchAction.INSTANCE.name(),
             this,
-            EqlSearchTask.class,
-            clusterService,
+                clusterService,
             threadPool,
             bigArrays
         );

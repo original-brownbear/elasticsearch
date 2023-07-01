@@ -76,7 +76,7 @@ class Mapper extends RuleExecutor<PhysicalPlan> {
                     missing[i] = keyed.isMissingEventFilter();
                 }
 
-                if (p instanceof Sample sample) {
+                if (p instanceof Sample) {
                     return new SampleExec(p.source(), matches, keys);
                 }
 

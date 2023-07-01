@@ -42,7 +42,6 @@ import static org.elasticsearch.xpack.security.authc.ldap.support.LdapUtils.sear
 
 class LdapUserSearchSessionFactory extends PoolingSessionFactory {
 
-    static final String SEARCH_PREFIX = "user_search.";
     private final String userSearchBaseDn;
     private final LdapSearchScope scope;
     private final String searchFilter;

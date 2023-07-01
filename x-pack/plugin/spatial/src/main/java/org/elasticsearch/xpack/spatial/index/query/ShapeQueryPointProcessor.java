@@ -42,7 +42,7 @@ public class ShapeQueryPointProcessor {
             throw new QueryShardException(context, relation + " query relation not supported for Field [" + fieldName + "].");
         }
         // wrap XYPoint query as a ConstantScoreQuery
-        return getVectorQueryFromShape(shape, fieldName, relation, context);
+        return getVectorQueryFromShape(shape, fieldName, context);
     }
 
     private void validateIsPointFieldType(String fieldName, SearchExecutionContext context) {
@@ -55,22 +55,20 @@ public class ShapeQueryPointProcessor {
         }
     }
 
-    protected Query getVectorQueryFromShape(Geometry queryShape, String fieldName, ShapeRelation relation, SearchExecutionContext context) {
-        ShapeVisitor shapeVisitor = new ShapeVisitor(context, fieldName, relation);
+    protected Query getVectorQueryFromShape(Geometry queryShape, String fieldName, SearchExecutionContext context) {
+        ShapeVisitor shapeVisitor = new ShapeVisitor(context, fieldName);
         return queryShape.visit(shapeVisitor);
     }
 
-    private class ShapeVisitor implements GeometryVisitor<Query, RuntimeException> {
+    private static class ShapeVisitor implements GeometryVisitor<Query, RuntimeException> {
         SearchExecutionContext context;
         MappedFieldType fieldType;
         String fieldName;
-        ShapeRelation relation;
 
-        ShapeVisitor(SearchExecutionContext context, String fieldName, ShapeRelation relation) {
+        ShapeVisitor(SearchExecutionContext context, String fieldName) {
             this.context = context;
             this.fieldType = context.getFieldType(fieldName);
             this.fieldName = fieldName;
-            this.relation = relation;
         }
 
         @Override

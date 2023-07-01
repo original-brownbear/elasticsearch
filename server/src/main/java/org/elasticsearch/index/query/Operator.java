@@ -48,9 +48,4 @@ public enum Operator implements Writeable {
         return valueOf(op.toUpperCase(Locale.ROOT));
     }
 
-    private static IllegalArgumentException newOperatorException(String op) {
-        return new IllegalArgumentException(
-            "operator needs to be either " + CollectionUtils.arrayAsArrayList(values()) + ", but not [" + op + "]"
-        );
-    }
 }

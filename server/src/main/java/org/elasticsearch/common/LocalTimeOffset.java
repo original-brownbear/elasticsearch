@@ -55,7 +55,7 @@ public abstract class LocalTimeOffset {
         }
         ZoneRules rules = zone.getRules();
         {
-            LocalTimeOffset fixed = checkForFixedZone(zone, rules);
+            LocalTimeOffset fixed = checkForFixedZone(rules);
             if (fixed != null) {
                 return new FixedLookup(zone, fixed);
             }
@@ -85,7 +85,7 @@ public abstract class LocalTimeOffset {
      * @return a lookup function of {@code null} if none could be built
      */
     public static LocalTimeOffset fixedOffset(ZoneId zone) {
-        return checkForFixedZone(zone, zone.getRules());
+        return checkForFixedZone(zone.getRules());
     }
 
     private final long millis;
@@ -583,7 +583,7 @@ public abstract class LocalTimeOffset {
         }
     }
 
-    private static LocalTimeOffset checkForFixedZone(ZoneId zone, ZoneRules rules) {
+    private static LocalTimeOffset checkForFixedZone(ZoneRules rules) {
         if (false == rules.isFixedOffset()) {
             return null;
         }

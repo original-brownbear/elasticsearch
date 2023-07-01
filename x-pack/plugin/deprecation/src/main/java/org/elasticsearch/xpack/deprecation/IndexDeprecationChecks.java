@@ -204,7 +204,7 @@ public class IndexDeprecationChecks {
                     mappingMetadata.type(),
                     sourceAsMap,
                     IndexDeprecationChecks::isDateFieldWithCamelCasePattern,
-                    IndexDeprecationChecks::changeFormatToSnakeCase,
+                    (type, entry) -> changeFormatToSnakeCase(entry),
                     "",
                     ""
                 )
@@ -236,7 +236,7 @@ public class IndexDeprecationChecks {
         return false;
     }
 
-    private static String changeFormatToSnakeCase(String type, Map.Entry<?, ?> entry) {
+    private static String changeFormatToSnakeCase(Map.Entry<?, ?> entry) {
         Map<?, ?> value = (Map<?, ?>) entry.getValue();
         final String formatFieldValue = (String) value.get("format");
         String[] patterns = DateFormatter.splitCombinedPatterns(formatFieldValue);

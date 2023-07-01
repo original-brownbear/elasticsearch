@@ -208,7 +208,7 @@ public class SamlAuthnRequestValidator {
         }
         final Map<String, Object> authnState = new HashMap<>();
         checkDestination(authnRequest);
-        final String acs = checkAcs(authnRequest, sp, authnState);
+        final String acs = checkAcs(authnRequest, sp);
         validateNameIdPolicy(authnRequest, sp, authnState);
         authnState.put(SamlAuthenticationState.Fields.AUTHN_REQUEST_ID.getPreferredName(), authnRequest.getID());
         final SamlValidateAuthnRequestResponse response = new SamlValidateAuthnRequestResponse(
@@ -303,7 +303,7 @@ public class SamlAuthnRequestValidator {
         }
     }
 
-    private String checkAcs(AuthnRequest request, SamlServiceProvider sp, Map<String, Object> authnState) {
+    private String checkAcs(AuthnRequest request, SamlServiceProvider sp) {
         final String acs = request.getAssertionConsumerServiceURL();
         if (Strings.hasText(acs) == false) {
             final String message = request.getAssertionConsumerServiceIndex() == null

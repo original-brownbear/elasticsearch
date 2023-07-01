@@ -103,10 +103,10 @@ public class GeoWKTParser {
             }
         }
         return switch (type) {
-            case POINT -> parsePoint(stream, ignoreZValue, coerce);
-            case MULTIPOINT -> parseMultiPoint(stream, ignoreZValue, coerce);
-            case LINESTRING -> parseLine(stream, ignoreZValue, coerce);
-            case MULTILINESTRING -> parseMultiLine(stream, ignoreZValue, coerce);
+            case POINT -> parsePoint(stream, ignoreZValue);
+            case MULTIPOINT -> parseMultiPoint(stream, ignoreZValue);
+            case LINESTRING -> parseLine(stream, ignoreZValue);
+            case MULTILINESTRING -> parseMultiLine(stream, ignoreZValue);
             case POLYGON -> parsePolygon(stream, ignoreZValue, coerce);
             case MULTIPOLYGON -> parseMultiPolygon(stream, ignoreZValue, coerce);
             case ENVELOPE -> parseBBox(stream);
@@ -130,7 +130,7 @@ public class GeoWKTParser {
         return new EnvelopeBuilder(new Coordinate(minLon, maxLat), new Coordinate(maxLon, minLat));
     }
 
-    private static PointBuilder parsePoint(StreamTokenizer stream, final boolean ignoreZValue, final boolean coerce) throws IOException,
+    private static PointBuilder parsePoint(StreamTokenizer stream, final boolean ignoreZValue) throws IOException,
         ElasticsearchParseException {
         if (nextEmptyOrOpen(stream).equals(EMPTY)) {
             return null;
@@ -143,12 +143,12 @@ public class GeoWKTParser {
         return pt;
     }
 
-    private static List<Coordinate> parseCoordinateList(StreamTokenizer stream, final boolean ignoreZValue, final boolean coerce)
+    private static List<Coordinate> parseCoordinateList(StreamTokenizer stream, final boolean ignoreZValue)
         throws IOException, ElasticsearchParseException {
         CoordinatesBuilder coordinates = new CoordinatesBuilder();
         boolean isOpenParen = false;
         if (isNumberNext(stream) || (isOpenParen = nextWord(stream).equals(LPAREN))) {
-            coordinates.coordinate(parseCoordinate(stream, ignoreZValue, coerce));
+            coordinates.coordinate(parseCoordinate(stream, ignoreZValue));
         }
 
         if (isOpenParen && nextCloser(stream).equals(RPAREN) == false) {
@@ -158,7 +158,7 @@ public class GeoWKTParser {
         while (nextCloserOrComma(stream).equals(COMMA)) {
             isOpenParen = false;
             if (isNumberNext(stream) || (isOpenParen = nextWord(stream).equals(LPAREN))) {
-                coordinates.coordinate(parseCoordinate(stream, ignoreZValue, coerce));
+                coordinates.coordinate(parseCoordinate(stream, ignoreZValue));
             }
             if (isOpenParen && nextCloser(stream).equals(RPAREN) == false) {
                 throw new ElasticsearchParseException("expected: " + RPAREN + " but found: " + tokenString(stream), stream.lineno());
@@ -167,7 +167,7 @@ public class GeoWKTParser {
         return coordinates.build();
     }
 
-    private static Coordinate parseCoordinate(StreamTokenizer stream, final boolean ignoreZValue, final boolean coerce) throws IOException,
+    private static Coordinate parseCoordinate(StreamTokenizer stream, final boolean ignoreZValue) throws IOException,
         ElasticsearchParseException {
         final double lon = nextNumber(stream);
         final double lat = nextNumber(stream);
@@ -178,22 +178,22 @@ public class GeoWKTParser {
         return z == null ? new Coordinate(lon, lat) : new Coordinate(lon, lat, z);
     }
 
-    private static MultiPointBuilder parseMultiPoint(StreamTokenizer stream, final boolean ignoreZValue, final boolean coerce)
+    private static MultiPointBuilder parseMultiPoint(StreamTokenizer stream, final boolean ignoreZValue)
         throws IOException, ElasticsearchParseException {
         String token = nextEmptyOrOpen(stream);
         if (token.equals(EMPTY)) {
             return new MultiPointBuilder();
         }
-        return new MultiPointBuilder(parseCoordinateList(stream, ignoreZValue, coerce));
+        return new MultiPointBuilder(parseCoordinateList(stream, ignoreZValue));
     }
 
-    private static LineStringBuilder parseLine(StreamTokenizer stream, final boolean ignoreZValue, final boolean coerce) throws IOException,
+    private static LineStringBuilder parseLine(StreamTokenizer stream, final boolean ignoreZValue) throws IOException,
         ElasticsearchParseException {
         String token = nextEmptyOrOpen(stream);
         if (token.equals(EMPTY)) {
             return null;
         }
-        return new LineStringBuilder(parseCoordinateList(stream, ignoreZValue, coerce));
+        return new LineStringBuilder(parseCoordinateList(stream, ignoreZValue));
     }
 
     // A LinearRing is closed LineString with 4 or more positions. The first and last positions
@@ -204,7 +204,7 @@ public class GeoWKTParser {
         if (token.equals(EMPTY)) {
             return null;
         }
-        List<Coordinate> coordinates = parseCoordinateList(stream, ignoreZValue, coerce);
+        List<Coordinate> coordinates = parseCoordinateList(stream, ignoreZValue);
         int coordinatesNeeded = coerce ? 3 : 4;
         if (coordinates.size() >= coordinatesNeeded) {
             if (coordinates.get(0).equals(coordinates.get(coordinates.size() - 1)) == false) {
@@ -221,16 +221,16 @@ public class GeoWKTParser {
         return new LineStringBuilder(coordinates);
     }
 
-    private static MultiLineStringBuilder parseMultiLine(StreamTokenizer stream, final boolean ignoreZValue, final boolean coerce)
+    private static MultiLineStringBuilder parseMultiLine(StreamTokenizer stream, final boolean ignoreZValue)
         throws IOException, ElasticsearchParseException {
         String token = nextEmptyOrOpen(stream);
         if (token.equals(EMPTY)) {
             return new MultiLineStringBuilder();
         }
         MultiLineStringBuilder builder = new MultiLineStringBuilder();
-        builder.linestring(parseLine(stream, ignoreZValue, coerce));
+        builder.linestring(parseLine(stream, ignoreZValue));
         while (nextCloserOrComma(stream).equals(COMMA)) {
-            builder.linestring(parseLine(stream, ignoreZValue, coerce));
+            builder.linestring(parseLine(stream, ignoreZValue));
         }
         return builder;
     }

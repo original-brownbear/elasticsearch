@@ -40,7 +40,6 @@ import org.elasticsearch.client.internal.OriginSettingClient;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.core.TimeValue;
@@ -74,7 +73,6 @@ import org.elasticsearch.xpack.core.security.user.User;
 import org.elasticsearch.xpack.security.support.SecurityIndexManager;
 
 import java.io.IOException;
-import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -109,30 +107,21 @@ public class ProfileService {
     private static final int DIFFERENTIATOR_UPPER_LIMIT = 9;
     private static final long ACTIVATE_INTERVAL_IN_MS = TimeValue.timeValueSeconds(30).millis();
 
-    private final Settings settings;
-    private final Clock clock;
     private final Client client;
     private final SecurityIndexManager profileIndex;
     private final ClusterService clusterService;
     private final Function<String, DomainConfig> domainConfigLookup;
-    private final ThreadPool threadPool;
 
     public ProfileService(
-        Settings settings,
-        Clock clock,
         Client client,
         SecurityIndexManager profileIndex,
         ClusterService clusterService,
-        Function<String, DomainConfig> domainConfigLookup,
-        ThreadPool threadPool
+        Function<String, DomainConfig> domainConfigLookup
     ) {
-        this.settings = settings;
-        this.clock = clock;
         this.client = client;
         this.profileIndex = profileIndex;
         this.clusterService = clusterService;
         this.domainConfigLookup = domainConfigLookup;
-        this.threadPool = threadPool;
     }
 
     public void getProfiles(List<String> uids, Set<String> dataKeys, ActionListener<ResultsAndErrors<Profile>> listener) {

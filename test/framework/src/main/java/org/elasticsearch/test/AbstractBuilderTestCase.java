@@ -220,10 +220,6 @@ public abstract class AbstractBuilderTestCase extends ESTestCase {
         return Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, indexVersionCreated).build();
     }
 
-    protected static IndexSettings indexSettings() {
-        return serviceHolder.idxSettings;
-    }
-
     protected static String expectedFieldName(String builderFieldName) {
         return ALIAS_TO_CONCRETE_FIELD_NAME.getOrDefault(builderFieldName, builderFieldName);
     }

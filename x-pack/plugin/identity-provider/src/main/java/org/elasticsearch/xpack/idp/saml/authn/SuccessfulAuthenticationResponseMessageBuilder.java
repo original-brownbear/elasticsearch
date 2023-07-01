@@ -257,11 +257,11 @@ public class SuccessfulAuthenticationResponseMessageBuilder {
                 : idp.getServiceProviderDefaults().nameIdFormat;
         }
         nameID.setFormat(nameIdFormat);
-        nameID.setValue(getNameIdValueForFormat(nameIdFormat, user));
+        nameID.setValue(getNameIdValueForFormat(nameIdFormat));
         return nameID;
     }
 
-    private String getNameIdValueForFormat(String format, UserServiceAuthentication user) {
+    private String getNameIdValueForFormat(String format) {
         return switch (format) {
             case TRANSIENT ->
                 // See SAML 2.0 Core 8.3.8 & 1.3.4

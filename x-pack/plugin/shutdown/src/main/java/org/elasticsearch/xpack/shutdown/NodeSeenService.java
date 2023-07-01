@@ -36,12 +36,9 @@ import static org.elasticsearch.core.Strings.format;
 public class NodeSeenService implements ClusterStateListener {
     private static final Logger logger = LogManager.getLogger(NodeSeenService.class);
 
-    final ClusterService clusterService;
-
     private final MasterServiceTaskQueue<SetSeenNodesShutdownTask> setSeenTaskQueue;
 
     public NodeSeenService(ClusterService clusterService) {
-        this.clusterService = clusterService;
         this.setSeenTaskQueue = clusterService.createTaskQueue(
             "shutdown-seen-nodes-updater",
             Priority.NORMAL,

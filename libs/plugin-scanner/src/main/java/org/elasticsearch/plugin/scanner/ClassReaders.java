@@ -8,14 +8,11 @@
 
 package org.elasticsearch.plugin.scanner;
 
-import org.elasticsearch.core.PathUtils;
 import org.objectweb.asm.ClassReader;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -24,7 +21,6 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -48,18 +44,6 @@ public class ClassReaders {
             return ofPaths(stream);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
-        }
-    }
-
-    public static List<ClassReader> ofPaths(Set<URL> classpathFiles) {
-        return ofPaths(classpathFiles.stream().map(ClassReaders::toPath));
-    }
-
-    private static Path toPath(URL url) {
-        try {
-            return PathUtils.get(url.toURI());
-        } catch (URISyntaxException e) {
-            throw new AssertionError(e);
         }
     }
 
@@ -105,7 +89,7 @@ public class ClassReaders {
         }
     }
 
-    public static List<ClassReader> ofClassPath() throws IOException {
+    public static List<ClassReader> ofClassPath() {
         String classpath = System.getProperty("java.class.path");
         return ofClassPath(classpath);
     }

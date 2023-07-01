@@ -9,7 +9,6 @@ package org.elasticsearch.xpack.core.indexing;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
-import org.elasticsearch.xcontent.ParseField;
 
 import java.io.IOException;
 import java.util.Locale;
@@ -35,8 +34,6 @@ public enum IndexerState implements Writeable {
 
     // Something (internal or external) has requested the indexer abort and shutdown
     ABORTING;
-
-    public final ParseField STATE = new ParseField("job_state");
 
     public static IndexerState fromString(String name) {
         return valueOf(name.trim().toUpperCase(Locale.ROOT));

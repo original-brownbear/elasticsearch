@@ -8,8 +8,6 @@
 
 package org.elasticsearch.index.translog;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexCommit;
 import org.apache.lucene.store.Directory;
@@ -43,8 +41,6 @@ import java.util.Set;
 import java.util.TreeSet;
 
 public class TruncateTranslogAction {
-
-    protected static final Logger logger = LogManager.getLogger(TruncateTranslogAction.class);
 
     public static Tuple<RemoveCorruptedShardDataCommand.CleanStatus, String> getCleanStatus(
         ShardPath shardPath,

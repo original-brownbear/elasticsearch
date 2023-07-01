@@ -70,18 +70,16 @@ public class SamlServiceProviderResolver {
 
     private void populateCacheAndReturn(String entityId, DocumentSupplier doc, ActionListener<SamlServiceProvider> listener) {
         final SamlServiceProvider serviceProvider = serviceProviderFactory.buildServiceProvider(doc.document.get());
-        final CachedServiceProvider cacheEntry = new CachedServiceProvider(entityId, doc.version, serviceProvider);
+        final CachedServiceProvider cacheEntry = new CachedServiceProvider(doc.version, serviceProvider);
         cache.put(entityId, cacheEntry);
         listener.onResponse(serviceProvider);
     }
 
     private class CachedServiceProvider {
-        private final String entityId;
         private final DocumentVersion documentVersion;
         private final SamlServiceProvider serviceProvider;
 
-        private CachedServiceProvider(String entityId, DocumentVersion documentVersion, SamlServiceProvider serviceProvider) {
-            this.entityId = entityId;
+        private CachedServiceProvider(DocumentVersion documentVersion, SamlServiceProvider serviceProvider) {
             this.documentVersion = documentVersion;
             this.serviceProvider = serviceProvider;
         }

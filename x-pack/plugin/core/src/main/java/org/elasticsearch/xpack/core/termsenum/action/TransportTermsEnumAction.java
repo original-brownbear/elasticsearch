@@ -536,7 +536,7 @@ public class TransportTermsEnumAction extends HandledTransportAction<TermsEnumRe
                     performOperation(nodeId, shardIds, numOps);
                 } else {
                     // really, no shards active in this group
-                    onNodeFailure(nodeId, numOps, null);
+                    onNodeFailure(nodeId, null);
                 }
                 ++numOps;
             }
@@ -560,7 +560,7 @@ public class TransportTermsEnumAction extends HandledTransportAction<TermsEnumRe
         protected void performOperation(final String nodeId, final Set<ShardId> shardIds, final int opsIndex) {
             if (shardIds.size() == 0) {
                 // no more active shards... (we should not really get here, just safety)
-                onNodeFailure(nodeId, opsIndex, null);
+                onNodeFailure(nodeId, null);
             } else {
                 try {
                     final NodeTermsEnumRequest nodeRequest = newNodeRequest(localIndices, nodeId, shardIds, request, task.getStartTime());
@@ -568,7 +568,7 @@ public class TransportTermsEnumAction extends HandledTransportAction<TermsEnumRe
                     DiscoveryNode node = nodes.get(nodeId);
                     if (node == null) {
                         // no node connected, act as failure
-                        onNodeFailure(nodeId, opsIndex, null);
+                        onNodeFailure(nodeId, null);
                     } else if (checkForEarlyFinish() == false) {
                         transportService.sendRequest(
                             node,
@@ -587,13 +587,13 @@ public class TransportTermsEnumAction extends HandledTransportAction<TermsEnumRe
 
                                 @Override
                                 public void handleException(TransportException exc) {
-                                    onNodeFailure(nodeId, opsIndex, exc);
+                                    onNodeFailure(nodeId, exc);
                                 }
                             }
                         );
                     }
                 } catch (Exception exc) {
-                    onNodeFailure(nodeId, opsIndex, exc);
+                    onNodeFailure(nodeId, exc);
                 }
             }
         }
@@ -615,11 +615,11 @@ public class TransportTermsEnumAction extends HandledTransportAction<TermsEnumRe
 
                     @Override
                     public void onFailure(Exception exc) {
-                        onRemoteClusterFailure(clusterAlias, opsIndex, exc);
+                        onRemoteClusterFailure(clusterAlias, exc);
                     }
                 });
             } catch (Exception exc) {
-                onRemoteClusterFailure(clusterAlias, opsIndex, null);
+                onRemoteClusterFailure(clusterAlias, null);
             }
         }
 
@@ -643,7 +643,7 @@ public class TransportTermsEnumAction extends HandledTransportAction<TermsEnumRe
             }
         }
 
-        private void onNodeFailure(String nodeId, int opsIndex, Exception exc) {
+        private void onNodeFailure(String nodeId, Exception exc) {
             logger.trace("received failure {} for node {}", exc, nodeId);
             // TODO: Handle exceptions in the atomic response array
             if (expectedOps == counterOps.incrementAndGet()) {
@@ -651,7 +651,7 @@ public class TransportTermsEnumAction extends HandledTransportAction<TermsEnumRe
             }
         }
 
-        private void onRemoteClusterFailure(String clusterAlias, int opsIndex, Exception exc) {
+        private void onRemoteClusterFailure(String clusterAlias, Exception exc) {
             logger.trace("received failure {} for cluster {}", exc, clusterAlias);
             // TODO: Handle exceptions in the atomic response array
             if (expectedOps == counterOps.incrementAndGet()) {

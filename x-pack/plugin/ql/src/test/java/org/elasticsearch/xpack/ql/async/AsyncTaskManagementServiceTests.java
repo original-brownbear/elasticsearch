@@ -200,8 +200,7 @@ public class AsyncTaskManagementServiceTests extends ESSingleNodeTestCase {
             transportService.getTaskManager(),
             "test_action",
             operation,
-            TestTask.class,
-            clusterService,
+                clusterService,
             transportService.getThreadPool(),
             bigArrays
         );

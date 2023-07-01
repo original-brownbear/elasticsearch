@@ -255,10 +255,6 @@ public final class RankFeatureQueryBuilder extends AbstractQueryBuilder<RankFeat
 
             public Linear() {}
 
-            private Linear(StreamInput in) {
-                this();
-            }
-
             @Override
             public boolean equals(Object obj) {
                 if (obj == null || getClass() != obj.getClass()) {
@@ -296,7 +292,7 @@ public final class RankFeatureQueryBuilder extends AbstractQueryBuilder<RankFeat
             case 0 -> new ScoreFunction.Log(in);
             case 1 -> new ScoreFunction.Saturation(in);
             case 2 -> new ScoreFunction.Sigmoid(in);
-            case 3 -> new ScoreFunction.Linear(in);
+            case 3 -> new ScoreFunction.Linear();
             default -> throw new IOException("Illegal score function id: " + b);
         };
     }

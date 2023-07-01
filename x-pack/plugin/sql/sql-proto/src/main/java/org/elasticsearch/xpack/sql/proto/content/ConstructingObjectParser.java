@@ -124,7 +124,6 @@ public class ConstructingObjectParser<Value, Context> extends AbstractObjectPars
         private final Context context;
         private int constructorArgsCollected = 0;
         private Consumer<Value>[] queuedFields;
-        private Consumer<Value> queuedOrderedModeCallback;
         private int queuedFieldsCount = 0;
         private Value targetObject;
 
@@ -189,9 +188,6 @@ public class ConstructingObjectParser<Value, Context> extends AbstractObjectPars
         private void buildTarget() {
             try {
                 targetObject = builder.apply(constructorArgs, context);
-                if (queuedOrderedModeCallback != null) {
-                    queuedOrderedModeCallback.accept(targetObject);
-                }
                 while (queuedFieldsCount > 0) {
                     queuedFieldsCount -= 1;
                     queuedFields[queuedFieldsCount].accept(targetObject);

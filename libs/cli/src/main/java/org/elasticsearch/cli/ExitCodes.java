@@ -30,5 +30,4 @@ public class ExitCodes {
     public static final int CONFIG = 78;         // configuration error
     public static final int NOOP = 80;           // nothing to do
 
-    private ExitCodes() { /* no instance, just constants */ }
 }

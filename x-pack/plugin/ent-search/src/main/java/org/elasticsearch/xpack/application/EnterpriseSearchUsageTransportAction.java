@@ -17,8 +17,6 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.license.XPackLicenseState;
-import org.elasticsearch.logging.LogManager;
-import org.elasticsearch.logging.Logger;
 import org.elasticsearch.protocol.xpack.XPackUsageRequest;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -40,7 +38,6 @@ import java.util.Map;
 import static org.elasticsearch.xpack.core.ClientHelper.ENT_SEARCH_ORIGIN;
 
 public class EnterpriseSearchUsageTransportAction extends XPackUsageFeatureTransportAction {
-    private static final Logger logger = LogManager.getLogger(EnterpriseSearchUsageTransportAction.class);
     private final XPackLicenseState licenseState;
     private final OriginSettingClient clientWithOrigin;
 

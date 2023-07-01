@@ -121,7 +121,6 @@ public class Deprecation extends Plugin implements ActionPlugin {
 
         final DeprecationIndexingComponent component = DeprecationIndexingComponent.createDeprecationIndexingComponent(
             client,
-            environment.settings(),
             rateLimitingFilterForIndexing,
             WRITE_DEPRECATION_LOGS_TO_INDEX.get(environment.settings()), // pass the default on startup
             clusterService

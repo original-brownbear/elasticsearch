@@ -46,7 +46,6 @@ public abstract class ReplicaShardAllocator extends BaseGatewayShardAllocator {
      * has to copy segment files.
      */
     public void processExistingRecoveries(RoutingAllocation allocation) {
-        Metadata metadata = allocation.metadata();
         RoutingNodes routingNodes = allocation.routingNodes();
         List<Runnable> shardCancellationActions = new ArrayList<>();
         for (RoutingNode routingNode : routingNodes) {

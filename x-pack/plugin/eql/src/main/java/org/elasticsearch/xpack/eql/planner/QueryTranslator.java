@@ -101,7 +101,7 @@ final class QueryTranslator {
 
         public static Query doTranslate(InsensitiveBinaryComparison bc, TranslatorHandler handler) {
             checkInsensitiveComparison(bc);
-            return handler.wrapFunctionQuery(bc, bc.left(), () -> translate(bc, handler));
+            return handler.wrapFunctionQuery(bc, bc.left(), () -> translate(bc));
         }
 
         public static void checkInsensitiveComparison(InsensitiveBinaryComparison bc) {
@@ -115,7 +115,7 @@ final class QueryTranslator {
             );
         }
 
-        private static Query translate(InsensitiveBinaryComparison bc, TranslatorHandler handler) {
+        private static Query translate(InsensitiveBinaryComparison bc) {
             FieldAttribute field = checkIsFieldAttribute(bc.left());
             Source source = bc.source();
             Object value = valueOf(bc.right());

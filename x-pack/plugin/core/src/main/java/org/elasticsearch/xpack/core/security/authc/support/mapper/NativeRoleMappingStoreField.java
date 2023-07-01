@@ -10,7 +10,6 @@ public final class NativeRoleMappingStoreField {
 
     public static final String DOC_TYPE_FIELD = "doc_type";
     public static final String DOC_TYPE_ROLE_MAPPING = "role-mapping";
-    public static final String ID_PREFIX = DOC_TYPE_ROLE_MAPPING + "_";
 
     private NativeRoleMappingStoreField() {}
 }

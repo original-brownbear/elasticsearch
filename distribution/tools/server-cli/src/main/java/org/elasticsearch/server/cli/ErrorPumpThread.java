@@ -35,10 +35,7 @@ class ErrorPumpThread extends Thread {
 
     // a latch which changes state when the server is ready or has had a bootstrap error
     private final CountDownLatch readyOrDead = new CountDownLatch(1);
-
-    // a flag denoting whether the ready marker has been received by the server process
-    private volatile boolean ready;
-
+    
     // an unexpected io failure that occurred while pumping stderr
     private volatile IOException ioFailure;
 
@@ -78,7 +75,6 @@ class ErrorPumpThread extends Thread {
             String line;
             while ((line = reader.readLine()) != null) {
                 if (line.isEmpty() == false && line.charAt(0) == SERVER_READY_MARKER) {
-                    ready = true;
                     readyOrDead.countDown();
                 } else if (filter.contains(line) == false) {
                     writer.println(line);

@@ -337,7 +337,7 @@ public class SamlMetadataCommandTests extends SamlTestCase {
         terminal.addSecretInput("");
 
         final EntityDescriptor descriptor = command.buildEntityDescriptor(terminal, options, env);
-        command.possiblySignDescriptor(terminal, options, descriptor, env);
+        command.possiblySignDescriptor(terminal, options, descriptor);
         assertThat(descriptor, notNullValue());
         // Verify generated signature
         assertThat(descriptor.getSignature(), notNullValue());
@@ -391,7 +391,7 @@ public class SamlMetadataCommandTests extends SamlTestCase {
 
         final MockTerminal terminal = getTerminalPossiblyWithPassword(usedKeyStore);
         final EntityDescriptor descriptor = command.buildEntityDescriptor(terminal, options, env);
-        command.possiblySignDescriptor(terminal, options, descriptor, env);
+        command.possiblySignDescriptor(terminal, options, descriptor);
         assertThat(descriptor, notNullValue());
         // Verify generated signature
         assertThat(descriptor.getSignature(), notNullValue());
@@ -437,7 +437,7 @@ public class SamlMetadataCommandTests extends SamlTestCase {
         final EntityDescriptor descriptor = command.buildEntityDescriptor(terminal, options, env);
         final UserException userException = expectThrows(
             UserException.class,
-            () -> command.possiblySignDescriptor(terminal, options, descriptor, env)
+            () -> command.possiblySignDescriptor(terminal, options, descriptor)
         );
         assertThat(userException.getMessage(), containsString("Unable to create metadata document"));
         assertThat(terminal.getErrorOutput(), containsString("cannot load PEM private key from ["));
@@ -471,7 +471,7 @@ public class SamlMetadataCommandTests extends SamlTestCase {
 
         final MockTerminal terminal = getTerminalPossiblyWithPassword(usedKeyStore);
         final EntityDescriptor descriptor = command.buildEntityDescriptor(terminal, options, env);
-        command.possiblySignDescriptor(terminal, options, descriptor, env);
+        command.possiblySignDescriptor(terminal, options, descriptor);
         assertThat(descriptor, notNullValue());
         // Verify generated signature
         assertThat(descriptor.getSignature(), notNullValue());
@@ -518,7 +518,7 @@ public class SamlMetadataCommandTests extends SamlTestCase {
 
         final MockTerminal terminal = getTerminalPossiblyWithPassword(usedKeyStore);
         final EntityDescriptor descriptor = command.buildEntityDescriptor(terminal, options, env);
-        command.possiblySignDescriptor(terminal, options, descriptor, env);
+        command.possiblySignDescriptor(terminal, options, descriptor);
         assertThat(descriptor, notNullValue());
         // Verify generated signature
         assertThat(descriptor.getSignature(), notNullValue());
@@ -559,7 +559,7 @@ public class SamlMetadataCommandTests extends SamlTestCase {
         terminal.addSecretInput("saml");
 
         final EntityDescriptor descriptor = command.buildEntityDescriptor(terminal, options, env);
-        command.possiblySignDescriptor(terminal, options, descriptor, env);
+        command.possiblySignDescriptor(terminal, options, descriptor);
         assertThat(descriptor, notNullValue());
         // Verify generated signature
         assertThat(descriptor.getSignature(), notNullValue());

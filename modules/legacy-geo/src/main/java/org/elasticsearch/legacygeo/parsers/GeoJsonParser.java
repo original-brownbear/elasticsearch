@@ -76,7 +76,7 @@ abstract class GeoJsonParser {
                             malformedException = "cannot have [" + ShapeParser.FIELD_GEOMETRIES + "] with type set to [" + shapeType + "]";
                         }
                         subParser.nextToken();
-                        geometryCollections = parseGeometries(subParser, shapeMapper);
+                        geometryCollections = parseGeometries(subParser);
                     } else if (CircleBuilder.FIELD_RADIUS.match(fieldName, subParser.getDeprecationHandler())) {
                         if (shapeType == null) {
                             shapeType = GeoShapeType.CIRCLE;
@@ -190,7 +190,7 @@ abstract class GeoJsonParser {
      * @return Geometry[] geometries of the GeometryCollection
      * @throws IOException Thrown if an error occurs while reading from the XContentParser
      */
-    static GeometryCollectionBuilder parseGeometries(XContentParser parser, AbstractShapeGeometryFieldMapper<?> mapper) throws IOException {
+    static GeometryCollectionBuilder parseGeometries(XContentParser parser) throws IOException {
         if (parser.currentToken() != XContentParser.Token.START_ARRAY) {
             throw new ElasticsearchParseException("geometries must be an array of geojson objects");
         }

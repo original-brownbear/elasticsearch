@@ -32,8 +32,7 @@ public class DateRangeAggregatorFactory extends AbstractRangeAggregatorFactory<R
     ) throws IOException {
         super(
             name,
-            DateRangeAggregationBuilder.REGISTRY_KEY,
-            config,
+                config,
             ranges,
             keyed,
             rangeFactory,

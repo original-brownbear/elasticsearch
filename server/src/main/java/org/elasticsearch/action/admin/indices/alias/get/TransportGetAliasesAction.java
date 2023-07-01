@@ -122,7 +122,7 @@ public class TransportGetAliasesAction extends TransportMasterNodeReadAction<Get
         }
         final Map<String, List<AliasMetadata>> finalResponse = Collections.unmodifiableMap(mapBuilder);
         if (systemIndexAccessLevel != SystemIndexAccessLevel.ALL) {
-            checkSystemIndexAccess(request, systemIndices, state, finalResponse, systemIndexAccessLevel, threadContext);
+            checkSystemIndexAccess(systemIndices, state, finalResponse, systemIndexAccessLevel, threadContext);
         }
         return finalResponse;
     }
@@ -151,7 +151,6 @@ public class TransportGetAliasesAction extends TransportMasterNodeReadAction<Get
     }
 
     private static void checkSystemIndexAccess(
-        GetAliasesRequest request,
         SystemIndices systemIndices,
         ClusterState state,
         Map<String, List<AliasMetadata>> aliasesMap,
