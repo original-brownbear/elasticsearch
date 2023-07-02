@@ -37,6 +37,7 @@ import org.elasticsearch.xpack.core.search.action.SubmitAsyncSearchRequest;
 
 import java.util.Map;
 import java.util.function.BiFunction;
+import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -45,7 +46,7 @@ import static org.elasticsearch.xpack.core.ClientHelper.ASYNC_SEARCH_ORIGIN;
 public class TransportSubmitAsyncSearchAction extends HandledTransportAction<SubmitAsyncSearchRequest, AsyncSearchResponse> {
     private final ClusterService clusterService;
     private final NodeClient nodeClient;
-    private final BiFunction<Supplier<Boolean>, SearchRequest, AggregationReduceContext> requestToAggReduceContextBuilder;
+    private final BiFunction<BooleanSupplier, SearchRequest, AggregationReduceContext> requestToAggReduceContextBuilder;
     private final TransportSearchAction searchAction;
     private final ThreadContext threadContext;
     private final AsyncTaskIndexService<AsyncSearchResponse> store;
@@ -159,7 +160,7 @@ public class TransportSubmitAsyncSearchAction extends HandledTransportAction<Sub
             @Override
             public AsyncSearchTask createTask(long id, String type, String action, TaskId parentTaskId, Map<String, String> taskHeaders) {
                 AsyncExecutionId searchId = new AsyncExecutionId(docID, new TaskId(nodeClient.getLocalNodeId(), id));
-                Function<Supplier<Boolean>, Supplier<AggregationReduceContext>> aggReduceContextSupplierFactory =
+                Function<BooleanSupplier, Supplier<AggregationReduceContext>> aggReduceContextSupplierFactory =
                     isCancelled -> () -> requestToAggReduceContextBuilder.apply(isCancelled, request.getSearchRequest());
                 return new AsyncSearchTask(
                     id,

@@ -14,8 +14,8 @@ import org.elasticsearch.script.ScriptService;
 import org.elasticsearch.search.aggregations.pipeline.PipelineAggregator.PipelineTree;
 import org.elasticsearch.tasks.TaskCancelledException;
 
+import java.util.function.BooleanSupplier;
 import java.util.function.IntConsumer;
-import java.util.function.Supplier;
 
 /**
  * Dependencies used to reduce aggs.
@@ -38,7 +38,7 @@ public abstract sealed class AggregationReduceContext permits AggregationReduceC
 
     private final BigArrays bigArrays;
     private final ScriptService scriptService;
-    private final Supplier<Boolean> isCanceled;
+    private final BooleanSupplier isCanceled;
     /**
      * Builder for the agg being processed or {@code null} if this context
      * was built for the top level or a pipeline aggregation.
@@ -50,7 +50,7 @@ public abstract sealed class AggregationReduceContext permits AggregationReduceC
     private AggregationReduceContext(
         BigArrays bigArrays,
         ScriptService scriptService,
-        Supplier<Boolean> isCanceled,
+        BooleanSupplier isCanceled,
         AggregatorFactories.Builder subBuilders
     ) {
         this.bigArrays = bigArrays;
@@ -63,7 +63,7 @@ public abstract sealed class AggregationReduceContext permits AggregationReduceC
     private AggregationReduceContext(
         BigArrays bigArrays,
         ScriptService scriptService,
-        Supplier<Boolean> isCanceled,
+        BooleanSupplier isCanceled,
         AggregationBuilder builder
     ) {
         this.bigArrays = bigArrays;
@@ -90,7 +90,7 @@ public abstract sealed class AggregationReduceContext permits AggregationReduceC
         return scriptService;
     }
 
-    public final Supplier<Boolean> isCanceled() {
+    public final BooleanSupplier isCanceled() {
         return isCanceled;
     }
 
@@ -113,7 +113,7 @@ public abstract sealed class AggregationReduceContext permits AggregationReduceC
      */
     public final void consumeBucketsAndMaybeBreak(int size) {
         // This is a volatile read.
-        if (isCanceled.get()) {
+        if (isCanceled.getAsBoolean()) {
             throw new TaskCancelledException("Cancelled");
         }
         consumeBucketCountAndMaybeBreak(size);
@@ -142,13 +142,13 @@ public abstract sealed class AggregationReduceContext permits AggregationReduceC
         public ForPartial(
             BigArrays bigArrays,
             ScriptService scriptService,
-            Supplier<Boolean> isCanceled,
+            BooleanSupplier isCanceled,
             AggregatorFactories.Builder builders
         ) {
             super(bigArrays, scriptService, isCanceled, builders);
         }
 
-        public ForPartial(BigArrays bigArrays, ScriptService scriptService, Supplier<Boolean> isCanceled, AggregationBuilder builder) {
+        public ForPartial(BigArrays bigArrays, ScriptService scriptService, BooleanSupplier isCanceled, AggregationBuilder builder) {
             super(bigArrays, scriptService, isCanceled, builder);
         }
 
@@ -181,7 +181,7 @@ public abstract sealed class AggregationReduceContext permits AggregationReduceC
         public ForFinal(
             BigArrays bigArrays,
             ScriptService scriptService,
-            Supplier<Boolean> isCanceled,
+            BooleanSupplier isCanceled,
             AggregatorFactories.Builder builders,
             IntConsumer multiBucketConsumer
         ) {
@@ -193,7 +193,7 @@ public abstract sealed class AggregationReduceContext permits AggregationReduceC
         public ForFinal(
             BigArrays bigArrays,
             ScriptService scriptService,
-            Supplier<Boolean> isCanceled,
+            BooleanSupplier isCanceled,
             AggregationBuilder builder,
             IntConsumer multiBucketConsumer,
             PipelineTree pipelineTreeRoot

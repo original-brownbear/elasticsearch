@@ -20,7 +20,7 @@ import org.elasticsearch.xpack.ml.aggs.frequentitemsets.mr.ItemSetMapReduceValue
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Supplier;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -32,7 +32,7 @@ import static org.hamcrest.Matchers.lessThan;
 
 public class EclatMapReducerTests extends ESTestCase {
 
-    private static Supplier<Boolean> doNotCancelSupplier = () -> false;
+    private static final BooleanSupplier doNotCancelSupplier = () -> false;
 
     public void testSimple() throws IOException {
         Field field1 = createKeywordFieldTestInstance("keyword1", 0);

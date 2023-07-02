@@ -10,7 +10,7 @@ package org.elasticsearch.xpack.ml.process;
 import java.util.Iterator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
+import java.util.function.BooleanSupplier;
 
 /**
  * A custom iterator that blocks even when there are no results as
@@ -20,10 +20,10 @@ import java.util.function.Supplier;
 public class BlackHoleResultIterator<T> implements Iterator<T> {
 
     private final BlockingQueue<T> results;
-    private final Supplier<Boolean> isRunning;
+    private final BooleanSupplier isRunning;
     private volatile T latestResult;
 
-    public BlackHoleResultIterator(BlockingQueue<T> results, Supplier<Boolean> isRunning) {
+    public BlackHoleResultIterator(BlockingQueue<T> results, BooleanSupplier isRunning) {
         this.results = results;
         this.isRunning = isRunning;
     }
@@ -31,7 +31,7 @@ public class BlackHoleResultIterator<T> implements Iterator<T> {
     @Override
     public boolean hasNext() {
         try {
-            while (isRunning.get()) {
+            while (isRunning.getAsBoolean()) {
                 latestResult = results.poll(100, TimeUnit.MILLISECONDS);
                 if (latestResult != null) {
                     return true;

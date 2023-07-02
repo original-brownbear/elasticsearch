@@ -58,7 +58,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Supplier;
+import java.util.function.BooleanSupplier;
 
 import static org.elasticsearch.core.Strings.format;
 import static org.elasticsearch.xcontent.XContentFactory.jsonBuilder;
@@ -106,7 +106,7 @@ public class JobResultsPersister {
         return new Builder(jobId, () -> true);
     }
 
-    public Builder bulkPersisterBuilder(String jobId, Supplier<Boolean> shouldRetry) {
+    public Builder bulkPersisterBuilder(String jobId, BooleanSupplier shouldRetry) {
         return new Builder(jobId, shouldRetry);
     }
 
@@ -114,9 +114,9 @@ public class JobResultsPersister {
         private final Map<String, IndexRequest> items;
         private final String jobId;
         private final String indexName;
-        private final Supplier<Boolean> shouldRetry;
+        private final BooleanSupplier shouldRetry;
 
-        private Builder(String jobId, Supplier<Boolean> shouldRetry) {
+        private Builder(String jobId, BooleanSupplier shouldRetry) {
             this.items = new LinkedHashMap<>();
             this.jobId = Objects.requireNonNull(jobId);
             this.indexName = AnomalyDetectorsIndex.resultsWriteAlias(jobId);
@@ -317,7 +317,7 @@ public class JobResultsPersister {
     /**
      * Persist the quantiles (blocking)
      */
-    public void persistQuantiles(Quantiles quantiles, Supplier<Boolean> shouldRetry) {
+    public void persistQuantiles(Quantiles quantiles, BooleanSupplier shouldRetry) {
         String jobId = quantiles.getJobId();
         String quantilesDocId = Quantiles.documentId(jobId);
         SearchRequest searchRequest = buildQuantilesDocIdSearch(quantilesDocId);
@@ -381,7 +381,7 @@ public class JobResultsPersister {
     public BulkResponse persistModelSnapshot(
         ModelSnapshot modelSnapshot,
         WriteRequest.RefreshPolicy refreshPolicy,
-        Supplier<Boolean> shouldRetry
+        BooleanSupplier shouldRetry
     ) {
         Persistable persistable = new Persistable(
             AnomalyDetectorsIndex.resultsWriteAlias(modelSnapshot.getJobId()),
@@ -396,7 +396,7 @@ public class JobResultsPersister {
     /**
      * Persist the memory usage data (blocking)
      */
-    public void persistModelSizeStats(ModelSizeStats modelSizeStats, Supplier<Boolean> shouldRetry) {
+    public void persistModelSizeStats(ModelSizeStats modelSizeStats, BooleanSupplier shouldRetry) {
         String jobId = modelSizeStats.getJobId();
         logger.trace("[{}] Persisting model size stats, for size {}", jobId, modelSizeStats.getModelBytes());
         Persistable persistable = new Persistable(
@@ -539,13 +539,13 @@ public class JobResultsPersister {
             this.refreshPolicy = refreshPolicy;
         }
 
-        BulkResponse persist(Supplier<Boolean> shouldRetry, boolean requireAlias) {
+        BulkResponse persist(BooleanSupplier shouldRetry, boolean requireAlias) {
             final PlainActionFuture<BulkResponse> getResponseFuture = PlainActionFuture.newFuture();
             persist(shouldRetry, requireAlias, getResponseFuture);
             return getResponseFuture.actionGet();
         }
 
-        void persist(Supplier<Boolean> shouldRetry, boolean requireAlias, ActionListener<BulkResponse> listener) {
+        void persist(BooleanSupplier shouldRetry, boolean requireAlias, ActionListener<BulkResponse> listener) {
             logCall();
             try {
                 resultsPersisterService.indexWithRetry(

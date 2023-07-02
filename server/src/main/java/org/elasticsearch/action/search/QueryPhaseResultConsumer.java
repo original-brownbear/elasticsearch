@@ -36,8 +36,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 import static java.util.stream.Collectors.toCollection;
 import static org.elasticsearch.action.search.SearchPhaseController.getTopDocsSize;
@@ -78,7 +78,7 @@ public class QueryPhaseResultConsumer extends ArraySearchPhaseResults<SearchPhas
         Executor executor,
         CircuitBreaker circuitBreaker,
         SearchPhaseController controller,
-        Supplier<Boolean> isCanceled,
+        BooleanSupplier isCanceled,
         SearchProgressListener progressListener,
         int expectedResultSize,
         Consumer<Exception> onPartialMergeFailure

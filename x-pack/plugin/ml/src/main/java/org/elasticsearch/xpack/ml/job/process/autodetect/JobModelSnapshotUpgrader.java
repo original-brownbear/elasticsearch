@@ -49,8 +49,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 import static org.elasticsearch.core.Strings.format;
 import static org.elasticsearch.xpack.ml.MachineLearning.UTILITY_THREAD_POOL_NAME;
@@ -66,7 +66,7 @@ public final class JobModelSnapshotUpgrader {
     private final AutodetectParams params;
     private final Client client;
     private final Consumer<Exception> onFinish;
-    private final Supplier<Boolean> continueRunning;
+    private final BooleanSupplier continueRunning;
     private final ThreadPool threadPool;
     private final AutodetectProcessFactory autodetectProcessFactory;
     private final JobResultsPersister jobResultsPersister;
@@ -85,7 +85,7 @@ public final class JobModelSnapshotUpgrader {
         Client client,
         NativeStorageProvider nativeStorageProvider,
         Consumer<Exception> onFinish,
-        Supplier<Boolean> continueRunning
+        BooleanSupplier continueRunning
     ) {
         this.task = Objects.requireNonNull(task);
         this.job = Objects.requireNonNull(job);
@@ -146,7 +146,7 @@ public final class JobModelSnapshotUpgrader {
 
         StateStreamer stateStreamer = new StateStreamer(client);
         Executor executor = new Executor(stateStreamer, processor, autodetectWorkerExecutor, process);
-        if (continueRunning.get() == false) {
+        if (continueRunning.getAsBoolean() == false) {
             onFinish.accept(null);
             return;
         }
@@ -294,7 +294,7 @@ public final class JobModelSnapshotUpgrader {
             task.updatePersistentTaskState(
                 new SnapshotUpgradeTaskState(SnapshotUpgradeState.SAVING_NEW_STATE, task.getAllocationId(), ""),
                 ActionListener.wrap(readingNewState -> {
-                    if (continueRunning.get() == false) {
+                    if (continueRunning.getAsBoolean() == false) {
                         shutdown(null);
                         return;
                     }
@@ -332,7 +332,7 @@ public final class JobModelSnapshotUpgrader {
             autodetectWorkerExecutor.execute(new AbstractRunnable() {
                 @Override
                 public void onFailure(Exception e) {
-                    if (continueRunning.get() == false) {
+                    if (continueRunning.getAsBoolean() == false) {
                         handler.accept(
                             null,
                             ExceptionsHelper.conflictStatusException(
@@ -348,7 +348,7 @@ public final class JobModelSnapshotUpgrader {
 
                 @Override
                 protected void doRun() throws Exception {
-                    if (continueRunning.get() == false) {
+                    if (continueRunning.getAsBoolean() == false) {
                         handler.accept(
                             null,
                             ExceptionsHelper.conflictStatusException(

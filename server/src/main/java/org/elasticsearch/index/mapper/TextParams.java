@@ -19,6 +19,7 @@ import org.elasticsearch.index.mapper.FieldMapper.Parameter;
 import org.elasticsearch.index.similarity.SimilarityProvider;
 
 import java.util.Objects;
+import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -170,17 +171,17 @@ public final class TextParams {
     }
 
     public static FieldType buildFieldType(
-        Supplier<Boolean> indexed,
-        Supplier<Boolean> stored,
+        BooleanSupplier indexed,
+        BooleanSupplier stored,
         Supplier<String> indexOptions,
-        Supplier<Boolean> norms,
+        BooleanSupplier norms,
         Supplier<String> termVectors
     ) {
         FieldType ft = new FieldType();
-        ft.setStored(stored.get());
+        ft.setStored(stored.getAsBoolean());
         ft.setTokenized(true);
-        ft.setIndexOptions(toIndexOptions(indexed.get(), indexOptions.get()));
-        ft.setOmitNorms(norms.get() == false);
+        ft.setIndexOptions(toIndexOptions(indexed.getAsBoolean(), indexOptions.get()));
+        ft.setOmitNorms(norms.getAsBoolean() == false);
         setTermVectorParams(termVectors.get(), ft);
         return ft;
     }

@@ -31,7 +31,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
-import java.util.function.Supplier;
+import java.util.function.BooleanSupplier;
 
 /**
  * A bulk processor is a thread safe bulk processing class, allowing to easily set when to "flush" a new bulk request
@@ -299,7 +299,7 @@ public class BulkProcessor2 implements Closeable {
      * @return this BulkProcessor2
      * @throws EsRejectedExecutionException if shouldAbort returns true before the request has been added to a batch
      */
-    public BulkProcessor2 addWithBackpressure(IndexRequest request, Supplier<Boolean> shouldAbort) throws EsRejectedExecutionException {
+    public BulkProcessor2 addWithBackpressure(IndexRequest request, BooleanSupplier shouldAbort) throws EsRejectedExecutionException {
         return addWithBackpressure((DocWriteRequest<?>) request, shouldAbort);
     }
 
@@ -322,7 +322,7 @@ public class BulkProcessor2 implements Closeable {
         return this;
     }
 
-    private BulkProcessor2 addWithBackpressure(DocWriteRequest<?> request, Supplier<Boolean> shouldAbort)
+    private BulkProcessor2 addWithBackpressure(DocWriteRequest<?> request, BooleanSupplier shouldAbort)
         throws EsRejectedExecutionException {
         /*
          * We want this method to block until the bulkProcessor accepts the request. Otherwise, the subsequent calls to this method will
@@ -332,7 +332,7 @@ public class BulkProcessor2 implements Closeable {
          */
         boolean successfullyAdded = false;
         while (successfullyAdded == false) {
-            if (shouldAbort.get()) {
+            if (shouldAbort.getAsBoolean()) {
                 throw new EsRejectedExecutionException("Rejecting request because bulk add has been cancelled by the caller");
             }
             try {

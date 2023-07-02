@@ -48,6 +48,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -826,23 +827,6 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             );
         }
 
-        public static Parameter<Boolean> boolParam(
-            String name,
-            boolean updateable,
-            Function<FieldMapper, Boolean> initializer,
-            Supplier<Boolean> defaultValue
-        ) {
-            return new Parameter<>(
-                name,
-                updateable,
-                defaultValue,
-                (n, c, o) -> XContentMapValues.nodeBooleanValue(o),
-                initializer,
-                XContentBuilder::field,
-                Objects::toString
-            );
-        }
-
         /**
          * Defines a parameter that takes the values {@code true} or {@code false}, and will always serialize
          * its value if configured.
@@ -1069,8 +1053,16 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             return Parameter.boolParam("index", false, initializer, defaultValue);
         }
 
-        public static Parameter<Boolean> indexParam(Function<FieldMapper, Boolean> initializer, Supplier<Boolean> defaultValue) {
-            return Parameter.boolParam("index", false, initializer, defaultValue);
+        public static Parameter<Boolean> indexParam(Function<FieldMapper, Boolean> initializer, BooleanSupplier defaultValue) {
+            return new Parameter<>(
+                "index",
+                false,
+                defaultValue::getAsBoolean,
+                (n, c, o) -> XContentMapValues.nodeBooleanValue(o),
+                initializer,
+                XContentBuilder::field,
+                String::valueOf
+            );
         }
 
         public static Parameter<Boolean> storeParam(Function<FieldMapper, Boolean> initializer, boolean defaultValue) {

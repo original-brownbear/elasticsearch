@@ -473,11 +473,11 @@ public class TextFieldMapper extends FieldMapper {
         public TextFieldMapper build(MapperBuilderContext context) {
             MultiFields multiFields = multiFieldsBuilder.build(this, context);
             FieldType fieldType = TextParams.buildFieldType(
-                index,
-                store,
+                index::get,
+                store::get,
                 indexOptions,
                 // legacy indices do not have access to norms
-                indexCreatedVersion.isLegacyIndexVersion() ? () -> false : norms,
+                indexCreatedVersion.isLegacyIndexVersion() ? () -> false : norms::get,
                 termVectors
             );
             TextFieldType tft = buildFieldType(fieldType, multiFields, context, indexCreatedVersion);

@@ -40,7 +40,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Supplier;
+import java.util.function.BooleanSupplier;
 
 import static org.elasticsearch.ingest.ConfigurationUtils.newConfigurationException;
 import static org.elasticsearch.ingest.ConfigurationUtils.readBooleanProperty;
@@ -59,7 +59,7 @@ public final class GeoIpProcessor extends AbstractProcessor {
     private static final String ASN_DB_SUFFIX = "-ASN";
 
     private final String field;
-    private final Supplier<Boolean> isValid;
+    private final BooleanSupplier isValid;
     private final String targetField;
     private final CheckedSupplier<GeoIpDatabase, IOException> supplier;
     private final Set<Property> properties;
@@ -85,7 +85,7 @@ public final class GeoIpProcessor extends AbstractProcessor {
         final String description,
         final String field,
         final CheckedSupplier<GeoIpDatabase, IOException> supplier,
-        final Supplier<Boolean> isValid,
+        final BooleanSupplier isValid,
         final String targetField,
         final Set<Property> properties,
         final boolean ignoreMissing,
@@ -111,7 +111,7 @@ public final class GeoIpProcessor extends AbstractProcessor {
     public IngestDocument execute(IngestDocument ingestDocument) throws IOException {
         Object ip = ingestDocument.getFieldValue(field, Object.class, ignoreMissing);
 
-        if (isValid.get() == false) {
+        if (isValid.getAsBoolean() == false) {
             ingestDocument.appendFieldValue("tags", "_geoip_expired_database", false);
             return ingestDocument;
         } else if (ip == null && ignoreMissing) {

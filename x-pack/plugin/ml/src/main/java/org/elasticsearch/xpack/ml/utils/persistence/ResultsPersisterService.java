@@ -44,8 +44,8 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.elasticsearch.ExceptionsHelper.status;
@@ -145,7 +145,7 @@ public class ResultsPersisterService {
         WriteRequest.RefreshPolicy refreshPolicy,
         String id,
         boolean requireAlias,
-        Supplier<Boolean> shouldRetry,
+        BooleanSupplier shouldRetry,
         Consumer<String> retryMsgHandler
     ) throws IOException {
         BulkRequest bulkRequest = new BulkRequest().setRefreshPolicy(refreshPolicy);
@@ -163,7 +163,7 @@ public class ResultsPersisterService {
         WriteRequest.RefreshPolicy refreshPolicy,
         String id,
         boolean requireAlias,
-        Supplier<Boolean> shouldRetry,
+        BooleanSupplier shouldRetry,
         Consumer<String> retryMsgHandler,
         ActionListener<BulkResponse> finalListener
     ) throws IOException {
@@ -177,7 +177,7 @@ public class ResultsPersisterService {
     public BulkResponse bulkIndexWithRetry(
         BulkRequest bulkRequest,
         String jobId,
-        Supplier<Boolean> shouldRetry,
+        BooleanSupplier shouldRetry,
         Consumer<String> retryMsgHandler
     ) {
         return bulkIndexWithRetry(bulkRequest, jobId, shouldRetry, retryMsgHandler, client::bulk);
@@ -186,7 +186,7 @@ public class ResultsPersisterService {
     public void bulkIndexWithRetry(
         BulkRequest bulkRequest,
         String jobId,
-        Supplier<Boolean> shouldRetry,
+        BooleanSupplier shouldRetry,
         Consumer<String> retryMsgHandler,
         ActionListener<BulkResponse> finalListener
     ) {
@@ -206,7 +206,7 @@ public class ResultsPersisterService {
         Map<String, String> headers,
         BulkRequest bulkRequest,
         String jobId,
-        Supplier<Boolean> shouldRetry,
+        BooleanSupplier shouldRetry,
         Consumer<String> retryMsgHandler
     ) {
         return bulkIndexWithRetry(
@@ -228,7 +228,7 @@ public class ResultsPersisterService {
     private BulkResponse bulkIndexWithRetry(
         BulkRequest bulkRequest,
         String jobId,
-        Supplier<Boolean> shouldRetry,
+        BooleanSupplier shouldRetry,
         Consumer<String> retryMsgHandler,
         BiConsumer<BulkRequest, ActionListener<BulkResponse>> actionExecutor
     ) {
@@ -246,7 +246,7 @@ public class ResultsPersisterService {
     private void bulkIndexWithRetry(
         BulkRequest bulkRequest,
         String jobId,
-        Supplier<Boolean> shouldRetry,
+        BooleanSupplier shouldRetry,
         Consumer<String> retryMsgHandler,
         BiConsumer<BulkRequest, ActionListener<BulkResponse>> actionExecutor,
         ActionListener<BulkResponse> finalListener
@@ -259,7 +259,7 @@ public class ResultsPersisterService {
         BulkRetryableAction bulkRetryableAction = new BulkRetryableAction(
             jobId,
             new BulkRequestRewriter(bulkRequest),
-            () -> (isShutdown == false && isResetMode == false) && shouldRetry.get(),
+            () -> (isShutdown == false && isResetMode == false) && shouldRetry.getAsBoolean(),
             retryMsgHandler,
             actionExecutor,
             removeListener
@@ -278,7 +278,7 @@ public class ResultsPersisterService {
     public SearchResponse searchWithRetry(
         SearchRequest searchRequest,
         String jobId,
-        Supplier<Boolean> shouldRetry,
+        BooleanSupplier shouldRetry,
         Consumer<String> retryMsgHandler
     ) {
         final PlainActionFuture<SearchResponse> getResponse = PlainActionFuture.newFuture();
@@ -291,7 +291,7 @@ public class ResultsPersisterService {
             jobId,
             searchRequest,
             client,
-            () -> (isShutdown == false) && shouldRetry.get(),
+            () -> (isShutdown == false) && shouldRetry.getAsBoolean(),
             retryMsgHandler,
             removeListener
         );
@@ -347,7 +347,7 @@ public class ResultsPersisterService {
         BulkRetryableAction(
             String jobId,
             BulkRequestRewriter bulkRequestRewriter,
-            Supplier<Boolean> shouldRetry,
+            BooleanSupplier shouldRetry,
             Consumer<String> msgHandler,
             BiConsumer<BulkRequest, ActionListener<BulkResponse>> actionExecutor,
             ActionListener<BulkResponse> listener
@@ -413,7 +413,7 @@ public class ResultsPersisterService {
             SearchRequest searchRequest,
             // Pass the client to work around https://bugs.eclipse.org/bugs/show_bug.cgi?id=569557
             OriginSettingClient client,
-            Supplier<Boolean> shouldRetry,
+            BooleanSupplier shouldRetry,
             Consumer<String> msgHandler,
             ActionListener<SearchResponse> listener
         ) {
@@ -450,7 +450,7 @@ public class ResultsPersisterService {
     private abstract class MlRetryableAction<Request, Response> extends RetryableAction<Response> {
 
         final String jobId;
-        final Supplier<Boolean> shouldRetry;
+        final BooleanSupplier shouldRetry;
         final Consumer<String> msgHandler;
         final BiConsumer<Request, ActionListener<Response>> action;
         volatile int currentAttempt = 0;
@@ -458,7 +458,7 @@ public class ResultsPersisterService {
 
         MlRetryableAction(
             String jobId,
-            Supplier<Boolean> shouldRetry,
+            BooleanSupplier shouldRetry,
             Consumer<String> msgHandler,
             BiConsumer<Request, ActionListener<Response>> action,
             ActionListener<Response> listener
@@ -495,7 +495,7 @@ public class ResultsPersisterService {
             }
 
             // If the outside conditions have changed and retries are no longer needed, do not retry.
-            if (shouldRetry.get() == false) {
+            if (shouldRetry.getAsBoolean() == false) {
                 LOGGER.info(() -> format("[%s] should not retry %s after [%s] attempts", jobId, getName(), currentAttempt), e);
                 return false;
             }

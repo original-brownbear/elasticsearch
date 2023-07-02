@@ -40,7 +40,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
-import java.util.function.Supplier;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Stream;
 
 /**
@@ -304,7 +304,7 @@ public final class EclatMapReducer extends AbstractItemSetMapReducer<
     protected ImmutableTransactionStore combine(
         Stream<ImmutableTransactionStore> partitions,
         HashBasedTransactionStore transactionStore,
-        Supplier<Boolean> isCanceledSupplier
+        BooleanSupplier isCanceledSupplier
     ) {
         HashBasedTransactionStore t = reduce(partitions, transactionStore, isCanceledSupplier);
         return t.createImmutableTransactionStore();
@@ -324,14 +324,14 @@ public final class EclatMapReducer extends AbstractItemSetMapReducer<
     public HashBasedTransactionStore reduce(
         Stream<ImmutableTransactionStore> partitions,
         HashBasedTransactionStore transactionStore,
-        Supplier<Boolean> isCanceledSupplier
+        BooleanSupplier isCanceledSupplier
     ) {
         final AtomicLong ramBytesSum = new AtomicLong();
 
         // we must iterate one at a time, because the transaction store isn't thread-safe
         partitions.forEachOrdered(p -> {
             try {
-                if (isCanceledSupplier.get()) {
+                if (isCanceledSupplier.getAsBoolean()) {
                     throw new TaskCancelledException("Cancelled");
                 }
                 if (profiling) {
@@ -357,7 +357,7 @@ public final class EclatMapReducer extends AbstractItemSetMapReducer<
     }
 
     @Override
-    public EclatResult reduceFinalize(HashBasedTransactionStore transactionStore, List<Field> fields, Supplier<Boolean> isCanceledSupplier)
+    public EclatResult reduceFinalize(HashBasedTransactionStore transactionStore, List<Field> fields, BooleanSupplier isCanceledSupplier)
         throws IOException {
         if (profiling) {
             profilingInfoReduce.put("ram_bytes_transactionstore_after_reduce", transactionStore.ramBytesUsed());
@@ -379,7 +379,7 @@ public final class EclatMapReducer extends AbstractItemSetMapReducer<
             profilingInfoReduce.put("unique_transactions_after_prune", transactionStore.getUniqueTransactionCount());
         }
 
-        if (isCanceledSupplier.get()) {
+        if (isCanceledSupplier.getAsBoolean()) {
             throw new TaskCancelledException("Cancelled");
         }
 
@@ -413,7 +413,7 @@ public final class EclatMapReducer extends AbstractItemSetMapReducer<
         int minimumSetSize,
         int size,
         List<Field> fields,
-        Supplier<Boolean> isCanceledSupplier,
+        BooleanSupplier isCanceledSupplier,
         Map<String, Object> profilingInfoReduce
     ) throws IOException {
         final long relativeStartNanos = System.nanoTime();
@@ -450,7 +450,7 @@ public final class EclatMapReducer extends AbstractItemSetMapReducer<
                 if (numberOfSetsChecked % ITERATION_CHECK_INTERVAL == 0) {
                     logger.debug("checked {} sets", numberOfSetsChecked);
 
-                    if (isCanceledSupplier.get()) {
+                    if (isCanceledSupplier.getAsBoolean()) {
                         final long eclatRuntimeNanos = System.nanoTime() - relativeStartNanos;
                         logger.debug(
                             "eclat has been cancelled after {} iterations and a runtime of {}s",

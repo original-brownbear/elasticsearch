@@ -24,7 +24,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.List;
 import java.util.function.BiConsumer;
-import java.util.function.Supplier;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Stream;
 
 /**
@@ -139,7 +139,7 @@ public abstract class AbstractItemSetMapReducer<
     protected abstract ReduceContext reduce(
         Stream<MapFinalContext> partitions,
         ReduceContext reduceContext,
-        Supplier<Boolean> isCanceledSupplier
+        BooleanSupplier isCanceledSupplier
     );
 
     /**
@@ -155,7 +155,7 @@ public abstract class AbstractItemSetMapReducer<
     protected abstract MapFinalContext combine(
         Stream<MapFinalContext> partitions,
         ReduceContext reduceContext,
-        Supplier<Boolean> isCanceledSupplier
+        BooleanSupplier isCanceledSupplier
     );
 
     /**
@@ -166,7 +166,7 @@ public abstract class AbstractItemSetMapReducer<
      * @param isCanceledSupplier supplier to check whether the request has been canceled
      * @throws IOException
      */
-    protected abstract Result reduceFinalize(ReduceContext reduceContext, List<Field> fields, Supplier<Boolean> isCanceledSupplier)
+    protected abstract Result reduceFinalize(ReduceContext reduceContext, List<Field> fields, BooleanSupplier isCanceledSupplier)
         throws IOException;
 
     /**

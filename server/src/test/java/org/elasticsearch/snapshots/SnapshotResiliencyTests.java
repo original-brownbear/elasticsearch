@@ -202,7 +202,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -1343,10 +1343,10 @@ public class SnapshotResiliencyTests extends ESTestCase {
         }, TimeUnit.MINUTES.toMillis(1L));
     }
 
-    private void runUntil(Supplier<Boolean> fulfilled, long timeout) {
+    private void runUntil(BooleanSupplier fulfilled, long timeout) {
         final long start = deterministicTaskQueue.getCurrentTimeMillis();
         while (timeout > deterministicTaskQueue.getCurrentTimeMillis() - start) {
-            if (fulfilled.get()) {
+            if (fulfilled.getAsBoolean()) {
                 return;
             }
             deterministicTaskQueue.runAllRunnableTasks();

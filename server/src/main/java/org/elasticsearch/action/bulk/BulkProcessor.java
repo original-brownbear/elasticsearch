@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
+import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 /**
@@ -87,7 +88,7 @@ public class BulkProcessor implements Closeable {
         private String globalIndex;
         private String globalRouting;
         private String globalPipeline;
-        private Supplier<Boolean> flushCondition = () -> true;
+        private BooleanSupplier flushCondition = () -> true;
 
         private Builder(
             BiConsumer<BulkRequest, ActionListener<BulkResponse>> consumer,
@@ -197,7 +198,7 @@ public class BulkProcessor implements Closeable {
             return () -> new BulkRequest(globalIndex).pipeline(globalPipeline).routing(globalRouting);
         }
 
-        public Builder setFlushCondition(Supplier<Boolean> flushCondition) {
+        public Builder setFlushCondition(BooleanSupplier flushCondition) {
             this.flushCondition = flushCondition;
             return this;
         }
@@ -235,7 +236,7 @@ public class BulkProcessor implements Closeable {
 
     private BulkRequest bulkRequest;
     private final Supplier<BulkRequest> bulkRequestSupplier;
-    private final Supplier<Boolean> flushSupplier;
+    private final BooleanSupplier flushSupplier;
     private final BulkRequestHandler bulkRequestHandler;
     private final Runnable onClose;
 
@@ -254,7 +255,7 @@ public class BulkProcessor implements Closeable {
         Scheduler retryScheduler,
         Runnable onClose,
         Supplier<BulkRequest> bulkRequestSupplier,
-        Supplier<Boolean> flushSupplier
+        BooleanSupplier flushSupplier
     ) {
         this.bulkActions = bulkActions;
         this.bulkSize = bulkSize.getBytes();
@@ -486,7 +487,7 @@ public class BulkProcessor implements Closeable {
 
     // needs to be executed under a lock
     private void execute() {
-        if (flushSupplier.get()) {
+        if (flushSupplier.getAsBoolean()) {
             final BulkRequest bulkRequest = this.bulkRequest;
             final long executionId = executionIdGen.incrementAndGet();
 

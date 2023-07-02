@@ -39,7 +39,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.function.Supplier;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -132,7 +132,7 @@ public class InternalItemSetMapReduceAggregationTests extends InternalAggregatio
         }
 
         @Override
-        public WordCounts reduce(Stream<WordCounts> partitions, WordCounts wordCounts, Supplier<Boolean> isCanceledSupplier) {
+        public WordCounts reduce(Stream<WordCounts> partitions, WordCounts wordCounts, BooleanSupplier isCanceledSupplier) {
             partitions.forEach(
                 p -> { p.frequencies.forEach((key, value) -> wordCounts.frequencies.merge(key, value, (v1, v2) -> v1 + v2)); }
             );
@@ -141,8 +141,7 @@ public class InternalItemSetMapReduceAggregationTests extends InternalAggregatio
         }
 
         @Override
-        public WordCounts reduceFinalize(WordCounts wordCounts, List<Field> fields, Supplier<Boolean> isCanceledSupplier)
-            throws IOException {
+        public WordCounts reduceFinalize(WordCounts wordCounts, List<Field> fields, BooleanSupplier isCanceledSupplier) throws IOException {
             return wordCounts;
         }
 
@@ -152,7 +151,7 @@ public class InternalItemSetMapReduceAggregationTests extends InternalAggregatio
         }
 
         @Override
-        protected WordCounts combine(Stream<WordCounts> partitions, WordCounts mapReduceContext, Supplier<Boolean> isCanceledSupplier) {
+        protected WordCounts combine(Stream<WordCounts> partitions, WordCounts mapReduceContext, BooleanSupplier isCanceledSupplier) {
             return reduce(partitions, mapReduceContext, isCanceledSupplier);
         }
 

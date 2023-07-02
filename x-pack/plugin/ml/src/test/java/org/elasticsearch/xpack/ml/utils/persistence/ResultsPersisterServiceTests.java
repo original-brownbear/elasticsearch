@@ -51,7 +51,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
+import java.util.function.BooleanSupplier;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
@@ -240,12 +240,12 @@ public class ResultsPersisterServiceTests extends ESTestCase {
         verify(client, times(1)).execute(eq(SearchAction.INSTANCE), eq(SEARCH_REQUEST), any());
     }
 
-    private static Supplier<Boolean> shouldRetryUntil(int maxRetries) {
-        return new Supplier<>() {
+    private static BooleanSupplier shouldRetryUntil(int maxRetries) {
+        return new BooleanSupplier() {
             int retries = 0;
 
             @Override
-            public Boolean get() {
+            public boolean getAsBoolean() {
                 return ++retries <= maxRetries;
             }
         };

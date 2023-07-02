@@ -58,20 +58,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.function.BiFunction;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.IntFunction;
-import java.util.function.Supplier;
 
 public final class SearchPhaseController {
     private static final ScoreDoc[] EMPTY_DOCS = new ScoreDoc[0];
 
     private final BiFunction<
-        Supplier<Boolean>,
+        BooleanSupplier,
         AggregatorFactories.Builder,
         AggregationReduceContext.Builder> requestToAggReduceContextBuilder;
 
     public SearchPhaseController(
-        BiFunction<Supplier<Boolean>, AggregatorFactories.Builder, AggregationReduceContext.Builder> requestToAggReduceContextBuilder
+        BiFunction<BooleanSupplier, AggregatorFactories.Builder, AggregationReduceContext.Builder> requestToAggReduceContextBuilder
     ) {
         this.requestToAggReduceContextBuilder = requestToAggReduceContextBuilder;
     }
@@ -751,7 +751,7 @@ public final class SearchPhaseController {
         }
     }
 
-    AggregationReduceContext.Builder getReduceContext(Supplier<Boolean> isCanceled, AggregatorFactories.Builder aggs) {
+    AggregationReduceContext.Builder getReduceContext(BooleanSupplier isCanceled, AggregatorFactories.Builder aggs) {
         return requestToAggReduceContextBuilder.apply(isCanceled, aggs);
     }
 
@@ -761,7 +761,7 @@ public final class SearchPhaseController {
     QueryPhaseResultConsumer newSearchPhaseResults(
         Executor executor,
         CircuitBreaker circuitBreaker,
-        Supplier<Boolean> isCanceled,
+        BooleanSupplier isCanceled,
         SearchProgressListener listener,
         SearchRequest request,
         int numShards,

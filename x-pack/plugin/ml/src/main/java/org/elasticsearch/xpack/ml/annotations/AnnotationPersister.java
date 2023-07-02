@@ -22,7 +22,7 @@ import org.elasticsearch.xpack.ml.utils.persistence.ResultsPersisterService;
 
 import java.io.IOException;
 import java.util.Objects;
-import java.util.function.Supplier;
+import java.util.function.BooleanSupplier;
 
 /**
  * Persists annotations to Elasticsearch index.
@@ -69,7 +69,7 @@ public class AnnotationPersister {
         return new Builder(jobId, () -> true);
     }
 
-    public Builder bulkPersisterBuilder(String jobId, Supplier<Boolean> shouldRetry) {
+    public Builder bulkPersisterBuilder(String jobId, BooleanSupplier shouldRetry) {
         return new Builder(jobId, shouldRetry);
     }
 
@@ -77,9 +77,9 @@ public class AnnotationPersister {
 
         private final String jobId;
         private BulkRequest bulkRequest = new BulkRequest(AnnotationIndex.WRITE_ALIAS_NAME);
-        private final Supplier<Boolean> shouldRetry;
+        private final BooleanSupplier shouldRetry;
 
-        private Builder(String jobId, Supplier<Boolean> shouldRetry) {
+        private Builder(String jobId, BooleanSupplier shouldRetry) {
             this.jobId = Objects.requireNonNull(jobId);
             this.shouldRetry = Objects.requireNonNull(shouldRetry);
         }

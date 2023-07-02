@@ -47,6 +47,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 /**
@@ -86,13 +87,13 @@ public class GeoIpDownloader extends AllocatedPersistentTask {
     private volatile Scheduler.ScheduledCancellable scheduled;
     private volatile GeoIpDownloaderStats stats = GeoIpDownloaderStats.EMPTY;
     private final Supplier<TimeValue> pollIntervalSupplier;
-    private final Supplier<Boolean> eagerDownloadSupplier;
+    private final BooleanSupplier eagerDownloadSupplier;
     /*
      * This variable tells us whether we have at least one pipeline with a geoip processor. If there are no geoip processors then we do
      * not download geoip databases (unless configured to eagerly download). Access is not protected because it is set in the constructor
      * and then only ever updated on the cluster state update thread (it is also read on the generic thread). Non-private for unit testing.
      */
-    private final Supplier<Boolean> atLeastOneGeoipProcessorSupplier;
+    private final BooleanSupplier atLeastOneGeoipProcessorSupplier;
 
     GeoIpDownloader(
         Client client,
@@ -107,8 +108,8 @@ public class GeoIpDownloader extends AllocatedPersistentTask {
         TaskId parentTask,
         Map<String, String> headers,
         Supplier<TimeValue> pollIntervalSupplier,
-        Supplier<Boolean> eagerDownloadSupplier,
-        Supplier<Boolean> atLeastOneGeoipProcessorSupplier
+        BooleanSupplier eagerDownloadSupplier,
+        BooleanSupplier atLeastOneGeoipProcessorSupplier
     ) {
         super(id, type, action, description, parentTask, headers);
         this.httpClient = httpClient;
@@ -135,7 +136,7 @@ public class GeoIpDownloader extends AllocatedPersistentTask {
                 throw blockException;
             }
         }
-        if (eagerDownloadSupplier.get() || atLeastOneGeoipProcessorSupplier.get()) {
+        if (eagerDownloadSupplier.getAsBoolean() || atLeastOneGeoipProcessorSupplier.getAsBoolean()) {
             logger.trace("Updating geoip databases");
             List<Map<String, Object>> response = fetchDatabasesOverview();
             for (Map<String, Object> res : response) {

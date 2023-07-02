@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -96,7 +97,7 @@ final class AsyncSearchTask extends SearchTask implements AsyncTask {
         AsyncExecutionId searchId,
         Client client,
         ThreadPool threadPool,
-        Function<Supplier<Boolean>, Supplier<AggregationReduceContext>> aggReduceContextSupplierFactory
+        Function<BooleanSupplier, Supplier<AggregationReduceContext>> aggReduceContextSupplierFactory
     ) {
         super(id, type, action, () -> "async_search{" + descriptionSupplier.get() + "}", parentTaskId, taskHeaders);
         this.expirationTimeMillis = getStartTime() + keepAlive.getMillis();

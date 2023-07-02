@@ -75,6 +75,7 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.BooleanSupplier;
 import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 
@@ -194,7 +195,7 @@ public class SearchableSnapshotDirectory extends BaseDirectory {
      */
     public boolean loadSnapshot(
         RecoveryState snapshotRecoveryState,
-        Supplier<Boolean> cancelPreWarming,
+        BooleanSupplier cancelPreWarming,
         ActionListener<Void> preWarmListener
     ) {
         assert snapshotRecoveryState != null;
@@ -472,12 +473,12 @@ public class SearchableSnapshotDirectory extends BaseDirectory {
         cacheService.waitForCacheFilesEvictionIfNeeded(snapshotId.getUUID(), indexId.getName(), shardId);
     }
 
-    private void prewarmCache(ActionListener<Void> listener, Supplier<Boolean> cancelPreWarming) {
+    private void prewarmCache(ActionListener<Void> listener, BooleanSupplier cancelPreWarming) {
         try (var completionListener = new RefCountingListener(listener.map(v -> {
             recoveryState.setPreWarmComplete();
             return v;
         }))) {
-            if (prewarmCache == false || cancelPreWarming.get()) {
+            if (prewarmCache == false || cancelPreWarming.getAsBoolean()) {
                 return;
             }
             var prewarmTaskRunner = new ThrottledTaskRunner(
@@ -487,7 +488,7 @@ public class SearchableSnapshotDirectory extends BaseDirectory {
             );
 
             for (BlobStoreIndexShardSnapshot.FileInfo file : snapshot().indexFiles()) {
-                if (cancelPreWarming.get()) {
+                if (cancelPreWarming.getAsBoolean()) {
                     return;
                 }
                 boolean hashEqualsContents = file.metadata().hashEqualsContents();

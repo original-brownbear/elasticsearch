@@ -52,6 +52,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.function.LongSupplier;
 import java.util.function.Supplier;
@@ -348,7 +349,7 @@ public abstract class AggregationContext implements Releasable {
         private final BitsetFilterCache bitsetFilterCache;
         private final int randomSeed;
         private final LongSupplier relativeTimeInMillis;
-        private final Supplier<Boolean> isCancelled;
+        private final BooleanSupplier isCancelled;
         private final Function<Query, Query> filterQuery;
         private final boolean enableRewriteToFilterByFilter;
         private final boolean inSortOrderExecutionRequired;
@@ -368,7 +369,7 @@ public abstract class AggregationContext implements Releasable {
             BitsetFilterCache bitsetFilterCache,
             int randomSeed,
             LongSupplier relativeTimeInMillis,
-            Supplier<Boolean> isCancelled,
+            BooleanSupplier isCancelled,
             Function<Query, Query> filterQuery,
             boolean enableRewriteToFilterByFilter,
             boolean inSortOrderExecutionRequired
@@ -572,7 +573,7 @@ public abstract class AggregationContext implements Releasable {
 
         @Override
         public boolean isCancelled() {
-            return isCancelled.get();
+            return isCancelled.getAsBoolean();
         }
 
         @Override
