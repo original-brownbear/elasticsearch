@@ -19,6 +19,7 @@ import org.elasticsearch.common.transport.BoundTransportAddress;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.util.PageCacheRecycler;
 import org.elasticsearch.common.util.concurrent.FutureUtils;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.indices.breaker.NoneCircuitBreakerService;
 import org.elasticsearch.test.ESTestCase;
@@ -159,7 +160,7 @@ public class SeedHostsResolverTests extends ESTestCase {
             transport,
             threadPool,
             TransportService.NOOP_TRANSPORT_INTERCEPTOR,
-            x -> null,
+            FunctionUtils.toNull(),
             null,
             Collections.emptySet()
         );
@@ -212,7 +213,7 @@ public class SeedHostsResolverTests extends ESTestCase {
             transport,
             threadPool,
             TransportService.NOOP_TRANSPORT_INTERCEPTOR,
-            x -> null,
+            FunctionUtils.toNull(),
             null,
             Collections.emptySet()
         );
@@ -283,7 +284,7 @@ public class SeedHostsResolverTests extends ESTestCase {
             transport,
             threadPool,
             TransportService.NOOP_TRANSPORT_INTERCEPTOR,
-            x -> null,
+            FunctionUtils.toNull(),
             null,
             Collections.emptySet()
         );
@@ -358,7 +359,7 @@ public class SeedHostsResolverTests extends ESTestCase {
             transport,
             threadPool,
             TransportService.NOOP_TRANSPORT_INTERCEPTOR,
-            x -> null,
+            FunctionUtils.toNull(),
             null,
             Collections.emptySet()
         );
@@ -402,7 +403,7 @@ public class SeedHostsResolverTests extends ESTestCase {
             transport,
             threadPool,
             TransportService.NOOP_TRANSPORT_INTERCEPTOR,
-            x -> null,
+            FunctionUtils.toNull(),
             null,
             Collections.emptySet()
         );

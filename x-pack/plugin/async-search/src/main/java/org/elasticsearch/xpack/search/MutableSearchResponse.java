@@ -17,6 +17,7 @@ import org.elasticsearch.action.search.ShardSearchFailure;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.util.concurrent.AtomicArray;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.InternalAggregations;
@@ -55,7 +56,7 @@ class MutableSearchResponse {
      * We default to returning no aggs, this {@code -> null}. We'll replace
      * this as we receive updates on the search progress listener.
      */
-    private Supplier<InternalAggregations> reducedAggsSource = () -> null;
+    private Supplier<InternalAggregations> reducedAggsSource = FunctionUtils.nullSupplier();
     private int reducePhase;
     /**
      * The response produced by the search API. Once we receive it we stop

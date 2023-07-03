@@ -6,6 +6,7 @@
  */
 package org.elasticsearch.xpack.security.authc.esnative.tool;
 
+import org.elasticsearch.common.CheckedSupplier;
 import org.elasticsearch.common.settings.MockSecureSettings;
 import org.elasticsearch.common.settings.SecureString;
 import org.elasticsearch.common.settings.Settings;
@@ -71,7 +72,7 @@ public class CommandLineHttpClientTests extends ESTestCase {
             new URL("https://localhost:" + webServer.getPort() + "/test"),
             "u1",
             new SecureString(new char[] { 'p' }),
-            () -> null,
+            CheckedSupplier.nullValue(),
             is -> responseBuilder(is)
         );
 
@@ -91,7 +92,7 @@ public class CommandLineHttpClientTests extends ESTestCase {
             new URL("https://localhost:" + webServer.getPort() + "/test"),
             "u1",
             new SecureString(new char[] { 'p' }),
-            () -> null,
+            CheckedSupplier.nullValue(),
             is -> responseBuilder(is)
         );
 

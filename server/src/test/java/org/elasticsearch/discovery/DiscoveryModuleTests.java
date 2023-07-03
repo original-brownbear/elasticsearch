@@ -23,6 +23,7 @@ import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.gateway.GatewayMetaState;
 import org.elasticsearch.indices.breaker.NoneCircuitBreakerService;
@@ -146,8 +147,8 @@ public class DiscoveryModuleTests extends ESTestCase {
     }
 
     public void testDuplicateSeedsProvider() {
-        DummyHostsProviderPlugin plugin1 = () -> Collections.singletonMap("dup", () -> null);
-        DummyHostsProviderPlugin plugin2 = () -> Collections.singletonMap("dup", () -> null);
+        DummyHostsProviderPlugin plugin1 = () -> Collections.singletonMap("dup", FunctionUtils.nullSupplier());
+        DummyHostsProviderPlugin plugin2 = () -> Collections.singletonMap("dup", FunctionUtils.nullSupplier());
         IllegalArgumentException e = expectThrows(
             IllegalArgumentException.class,
             () -> newModule(Settings.EMPTY, List.of(plugin1, plugin2), List.of())
@@ -156,7 +157,7 @@ public class DiscoveryModuleTests extends ESTestCase {
     }
 
     public void testSettingsSeedsProvider() {
-        DummyHostsProviderPlugin plugin = () -> Collections.singletonMap("settings", () -> null);
+        DummyHostsProviderPlugin plugin = () -> Collections.singletonMap("settings", FunctionUtils.nullSupplier());
         IllegalArgumentException e = expectThrows(
             IllegalArgumentException.class,
             () -> newModule(Settings.EMPTY, List.of(plugin), List.of())

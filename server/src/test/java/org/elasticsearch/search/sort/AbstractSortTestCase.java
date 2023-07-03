@@ -14,6 +14,7 @@ import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexSettings;
@@ -215,7 +216,7 @@ public abstract class AbstractSortTestCase<T extends SortBuilder<T>> extends EST
             () -> randomNonNegativeLong(),
             null,
             null,
-            () -> true,
+            FunctionUtils.TRUE_BOOLEAN_SUPPLIER,
             null,
             emptyMap()
         ) {

@@ -874,7 +874,7 @@ public class IndicesService extends AbstractLifecycleComponent
                     .source(mapping.source().string(), XContentType.JSON)
                     .timeout(TimeValue.MAX_VALUE)
                     .masterNodeTimeout(TimeValue.MAX_VALUE),
-                new ThreadedActionListener<>(threadPool.generic(), listener.map(ignored -> null))
+                new ThreadedActionListener<>(threadPool.generic(), listener.map(CheckedFunction.toNull()))
             );
         }, this);
         return indexShard;

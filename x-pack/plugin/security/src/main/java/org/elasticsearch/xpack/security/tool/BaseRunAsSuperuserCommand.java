@@ -16,6 +16,7 @@ import org.elasticsearch.cli.ExitCodes;
 import org.elasticsearch.cli.ProcessInfo;
 import org.elasticsearch.cli.Terminal;
 import org.elasticsearch.cli.UserException;
+import org.elasticsearch.common.CheckedSupplier;
 import org.elasticsearch.common.cli.KeyStoreAwareCommand;
 import org.elasticsearch.common.settings.KeyStoreWrapper;
 import org.elasticsearch.common.settings.SecureString;
@@ -211,7 +212,14 @@ public abstract class BaseRunAsSuperuserCommand extends KeyStoreAwareCommand {
         final URL clusterHealthUrl = CommandLineHttpClient.createURL(baseUrl, "_cluster/health", "?pretty");
         final HttpResponse response;
         try {
-            response = client.execute("GET", clusterHealthUrl, username, password, () -> null, CommandLineHttpClient::responseBuilder);
+            response = client.execute(
+                "GET",
+                clusterHealthUrl,
+                username,
+                password,
+                CheckedSupplier.nullValue(),
+                CommandLineHttpClient::responseBuilder
+            );
         } catch (Exception e) {
             throw new UserException(ExitCodes.UNAVAILABLE, "Failed to determine the health of the cluster. ", e);
         }

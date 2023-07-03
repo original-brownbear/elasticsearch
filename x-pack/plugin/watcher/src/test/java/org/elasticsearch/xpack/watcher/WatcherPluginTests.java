@@ -7,6 +7,7 @@
 package org.elasticsearch.xpack.watcher;
 
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.env.TestEnvironment;
 import org.elasticsearch.index.IndexModule;
 import org.elasticsearch.index.IndexSettings;
@@ -64,7 +65,7 @@ public class WatcherPluginTests extends ESTestCase {
             registry,
             new InternalEngineFactory(),
             Collections.emptyMap(),
-            () -> true,
+            FunctionUtils.TRUE_BOOLEAN_SUPPLIER,
             TestIndexNameExpressionResolver.newInstance(),
             Collections.emptyMap()
         );

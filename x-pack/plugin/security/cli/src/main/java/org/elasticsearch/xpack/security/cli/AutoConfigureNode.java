@@ -24,6 +24,7 @@ import org.elasticsearch.cli.UserException;
 import org.elasticsearch.cluster.coordination.ClusterBootstrapService;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.node.DiscoveryNodeRole;
+import org.elasticsearch.common.CheckedSupplier;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.cli.EnvironmentAwareCommand;
@@ -309,7 +310,7 @@ public class AutoConfigureNode extends EnvironmentAwareCommand {
                         "GET",
                         enrollNodeUrl,
                         new SecureString(enrollmentToken.getApiKey().toCharArray()),
-                        () -> null,
+                        CheckedSupplier.nullValue(),
                         CommandLineHttpClient::responseBuilder
                     );
                     break;

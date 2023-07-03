@@ -15,6 +15,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.core.CheckedFunction;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.xpack.core.security.authc.RealmConfig;
@@ -90,7 +91,7 @@ public class JwtAuthenticator implements Releasable {
         }
 
         try {
-            validateSignature(tokenPrincipal, signedJWT, listener.map(ignored -> jwtClaimsSet));
+            validateSignature(tokenPrincipal, signedJWT, listener.map(CheckedFunction.toConstant(jwtClaimsSet)));
         } catch (Exception e) {
             listener.onFailure(e);
         }

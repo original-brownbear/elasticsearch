@@ -12,6 +12,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.util.MockBigArrays;
 import org.elasticsearch.common.util.MockPageCacheRecycler;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.indices.breaker.NoneCircuitBreakerService;
 import org.elasticsearch.test.ESTestCase;
@@ -20,7 +21,6 @@ import org.elasticsearch.xpack.ml.aggs.frequentitemsets.mr.ItemSetMapReduceValue
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -31,8 +31,6 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.lessThan;
 
 public class EclatMapReducerTests extends ESTestCase {
-
-    private static Supplier<Boolean> doNotCancelSupplier = () -> false;
 
     public void testSimple() throws IOException {
         Field field1 = createKeywordFieldTestInstance("keyword1", 0);
@@ -487,8 +485,8 @@ public class EclatMapReducerTests extends ESTestCase {
         for (HashBasedTransactionStore transactionStore : transactionStores) {
             ImmutableTransactionStore transactionStoreAfterFinalizing = eclat.mapFinalize(transactionStore, null);
             List<ImmutableTransactionStore> allPartitions = List.of(transactionStoreAfterFinalizing);
-            eclat.reduce(allPartitions.stream(), transactionStoreForReduce, doNotCancelSupplier);
+            eclat.reduce(allPartitions.stream(), transactionStoreForReduce, FunctionUtils.FALSE_SUPPLIER);
         }
-        return eclat.reduceFinalize(transactionStoreForReduce, fields, doNotCancelSupplier);
+        return eclat.reduceFinalize(transactionStoreForReduce, fields, FunctionUtils.FALSE_SUPPLIER);
     }
 }

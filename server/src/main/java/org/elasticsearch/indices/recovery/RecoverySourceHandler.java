@@ -35,6 +35,7 @@ import org.elasticsearch.common.util.CancellableThreads;
 import org.elasticsearch.common.util.concurrent.CountDown;
 import org.elasticsearch.common.util.concurrent.ListenableFuture;
 import org.elasticsearch.common.util.set.Sets;
+import org.elasticsearch.core.CheckedFunction;
 import org.elasticsearch.core.CheckedRunnable;
 import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.core.Nullable;
@@ -1026,7 +1027,7 @@ public class RecoverySourceHandler {
      * on the wrong thread so we must fork back to GENERIC to carry on with the recovery. This method applies the appropriate wrappers.
      */
     private ActionListener<ReplicationResponse> wrapLeaseSyncListener(ActionListener<Void> listener) {
-        return new ThreadedActionListener<>(shard.getThreadPool().generic(), listener).map(ignored -> null);
+        return new ThreadedActionListener<>(shard.getThreadPool().generic(), listener).map(CheckedFunction.toNull());
     }
 
     boolean hasSameLegacySyncId(Store.MetadataSnapshot source, Store.MetadataSnapshot target) {

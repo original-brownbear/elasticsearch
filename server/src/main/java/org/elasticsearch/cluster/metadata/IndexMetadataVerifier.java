@@ -18,6 +18,7 @@ import org.elasticsearch.common.TriFunction;
 import org.elasticsearch.common.settings.IndexScopedSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.analysis.AnalyzerScope;
@@ -179,7 +180,7 @@ public class IndexMetadataVerifier {
                     parserConfiguration,
                     similarityService,
                     mapperRegistry,
-                    () -> null,
+                    FunctionUtils.nullSupplier(),
                     indexSettings.getMode().idFieldMapperWithoutFieldData(),
                     scriptService
                 )

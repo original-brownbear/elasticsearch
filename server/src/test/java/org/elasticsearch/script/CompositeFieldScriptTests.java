@@ -13,6 +13,7 @@ import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.tests.index.RandomIndexWriter;
 import org.apache.lucene.util.BytesRef;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.index.mapper.OnScriptError;
 import org.elasticsearch.search.lookup.SearchLookup;
 import org.elasticsearch.test.ESTestCase;
@@ -32,7 +33,7 @@ public class CompositeFieldScriptTests extends ESTestCase {
                 CompositeFieldScript script = new CompositeFieldScript(
                     "composite",
                     Collections.emptyMap(),
-                    new SearchLookup(field -> null, (ft, lookup, ftd) -> null, (ctx, doc) -> null),
+                    new SearchLookup(FunctionUtils.toNull(), (ft, lookup, ftd) -> null, (ctx, doc) -> null),
                     OnScriptError.FAIL,
                     reader.leaves().get(0)
                 ) {
@@ -64,7 +65,7 @@ public class CompositeFieldScriptTests extends ESTestCase {
                 CompositeFieldScript script = new CompositeFieldScript(
                     "composite",
                     Collections.emptyMap(),
-                    new SearchLookup(field -> null, (ft, lookup, ftd) -> null, (ctx, doc) -> null),
+                    new SearchLookup(FunctionUtils.toNull(), (ft, lookup, ftd) -> null, (ctx, doc) -> null),
                     OnScriptError.FAIL,
                     reader.leaves().get(0)
                 ) {
@@ -78,7 +79,7 @@ public class CompositeFieldScriptTests extends ESTestCase {
                 StringFieldScript stringFieldScript = new StringFieldScript(
                     "composite.leaf",
                     Collections.emptyMap(),
-                    new SearchLookup(field -> null, (ft, lookup, ftd) -> null, (ctx, doc) -> null),
+                    new SearchLookup(FunctionUtils.toNull(), (ft, lookup, ftd) -> null, (ctx, doc) -> null),
                     OnScriptError.FAIL,
                     reader.leaves().get(0)
                 ) {

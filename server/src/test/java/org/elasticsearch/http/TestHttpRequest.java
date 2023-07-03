@@ -10,6 +10,7 @@ package org.elasticsearch.http;
 
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.rest.ChunkedRestResponseBody;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.RestStatus;
@@ -34,7 +35,7 @@ class TestHttpRequest implements HttpRequest {
     }
 
     TestHttpRequest(HttpVersion version, RestRequest.Method method, String uri) {
-        this(() -> version, method, uri);
+        this(FunctionUtils.constantSupplier(version), method, uri);
     }
 
     @Override

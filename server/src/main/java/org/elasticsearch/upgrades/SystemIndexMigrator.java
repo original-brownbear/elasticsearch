@@ -35,6 +35,7 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.IndexScopedSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.CheckedConsumer;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.SuppressForbidden;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexNotFoundException;
@@ -150,7 +151,7 @@ public class SystemIndexMigrator extends AllocatedPersistentTask {
                 .flatMap(feature -> SystemIndexMigrationInfo.fromFeature(feature, clusterState.metadata(), indexScopedSettings))
                 .filter(migrationInfo -> needsToBeMigrated(clusterState.metadata().index(migrationInfo.getCurrentIndexName())))
                 .sorted() // Stable order between nodes
-                .collect(Collectors.toCollection(() -> migrationQueue));
+                .collect(Collectors.toCollection(FunctionUtils.constantSupplier(migrationQueue)));
 
             List<String> closedIndices = migrationQueue.stream()
                 .filter(SystemIndexMigrationInfo::isCurrentIndexClosed)

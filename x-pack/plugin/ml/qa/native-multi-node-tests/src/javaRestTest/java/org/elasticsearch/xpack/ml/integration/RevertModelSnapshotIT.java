@@ -9,6 +9,7 @@ package org.elasticsearch.xpack.ml.integration;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.WriteRequest;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
@@ -150,7 +151,7 @@ public class RevertModelSnapshotIT extends MlNativeAutodetectIntegTestCase {
         assertThat(revertPointBucket.isInterim(), is(true));
 
         // We need to wait a second to ensure the second time around model snapshot will have a different ID (it depends on epoch seconds)
-        waitUntil(() -> false, 1, TimeUnit.SECONDS);
+        waitUntil(FunctionUtils.FALSE_BOOLEAN_SUPPLIER, 1, TimeUnit.SECONDS);
 
         openJob(job.getId());
         postData(

@@ -13,6 +13,7 @@ import org.elasticsearch.Version;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.query.SearchExecutionContext;
@@ -23,7 +24,7 @@ public class IdFieldTypeTests extends ESTestCase {
 
     public void testRangeQuery() {
         MappedFieldType ft = randomBoolean()
-            ? new ProvidedIdFieldMapper.IdFieldType(() -> false)
+            ? new ProvidedIdFieldMapper.IdFieldType(FunctionUtils.FALSE_BOOLEAN_SUPPLIER)
             : new TsidExtractingIdFieldMapper.IdFieldType();
         IllegalArgumentException e = expectThrows(
             IllegalArgumentException.class,
@@ -47,16 +48,16 @@ public class IdFieldTypeTests extends ESTestCase {
         IndexSettings mockSettings = new IndexSettings(indexMetadata, Settings.EMPTY);
         Mockito.when(context.getIndexSettings()).thenReturn(mockSettings);
         Mockito.when(context.indexVersionCreated()).thenReturn(IndexVersion.current());
-        MappedFieldType ft = new ProvidedIdFieldMapper.IdFieldType(() -> false);
+        MappedFieldType ft = new ProvidedIdFieldMapper.IdFieldType(FunctionUtils.FALSE_BOOLEAN_SUPPLIER);
         Query query = ft.termQuery("id", context);
         assertEquals(new TermInSetQuery("_id", Uid.encodeId("id")), query);
     }
 
     public void testIsAggregatable() {
-        MappedFieldType ft = new ProvidedIdFieldMapper.IdFieldType(() -> false);
+        MappedFieldType ft = new ProvidedIdFieldMapper.IdFieldType(FunctionUtils.FALSE_BOOLEAN_SUPPLIER);
         assertFalse(ft.isAggregatable());
 
-        ft = new ProvidedIdFieldMapper.IdFieldType(() -> true);
+        ft = new ProvidedIdFieldMapper.IdFieldType(FunctionUtils.TRUE_BOOLEAN_SUPPLIER);
         assertTrue(ft.isAggregatable());
 
         ft = new TsidExtractingIdFieldMapper.IdFieldType();

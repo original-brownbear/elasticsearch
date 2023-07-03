@@ -21,6 +21,7 @@ import org.apache.lucene.tests.util.LuceneTestCase.SuppressCodecs;
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.BigArrays;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.analysis.IndexAnalyzers;
@@ -92,7 +93,7 @@ public class CodecTests extends ESTestCase {
             parserConfig(),
             similarityService,
             mapperRegistry,
-            () -> null,
+            FunctionUtils.nullSupplier(),
             settings.getMode().idFieldMapperWithoutFieldData(),
             ScriptCompiler.NONE
         );

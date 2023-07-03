@@ -7,6 +7,7 @@
 
 package org.elasticsearch.repositories.blobstore.testkit;
 
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.test.ESTestCase;
 
 import java.io.IOException;
@@ -23,7 +24,7 @@ public class RandomBlobContentBytesReferenceTests extends ESTestCase {
         final RandomBlobContent randomBlobContent = new RandomBlobContent(
             "repo",
             randomLong(),
-            () -> false,
+            FunctionUtils.FALSE_BOOLEAN_SUPPLIER,
             () -> assertTrue("multiple notifications", readComplete.compareAndSet(false, true))
         );
 

@@ -23,6 +23,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.core.CheckedRunnable;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.TermsQueryBuilder;
@@ -608,7 +609,7 @@ public class MlDistributedFailureIT extends BaseMlIntegTestCase {
             JobResultsPersister.class,
             internalCluster().getMasterName()
         );
-        jobResultsPersister.persistModelSnapshot(modelSnapshot, WriteRequest.RefreshPolicy.IMMEDIATE, () -> true);
+        jobResultsPersister.persistModelSnapshot(modelSnapshot, WriteRequest.RefreshPolicy.IMMEDIATE, FunctionUtils.TRUE_SUPPLIER);
         UpdateJobAction.Request updateJobRequest = UpdateJobAction.Request.internal(
             jobId,
             new JobUpdate.Builder(jobId).setModelSnapshotId(snapshotId).build()

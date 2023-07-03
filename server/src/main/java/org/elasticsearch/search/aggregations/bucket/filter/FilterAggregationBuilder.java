@@ -11,6 +11,7 @@ package org.elasticsearch.search.aggregations.bucket.filter;
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.core.CheckedFunction;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryRewriteContext;
 import org.elasticsearch.index.query.Rewriteable;
@@ -197,7 +198,7 @@ public class FilterAggregationBuilder extends AbstractAggregationBuilder<FilterA
 
         FilterAggregator(String name, Aggregator parent, AggregatorFactories subAggregators, FiltersAggregator innerAggregator)
             throws IOException {
-            super(parent, subAggregators, aggregatorFactories -> innerAggregator);
+            super(parent, subAggregators, CheckedFunction.toConstant(innerAggregator));
             this.name = name;
             this.innerAggregator = innerAggregator;
         }

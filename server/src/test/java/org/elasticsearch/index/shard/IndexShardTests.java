@@ -1696,7 +1696,7 @@ public class IndexShardTests extends IndexShardTestCase {
                 shardRouting,
                 shardPath,
                 metadata,
-                i -> store,
+                CheckedFunction.toConstant(store),
                 null,
                 new InternalEngineFactory(),
                 NOOP_GCP_SYNCER,
@@ -3489,7 +3489,7 @@ public class IndexShardTests extends IndexShardTestCase {
 
             final IndexShardRecoveryException indexShardRecoveryException = expectThrows(
                 IndexShardRecoveryException.class,
-                () -> newStartedShard(p -> corruptedShard, true)
+                () -> newStartedShard(CheckedFunction.toConstant(corruptedShard), true)
             );
             assertThat(indexShardRecoveryException.getMessage(), equalTo("failed recovery"));
 
@@ -3554,7 +3554,7 @@ public class IndexShardTests extends IndexShardTestCase {
 
         final IndexShardRecoveryException exception1 = expectThrows(
             IndexShardRecoveryException.class,
-            () -> newStartedShard(p -> corruptedShard, true)
+            () -> newStartedShard(CheckedFunction.toConstant(corruptedShard), true)
         );
         assertThat(exception1.getCause().getMessage(), equalTo(corruptionMessage + " (resource=preexisting_corruption)"));
         closeShards(corruptedShard);
@@ -3587,7 +3587,7 @@ public class IndexShardTests extends IndexShardTestCase {
 
         final IndexShardRecoveryException exception2 = expectThrows(
             IndexShardRecoveryException.class,
-            () -> newStartedShard(p -> corruptedShard2, true)
+            () -> newStartedShard(CheckedFunction.toConstant(corruptedShard2), true)
         );
         assertThat(exception2.getCause().getMessage(), equalTo(corruptionMessage + " (resource=preexisting_corruption)"));
         closeShards(corruptedShard2);

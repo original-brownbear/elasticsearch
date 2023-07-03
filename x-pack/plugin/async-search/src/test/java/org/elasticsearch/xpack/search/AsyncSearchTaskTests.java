@@ -16,6 +16,7 @@ import org.elasticsearch.action.search.SearchShard;
 import org.elasticsearch.action.search.ShardSearchFailure;
 import org.elasticsearch.common.breaker.CircuitBreaker;
 import org.elasticsearch.common.breaker.CircuitBreakingException;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.shard.ShardId;
@@ -76,14 +77,14 @@ public class AsyncSearchTaskTests extends ESTestCase {
             "",
             "",
             new TaskId("node1", 0),
-            () -> null,
+            FunctionUtils.nullSupplier(),
             TimeValue.timeValueHours(1),
             Collections.emptyMap(),
             Collections.emptyMap(),
             new AsyncExecutionId("0", new TaskId("node1", 1)),
             new NoOpClient(threadPool),
             threadPool,
-            (t) -> () -> null
+            (t) -> FunctionUtils.nullSupplier()
         );
     }
 
@@ -103,7 +104,7 @@ public class AsyncSearchTaskTests extends ESTestCase {
             new AsyncExecutionId("0", new TaskId("node1", 1)),
             new NoOpClient(threadPool),
             threadPool,
-            (t) -> () -> null
+            (t) -> FunctionUtils.nullSupplier()
         );
         assertEquals("""
             async_search{indices[index1,index2], search_type[QUERY_THEN_FETCH], source\
@@ -116,14 +117,14 @@ public class AsyncSearchTaskTests extends ESTestCase {
             "",
             "",
             new TaskId("node1", 0),
-            () -> null,
+            FunctionUtils.nullSupplier(),
             TimeValue.timeValueHours(1),
             Collections.emptyMap(),
             Collections.emptyMap(),
             new AsyncExecutionId("0", new TaskId("node1", 1)),
             new NoOpClient(threadPool),
             threadPool,
-            (t) -> () -> null
+            (t) -> FunctionUtils.nullSupplier()
         );
         int numShards = randomIntBetween(0, 10);
         List<SearchShard> shards = new ArrayList<>();

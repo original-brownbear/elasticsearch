@@ -20,6 +20,7 @@ import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentHelper;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.test.VersionUtils;
 import org.elasticsearch.test.XContentTestUtils;
@@ -331,7 +332,7 @@ public class DynamicTemplatesTests extends MapperServiceTestCase {
                 .endArray()
                 .endObject()
         );
-        MapperService mapperService = createMapperService(IndexVersion.current(), Settings.EMPTY, () -> true);
+        MapperService mapperService = createMapperService(IndexVersion.current(), Settings.EMPTY, FunctionUtils.TRUE_BOOLEAN_SUPPLIER);
         mapperService.merge(MapperService.SINGLE_MAPPING_NAME, new CompressedXContent(mapping), MapperService.MergeReason.INDEX_TEMPLATE);
 
         // There should be no update if templates are not set.

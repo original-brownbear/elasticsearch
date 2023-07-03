@@ -29,6 +29,7 @@ import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.core.CheckedRunnable;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.Releasables;
 import org.elasticsearch.core.SuppressForbidden;
@@ -273,7 +274,7 @@ public final class SamlRealm extends Realm implements Releasable {
             config.getSetting(NAMEID_ALLOW_CREATE),
             config.getSetting(NAMEID_SP_QUALIFIER)
         );
-        this.forceAuthn = config.getSetting(FORCE_AUTHN, () -> null);
+        this.forceAuthn = config.getSetting(FORCE_AUTHN, FunctionUtils.nullSupplier());
         this.useSingleLogout = config.getSetting(IDP_SINGLE_LOGOUT);
         this.populateUserMetadata = config.getSetting(POPULATE_USER_METADATA);
         this.principalAttribute = AttributeParser.forSetting(logger, PRINCIPAL_ATTRIBUTE, config, true);

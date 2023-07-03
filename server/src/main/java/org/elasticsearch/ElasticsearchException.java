@@ -57,6 +57,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
@@ -1894,7 +1895,7 @@ public class ElasticsearchException extends RuntimeException implements ToXConte
             Arrays.stream(ElasticsearchExceptionHandle.values()).collect(Collectors.toMap(e -> e.id, e -> e.constructor))
         );
         CLASS_TO_ELASTICSEARCH_EXCEPTION_HANDLE = unmodifiableMap(
-            Arrays.stream(ElasticsearchExceptionHandle.values()).collect(Collectors.toMap(e -> e.exceptionClass, e -> e))
+            Arrays.stream(ElasticsearchExceptionHandle.values()).collect(Collectors.toMap(e -> e.exceptionClass, Function.identity()))
         );
     }
 

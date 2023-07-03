@@ -25,6 +25,7 @@ import org.apache.lucene.tests.index.RandomIndexWriter;
 import org.elasticsearch.common.time.DateFormatter;
 import org.elasticsearch.common.time.DateFormatters;
 import org.elasticsearch.core.CheckedConsumer;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.index.mapper.BooleanFieldMapper;
 import org.elasticsearch.index.mapper.CustomTermFreqField;
 import org.elasticsearch.index.mapper.DateFieldMapper;
@@ -1068,7 +1069,7 @@ public class DateHistogramAggregatorTests extends DateHistogramAggregatorTestCas
                     new AggregationReduceContext.ForFinal(
                         context.bigArrays(),
                         null,
-                        () -> false,
+                        FunctionUtils.FALSE_SUPPLIER,
                         builder,
                         new MultiBucketConsumerService.MultiBucketConsumer(context.maxBuckets(), context.breaker()),
                         PipelineTree.EMPTY

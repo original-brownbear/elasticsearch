@@ -11,6 +11,7 @@ import org.elasticsearch.Version;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.engine.EngineFactory;
@@ -40,7 +41,10 @@ public class CcrTests extends ESTestCase {
                 .numberOfShards(1)
                 .numberOfReplicas(0)
                 .build();
-            final Ccr ccr = new Ccr(Settings.EMPTY, new CcrLicenseChecker(() -> true, () -> false));
+            final Ccr ccr = new Ccr(
+                Settings.EMPTY,
+                new CcrLicenseChecker(FunctionUtils.TRUE_BOOLEAN_SUPPLIER, FunctionUtils.FALSE_BOOLEAN_SUPPLIER)
+            );
             final Optional<EngineFactory> engineFactory = ccr.getEngineFactory(new IndexSettings(indexMetadata, Settings.EMPTY));
             if (value != null && value) {
                 assertTrue(engineFactory.isPresent());

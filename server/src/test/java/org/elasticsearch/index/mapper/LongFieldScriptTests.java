@@ -14,6 +14,7 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.tests.index.RandomIndexWriter;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.script.AbstractFieldScript;
 import org.elasticsearch.script.LongFieldScript;
 import org.elasticsearch.script.ScriptContext;
@@ -66,7 +67,7 @@ public class LongFieldScriptTests extends FieldScriptTestCase<LongFieldScript.Fa
                 LongFieldScript script = new LongFieldScript(
                     "test",
                     Map.of(),
-                    new SearchLookup(field -> null, (ft, lookup, fdt) -> null, (ctx, doc) -> null),
+                    new SearchLookup(FunctionUtils.toNull(), (ft, lookup, fdt) -> null, (ctx, doc) -> null),
                     OnScriptError.FAIL,
                     reader.leaves().get(0)
                 ) {
@@ -102,7 +103,7 @@ public class LongFieldScriptTests extends FieldScriptTestCase<LongFieldScript.Fa
                 LongFieldScript.LeafFactory leafFactory = fromSource().newFactory(
                     "field",
                     Collections.emptyMap(),
-                    new SearchLookup(field -> null, (ft, lookup, fdt) -> null, SourceProvider.fromStoredFields()),
+                    new SearchLookup(FunctionUtils.toNull(), (ft, lookup, fdt) -> null, SourceProvider.fromStoredFields()),
                     OnScriptError.FAIL
                 );
                 LongFieldScript longFieldScript = leafFactory.newInstance(reader.leaves().get(0));

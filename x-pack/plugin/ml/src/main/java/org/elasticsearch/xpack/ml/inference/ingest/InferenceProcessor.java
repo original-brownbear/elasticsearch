@@ -18,6 +18,7 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
 import org.elasticsearch.ingest.IngestDocument;
@@ -247,7 +248,7 @@ public class InferenceProcessor extends AbstractProcessor {
                 fieldMap = ConfigurationUtils.readOptionalMap(TYPE, tag, config, FIELD_MAPPINGS);
                 // TODO Remove in 9?.x
                 if (fieldMap != null) {
-                    LoggingDeprecationHandler.INSTANCE.logRenamedField(null, () -> null, FIELD_MAPPINGS, FIELD_MAP);
+                    LoggingDeprecationHandler.INSTANCE.logRenamedField(null, FunctionUtils.nullSupplier(), FIELD_MAPPINGS, FIELD_MAP);
                 }
             }
             if (fieldMap == null) {

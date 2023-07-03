@@ -25,6 +25,7 @@ import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.core.CheckedConsumer;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.IndexVersion;
@@ -456,7 +457,10 @@ public class SnapshotsRecoveryPlannerServiceTests extends ESTestCase {
         Version version,
         boolean primaryRelocation
     ) throws Exception {
-        SnapshotsRecoveryPlannerService recoveryPlannerService = new SnapshotsRecoveryPlannerService(shardSnapshotsService, () -> true);
+        SnapshotsRecoveryPlannerService recoveryPlannerService = new SnapshotsRecoveryPlannerService(
+            shardSnapshotsService,
+            FunctionUtils.TRUE_BOOLEAN_SUPPLIER
+        );
 
         PlainActionFuture<ShardRecoveryPlan> planFuture = PlainActionFuture.newFuture();
         recoveryPlannerService.computeRecoveryPlan(

@@ -13,6 +13,7 @@ import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestRequest;
@@ -71,13 +72,13 @@ public class KnnSearchRequestParserTests extends ESTestCase {
         KnnSearch knnSearch = randomKnnSearch();
         List<QueryBuilder> filterQueries = randomFilterQueries();
         SearchSourceBuilder searchSource = randomSearchSourceBuilder(
-            () -> null,
-            () -> null,
-            () -> null,
-            () -> null,
+            FunctionUtils.nullSupplier(),
+            FunctionUtils.nullSupplier(),
+            FunctionUtils.nullSupplier(),
+            FunctionUtils.nullSupplier(),
             Collections::emptyList,
-            () -> null,
-            () -> null
+            FunctionUtils.nullSupplier(),
+            FunctionUtils.nullSupplier()
         );
         XContentBuilder builder = createRequestBody(knnSearch, filterQueries, searchSource);
 

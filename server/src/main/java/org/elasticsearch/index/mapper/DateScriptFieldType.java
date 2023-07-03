@@ -14,6 +14,7 @@ import org.elasticsearch.common.time.DateFormatter;
 import org.elasticsearch.common.time.DateMathParser;
 import org.elasticsearch.common.util.LocaleUtils;
 import org.elasticsearch.common.util.set.Sets;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.IndexVersion;
@@ -64,7 +65,7 @@ public class DateScriptFieldType extends AbstractScriptFieldType<DateFieldScript
         private final FieldMapper.Parameter<Locale> locale = new FieldMapper.Parameter<>(
             "locale",
             true,
-            () -> null,
+            FunctionUtils.nullSupplier(),
             (n, c, o) -> o == null ? null : LocaleUtils.parse(o.toString()),
             RuntimeField.initializerNotSupported(),
             (b, n, v) -> {

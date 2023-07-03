@@ -27,6 +27,7 @@ import org.apache.lucene.search.KnnFloatVectorQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.fielddata.FieldDataContext;
 import org.elasticsearch.index.fielddata.IndexFieldData;
@@ -90,7 +91,7 @@ public class DenseVectorFieldMapper extends FieldMapper {
         private final Parameter<Integer> dims = new Parameter<>(
             "dims",
             false,
-            () -> null,
+            FunctionUtils.nullSupplier(),
             (n, c, o) -> XContentMapValues.nodeIntegerValue(o),
             m -> toType(m).dims,
             XContentBuilder::field,
@@ -122,7 +123,7 @@ public class DenseVectorFieldMapper extends FieldMapper {
         private final Parameter<IndexOptions> indexOptions = new Parameter<>(
             "index_options",
             false,
-            () -> null,
+            FunctionUtils.nullSupplier(),
             (n, c, o) -> o == null ? null : parseIndexOptions(n, o),
             m -> toType(m).indexOptions,
             XContentBuilder::field,

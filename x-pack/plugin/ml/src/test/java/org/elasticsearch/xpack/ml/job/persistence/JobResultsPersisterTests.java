@@ -25,6 +25,7 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.cluster.service.MasterService;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.SearchHit;
@@ -335,7 +336,7 @@ public class JobResultsPersisterTests extends ESTestCase {
         doAnswer(withResponse(searchResponse)).when(client).execute(eq(SearchAction.INSTANCE), any(), any());
 
         Quantiles quantiles = new Quantiles("foo", new Date(), "bar");
-        persister.persistQuantiles(quantiles, () -> false);
+        persister.persistQuantiles(quantiles, FunctionUtils.FALSE_SUPPLIER);
 
         InOrder inOrder = inOrder(client);
         inOrder.verify(client).execute(eq(SearchAction.INSTANCE), any(), any());

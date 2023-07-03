@@ -33,6 +33,7 @@ import org.elasticsearch.common.lucene.search.Queries;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Setting.Property;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.index.IndexMode;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.fielddata.FieldDataContext;
@@ -167,7 +168,7 @@ public class NumberFieldMapper extends FieldMapper {
             this.nullValue = new Parameter<>(
                 "null_value",
                 false,
-                () -> null,
+                FunctionUtils.nullSupplier(),
                 (n, c, o) -> o == null ? null : type.parse(o, false),
                 m -> toType(m).nullValue,
                 XContentBuilder::field,

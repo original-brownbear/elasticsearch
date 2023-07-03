@@ -16,6 +16,7 @@ import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.RestApiVersion;
 import org.elasticsearch.core.TimeValue;
@@ -87,7 +88,7 @@ public class BulkProcessor implements Closeable {
         private String globalIndex;
         private String globalRouting;
         private String globalPipeline;
-        private Supplier<Boolean> flushCondition = () -> true;
+        private Supplier<Boolean> flushCondition = FunctionUtils.TRUE_SUPPLIER;
 
         private Builder(
             BiConsumer<BulkRequest, ActionListener<BulkResponse>> consumer,
@@ -292,7 +293,7 @@ public class BulkProcessor implements Closeable {
             retryScheduler,
             onClose,
             bulkRequestSupplier,
-            () -> true
+            FunctionUtils.TRUE_SUPPLIER
         );
     }
 

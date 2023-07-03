@@ -11,6 +11,7 @@ import org.elasticsearch.ElasticsearchSecurityException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.test.ESSingleNodeTestCase;
 import org.elasticsearch.xpack.autoscaling.action.DeleteAutoscalingPolicyAction;
@@ -33,7 +34,7 @@ public class AutoscalingLicenseCheckerIT extends ESSingleNodeTestCase {
 
         public NonCompliantLicenseLocalStateAutoscaling(final Settings settings, final Path configPath) {
             super(settings, configPath);
-            plugins.add(new Autoscaling(new AutoscalingLicenseChecker(() -> false)));
+            plugins.add(new Autoscaling(new AutoscalingLicenseChecker(FunctionUtils.FALSE_BOOLEAN_SUPPLIER)));
         }
 
     }

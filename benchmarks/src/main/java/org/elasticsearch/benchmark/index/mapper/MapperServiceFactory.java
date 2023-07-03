@@ -16,6 +16,7 @@ import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.analysis.AnalyzerScope;
 import org.elasticsearch.index.analysis.IndexAnalyzers;
@@ -65,7 +66,7 @@ public class MapperServiceFactory {
             () -> {
                 throw new UnsupportedOperationException();
             },
-            new ProvidedIdFieldMapper(() -> true),
+            new ProvidedIdFieldMapper(FunctionUtils.TRUE_BOOLEAN_SUPPLIER),
             new ScriptCompiler() {
                 @Override
                 public <T> T compile(Script script, ScriptContext<T> scriptContext) {

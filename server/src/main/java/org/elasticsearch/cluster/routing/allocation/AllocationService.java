@@ -40,6 +40,7 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.logging.ESLogMessage;
 import org.elasticsearch.common.util.set.Sets;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.gateway.GatewayAllocator;
 import org.elasticsearch.gateway.PriorityComparator;
 import org.elasticsearch.rest.RestStatus;
@@ -522,7 +523,7 @@ public class AllocationService {
 
     private void reroute(RoutingAllocation allocation, RerouteStrategy rerouteStrategy) {
         assert hasDeadNodes(allocation) == false : "dead nodes should be explicitly cleaned up. See disassociateDeadNodes";
-        assert AutoExpandReplicas.getAutoExpandReplicaChanges(allocation.metadata(), () -> allocation).isEmpty()
+        assert AutoExpandReplicas.getAutoExpandReplicaChanges(allocation.metadata(), FunctionUtils.constantSupplier(allocation)).isEmpty()
             : "auto-expand replicas out of sync with number of nodes in the cluster";
         assert assertInitialized();
         rerouteStrategy.removeDelayMarkers(allocation);

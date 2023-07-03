@@ -34,6 +34,7 @@ import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.MockPageCacheRecycler;
 import org.elasticsearch.common.util.concurrent.DeterministicTaskQueue;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.tasks.Task;
@@ -87,7 +88,11 @@ public class PublicationTransportHandlerTests extends ESTestCase {
         when(connection.getTransportVersion()).thenReturn(TransportVersion.current());
         when(transportService.getConnection(any())).thenReturn(connection);
 
-        final PublicationTransportHandler handler = new PublicationTransportHandler(transportService, writableRegistry(), pu -> null);
+        final PublicationTransportHandler handler = new PublicationTransportHandler(
+            transportService,
+            writableRegistry(),
+            FunctionUtils.toNull()
+        );
 
         final DiscoveryNode otherNode = DiscoveryNodeUtils.create("otherNode");
         final ClusterState clusterState = CoordinationStateTests.clusterState(
@@ -216,7 +221,11 @@ public class PublicationTransportHandlerTests extends ESTestCase {
                 new ClusterSettings(Settings.EMPTY, ClusterSettings.BUILT_IN_CLUSTER_SETTINGS),
                 Collections.emptySet()
             );
-            final PublicationTransportHandler handler = new PublicationTransportHandler(transportService, writableRegistry(), pu -> null);
+            final PublicationTransportHandler handler = new PublicationTransportHandler(
+                transportService,
+                writableRegistry(),
+                FunctionUtils.toNull()
+            );
             transportService.start();
             transportService.acceptIncomingRequests();
 
@@ -391,7 +400,7 @@ public class PublicationTransportHandlerTests extends ESTestCase {
                 Settings.EMPTY,
                 threadPool,
                 TransportService.NOOP_TRANSPORT_INTERCEPTOR,
-                ignored -> discoveryNode,
+                FunctionUtils.toConstant(discoveryNode),
                 null,
                 Set.of()
             );

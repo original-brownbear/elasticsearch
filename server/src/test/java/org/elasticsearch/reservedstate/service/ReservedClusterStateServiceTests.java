@@ -25,6 +25,7 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.cluster.service.MasterServiceTaskQueue;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.reservedstate.NonStateTransformResult;
 import org.elasticsearch.reservedstate.ReservedClusterStateHandler;
@@ -205,7 +206,7 @@ public class ReservedClusterStateServiceTests extends ESTestCase {
         };
 
         ClusterState newState = taskExecutor.execute(
-            new ClusterStateTaskExecutor.BatchExecutionContext<>(state, List.of(taskContext), () -> null)
+            new ClusterStateTaskExecutor.BatchExecutionContext<>(state, List.of(taskContext), FunctionUtils.nullSupplier())
         );
         assertEquals(state, newState);
         assertTrue(successCalled.get());
@@ -268,7 +269,7 @@ public class ReservedClusterStateServiceTests extends ESTestCase {
         ReservedStateErrorTaskExecutor executor = new ReservedStateErrorTaskExecutor();
 
         ClusterState newState = executor.execute(
-            new ClusterStateTaskExecutor.BatchExecutionContext<>(state, List.of(taskContext), () -> null)
+            new ClusterStateTaskExecutor.BatchExecutionContext<>(state, List.of(taskContext), FunctionUtils.nullSupplier())
         );
 
         verify(task, times(1)).execute(any());

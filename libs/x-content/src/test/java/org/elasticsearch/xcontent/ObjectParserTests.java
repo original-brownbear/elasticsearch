@@ -12,6 +12,7 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.logging.DeprecationLogger;
 import org.elasticsearch.common.xcontent.XContentParserUtils;
 import org.elasticsearch.core.CheckedFunction;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.RestApiVersion;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.xcontent.ObjectParser.NamedObjectParser;
@@ -192,7 +193,7 @@ public class ObjectParserTests extends ESTestCase {
             {"url" : { "host": "http://foobar", "port" : 80}, "name" : "foobarbaz"}""");
         ObjectParser<Foo, CustomParseContext> objectParser = new ObjectParser<>("foo");
         objectParser.declareString(Foo::setName, new ParseField("name"));
-        objectParser.declareObjectOrDefault(Foo::setUri, (p, s) -> s.parseURI(p), () -> null, new ParseField("url"));
+        objectParser.declareObjectOrDefault(Foo::setUri, (p, s) -> s.parseURI(p), FunctionUtils.nullSupplier(), new ParseField("url"));
         Foo s = objectParser.parse(parser, new Foo(), new CustomParseContext(new ClassicParser()));
         assertEquals(s.uri.getHost(), "foobar");
         assertEquals(s.uri.getPort(), 80);

@@ -45,6 +45,7 @@ import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.util.MockBigArrays;
 import org.elasticsearch.common.util.MockPageCacheRecycler;
 import org.elasticsearch.core.CheckedConsumer;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.Strings;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.mapper.DateFieldMapper.DateFieldType;
@@ -1281,7 +1282,7 @@ public class TermsAggregatorTests extends AggregatorTestCase {
             AggregationReduceContext ctx = new AggregationReduceContext.ForFinal(
                 new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), new NoneCircuitBreakerService()),
                 null,
-                () -> false,
+                FunctionUtils.FALSE_SUPPLIER,
                 aggregationBuilder,
                 b -> {},
                 PipelineTree.EMPTY
@@ -1986,7 +1987,7 @@ public class TermsAggregatorTests extends AggregatorTestCase {
      */
     public void testRuntimeFieldTopLevelNotOptimized() throws IOException {
         long totalDocs = 500;
-        SearchLookup lookup = new SearchLookup(s -> null, (ft, l, ftd) -> null, (ctx, doc) -> null);
+        SearchLookup lookup = new SearchLookup(FunctionUtils.toNull(), (ft, l, ftd) -> null, (ctx, doc) -> null);
         StringFieldScript.LeafFactory scriptFactory = ctx -> new StringFieldScript("dummy", Map.of(), lookup, OnScriptError.FAIL, ctx) {
             @Override
             public void execute() {
@@ -2279,7 +2280,7 @@ public class TermsAggregatorTests extends AggregatorTestCase {
         AggregationReduceContext context = new AggregationReduceContext.ForFinal(
             bigArrays,
             getMockScriptService(),
-            () -> false,
+            FunctionUtils.FALSE_SUPPLIER,
             builder,
             reduceBucketConsumer,
             PipelineTree.EMPTY

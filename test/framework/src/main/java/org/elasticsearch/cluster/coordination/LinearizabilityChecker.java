@@ -12,6 +12,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.lucene.util.FixedBitSet;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.util.set.Sets;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.Tuple;
 
 import java.util.ArrayList;
@@ -215,7 +216,7 @@ public class LinearizabilityChecker {
      * @return true iff the history is linearizable w.r.t. the given spec
      */
     public boolean isLinearizable(SequentialSpec spec, History history, Function<Object, Object> missingResponseGenerator) {
-        return isLinearizable(spec, history, missingResponseGenerator, () -> false);
+        return isLinearizable(spec, history, missingResponseGenerator, FunctionUtils.FALSE_BOOLEAN_SUPPLIER);
     }
 
     /**
@@ -491,7 +492,7 @@ public class LinearizabilityChecker {
 
             // Get a unique set object per state permutation. We assume that the number of permutations of states are small.
             // We thus avoid the overhead of the set data structure.
-            states = statePermutations.computeIfAbsent(states, k -> k);
+            states = statePermutations.computeIfAbsent(states, Function.identity());
 
             smallMap.put(bits, states);
 

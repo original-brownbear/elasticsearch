@@ -20,6 +20,7 @@ import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.settings.IndexScopedSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.CheckedFunction;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.env.Environment;
@@ -571,7 +572,7 @@ public final class DataStreamTestHelper {
             when(mapperService.mappingLookup()).thenReturn(mappingLookup);
             when(indexService.getIndexEventListener()).thenReturn(new IndexEventListener() {
             });
-            when(indexService.getIndexSortSupplier()).thenReturn(() -> null);
+            when(indexService.getIndexSortSupplier()).thenReturn(FunctionUtils.nullSupplier());
             return ((CheckedFunction<IndexService, ?, ?>) invocationOnMock.getArguments()[1]).apply(indexService);
         });
         return indicesService;

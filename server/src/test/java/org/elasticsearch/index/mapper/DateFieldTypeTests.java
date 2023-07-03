@@ -29,6 +29,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.time.DateFormatter;
 import org.elasticsearch.common.time.DateFormatters;
 import org.elasticsearch.common.time.DateMathParser;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.fielddata.IndexNumericFieldData;
@@ -224,7 +225,7 @@ public class DateFieldTypeTests extends FieldTypeTestCase {
             () -> nowInMillis,
             null,
             null,
-            () -> true,
+            FunctionUtils.TRUE_BOOLEAN_SUPPLIER,
             null,
             Collections.emptyMap()
         );

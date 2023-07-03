@@ -18,6 +18,7 @@ import org.apache.lucene.tests.util.LuceneTestCase;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.geo.GeoBoundingBox;
 import org.elasticsearch.core.CheckedConsumer;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.geometry.Point;
 import org.elasticsearch.geometry.Rectangle;
 import org.elasticsearch.index.mapper.GeoPointFieldMapper;
@@ -131,11 +132,11 @@ public abstract class GeoGridAggregatorTestCase<T extends InternalGeoGridBucket>
     }
 
     public void testSingletonDocs() throws IOException {
-        testWithSeveralDocs(() -> true, null);
+        testWithSeveralDocs(FunctionUtils.TRUE_BOOLEAN_SUPPLIER, null);
     }
 
     public void testBoundedSingletonDocs() throws IOException {
-        testWithSeveralDocs(() -> true, randomBBox());
+        testWithSeveralDocs(FunctionUtils.TRUE_BOOLEAN_SUPPLIER, randomBBox());
     }
 
     public void testMultiValuedDocs() throws IOException {
@@ -185,11 +186,11 @@ public abstract class GeoGridAggregatorTestCase<T extends InternalGeoGridBucket>
     }
 
     public void testSingletonDocsAsSubAgg() throws IOException {
-        testWithSeveralDocsAsSubAgg(() -> true, null);
+        testWithSeveralDocsAsSubAgg(FunctionUtils.TRUE_BOOLEAN_SUPPLIER, null);
     }
 
     public void testBoundedSingletonDocsAsSubAgg() throws IOException {
-        testWithSeveralDocsAsSubAgg(() -> true, randomBBox());
+        testWithSeveralDocsAsSubAgg(FunctionUtils.TRUE_BOOLEAN_SUPPLIER, randomBBox());
     }
 
     public void testMultiValuedDocsAsSubAgg() throws IOException {

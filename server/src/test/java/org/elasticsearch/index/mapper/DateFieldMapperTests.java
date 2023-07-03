@@ -14,6 +14,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.time.DateFormatter;
 import org.elasticsearch.common.time.DateUtils;
 import org.elasticsearch.core.CheckedConsumer;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.Strings;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.index.IndexVersion;
@@ -697,12 +698,17 @@ public class DateFieldMapperTests extends MapperTestCase {
 
     public void testLegacyField() throws Exception {
         // check that unknown date formats are treated leniently on old indices
-        MapperService service = createMapperService(IndexVersion.fromId(5000099), Settings.EMPTY, () -> false, mapping(b -> {
-            b.startObject("mydate");
-            b.field("type", "date");
-            b.field("format", "unknown-format");
-            b.endObject();
-        }));
+        MapperService service = createMapperService(
+            IndexVersion.fromId(5000099),
+            Settings.EMPTY,
+            FunctionUtils.FALSE_BOOLEAN_SUPPLIER,
+            mapping(b -> {
+                b.startObject("mydate");
+                b.field("type", "date");
+                b.field("format", "unknown-format");
+                b.endObject();
+            })
+        );
         assertThat(service.fieldType("mydate"), instanceOf(DateFieldType.class));
         assertEquals(DEFAULT_DATE_TIME_FORMATTER, ((DateFieldType) service.fieldType("mydate")).dateTimeFormatter);
 

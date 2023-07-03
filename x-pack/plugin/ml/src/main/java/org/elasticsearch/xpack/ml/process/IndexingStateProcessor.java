@@ -15,6 +15,7 @@ import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.bytes.CompositeBytesReference;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.IdsQueryBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -149,7 +150,7 @@ public class IndexingStateProcessor implements StateProcessor {
                 resultsPersisterService.bulkIndexWithRetry(
                     bulkRequest,
                     jobId,
-                    () -> true,
+                    FunctionUtils.TRUE_SUPPLIER,
                     retryMessage -> LOGGER.debug("[{}] Bulk indexing of state failed {}", jobId, retryMessage)
                 );
             } catch (Exception ex) {
@@ -225,7 +226,7 @@ public class IndexingStateProcessor implements StateProcessor {
         SearchResponse searchResponse = resultsPersisterService.searchWithRetry(
             searchRequest,
             jobId,
-            () -> true,
+            FunctionUtils.TRUE_SUPPLIER,
             retryMessage -> LOGGER.debug("[{}] {} {}", jobId, documentId, retryMessage)
         );
         return searchResponse.getHits().getHits().length > 0

@@ -17,6 +17,7 @@ import org.elasticsearch.common.collect.MapBuilder;
 import org.elasticsearch.common.settings.KeyStoreWrapper;
 import org.elasticsearch.common.settings.SecureString;
 import org.elasticsearch.common.util.Maps;
+import org.elasticsearch.core.CheckedFunction;
 import org.elasticsearch.protocol.xpack.XPackInfoResponse;
 import org.elasticsearch.protocol.xpack.XPackInfoResponse.FeatureSetsInfo;
 import org.elasticsearch.protocol.xpack.XPackInfoResponse.FeatureSetsInfo.FeatureSet;
@@ -672,7 +673,7 @@ public class SetupPasswordToolTests extends CommandTestCase {
     }
 
     private Command getSetupPasswordCommandWithKeyStore(KeyStoreWrapper keyStore) {
-        return new SetupPasswordTool(env -> httpClient, (e) -> keyStore);
+        return new SetupPasswordTool(env -> httpClient, CheckedFunction.toConstant(keyStore));
 
     }
 

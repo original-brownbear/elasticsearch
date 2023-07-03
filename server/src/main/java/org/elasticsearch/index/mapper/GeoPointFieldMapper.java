@@ -26,6 +26,7 @@ import org.elasticsearch.common.geo.ShapeRelation;
 import org.elasticsearch.common.geo.SimpleVectorTileFormatter;
 import org.elasticsearch.common.unit.DistanceUnit;
 import org.elasticsearch.core.CheckedFunction;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.geometry.Point;
 import org.elasticsearch.index.IndexMode;
 import org.elasticsearch.index.IndexVersion;
@@ -106,7 +107,7 @@ public class GeoPointFieldMapper extends AbstractPointGeometryFieldMapper<GeoPoi
             this.nullValue = nullValueParam(
                 m -> builder(m).nullValue.get(),
                 (n, c, o) -> parseNullValue(o, ignoreZValue.get().value(), ignoreMalformed.get().value()),
-                () -> null,
+                FunctionUtils.nullSupplier(),
                 XContentBuilder::field
             ).acceptsNull();
             this.scriptCompiler = Objects.requireNonNull(scriptCompiler);
@@ -302,8 +303,11 @@ public class GeoPointFieldMapper extends AbstractPointGeometryFieldMapper<GeoPoi
         }
         // TODO phase out geohash (which is currently used in the CompletionSuggester)
         // we only expose the geohash value and disallow advancing tokens, hence we can reuse the same parser throughout multiple sub-fields
-        DocumentParserContext parserContext = context.switchParser(new GeoHashMultiFieldParser(context.parser(), geometry.geohash()));
-        multiFields.parse(this, context, () -> parserContext);
+        multiFields.parse(
+            this,
+            context,
+            FunctionUtils.constantSupplier(context.switchParser(new GeoHashMultiFieldParser(context.parser(), geometry.geohash())))
+        );
     }
 
     /**

@@ -34,6 +34,7 @@ import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.util.MockBigArrays;
 import org.elasticsearch.common.util.MockPageCacheRecycler;
 import org.elasticsearch.core.CheckedConsumer;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.IndexVersion;
@@ -159,7 +160,7 @@ public abstract class MapperServiceTestCase extends ESTestCase {
     }
 
     protected final MapperService createMapperService(Settings settings, XContentBuilder mappings) throws IOException {
-        return createMapperService(getVersion(), settings, () -> true, mappings);
+        return createMapperService(getVersion(), settings, FunctionUtils.TRUE_BOOLEAN_SUPPLIER, mappings);
     }
 
     protected final MapperService createMapperService(BooleanSupplier idFieldEnabled, XContentBuilder mappings) throws IOException {
@@ -173,13 +174,18 @@ public abstract class MapperServiceTestCase extends ESTestCase {
     }
 
     protected final MapperService createMapperService(Settings settings, String mappings) throws IOException {
-        MapperService mapperService = createMapperService(IndexVersion.current(), settings, () -> true, mapping(b -> {}));
+        MapperService mapperService = createMapperService(
+            IndexVersion.current(),
+            settings,
+            FunctionUtils.TRUE_BOOLEAN_SUPPLIER,
+            mapping(b -> {})
+        );
         merge(mapperService, mappings);
         return mapperService;
     }
 
     protected final MapperService createMapperService(IndexVersion version, XContentBuilder mapping) throws IOException {
-        return createMapperService(version, getIndexSettings(), () -> true, mapping);
+        return createMapperService(version, getIndexSettings(), FunctionUtils.TRUE_BOOLEAN_SUPPLIER, mapping);
     }
 
     /**
@@ -664,7 +670,7 @@ public abstract class MapperServiceTestCase extends ESTestCase {
             () -> nowInMillis,
             null,
             null,
-            () -> true,
+            FunctionUtils.TRUE_BOOLEAN_SUPPLIER,
             null,
             Collections.emptyMap()
         );

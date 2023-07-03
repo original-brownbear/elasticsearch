@@ -14,6 +14,7 @@ import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.common.util.MockBigArrays;
 import org.elasticsearch.common.util.MockPageCacheRecycler;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.indices.breaker.NoneCircuitBreakerService;
 import org.elasticsearch.plugins.SearchPlugin;
 import org.elasticsearch.script.ScriptService;
@@ -382,7 +383,7 @@ public class InternalMultiTermsTests extends InternalAggregationTestCase<Interna
         AggregationReduceContext context = new AggregationReduceContext.ForPartial(
             bigArrays,
             mockScriptService,
-            () -> false,
+            FunctionUtils.FALSE_SUPPLIER,
             mock(AggregationBuilder.class)
         );
 

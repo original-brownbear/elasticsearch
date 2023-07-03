@@ -20,6 +20,7 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.cluster.service.MasterServiceTaskQueue;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.license.XPackLicenseState;
@@ -284,7 +285,9 @@ public class ReservedLifecycleStateServiceTests extends ESTestCase {
                             return null;
                         }
                     };
-                    executor.execute(new ClusterStateTaskExecutor.BatchExecutionContext<>(state, List.of(context), () -> null));
+                    executor.execute(
+                        new ClusterStateTaskExecutor.BatchExecutionContext<>(state, List.of(context), FunctionUtils.nullSupplier())
+                    );
                     return null;
                 }).when(taskQueue).submitTask(anyString(), any(), any());
             }

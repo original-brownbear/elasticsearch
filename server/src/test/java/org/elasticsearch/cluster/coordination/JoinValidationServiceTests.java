@@ -27,6 +27,7 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
 import org.elasticsearch.common.util.concurrent.DeterministicTaskQueue;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.Releasables;
 import org.elasticsearch.core.TimeValue;
@@ -131,14 +132,12 @@ public class JoinValidationServiceTests extends ESTestCase {
                 }
             };
 
-            final var localNode = DiscoveryNodeUtils.create("local");
-
             final var transportService = new TransportService(
                 settings,
                 transport,
                 threadPool,
                 TransportService.NOOP_TRANSPORT_INTERCEPTOR,
-                ignored -> localNode,
+                FunctionUtils.toConstant(DiscoveryNodeUtils.create("local")),
                 null,
                 Set.of()
             );
@@ -267,11 +266,12 @@ public class JoinValidationServiceTests extends ESTestCase {
             Settings.EMPTY,
             deterministicTaskQueue.getThreadPool(),
             TransportService.NOOP_TRANSPORT_INTERCEPTOR,
-            x -> joiningNode,
+            FunctionUtils.toConstant(joiningNode),
             null,
             Collections.emptySet()
         );
-        new JoinValidationService(Settings.EMPTY, joiningNodeTransportService, () -> clusterState, List.of()); // registers request handler
+        // registers request handler
+        new JoinValidationService(Settings.EMPTY, joiningNodeTransportService, FunctionUtils.constantSupplier(clusterState), List.of());
         joiningNodeTransportService.start();
         joiningNodeTransportService.acceptIncomingRequests();
 
@@ -311,11 +311,16 @@ public class JoinValidationServiceTests extends ESTestCase {
             Settings.EMPTY,
             deterministicTaskQueue.getThreadPool(),
             TransportService.NOOP_TRANSPORT_INTERCEPTOR,
-            x -> masterNode,
+            FunctionUtils.toConstant(masterNode),
             null,
             Collections.emptySet()
         );
-        final var joinValidationService = new JoinValidationService(Settings.EMPTY, masterTransportService, () -> clusterState, List.of());
+        final var joinValidationService = new JoinValidationService(
+            Settings.EMPTY,
+            masterTransportService,
+            FunctionUtils.constantSupplier(clusterState),
+            List.of()
+        );
         masterTransportService.start();
         masterTransportService.acceptIncomingRequests();
 
@@ -349,14 +354,15 @@ public class JoinValidationServiceTests extends ESTestCase {
             Settings.EMPTY,
             deterministicTaskQueue.getThreadPool(),
             TransportService.NOOP_TRANSPORT_INTERCEPTOR,
-            ignored -> localNode,
+            FunctionUtils.toConstant(localNode),
             null,
             Set.of()
         );
 
         final var dataPath = "/my/data/path";
         final var settings = Settings.builder().put(Environment.PATH_DATA_SETTING.getKey(), dataPath).build();
-        new JoinValidationService(settings, transportService, () -> localClusterState, List.of()); // registers request handler
+        // registers request handler
+        new JoinValidationService(settings, transportService, FunctionUtils.constantSupplier(localClusterState), List.of());
         transportService.start();
         transportService.acceptIncomingRequests();
 
@@ -395,17 +401,22 @@ public class JoinValidationServiceTests extends ESTestCase {
             Settings.EMPTY,
             deterministicTaskQueue.getThreadPool(),
             TransportService.NOOP_TRANSPORT_INTERCEPTOR,
-            ignored -> localNode,
+            FunctionUtils.toConstant(localNode),
             null,
             Set.of()
         );
 
         final var stateForValidation = ClusterState.builder(ClusterName.DEFAULT).build();
-        new JoinValidationService(Settings.EMPTY, transportService, () -> localClusterState, List.of((node, state) -> {
-            assertSame(node, localNode);
-            assertSame(state, stateForValidation);
-            throw new IllegalStateException("simulated validation failure");
-        })); // registers request handler
+        new JoinValidationService(
+            Settings.EMPTY,
+            transportService,
+            FunctionUtils.constantSupplier(localClusterState),
+            List.of((node, state) -> {
+                assertSame(node, localNode);
+                assertSame(state, stateForValidation);
+                throw new IllegalStateException("simulated validation failure");
+            })
+        ); // registers request handler
         transportService.start();
         transportService.acceptIncomingRequests();
 

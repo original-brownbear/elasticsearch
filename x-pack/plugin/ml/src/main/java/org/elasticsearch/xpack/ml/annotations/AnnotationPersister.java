@@ -11,6 +11,7 @@ import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.xcontent.ToXContent;
@@ -66,7 +67,7 @@ public class AnnotationPersister {
     }
 
     public Builder bulkPersisterBuilder(String jobId) {
-        return new Builder(jobId, () -> true);
+        return new Builder(jobId, FunctionUtils.TRUE_SUPPLIER);
     }
 
     public Builder bulkPersisterBuilder(String jobId, Supplier<Boolean> shouldRetry) {

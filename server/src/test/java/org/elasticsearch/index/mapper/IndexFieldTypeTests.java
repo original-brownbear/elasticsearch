@@ -14,6 +14,7 @@ import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.regex.Regex;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.query.QueryShardException;
 import org.elasticsearch.index.query.SearchExecutionContext;
@@ -79,7 +80,7 @@ public class IndexFieldTypeTests extends ESTestCase {
             System::currentTimeMillis,
             null,
             indexNameMatcher,
-            () -> true,
+            FunctionUtils.TRUE_BOOLEAN_SUPPLIER,
             null,
             Collections.emptyMap()
         );

@@ -26,6 +26,7 @@ import org.elasticsearch.common.lucene.store.ESIndexInputTestCase;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.shard.ShardId;
@@ -695,7 +696,7 @@ public class SearchableSnapshotDirectoryStatsTests extends AbstractSearchableSna
             DiscoveryNode targetNode = DiscoveryNodeUtils.create("local");
             RecoveryState recoveryState = new SearchableSnapshotRecoveryState(shardRouting, targetNode, null);
             final PlainActionFuture<Void> future = PlainActionFuture.newFuture();
-            final boolean loaded = directory.loadSnapshot(recoveryState, () -> false, future);
+            final boolean loaded = directory.loadSnapshot(recoveryState, FunctionUtils.FALSE_SUPPLIER, future);
             future.get();
             assertThat("Failed to load snapshot", loaded, is(true));
             assertThat("Snapshot should be loaded", directory.snapshot(), notNullValue());

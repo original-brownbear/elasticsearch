@@ -13,6 +13,7 @@ import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.bytes.BytesArray;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.script.MockScriptPlugin;
 import org.elasticsearch.script.Script;
@@ -117,7 +118,7 @@ public class BucketScriptIT extends ESIntegTestCase {
                 return value;
             });
 
-            scripts.put("return null", vars -> null);
+            scripts.put("return null", FunctionUtils.toNull());
 
             return scripts;
         }

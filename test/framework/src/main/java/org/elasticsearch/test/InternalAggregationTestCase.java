@@ -21,6 +21,7 @@ import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.util.MockBigArrays;
 import org.elasticsearch.common.util.MockPageCacheRecycler;
 import org.elasticsearch.common.xcontent.XContentParserUtils;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.index.mapper.DateFieldMapper.Resolution;
 import org.elasticsearch.indices.breaker.NoneCircuitBreakerService;
 import org.elasticsearch.plugins.Plugin;
@@ -189,12 +190,18 @@ public abstract class InternalAggregationTestCase<T extends InternalAggregation>
         return new AggregationReduceContext.Builder() {
             @Override
             public AggregationReduceContext forPartialReduction() {
-                return new AggregationReduceContext.ForPartial(BigArrays.NON_RECYCLING_INSTANCE, null, () -> false, aggs);
+                return new AggregationReduceContext.ForPartial(BigArrays.NON_RECYCLING_INSTANCE, null, FunctionUtils.FALSE_SUPPLIER, aggs);
             }
 
             @Override
             public AggregationReduceContext forFinalReduction() {
-                return new AggregationReduceContext.ForFinal(BigArrays.NON_RECYCLING_INSTANCE, null, () -> false, aggs, b -> {});
+                return new AggregationReduceContext.ForFinal(
+                    BigArrays.NON_RECYCLING_INSTANCE,
+                    null,
+                    FunctionUtils.FALSE_SUPPLIER,
+                    aggs,
+                    b -> {}
+                );
             }
         };
     }
@@ -207,7 +214,7 @@ public abstract class InternalAggregationTestCase<T extends InternalAggregation>
         return new AggregationReduceContext.Builder() {
             @Override
             public AggregationReduceContext forPartialReduction() {
-                return new AggregationReduceContext.ForPartial(BigArrays.NON_RECYCLING_INSTANCE, null, () -> false, agg);
+                return new AggregationReduceContext.ForPartial(BigArrays.NON_RECYCLING_INSTANCE, null, FunctionUtils.FALSE_SUPPLIER, agg);
             }
 
             @Override
@@ -215,7 +222,7 @@ public abstract class InternalAggregationTestCase<T extends InternalAggregation>
                 return new AggregationReduceContext.ForFinal(
                     BigArrays.NON_RECYCLING_INSTANCE,
                     null,
-                    () -> false,
+                    FunctionUtils.FALSE_SUPPLIER,
                     agg,
                     b -> {},
                     PipelineTree.EMPTY
@@ -429,7 +436,7 @@ public abstract class InternalAggregationTestCase<T extends InternalAggregation>
             AggregationReduceContext context = new AggregationReduceContext.ForPartial(
                 bigArrays,
                 mockScriptService,
-                () -> false,
+                FunctionUtils.FALSE_SUPPLIER,
                 inputs.builder()
             );
             @SuppressWarnings("unchecked")
@@ -459,7 +466,7 @@ public abstract class InternalAggregationTestCase<T extends InternalAggregation>
         AggregationReduceContext context = new AggregationReduceContext.ForFinal(
             bigArrays,
             mockScriptService,
-            () -> false,
+            FunctionUtils.FALSE_SUPPLIER,
             inputs.builder(),
             bucketConsumer,
             PipelineTree.EMPTY

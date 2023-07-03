@@ -41,6 +41,7 @@ import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Setting.Property;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.settings.SettingsModule;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.gateway.GatewayAllocator;
 import org.elasticsearch.indices.EmptySystemIndices;
 import org.elasticsearch.plugins.ClusterPlugin;
@@ -219,7 +220,7 @@ public class ClusterModuleTests extends ModuleTestCase {
 
     public void testShardsAllocatorFactoryNull() {
         Settings settings = Settings.builder().put(ClusterModule.SHARDS_ALLOCATOR_TYPE_SETTING.getKey(), "bad").build();
-        expectThrows(NullPointerException.class, () -> newClusterModuleWithShardsAllocator(settings, "bad", () -> null));
+        expectThrows(NullPointerException.class, () -> newClusterModuleWithShardsAllocator(settings, "bad", FunctionUtils.nullSupplier()));
         assertCriticalWarnings(
             "[cluster.routing.allocation.type] setting was deprecated in Elasticsearch and will be removed in a future release."
         );

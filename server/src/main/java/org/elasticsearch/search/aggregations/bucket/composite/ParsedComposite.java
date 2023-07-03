@@ -8,6 +8,7 @@
 
 package org.elasticsearch.search.aggregations.bucket.composite;
 
+import org.elasticsearch.core.CheckedFunction;
 import org.elasticsearch.search.aggregations.ParsedMultiBucketAggregation;
 import org.elasticsearch.xcontent.ObjectParser;
 import org.elasticsearch.xcontent.ParseField;
@@ -32,7 +33,7 @@ public class ParsedComposite extends ParsedMultiBucketAggregation<ParsedComposit
             new ParseField("after_key"),
             ObjectParser.ValueType.OBJECT
         );
-        declareMultiBucketAggregationFields(PARSER, parser -> ParsedComposite.ParsedBucket.fromXContent(parser), parser -> null);
+        declareMultiBucketAggregationFields(PARSER, parser -> ParsedComposite.ParsedBucket.fromXContent(parser), CheckedFunction.toNull());
     }
 
     private Map<String, Object> afterKey;

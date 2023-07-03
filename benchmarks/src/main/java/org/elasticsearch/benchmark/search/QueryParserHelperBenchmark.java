@@ -27,6 +27,7 @@ import org.elasticsearch.common.lucene.Lucene;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.fielddata.IndexFieldDataCache;
@@ -154,7 +155,7 @@ public class QueryParserHelperBenchmark {
             () -> nowInMillis,
             null,
             null,
-            () -> true,
+            FunctionUtils.TRUE_BOOLEAN_SUPPLIER,
             null,
             Collections.emptyMap()
         );
@@ -182,7 +183,7 @@ public class QueryParserHelperBenchmark {
             () -> {
                 throw new UnsupportedOperationException();
             },
-            new ProvidedIdFieldMapper(() -> true),
+            new ProvidedIdFieldMapper(FunctionUtils.TRUE_BOOLEAN_SUPPLIER),
             new ScriptCompiler() {
                 @Override
                 public <T> T compile(Script script, ScriptContext<T> scriptContext) {

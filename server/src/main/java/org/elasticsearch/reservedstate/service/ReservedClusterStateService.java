@@ -19,6 +19,7 @@ import org.elasticsearch.cluster.metadata.ReservedStateMetadata;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.cluster.service.MasterServiceTaskQueue;
 import org.elasticsearch.common.Priority;
+import org.elasticsearch.core.CheckedFunction;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.reservedstate.NonStateTransformResult;
 import org.elasticsearch.reservedstate.ReservedClusterStateHandler;
@@ -349,7 +350,7 @@ public class ReservedClusterStateService {
         ActionListener<Collection<NonStateTransformResult>> listener
     ) {
         final List<NonStateTransformResult> result = Collections.synchronizedList(new ArrayList<>(nonStateTransforms.size()));
-        try (var listeners = new RefCountingListener(listener.map(ignored -> result))) {
+        try (var listeners = new RefCountingListener(listener.map(CheckedFunction.toConstant(result)))) {
             for (var transform : nonStateTransforms) {
                 // non cluster state transforms don't modify the cluster state, they however are given a chance to return a more
                 // up-to-date version of the modified keys we should save in the reserved state. These calls are

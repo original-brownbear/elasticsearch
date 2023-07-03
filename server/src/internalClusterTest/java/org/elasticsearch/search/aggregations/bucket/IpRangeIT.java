@@ -10,6 +10,7 @@ package org.elasticsearch.search.aggregations.bucket;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.script.MockScriptPlugin;
 import org.elasticsearch.script.Script;
@@ -35,7 +36,7 @@ public class IpRangeIT extends ESIntegTestCase {
     public static class DummyScriptPlugin extends MockScriptPlugin {
         @Override
         public Map<String, Function<Map<String, Object>, Object>> pluginScripts() {
-            return Collections.singletonMap("dummy", params -> null);
+            return Collections.singletonMap("dummy", FunctionUtils.toNull());
         }
     }
 

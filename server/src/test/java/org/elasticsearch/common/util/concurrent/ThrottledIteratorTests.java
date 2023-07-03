@@ -11,6 +11,7 @@ package org.elasticsearch.common.util.concurrent;
 import org.apache.lucene.tests.util.LuceneTestCase;
 import org.elasticsearch.action.support.RefCountingRunnable;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.threadpool.FixedExecutorBuilder;
@@ -46,11 +47,11 @@ public class ThrottledIteratorTests extends ESTestCase {
             final var itemPermits = new Semaphore(maxConcurrency);
             final var completionLatch = new CountDownLatch(1);
             final BooleanSupplier forkSupplier = randomFrom(
-                () -> false,
+                FunctionUtils.FALSE_BOOLEAN_SUPPLIER,
                 ESTestCase::randomBoolean,
                 LuceneTestCase::rarely,
                 LuceneTestCase::usually,
-                () -> true
+                FunctionUtils.TRUE_BOOLEAN_SUPPLIER
             );
             final var blockPermits = new Semaphore(between(0, Math.min(maxRelaxedThreads, maxConcurrency) - 1));
 

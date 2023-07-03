@@ -8,6 +8,7 @@
 package org.elasticsearch.xpack.ccr;
 
 import org.elasticsearch.client.internal.Client;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.xpack.core.security.user.User;
 
@@ -22,7 +23,10 @@ public class CcrLicenseCheckerTests extends ESTestCase {
 
     public void testNoAuthenticationInfo() {
         final boolean isCcrAllowed = randomBoolean();
-        final CcrLicenseChecker checker = new CcrLicenseChecker(() -> isCcrAllowed, () -> true) {
+        final CcrLicenseChecker checker = new CcrLicenseChecker(
+            FunctionUtils.booleanSupplier(isCcrAllowed),
+            FunctionUtils.TRUE_BOOLEAN_SUPPLIER
+        ) {
 
             @Override
             User getUser(final Client remoteClient) {

@@ -31,6 +31,7 @@ import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.BigArrays;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.analysis.AnalyzerScope;
 import org.elasticsearch.index.analysis.IndexAnalyzers;
@@ -443,7 +444,7 @@ public class SearchExecutionContextTests extends ESTestCase {
             () -> nowInMillis,
             clusterAlias,
             null,
-            () -> true,
+            FunctionUtils.TRUE_BOOLEAN_SUPPLIER,
             null,
             runtimeMappings
         );
@@ -467,7 +468,7 @@ public class SearchExecutionContextTests extends ESTestCase {
                 ScriptCompiler.NONE,
                 indexAnalyzers,
                 indexSettings,
-                indexSettings.getMode().buildIdFieldMapper(() -> true)
+                indexSettings.getMode().buildIdFieldMapper(FunctionUtils.TRUE_BOOLEAN_SUPPLIER)
             )
         );
         when(mapperService.isMultiField(anyString())).then(

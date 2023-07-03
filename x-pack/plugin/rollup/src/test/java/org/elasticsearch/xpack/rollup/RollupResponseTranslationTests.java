@@ -31,6 +31,7 @@ import org.elasticsearch.common.util.MockBigArrays;
 import org.elasticsearch.common.util.MockPageCacheRecycler;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.core.CheckedConsumer;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.mapper.DateFieldMapper;
@@ -627,7 +628,7 @@ public class RollupResponseTranslationTests extends AggregatorTestCase {
         AggregationReduceContext context = new AggregationReduceContext.ForFinal(
             bigArrays,
             scriptService,
-            () -> false,
+            FunctionUtils.FALSE_SUPPLIER,
             mock(AggregationBuilder.class),
             b -> {},
             PipelineTree.EMPTY

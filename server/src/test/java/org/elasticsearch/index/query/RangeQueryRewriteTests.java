@@ -14,6 +14,7 @@ import org.apache.lucene.search.IndexSearcher;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.ClusterSettings;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.index.IndexService;
 import org.elasticsearch.index.mapper.MappedFieldType.Relation;
 import org.elasticsearch.index.mapper.MapperService.MergeReason;
@@ -48,7 +49,7 @@ public class RangeQueryRewriteTests extends ESSingleNodeTestCase {
             null,
             null,
             null,
-            () -> true,
+            FunctionUtils.TRUE_BOOLEAN_SUPPLIER,
             null,
             emptyMap()
         );
@@ -89,7 +90,7 @@ public class RangeQueryRewriteTests extends ESSingleNodeTestCase {
             null,
             null,
             null,
-            () -> true,
+            FunctionUtils.TRUE_BOOLEAN_SUPPLIER,
             null,
             emptyMap()
         );
@@ -132,7 +133,7 @@ public class RangeQueryRewriteTests extends ESSingleNodeTestCase {
             null,
             null,
             null,
-            () -> true,
+            FunctionUtils.TRUE_BOOLEAN_SUPPLIER,
             null,
             emptyMap()
         );

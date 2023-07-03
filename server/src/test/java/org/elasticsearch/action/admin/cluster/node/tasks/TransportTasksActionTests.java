@@ -35,6 +35,7 @@ import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.ChunkedToXContent;
 import org.elasticsearch.common.xcontent.XContentHelper;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.tasks.CancellableTask;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.tasks.TaskCancelledException;
@@ -931,7 +932,8 @@ public class TransportTasksActionTests extends TaskManagerTestCase {
         XContentBuilder builder = XContentFactory.contentBuilder(XContentType.JSON);
         if (byParents) {
             DiscoveryNodes nodes = testNodes[0].clusterService.state().nodes();
-            ChunkedToXContent.wrapAsToXContent(response.groupedByNode(() -> nodes)).toXContent(builder, ToXContent.EMPTY_PARAMS);
+            ChunkedToXContent.wrapAsToXContent(response.groupedByNode(FunctionUtils.constantSupplier(nodes)))
+                .toXContent(builder, ToXContent.EMPTY_PARAMS);
         } else {
             ChunkedToXContent.wrapAsToXContent(response.groupedByParent()).toXContent(builder, ToXContent.EMPTY_PARAMS);
         }

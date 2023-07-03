@@ -30,6 +30,7 @@ import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
 import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
 import org.elasticsearch.common.util.set.Sets;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.shard.IndexShardNotStartedException;
 import org.elasticsearch.index.shard.IndexShardState;
@@ -135,7 +136,7 @@ public class ReplicationOperationTests extends ESTestCase {
         PlainActionFuture<TestPrimary.Result> listener = new PlainActionFuture<>();
         final TestReplicaProxy replicasProxy = new TestReplicaProxy(simulatedFailures);
 
-        final TestPrimary primary = new TestPrimary(primaryShard, () -> replicationGroup, threadPool);
+        final TestPrimary primary = new TestPrimary(primaryShard, FunctionUtils.constantSupplier(replicationGroup), threadPool);
         final TestReplicationOperation op = new TestReplicationOperation(request, primary, listener, replicasProxy, primaryTerm);
         op.execute();
         assertThat("request was not processed on primary", request.processedOnPrimary.get(), equalTo(true));
@@ -213,7 +214,7 @@ public class ReplicationOperationTests extends ESTestCase {
         PlainActionFuture<TestPrimary.Result> listener = new PlainActionFuture<>();
         final TestReplicaProxy replicasProxy = new TestReplicaProxy(simulatedFailures, true);
 
-        final TestPrimary primary = new TestPrimary(primaryShard, () -> replicationGroup, threadPool);
+        final TestPrimary primary = new TestPrimary(primaryShard, FunctionUtils.constantSupplier(replicationGroup), threadPool);
         final TestReplicationOperation op = new TestReplicationOperation(
             request,
             primary,
@@ -352,7 +353,7 @@ public class ReplicationOperationTests extends ESTestCase {
             }
         };
         AtomicBoolean primaryFailed = new AtomicBoolean();
-        final TestPrimary primary = new TestPrimary(primaryShard, () -> replicationGroup, threadPool) {
+        final TestPrimary primary = new TestPrimary(primaryShard, FunctionUtils.constantSupplier(replicationGroup), threadPool) {
             @Override
             public void failShard(String message, Exception exception) {
                 assertThat(exception, instanceOf(ShardStateAction.NoLongerPrimaryShardException.class));
@@ -473,7 +474,7 @@ public class ReplicationOperationTests extends ESTestCase {
         final ShardRouting primaryShard = shardRoutingTable.primaryShard();
         final TestReplicationOperation op = new TestReplicationOperation(
             request,
-            new TestPrimary(primaryShard, () -> initialReplicationGroup, threadPool),
+            new TestPrimary(primaryShard, FunctionUtils.constantSupplier(initialReplicationGroup), threadPool),
             listener,
             new TestReplicaProxy(),
             logger,
@@ -508,14 +509,13 @@ public class ReplicationOperationTests extends ESTestCase {
         final Set<String> inSyncAllocationIds = indexMetadata.inSyncAllocationIds(0);
         final IndexShardRoutingTable shardRoutingTable = state.routingTable().index(index).shard(shardId.id());
         final Set<String> trackedShards = shardRoutingTable.getPromotableAllocationIds();
-        final ReplicationGroup initialReplicationGroup = new ReplicationGroup(shardRoutingTable, inSyncAllocationIds, trackedShards, 0);
 
         final Thread testThread = Thread.currentThread();
         final boolean fatal = randomBoolean();
         final PlainActionFuture<Void> primaryFailedFuture = new PlainActionFuture<>();
         final ReplicationOperation.Primary<Request, Request, TestPrimary.Result> primary = new TestPrimary(
             primaryRouting,
-            () -> initialReplicationGroup,
+            FunctionUtils.constantSupplier(new ReplicationGroup(shardRoutingTable, inSyncAllocationIds, trackedShards, 0)),
             threadPool
         ) {
 

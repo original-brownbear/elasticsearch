@@ -21,6 +21,7 @@ import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.DeterministicTaskQueue;
 import org.elasticsearch.common.util.concurrent.FutureUtils;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.indices.breaker.NoneCircuitBreakerService;
 import org.elasticsearch.monitor.StatusInfo;
@@ -69,7 +70,7 @@ public class JoinHelperTests extends ESTestCase {
             capturingTransport,
             threadPool,
             TransportService.NOOP_TRANSPORT_INTERCEPTOR,
-            x -> localNode,
+            FunctionUtils.toConstant(localNode),
             clusterSettings,
             new ClusterConnectionManager(Settings.EMPTY, capturingTransport, threadPool.getThreadContext()),
             taskManger,
@@ -234,7 +235,7 @@ public class JoinHelperTests extends ESTestCase {
             capturingTransport,
             threadPool,
             TransportService.NOOP_TRANSPORT_INTERCEPTOR,
-            x -> localNode,
+            FunctionUtils.toConstant(localNode),
             clusterSettings,
             new ClusterConnectionManager(Settings.EMPTY, capturingTransport, threadPool.getThreadContext()),
             taskManger,
@@ -310,7 +311,7 @@ public class JoinHelperTests extends ESTestCase {
             capturingTransport,
             threadPool,
             TransportService.NOOP_TRANSPORT_INTERCEPTOR,
-            x -> localNode,
+            FunctionUtils.toConstant(localNode),
             clusterSettings,
             new ClusterConnectionManager(Settings.EMPTY, capturingTransport, threadPool.getThreadContext()),
             taskManger,

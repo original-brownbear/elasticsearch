@@ -1565,7 +1565,7 @@ public abstract class EngineTestCase extends ESTestCase {
 
     public static CheckedFunction<DirectoryReader, DirectoryReader, IOException> randomReaderWrapper() {
         if (randomBoolean()) {
-            return reader -> reader;
+            return CheckedFunction.identity();
         } else {
             return reader -> new MatchingDirectoryReader(reader, new MatchAllDocsQuery());
         }

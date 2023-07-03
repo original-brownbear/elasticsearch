@@ -17,6 +17,7 @@ import org.elasticsearch.common.lucene.search.TopDocsAndMaxScore;
 import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.common.util.concurrent.EsThreadPoolExecutor;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.search.DocValueFormat;
 import org.elasticsearch.search.SearchShardTarget;
@@ -101,7 +102,7 @@ public class QueryPhaseResultConsumerTests extends ESTestCase {
             executor,
             new NoopCircuitBreaker(CircuitBreaker.REQUEST),
             searchPhaseController,
-            () -> false,
+            FunctionUtils.FALSE_SUPPLIER,
             searchProgressListener,
             10,
             e -> onPartialMergeFailure.accumulateAndGet(e, (prev, curr) -> {

@@ -17,6 +17,7 @@ import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.geo.GeoPoint;
 import org.elasticsearch.common.text.Text;
 import org.elasticsearch.common.unit.DistanceUnit;
+import org.elasticsearch.core.CheckedFunction;
 import org.elasticsearch.core.PathUtils;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.xcontent.NamedObjectNotFoundException;
@@ -1092,8 +1093,8 @@ public abstract class BaseXContentTestCase extends ESTestCase {
         Object test2 = new Object();
         NamedXContentRegistry registry = new NamedXContentRegistry(
             Arrays.asList(
-                new NamedXContentRegistry.Entry(Object.class, new ParseField("test1"), p -> test1),
-                new NamedXContentRegistry.Entry(Object.class, new ParseField("test2", "deprecated"), p -> test2),
+                new NamedXContentRegistry.Entry(Object.class, new ParseField("test1"), CheckedFunction.toConstant(test1)),
+                new NamedXContentRegistry.Entry(Object.class, new ParseField("test2", "deprecated"), CheckedFunction.toConstant(test2)),
                 new NamedXContentRegistry.Entry(Object.class, new ParseField("str"), p -> p.text())
             )
         );

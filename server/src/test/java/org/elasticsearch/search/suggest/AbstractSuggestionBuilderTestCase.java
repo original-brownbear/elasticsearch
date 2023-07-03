@@ -15,6 +15,7 @@ import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.analysis.AnalyzerScope;
@@ -187,7 +188,7 @@ public abstract class AbstractSuggestionBuilderTestCase<SB extends SuggestionBui
                 System::currentTimeMillis,
                 null,
                 null,
-                () -> true,
+                FunctionUtils.TRUE_BOOLEAN_SUPPLIER,
                 null,
                 emptyMap()
             );
@@ -244,7 +245,7 @@ public abstract class AbstractSuggestionBuilderTestCase<SB extends SuggestionBui
             System::currentTimeMillis,
             null,
             null,
-            () -> true,
+            FunctionUtils.TRUE_BOOLEAN_SUPPLIER,
             null,
             emptyMap()
         );

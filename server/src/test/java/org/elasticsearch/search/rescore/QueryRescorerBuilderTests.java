@@ -16,6 +16,7 @@ import org.elasticsearch.common.ParsingException;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.mapper.MapperBuilderContext;
@@ -151,7 +152,7 @@ public class QueryRescorerBuilderTests extends ESTestCase {
             () -> nowInMillis,
             null,
             null,
-            () -> true,
+            FunctionUtils.TRUE_BOOLEAN_SUPPLIER,
             null,
             emptyMap()
         ) {
@@ -214,7 +215,7 @@ public class QueryRescorerBuilderTests extends ESTestCase {
             () -> nowInMillis,
             null,
             null,
-            () -> true,
+            FunctionUtils.TRUE_BOOLEAN_SUPPLIER,
             null,
             emptyMap()
         ) {

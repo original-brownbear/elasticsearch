@@ -60,6 +60,7 @@ import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.common.util.MockBigArrays;
 import org.elasticsearch.core.CheckedFunction;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.core.PathUtils;
 import org.elasticsearch.core.PathUtilsForTesting;
@@ -781,7 +782,7 @@ public class SearchableSnapshotDirectoryTests extends AbstractSearchableSnapshot
             ) {
                 final RecoveryState recoveryState = createRecoveryState(randomBoolean());
                 final PlainActionFuture<Void> f = PlainActionFuture.newFuture();
-                final boolean loaded = directory.loadSnapshot(recoveryState, () -> false, f);
+                final boolean loaded = directory.loadSnapshot(recoveryState, FunctionUtils.FALSE_SUPPLIER, f);
                 f.get();
                 assertThat("Failed to load snapshot", loaded, is(true));
                 assertThat("Snapshot should be loaded", directory.snapshot(), sameInstance(snapshot));

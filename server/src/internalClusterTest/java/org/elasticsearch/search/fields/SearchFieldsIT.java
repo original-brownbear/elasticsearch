@@ -20,6 +20,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.time.DateFormatter;
 import org.elasticsearch.common.time.DateUtils;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.index.fielddata.ScriptDocValues;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.plugins.Plugin;
@@ -123,7 +124,7 @@ public class SearchFieldsIT extends ESIntegTestCase {
             scripts.put("_source.obj2.arr2", vars -> sourceScript(vars, "obj2.arr2"));
             scripts.put("_source.arr3", vars -> sourceScript(vars, "arr3"));
 
-            scripts.put("return null", vars -> null);
+            scripts.put("return null", FunctionUtils.toNull());
 
             scripts.put("doc['l']", vars -> docScript(vars, "l"));
             scripts.put("doc['ml']", vars -> docScript(vars, "ml"));

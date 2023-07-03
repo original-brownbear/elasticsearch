@@ -14,6 +14,7 @@ import org.elasticsearch.client.Response;
 import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.xcontent.json.JsonXContent;
 import org.elasticsearch.xpack.test.rest.XPackRestTestConstants;
@@ -205,7 +206,7 @@ public class MlJobSnapshotUpgradeIT extends AbstractUpgradeTestCase {
         closeJob(JOB_ID);
 
         // We need to wait a second to ensure the second time around model snapshot will have a different ID (it depends on epoch seconds)
-        waitUntil(() -> false, 2, TimeUnit.SECONDS);
+        waitUntil(FunctionUtils.FALSE_BOOLEAN_SUPPLIER, 2, TimeUnit.SECONDS);
 
         openJob(JOB_ID);
         dataCounts = entityAsMap(

@@ -8,6 +8,7 @@ package org.elasticsearch.xpack.security.authc.ldap;
 
 import org.apache.logging.log4j.LogManager;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.xpack.core.security.authc.ldap.LdapRealmSettings;
 import org.junit.BeforeClass;
 
@@ -43,7 +44,7 @@ public class MultipleAdRealmIT extends AbstractAdLdapRealmTestCase {
 
         // It's easier to test 2 realms when using file based role mapping, and for the purposes of
         // this test, there's no need to test native mappings.
-        AbstractAdLdapRealmTestCase.roleMappings = realmConfig.selectRoleMappings(() -> true);
+        AbstractAdLdapRealmTestCase.roleMappings = realmConfig.selectRoleMappings(FunctionUtils.TRUE_SUPPLIER);
     }
 
     @Override
@@ -51,7 +52,7 @@ public class MultipleAdRealmIT extends AbstractAdLdapRealmTestCase {
         Settings.Builder builder = Settings.builder();
         builder.put(super.nodeSettings(nodeOrdinal, otherSettings));
 
-        final List<RoleMappingEntry> secondaryRoleMappings = secondaryRealmConfig.selectRoleMappings(() -> true);
+        final List<RoleMappingEntry> secondaryRoleMappings = secondaryRealmConfig.selectRoleMappings(FunctionUtils.TRUE_SUPPLIER);
         final Settings secondarySettings = super.buildRealmSettings(
             secondaryRealmConfig,
             secondaryRoleMappings,

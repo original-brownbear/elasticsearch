@@ -9,6 +9,7 @@ package org.elasticsearch.xpack.sql.execution.search.extractor;
 import org.elasticsearch.common.document.DocumentField;
 import org.elasticsearch.common.io.stream.Writeable.Reader;
 import org.elasticsearch.common.util.Maps;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.xpack.ql.QlIllegalArgumentException;
@@ -257,7 +258,7 @@ public class FieldHitExtractorTests extends AbstractSqlWireSerializingTestCase<F
                 ESTestCase::randomInt,
                 () -> BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.ONE),
                 () -> new BigDecimal("20012312345621343256123456254.20012312345621343256123456254"),
-                () -> null
+                FunctionUtils.nullSupplier()
             )
         );
         return value.get();

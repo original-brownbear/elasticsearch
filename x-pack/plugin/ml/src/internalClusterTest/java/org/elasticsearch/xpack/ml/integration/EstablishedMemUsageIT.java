@@ -13,6 +13,7 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.cluster.service.MasterService;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.indices.TestIndexNameExpressionResolver;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.xpack.core.ClientHelper;
@@ -267,7 +268,7 @@ public class EstablishedMemUsageIT extends BaseMlIntegTestCase {
             .setLogTime(new Date(bucketSpan * bucketNum + randomIntBetween(1, 1000)))
             .setModelBytes(modelBytes)
             .build();
-        jobResultsPersister.persistModelSizeStats(modelSizeStats, () -> true);
+        jobResultsPersister.persistModelSizeStats(modelSizeStats, FunctionUtils.TRUE_SUPPLIER);
         return modelSizeStats;
     }
 

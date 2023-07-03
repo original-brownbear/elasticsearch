@@ -16,4 +16,16 @@ import java.util.function.Function;
 @FunctionalInterface
 public interface CheckedFunction<T, R, E extends Exception> {
     R apply(T t) throws E;
+
+    static <I, EX extends Exception> CheckedFunction<I, I, EX> identity() {
+        return in -> in;
+    }
+
+    static <I, O, EX extends Exception> CheckedFunction<I, O, EX> toNull() {
+        return ignored -> null;
+    }
+
+    static <I, O, EX extends Exception> CheckedFunction<I, O, EX> toConstant(O value) {
+        return value == null ? toNull() : ignored -> value;
+    }
 }

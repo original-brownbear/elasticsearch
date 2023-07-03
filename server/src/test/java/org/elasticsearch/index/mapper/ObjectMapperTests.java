@@ -13,6 +13,7 @@ import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.mapper.MapperService.MergeReason;
 import org.elasticsearch.index.mapper.ObjectMapper.Dynamic;
@@ -313,22 +314,32 @@ public class ObjectMapperTests extends MapperServiceTestCase {
     }
 
     public void testUnknownLegacyFields() throws Exception {
-        MapperService service = createMapperService(IndexVersion.fromId(5000099), Settings.EMPTY, () -> false, mapping(b -> {
-            b.startObject("name");
-            b.field("type", "unknown");
-            b.field("unknown_setting", 5);
-            b.endObject();
-        }));
+        MapperService service = createMapperService(
+            IndexVersion.fromId(5000099),
+            Settings.EMPTY,
+            FunctionUtils.FALSE_BOOLEAN_SUPPLIER,
+            mapping(b -> {
+                b.startObject("name");
+                b.field("type", "unknown");
+                b.field("unknown_setting", 5);
+                b.endObject();
+            })
+        );
         assertThat(service.fieldType("name"), instanceOf(PlaceHolderFieldMapper.PlaceHolderFieldType.class));
     }
 
     public void testUnmappedLegacyFields() throws Exception {
-        MapperService service = createMapperService(IndexVersion.fromId(5000099), Settings.EMPTY, () -> false, mapping(b -> {
-            b.startObject("name");
-            b.field("type", CompletionFieldMapper.CONTENT_TYPE);
-            b.field("unknown_setting", 5);
-            b.endObject();
-        }));
+        MapperService service = createMapperService(
+            IndexVersion.fromId(5000099),
+            Settings.EMPTY,
+            FunctionUtils.FALSE_BOOLEAN_SUPPLIER,
+            mapping(b -> {
+                b.startObject("name");
+                b.field("type", CompletionFieldMapper.CONTENT_TYPE);
+                b.field("unknown_setting", 5);
+                b.endObject();
+            })
+        );
         assertThat(service.fieldType("name"), instanceOf(PlaceHolderFieldMapper.PlaceHolderFieldType.class));
     }
 

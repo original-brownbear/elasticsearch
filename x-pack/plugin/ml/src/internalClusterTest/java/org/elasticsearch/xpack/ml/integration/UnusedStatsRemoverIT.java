@@ -12,6 +12,7 @@ import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.action.support.master.MasterNodeRequest;
 import org.elasticsearch.client.internal.OriginSettingClient;
 import org.elasticsearch.common.unit.ByteSizeValue;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.indices.TestIndexNameExpressionResolver;
 import org.elasticsearch.tasks.TaskId;
 import org.elasticsearch.xcontent.ToXContent;
@@ -117,7 +118,7 @@ public class UnusedStatsRemoverIT extends BaseMlIntegTestCase {
 
         PlainActionFuture<Boolean> deletionListener = new PlainActionFuture<>();
         UnusedStatsRemover statsRemover = new UnusedStatsRemover(client, new TaskId("test", 0L));
-        statsRemover.remove(10000.0f, deletionListener, () -> false);
+        statsRemover.remove(10000.0f, deletionListener, FunctionUtils.FALSE_BOOLEAN_SUPPLIER);
         deletionListener.actionGet();
 
         client().admin().indices().prepareRefresh(MlStatsIndex.indexPattern()).get();

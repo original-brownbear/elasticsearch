@@ -18,6 +18,7 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.cluster.service.MasterServiceTaskQueue;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.license.licensor.LicenseSigner;
 import org.elasticsearch.protocol.xpack.license.LicensesStatus;
@@ -222,7 +223,9 @@ public class ClusterStateLicenseServiceTests extends ESTestCase {
             );
 
             ClusterState updatedState = taskExecutorCaptor.getValue()
-                .execute(new ClusterStateTaskExecutor.BatchExecutionContext<>(oldState, List.of(taskContext), () -> null));
+                .execute(
+                    new ClusterStateTaskExecutor.BatchExecutionContext<>(oldState, List.of(taskContext), FunctionUtils.nullSupplier())
+                );
             // Pass updated state to listener to trigger onResponse call to wrapped `future`
             listenerCaptor.getValue().run();
             assertion.accept(future);

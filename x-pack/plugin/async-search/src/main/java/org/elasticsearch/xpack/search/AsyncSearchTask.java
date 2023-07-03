@@ -21,6 +21,7 @@ import org.elasticsearch.action.search.SearchShard;
 import org.elasticsearch.action.search.SearchTask;
 import org.elasticsearch.action.search.ShardSearchFailure;
 import org.elasticsearch.client.internal.Client;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.search.SearchShardTarget;
 import org.elasticsearch.search.aggregations.AggregationReduceContext;
@@ -421,7 +422,7 @@ final class AsyncSearchTask extends SearchTask implements AsyncTask {
             Supplier<InternalAggregations> reducedAggs;
             if (aggregations == null) {
                 // There aren't any aggs to reduce.
-                reducedAggs = () -> null;
+                reducedAggs = FunctionUtils.nullSupplier();
             } else {
                 /*
                  * Keep a reference to the partially reduced aggs and reduce it on the fly when someone asks

@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.jar.JarFile;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -178,7 +179,7 @@ public abstract class JarApiComparisonTask extends PrecommitTask {
          * Iterate over classes and gather signatures.
          */
         public Map<String, Set<String>> jarSignature() throws IOException {
-            return this.classNames().stream().collect(Collectors.toMap(s -> s, s -> {
+            return this.classNames().stream().collect(Collectors.toMap(Function.identity(), s -> {
                 List<String> disassembled = disassembleFromJar(s, null);
                 if ("module-info.class".equals(s)) {
                     return moduleInfoSignaturesSet(disassembled);

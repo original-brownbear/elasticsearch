@@ -18,6 +18,7 @@ import org.apache.lucene.search.IndexOrDocValuesQuery;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.TermQuery;
 import org.elasticsearch.common.util.BigArrays;
+import org.elasticsearch.core.CheckedFunction;
 import org.elasticsearch.index.mapper.IpFieldMapper;
 import org.elasticsearch.index.mapper.KeywordFieldMapper;
 import org.elasticsearch.index.mapper.MappedFieldType;
@@ -35,7 +36,7 @@ public class SingleDimensionValuesSourceTests extends ESTestCase {
             BigArrays.NON_RECYCLING_INSTANCE,
             (b) -> {},
             keyword,
-            context -> null,
+            CheckedFunction.toNull(),
             DocValueFormat.RAW,
             false,
             MissingOrder.DEFAULT,
@@ -53,7 +54,7 @@ public class SingleDimensionValuesSourceTests extends ESTestCase {
             BigArrays.NON_RECYCLING_INSTANCE,
             (b) -> {},
             keyword,
-            context -> null,
+            CheckedFunction.toNull(),
             DocValueFormat.RAW,
             true,
             MissingOrder.DEFAULT,
@@ -67,7 +68,7 @@ public class SingleDimensionValuesSourceTests extends ESTestCase {
             BigArrays.NON_RECYCLING_INSTANCE,
             (b) -> {},
             keyword,
-            context -> null,
+            CheckedFunction.toNull(),
             DocValueFormat.RAW,
             false,
             MissingOrder.DEFAULT,
@@ -81,7 +82,7 @@ public class SingleDimensionValuesSourceTests extends ESTestCase {
             BigArrays.NON_RECYCLING_INSTANCE,
             (b) -> {},
             ip,
-            context -> null,
+            CheckedFunction.toNull(),
             DocValueFormat.RAW,
             false,
             MissingOrder.DEFAULT,
@@ -97,7 +98,7 @@ public class SingleDimensionValuesSourceTests extends ESTestCase {
             BigArrays.NON_RECYCLING_INSTANCE,
             keyword,
             0L,
-            context -> null,
+            CheckedFunction.toNull(),
             DocValueFormat.RAW,
             false,
             MissingOrder.DEFAULT,
@@ -115,7 +116,7 @@ public class SingleDimensionValuesSourceTests extends ESTestCase {
             BigArrays.NON_RECYCLING_INSTANCE,
             keyword,
             0L,
-            context -> null,
+            CheckedFunction.toNull(),
             DocValueFormat.RAW,
             true,
             MissingOrder.DEFAULT,
@@ -130,7 +131,7 @@ public class SingleDimensionValuesSourceTests extends ESTestCase {
             BigArrays.NON_RECYCLING_INSTANCE,
             keyword,
             0L,
-            context -> null,
+            CheckedFunction.toNull(),
             DocValueFormat.RAW,
             false,
             MissingOrder.DEFAULT,
@@ -145,7 +146,7 @@ public class SingleDimensionValuesSourceTests extends ESTestCase {
             BigArrays.NON_RECYCLING_INSTANCE,
             ip,
             0L,
-            context -> null,
+            CheckedFunction.toNull(),
             DocValueFormat.RAW,
             false,
             MissingOrder.DEFAULT,
@@ -168,7 +169,7 @@ public class SingleDimensionValuesSourceTests extends ESTestCase {
                 source = new LongValuesSource(
                     BigArrays.NON_RECYCLING_INSTANCE,
                     number,
-                    context -> null,
+                    CheckedFunction.toNull(),
                     value -> value,
                     DocValueFormat.RAW,
                     false,
@@ -200,7 +201,7 @@ public class SingleDimensionValuesSourceTests extends ESTestCase {
                 LongValuesSource sourceWithMissing = new LongValuesSource(
                     BigArrays.NON_RECYCLING_INSTANCE,
                     number,
-                    context -> null,
+                    CheckedFunction.toNull(),
                     value -> value,
                     DocValueFormat.RAW,
                     true,
@@ -219,7 +220,7 @@ public class SingleDimensionValuesSourceTests extends ESTestCase {
                 LongValuesSource sourceRev = new LongValuesSource(
                     BigArrays.NON_RECYCLING_INSTANCE,
                     number,
-                    context -> null,
+                    CheckedFunction.toNull(),
                     value -> value,
                     DocValueFormat.RAW,
                     false,
@@ -237,7 +238,7 @@ public class SingleDimensionValuesSourceTests extends ESTestCase {
                     source = new DoubleValuesSource(
                         BigArrays.NON_RECYCLING_INSTANCE,
                         number,
-                        context -> null,
+                        CheckedFunction.toNull(),
                         DocValueFormat.RAW,
                         false,
                         MissingOrder.DEFAULT,

@@ -7,6 +7,7 @@
 
 package org.elasticsearch.xpack.deprecation;
 
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.xpack.core.deprecation.DeprecationIssue;
@@ -28,7 +29,7 @@ public class DeprecationChecksTests extends ESTestCase {
             checks.add(() -> issue);
         }
         for (int i = 0; i < numChecksPassed; i++) {
-            checks.add(() -> null);
+            checks.add(FunctionUtils.nullSupplier());
         }
         List<DeprecationIssue> filteredIssues = DeprecationInfoAction.filterChecks(checks, Supplier::get);
         assertThat(filteredIssues.size(), equalTo(numChecksFailed));

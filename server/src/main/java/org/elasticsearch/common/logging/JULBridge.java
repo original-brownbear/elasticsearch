@@ -9,6 +9,7 @@
 package org.elasticsearch.common.logging;
 
 import org.elasticsearch.common.util.Maps;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.logging.Level;
 import org.elasticsearch.logging.LogManager;
 import org.elasticsearch.logging.Logger;
@@ -74,7 +75,7 @@ class JULBridge extends Handler {
         if (thrown == null) {
             logger.log(level, message);
         } else {
-            logger.log(level, () -> message, thrown);
+            logger.log(level, FunctionUtils.constantSupplier(message), thrown);
         }
     }
 

@@ -8,6 +8,7 @@
 package org.elasticsearch.xpack.core.ssl;
 
 import org.elasticsearch.common.ssl.PemUtils;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.test.ESTestCase;
 
 import java.io.IOException;
@@ -93,7 +94,7 @@ public class CertParsingUtilsTests extends ESTestCase {
     }
 
     private void verifyPrime256v1ECKey(Path keyPath) throws IOException, GeneralSecurityException {
-        PrivateKey privateKey = PemUtils.readPrivateKey(keyPath, () -> null);
+        PrivateKey privateKey = PemUtils.readPrivateKey(keyPath, FunctionUtils.nullSupplier());
         assertEquals("EC", privateKey.getAlgorithm());
         assertThat(privateKey, instanceOf(ECPrivateKey.class));
     }

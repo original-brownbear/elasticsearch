@@ -8,6 +8,7 @@
 
 package org.elasticsearch.index.mapper;
 
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.script.CompositeFieldScript;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.search.lookup.SearchLookup;
@@ -36,7 +37,7 @@ public class CompositeRuntimeField implements RuntimeField {
         private final FieldMapper.Parameter<Script> script = new FieldMapper.Parameter<>(
             "script",
             false,
-            () -> null,
+            FunctionUtils.nullSupplier(),
             RuntimeField::parseScript,
             RuntimeField.initializerNotSupported(),
             XContentBuilder::field,

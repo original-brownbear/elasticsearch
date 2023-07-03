@@ -45,6 +45,7 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.AbstractRefCounted;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexModule;
@@ -1235,7 +1236,7 @@ public class SearchServiceTests extends ESSingleNodeTestCase {
     public void testCreateReduceContext() {
         SearchService service = getInstanceFromNode(SearchService.class);
         AggregationReduceContext.Builder reduceContextBuilder = service.aggReduceContextBuilder(
-            () -> false,
+            FunctionUtils.FALSE_SUPPLIER,
             new SearchRequest().source(new SearchSourceBuilder()).source().aggregations()
         );
         {

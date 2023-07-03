@@ -11,6 +11,7 @@ package org.elasticsearch.search.runtime;
 import org.apache.lucene.search.QueryVisitor;
 import org.apache.lucene.util.BytesRefBuilder;
 import org.apache.lucene.util.automaton.ByteRunAutomaton;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.StringFieldScript;
 
@@ -44,7 +45,7 @@ public abstract class AbstractStringScriptFieldAutomatonQuery extends AbstractSt
     @Override
     public final void visit(QueryVisitor visitor) {
         if (visitor.acceptField(fieldName())) {
-            visitor.consumeTermsMatching(this, fieldName(), () -> automaton);
+            visitor.consumeTermsMatching(this, fieldName(), FunctionUtils.constantSupplier(automaton));
         }
     }
 }

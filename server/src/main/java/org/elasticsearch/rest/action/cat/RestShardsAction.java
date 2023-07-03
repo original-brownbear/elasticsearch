@@ -394,8 +394,8 @@ public class RestShardsAction extends AbstractCatAction {
             table.addCell(getOrNull(commonStats, CommonStats::getWarmer, WarmerStats::total));
             table.addCell(getOrNull(commonStats, CommonStats::getWarmer, WarmerStats::totalTime));
 
-            table.addCell(getOrNull(shardStats, ShardStats::getDataPath, s -> s));
-            table.addCell(getOrNull(shardStats, ShardStats::getStatePath, s -> s));
+            table.addCell(getOrNull(shardStats, ShardStats::getDataPath, Function.identity()));
+            table.addCell(getOrNull(shardStats, ShardStats::getStatePath, Function.identity()));
 
             table.addCell(getOrNull(commonStats, CommonStats::getBulk, BulkStats::getTotalOperations));
             table.addCell(getOrNull(commonStats, CommonStats::getBulk, BulkStats::getTotalTime));

@@ -14,6 +14,7 @@ import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentHelper;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.analysis.AnalyzerScope;
@@ -123,7 +124,7 @@ public class TypeParsersTests extends ESTestCase {
             type -> typeParser,
             type -> null,
             version,
-            () -> transportVersion,
+            FunctionUtils.constantSupplier(transportVersion),
             null,
             ScriptCompiler.NONE,
             mapperService.getIndexAnalyzers(),

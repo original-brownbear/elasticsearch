@@ -225,7 +225,7 @@ public class RemoveCorruptedShardDataCommandTests extends IndexShardTestCase {
             // test corrupted shard and add corruption marker
             final IndexShard corruptedShard = reopenIndexShard(true);
             allowShardFailures();
-            expectThrows(IndexShardRecoveryException.class, () -> newStartedShard(p -> corruptedShard, true));
+            expectThrows(IndexShardRecoveryException.class, () -> newStartedShard(CheckedFunction.toConstant(corruptedShard), true));
             closeShards(corruptedShard);
         }
 
@@ -288,7 +288,7 @@ public class RemoveCorruptedShardDataCommandTests extends IndexShardTestCase {
 
         allowShardFailures();
         // it has to fail on start up due to index.shard.check_on_startup = checksum
-        final Exception exception = expectThrows(Exception.class, () -> newStartedShard(p -> corruptedShard, true));
+        final Exception exception = expectThrows(Exception.class, () -> newStartedShard(CheckedFunction.toConstant(corruptedShard), true));
         final Throwable cause = exception.getCause() instanceof EngineException ? exception.getCause().getCause() : exception.getCause();
         assertThat(cause, instanceOf(TranslogCorruptedException.class));
 
@@ -344,7 +344,7 @@ public class RemoveCorruptedShardDataCommandTests extends IndexShardTestCase {
             // test corrupted shard and add corruption marker
             final IndexShard corruptedShard = reopenIndexShard(true);
             allowShardFailures();
-            expectThrows(IndexShardRecoveryException.class, () -> newStartedShard(p -> corruptedShard, true));
+            expectThrows(IndexShardRecoveryException.class, () -> newStartedShard(CheckedFunction.toConstant(corruptedShard), true));
             closeShards(corruptedShard);
         }
         TestTranslog.corruptRandomTranslogFile(logger, random(), translogPath);
@@ -468,7 +468,7 @@ public class RemoveCorruptedShardDataCommandTests extends IndexShardTestCase {
 
         allowShardFailures();
         final IndexShard corruptedShard = reopenIndexShard(true);
-        expectThrows(IndexShardRecoveryException.class, () -> newStartedShard(p -> corruptedShard, true));
+        expectThrows(IndexShardRecoveryException.class, () -> newStartedShard(CheckedFunction.toConstant(corruptedShard), true));
         closeShards(corruptedShard);
 
         final RemoveCorruptedShardDataCommand command = new RemoveCorruptedShardDataCommand();

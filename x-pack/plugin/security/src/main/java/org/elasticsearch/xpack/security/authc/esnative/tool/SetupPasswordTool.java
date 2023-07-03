@@ -18,6 +18,7 @@ import org.elasticsearch.cli.Terminal;
 import org.elasticsearch.cli.Terminal.Verbosity;
 import org.elasticsearch.cli.UserException;
 import org.elasticsearch.common.CheckedBiConsumer;
+import org.elasticsearch.common.CheckedSupplier;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.cli.KeyStoreAwareCommand;
 import org.elasticsearch.common.settings.KeyStoreWrapper;
@@ -342,7 +343,7 @@ class SetupPasswordTool extends MultiCommand {
                     route,
                     elasticUser,
                     elasticUserPassword,
-                    () -> null,
+                    CheckedSupplier.nullValue(),
                     is -> responseBuilder(is, terminal)
                 );
                 final int httpCode = httpResponse.getHttpStatus();
@@ -424,7 +425,7 @@ class SetupPasswordTool extends MultiCommand {
                 route,
                 elasticUser,
                 elasticUserPassword,
-                () -> null,
+                CheckedSupplier.nullValue(),
                 is -> responseBuilder(is, terminal)
             );
             if (httpResponse.getHttpStatus() != HttpURLConnection.HTTP_OK) {
@@ -478,7 +479,7 @@ class SetupPasswordTool extends MultiCommand {
                 route,
                 elasticUser,
                 elasticUserPassword,
-                () -> null,
+                CheckedSupplier.nullValue(),
                 is -> responseBuilder(is, terminal)
             );
             if (httpResponse.getHttpStatus() != HttpURLConnection.HTTP_OK) {

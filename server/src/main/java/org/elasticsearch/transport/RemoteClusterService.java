@@ -27,6 +27,7 @@ import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
 import org.elasticsearch.common.util.concurrent.CountDown;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.node.ReportingService;
@@ -458,17 +459,18 @@ public final class RemoteClusterService extends RemoteClusterAware implements Cl
 
         final Map<String, Function<String, DiscoveryNode>> clusterMap = new HashMap<>();
         CountDown countDown = new CountDown(clusters.size());
-        Function<String, DiscoveryNode> nullFunction = s -> null;
         for (final String cluster : clusters) {
             RemoteClusterConnection connection = this.remoteClusters.get(cluster);
-            connection.collectNodes(new ActionListener<Function<String, DiscoveryNode>>() {
+            connection.collectNodes(new ActionListener<>() {
                 @Override
                 public void onResponse(Function<String, DiscoveryNode> nodeLookup) {
                     synchronized (clusterMap) {
                         clusterMap.put(cluster, nodeLookup);
                     }
                     if (countDown.countDown()) {
-                        listener.onResponse((clusterAlias, nodeId) -> clusterMap.getOrDefault(clusterAlias, nullFunction).apply(nodeId));
+                        listener.onResponse(
+                            (clusterAlias, nodeId) -> clusterMap.getOrDefault(clusterAlias, FunctionUtils.toNull()).apply(nodeId)
+                        );
                     }
                 }
 

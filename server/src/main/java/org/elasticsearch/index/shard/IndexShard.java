@@ -1567,7 +1567,7 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
             throw new IllegalStateException("Can't wrap non elasticsearch directory reader");
         }
         if (readerWrapper == null) {
-            readerWrapper = r -> r;
+            readerWrapper = CheckedFunction.identity();
         }
         NonClosingReaderWrapper nonClosingReaderWrapper = new NonClosingReaderWrapper(engineSearcher.getDirectoryReader());
         // first apply field usage stats wrapping before applying other wrappers so that it can track the effects of these wrappers

@@ -33,6 +33,7 @@ import org.elasticsearch.common.settings.IndexScopedSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.settings.SettingsModule;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.env.TestEnvironment;
@@ -576,7 +577,7 @@ public abstract class AbstractBuilderTestCase extends ESTestCase {
                 () -> nowInMillis,
                 null,
                 indexNameMatcher(),
-                () -> true,
+                FunctionUtils.TRUE_BOOLEAN_SUPPLIER,
                 null,
                 emptyMap()
             );
@@ -599,7 +600,7 @@ public abstract class AbstractBuilderTestCase extends ESTestCase {
                 indexNameMatcher(),
                 namedWriteableRegistry,
                 null,
-                () -> true,
+                FunctionUtils.TRUE_BOOLEAN_SUPPLIER,
                 scriptService
             );
         }

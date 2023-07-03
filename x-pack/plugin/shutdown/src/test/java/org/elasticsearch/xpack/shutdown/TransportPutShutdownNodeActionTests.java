@@ -17,6 +17,7 @@ import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.metadata.SingleNodeShutdownMetadata.Type;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.cluster.service.MasterServiceTaskQueue;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -89,7 +90,13 @@ public class TransportPutShutdownNodeActionTests extends ESTestCase {
         verify(taskQueue).submitTask(any(), updateTask.capture(), any());
         when(taskContext.getTask()).thenReturn(updateTask.getValue());
         ClusterState stableState = taskExecutor.getValue()
-            .execute(new ClusterStateTaskExecutor.BatchExecutionContext<>(ClusterState.EMPTY_STATE, List.of(taskContext), () -> null));
+            .execute(
+                new ClusterStateTaskExecutor.BatchExecutionContext<>(
+                    ClusterState.EMPTY_STATE,
+                    List.of(taskContext),
+                    FunctionUtils.nullSupplier()
+                )
+            );
 
         // run the request again, there should be no call to submit an update task
         clearTaskQueueInvocations();
@@ -101,7 +108,7 @@ public class TransportPutShutdownNodeActionTests extends ESTestCase {
         verify(taskQueue).submitTask(any(), updateTask.capture(), any());
         when(taskContext.getTask()).thenReturn(updateTask.getValue());
         ClusterState gotState = taskExecutor.getValue()
-            .execute(new ClusterStateTaskExecutor.BatchExecutionContext<>(stableState, List.of(taskContext), () -> null));
+            .execute(new ClusterStateTaskExecutor.BatchExecutionContext<>(stableState, List.of(taskContext), FunctionUtils.nullSupplier()));
         assertThat(gotState, sameInstance(stableState));
     }
 

@@ -31,6 +31,7 @@ import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.settings.SettingsModule;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.env.NodeMetadata;
@@ -356,7 +357,7 @@ public class SecurityTests extends ESTestCase {
             emptyAnalysisRegistry,
             new InternalEngineFactory(),
             Collections.emptyMap(),
-            () -> true,
+            FunctionUtils.TRUE_BOOLEAN_SUPPLIER,
             TestIndexNameExpressionResolver.newInstance(threadPool.getThreadContext()),
             Collections.emptyMap()
         );

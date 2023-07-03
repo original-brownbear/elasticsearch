@@ -13,6 +13,7 @@ import org.apache.lucene.search.IndexSearcher;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.document.DocumentField;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.query.SearchExecutionContext;
 import org.elasticsearch.search.fetch.subphase.FieldAndFormat;
@@ -38,7 +39,12 @@ public class PlaceHolderFieldMapperTests extends MapperServiceTestCase {
             b.field("someparam", "value");
             b.endObject();
         });
-        MapperService service = createMapperService(IndexVersion.fromId(5000099), Settings.EMPTY, () -> false, mapping);
+        MapperService service = createMapperService(
+            IndexVersion.fromId(5000099),
+            Settings.EMPTY,
+            FunctionUtils.FALSE_BOOLEAN_SUPPLIER,
+            mapping
+        );
         assertThat(service.fieldType("myfield"), instanceOf(PlaceHolderFieldMapper.PlaceHolderFieldType.class));
         assertEquals(Strings.toString(mapping), Strings.toString(service.documentMapper().mapping()));
 

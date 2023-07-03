@@ -73,6 +73,8 @@ import org.elasticsearch.common.util.concurrent.ListenableFuture;
 import org.elasticsearch.common.xcontent.ChunkedToXContent;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
 import org.elasticsearch.core.CheckedConsumer;
+import org.elasticsearch.core.CheckedFunction;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.SuppressForbidden;
@@ -955,7 +957,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         RepositoryData updatedRepoData,
         ActionListener<Void> listener
     ) {
-        cleanupStaleBlobs(deletedSnapshots, foundIndices, rootBlobs, updatedRepoData, listener.map(ignored -> null));
+        cleanupStaleBlobs(deletedSnapshots, foundIndices, rootBlobs, updatedRepoData, listener.map(CheckedFunction.toNull()));
     }
 
     private void asyncCleanupUnlinkedShardLevelBlobs(
@@ -1942,7 +1944,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                             clusterService,
                             metadata.name(),
                             loaded,
-                            new ThreadedActionListener<>(threadPool.generic(), listener.map(v -> loaded))
+                            new ThreadedActionListener<>(threadPool.generic(), listener.map(CheckedFunction.toConstant(loaded)))
                         );
                     }
                 }
@@ -2268,36 +2270,42 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     if (snapshotIdsWithMissingDetails.isEmpty() == false) {
                         final Map<SnapshotId, SnapshotDetails> extraDetailsMap = new ConcurrentHashMap<>();
                         getSnapshotInfo(
-                            new GetSnapshotInfoContext(snapshotIdsWithMissingDetails, false, () -> false, (context, snapshotInfo) -> {
-                                final String slmPolicy = slmPolicy(snapshotInfo);
-                                extraDetailsMap.put(
-                                    snapshotInfo.snapshotId(),
-                                    new SnapshotDetails(
-                                        snapshotInfo.state(),
-                                        snapshotInfo.version(),
-                                        snapshotInfo.startTime(),
-                                        snapshotInfo.endTime(),
-                                        slmPolicy
-                                    )
-                                );
-                            }, ActionListener.runAfter(new ActionListener<>() {
-                                @Override
-                                public void onResponse(Void aVoid) {
-                                    logger.info(
-                                        "Successfully loaded all snapshots' detailed information for {} from snapshot metadata",
-                                        AllocationService.firstListElementsToCommaDelimitedString(
-                                            snapshotIdsWithMissingDetails,
-                                            SnapshotId::toString,
-                                            logger.isDebugEnabled()
+                            new GetSnapshotInfoContext(
+                                snapshotIdsWithMissingDetails,
+                                false,
+                                FunctionUtils.FALSE_BOOLEAN_SUPPLIER,
+                                (context, snapshotInfo) -> {
+                                    final String slmPolicy = slmPolicy(snapshotInfo);
+                                    extraDetailsMap.put(
+                                        snapshotInfo.snapshotId(),
+                                        new SnapshotDetails(
+                                            snapshotInfo.state(),
+                                            snapshotInfo.version(),
+                                            snapshotInfo.startTime(),
+                                            snapshotInfo.endTime(),
+                                            slmPolicy
                                         )
                                     );
-                                }
+                                },
+                                ActionListener.runAfter(new ActionListener<>() {
+                                    @Override
+                                    public void onResponse(Void aVoid) {
+                                        logger.info(
+                                            "Successfully loaded all snapshots' detailed information for {} from snapshot metadata",
+                                            AllocationService.firstListElementsToCommaDelimitedString(
+                                                snapshotIdsWithMissingDetails,
+                                                SnapshotId::toString,
+                                                logger.isDebugEnabled()
+                                            )
+                                        );
+                                    }
 
-                                @Override
-                                public void onFailure(Exception e) {
-                                    logger.warn("Failure when trying to load missing details from snapshot metadata", e);
-                                }
-                            }, () -> filterRepositoryDataStep.onResponse(repositoryData.withExtraDetails(extraDetailsMap))))
+                                    @Override
+                                    public void onFailure(Exception e) {
+                                        logger.warn("Failure when trying to load missing details from snapshot metadata", e);
+                                    }
+                                }, () -> filterRepositoryDataStep.onResponse(repositoryData.withExtraDetails(extraDetailsMap)))
+                            )
                         );
                     } else {
                         filterRepositoryDataStep.onResponse(repositoryData);
@@ -3007,7 +3015,11 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                             snapshotFiles.indexFiles().size()
                         );
                         final BlockingQueue<BlobStoreIndexShardSnapshot.FileInfo> files = new LinkedBlockingQueue<>(filesToRecover);
-                        final ActionListener<Void> allFilesListener = fileQueueListener(files, workers, listener.map(v -> null));
+                        final ActionListener<Void> allFilesListener = fileQueueListener(
+                            files,
+                            workers,
+                            listener.map(CheckedFunction.toNull())
+                        );
                         // restore the files from the snapshot to the Lucene store
                         for (int i = 0; i < workers; ++i) {
                             try {

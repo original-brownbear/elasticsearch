@@ -10,6 +10,7 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.xcontent.XContentHelper;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.test.AbstractXContentSerializingTestCase;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.xcontent.XContentBuilder;
@@ -111,7 +112,12 @@ public class SqlQueryResponseTests extends AbstractXContentSerializingTestCase<S
                 List<Object> row = new ArrayList<>(rowCount);
                 for (int c = 0; c < columnCount; c++) {
                     Supplier<Object> value = randomFrom(
-                        Arrays.asList(() -> randomAlphaOfLength(10), ESTestCase::randomLong, ESTestCase::randomDouble, () -> null)
+                        Arrays.asList(
+                            () -> randomAlphaOfLength(10),
+                            ESTestCase::randomLong,
+                            ESTestCase::randomDouble,
+                            FunctionUtils.nullSupplier()
+                        )
                     );
                     row.add(value.get());
                 }

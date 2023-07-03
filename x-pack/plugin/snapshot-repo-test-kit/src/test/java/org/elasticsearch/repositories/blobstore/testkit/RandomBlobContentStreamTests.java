@@ -7,6 +7,7 @@
 
 package org.elasticsearch.repositories.blobstore.testkit;
 
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.repositories.RepositoryVerificationException;
 import org.elasticsearch.test.ESTestCase;
 
@@ -35,7 +36,7 @@ public class RandomBlobContentStreamTests extends ESTestCase {
         final RandomBlobContent randomBlobContent = new RandomBlobContent(
             "repo",
             randomLong(),
-            () -> false,
+            FunctionUtils.FALSE_BOOLEAN_SUPPLIER,
             () -> assertTrue("multiple notifications", readComplete.compareAndSet(false, true))
         );
 
@@ -97,7 +98,7 @@ public class RandomBlobContentStreamTests extends ESTestCase {
         final RandomBlobContent randomBlobContent = new RandomBlobContent(
             "repo",
             randomLong(),
-            () -> false,
+            FunctionUtils.FALSE_BOOLEAN_SUPPLIER,
             () -> assertTrue("multiple notifications", readComplete.compareAndSet(false, true))
         );
 
@@ -113,7 +114,12 @@ public class RandomBlobContentStreamTests extends ESTestCase {
     }
 
     public void testReadingOneByteThrowsExceptionAfterCancellation() {
-        final RandomBlobContent randomBlobContent = new RandomBlobContent("repo", randomLong(), () -> true, () -> {});
+        final RandomBlobContent randomBlobContent = new RandomBlobContent(
+            "repo",
+            randomLong(),
+            FunctionUtils.TRUE_BOOLEAN_SUPPLIER,
+            () -> {}
+        );
 
         try (RandomBlobContentStream randomBlobContentStream = new RandomBlobContentStream(randomBlobContent, randomSize())) {
             // noinspection ResultOfMethodCallIgnored
@@ -122,7 +128,12 @@ public class RandomBlobContentStreamTests extends ESTestCase {
     }
 
     public void testReadingBytesThrowsExceptionAfterCancellation() {
-        final RandomBlobContent randomBlobContent = new RandomBlobContent("repo", randomLong(), () -> true, () -> {});
+        final RandomBlobContent randomBlobContent = new RandomBlobContent(
+            "repo",
+            randomLong(),
+            FunctionUtils.TRUE_BOOLEAN_SUPPLIER,
+            () -> {}
+        );
 
         try (RandomBlobContentStream randomBlobContentStream = new RandomBlobContentStream(randomBlobContent, randomSize())) {
             expectThrows(RepositoryVerificationException.class, randomBlobContentStream::readAllBytes);

@@ -12,6 +12,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.client.internal.OriginSettingClient;
 import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
@@ -119,7 +120,7 @@ public class AbstractExpiredJobDataRemoverTests extends ESTestCase {
         TestListener listener = new TestListener();
         Iterator<Job> jobIterator = Collections.emptyIterator();
         ConcreteExpiredJobDataRemover remover = new ConcreteExpiredJobDataRemover(originSettingClient, jobIterator);
-        remover.remove(1.0f, listener, () -> false);
+        remover.remove(1.0f, listener, FunctionUtils.FALSE_BOOLEAN_SUPPLIER);
 
         listener.waitToCompletion();
         assertThat(listener.success, is(true));

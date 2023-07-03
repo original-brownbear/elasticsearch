@@ -13,6 +13,7 @@ import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.support.SubscribableListener;
 import org.elasticsearch.common.util.concurrent.RunOnce;
 import org.elasticsearch.core.AbstractRefCounted;
+import org.elasticsearch.core.CheckedFunction;
 import org.elasticsearch.index.engine.Engine;
 
 /**
@@ -69,7 +70,7 @@ public class SnapshotIndexCommit extends AbstractRefCounted {
         return new ActionListener<T>() {
             @Override
             public void onResponse(T result) {
-                onCompletion(delegate.map(ignored -> result));
+                onCompletion(delegate.map(CheckedFunction.toConstant(result)));
             }
 
             @Override

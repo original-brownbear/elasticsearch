@@ -11,6 +11,7 @@ package org.elasticsearch.search.aggregations.support;
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.index.SortedNumericDocValues;
 import org.apache.lucene.util.BytesRef;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.index.fielddata.SortedBinaryDocValues;
 import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.index.mapper.MapperServiceTestCase;
@@ -128,7 +129,7 @@ public class ValuesSourceConfigTests extends MapperServiceTestCase {
                 CoreValuesSourceType.KEYWORD
             );
             assertEquals(CoreValuesSourceType.IP, config.valueSourceType());
-        }, () -> null);
+        }, FunctionUtils.nullSupplier());
 
         // With unmapped field
         withAggregationContext(mapperService, List.of(source(b -> b.field("field", 42))), context -> {
@@ -144,7 +145,7 @@ public class ValuesSourceConfigTests extends MapperServiceTestCase {
                 CoreValuesSourceType.KEYWORD
             );
             assertEquals(CoreValuesSourceType.IP, config.valueSourceType());
-        }, () -> null);
+        }, FunctionUtils.nullSupplier());
 
         // Without field
         withAggregationContext(mapperService, List.of(source(b -> b.field("field", 42))), context -> {
@@ -160,7 +161,7 @@ public class ValuesSourceConfigTests extends MapperServiceTestCase {
                 CoreValuesSourceType.KEYWORD
             );
             assertEquals(CoreValuesSourceType.IP, config.valueSourceType());
-        }, () -> null);
+        }, FunctionUtils.nullSupplier());
     }
 
     /**
@@ -182,7 +183,7 @@ public class ValuesSourceConfigTests extends MapperServiceTestCase {
                 CoreValuesSourceType.KEYWORD
             );
             assertEquals(CoreValuesSourceType.NUMERIC, config.valueSourceType());
-        }, () -> null);
+        }, FunctionUtils.nullSupplier());
 
         // With unmapped field
         withAggregationContext(mapperService, List.of(source(b -> b.field("field", 42))), context -> {
@@ -198,7 +199,7 @@ public class ValuesSourceConfigTests extends MapperServiceTestCase {
                 CoreValuesSourceType.KEYWORD
             );
             assertEquals(CoreValuesSourceType.KEYWORD, config.valueSourceType());
-        }, () -> null);
+        }, FunctionUtils.nullSupplier());
 
         // Without field
         withAggregationContext(mapperService, List.of(source(b -> b.field("field", 42))), context -> {
@@ -214,7 +215,7 @@ public class ValuesSourceConfigTests extends MapperServiceTestCase {
                 CoreValuesSourceType.KEYWORD
             );
             assertEquals(CoreValuesSourceType.KEYWORD, config.valueSourceType());
-        }, () -> null);
+        }, FunctionUtils.nullSupplier());
     }
 
     public void testKeyword() throws Exception {

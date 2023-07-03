@@ -10,6 +10,7 @@ package org.elasticsearch.cluster.coordination;
 import org.elasticsearch.cluster.coordination.LinearizabilityChecker.History;
 import org.elasticsearch.cluster.coordination.LinearizabilityChecker.KeyedSpec;
 import org.elasticsearch.cluster.coordination.LinearizabilityChecker.SequentialSpec;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.test.ESTestCase;
 
@@ -138,7 +139,7 @@ public class LinearizabilityCheckerTests extends ESTestCase {
         history.respond(call1, 42); // 1: read returns 42
 
         expectThrows(IllegalArgumentException.class, () -> checker.isLinearizable(registerSpec, history));
-        assertTrue(checker.isLinearizable(registerSpec, history, i -> null));
+        assertTrue(checker.isLinearizable(registerSpec, history, FunctionUtils.toNull()));
 
         history.respond(call0, null); // 0: write returns
         assertTrue(checker.isLinearizable(registerSpec, history));
@@ -153,7 +154,7 @@ public class LinearizabilityCheckerTests extends ESTestCase {
         history.respond(call2, 0); // 2: read returns 0, not allowed
 
         expectThrows(IllegalArgumentException.class, () -> checker.isLinearizable(registerSpec, history));
-        assertFalse(checker.isLinearizable(registerSpec, history, i -> null));
+        assertFalse(checker.isLinearizable(registerSpec, history, FunctionUtils.toNull()));
 
         history.respond(call0, null); // 0: write returns
         assertFalse(checker.isLinearizable(registerSpec, history));
@@ -230,7 +231,7 @@ public class LinearizabilityCheckerTests extends ESTestCase {
         history.respond(callX1, 42); // 1: read returns 42 on key x
 
         expectThrows(IllegalArgumentException.class, () -> checker.isLinearizable(multiRegisterSpec, history));
-        assertTrue(checker.isLinearizable(multiRegisterSpec, history, i -> null));
+        assertTrue(checker.isLinearizable(multiRegisterSpec, history, FunctionUtils.toNull()));
 
         history.respond(callX0, null); // 0: write returns on key x
         history.respond(callY0, null); // 0: write returns on key y
@@ -251,7 +252,7 @@ public class LinearizabilityCheckerTests extends ESTestCase {
         history.respond(callX1, 42); // 1: read returns 42 on key x
 
         expectThrows(IllegalArgumentException.class, () -> checker.isLinearizable(multiRegisterSpec, history));
-        assertFalse(checker.isLinearizable(multiRegisterSpec, history, i -> null));
+        assertFalse(checker.isLinearizable(multiRegisterSpec, history, FunctionUtils.toNull()));
 
         history.respond(callX0, null); // 0: write returns on key x
         history.respond(callY0, null); // 0: write returns on key y

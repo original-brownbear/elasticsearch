@@ -19,6 +19,7 @@ import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.MemorySizeValue;
 import org.elasticsearch.common.xcontent.XContentParserUtils;
 import org.elasticsearch.core.Booleans;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.core.Tuple;
@@ -254,7 +255,7 @@ public class Setting<T> implements ToXContentObject {
      * @param properties properties for this setting like scope, filtering...
      */
     public Setting(String key, String defaultValue, Function<String, T> parser, Property... properties) {
-        this(key, s -> defaultValue, parser, properties);
+        this(key, FunctionUtils.toConstant(defaultValue), parser, properties);
     }
 
     /**
@@ -267,7 +268,7 @@ public class Setting<T> implements ToXContentObject {
      * @param properties   properties for this setting
      */
     public Setting(String key, String defaultValue, Function<String, T> parser, Validator<T> validator, Property... properties) {
-        this(new SimpleKey(key), s -> defaultValue, parser, validator, properties);
+        this(new SimpleKey(key), FunctionUtils.toConstant(defaultValue), parser, validator, properties);
     }
 
     /**
@@ -1114,7 +1115,7 @@ public class Setting<T> implements ToXContentObject {
         private final Consumer<Settings> validator;
 
         private GroupSetting(String key, Consumer<Settings> validator, Property... properties) {
-            super(new GroupKey(key), (s) -> "", (s) -> null, properties);
+            super(new GroupKey(key), (s) -> "", FunctionUtils.toNull(), properties);
             this.key = key;
             this.validator = validator;
         }
@@ -1641,7 +1642,7 @@ public class Setting<T> implements ToXContentObject {
     }
 
     public static Setting<List<String>> stringListSetting(String key, List<String> defValue, Property... properties) {
-        return new ListSetting<>(key, null, s -> defValue, Setting::parseableStringToList, v -> {}, properties) {
+        return new ListSetting<>(key, null, FunctionUtils.toConstant(defValue), Setting::parseableStringToList, v -> {}, properties) {
             @Override
             public List<String> get(Settings settings) {
                 checkDeprecation(settings);
@@ -1660,7 +1661,7 @@ public class Setting<T> implements ToXContentObject {
         final Function<String, T> singleValueParser,
         final Property... properties
     ) {
-        return listSetting(key, null, singleValueParser, (s) -> defaultStringValue, properties);
+        return listSetting(key, null, singleValueParser, FunctionUtils.toConstant(defaultStringValue), properties);
     }
 
     public static <T> Setting<List<T>> listSetting(
@@ -1670,7 +1671,7 @@ public class Setting<T> implements ToXContentObject {
         final Validator<List<T>> validator,
         final Property... properties
     ) {
-        return listSetting(key, null, singleValueParser, (s) -> defaultStringValue, validator, properties);
+        return listSetting(key, null, singleValueParser, FunctionUtils.toConstant(defaultStringValue), validator, properties);
     }
 
     // TODO this one's two argument get is still broken

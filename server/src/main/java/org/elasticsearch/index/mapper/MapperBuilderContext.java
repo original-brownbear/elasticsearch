@@ -9,6 +9,7 @@
 package org.elasticsearch.index.mapper;
 
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.core.FunctionUtils;
 
 import java.util.Objects;
 import java.util.function.BooleanSupplier;
@@ -22,7 +23,7 @@ public class MapperBuilderContext {
      * The root context, to be used when building a tree of mappers
      */
     public static MapperBuilderContext root(boolean isSourceSynthetic) {
-        return new MapperBuilderContext(null, () -> isSourceSynthetic);
+        return new MapperBuilderContext(null, FunctionUtils.booleanSupplier(isSourceSynthetic));
     }
 
     /**
@@ -38,7 +39,7 @@ public class MapperBuilderContext {
     private final BooleanSupplier isSourceSynthetic;
 
     MapperBuilderContext(String path, boolean isSourceSynthetic) {
-        this(Objects.requireNonNull(path), () -> isSourceSynthetic);
+        this(Objects.requireNonNull(path), FunctionUtils.booleanSupplier(isSourceSynthetic));
     }
 
     private MapperBuilderContext(String path, BooleanSupplier isSourceSynthetic) {

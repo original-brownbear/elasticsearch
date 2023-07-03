@@ -33,6 +33,7 @@ import org.elasticsearch.common.CheckedSupplier;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.indices.TestIndexNameExpressionResolver;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -470,7 +471,7 @@ public class JobResultsProviderIT extends MlSingleNodeTestCase {
         };
 
         ModelSizeStats storedModelSizeStats = new ModelSizeStats.Builder(job.getId()).setModelBytes(10L).build();
-        jobResultsPersister.persistModelSizeStats(storedModelSizeStats, () -> false);
+        jobResultsPersister.persistModelSizeStats(storedModelSizeStats, FunctionUtils.FALSE_SUPPLIER);
         jobResultsPersister.commitWrites(job.getId(), JobResultsPersister.CommitType.RESULTS);
 
         setOrThrow.get();
@@ -1071,7 +1072,7 @@ public class JobResultsProviderIT extends MlSingleNodeTestCase {
             new OriginSettingClient(client(), ClientHelper.ML_ORIGIN),
             resultsPersisterService
         );
-        persister.persistModelSizeStats(modelSizeStats, () -> true);
+        persister.persistModelSizeStats(modelSizeStats, FunctionUtils.TRUE_SUPPLIER);
     }
 
     private void indexModelSnapshot(ModelSnapshot snapshot) {
@@ -1079,7 +1080,7 @@ public class JobResultsProviderIT extends MlSingleNodeTestCase {
             new OriginSettingClient(client(), ClientHelper.ML_ORIGIN),
             resultsPersisterService
         );
-        persister.persistModelSnapshot(snapshot, WriteRequest.RefreshPolicy.IMMEDIATE, () -> true);
+        persister.persistModelSnapshot(snapshot, WriteRequest.RefreshPolicy.IMMEDIATE, FunctionUtils.TRUE_SUPPLIER);
     }
 
     private void indexQuantiles(Quantiles quantiles) {
@@ -1096,7 +1097,7 @@ public class JobResultsProviderIT extends MlSingleNodeTestCase {
             new OriginSettingClient(client(), ClientHelper.ML_ORIGIN),
             resultsPersisterService
         );
-        persister.persistQuantiles(quantiles, () -> true);
+        persister.persistQuantiles(quantiles, FunctionUtils.TRUE_SUPPLIER);
     }
 
     private void indexCalendars(List<Calendar> calendars) throws IOException {

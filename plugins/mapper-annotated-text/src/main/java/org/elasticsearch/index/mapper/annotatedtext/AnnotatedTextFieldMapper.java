@@ -21,6 +21,7 @@ import org.apache.lucene.document.Field;
 import org.apache.lucene.document.FieldType;
 import org.apache.lucene.index.IndexOptions;
 import org.elasticsearch.ElasticsearchParseException;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.analysis.AnalyzerScope;
 import org.elasticsearch.index.analysis.IndexAnalyzers;
@@ -132,7 +133,7 @@ public class AnnotatedTextFieldMapper extends FieldMapper {
 
         @Override
         public AnnotatedTextFieldMapper build(MapperBuilderContext context) {
-            FieldType fieldType = TextParams.buildFieldType(() -> true, store, indexOptions, norms, termVectors);
+            FieldType fieldType = TextParams.buildFieldType(FunctionUtils.TRUE_SUPPLIER, store, indexOptions, norms, termVectors);
             if (fieldType.indexOptions() == IndexOptions.NONE) {
                 throw new IllegalArgumentException("[" + CONTENT_TYPE + "] fields must be indexed");
             }

@@ -78,6 +78,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.common.util.concurrent.StoppableExecutorServiceWrapper;
 import org.elasticsearch.core.CheckedFunction;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.env.TestEnvironment;
@@ -200,7 +201,7 @@ public class ClusterStateChanges {
                 when(mapperService.documentMapper()).thenReturn(null);
                 when(indexService.getIndexEventListener()).thenReturn(new IndexEventListener() {
                 });
-                when(indexService.getIndexSortSupplier()).thenReturn(() -> null);
+                when(indexService.getIndexSortSupplier()).thenReturn(FunctionUtils.nullSupplier());
                 return ((CheckedFunction<IndexService, ?, ?>) invocationOnMock.getArguments()[1]).apply(indexService);
             });
         } catch (Exception e) {
@@ -519,7 +520,7 @@ public class ClusterStateChanges {
                     masterNodeAction,
                     request,
                     clusterState,
-                    newClusterStateFuture.map(ignored -> clusterState)
+                    newClusterStateFuture.map(CheckedFunction.toConstant(clusterState))
                 );
                 assertTrue("operation should have completed synchronously", newClusterStateFuture.isDone());
                 return newClusterStateFuture.get();

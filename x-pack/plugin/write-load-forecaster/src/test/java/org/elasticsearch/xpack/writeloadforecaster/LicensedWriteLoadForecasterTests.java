@@ -15,6 +15,7 @@ import org.elasticsearch.cluster.metadata.IndexWriteLoad;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.cluster.routing.allocation.WriteLoadForecaster;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexMode;
@@ -135,7 +136,11 @@ public class LicensedWriteLoadForecasterTests extends ESTestCase {
         final DataStream dataStream = createDataStream(dataStreamName, backingIndices);
         metadataBuilder.put(dataStream);
 
-        final WriteLoadForecaster writeLoadForecaster = new LicensedWriteLoadForecaster(() -> true, threadPool, maxIndexAge);
+        final WriteLoadForecaster writeLoadForecaster = new LicensedWriteLoadForecaster(
+            FunctionUtils.TRUE_BOOLEAN_SUPPLIER,
+            threadPool,
+            maxIndexAge
+        );
 
         final Metadata.Builder updatedMetadataBuilder = writeLoadForecaster.withWriteLoadForecastForWriteIndex(
             dataStream.getName(),
@@ -289,7 +294,11 @@ public class LicensedWriteLoadForecasterTests extends ESTestCase {
 
     public void testGetIndicesWithinMaxAgeRange() {
         final TimeValue maxIndexAge = TimeValue.timeValueDays(7);
-        final LicensedWriteLoadForecaster writeLoadForecaster = new LicensedWriteLoadForecaster(() -> true, threadPool, maxIndexAge);
+        final LicensedWriteLoadForecaster writeLoadForecaster = new LicensedWriteLoadForecaster(
+            FunctionUtils.TRUE_BOOLEAN_SUPPLIER,
+            threadPool,
+            maxIndexAge
+        );
 
         final Metadata.Builder metadataBuilder = Metadata.builder();
         final int numberOfBackingIndicesOlderThanMinAge = randomIntBetween(0, 10);

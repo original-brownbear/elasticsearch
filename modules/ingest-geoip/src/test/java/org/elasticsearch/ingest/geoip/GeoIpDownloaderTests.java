@@ -30,6 +30,7 @@ import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.persistent.PersistentTaskState;
 import org.elasticsearch.persistent.PersistentTasksCustomMetadata;
@@ -107,7 +108,7 @@ public class GeoIpDownloaderTests extends ESTestCase {
             Collections.emptyMap(),
             () -> GeoIpDownloaderTaskExecutor.POLL_INTERVAL_SETTING.getDefault(Settings.EMPTY),
             () -> GeoIpDownloaderTaskExecutor.EAGER_DOWNLOAD_SETTING.getDefault(Settings.EMPTY),
-            () -> true
+            FunctionUtils.TRUE_SUPPLIER
         );
     }
 
@@ -264,7 +265,7 @@ public class GeoIpDownloaderTests extends ESTestCase {
             Collections.emptyMap(),
             () -> GeoIpDownloaderTaskExecutor.POLL_INTERVAL_SETTING.getDefault(Settings.EMPTY),
             () -> GeoIpDownloaderTaskExecutor.EAGER_DOWNLOAD_SETTING.getDefault(Settings.EMPTY),
-            () -> true
+            FunctionUtils.TRUE_SUPPLIER
         ) {
             @Override
             void updateTaskState() {
@@ -313,7 +314,7 @@ public class GeoIpDownloaderTests extends ESTestCase {
             Collections.emptyMap(),
             () -> GeoIpDownloaderTaskExecutor.POLL_INTERVAL_SETTING.getDefault(Settings.EMPTY),
             () -> GeoIpDownloaderTaskExecutor.EAGER_DOWNLOAD_SETTING.getDefault(Settings.EMPTY),
-            () -> true
+            FunctionUtils.TRUE_SUPPLIER
         ) {
             @Override
             void updateTaskState() {
@@ -362,9 +363,9 @@ public class GeoIpDownloaderTests extends ESTestCase {
             "",
             EMPTY_TASK_ID,
             Collections.emptyMap(),
-            () -> GeoIpDownloaderTaskExecutor.POLL_INTERVAL_SETTING.getDefault(Settings.EMPTY),
-            () -> GeoIpDownloaderTaskExecutor.EAGER_DOWNLOAD_SETTING.getDefault(Settings.EMPTY),
-            () -> true
+            FunctionUtils.constantSupplier(GeoIpDownloaderTaskExecutor.POLL_INTERVAL_SETTING.getDefault(Settings.EMPTY)),
+            FunctionUtils.constantSupplier(GeoIpDownloaderTaskExecutor.EAGER_DOWNLOAD_SETTING.getDefault(Settings.EMPTY).booleanValue()),
+            FunctionUtils.TRUE_SUPPLIER
         ) {
             @Override
             void updateTaskState() {
@@ -408,7 +409,7 @@ public class GeoIpDownloaderTests extends ESTestCase {
             Collections.emptyMap(),
             () -> GeoIpDownloaderTaskExecutor.POLL_INTERVAL_SETTING.getDefault(Settings.EMPTY),
             () -> GeoIpDownloaderTaskExecutor.EAGER_DOWNLOAD_SETTING.getDefault(Settings.EMPTY),
-            () -> true
+            FunctionUtils.TRUE_SUPPLIER
         ) {
             @Override
             public void updatePersistentTaskState(PersistentTaskState state, ActionListener<PersistentTask<?>> listener) {
@@ -438,7 +439,7 @@ public class GeoIpDownloaderTests extends ESTestCase {
             Collections.emptyMap(),
             () -> GeoIpDownloaderTaskExecutor.POLL_INTERVAL_SETTING.getDefault(Settings.EMPTY),
             () -> GeoIpDownloaderTaskExecutor.EAGER_DOWNLOAD_SETTING.getDefault(Settings.EMPTY),
-            () -> true
+            FunctionUtils.TRUE_SUPPLIER
         ) {
             @Override
             public void updatePersistentTaskState(PersistentTaskState state, ActionListener<PersistentTask<?>> listener) {

@@ -18,6 +18,7 @@ import org.elasticsearch.cluster.metadata.NodesShutdownMetadata;
 import org.elasticsearch.cluster.metadata.SingleNodeShutdownMetadata;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.cluster.service.MasterServiceTaskQueue;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
@@ -85,7 +86,13 @@ public class TransportDeleteShutdownNodeActionTests extends ESTestCase {
         verify(taskQueue).submitTask(any(), updateTask.capture(), any());
         when(taskContext.getTask()).thenReturn(updateTask.getValue());
         ClusterState gotState = taskExecutor.getValue()
-            .execute(new ClusterStateTaskExecutor.BatchExecutionContext<>(ClusterState.EMPTY_STATE, List.of(taskContext), () -> null));
+            .execute(
+                new ClusterStateTaskExecutor.BatchExecutionContext<>(
+                    ClusterState.EMPTY_STATE,
+                    List.of(taskContext),
+                    FunctionUtils.nullSupplier()
+                )
+            );
         assertThat(gotState, sameInstance(ClusterState.EMPTY_STATE));
     }
 }

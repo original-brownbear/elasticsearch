@@ -269,7 +269,14 @@ public class CommandLineHttpClient {
         final URL clusterHealthUrl = createURL(new URL(getDefaultURL()), "_cluster/health", "?wait_for_status=yellow&pretty");
         HttpResponse response;
         try {
-            response = execute("GET", clusterHealthUrl, username, password, () -> null, CommandLineHttpClient::responseBuilder);
+            response = execute(
+                "GET",
+                clusterHealthUrl,
+                username,
+                password,
+                CheckedSupplier.nullValue(),
+                CommandLineHttpClient::responseBuilder
+            );
         } catch (Exception e) {
             if (retries > 0) {
                 Thread.sleep(1000);

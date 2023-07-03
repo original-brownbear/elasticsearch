@@ -22,6 +22,7 @@ import org.elasticsearch.common.settings.Settings.Builder;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
 import org.elasticsearch.common.util.concurrent.DeterministicTaskQueue;
 import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.monitor.NodeHealthService;
 import org.elasticsearch.monitor.StatusInfo;
 import org.elasticsearch.test.ESTestCase;
@@ -101,7 +102,7 @@ public class FollowersCheckerTests extends ESTestCase {
             settings,
             deterministicTaskQueue.getThreadPool(),
             TransportService.NOOP_TRANSPORT_INTERCEPTOR,
-            boundTransportAddress -> localNode,
+            FunctionUtils.toConstant(localNode),
             null,
             emptySet()
         );
@@ -175,7 +176,7 @@ public class FollowersCheckerTests extends ESTestCase {
         final Settings settings = randomSettings();
         testBehaviourOfFailingNode(
             settings,
-            () -> null,
+            FunctionUtils.nullSupplier(),
             "followers check retry count exceeded [timeouts=" + FOLLOWER_CHECK_RETRY_COUNT_SETTING.get(settings) + ", failures=0]",
             (FOLLOWER_CHECK_RETRY_COUNT_SETTING.get(settings) - 1) * FOLLOWER_CHECK_INTERVAL_SETTING.get(settings).millis()
                 + FOLLOWER_CHECK_RETRY_COUNT_SETTING.get(settings) * FOLLOWER_CHECK_TIMEOUT_SETTING.get(settings).millis(),
@@ -333,7 +334,7 @@ public class FollowersCheckerTests extends ESTestCase {
             settings,
             deterministicTaskQueue.getThreadPool(),
             TransportService.NOOP_TRANSPORT_INTERCEPTOR,
-            boundTransportAddress -> localNode,
+            FunctionUtils.toConstant(localNode),
             null,
             emptySet()
         );
@@ -419,7 +420,7 @@ public class FollowersCheckerTests extends ESTestCase {
             settings,
             deterministicTaskQueue.getThreadPool(),
             TransportService.NOOP_TRANSPORT_INTERCEPTOR,
-            boundTransportAddress -> localNode,
+            FunctionUtils.toConstant(localNode),
             null,
             emptySet()
         );
@@ -517,7 +518,7 @@ public class FollowersCheckerTests extends ESTestCase {
             settings,
             deterministicTaskQueue.getThreadPool(),
             TransportService.NOOP_TRANSPORT_INTERCEPTOR,
-            boundTransportAddress -> follower,
+            FunctionUtils.toConstant(follower),
             null,
             emptySet()
         );
@@ -588,7 +589,7 @@ public class FollowersCheckerTests extends ESTestCase {
             } else {
                 return r;
             }
-        }), TransportService.NOOP_TRANSPORT_INTERCEPTOR, boundTransportAddress -> follower, null, emptySet());
+        }), TransportService.NOOP_TRANSPORT_INTERCEPTOR, FunctionUtils.toConstant(follower), null, emptySet());
 
         final AtomicBoolean calledCoordinator = new AtomicBoolean();
         final AtomicReference<RuntimeException> coordinatorException = new AtomicReference<>();

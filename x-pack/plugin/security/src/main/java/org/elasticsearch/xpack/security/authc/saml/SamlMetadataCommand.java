@@ -26,6 +26,7 @@ import org.elasticsearch.common.ssl.PemUtils;
 import org.elasticsearch.common.util.LocaleUtils;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.core.CheckedFunction;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.PathUtils;
 import org.elasticsearch.core.SuppressForbidden;
 import org.elasticsearch.env.Environment;
@@ -304,7 +305,7 @@ class SamlMetadataCommand extends KeyStoreAwareCommand {
                 "certificate bundle (" + p12Path + ")",
                 password,
                 terminal,
-                keyPassword -> CertParsingUtils.readPkcs12KeyPairs(p12Path, keyPassword, a -> keyPassword)
+                keyPassword -> CertParsingUtils.readPkcs12KeyPairs(p12Path, keyPassword, FunctionUtils.toConstant(keyPassword))
             );
 
             if (keys.size() != 1) {

@@ -32,6 +32,7 @@ import org.elasticsearch.common.blobstore.support.BlobMetadata;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.snapshots.blobstore.BlobStoreIndexShardSnapshots;
 import org.elasticsearch.repositories.GetSnapshotInfoContext;
@@ -259,7 +260,7 @@ public final class BlobStoreTestUtil {
             new GetSnapshotInfoContext(
                 List.copyOf(snapshotIds),
                 true,
-                () -> false,
+                FunctionUtils.FALSE_BOOLEAN_SUPPLIER,
                 (ctx, sni) -> snapshotInfos.add(sni),
                 new ActionListener<>() {
                     @Override

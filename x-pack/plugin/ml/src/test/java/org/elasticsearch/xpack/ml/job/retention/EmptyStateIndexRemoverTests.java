@@ -18,6 +18,7 @@ import org.elasticsearch.action.admin.indices.stats.IndicesStatsResponse;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.client.internal.OriginSettingClient;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.index.shard.DocsStats;
 import org.elasticsearch.tasks.TaskId;
 import org.elasticsearch.test.ESTestCase;
@@ -70,7 +71,7 @@ public class EmptyStateIndexRemoverTests extends ESTestCase {
     }
 
     public void testRemove_TimedOut() {
-        remover.remove(1.0f, listener, () -> true);
+        remover.remove(1.0f, listener, FunctionUtils.TRUE_BOOLEAN_SUPPLIER);
 
         InOrder inOrder = inOrder(client, listener);
         inOrder.verify(listener).onResponse(false);
@@ -81,7 +82,7 @@ public class EmptyStateIndexRemoverTests extends ESTestCase {
         when(indicesStatsResponse.getIndices()).thenReturn(Map.of());
         doAnswer(withResponse(indicesStatsResponse)).when(client).execute(any(), any(), any());
 
-        remover.remove(1.0f, listener, () -> false);
+        remover.remove(1.0f, listener, FunctionUtils.FALSE_BOOLEAN_SUPPLIER);
 
         InOrder inOrder = inOrder(client, listener);
         inOrder.verify(client).execute(eq(IndicesStatsAction.INSTANCE), any(), any());
@@ -104,7 +105,7 @@ public class EmptyStateIndexRemoverTests extends ESTestCase {
         ).when(indicesStatsResponse).getIndices();
         doAnswer(withResponse(indicesStatsResponse)).when(client).execute(eq(IndicesStatsAction.INSTANCE), any(), any());
 
-        remover.remove(1.0f, listener, () -> false);
+        remover.remove(1.0f, listener, FunctionUtils.FALSE_BOOLEAN_SUPPLIER);
 
         InOrder inOrder = inOrder(client, listener);
         inOrder.verify(client).execute(eq(IndicesStatsAction.INSTANCE), any(), any());
@@ -135,7 +136,7 @@ public class EmptyStateIndexRemoverTests extends ESTestCase {
         AcknowledgedResponse deleteIndexResponse = AcknowledgedResponse.of(acknowledged);
         doAnswer(withResponse(deleteIndexResponse)).when(client).execute(eq(DeleteIndexAction.INSTANCE), any(), any());
 
-        remover.remove(1.0f, listener, () -> false);
+        remover.remove(1.0f, listener, FunctionUtils.FALSE_BOOLEAN_SUPPLIER);
 
         InOrder inOrder = inOrder(client, listener);
         inOrder.verify(client).execute(eq(IndicesStatsAction.INSTANCE), any(), any());
@@ -163,7 +164,7 @@ public class EmptyStateIndexRemoverTests extends ESTestCase {
         GetIndexResponse getIndexResponse = new GetIndexResponse(new String[] { ".ml-state-a" }, null, null, null, null, null);
         doAnswer(withResponse(getIndexResponse)).when(client).execute(eq(GetIndexAction.INSTANCE), any(), any());
 
-        remover.remove(1.0f, listener, () -> false);
+        remover.remove(1.0f, listener, FunctionUtils.FALSE_BOOLEAN_SUPPLIER);
 
         InOrder inOrder = inOrder(client, listener);
         inOrder.verify(client).execute(eq(IndicesStatsAction.INSTANCE), any(), any());

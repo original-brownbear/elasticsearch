@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.elasticsearch.xpack.core.ml.inference.trainedmodel.InferenceConfig.DEFAULT_RESULTS_FIELD;
@@ -182,7 +183,7 @@ public class LearnToRankConfigUpdate implements InferenceConfigUpdate, NamedXCon
         if (featureExtractorBuilderList.isEmpty() == false) {
             Map<String, LearnToRankFeatureExtractorBuilder> existingExtractors = ltrConfig.getFeatureExtractorBuilders()
                 .stream()
-                .collect(Collectors.toMap(LearnToRankFeatureExtractorBuilder::featureName, f -> f));
+                .collect(Collectors.toMap(LearnToRankFeatureExtractorBuilder::featureName, Function.identity()));
             featureExtractorBuilderList.forEach(f -> existingExtractors.put(f.featureName(), f));
             builder.setLearnToRankFeatureExtractorBuilders(new ArrayList<>(existingExtractors.values()));
         }

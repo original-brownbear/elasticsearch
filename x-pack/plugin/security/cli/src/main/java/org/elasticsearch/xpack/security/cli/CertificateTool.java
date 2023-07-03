@@ -34,6 +34,7 @@ import org.elasticsearch.common.ssl.PemUtils;
 import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.core.CheckedConsumer;
 import org.elasticsearch.core.CheckedFunction;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.PathUtils;
 import org.elasticsearch.core.SuppressForbidden;
 import org.elasticsearch.env.Environment;
@@ -363,7 +364,7 @@ class CertificateTool extends MultiCommand {
                 passwordOption,
                 terminal,
                 false,
-                password -> CertParsingUtils.readPkcs12KeyPairs(path, password, a -> password)
+                password -> CertParsingUtils.readPkcs12KeyPairs(path, password, FunctionUtils.toConstant(password))
             );
 
             if (keys.size() != 1) {

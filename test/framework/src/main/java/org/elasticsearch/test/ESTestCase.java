@@ -1124,7 +1124,7 @@ public abstract class ESTestCase extends LuceneTestCase {
      * helper to get a random value in a certain range that's different from the input
      */
     public static <T> T randomValueOtherThan(T input, Supplier<T> randomSupplier) {
-        return randomValueOtherThanMany(v -> Objects.equals(input, v), randomSupplier);
+        return randomValueOtherThanMany(Predicate.isEqual(input), randomSupplier);
     }
 
     /**

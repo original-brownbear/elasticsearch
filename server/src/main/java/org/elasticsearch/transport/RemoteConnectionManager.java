@@ -14,6 +14,7 @@ import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.util.CollectionUtils;
+import org.elasticsearch.core.CheckedFunction;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.Releasable;
 
@@ -70,12 +71,10 @@ public class RemoteConnectionManager implements ConnectionManager {
 
     public void connectToRemoteClusterNode(DiscoveryNode node, ConnectionValidator connectionValidator, ActionListener<Void> listener)
         throws ConnectTransportException {
-        delegate.connectToNode(node, null, connectionValidator, listener.map(connectionReleasable -> {
-            // We drop the connectionReleasable here but it's not really a leak: we never close individual connections to a remote cluster
-            // ourselves - instead we close the whole connection manager if the remote cluster is removed, which bypasses any refcounting
-            // and just closes the underlying channels.
-            return null;
-        }));
+        // We drop the connectionReleasable here but it's not really a leak: we never close individual connections to a remote cluster
+        // ourselves - instead we close the whole connection manager if the remote cluster is removed, which bypasses any refcounting
+        // and just closes the underlying channels.
+        delegate.connectToNode(node, null, connectionValidator, listener.map(CheckedFunction.toNull()));
     }
 
     @Override

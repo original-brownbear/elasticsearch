@@ -11,6 +11,7 @@ import org.elasticsearch.action.search.SearchAction;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.client.internal.OriginSettingClient;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
 import org.elasticsearch.index.reindex.DeleteByQueryAction;
 import org.elasticsearch.index.reindex.DeleteByQueryRequest;
@@ -65,7 +66,7 @@ public class ExpiredAnnotationsRemoverTests extends ESTestCase {
     public void testRemove_GivenNoJobs() {
         givenDBQRequestsSucceed();
 
-        createExpiredAnnotationsRemover(Collections.emptyIterator()).remove(1.0f, listener, () -> false);
+        createExpiredAnnotationsRemover(Collections.emptyIterator()).remove(1.0f, listener, FunctionUtils.FALSE_BOOLEAN_SUPPLIER);
 
         verify(listener).onResponse(true);
     }
@@ -74,7 +75,7 @@ public class ExpiredAnnotationsRemoverTests extends ESTestCase {
         givenDBQRequestsSucceed();
         List<Job> jobs = Arrays.asList(JobTests.buildJobBuilder("foo").build(), JobTests.buildJobBuilder("bar").build());
 
-        createExpiredAnnotationsRemover(jobs.iterator()).remove(1.0f, listener, () -> false);
+        createExpiredAnnotationsRemover(jobs.iterator()).remove(1.0f, listener, FunctionUtils.FALSE_BOOLEAN_SUPPLIER);
 
         verify(listener).onResponse(true);
     }
@@ -89,7 +90,7 @@ public class ExpiredAnnotationsRemoverTests extends ESTestCase {
             JobTests.buildJobBuilder("annotations-2").setResultsRetentionDays(20L).build()
         );
 
-        createExpiredAnnotationsRemover(jobs.iterator()).remove(1.0f, listener, () -> false);
+        createExpiredAnnotationsRemover(jobs.iterator()).remove(1.0f, listener, FunctionUtils.FALSE_BOOLEAN_SUPPLIER);
 
         assertThat(capturedDeleteByQueryRequests.size(), equalTo(2));
         DeleteByQueryRequest dbqRequest = capturedDeleteByQueryRequests.get(0);
@@ -126,7 +127,7 @@ public class ExpiredAnnotationsRemoverTests extends ESTestCase {
             JobTests.buildJobBuilder("annotations-1").setResultsRetentionDays(10L).build(),
             JobTests.buildJobBuilder("annotations-2").setResultsRetentionDays(20L).build()
         );
-        createExpiredAnnotationsRemover(jobs.iterator()).remove(1.0f, listener, () -> false);
+        createExpiredAnnotationsRemover(jobs.iterator()).remove(1.0f, listener, FunctionUtils.FALSE_BOOLEAN_SUPPLIER);
 
         assertThat(capturedDeleteByQueryRequests.size(), equalTo(1));
         DeleteByQueryRequest dbqRequest = capturedDeleteByQueryRequests.get(0);

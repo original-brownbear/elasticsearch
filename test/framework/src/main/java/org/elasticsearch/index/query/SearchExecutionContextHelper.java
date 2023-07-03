@@ -10,6 +10,7 @@ package org.elasticsearch.index.query;
 
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.settings.ClusterSettings;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.mapper.MappingLookup;
 import org.elasticsearch.xcontent.XContentParserConfiguration;
@@ -43,7 +44,7 @@ public class SearchExecutionContextHelper {
             System::currentTimeMillis,
             null,
             null,
-            () -> true,
+            FunctionUtils.TRUE_BOOLEAN_SUPPLIER,
             null,
             Collections.emptyMap()
         );

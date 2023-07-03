@@ -10,6 +10,7 @@ package org.elasticsearch.index.mapper;
 
 import org.apache.lucene.document.FieldType;
 import org.apache.lucene.index.IndexOptions;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.analysis.AnalysisMode;
 import org.elasticsearch.index.analysis.AnalysisRegistry;
@@ -131,7 +132,7 @@ public final class TextParams {
         return new Parameter<>(
             "similarity",
             false,
-            () -> null,
+            FunctionUtils.nullSupplier(),
             (n, c, o) -> TypeParsers.resolveSimilarity(c, n, o),
             init,
             (b, f, v) -> b.field(f, v == null ? null : v.name()),

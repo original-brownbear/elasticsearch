@@ -30,6 +30,7 @@ import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
 import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.index.Index;
@@ -1398,7 +1399,7 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
             Settings.EMPTY,
             null,
             clusterService,
-            new CcrLicenseChecker(() -> true, () -> false),
+            new CcrLicenseChecker(FunctionUtils.TRUE_BOOLEAN_SUPPLIER, FunctionUtils.FALSE_BOOLEAN_SUPPLIER),
             () -> 1L,
             () -> 1L,
             Runnable::run
@@ -1514,7 +1515,7 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
             Settings.EMPTY,
             null,
             clusterService,
-            new CcrLicenseChecker(() -> true, () -> false),
+            new CcrLicenseChecker(FunctionUtils.TRUE_BOOLEAN_SUPPLIER, FunctionUtils.FALSE_BOOLEAN_SUPPLIER),
             () -> 1L,
             () -> 1L,
             Runnable::run
@@ -2375,7 +2376,7 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
             Settings.EMPTY,
             null,
             mockClusterService(),
-            new CcrLicenseChecker(() -> true, () -> false),
+            new CcrLicenseChecker(FunctionUtils.TRUE_BOOLEAN_SUPPLIER, FunctionUtils.FALSE_BOOLEAN_SUPPLIER),
             () -> 1L,
             () -> 1L,
             Runnable::run

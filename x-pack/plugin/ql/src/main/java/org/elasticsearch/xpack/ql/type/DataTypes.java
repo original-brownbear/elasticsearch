@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Function;
 
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableMap;
@@ -76,7 +77,8 @@ public final class DataTypes {
         NESTED
     ).stream().sorted(Comparator.comparing(DataType::typeName)).toList();
 
-    private static final Map<String, DataType> NAME_TO_TYPE = TYPES.stream().collect(toUnmodifiableMap(DataType::typeName, t -> t));
+    private static final Map<String, DataType> NAME_TO_TYPE = TYPES.stream()
+        .collect(toUnmodifiableMap(DataType::typeName, Function.identity()));
 
     private static Map<String, DataType> ES_TO_TYPE;
 

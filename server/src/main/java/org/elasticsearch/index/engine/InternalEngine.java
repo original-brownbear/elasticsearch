@@ -63,6 +63,8 @@ import org.elasticsearch.common.util.concurrent.ReleasableLock;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.core.Assertions;
 import org.elasticsearch.core.Booleans;
+import org.elasticsearch.core.CheckedFunction;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.Releasable;
@@ -366,7 +368,7 @@ public class InternalEngine extends Engine {
             return new CombinedDeletionPolicy.CommitsListener() {
                 @Override
                 public void onNewAcquiredCommit(final IndexCommit commit, final Set<String> additionalFiles) {
-                    final IndexCommitRef indexCommitRef = acquireIndexCommitRef(() -> commit);
+                    final IndexCommitRef indexCommitRef = acquireIndexCommitRef(FunctionUtils.constantSupplier(commit));
                     var primaryTerm = config().getPrimaryTermSupplier().getAsLong();
                     assert indexCommitRef.getIndexCommit() == commit;
                     listener.onNewCommit(shardId, store, primaryTerm, indexCommitRef, additionalFiles);
@@ -3253,7 +3255,7 @@ public class InternalEngine extends Engine {
         this.flushListener.addOrNotify(location, new ActionListener<>() {
             @Override
             public void onResponse(Long generation) {
-                waitForCommitDurability(generation, listener.map(v -> generation));
+                waitForCommitDurability(generation, listener.map(CheckedFunction.toConstant(generation)));
             }
 
             @Override

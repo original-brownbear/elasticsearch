@@ -9,6 +9,7 @@
 package org.elasticsearch.search.aggregations;
 
 import org.apache.lucene.util.BytesRef;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.search.DocValueFormat;
 import org.elasticsearch.search.aggregations.InternalMultiBucketAggregation.InternalBucket;
 import org.elasticsearch.search.aggregations.bucket.MultiBucketsAggregation.Bucket;
@@ -32,7 +33,13 @@ public class DelayedBucketTests extends ESTestCase {
 
     public void testReduced() {
         AtomicInteger buckets = new AtomicInteger();
-        AggregationReduceContext context = new AggregationReduceContext.ForFinal(null, null, () -> false, null, buckets::addAndGet);
+        AggregationReduceContext context = new AggregationReduceContext.ForFinal(
+            null,
+            null,
+            FunctionUtils.FALSE_SUPPLIER,
+            null,
+            buckets::addAndGet
+        );
         DelayedBucket<?> b = new DelayedBucket<>(mockReduce(context), context, List.of(bucket("test", 1), bucket("test", 2)));
         assertThat(b.getDocCount(), equalTo(3L));
         assertThat(b.reduced(), sameInstance(b.reduced()));
@@ -60,7 +67,7 @@ public class DelayedBucketTests extends ESTestCase {
         AggregationReduceContext context = new AggregationReduceContext.ForFinal(
             null,
             null,
-            () -> false,
+            FunctionUtils.FALSE_SUPPLIER,
             null,
             b -> fail("shouldn't be called")
         );
@@ -69,7 +76,13 @@ public class DelayedBucketTests extends ESTestCase {
 
     public void testNonCompetitiveReduced() {
         AtomicInteger buckets = new AtomicInteger();
-        AggregationReduceContext context = new AggregationReduceContext.ForFinal(null, null, () -> false, null, buckets::addAndGet);
+        AggregationReduceContext context = new AggregationReduceContext.ForFinal(
+            null,
+            null,
+            FunctionUtils.FALSE_SUPPLIER,
+            null,
+            buckets::addAndGet
+        );
         DelayedBucket<?> b = new DelayedBucket<>(mockReduce(context), context, List.of(bucket("test", 1)));
         b.reduced();
         assertEquals(1, buckets.get());

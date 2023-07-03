@@ -32,6 +32,7 @@ import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.core.CheckedFunction;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.Releasable;
@@ -493,7 +494,7 @@ public abstract class IndexShardTestCase extends ESTestCase {
                 indexSettings,
                 shardPath,
                 store,
-                () -> null,
+                FunctionUtils.nullSupplier(),
                 indexCache,
                 mapperService,
                 similarityService,

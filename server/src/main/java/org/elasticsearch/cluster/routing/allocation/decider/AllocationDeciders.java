@@ -17,6 +17,7 @@ import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.routing.allocation.RoutingAllocation;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.util.set.Sets;
+import org.elasticsearch.core.FunctionUtils;
 
 import java.util.Collection;
 import java.util.Optional;
@@ -233,7 +234,8 @@ public class AllocationDeciders {
         for (AllocationDecider decider : deciders) {
             var forcedInitialNodeIds = decider.getForcedInitialShardAllocationToNodes(shardRouting, allocation);
             if (forcedInitialNodeIds.isPresent()) {
-                result = result.map(nodeIds -> Sets.intersection(nodeIds, forcedInitialNodeIds.get())).or(() -> forcedInitialNodeIds);
+                result = result.map(nodeIds -> Sets.intersection(nodeIds, forcedInitialNodeIds.get()))
+                    .or(FunctionUtils.constantSupplier(forcedInitialNodeIds));
             }
         }
         return result;

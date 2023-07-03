@@ -16,6 +16,7 @@ import org.elasticsearch.common.geo.ShapeRelation;
 import org.elasticsearch.common.logging.DeprecationCategory;
 import org.elasticsearch.common.logging.DeprecationLogger;
 import org.elasticsearch.core.CheckedFunction;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.geometry.Geometry;
 import org.elasticsearch.geometry.Point;
 import org.elasticsearch.index.fielddata.FieldDataContext;
@@ -72,7 +73,7 @@ public class PointFieldMapper extends AbstractPointGeometryFieldMapper<Cartesian
             this.nullValue = nullValueParam(
                 m -> builder(m).nullValue.get(),
                 (n, c, o) -> o == null ? null : parseNullValue(o, ignoreZValue.get().value(), ignoreMalformed.get().value()),
-                () -> null,
+                FunctionUtils.nullSupplier(),
                 XContentBuilder::field
             ).acceptsNull();
         }

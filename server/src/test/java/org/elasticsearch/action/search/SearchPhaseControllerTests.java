@@ -34,6 +34,7 @@ import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.util.concurrent.AtomicArray;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.common.util.concurrent.EsThreadPoolExecutor;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.lucene.grouping.TopFieldGroups;
 import org.elasticsearch.search.DocValueFormat;
@@ -578,7 +579,7 @@ public class SearchPhaseControllerTests extends ESTestCase {
         ArraySearchPhaseResults<SearchPhaseResult> consumer = searchPhaseController.newSearchPhaseResults(
             fixedExecutor,
             new NoopCircuitBreaker(CircuitBreaker.REQUEST),
-            () -> false,
+            FunctionUtils.FALSE_SUPPLIER,
             SearchProgressListener.NOOP,
             request,
             3 + numEmptyResponses,
@@ -687,7 +688,7 @@ public class SearchPhaseControllerTests extends ESTestCase {
         ArraySearchPhaseResults<SearchPhaseResult> consumer = searchPhaseController.newSearchPhaseResults(
             fixedExecutor,
             new NoopCircuitBreaker(CircuitBreaker.REQUEST),
-            () -> false,
+            FunctionUtils.FALSE_SUPPLIER,
             SearchProgressListener.NOOP,
             request,
             expectedNumResults,
@@ -752,7 +753,7 @@ public class SearchPhaseControllerTests extends ESTestCase {
         QueryPhaseResultConsumer consumer = searchPhaseController.newSearchPhaseResults(
             fixedExecutor,
             new NoopCircuitBreaker(CircuitBreaker.REQUEST),
-            () -> false,
+            FunctionUtils.FALSE_SUPPLIER,
             SearchProgressListener.NOOP,
             request,
             expectedNumResults,
@@ -806,7 +807,7 @@ public class SearchPhaseControllerTests extends ESTestCase {
         QueryPhaseResultConsumer consumer = searchPhaseController.newSearchPhaseResults(
             fixedExecutor,
             new NoopCircuitBreaker(CircuitBreaker.REQUEST),
-            () -> false,
+            FunctionUtils.FALSE_SUPPLIER,
             SearchProgressListener.NOOP,
             request,
             expectedNumResults,
@@ -865,7 +866,7 @@ public class SearchPhaseControllerTests extends ESTestCase {
         QueryPhaseResultConsumer consumer = searchPhaseController.newSearchPhaseResults(
             fixedExecutor,
             new NoopCircuitBreaker(CircuitBreaker.REQUEST),
-            () -> false,
+            FunctionUtils.FALSE_SUPPLIER,
             SearchProgressListener.NOOP,
             request,
             4,
@@ -915,7 +916,7 @@ public class SearchPhaseControllerTests extends ESTestCase {
         QueryPhaseResultConsumer consumer = searchPhaseController.newSearchPhaseResults(
             fixedExecutor,
             new NoopCircuitBreaker(CircuitBreaker.REQUEST),
-            () -> false,
+            FunctionUtils.FALSE_SUPPLIER,
             SearchProgressListener.NOOP,
             request,
             expectedNumResults,
@@ -963,7 +964,7 @@ public class SearchPhaseControllerTests extends ESTestCase {
         QueryPhaseResultConsumer consumer = searchPhaseController.newSearchPhaseResults(
             fixedExecutor,
             new NoopCircuitBreaker(CircuitBreaker.REQUEST),
-            () -> false,
+            FunctionUtils.FALSE_SUPPLIER,
             SearchProgressListener.NOOP,
             request,
             expectedNumResults,
@@ -1014,7 +1015,7 @@ public class SearchPhaseControllerTests extends ESTestCase {
         QueryPhaseResultConsumer consumer = searchPhaseController.newSearchPhaseResults(
             fixedExecutor,
             new NoopCircuitBreaker(CircuitBreaker.REQUEST),
-            () -> false,
+            FunctionUtils.FALSE_SUPPLIER,
             SearchProgressListener.NOOP,
             request,
             expectedNumResults,
@@ -1153,7 +1154,7 @@ public class SearchPhaseControllerTests extends ESTestCase {
             QueryPhaseResultConsumer consumer = searchPhaseController.newSearchPhaseResults(
                 fixedExecutor,
                 new NoopCircuitBreaker(CircuitBreaker.REQUEST),
-                () -> false,
+                FunctionUtils.FALSE_SUPPLIER,
                 progressListener,
                 request,
                 expectedNumResults,
@@ -1236,7 +1237,7 @@ public class SearchPhaseControllerTests extends ESTestCase {
         QueryPhaseResultConsumer consumer = searchPhaseController.newSearchPhaseResults(
             fixedExecutor,
             circuitBreaker,
-            () -> false,
+            FunctionUtils.FALSE_SUPPLIER,
             SearchProgressListener.NOOP,
             request,
             numShards,
@@ -1299,7 +1300,7 @@ public class SearchPhaseControllerTests extends ESTestCase {
             QueryPhaseResultConsumer consumer = searchPhaseController.newSearchPhaseResults(
                 fixedExecutor,
                 new NoopCircuitBreaker(CircuitBreaker.REQUEST),
-                () -> false,
+                FunctionUtils.FALSE_SUPPLIER,
                 SearchProgressListener.NOOP,
                 request,
                 expectedNumResults,

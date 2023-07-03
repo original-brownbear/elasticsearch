@@ -23,6 +23,7 @@ import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
 import org.elasticsearch.common.util.concurrent.RunOnce;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.core.AbstractRefCounted;
+import org.elasticsearch.core.CheckedFunction;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.Releasables;
 import org.elasticsearch.core.TimeValue;
@@ -120,7 +121,9 @@ public class ClusterConnectionManagerTests extends ESTestCase {
             validatedConnectionRef.set(c);
             l.onResponse(null);
         };
-        PlainActionFuture.get(fut -> connectionManager.connectToNode(node, connectionProfile, validator, fut.map(x -> null)));
+        PlainActionFuture.get(
+            fut -> connectionManager.connectToNode(node, connectionProfile, validator, fut.map(CheckedFunction.toNull()))
+        );
 
         assertFalse(connection.isClosed());
         assertTrue(connectionManager.nodeConnected(node));
@@ -167,8 +170,12 @@ public class ClusterConnectionManagerTests extends ESTestCase {
         final ConnectionManager.ConnectionValidator validator = (c, p, l) -> l.onResponse(null);
         final AtomicReference<Releasable> toClose = new AtomicReference<>();
 
-        PlainActionFuture.get(f -> connectionManager.connectToNode(remoteClose, connectionProfile, validator, f.map(x -> null)));
-        PlainActionFuture.get(f -> connectionManager.connectToNode(shutdownClose, connectionProfile, validator, f.map(x -> null)));
+        PlainActionFuture.get(
+            f -> connectionManager.connectToNode(remoteClose, connectionProfile, validator, f.map(CheckedFunction.toNull()))
+        );
+        PlainActionFuture.get(
+            f -> connectionManager.connectToNode(shutdownClose, connectionProfile, validator, f.map(CheckedFunction.toNull()))
+        );
         PlainActionFuture.get(f -> connectionManager.connectToNode(localClose, connectionProfile, validator, f.map(toClose::getAndSet)));
 
         final Releasable localConnectionRef = toClose.getAndSet(null);

@@ -12,6 +12,7 @@ import org.elasticsearch.common.ValidationException;
 import org.elasticsearch.common.settings.MockSecureSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.ssl.PemUtils;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.env.TestEnvironment;
 import org.elasticsearch.xpack.core.ssl.CertParsingUtils;
@@ -59,7 +60,7 @@ public class SamlIdentityProviderBuilderTests extends IdpSamlTestCase {
         final Path dir = LuceneTestCase.createTempDir("signing");
         final Path signingKeyPath = getDataPath("signing1.key");
         final Path destSigningKeyPath = dir.resolve("signing1.key");
-        final PrivateKey signingKey = PemUtils.readPrivateKey(signingKeyPath, () -> null);
+        final PrivateKey signingKey = PemUtils.readPrivateKey(signingKeyPath, FunctionUtils.nullSupplier());
         final Path signingCertPath = getDataPath("signing1.crt");
         final Path destSigningCertPath = dir.resolve("signing1.crt");
         final X509Certificate signingCert = CertParsingUtils.readX509Certificates(List.of(signingCertPath))[0];
@@ -297,7 +298,7 @@ public class SamlIdentityProviderBuilderTests extends IdpSamlTestCase {
         final Path dir = LuceneTestCase.createTempDir("signing");
         final Path signingKeyPath = getDataPath("signing1.key");
         final Path destSigningKeyPath = dir.resolve("signing1.key");
-        final PrivateKey signingKey = PemUtils.readPrivateKey(signingKeyPath, () -> null);
+        final PrivateKey signingKey = PemUtils.readPrivateKey(signingKeyPath, FunctionUtils.nullSupplier());
         final Path signingCertPath = getDataPath("signing1.crt");
         final Path destSigningCertPath = dir.resolve("signing1.crt");
         final X509Certificate signingCert = CertParsingUtils.readX509Certificates(List.of(signingCertPath))[0];
@@ -333,7 +334,7 @@ public class SamlIdentityProviderBuilderTests extends IdpSamlTestCase {
         final Environment env = TestEnvironment.newEnvironment(settings);
         final X509Credential credential = SamlIdentityProviderBuilder.buildSigningCredential(env, settings, "xpack.idp.signing.");
         final Path signingKeyPath = getDataPath("signing1.key");
-        final PrivateKey signingKey = PemUtils.readPrivateKey(signingKeyPath, () -> null);
+        final PrivateKey signingKey = PemUtils.readPrivateKey(signingKeyPath, FunctionUtils.nullSupplier());
 
         assertThat(credential, notNullValue());
         assertThat(credential.getPrivateKey(), equalTo(signingKey));
@@ -358,7 +359,7 @@ public class SamlIdentityProviderBuilderTests extends IdpSamlTestCase {
         final Settings settings = builder.build();
         final Environment env = TestEnvironment.newEnvironment(settings);
         final Path signingKeyPath = getDataPath("signing1.key");
-        final PrivateKey signingKey = PemUtils.readPrivateKey(signingKeyPath, () -> null);
+        final PrivateKey signingKey = PemUtils.readPrivateKey(signingKeyPath, FunctionUtils.nullSupplier());
         final X509Credential credential = SamlIdentityProviderBuilder.buildSigningCredential(env, settings, "xpack.idp.signing.");
         assertThat(credential, notNullValue());
         assertThat(credential.getPrivateKey(), equalTo(signingKey));
@@ -416,7 +417,7 @@ public class SamlIdentityProviderBuilderTests extends IdpSamlTestCase {
         final Environment env = TestEnvironment.newEnvironment(settings);
         final X509Credential credential = SamlIdentityProviderBuilder.buildSigningCredential(env, settings, "xpack.idp.signing.");
         final Path signingKeyPath = getDataPath(alias + ".key");
-        final PrivateKey signingKey = PemUtils.readPrivateKey(signingKeyPath, () -> null);
+        final PrivateKey signingKey = PemUtils.readPrivateKey(signingKeyPath, FunctionUtils.nullSupplier());
 
         assertThat(credential, notNullValue());
         assertThat(credential.getPrivateKey(), equalTo(signingKey));
@@ -472,7 +473,7 @@ public class SamlIdentityProviderBuilderTests extends IdpSamlTestCase {
         final Environment env = TestEnvironment.newEnvironment(settings);
         final X509Credential credential = SamlIdentityProviderBuilder.buildSigningCredential(env, settings, "xpack.idp.metadata_signing.");
         final Path signingKeyPath = getDataPath("signing1.key");
-        final PrivateKey signingKey = PemUtils.readPrivateKey(signingKeyPath, () -> null);
+        final PrivateKey signingKey = PemUtils.readPrivateKey(signingKeyPath, FunctionUtils.nullSupplier());
 
         assertThat(credential, notNullValue());
         assertThat(credential.getPrivateKey(), equalTo(signingKey));
@@ -497,7 +498,7 @@ public class SamlIdentityProviderBuilderTests extends IdpSamlTestCase {
         final Settings settings = builder.build();
         final Environment env = TestEnvironment.newEnvironment(settings);
         final Path signingKeyPath = getDataPath("signing1.key");
-        final PrivateKey signingKey = PemUtils.readPrivateKey(signingKeyPath, () -> null);
+        final PrivateKey signingKey = PemUtils.readPrivateKey(signingKeyPath, FunctionUtils.nullSupplier());
         final X509Credential credential = SamlIdentityProviderBuilder.buildSigningCredential(env, settings, "xpack.idp.metadata_signing.");
         assertThat(credential, notNullValue());
         assertThat(credential.getPrivateKey(), equalTo(signingKey));
@@ -555,7 +556,7 @@ public class SamlIdentityProviderBuilderTests extends IdpSamlTestCase {
         final Environment env = TestEnvironment.newEnvironment(settings);
         final X509Credential credential = SamlIdentityProviderBuilder.buildSigningCredential(env, settings, "xpack.idp.metadata_signing.");
         final Path signingKeyPath = getDataPath(alias + ".key");
-        final PrivateKey signingKey = PemUtils.readPrivateKey(signingKeyPath, () -> null);
+        final PrivateKey signingKey = PemUtils.readPrivateKey(signingKeyPath, FunctionUtils.nullSupplier());
 
         assertThat(credential, notNullValue());
         assertThat(credential.getPrivateKey(), equalTo(signingKey));

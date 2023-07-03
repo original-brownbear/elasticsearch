@@ -21,6 +21,7 @@ import org.elasticsearch.common.settings.Setting.Property;
 import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.analysis.NamedAnalyzer;
 import org.elasticsearch.script.Script;
@@ -818,7 +819,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             return new Parameter<>(
                 name,
                 updateable,
-                defaultValue ? () -> true : () -> false,
+                defaultValue ? FunctionUtils.TRUE_SUPPLIER : FunctionUtils.FALSE_SUPPLIER,
                 (n, c, o) -> XContentMapValues.nodeBooleanValue(o),
                 initializer,
                 XContentBuilder::field,
@@ -884,7 +885,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             return new Parameter<>(
                 name,
                 updateable,
-                () -> defaultValue,
+                FunctionUtils.constantSupplier(defaultValue),
                 (n, c, o) -> XContentMapValues.nodeIntegerValue(o),
                 initializer,
                 XContentBuilder::field,
@@ -918,7 +919,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             return new Parameter<>(
                 name,
                 updateable,
-                defaultValue == null ? () -> null : () -> defaultValue,
+                FunctionUtils.constantSupplier(defaultValue),
                 (n, c, o) -> XContentMapValues.nodeStringValue(o),
                 initializer,
                 serializer,
@@ -981,7 +982,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             Set<T> acceptedValues
         ) {
             assert acceptedValues.size() > 0;
-            return new Parameter<>(name, updateable, () -> defaultValue, (n, c, o) -> {
+            return new Parameter<>(name, updateable, FunctionUtils.constantSupplier(defaultValue), (n, c, o) -> {
                 if (o == null) {
                     return defaultValue;
                 }
@@ -1087,7 +1088,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
          * @return a script parameter
          */
         public static Parameter<Script> scriptParam(Function<FieldMapper, Script> initializer) {
-            return new FieldMapper.Parameter<>("script", false, () -> null, (n, c, o) -> {
+            return new FieldMapper.Parameter<>("script", false, FunctionUtils.nullSupplier(), (n, c, o) -> {
                 if (o == null) {
                     return null;
                 }

@@ -24,6 +24,7 @@ import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.lucene.Lucene;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.IndexVersion;
@@ -773,12 +774,17 @@ public class KeywordFieldMapperTests extends MapperTestCase {
 
     public void testLegacyField() throws Exception {
         // check that unknown normalizers are treated leniently on old indices
-        MapperService service = createMapperService(IndexVersion.fromId(5000099), Settings.EMPTY, () -> false, mapping(b -> {
-            b.startObject("mykeyw");
-            b.field("type", "keyword");
-            b.field("normalizer", "unknown-normalizer");
-            b.endObject();
-        }));
+        MapperService service = createMapperService(
+            IndexVersion.fromId(5000099),
+            Settings.EMPTY,
+            FunctionUtils.FALSE_BOOLEAN_SUPPLIER,
+            mapping(b -> {
+                b.startObject("mykeyw");
+                b.field("type", "keyword");
+                b.field("normalizer", "unknown-normalizer");
+                b.endObject();
+            })
+        );
         assertThat(service.fieldType("mykeyw"), instanceOf(KeywordFieldMapper.KeywordFieldType.class));
         assertEquals(Lucene.KEYWORD_ANALYZER, ((KeywordFieldMapper.KeywordFieldType) service.fieldType("mykeyw")).normalizer());
 

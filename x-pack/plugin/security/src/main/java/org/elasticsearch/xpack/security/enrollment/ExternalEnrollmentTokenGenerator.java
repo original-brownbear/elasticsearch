@@ -155,7 +155,14 @@ public class ExternalEnrollmentTokenGenerator extends BaseEnrollmentTokenGenerat
 
     protected Tuple<List<String>, String> getNodeInfo(String user, SecureString password, URL baseUrl) throws Exception {
         final URL httpInfoUrl = getHttpInfoUrl(baseUrl);
-        final HttpResponse httpResponseHttp = client.execute("GET", httpInfoUrl, user, password, () -> null, is -> responseBuilder(is));
+        final HttpResponse httpResponseHttp = client.execute(
+            "GET",
+            httpInfoUrl,
+            user,
+            password,
+            CheckedSupplier.nullValue(),
+            is -> responseBuilder(is)
+        );
         final int httpCode = httpResponseHttp.getHttpStatus();
 
         if (httpCode != HttpURLConnection.HTTP_OK) {

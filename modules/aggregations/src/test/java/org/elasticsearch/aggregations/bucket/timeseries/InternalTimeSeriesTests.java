@@ -14,6 +14,7 @@ import org.elasticsearch.aggregations.bucket.timeseries.InternalTimeSeries.Inter
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.MockBigArrays;
 import org.elasticsearch.common.util.MockPageCacheRecycler;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.index.mapper.TimeSeriesIdFieldMapper;
 import org.elasticsearch.indices.breaker.NoneCircuitBreakerService;
 import org.elasticsearch.search.aggregations.Aggregation;
@@ -153,7 +154,7 @@ public class InternalTimeSeriesTests extends AggregationMultiBucketAggregationTe
         AggregationReduceContext context = new AggregationReduceContext.ForFinal(
             new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), new NoneCircuitBreakerService()),
             mockScriptService(),
-            () -> false,
+            FunctionUtils.FALSE_SUPPLIER,
             new TimeSeriesAggregationBuilder("ts"),
             value -> {},
             PipelineAggregator.PipelineTree.EMPTY

@@ -45,6 +45,7 @@ import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.util.PageCacheRecycler;
 import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
 import org.elasticsearch.core.CheckedFunction;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.env.NodeEnvironment;
@@ -231,7 +232,7 @@ public class IndexModuleTests extends ESTestCase {
             emptyAnalysisRegistry,
             engineFactory,
             Collections.emptyMap(),
-            () -> true,
+            FunctionUtils.TRUE_BOOLEAN_SUPPLIER,
             indexNameExpressionResolver,
             Collections.emptyMap()
         );
@@ -256,7 +257,7 @@ public class IndexModuleTests extends ESTestCase {
             emptyAnalysisRegistry,
             new InternalEngineFactory(),
             indexStoreFactories,
-            () -> true,
+            FunctionUtils.TRUE_BOOLEAN_SUPPLIER,
             indexNameExpressionResolver,
             Collections.emptyMap()
         );
@@ -279,7 +280,7 @@ public class IndexModuleTests extends ESTestCase {
             emptyAnalysisRegistry,
             new InternalEngineFactory(),
             Map.of(),
-            () -> true,
+            FunctionUtils.TRUE_BOOLEAN_SUPPLIER,
             indexNameExpressionResolver,
             Collections.emptyMap()
         );
@@ -630,7 +631,7 @@ public class IndexModuleTests extends ESTestCase {
             emptyAnalysisRegistry,
             new InternalEngineFactory(),
             Collections.emptyMap(),
-            () -> true,
+            FunctionUtils.TRUE_BOOLEAN_SUPPLIER,
             indexNameExpressionResolver,
             recoveryStateFactories
         );
@@ -650,7 +651,7 @@ public class IndexModuleTests extends ESTestCase {
             emptyAnalysisRegistry,
             InternalEngine::new,
             Collections.emptyMap(),
-            () -> true,
+            FunctionUtils.TRUE_BOOLEAN_SUPPLIER,
             indexNameExpressionResolver,
             Collections.emptyMap()
         );
@@ -750,7 +751,7 @@ public class IndexModuleTests extends ESTestCase {
             emptyAnalysisRegistry,
             new InternalEngineFactory(),
             Collections.emptyMap(),
-            () -> true,
+            FunctionUtils.TRUE_BOOLEAN_SUPPLIER,
             indexNameExpressionResolver,
             Collections.emptyMap()
         );

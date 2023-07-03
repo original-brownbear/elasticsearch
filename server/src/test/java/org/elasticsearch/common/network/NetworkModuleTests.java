@@ -16,6 +16,7 @@ import org.elasticsearch.common.transport.BoundTransportAddress;
 import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.util.PageCacheRecycler;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.http.HttpInfo;
 import org.elasticsearch.http.HttpPreRequest;
 import org.elasticsearch.http.HttpServerTransport;
@@ -86,7 +87,7 @@ public class NetworkModuleTests extends ESTestCase {
 
     public void testRegisterTransport() {
         Settings settings = Settings.builder().put(NetworkModule.TRANSPORT_TYPE_KEY, "custom").build();
-        Supplier<Transport> custom = () -> null; // content doesn't matter we check reference equality
+        Supplier<Transport> custom = FunctionUtils.nullSupplier(); // content doesn't matter we check reference equality
         NetworkPlugin plugin = new NetworkPlugin() {
             @Override
             public Map<String, Supplier<Transport>> getTransports(
@@ -143,7 +144,7 @@ public class NetworkModuleTests extends ESTestCase {
             .put(NetworkModule.TRANSPORT_DEFAULT_TYPE_SETTING.getKey(), "local")
             .put(NetworkModule.TRANSPORT_TYPE_KEY, "default_custom")
             .build();
-        Supplier<Transport> customTransport = () -> null;  // content doesn't matter we check reference equality
+        Supplier<Transport> customTransport = FunctionUtils.nullSupplier();  // content doesn't matter we check reference equality
         Supplier<HttpServerTransport> custom = FakeHttpTransport::new;
         Supplier<HttpServerTransport> def = FakeHttpTransport::new;
         NetworkModule module = newNetworkModule(settings, new NetworkPlugin() {
@@ -190,7 +191,7 @@ public class NetworkModuleTests extends ESTestCase {
             .build();
         Supplier<HttpServerTransport> custom = FakeHttpTransport::new;
         Supplier<HttpServerTransport> def = FakeHttpTransport::new;
-        Supplier<Transport> customTransport = () -> null;
+        Supplier<Transport> customTransport = FunctionUtils.nullSupplier();
         NetworkModule module = newNetworkModule(settings, new NetworkPlugin() {
             @Override
             public Map<String, Supplier<Transport>> getTransports(

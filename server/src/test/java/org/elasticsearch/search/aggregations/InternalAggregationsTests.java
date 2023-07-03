@@ -15,6 +15,7 @@ import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.index.query.TermQueryBuilder;
 import org.elasticsearch.search.DocValueFormat;
 import org.elasticsearch.search.SearchModule;
@@ -77,7 +78,7 @@ public class InternalAggregationsTests extends ESTestCase {
 
         InternalAggregations reduced = InternalAggregations.topLevelReduce(
             List.of(s1, s2),
-            new AggregationReduceContext.ForFinal(null, null, () -> false, builders, b -> {})
+            new AggregationReduceContext.ForFinal(null, null, FunctionUtils.FALSE_SUPPLIER, builders, b -> {})
         );
         assertThat(f1Reduced.get(), equalTo(1L));
         assertThat(f2Reduced.get(), equalTo(2L));

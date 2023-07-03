@@ -8,6 +8,7 @@
 package org.elasticsearch.xpack.ml.rest;
 
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.RestApiVersion;
 import org.elasticsearch.rest.RestRequest;
 
@@ -28,7 +29,7 @@ public final class RestCompatibilityChecker {
     ) {
         final T paramValue;
         if (restRequest.getRestApiVersion() == compatVersion && restRequest.hasParam(deprecatedParam)) {
-            LoggingDeprecationHandler.INSTANCE.logRenamedField(null, () -> null, deprecatedParam, newParam, true);
+            LoggingDeprecationHandler.INSTANCE.logRenamedField(null, FunctionUtils.nullSupplier(), deprecatedParam, newParam, true);
             paramValue = extractor.apply(restRequest, deprecatedParam);
         } else {
             paramValue = extractor.apply(restRequest, newParam);

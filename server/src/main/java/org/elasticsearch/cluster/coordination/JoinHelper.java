@@ -28,6 +28,7 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.breaker.CircuitBreaker;
 import org.elasticsearch.common.breaker.CircuitBreakingException;
 import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.Releasables;
 import org.elasticsearch.core.TimeValue;
@@ -283,7 +284,7 @@ public class JoinHelper {
                     pendingJoinInfo.message = PENDING_JOIN_WAITING_APPLIER;
                     clusterApplier.onNewClusterState(
                         "joining " + destination.descriptionWithoutAttributes(),
-                        () -> null,
+                        FunctionUtils.nullSupplier(),
                         new ActionListener<>() {
                             @Override
                             public void onResponse(Void unused) {

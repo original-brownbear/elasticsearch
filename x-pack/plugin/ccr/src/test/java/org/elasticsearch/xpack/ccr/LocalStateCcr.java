@@ -8,6 +8,7 @@
 package org.elasticsearch.xpack.ccr;
 
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.xpack.core.LocalStateCompositeXPackPlugin;
 
 import java.nio.file.Path;
@@ -17,7 +18,7 @@ public class LocalStateCcr extends LocalStateCompositeXPackPlugin {
     public LocalStateCcr(final Settings settings, final Path configPath) throws Exception {
         super(settings, configPath);
 
-        plugins.add(new Ccr(settings, new CcrLicenseChecker(() -> true, () -> false)) {
+        plugins.add(new Ccr(settings, new CcrLicenseChecker(FunctionUtils.TRUE_BOOLEAN_SUPPLIER, FunctionUtils.FALSE_BOOLEAN_SUPPLIER)) {
 
         });
     }

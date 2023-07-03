@@ -226,10 +226,10 @@ public class MachineLearningUsageTransportAction extends XPackUsageFeatureTransp
         Map<JobState, Map<String, Long>> createdByByState = new HashMap<>();
 
         List<GetJobsStatsAction.Response.JobStats> jobsStats = response.getResponse().results();
-        Map<String, Job> jobMap = jobs.stream().collect(Collectors.toMap(Job::getId, item -> item));
+        Map<String, Job> jobMap = jobs.stream().collect(Collectors.toMap(Job::getId, Function.identity()));
         Map<String, Long> allJobsCreatedBy = jobs.stream()
             .map(this::jobCreatedBy)
-            .collect(Collectors.groupingBy(item -> item, Collectors.counting()));
+            .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
         ;
         for (GetJobsStatsAction.Response.JobStats jobStats : jobsStats) {
             Job job = jobMap.get(jobStats.getJobId());

@@ -14,6 +14,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.common.util.MockBigArrays;
 import org.elasticsearch.common.util.MockPageCacheRecycler;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.indices.breaker.NoneCircuitBreakerService;
 import org.elasticsearch.script.ScriptService;
 import org.elasticsearch.search.DocValueFormat;
@@ -163,7 +164,7 @@ public class InternalVariableWidthHistogramTests extends InternalMultiBucketAggr
         AggregationReduceContext context = new AggregationReduceContext.ForFinal(
             bigArrays,
             mockScriptService,
-            () -> false,
+            FunctionUtils.FALSE_SUPPLIER,
             mock(AggregationBuilder.class),
             bucketConsumer,
             PipelineAggregator.PipelineTree.EMPTY
@@ -218,7 +219,7 @@ public class InternalVariableWidthHistogramTests extends InternalMultiBucketAggr
         AggregationReduceContext context = new AggregationReduceContext.ForFinal(
             bigArrays,
             mockScriptService,
-            () -> false,
+            FunctionUtils.FALSE_SUPPLIER,
             mock(AggregationBuilder.class),
             bucketConsumer,
             PipelineAggregator.PipelineTree.EMPTY
@@ -309,7 +310,7 @@ public class InternalVariableWidthHistogramTests extends InternalMultiBucketAggr
         AggregationReduceContext context = new AggregationReduceContext.ForFinal(
             bigArrays,
             mockScriptService,
-            () -> false,
+            FunctionUtils.FALSE_SUPPLIER,
             mock(AggregationBuilder.class),
             bucketConsumer,
             PipelineAggregator.PipelineTree.EMPTY
@@ -366,7 +367,7 @@ public class InternalVariableWidthHistogramTests extends InternalMultiBucketAggr
         AggregationReduceContext context = new AggregationReduceContext.ForFinal(
             bigArrays,
             mockScriptService,
-            () -> false,
+            FunctionUtils.FALSE_SUPPLIER,
             mock(AggregationBuilder.class),
             bucketConsumer,
             PipelineAggregator.PipelineTree.EMPTY
@@ -428,7 +429,7 @@ public class InternalVariableWidthHistogramTests extends InternalMultiBucketAggr
         AggregationReduceContext context = new AggregationReduceContext.ForFinal(
             bigArrays,
             mockScriptService,
-            () -> false,
+            FunctionUtils.FALSE_SUPPLIER,
             mock(AggregationBuilder.class),
             bucketConsumer,
             PipelineAggregator.PipelineTree.EMPTY

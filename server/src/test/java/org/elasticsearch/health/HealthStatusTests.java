@@ -9,6 +9,7 @@
 package org.elasticsearch.health;
 
 import org.elasticsearch.common.io.stream.Writeable;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.test.AbstractWireSerializingTestCase;
 
 import java.util.ArrayList;
@@ -52,7 +53,7 @@ public class HealthStatusTests extends AbstractWireSerializingTestCase<HealthSta
     private static Stream<HealthStatus> randomStatusesContaining(HealthStatus... statuses) {
         var result = new ArrayList<HealthStatus>();
         for (HealthStatus status : statuses) {
-            result.addAll(randomList(1, 10, () -> status));
+            result.addAll(randomList(1, 10, FunctionUtils.constantSupplier(status)));
         }
         return result.stream();
     }

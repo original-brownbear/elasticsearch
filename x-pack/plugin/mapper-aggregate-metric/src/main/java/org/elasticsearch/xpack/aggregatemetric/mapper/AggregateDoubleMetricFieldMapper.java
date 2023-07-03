@@ -17,6 +17,7 @@ import org.apache.lucene.search.SortedNumericSortField;
 import org.apache.lucene.util.NumericUtils;
 import org.elasticsearch.common.time.DateMathParser;
 import org.elasticsearch.common.util.BigArrays;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.index.IndexMode;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.fielddata.FieldDataContext;
@@ -150,13 +151,21 @@ public class AggregateDoubleMetricFieldMapper extends FieldMapper {
         /**
          * Set the default metric so that query operations are delegated to it.
          */
-        private final Parameter<Metric> defaultMetric = new Parameter<>(Names.DEFAULT_METRIC, false, () -> null, (n, c, o) -> {
-            try {
-                return Metric.valueOf(o.toString());
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Metric [" + o.toString() + "] is not supported.", e);
-            }
-        }, m -> toType(m).defaultMetric, XContentBuilder::field, Objects::toString);
+        private final Parameter<Metric> defaultMetric = new Parameter<>(
+            Names.DEFAULT_METRIC,
+            false,
+            FunctionUtils.nullSupplier(),
+            (n, c, o) -> {
+                try {
+                    return Metric.valueOf(o.toString());
+                } catch (IllegalArgumentException e) {
+                    throw new IllegalArgumentException("Metric [" + o.toString() + "] is not supported.", e);
+                }
+            },
+            m -> toType(m).defaultMetric,
+            XContentBuilder::field,
+            Objects::toString
+        );
 
         private final IndexVersion indexCreatedVersion;
         private final IndexMode indexMode;

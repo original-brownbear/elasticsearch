@@ -10,6 +10,7 @@ package org.elasticsearch.xpack.ml.dataframe.stats;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.support.WriteRequest;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.ToXContentObject;
 import org.elasticsearch.xpack.core.ml.MlStatsIndex;
@@ -46,7 +47,7 @@ public class StatsPersister {
                 WriteRequest.RefreshPolicy.NONE,
                 docIdSupplier.apply(jobId),
                 true,
-                () -> true,
+                FunctionUtils.TRUE_SUPPLIER,
                 retryMessage -> LOGGER.debug(
                     "[{}] failed to persist result with id [{}]; {}",
                     jobId,

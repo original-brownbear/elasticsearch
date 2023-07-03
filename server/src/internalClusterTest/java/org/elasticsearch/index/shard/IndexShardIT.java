@@ -556,7 +556,6 @@ public class IndexShardIT extends ESSingleNodeTestCase {
         client().prepareDelete("test", "0").get();
         client().prepareIndex("test").setId("1").setSource("{\"foo\" : \"bar\"}", XContentType.JSON).setRefreshPolicy(IMMEDIATE).get();
 
-        CheckedFunction<DirectoryReader, DirectoryReader, IOException> wrapper = directoryReader -> directoryReader;
         shard.close("simon says", false);
         AtomicReference<IndexShard> shardRef = new AtomicReference<>();
         List<Exception> failures = new ArrayList<>();
@@ -588,7 +587,13 @@ public class IndexShardIT extends ESSingleNodeTestCase {
                 }
             }
         };
-        final IndexShard newShard = newIndexShard(indexService, shard, wrapper, getInstanceFromNode(CircuitBreakerService.class), listener);
+        final IndexShard newShard = newIndexShard(
+            indexService,
+            shard,
+            CheckedFunction.identity(),
+            getInstanceFromNode(CircuitBreakerService.class),
+            listener
+        );
         shardRef.set(newShard);
         recoverShard(newShard);
 

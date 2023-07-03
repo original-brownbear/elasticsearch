@@ -15,6 +15,7 @@ import org.apache.lucene.tests.index.RandomIndexWriter;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.time.DateFormatter;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.script.AbstractFieldScript;
 import org.elasticsearch.script.DateFieldScript;
 import org.elasticsearch.script.ScriptContext;
@@ -68,7 +69,7 @@ public class DateFieldScriptTests extends FieldScriptTestCase<DateFieldScript.Fa
                 DateFieldScript script = new DateFieldScript(
                     "test",
                     Map.of(),
-                    new SearchLookup(field -> null, (ft, lookup, fdt) -> null, (ctx, doc) -> null),
+                    new SearchLookup(FunctionUtils.toNull(), (ft, lookup, fdt) -> null, (ctx, doc) -> null),
                     DateFormatter.forPattern(randomDateFormatterPattern()).withLocale(randomLocale(random())),
                     OnScriptError.FAIL,
                     reader.leaves().get(0)
@@ -105,7 +106,7 @@ public class DateFieldScriptTests extends FieldScriptTestCase<DateFieldScript.Fa
                 DateFieldScript.LeafFactory leafFactory = fromSource().newFactory(
                     "field",
                     Collections.emptyMap(),
-                    new SearchLookup(field -> null, (ft, lookup, fdt) -> null, SourceProvider.fromStoredFields()),
+                    new SearchLookup(FunctionUtils.toNull(), (ft, lookup, fdt) -> null, SourceProvider.fromStoredFields()),
                     DateFormatter.forPattern("epoch_millis"),
                     OnScriptError.FAIL
                 );

@@ -23,12 +23,12 @@ import org.elasticsearch.common.logging.DeprecationCategory;
 import org.elasticsearch.common.logging.DeprecationLogger;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.Maps;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.index.IndexModule;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.mapper.MappedFieldType;
-import org.elasticsearch.lucene.similarity.LegacyBM25Similarity;
 import org.elasticsearch.script.ScriptService;
 
 import java.util.Collections;
@@ -45,14 +45,8 @@ public final class SimilarityService {
     public static final Map<String, TriFunction<Settings, IndexVersion, ScriptService, Similarity>> BUILT_IN;
     static {
         Map<String, Function<IndexVersion, Supplier<Similarity>>> defaults = new HashMap<>();
-        defaults.put("BM25", version -> {
-            final LegacyBM25Similarity similarity = SimilarityProviders.createBM25Similarity(Settings.EMPTY, version);
-            return () -> similarity;
-        });
-        defaults.put("boolean", version -> {
-            final Similarity similarity = new BooleanSimilarity();
-            return () -> similarity;
-        });
+        defaults.put("BM25", version -> FunctionUtils.constantSupplier(SimilarityProviders.createBM25Similarity(Settings.EMPTY, version)));
+        defaults.put("boolean", version -> FunctionUtils.constantSupplier(new BooleanSimilarity()));
 
         Map<String, TriFunction<Settings, IndexVersion, ScriptService, Similarity>> builtIn = new HashMap<>();
         builtIn.put("BM25", (settings, version, scriptService) -> SimilarityProviders.createBM25Similarity(settings, version));
@@ -104,8 +98,7 @@ public final class SimilarityService {
                 // We don't trust custom similarities
                 similarity = new NonNegativeScoresSimilarity(similarity);
             }
-            final Similarity similarityF = similarity; // like similarity but final
-            providers.put(name, () -> similarityF);
+            providers.put(name, FunctionUtils.constantSupplier(similarity));
         }
         for (Map.Entry<String, Function<IndexVersion, Supplier<Similarity>>> entry : DEFAULTS.entrySet()) {
             providers.put(entry.getKey(), entry.getValue().apply(indexSettings.getIndexVersionCreated()));

@@ -16,6 +16,7 @@ import org.elasticsearch.cluster.node.DiscoveryNodeUtils;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.DeterministicTaskQueue;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.discovery.DiscoveryModule;
 import org.elasticsearch.test.ESTestCase;
@@ -110,7 +111,7 @@ public class ClusterBootstrapServiceTests extends ESTestCase {
             settings.build(),
             transportService,
             () -> discoveredNodesSupplier.get().get(),
-            () -> false,
+            FunctionUtils.FALSE_BOOLEAN_SUPPLIER,
             vc -> {
                 assertTrue(bootstrapped.compareAndSet(false, true));
                 assertThat(
@@ -152,7 +153,7 @@ public class ClusterBootstrapServiceTests extends ESTestCase {
     private void testDoesNothingWithSettings(Settings.Builder builder) {
         ClusterBootstrapService clusterBootstrapService = new ClusterBootstrapService(builder.build(), transportService, () -> {
             throw new AssertionError("should not be called");
-        }, () -> false, vc -> { throw new AssertionError("should not be called"); });
+        }, FunctionUtils.FALSE_BOOLEAN_SUPPLIER, vc -> { throw new AssertionError("should not be called"); });
         transportService.start();
         clusterBootstrapService.scheduleUnconfiguredBootstrap();
         deterministicTaskQueue.runAllTasks();
@@ -165,7 +166,7 @@ public class ClusterBootstrapServiceTests extends ESTestCase {
                 builder().putList(INITIAL_MASTER_NODES_SETTING.getKey(), "duplicate-requirement", "duplicate-requirement").build(),
                 transportService,
                 Collections::emptyList,
-                () -> false,
+                FunctionUtils.FALSE_BOOLEAN_SUPPLIER,
                 vc -> {
                     throw new AssertionError("should not be called");
                 }
@@ -185,7 +186,7 @@ public class ClusterBootstrapServiceTests extends ESTestCase {
                 .build(),
             transportService,
             () -> Stream.of(otherNode1, otherNode2).toList(),
-            () -> false,
+            FunctionUtils.FALSE_BOOLEAN_SUPPLIER,
             vc -> {
                 assertTrue(bootstrapped.compareAndSet(false, true));
                 assertThat(vc.getNodeIds(), containsInAnyOrder(localNode.getId(), otherNode1.getId(), otherNode2.getId()));
@@ -213,7 +214,7 @@ public class ClusterBootstrapServiceTests extends ESTestCase {
                 .build(),
             transportService,
             () -> singletonList(otherNode1),
-            () -> false,
+            FunctionUtils.FALSE_BOOLEAN_SUPPLIER,
             vc -> {
                 assertTrue(bootstrapped.compareAndSet(false, true));
                 assertThat(vc.getNodeIds(), hasSize(3));
@@ -253,7 +254,7 @@ public class ClusterBootstrapServiceTests extends ESTestCase {
                 .build(),
             transportService,
             () -> Stream.of(otherNode1, otherNode2).toList(),
-            () -> false,
+            FunctionUtils.FALSE_BOOLEAN_SUPPLIER,
             vc -> {
                 assertTrue(bootstrapped.compareAndSet(false, true));
                 assertThat(vc.getNodeIds(), hasSize(5));
@@ -291,7 +292,7 @@ public class ClusterBootstrapServiceTests extends ESTestCase {
                 .build(),
             transportService,
             Collections::emptyList,
-            () -> true,
+            FunctionUtils.TRUE_BOOLEAN_SUPPLIER,
             vc -> {
                 throw new AssertionError("should not be called");
             }
@@ -316,7 +317,7 @@ public class ClusterBootstrapServiceTests extends ESTestCase {
                 .build(),
             transportService,
             () -> Stream.of(otherNode1).toList(),
-            () -> false,
+            FunctionUtils.FALSE_BOOLEAN_SUPPLIER,
             vc -> {
                 throw new AssertionError("should not be called");
             }
@@ -342,7 +343,7 @@ public class ClusterBootstrapServiceTests extends ESTestCase {
                 .build(),
             transportService,
             () -> Stream.of(otherNode1, otherNode2).toList(),
-            () -> false,
+            FunctionUtils.FALSE_BOOLEAN_SUPPLIER,
             vc -> {
                 throw new AssertionError("should not be called");
             }
@@ -360,7 +361,7 @@ public class ClusterBootstrapServiceTests extends ESTestCase {
                 .build(),
             transportService,
             () -> Stream.of(otherNode1, otherNode2).toList(),
-            () -> true,
+            FunctionUtils.TRUE_BOOLEAN_SUPPLIER,
             vc -> {
                 throw new AssertionError("should not be called");
             }
@@ -379,7 +380,7 @@ public class ClusterBootstrapServiceTests extends ESTestCase {
                 .build(),
             transportService,
             () -> Stream.of(localNode, otherNode1, otherNode2).toList(),
-            () -> false,
+            FunctionUtils.FALSE_BOOLEAN_SUPPLIER,
             vc -> {
                 throw new AssertionError("should not be called");
             }
@@ -394,7 +395,7 @@ public class ClusterBootstrapServiceTests extends ESTestCase {
             Settings.builder().putList(INITIAL_MASTER_NODES_SETTING.getKey(), otherNode1.getName(), otherNode2.getName()).build(),
             transportService,
             () -> Stream.of(localNode, otherNode1, otherNode2).toList(),
-            () -> false,
+            FunctionUtils.FALSE_BOOLEAN_SUPPLIER,
             vc -> {
                 throw new AssertionError("should not be called");
             }
@@ -409,7 +410,7 @@ public class ClusterBootstrapServiceTests extends ESTestCase {
             Settings.builder().putList(INITIAL_MASTER_NODES_SETTING.getKey()).build(),
             transportService,
             () -> Stream.of(localNode, otherNode1, otherNode2).toList(),
-            () -> false,
+            FunctionUtils.FALSE_BOOLEAN_SUPPLIER,
             vc -> {
                 throw new AssertionError("should not be called");
             }
@@ -428,7 +429,7 @@ public class ClusterBootstrapServiceTests extends ESTestCase {
                 .build(),
             transportService,
             () -> Stream.of(otherNode1, otherNode2).toList(),
-            () -> false,
+            FunctionUtils.FALSE_BOOLEAN_SUPPLIER,
             vc -> {
                 bootstrappingAttempts.incrementAndGet();
                 if (bootstrappingAttempts.get() < 5L) {
@@ -450,7 +451,7 @@ public class ClusterBootstrapServiceTests extends ESTestCase {
             Settings.builder().putList(INITIAL_MASTER_NODES_SETTING.getKey(), localNode.getAddress().getAddress()).build(),
             transportService,
             discoveredNodes::get,
-            () -> false,
+            FunctionUtils.FALSE_BOOLEAN_SUPPLIER,
             vc -> {
                 throw new AssertionError("should not be called");
             }
@@ -473,7 +474,7 @@ public class ClusterBootstrapServiceTests extends ESTestCase {
                 .build(),
             transportService,
             discoveredNodes::get,
-            () -> false,
+            FunctionUtils.FALSE_BOOLEAN_SUPPLIER,
             vc -> {
                 throw new AssertionError("should not be called");
             }
@@ -507,7 +508,7 @@ public class ClusterBootstrapServiceTests extends ESTestCase {
             Settings.builder().putList(INITIAL_MASTER_NODES_SETTING.getKey(), localNode.getName()).build(),
             transportService,
             Collections::emptyList,
-            () -> false,
+            FunctionUtils.FALSE_BOOLEAN_SUPPLIER,
             vc -> assertTrue(bootstrapped.compareAndSet(false, true))
         );
 
@@ -523,7 +524,7 @@ public class ClusterBootstrapServiceTests extends ESTestCase {
             Settings.builder().putList(INITIAL_MASTER_NODES_SETTING.getKey(), localNode.getAddress().toString()).build(),
             transportService,
             Collections::emptyList,
-            () -> false,
+            FunctionUtils.FALSE_BOOLEAN_SUPPLIER,
             vc -> assertTrue(bootstrapped.compareAndSet(false, true))
         );
 
@@ -539,7 +540,7 @@ public class ClusterBootstrapServiceTests extends ESTestCase {
             Settings.builder().putList(INITIAL_MASTER_NODES_SETTING.getKey(), localNode.getAddress().getAddress()).build(),
             transportService,
             Collections::emptyList,
-            () -> false,
+            FunctionUtils.FALSE_BOOLEAN_SUPPLIER,
             vc -> assertTrue(bootstrapped.compareAndSet(false, true))
         );
 
@@ -554,7 +555,7 @@ public class ClusterBootstrapServiceTests extends ESTestCase {
             Settings.builder().putList(INITIAL_MASTER_NODES_SETTING.getKey(), randomAlphaOfLength(10)).build(),
             transportService,
             Collections::emptyList,
-            () -> false,
+            FunctionUtils.FALSE_BOOLEAN_SUPPLIER,
             vc -> {
                 throw new AssertionError("should not be called");
             }
@@ -574,7 +575,7 @@ public class ClusterBootstrapServiceTests extends ESTestCase {
                 .build(),
             transportService,
             () -> List.of(otherNode1, otherNode2, extraNode),
-            () -> false,
+            FunctionUtils.FALSE_BOOLEAN_SUPPLIER,
             vc -> {
                 assertTrue(bootstrapped.compareAndSet(false, true));
                 assertThat(vc.getNodeIds(), not(hasItem(extraNode.getId())));
@@ -597,7 +598,7 @@ public class ClusterBootstrapServiceTests extends ESTestCase {
             settings.build(),
             transportService,
             Collections::emptyList,
-            () -> false,
+            FunctionUtils.FALSE_BOOLEAN_SUPPLIER,
             vc -> {
                 assertTrue(bootstrapped.compareAndSet(false, true));
                 assertThat(vc.getNodeIds(), hasSize(1));
@@ -626,7 +627,13 @@ public class ClusterBootstrapServiceTests extends ESTestCase {
         assertThat(
             expectThrows(
                 IllegalArgumentException.class,
-                () -> new ClusterBootstrapService(settings.build(), transportService, Collections::emptyList, () -> false, vc -> fail())
+                () -> new ClusterBootstrapService(
+                    settings.build(),
+                    transportService,
+                    Collections::emptyList,
+                    FunctionUtils.FALSE_BOOLEAN_SUPPLIER,
+                    vc -> fail()
+                )
             ).getMessage(),
             containsString(
                 "setting [" + INITIAL_MASTER_NODES_SETTING.getKey() + "] is not allowed when [discovery.type] is set " + "to [single-node]"
@@ -643,7 +650,13 @@ public class ClusterBootstrapServiceTests extends ESTestCase {
         assertThat(
             expectThrows(
                 IllegalArgumentException.class,
-                () -> new ClusterBootstrapService(settings.build(), transportService, Collections::emptyList, () -> false, vc -> fail())
+                () -> new ClusterBootstrapService(
+                    settings.build(),
+                    transportService,
+                    Collections::emptyList,
+                    FunctionUtils.FALSE_BOOLEAN_SUPPLIER,
+                    vc -> fail()
+                )
             ).getMessage(),
             containsString("node with [discovery.type] set to [single-node] must be master-eligible")
         );
@@ -669,7 +682,7 @@ public class ClusterBootstrapServiceTests extends ESTestCase {
                 Settings.builder().putList(INITIAL_MASTER_NODES_SETTING.getKey(), "node1", "node2").build(),
                 transportService,
                 Collections::emptyList,
-                () -> false,
+                FunctionUtils.FALSE_BOOLEAN_SUPPLIER,
                 vc -> {
                     throw new AssertionError("should not be called");
                 }
@@ -688,9 +701,15 @@ public class ClusterBootstrapServiceTests extends ESTestCase {
                 )
             );
 
-            new ClusterBootstrapService(Settings.EMPTY, transportService, Collections::emptyList, () -> false, vc -> {
-                throw new AssertionError("should not be called");
-            }).logBootstrapState(Metadata.builder().clusterUUID("test-uuid").clusterUUIDCommitted(true).build());
+            new ClusterBootstrapService(
+                Settings.EMPTY,
+                transportService,
+                Collections::emptyList,
+                FunctionUtils.FALSE_BOOLEAN_SUPPLIER,
+                vc -> {
+                    throw new AssertionError("should not be called");
+                }
+            ).logBootstrapState(Metadata.builder().clusterUUID("test-uuid").clusterUUIDCommitted(true).build());
 
             mockAppender.assertAllExpectationsMatched();
 
@@ -713,7 +732,7 @@ public class ClusterBootstrapServiceTests extends ESTestCase {
                 Settings.builder().putList(INITIAL_MASTER_NODES_SETTING.getKey(), "node1", "node2").build(),
                 transportService,
                 Collections::emptyList,
-                () -> false,
+                FunctionUtils.FALSE_BOOLEAN_SUPPLIER,
                 vc -> {
                     throw new AssertionError("should not be called");
                 }
@@ -751,7 +770,7 @@ public class ClusterBootstrapServiceTests extends ESTestCase {
                 Settings.builder().put(DiscoveryModule.DISCOVERY_TYPE_SETTING.getKey(), DiscoveryModule.SINGLE_NODE_DISCOVERY_TYPE).build(),
                 transportService,
                 Collections::emptyList,
-                () -> false,
+                FunctionUtils.FALSE_BOOLEAN_SUPPLIER,
                 vc -> {
                     throw new AssertionError("should not be called");
                 }
@@ -766,7 +785,7 @@ public class ClusterBootstrapServiceTests extends ESTestCase {
             Settings.builder().put(DiscoveryModule.DISCOVERY_TYPE_SETTING.getKey(), DiscoveryModule.SINGLE_NODE_DISCOVERY_TYPE).build(),
             transportService,
             Collections::emptyList,
-            () -> false,
+            FunctionUtils.FALSE_BOOLEAN_SUPPLIER,
             vc -> {
                 throw new AssertionError("should not be called");
             }

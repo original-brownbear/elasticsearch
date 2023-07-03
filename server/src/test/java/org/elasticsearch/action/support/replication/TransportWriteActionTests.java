@@ -28,6 +28,7 @@ import org.elasticsearch.cluster.routing.TestShardRouting;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.core.CheckedFunction;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.Strings;
 import org.elasticsearch.index.Index;
@@ -136,7 +137,7 @@ public class TransportWriteActionTests extends ESTestCase {
         TestAction testAction = new TestAction();
         testAction.dispatchedShardOperationOnPrimary(request, indexShard, ActionTestUtils.assertNoFailureListener(result -> {
             CapturingActionListener<TestResponse> listener = new CapturingActionListener<>();
-            result.runPostReplicationActions(listener.map(ignore -> result.replicationResponse));
+            result.runPostReplicationActions(listener.map(CheckedFunction.toConstant(result.replicationResponse)));
             assertNotNull(listener.response);
             assertNull(listener.failure);
             verify(indexShard, never()).refresh(any());
@@ -165,7 +166,7 @@ public class TransportWriteActionTests extends ESTestCase {
         TestAction testAction = new TestAction();
         testAction.dispatchedShardOperationOnPrimary(request, indexShard, ActionTestUtils.assertNoFailureListener(result -> {
             CapturingActionListener<TestResponse> listener = new CapturingActionListener<>();
-            result.runPostReplicationActions(listener.map(ignore -> result.replicationResponse));
+            result.runPostReplicationActions(listener.map(CheckedFunction.toConstant(result.replicationResponse)));
 
             @SuppressWarnings({ "unchecked", "rawtypes" })
             ArgumentCaptor<ActionListener<Boolean>> refreshListener = ArgumentCaptor.forClass((Class) ActionListener.class);
@@ -210,7 +211,7 @@ public class TransportWriteActionTests extends ESTestCase {
         TestAction testAction = new TestAction();
         testAction.dispatchedShardOperationOnPrimary(request, indexShard, ActionTestUtils.assertNoFailureListener(result -> {
             CapturingActionListener<TestResponse> listener = new CapturingActionListener<>();
-            result.runPostReplicationActions(listener.map(ignore -> result.replicationResponse));
+            result.runPostReplicationActions(listener.map(CheckedFunction.toConstant(result.replicationResponse)));
             assertNull(listener.response); // Haven't really responded yet
 
             @SuppressWarnings({ "unchecked", "rawtypes" })

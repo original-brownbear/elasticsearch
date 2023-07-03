@@ -62,6 +62,7 @@ import org.elasticsearch.common.util.MockBigArrays;
 import org.elasticsearch.common.util.MockPageCacheRecycler;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.core.CheckedConsumer;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.Releasables;
 import org.elasticsearch.core.Strings;
@@ -163,6 +164,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static java.util.Collections.emptyMap;
@@ -355,7 +357,7 @@ public abstract class AggregatorTestCase extends ESTestCase {
             System::currentTimeMillis,
             null,
             null,
-            () -> true,
+            FunctionUtils.TRUE_BOOLEAN_SUPPLIER,
             valuesSourceRegistry,
             emptyMap()
         );
@@ -372,8 +374,8 @@ public abstract class AggregatorTestCase extends ESTestCase {
             bitsetFilterCache,
             randomInt(),
             () -> 0L,
-            () -> false,
-            q -> q,
+            FunctionUtils.FALSE_SUPPLIER,
+            Function.identity(),
             true,
             isInSortOrderExecutionRequired
         );
@@ -621,7 +623,7 @@ public abstract class AggregatorTestCase extends ESTestCase {
                 AggregationReduceContext reduceContext = new AggregationReduceContext.ForPartial(
                     bigArraysForReduction,
                     getMockScriptService(),
-                    () -> false,
+                    FunctionUtils.FALSE_SUPPLIER,
                     builder
                 );
                 A reduced = (A) internalAggs.get(0).reduce(toReduce, reduceContext);
@@ -638,7 +640,7 @@ public abstract class AggregatorTestCase extends ESTestCase {
             AggregationReduceContext reduceContext = new AggregationReduceContext.ForFinal(
                 bigArraysForReduction,
                 getMockScriptService(),
-                () -> false,
+                FunctionUtils.FALSE_SUPPLIER,
                 builder,
                 reduceBucketConsumer,
                 pipelines
@@ -793,7 +795,7 @@ public abstract class AggregatorTestCase extends ESTestCase {
                 new AggregationReduceContext.ForFinal(
                     context.bigArrays(),
                     getMockScriptService(),
-                    () -> false,
+                    FunctionUtils.FALSE_SUPPLIER,
                     builder,
                     new MultiBucketConsumer(context.maxBuckets(), context.breaker()),
                     builder.buildPipelineTree()

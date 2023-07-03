@@ -31,6 +31,7 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.core.CheckedConsumer;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.engine.CommitStats;
@@ -77,7 +78,10 @@ public class CcrLicenseChecker {
      * Constructs a CCR license checker with the default rule based on the license state for checking if CCR is allowed.
      */
     CcrLicenseChecker(Settings settings) {
-        this(() -> CcrConstants.CCR_FEATURE.check(XPackPlugin.getSharedLicenseState()), () -> XPackSettings.SECURITY_ENABLED.get(settings));
+        this(
+            () -> CcrConstants.CCR_FEATURE.check(XPackPlugin.getSharedLicenseState()),
+            FunctionUtils.booleanSupplier(XPackSettings.SECURITY_ENABLED.get(settings))
+        );
     }
 
     /**

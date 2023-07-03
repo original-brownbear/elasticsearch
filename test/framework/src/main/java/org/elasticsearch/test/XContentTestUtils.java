@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Stack;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -221,7 +222,7 @@ public final class XContentTestUtils {
                 return randomValues.get(0);
             } else {
                 if (random.nextBoolean()) {
-                    return randomValues.stream().collect(Collectors.toMap(obj -> randomAsciiOfLength(random, 10), obj -> obj));
+                    return randomValues.stream().collect(Collectors.toMap(obj -> randomAsciiOfLength(random, 10), Function.identity()));
                 } else {
                     return randomValues;
                 }

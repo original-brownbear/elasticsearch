@@ -9,6 +9,7 @@ package org.elasticsearch.action;
 
 import org.apache.lucene.store.AlreadyClosedException;
 import org.elasticsearch.action.support.PlainActionFuture;
+import org.elasticsearch.common.CheckedSupplier;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
 import org.elasticsearch.core.Assertions;
 import org.elasticsearch.core.CheckedConsumer;
@@ -405,7 +406,10 @@ public class ActionListenerTests extends ESTestCase {
             }
         };
 
-        AssertionError assertionError = expectThrows(AssertionError.class, () -> ActionListener.completeWith(listener, () -> null));
+        AssertionError assertionError = expectThrows(
+            AssertionError.class,
+            () -> ActionListener.completeWith(listener, CheckedSupplier.nullValue())
+        );
         assertThat(assertionError.getCause(), instanceOf(IllegalArgumentException.class));
         assertNull(exReference.get());
 

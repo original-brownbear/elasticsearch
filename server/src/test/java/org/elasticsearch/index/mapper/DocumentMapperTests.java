@@ -15,6 +15,7 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.analysis.AnalyzerScope;
@@ -198,7 +199,7 @@ public class DocumentMapperTests extends MapperServiceTestCase {
                     // not in the mapping yet, try again
                     continue;
                 }
-                Analyzer a = mapperService.indexAnalyzer(fieldName, f -> null);
+                Analyzer a = mapperService.indexAnalyzer(fieldName, FunctionUtils.toNull());
                 assertNotNull(a);
                 assertNotNull(a.tokenStream(fieldName, "foo"));
             }
@@ -284,7 +285,7 @@ public class DocumentMapperTests extends MapperServiceTestCase {
     }
 
     public void testEmptyDocumentMapper() {
-        MapperService mapperService = createMapperService(IndexVersion.current(), Settings.EMPTY, () -> false);
+        MapperService mapperService = createMapperService(IndexVersion.current(), Settings.EMPTY, FunctionUtils.FALSE_BOOLEAN_SUPPLIER);
         DocumentMapper documentMapper = DocumentMapper.createEmpty(mapperService);
         assertEquals("{\"_doc\":{}}", Strings.toString(documentMapper.mapping()));
         assertTrue(documentMapper.mappers().hasMappings());
@@ -428,7 +429,11 @@ public class DocumentMapperTests extends MapperServiceTestCase {
                 builders[i].endObject().endObject().endObject();
             }
 
-            final MapperService mapperService = createMapperService(IndexVersion.current(), Settings.EMPTY, () -> false);
+            final MapperService mapperService = createMapperService(
+                IndexVersion.current(),
+                Settings.EMPTY,
+                FunctionUtils.FALSE_BOOLEAN_SUPPLIER
+            );
             final CountDownLatch latch = new CountDownLatch(1);
             final Thread[] threads = new Thread[numThreads];
             for (int i = 0; i < threads.length; i++) {

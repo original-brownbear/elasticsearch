@@ -11,6 +11,7 @@ import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.CheckedRunnable;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.xpack.autoscaling.capacity.AutoscalingDeciderResult;
 import org.elasticsearch.xpack.autoscaling.capacity.AutoscalingDeciderService;
 import org.elasticsearch.xpack.core.LocalStateCompositeXPackPlugin;
@@ -37,7 +38,7 @@ public class LocalStateAutoscaling extends LocalStateCompositeXPackPlugin {
         private final AutoscalingSyncTestDeciderService syncDeciderService = new AutoscalingSyncTestDeciderService();
 
         private AutoscalingTestPlugin() {
-            super(new AutoscalingLicenseChecker(() -> true));
+            super(new AutoscalingLicenseChecker(FunctionUtils.TRUE_BOOLEAN_SUPPLIER));
         }
 
         @Override

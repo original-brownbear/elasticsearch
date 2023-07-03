@@ -24,6 +24,7 @@ import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.client.internal.OriginSettingClient;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.IdsQueryBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -103,7 +104,7 @@ public class JobResultsPersister {
     }
 
     public Builder bulkPersisterBuilder(String jobId) {
-        return new Builder(jobId, () -> true);
+        return new Builder(jobId, FunctionUtils.TRUE_SUPPLIER);
     }
 
     public Builder bulkPersisterBuilder(String jobId, Supplier<Boolean> shouldRetry) {
@@ -504,7 +505,7 @@ public class JobResultsPersister {
             DatafeedTimingStats.documentId(timingStats.getJobId())
         );
         persistable.setRefreshPolicy(refreshPolicy);
-        persistable.persist(() -> true, true, listener);
+        persistable.persist(FunctionUtils.TRUE_SUPPLIER, true, listener);
     }
 
     private static XContentBuilder toXContentBuilder(ToXContent obj, ToXContent.Params params) throws IOException {

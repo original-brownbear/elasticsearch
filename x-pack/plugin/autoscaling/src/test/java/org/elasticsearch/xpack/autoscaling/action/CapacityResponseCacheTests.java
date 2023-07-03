@@ -11,6 +11,7 @@ import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
 import org.elasticsearch.common.util.concurrent.FutureUtils;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.tasks.TaskCancelledException;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.threadpool.TestThreadPool;
@@ -65,7 +66,7 @@ public class CapacityResponseCacheTests extends AutoscalingTestCase {
         responses.add(response);
         PlainActionFuture<Long> future = new PlainActionFuture<>();
 
-        cache.get(() -> false, future);
+        cache.get(FunctionUtils.FALSE_BOOLEAN_SUPPLIER, future);
 
         assertThat(future.get(), equalTo(response));
     }
@@ -115,7 +116,7 @@ public class CapacityResponseCacheTests extends AutoscalingTestCase {
         List<PlainActionFuture<Integer>> blockingFutures = new ArrayList<>(count + 1);
         for (int i = 0; i < count; ++i) {
             PlainActionFuture<Integer> blockingFuture = new PlainActionFuture<>();
-            maybeSpawn.accept(() -> cache.get(() -> false, blockingFuture));
+            maybeSpawn.accept(() -> cache.get(FunctionUtils.FALSE_BOOLEAN_SUPPLIER, blockingFuture));
             blockingFutures.add(blockingFuture);
         }
         await(barrier);
@@ -130,7 +131,7 @@ public class CapacityResponseCacheTests extends AutoscalingTestCase {
         int response = randomInt();
         responses.add(() -> response);
         PlainActionFuture<Integer> responseFuture = new PlainActionFuture<>();
-        cache.get(() -> false, responseFuture);
+        cache.get(FunctionUtils.FALSE_BOOLEAN_SUPPLIER, responseFuture);
 
         Stream.concat(blockingFutures.stream(), supersededFutures.stream()).forEach(future -> assertThat(future.isDone(), is(false)));
         assertThat(responseFuture.isDone(), is(false));
@@ -165,7 +166,7 @@ public class CapacityResponseCacheTests extends AutoscalingTestCase {
         });
 
         PlainActionFuture<Integer> blockingFuture = new PlainActionFuture<>();
-        cache.get(() -> false, blockingFuture);
+        cache.get(FunctionUtils.FALSE_BOOLEAN_SUPPLIER, blockingFuture);
         await(barrier);
 
         AtomicBoolean cancelled = new AtomicBoolean();
@@ -223,7 +224,7 @@ public class CapacityResponseCacheTests extends AutoscalingTestCase {
                 int lastResult = -1;
                 for (int i = 0; i < iterations; ++i) {
                     PlainActionFuture<Integer> future = new PlainActionFuture<>();
-                    cache.get(() -> false, future);
+                    cache.get(FunctionUtils.FALSE_BOOLEAN_SUPPLIER, future);
                     int result = future.actionGet();
                     assertThat(result, greaterThan(lastResult));
                     lastResult = result;
@@ -252,10 +253,10 @@ public class CapacityResponseCacheTests extends AutoscalingTestCase {
             return 0;
         });
         PlainActionFuture<Integer> future1 = new PlainActionFuture<>();
-        runOnThread.accept(() -> { cache.get(() -> false, future1); });
+        runOnThread.accept(() -> { cache.get(FunctionUtils.FALSE_BOOLEAN_SUPPLIER, future1); });
         await(barrier);
         PlainActionFuture<Integer> future2 = new PlainActionFuture<>();
-        cache.get(() -> false, future2);
+        cache.get(FunctionUtils.FALSE_BOOLEAN_SUPPLIER, future2);
 
         // release the spawned get request.
         await(barrier);

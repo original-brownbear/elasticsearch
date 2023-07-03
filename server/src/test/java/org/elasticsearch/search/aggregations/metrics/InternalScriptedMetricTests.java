@@ -12,6 +12,7 @@ import org.elasticsearch.TransportVersion;
 import org.elasticsearch.common.geo.GeoPoint;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.Maps;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.script.MockScriptEngine;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptEngine;
@@ -56,7 +57,7 @@ public class InternalScriptedMetricTests extends InternalAggregationTestCase<Int
         () -> randomBoolean(),
         () -> randomAlphaOfLength(5),
         () -> new GeoPoint(randomDouble(), randomDouble()),
-        () -> null };
+        FunctionUtils.nullSupplier() };
     @SuppressWarnings({ "rawtypes", "unchecked" })
     private final Supplier<Object>[] nestedValueSuppliers = new Supplier[] { () -> new HashMap<String, Object>(), () -> new ArrayList<>() };
 
@@ -180,7 +181,7 @@ public class InternalScriptedMetricTests extends InternalAggregationTestCase<Int
             new AggregationReduceContext.ForFinal(
                 null,
                 mockScriptService(),
-                () -> false,
+                FunctionUtils.FALSE_SUPPLIER,
                 mock(AggregationBuilder.class),
                 null,
                 PipelineTree.EMPTY

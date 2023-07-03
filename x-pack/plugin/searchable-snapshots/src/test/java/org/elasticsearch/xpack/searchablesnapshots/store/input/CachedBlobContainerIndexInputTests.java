@@ -15,6 +15,7 @@ import org.elasticsearch.common.blobstore.BlobContainer;
 import org.elasticsearch.common.blobstore.support.FilterBlobContainer;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeValue;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.shard.ShardId;
@@ -126,7 +127,7 @@ public class CachedBlobContainerIndexInputTests extends AbstractSearchableSnapsh
                 ) {
                     RecoveryState recoveryState = createRecoveryState(recoveryFinalizedDone);
                     final PlainActionFuture<Void> future = PlainActionFuture.newFuture();
-                    final boolean loaded = directory.loadSnapshot(recoveryState, () -> false, future);
+                    final boolean loaded = directory.loadSnapshot(recoveryState, FunctionUtils.FALSE_SUPPLIER, future);
                     if (randomBoolean()) {
                         // randomly wait for pre-warm before running the below reads
                         future.get();
@@ -231,7 +232,7 @@ public class CachedBlobContainerIndexInputTests extends AbstractSearchableSnapsh
             ) {
                 RecoveryState recoveryState = createRecoveryState(randomBoolean());
                 final PlainActionFuture<Void> f = PlainActionFuture.newFuture();
-                final boolean loaded = searchableSnapshotDirectory.loadSnapshot(recoveryState, () -> false, f);
+                final boolean loaded = searchableSnapshotDirectory.loadSnapshot(recoveryState, FunctionUtils.FALSE_SUPPLIER, f);
                 try {
                     f.get();
                 } catch (ExecutionException e) {

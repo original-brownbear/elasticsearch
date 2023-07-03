@@ -12,6 +12,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.client.internal.OriginSettingClient;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.query.IdsQueryBuilder;
 import org.elasticsearch.index.reindex.DeleteByQueryAction;
@@ -95,7 +96,7 @@ public class ExpiredModelSnapshotsRemoverTests extends ESTestCase {
         );
         givenClientRequestsSucceed(responses, Collections.emptyMap());
 
-        createExpiredModelSnapshotsRemover(jobs.iterator()).remove(1.0f, listener, () -> false);
+        createExpiredModelSnapshotsRemover(jobs.iterator()).remove(1.0f, listener, FunctionUtils.FALSE_BOOLEAN_SUPPLIER);
 
         listener.waitToCompletion();
         assertThat(listener.success, is(true));
@@ -131,7 +132,7 @@ public class ExpiredModelSnapshotsRemoverTests extends ESTestCase {
         // created AFTER 17 days ago
         snapshotResponses.put("job-2", Collections.emptyList());
         givenClientRequestsSucceed(searchResponses, snapshotResponses);
-        createExpiredModelSnapshotsRemover(jobs.iterator()).remove(1.0f, listener, () -> false);
+        createExpiredModelSnapshotsRemover(jobs.iterator()).remove(1.0f, listener, FunctionUtils.FALSE_BOOLEAN_SUPPLIER);
 
         listener.waitToCompletion();
         assertThat(listener.success, is(true));
@@ -198,7 +199,7 @@ public class ExpiredModelSnapshotsRemoverTests extends ESTestCase {
         );
 
         givenClientSearchRequestsFail(searchResponses, Collections.emptyMap());
-        createExpiredModelSnapshotsRemover(jobs.iterator()).remove(1.0f, listener, () -> false);
+        createExpiredModelSnapshotsRemover(jobs.iterator()).remove(1.0f, listener, FunctionUtils.FALSE_BOOLEAN_SUPPLIER);
 
         listener.waitToCompletion();
         assertThat(listener.success, is(false));
@@ -228,7 +229,7 @@ public class ExpiredModelSnapshotsRemoverTests extends ESTestCase {
         searchResponses.add(AbstractExpiredJobDataRemoverTests.createSearchResponseFromHits(Collections.singletonList(snapshot2_2)));
 
         givenClientDeleteModelSnapshotRequestsFail(searchResponses, snapshots);
-        createExpiredModelSnapshotsRemover(jobs.iterator()).remove(1.0f, listener, () -> false);
+        createExpiredModelSnapshotsRemover(jobs.iterator()).remove(1.0f, listener, FunctionUtils.FALSE_BOOLEAN_SUPPLIER);
 
         listener.waitToCompletion();
         assertThat(listener.success, is(false));

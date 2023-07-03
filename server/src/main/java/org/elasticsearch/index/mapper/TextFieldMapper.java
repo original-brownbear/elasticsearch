@@ -52,6 +52,7 @@ import org.elasticsearch.common.lucene.search.AutomatonQueries;
 import org.elasticsearch.common.lucene.search.MultiPhrasePrefixQuery;
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.analysis.AnalyzerScope;
@@ -265,7 +266,7 @@ public class TextFieldMapper extends FieldMapper {
         final Parameter<PrefixConfig> indexPrefixes = new Parameter<>(
             "index_prefixes",
             false,
-            () -> null,
+            FunctionUtils.nullSupplier(),
             TextFieldMapper::parsePrefixConfig,
             m -> ((TextFieldMapper) m).indexPrefixes,
             XContentBuilder::field,
@@ -477,7 +478,7 @@ public class TextFieldMapper extends FieldMapper {
                 store,
                 indexOptions,
                 // legacy indices do not have access to norms
-                indexCreatedVersion.isLegacyIndexVersion() ? () -> false : norms,
+                indexCreatedVersion.isLegacyIndexVersion() ? FunctionUtils.FALSE_SUPPLIER : norms,
                 termVectors
             );
             TextFieldType tft = buildFieldType(fieldType, multiFields, context, indexCreatedVersion);

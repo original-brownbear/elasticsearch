@@ -24,6 +24,7 @@ import org.elasticsearch.common.Explicit;
 import org.elasticsearch.common.lucene.Lucene;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
 import org.elasticsearch.core.Booleans;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.analysis.NamedAnalyzer;
@@ -77,7 +78,7 @@ public class BooleanFieldMapper extends FieldMapper {
         private final Parameter<Boolean> nullValue = new Parameter<>(
             "null_value",
             false,
-            () -> null,
+            FunctionUtils.nullSupplier(),
             (n, c, o) -> o == null ? null : XContentMapValues.nodeBooleanValue(o),
             m -> toType(m).nullValue,
             XContentBuilder::field,

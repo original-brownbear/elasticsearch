@@ -16,6 +16,7 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.cluster.service.MasterService;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.xcontent.XContentType;
@@ -90,7 +91,7 @@ public class AnomalyJobCRUDIT extends MlSingleNodeTestCase {
         createJob(jobId);
         jobResultsPersister.persistModelSizeStats(
             new ModelSizeStats.Builder(jobId).setTimestamp(new Date()).setLogTime(new Date()).setModelBytes(10000000).build(),
-            () -> false
+            FunctionUtils.FALSE_SUPPLIER
         );
         jobResultsPersister.commitWrites(jobId, JobResultsPersister.CommitType.RESULTS);
 
@@ -205,7 +206,7 @@ public class AnomalyJobCRUDIT extends MlSingleNodeTestCase {
     }
 
     private void indexModelSnapshot(ModelSnapshot snapshot) {
-        jobResultsPersister.persistModelSnapshot(snapshot, WriteRequest.RefreshPolicy.IMMEDIATE, () -> true);
+        jobResultsPersister.persistModelSnapshot(snapshot, WriteRequest.RefreshPolicy.IMMEDIATE, FunctionUtils.TRUE_SUPPLIER);
     }
 
     private void testCreateWithExistingDocs(IndexRequest indexRequest, String jobId) {

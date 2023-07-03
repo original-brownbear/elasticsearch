@@ -17,6 +17,7 @@ import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.xcontent.NamedXContentRegistry;
 import org.elasticsearch.xcontent.ObjectParser;
@@ -98,8 +99,8 @@ public class ReportingAttachmentParser implements EmailAttachmentParser<Reportin
         PARSER.declareBoolean(Builder::inline, ReportingAttachment.INLINE);
         PARSER.declareString(Builder::interval, ReportingAttachment.INTERVAL);
         PARSER.declareString(Builder::url, ReportingAttachment.URL);
-        PARSER.declareObjectOrDefault(Builder::auth, (p, s) -> s.parseAuth(p), () -> null, ReportingAttachment.AUTH);
-        PARSER.declareObjectOrDefault(Builder::proxy, (p, s) -> s.parseProxy(p), () -> null, ReportingAttachment.PROXY);
+        PARSER.declareObjectOrDefault(Builder::auth, (p, s) -> s.parseAuth(p), FunctionUtils.nullSupplier(), ReportingAttachment.AUTH);
+        PARSER.declareObjectOrDefault(Builder::proxy, (p, s) -> s.parseProxy(p), FunctionUtils.nullSupplier(), ReportingAttachment.PROXY);
         PAYLOAD_PARSER.declareString(KibanaReportingPayload::setPath, new ParseField("path"));
     }
 

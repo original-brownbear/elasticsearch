@@ -9,6 +9,7 @@ package org.elasticsearch.xpack.security.ingest;
 import org.elasticsearch.ElasticsearchParseException;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.xpack.core.XPackSettings;
 import org.elasticsearch.xpack.core.security.SecurityContext;
@@ -73,7 +74,7 @@ public class SetSecurityUserProcessorFactoryTests extends ESTestCase {
 
     public void testCanConstructorProcessorWithoutSecurityEnabled() throws Exception {
         Settings securityDisabled = Settings.builder().put(XPackSettings.SECURITY_ENABLED.getKey(), false).build();
-        SetSecurityUserProcessor.Factory factory = new SetSecurityUserProcessor.Factory(() -> null, securityDisabled);
+        SetSecurityUserProcessor.Factory factory = new SetSecurityUserProcessor.Factory(FunctionUtils.nullSupplier(), securityDisabled);
         Map<String, Object> config = new HashMap<>();
         config.put("field", "_field");
         final SetSecurityUserProcessor processor = factory.create(null, "_tag", null, config);

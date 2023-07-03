@@ -51,6 +51,7 @@ import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.common.util.concurrent.ListenableFuture;
 import org.elasticsearch.common.xcontent.XContentHelper;
+import org.elasticsearch.core.CheckedFunction;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.Releasables;
@@ -699,7 +700,7 @@ public class Coordinator extends AbstractLifecycleComponent implements ClusterSt
         sendJoinPing(joinRequest.getSourceNode(), TransportRequestOptions.Type.PING, new ActionListener<>() {
             @Override
             public void onResponse(Empty empty) {
-                validateStateListener.addListener(validateListener.map(ignored -> null));
+                validateStateListener.addListener(validateListener.map(CheckedFunction.toNull()));
             }
 
             @Override
@@ -1996,7 +1997,11 @@ public class Coordinator extends AbstractLifecycleComponent implements ClusterSt
             assert getCurrentTerm() >= publishResponse.getTerm();
             return coordinationState.get().handlePublishResponse(sourceNode, publishResponse).map(applyCommitRequest -> {
                 final var future = new SubscribableListener<ApplyCommitRequest>();
-                beforeCommit(applyCommitRequest.getTerm(), applyCommitRequest.getVersion(), future.map(ignored -> applyCommitRequest));
+                beforeCommit(
+                    applyCommitRequest.getTerm(),
+                    applyCommitRequest.getVersion(),
+                    future.map(CheckedFunction.toConstant(applyCommitRequest))
+                );
                 future.addListener(new ActionListener<>() {
                     @Override
                     public void onResponse(ApplyCommitRequest applyCommitRequest) {}

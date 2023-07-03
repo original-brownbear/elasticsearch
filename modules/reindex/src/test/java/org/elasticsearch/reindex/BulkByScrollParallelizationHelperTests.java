@@ -9,6 +9,7 @@
 package org.elasticsearch.reindex;
 
 import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.index.mapper.IdFieldMapper;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.test.ESTestCase;
@@ -23,7 +24,15 @@ import static org.elasticsearch.search.RandomSearchRequestGenerator.randomSearch
 public class BulkByScrollParallelizationHelperTests extends ESTestCase {
     public void testSliceIntoSubRequests() throws IOException {
         SearchRequest searchRequest = randomSearchRequest(
-            () -> randomSearchSourceBuilder(() -> null, () -> null, () -> null, () -> null, () -> emptyList(), () -> null, () -> null)
+            () -> randomSearchSourceBuilder(
+                FunctionUtils.nullSupplier(),
+                FunctionUtils.nullSupplier(),
+                FunctionUtils.nullSupplier(),
+                FunctionUtils.nullSupplier(),
+                () -> emptyList(),
+                FunctionUtils.nullSupplier(),
+                FunctionUtils.nullSupplier()
+            )
         );
         if (searchRequest.source() != null) {
             // Clear the slice builder if there is one set. We can't call sliceIntoSubRequests if it is.

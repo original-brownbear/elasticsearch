@@ -16,4 +16,8 @@ import java.util.function.Supplier;
 @FunctionalInterface
 public interface CheckedSupplier<R, E extends Exception> {
     R get() throws E;
+
+    static <T, EX extends Exception> CheckedSupplier<T, EX> nullValue() {
+        return () -> null;
+    }
 }

@@ -13,6 +13,7 @@ import org.elasticsearch.action.index.IndexAction;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.client.internal.Client;
+import org.elasticsearch.core.FunctionUtils;
 import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xpack.core.ml.job.persistence.AnomalyDetectorsIndex;
@@ -88,7 +89,7 @@ public class JobDataCountsPersister {
                 WriteRequest.RefreshPolicy.NONE,
                 DataCounts.documentId(jobId),
                 true,
-                () -> true,
+                FunctionUtils.TRUE_SUPPLIER,
                 retryMessage -> logger.debug("[{}] Job data_counts {}", jobId, retryMessage),
                 ActionListener.wrap(r -> ongoingPersists.remove(jobId).countDown(), e -> {
                     ongoingPersists.remove(jobId).countDown();
