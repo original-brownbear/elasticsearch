@@ -585,7 +585,7 @@ public class RepositoryAnalyzeAction extends ActionType<RepositoryAnalyzeAction.
                             logger.debug(() -> "failed [" + request + "] on [" + node + "]", exp);
                             fail(exp);
                         }
-                    }, ref), in -> ActionResponse.Empty.INSTANCE)
+                    }, ref), ActionResponse.Empty.reader())
                 );
             } else {
                 ref.close();

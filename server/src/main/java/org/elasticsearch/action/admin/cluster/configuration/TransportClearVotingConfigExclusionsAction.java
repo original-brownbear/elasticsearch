@@ -59,7 +59,7 @@ public class TransportClearVotingConfigExclusionsAction extends TransportMasterN
             actionFilters,
             ClearVotingConfigExclusionsRequest::new,
             indexNameExpressionResolver,
-            in -> ActionResponse.Empty.INSTANCE,
+            ActionResponse.Empty.reader(),
             ThreadPool.Names.SAME
         );
     }

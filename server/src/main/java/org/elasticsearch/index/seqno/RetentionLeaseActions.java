@@ -98,7 +98,7 @@ public class RetentionLeaseActions {
 
         @Override
         protected final Writeable.Reader<ActionResponse.Empty> getResponseReader() {
-            return in -> ActionResponse.Empty.INSTANCE;
+            return ActionResponse.Empty.reader();
         }
 
         @Override
@@ -114,7 +114,7 @@ public class RetentionLeaseActions {
         public static final String ACTION_NAME = "indices:admin/seq_no/add_retention_lease";
 
         private Add() {
-            super(ACTION_NAME, in -> ActionResponse.Empty.INSTANCE);
+            super(ACTION_NAME, ActionResponse.Empty.reader());
         }
 
         public static class TransportAction extends TransportRetentionLeaseAction<AddRequest> {
@@ -150,7 +150,7 @@ public class RetentionLeaseActions {
                     request.getId(),
                     request.getRetainingSequenceNumber(),
                     request.getSource(),
-                    listener.map(r -> ActionResponse.Empty.INSTANCE)
+                    listener.map(ActionResponse.Empty.map())
                 );
             }
         }
@@ -162,7 +162,7 @@ public class RetentionLeaseActions {
         public static final String ACTION_NAME = "indices:admin/seq_no/renew_retention_lease";
 
         private Renew() {
-            super(ACTION_NAME, in -> ActionResponse.Empty.INSTANCE);
+            super(ACTION_NAME, ActionResponse.Empty.reader());
         }
 
         public static class TransportAction extends TransportRetentionLeaseAction<RenewRequest> {
@@ -207,7 +207,7 @@ public class RetentionLeaseActions {
         public static final String ACTION_NAME = "indices:admin/seq_no/remove_retention_lease";
 
         private Remove() {
-            super(ACTION_NAME, in -> ActionResponse.Empty.INSTANCE);
+            super(ACTION_NAME, ActionResponse.Empty.reader());
         }
 
         public static class TransportAction extends TransportRetentionLeaseAction<RemoveRequest> {
@@ -239,7 +239,7 @@ public class RetentionLeaseActions {
                 final RemoveRequest request,
                 final ActionListener<ActionResponse.Empty> listener
             ) {
-                indexShard.removeRetentionLease(request.getId(), listener.map(r -> ActionResponse.Empty.INSTANCE));
+                indexShard.removeRetentionLease(request.getId(), listener.map(ActionResponse.Empty.map()));
             }
         }
     }

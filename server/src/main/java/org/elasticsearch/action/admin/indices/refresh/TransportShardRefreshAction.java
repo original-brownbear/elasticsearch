@@ -131,7 +131,7 @@ public class TransportShardRefreshAction extends TransportReplicationAction<
                     unpromotableReplicaRequest,
                     new ActionListenerResponseHandler<>(
                         listener.delegateFailure((l, r) -> l.onResponse(null)),
-                        (in) -> ActionResponse.Empty.INSTANCE,
+                        ActionResponse.Empty.reader(),
                         ThreadPool.Names.REFRESH
                     )
                 );

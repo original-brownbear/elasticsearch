@@ -72,6 +72,7 @@ import org.elasticsearch.common.util.concurrent.ListenableFuture;
 import org.elasticsearch.common.xcontent.ChunkedToXContent;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
 import org.elasticsearch.core.CheckedConsumer;
+import org.elasticsearch.core.CheckedFunction;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.SuppressForbidden;
@@ -954,7 +955,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         RepositoryData updatedRepoData,
         ActionListener<Void> listener
     ) {
-        cleanupStaleBlobs(deletedSnapshots, foundIndices, rootBlobs, updatedRepoData, listener.map(ignored -> null));
+        cleanupStaleBlobs(deletedSnapshots, foundIndices, rootBlobs, updatedRepoData, listener.map(CheckedFunction.toNull()));
     }
 
     private void asyncCleanupUnlinkedShardLevelBlobs(
@@ -3006,7 +3007,11 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                             snapshotFiles.indexFiles().size()
                         );
                         final BlockingQueue<BlobStoreIndexShardSnapshot.FileInfo> files = new LinkedBlockingQueue<>(filesToRecover);
-                        final ActionListener<Void> allFilesListener = fileQueueListener(files, workers, listener.map(v -> null));
+                        final ActionListener<Void> allFilesListener = fileQueueListener(
+                            files,
+                            workers,
+                            listener.map(CheckedFunction.toNull())
+                        );
                         // restore the files from the snapshot to the Lucene store
                         for (int i = 0; i < workers; ++i) {
                             try {

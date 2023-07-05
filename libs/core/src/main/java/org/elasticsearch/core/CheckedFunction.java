@@ -16,4 +16,8 @@ import java.util.function.Function;
 @FunctionalInterface
 public interface CheckedFunction<T, R, E extends Exception> {
     R apply(T t) throws E;
+
+    static <T, R, E extends Exception> CheckedFunction<T, R, E> toNull() {
+        return ignored -> null;
+    }
 }

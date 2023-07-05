@@ -24,7 +24,7 @@ public class StatelessPrimaryRelocationAction {
 
     public static final ActionType<ActionResponse.Empty> INSTANCE = new ActionType<>(
         "internal:index/shard/recovery/stateless_primary_relocation",
-        in -> ActionResponse.Empty.INSTANCE
+        ActionResponse.Empty.reader()
     );
 
     public static class Request extends ActionRequest {

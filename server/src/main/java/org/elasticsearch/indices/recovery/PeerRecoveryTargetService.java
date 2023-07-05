@@ -502,7 +502,7 @@ public class PeerRecoveryTargetService implements IndexEventListener {
                     .handoffPrimaryContext(
                         request.primaryContext(),
                         ActionListener.runBefore(
-                            new ChannelActionListener<>(channel).map(v -> TransportResponse.Empty.INSTANCE),
+                            new ChannelActionListener<TransportResponse.Empty>(channel).map(TransportResponse.Empty.map()),
                             recoveryRef::close
                         )
                     );

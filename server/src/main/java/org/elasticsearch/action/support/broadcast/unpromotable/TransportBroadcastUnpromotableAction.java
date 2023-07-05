@@ -63,7 +63,7 @@ public abstract class TransportBroadcastUnpromotableAction<Request extends Broad
 
     @Override
     protected void doExecute(Task task, Request request, ActionListener<ActionResponse.Empty> listener) {
-        try (var listeners = new RefCountingListener(listener.map(v -> ActionResponse.Empty.INSTANCE))) {
+        try (var listeners = new RefCountingListener(listener.map(ActionResponse.Empty.map()))) {
             ActionListener.completeWith(listeners.acquire(), () -> {
                 final ClusterState clusterState = clusterService.state();
                 if (task != null) {
@@ -81,7 +81,7 @@ public abstract class TransportBroadcastUnpromotableAction<Request extends Broad
                             request.failShardOnError()
                                 ? acquired.delegateResponse((l, e) -> failShard(shardRouting, clusterState, l, e))
                                 : acquired,
-                            (in) -> TransportResponse.Empty.INSTANCE,
+                            TransportResponse.Empty.reader(),
                             executor
                         )
                     );

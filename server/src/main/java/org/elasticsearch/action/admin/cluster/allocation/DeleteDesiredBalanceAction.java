@@ -17,6 +17,6 @@ public class DeleteDesiredBalanceAction extends ActionType<ActionResponse.Empty>
     public static final String NAME = "cluster:admin/desired_balance/reset";
 
     DeleteDesiredBalanceAction() {
-        super(NAME, in -> ActionResponse.Empty.INSTANCE);
+        super(NAME, ActionResponse.Empty.reader());
     }
 }

@@ -3432,7 +3432,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                 actionFilters,
                 UpdateIndexShardSnapshotStatusRequest::new,
                 indexNameExpressionResolver,
-                in -> ActionResponse.Empty.INSTANCE,
+                ActionResponse.Empty.reader(),
                 ThreadPool.Names.SAME
             );
         }
@@ -3449,7 +3449,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                 request.shardId(),
                 null,
                 request.status(),
-                listener.map(v -> ActionResponse.Empty.INSTANCE)
+                listener.map(ActionResponse.Empty.map())
             );
         }
 

@@ -21,7 +21,7 @@ public class DeleteDesiredNodesAction extends ActionType<ActionResponse.Empty> {
     public static final String NAME = "cluster:admin/desired_nodes/delete";
 
     DeleteDesiredNodesAction() {
-        super(NAME, in -> ActionResponse.Empty.INSTANCE);
+        super(NAME, ActionResponse.Empty.reader());
     }
 
     public static class Request extends AcknowledgedRequest<Request> {

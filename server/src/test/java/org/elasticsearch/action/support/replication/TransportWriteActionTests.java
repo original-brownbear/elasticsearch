@@ -152,7 +152,7 @@ public class TransportWriteActionTests extends ESTestCase {
         testAction.dispatchedShardOperationOnReplica(request, indexShard, future);
         final TransportReplicationAction.ReplicaResult result = future.actionGet();
         CapturingActionListener<TransportResponse.Empty> listener = new CapturingActionListener<>();
-        result.runPostReplicaActions(listener.map(ignore -> TransportResponse.Empty.INSTANCE));
+        result.runPostReplicaActions(listener.map(TransportResponse.Empty.map()));
         assertNotNull(listener.response);
         assertNull(listener.failure);
         verify(indexShard, never()).refresh(any());

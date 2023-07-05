@@ -209,7 +209,7 @@ public class SearchTransportService {
             CLEAR_SCROLL_CONTEXTS_ACTION_NAME,
             TransportRequest.Empty.INSTANCE,
             TransportRequestOptions.EMPTY,
-            new ActionListenerResponseHandler<>(listener, (in) -> TransportResponse.Empty.INSTANCE)
+            new ActionListenerResponseHandler<>(listener, TransportResponse.Empty.reader())
         );
     }
 
@@ -472,7 +472,7 @@ public class SearchTransportService {
             transportService,
             CLEAR_SCROLL_CONTEXTS_ACTION_NAME,
             false,
-            (in) -> TransportResponse.Empty.INSTANCE
+            TransportResponse.Empty.reader()
         );
 
         transportService.registerRequestHandler(

@@ -152,7 +152,7 @@ public class PostWriteRefresh {
             TransportRequestOptions.timeout(postWriteRefreshTimeout),
             new ActionListenerResponseHandler<>(
                 listener.delegateFailure((l, r) -> l.onResponse(wasForced)),
-                (in) -> ActionResponse.Empty.INSTANCE,
+                ActionResponse.Empty.reader(),
                 ThreadPool.Names.REFRESH
             )
         );

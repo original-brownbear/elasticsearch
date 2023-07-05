@@ -15,6 +15,6 @@ public class ClearVotingConfigExclusionsAction extends ActionType<ActionResponse
     public static final String NAME = "cluster:admin/voting_config/clear_exclusions";
 
     private ClearVotingConfigExclusionsAction() {
-        super(NAME, in -> ActionResponse.Empty.INSTANCE);
+        super(NAME, ActionResponse.Empty.reader());
     }
 }

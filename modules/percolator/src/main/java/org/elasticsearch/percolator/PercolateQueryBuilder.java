@@ -44,6 +44,7 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.logging.DeprecationLogger;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
 import org.elasticsearch.common.xcontent.XContentHelper;
+import org.elasticsearch.core.CheckedFunction;
 import org.elasticsearch.core.RestApiVersion;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.fielddata.FieldDataContext;
@@ -577,7 +578,7 @@ public class PercolateQueryBuilder extends AbstractQueryBuilder<PercolateQueryBu
             LeafReader leafReader = ctx.reader();
             BinaryDocValues binaryDocValues = leafReader.getBinaryDocValues(queryBuilderFieldType.name());
             if (binaryDocValues == null) {
-                return docId -> null;
+                return CheckedFunction.toNull();
             }
             return docId -> {
                 if (binaryDocValues.advanceExact(docId)) {

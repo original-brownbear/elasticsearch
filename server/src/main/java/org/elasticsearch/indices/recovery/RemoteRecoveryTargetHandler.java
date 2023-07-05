@@ -25,6 +25,7 @@ import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.util.CancellableThreads;
 import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
 import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
+import org.elasticsearch.core.CheckedFunction;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.seqno.ReplicationTracker;
 import org.elasticsearch.index.seqno.RetentionLeases;
@@ -114,8 +115,13 @@ public class RemoteRecoveryTargetHandler implements RecoveryTargetHandler {
             shardId,
             totalTranslogOps
         );
-        final Writeable.Reader<TransportResponse.Empty> reader = in -> TransportResponse.Empty.INSTANCE;
-        executeRetryableAction(action, request, standardTimeoutRequestOptions, listener.map(r -> null), reader);
+        executeRetryableAction(
+            action,
+            request,
+            standardTimeoutRequestOptions,
+            listener.map(CheckedFunction.toNull()),
+            TransportResponse.Empty.reader()
+        );
     }
 
     @Override
@@ -129,13 +135,12 @@ public class RemoteRecoveryTargetHandler implements RecoveryTargetHandler {
             globalCheckpoint,
             trimAboveSeqNo
         );
-        final Writeable.Reader<TransportResponse.Empty> reader = in -> TransportResponse.Empty.INSTANCE;
         executeRetryableAction(
             action,
             request,
             TransportRequestOptions.timeout(recoverySettings.internalActionLongTimeout()),
-            listener.map(r -> null),
-            reader
+            listener.map(CheckedFunction.toNull()),
+            TransportResponse.Empty.reader()
         );
     }
 
@@ -146,7 +151,11 @@ public class RemoteRecoveryTargetHandler implements RecoveryTargetHandler {
             PeerRecoveryTargetService.Actions.HANDOFF_PRIMARY_CONTEXT,
             new RecoveryHandoffPrimaryContextRequest(recoveryId, shardId, primaryContext),
             standardTimeoutRequestOptions,
-            new ActionListenerResponseHandler<>(listener.map(r -> null), in -> TransportResponse.Empty.INSTANCE, ThreadPool.Names.GENERIC)
+            new ActionListenerResponseHandler<>(
+                listener.map(CheckedFunction.toNull()),
+                TransportResponse.Empty.reader(),
+                ThreadPool.Names.GENERIC
+            )
         );
     }
 
@@ -198,8 +207,13 @@ public class RemoteRecoveryTargetHandler implements RecoveryTargetHandler {
             phase1ExistingFileSizes,
             totalTranslogOps
         );
-        final Writeable.Reader<TransportResponse.Empty> reader = in -> TransportResponse.Empty.INSTANCE;
-        executeRetryableAction(action, request, standardTimeoutRequestOptions, listener.map(r -> null), reader);
+        executeRetryableAction(
+            action,
+            request,
+            standardTimeoutRequestOptions,
+            listener.map(CheckedFunction.toNull()),
+            TransportResponse.Empty.reader()
+        );
     }
 
     @Override
@@ -219,9 +233,8 @@ public class RemoteRecoveryTargetHandler implements RecoveryTargetHandler {
             totalTranslogOps,
             globalCheckpoint
         );
-        final Writeable.Reader<TransportResponse.Empty> reader = in -> TransportResponse.Empty.INSTANCE;
-        final ActionListener<TransportResponse.Empty> responseListener = listener.map(r -> null);
-        executeRetryableAction(action, request, TransportRequestOptions.EMPTY, responseListener, reader);
+        final ActionListener<TransportResponse.Empty> responseListener = listener.map(CheckedFunction.toNull());
+        executeRetryableAction(action, request, TransportRequestOptions.EMPTY, responseListener, TransportResponse.Empty.reader());
     }
 
     @Override
@@ -241,9 +254,8 @@ public class RemoteRecoveryTargetHandler implements RecoveryTargetHandler {
             indexId,
             snapshotFile
         );
-        final Writeable.Reader<TransportResponse.Empty> reader = in -> TransportResponse.Empty.INSTANCE;
-        final ActionListener<TransportResponse.Empty> responseListener = listener.map(r -> null);
-        executeRetryableAction(action, request, TransportRequestOptions.EMPTY, responseListener, reader);
+        final ActionListener<TransportResponse.Empty> responseListener = listener.map(CheckedFunction.toNull());
+        executeRetryableAction(action, request, TransportRequestOptions.EMPTY, responseListener, TransportResponse.Empty.reader());
     }
 
     @Override
@@ -301,8 +313,8 @@ public class RemoteRecoveryTargetHandler implements RecoveryTargetHandler {
         threadPool.generic()
             .execute(
                 ActionRunnable.wrap(
-                    ActionListener.<TransportResponse.Empty>runBefore(listener.map(r -> null), request::decRef),
-                    l -> executeRetryableAction(action, request, fileChunkRequestOptions, l, in -> TransportResponse.Empty.INSTANCE)
+                    ActionListener.<TransportResponse.Empty>runBefore(listener.map(CheckedFunction.toNull()), request::decRef),
+                    l -> executeRetryableAction(action, request, fileChunkRequestOptions, l, TransportResponse.Empty.reader())
                 )
             );
     }

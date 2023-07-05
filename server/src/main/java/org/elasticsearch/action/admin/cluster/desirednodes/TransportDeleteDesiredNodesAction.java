@@ -48,7 +48,7 @@ public class TransportDeleteDesiredNodesAction extends TransportMasterNodeAction
             actionFilters,
             DeleteDesiredNodesAction.Request::new,
             indexNameExpressionResolver,
-            in -> ActionResponse.Empty.INSTANCE,
+            ActionResponse.Empty.reader(),
             ThreadPool.Names.SAME
         );
         this.taskQueue = clusterService.createTaskQueue("delete-desired-nodes", Priority.HIGH, new DeleteDesiredNodesExecutor());

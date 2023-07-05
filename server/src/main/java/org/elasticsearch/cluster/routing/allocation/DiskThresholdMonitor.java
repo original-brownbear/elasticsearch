@@ -32,6 +32,7 @@ import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
+import org.elasticsearch.core.CheckedFunction;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.gateway.GatewayService;
 
@@ -496,7 +497,7 @@ public class DiskThresholdMonitor {
                 .prepareUpdateSettings(indicesToRelease.toArray(Strings.EMPTY_ARRAY))
                 .setSettings(NOT_READ_ONLY_ALLOW_DELETE_SETTINGS)
                 .origin("disk-threshold-monitor")
-                .execute(wrappedListener.map(r -> null));
+                .execute(wrappedListener.map(CheckedFunction.toNull()));
         } else {
             wrappedListener.onResponse(null);
         }

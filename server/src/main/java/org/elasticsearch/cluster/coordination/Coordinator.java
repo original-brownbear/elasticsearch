@@ -51,6 +51,7 @@ import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.common.util.concurrent.ListenableFuture;
 import org.elasticsearch.common.xcontent.XContentHelper;
+import org.elasticsearch.core.CheckedFunction;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.Releasables;
@@ -268,7 +269,7 @@ public class Coordinator extends AbstractLifecycleComponent implements ClusterSt
             false,
             false,
             ApplyCommitRequest::new,
-            (request, channel, task) -> handleApplyCommit(request, new ChannelActionListener<>(channel).map(r -> Empty.INSTANCE))
+            (request, channel, task) -> handleApplyCommit(request, new ChannelActionListener<Empty>(channel).map(Empty.map()))
         );
         this.publicationHandler = new PublicationTransportHandler(transportService, namedWriteableRegistry, this::handlePublishRequest);
         this.leaderChecker = new LeaderChecker(settings, transportService, this::onLeaderFailure, nodeHealthService);
@@ -699,7 +700,7 @@ public class Coordinator extends AbstractLifecycleComponent implements ClusterSt
         sendJoinPing(joinRequest.getSourceNode(), TransportRequestOptions.Type.PING, new ActionListener<>() {
             @Override
             public void onResponse(Empty empty) {
-                validateStateListener.addListener(validateListener.map(ignored -> null));
+                validateStateListener.addListener(validateListener.map(CheckedFunction.toNull()));
             }
 
             @Override
@@ -758,7 +759,7 @@ public class Coordinator extends AbstractLifecycleComponent implements ClusterSt
                         e
                     )
                 );
-            }), i -> Empty.INSTANCE, Names.CLUSTER_COORDINATION)
+            }), Empty.reader(), Names.CLUSTER_COORDINATION)
         );
     }
 
@@ -2071,11 +2072,7 @@ public class Coordinator extends AbstractLifecycleComponent implements ClusterSt
                     COMMIT_STATE_ACTION_NAME,
                     applyCommit,
                     COMMIT_STATE_REQUEST_OPTIONS,
-                    new ActionListenerResponseHandler<>(
-                        wrapWithMutex(responseActionListener),
-                        in -> Empty.INSTANCE,
-                        Names.CLUSTER_COORDINATION
-                    )
+                    new ActionListenerResponseHandler<>(wrapWithMutex(responseActionListener), Empty.reader(), Names.CLUSTER_COORDINATION)
                 );
             } catch (Exception e) {
                 responseActionListener.onFailure(e);

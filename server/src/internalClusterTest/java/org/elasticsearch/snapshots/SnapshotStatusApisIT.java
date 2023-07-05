@@ -24,6 +24,7 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
+import org.elasticsearch.core.CheckedFunction;
 import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.repositories.blobstore.BlobStoreRepository;
@@ -649,7 +650,7 @@ public class SnapshotStatusApisIT extends AbstractSnapshotIntegTestCase {
         final var createsListener = new PlainActionFuture<Void>();
         final var createsGroupedListener = new GroupedActionListener<CreateSnapshotResponse>(
             snapshotNames.length,
-            createsListener.map(ignored -> null)
+            createsListener.map(CheckedFunction.toNull())
         );
         for (final var snapshotName : snapshotNames) {
             clusterAdmin().prepareCreateSnapshot(repoName, snapshotName)

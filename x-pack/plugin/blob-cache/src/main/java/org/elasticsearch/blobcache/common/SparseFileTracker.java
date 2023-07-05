@@ -10,6 +10,7 @@ package org.elasticsearch.blobcache.common;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.support.RefCountingListener;
 import org.elasticsearch.core.Assertions;
+import org.elasticsearch.core.CheckedFunction;
 import org.elasticsearch.core.Nullable;
 
 import java.util.ArrayList;
@@ -322,7 +323,7 @@ public class SparseFileTracker {
             case 1 -> {
                 final Range requiredRange = requiredRanges.get(0);
                 requiredRange.completionListener.addListener(
-                    listener.map(progress -> null),
+                    listener.map(CheckedFunction.toNull()),
                     Math.min(requiredRange.completionListener.end, rangeEnd)
                 );
             }

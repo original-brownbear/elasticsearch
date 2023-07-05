@@ -18,6 +18,6 @@ public class SetEnabledAction extends ActionType<ActionResponse.Empty> {
     public static final String NAME = "cluster:admin/xpack/security/user/set_enabled";
 
     private SetEnabledAction() {
-        super(NAME, in -> ActionResponse.Empty.INSTANCE);
+        super(NAME, ActionResponse.Empty.reader());
     }
 }

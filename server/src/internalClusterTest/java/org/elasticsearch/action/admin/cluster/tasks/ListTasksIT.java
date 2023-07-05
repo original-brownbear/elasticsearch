@@ -149,7 +149,7 @@ public class ListTasksIT extends ESSingleNodeTestCase {
 
     private static final ActionType<ActionResponse.Empty> TEST_ACTION = new ActionType<>(
         TestTransportAction.NAME,
-        in -> ActionResponse.Empty.INSTANCE
+        ActionResponse.Empty.reader()
     );
 
     public static class TestPlugin extends Plugin implements ActionPlugin {

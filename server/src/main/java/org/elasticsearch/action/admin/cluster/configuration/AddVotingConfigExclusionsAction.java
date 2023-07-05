@@ -15,6 +15,6 @@ public class AddVotingConfigExclusionsAction extends ActionType<ActionResponse.E
     public static final String NAME = "cluster:admin/voting_config/add_exclusions";
 
     private AddVotingConfigExclusionsAction() {
-        super(NAME, in -> ActionResponse.Empty.INSTANCE);
+        super(NAME, ActionResponse.Empty.reader());
     }
 }

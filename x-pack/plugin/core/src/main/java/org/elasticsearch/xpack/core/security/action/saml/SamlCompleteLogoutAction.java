@@ -18,6 +18,6 @@ public final class SamlCompleteLogoutAction extends ActionType<ActionResponse.Em
     public static final SamlCompleteLogoutAction INSTANCE = new SamlCompleteLogoutAction();
 
     private SamlCompleteLogoutAction() {
-        super(NAME, in -> ActionResponse.Empty.INSTANCE);
+        super(NAME, ActionResponse.Empty.reader());
     }
 }

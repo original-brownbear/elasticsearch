@@ -53,7 +53,7 @@ public class RegisterAnalyzeAction extends ActionType<ActionResponse.Empty> {
     public static final String NAME = "cluster:admin/repository/analyze/register";
 
     private RegisterAnalyzeAction() {
-        super(NAME, in -> ActionResponse.Empty.INSTANCE);
+        super(NAME, ActionResponse.Empty.reader());
     }
 
     public static class TransportAction extends HandledTransportAction<Request, ActionResponse.Empty> {
@@ -94,7 +94,7 @@ public class RegisterAnalyzeAction extends ActionType<ActionResponse.Empty> {
                 public void onResponse(OptionalBytesReference maybeInitialBytes) {
                     final long initialValue = maybeInitialBytes.isPresent() ? longFromBytes(maybeInitialBytes.bytesReference()) : 0L;
 
-                    ActionListener.run(outerListener.<Void>map(ignored -> ActionResponse.Empty.INSTANCE), l -> {
+                    ActionListener.run(outerListener.<Void>map(ActionResponse.Empty.map()), l -> {
                         if (initialValue < 0 || initialValue >= request.getRequestCount()) {
                             throw new IllegalStateException("register holds unexpected value [" + initialValue + "]");
                         }

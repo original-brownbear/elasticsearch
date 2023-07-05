@@ -115,10 +115,7 @@ public class JoinHelper {
             false,
             false,
             JoinRequest::new,
-            (request, channel, task) -> joinHandler.accept(
-                request,
-                new ChannelActionListener<Empty>(channel).map(ignored -> Empty.INSTANCE)
-            )
+            (request, channel, task) -> joinHandler.accept(request, new ChannelActionListener<Empty>(channel).map(Empty.map()))
         );
 
         transportService.registerRequestHandler(

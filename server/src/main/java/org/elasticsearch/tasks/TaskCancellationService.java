@@ -337,7 +337,7 @@ public class TaskCancellationService {
                 final List<CancellableTask> childTasks = taskManager.setBan(request.parentTaskId, request.reason, channel);
                 final GroupedActionListener<Void> listener = new GroupedActionListener<>(
                     childTasks.size() + 1,
-                    new ChannelActionListener<>(channel).map(r -> TransportResponse.Empty.INSTANCE)
+                    new ChannelActionListener<TransportResponse.Empty>(channel).map(TransportResponse.Empty.map())
                 );
                 for (CancellableTask childTask : childTasks) {
                     cancelTaskAndDescendants(childTask, request.reason, request.waitForCompletion, listener);

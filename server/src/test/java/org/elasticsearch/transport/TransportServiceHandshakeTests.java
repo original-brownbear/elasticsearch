@@ -20,6 +20,7 @@ import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.PageCacheRecycler;
+import org.elasticsearch.core.CheckedFunction;
 import org.elasticsearch.core.SuppressForbidden;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.IndexVersion;
@@ -185,7 +186,7 @@ public class TransportServiceHandshakeTests extends ESTestCase {
                     TestProfiles.LIGHT_PROFILE
                 )
             ) {
-                PlainActionFuture.get(fut -> transportServiceA.handshake(connection, timeout, fut.map(x -> null)));
+                PlainActionFuture.get(fut -> transportServiceA.handshake(connection, timeout, fut.map(CheckedFunction.toNull())));
             }
         });
         assertThat(
@@ -228,7 +229,7 @@ public class TransportServiceHandshakeTests extends ESTestCase {
                     TestProfiles.LIGHT_PROFILE
                 )
             ) {
-                PlainActionFuture.get(fut -> transportServiceA.handshake(connection, timeout, fut.map(x -> null)));
+                PlainActionFuture.get(fut -> transportServiceA.handshake(connection, timeout, fut.map(CheckedFunction.toNull())));
             }
         });
         assertThat(
@@ -275,7 +276,7 @@ public class TransportServiceHandshakeTests extends ESTestCase {
                     TestProfiles.LIGHT_PROFILE
                 )
             ) {
-                PlainActionFuture.get(fut -> transportServiceA.handshake(connection, timeout, fut.map(x -> null)));
+                PlainActionFuture.get(fut -> transportServiceA.handshake(connection, timeout, fut.map(CheckedFunction.toNull())));
             }
         });
         // the error is exposed as a general connection exception, the actual message is in the logs
@@ -347,7 +348,7 @@ public class TransportServiceHandshakeTests extends ESTestCase {
                     TestProfiles.LIGHT_PROFILE
                 )
             ) {
-                PlainActionFuture.get(fut -> transportServiceA.handshake(connection, timeout, fut.map(x -> null)));
+                PlainActionFuture.get(fut -> transportServiceA.handshake(connection, timeout, fut.map(CheckedFunction.toNull())));
             }
         });
         assertThat(

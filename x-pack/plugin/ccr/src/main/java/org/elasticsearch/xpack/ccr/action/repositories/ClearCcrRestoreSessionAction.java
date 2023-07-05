@@ -32,7 +32,7 @@ public class ClearCcrRestoreSessionAction extends ActionType<ActionResponse.Empt
     }
 
     private ClearCcrRestoreSessionAction(String name) {
-        super(name, in -> ActionResponse.Empty.INSTANCE);
+        super(name, ActionResponse.Empty.reader());
     }
 
     abstract static class TransportDeleteCcrRestoreSessionAction extends HandledTransportAction<
@@ -48,7 +48,7 @@ public class ClearCcrRestoreSessionAction extends ActionType<ActionResponse.Empt
             CcrRestoreSourceService ccrRestoreService
         ) {
             super(actionName, transportService, actionFilters, ClearCcrRestoreSessionRequest::new, ThreadPool.Names.GENERIC);
-            TransportActionProxy.registerProxyAction(transportService, actionName, false, in -> ActionResponse.Empty.INSTANCE);
+            TransportActionProxy.registerProxyAction(transportService, actionName, false, ActionResponse.Empty.reader());
             this.ccrRestoreService = ccrRestoreService;
         }
 

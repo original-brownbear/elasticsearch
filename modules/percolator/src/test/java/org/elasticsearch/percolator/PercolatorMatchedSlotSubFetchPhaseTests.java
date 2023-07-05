@@ -23,6 +23,7 @@ import org.apache.lucene.search.TotalHits;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.tests.index.RandomIndexWriter;
 import org.apache.lucene.util.FixedBitSet;
+import org.elasticsearch.core.CheckedFunction;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.mapper.SeqNoFieldMapper;
 import org.elasticsearch.index.query.SearchExecutionContext;
@@ -118,7 +119,7 @@ public class PercolatorMatchedSlotSubFetchPhaseTests extends ESTestCase {
                 // No query:
                 {
                     HitContext hit = new HitContext(new SearchHit(0), context, 0, Map.of(), Source.empty(null));
-                    PercolateQuery.QueryStore queryStore = ctx -> docId -> null;
+                    PercolateQuery.QueryStore queryStore = ctx -> CheckedFunction.toNull();
                     MemoryIndex memoryIndex = new MemoryIndex();
                     memoryIndex.addField("field", "value", new WhitespaceAnalyzer());
                     memoryIndex.addField(new NumericDocValuesField(SeqNoFieldMapper.PRIMARY_TERM_NAME, 0), null);

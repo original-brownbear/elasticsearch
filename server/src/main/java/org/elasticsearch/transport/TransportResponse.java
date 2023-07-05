@@ -10,6 +10,8 @@ package org.elasticsearch.transport;
 
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.Writeable;
+import org.elasticsearch.core.CheckedFunction;
 
 import java.io.IOException;
 
@@ -31,6 +33,14 @@ public abstract class TransportResponse extends TransportMessage {
 
     public static class Empty extends TransportResponse {
         public static final Empty INSTANCE = new Empty();
+
+        public static <T, E extends Exception> CheckedFunction<T, TransportResponse.Empty, E> map() {
+            return ignored -> INSTANCE;
+        }
+
+        public static Writeable.Reader<TransportResponse.Empty> reader() {
+            return ignored -> INSTANCE;
+        }
 
         @Override
         public String toString() {

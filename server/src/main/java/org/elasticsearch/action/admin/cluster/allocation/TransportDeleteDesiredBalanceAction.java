@@ -55,7 +55,7 @@ public class TransportDeleteDesiredBalanceAction extends TransportMasterNodeActi
             actionFilters,
             DesiredBalanceRequest::new,
             indexNameExpressionResolver,
-            in -> ActionResponse.Empty.INSTANCE,
+            ActionResponse.Empty.reader(),
             ThreadPool.Names.MANAGEMENT
         );
 
@@ -117,7 +117,7 @@ public class TransportDeleteDesiredBalanceAction extends TransportMasterNodeActi
         }
         resetDesiredBalanceTaskQueue.submitTask(
             "reset-desired-balance",
-            new ResetDesiredBalanceTask(listener.map(ignored -> ActionResponse.Empty.INSTANCE)),
+            new ResetDesiredBalanceTask(listener.map(ActionResponse.Empty.map())),
             null
         );
     }

@@ -77,7 +77,7 @@ public class TransportAddVotingConfigExclusionsAction extends TransportMasterNod
             actionFilters,
             AddVotingConfigExclusionsRequest::new,
             indexNameExpressionResolver,
-            in -> ActionResponse.Empty.INSTANCE,
+            ActionResponse.Empty.reader(),
             ThreadPool.Names.SAME
         );
 

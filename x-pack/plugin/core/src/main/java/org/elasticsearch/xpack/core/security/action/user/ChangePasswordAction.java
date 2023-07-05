@@ -15,6 +15,6 @@ public class ChangePasswordAction extends ActionType<ActionResponse.Empty> {
     public static final String NAME = "cluster:admin/xpack/security/user/change_password";
 
     protected ChangePasswordAction() {
-        super(NAME, in -> ActionResponse.Empty.INSTANCE);
+        super(NAME, ActionResponse.Empty.reader());
     }
 }

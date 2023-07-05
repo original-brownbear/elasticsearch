@@ -36,6 +36,7 @@ import org.elasticsearch.common.settings.MockSecureSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.xcontent.XContentHelper;
+import org.elasticsearch.core.CheckedFunction;
 import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.core.SuppressForbidden;
 import org.elasticsearch.core.TimeValue;
@@ -861,7 +862,7 @@ public class RemoteClusterConnectionTests extends ESTestCase {
                 String clusterAlias = "test-cluster";
                 Settings settings = buildRandomSettings(clusterAlias, addresses(seedNode));
                 try (RemoteClusterConnection connection = new RemoteClusterConnection(settings, clusterAlias, service, false)) {
-                    PlainActionFuture.get(fut -> connection.ensureConnected(fut.map(x -> null)));
+                    PlainActionFuture.get(fut -> connection.ensureConnected(fut.map(CheckedFunction.toNull())));
                     for (int i = 0; i < 10; i++) {
                         // always a direct connection as the remote node is already connected
                         Transport.Connection remoteConnection = connection.getConnection(seedNode);

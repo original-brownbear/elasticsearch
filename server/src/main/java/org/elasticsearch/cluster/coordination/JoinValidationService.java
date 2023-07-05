@@ -171,7 +171,7 @@ public class JoinValidationService {
                             e
                         )
                     );
-                }), i -> TransportResponse.Empty.INSTANCE, ThreadPool.Names.CLUSTER_COORDINATION)
+                }), TransportResponse.Empty.reader(), ThreadPool.Names.CLUSTER_COORDINATION)
             );
         }
     }
@@ -323,7 +323,7 @@ public class JoinValidationService {
                 REQUEST_OPTIONS,
                 new CleanableResponseHandler<>(
                     listener,
-                    in -> TransportResponse.Empty.INSTANCE,
+                    TransportResponse.Empty.reader(),
                     ThreadPool.Names.CLUSTER_COORDINATION,
                     bytes::decRef
                 )
