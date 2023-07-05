@@ -94,7 +94,7 @@ class SetupPasswordTool extends MultiCommand {
     private CommandLineHttpClient client;
 
     SetupPasswordTool() {
-        this(environment -> new CommandLineHttpClient(environment), environment -> {
+        this(CommandLineHttpClient::new, environment -> {
             KeyStoreWrapper keyStoreWrapper = KeyStoreWrapper.load(environment.configFile());
             if (keyStoreWrapper == null) {
                 throw new UserException(

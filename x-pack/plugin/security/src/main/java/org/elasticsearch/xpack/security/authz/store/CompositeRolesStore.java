@@ -161,7 +161,7 @@ public class CompositeRolesStore {
             .filter(u -> u.getLocalClusterRoleDescriptor().isPresent())
             .collect(
                 Collectors.toMap(
-                    u -> u.principal(),
+                    User::principal,
                     u -> Role.buildFromRoleDescriptor(
                         u.getLocalClusterRoleDescriptor().get(),
                         fieldPermissionsCache,

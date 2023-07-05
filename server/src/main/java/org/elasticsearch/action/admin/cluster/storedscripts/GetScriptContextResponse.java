@@ -41,17 +41,13 @@ public class GetScriptContextResponse extends ActionResponse implements StatusTo
         true,
         (a) -> {
             Map<String, ScriptContextInfo> contexts = ((List<ScriptContextInfo>) a[0]).stream()
-                .collect(Collectors.toMap(ScriptContextInfo::getName, c -> c));
+                .collect(Collectors.toMap(ScriptContextInfo::getName, Function.identity()));
             return new GetScriptContextResponse(contexts);
         }
     );
 
     static {
-        PARSER.declareObjectArray(
-            ConstructingObjectParser.constructorArg(),
-            (parser, ctx) -> ScriptContextInfo.PARSER.apply(parser, ctx),
-            CONTEXTS
-        );
+        PARSER.declareObjectArray(ConstructingObjectParser.constructorArg(), ScriptContextInfo.PARSER::apply, CONTEXTS);
     }
 
     GetScriptContextResponse(StreamInput in) throws IOException {

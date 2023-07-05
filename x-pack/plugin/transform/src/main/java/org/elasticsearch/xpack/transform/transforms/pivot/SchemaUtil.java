@@ -40,7 +40,7 @@ public final class SchemaUtil {
     private static final Map<String, Boolean> NUMERIC_FIELD_MAPPER_TYPES;
     static {
         Map<String, Boolean> types = Stream.of(NumberFieldMapper.NumberType.values())
-            .collect(Collectors.toMap(t -> t.typeName(), t -> t.numericType().isFloatingPoint()));
+            .collect(Collectors.toMap(NumberFieldMapper.NumberType::typeName, t -> t.numericType().isFloatingPoint()));
 
         // have to add manually since they are in a module
         types.put("scaled_float", true);

@@ -92,7 +92,7 @@ public class FieldCapabilitiesResponse extends ActionResponse implements Chunked
      * Get the concrete list of indices that failed
      */
     public String[] getFailedIndices() {
-        return this.failures.stream().map(FieldCapabilitiesFailure::getIndices).flatMap(s -> Arrays.stream(s)).toArray(String[]::new);
+        return this.failures.stream().map(FieldCapabilitiesFailure::getIndices).flatMap(Arrays::stream).toArray(String[]::new);
     }
 
     /**

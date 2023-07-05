@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -252,9 +253,7 @@ public final class TransformAggregations {
             return new Tuple<>(
                 outputFieldNames.get()
                     .stream()
-                    .collect(
-                        Collectors.toMap(outputField -> agg.getName() + "." + outputField, outputField -> outputField, (v1, v2) -> v1)
-                    ),
+                    .collect(Collectors.toMap(outputField -> agg.getName() + "." + outputField, Function.identity(), (v1, v2) -> v1)),
                 outputFieldNames.get()
                     .stream()
                     .collect(

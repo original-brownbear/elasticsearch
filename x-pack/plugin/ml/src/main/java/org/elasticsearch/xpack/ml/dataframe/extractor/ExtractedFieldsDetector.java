@@ -307,7 +307,7 @@ public class ExtractedFieldsDetector {
     }
 
     private Optional<String> findMatchingNestedFieldPattern(String field) {
-        return topNestedFieldPrefixes.stream().filter(prefix -> field.startsWith(prefix)).map(prefix -> prefix + "*").findFirst();
+        return topNestedFieldPrefixes.stream().filter(field::startsWith).map(prefix -> prefix + "*").findFirst();
     }
 
     private void includeAndExcludeFields(Set<String> fields, Set<FieldSelection> fieldSelection) {

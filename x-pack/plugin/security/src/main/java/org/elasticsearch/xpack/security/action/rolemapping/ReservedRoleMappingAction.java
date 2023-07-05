@@ -59,7 +59,7 @@ public class ReservedRoleMappingAction implements ReservedClusterStateHandler<Li
     }
 
     private Collection<PutRoleMappingRequest> prepare(List<ExpressionRoleMapping> roleMappings) {
-        List<PutRoleMappingRequest> requests = roleMappings.stream().map(rm -> PutRoleMappingRequest.fromMapping(rm)).toList();
+        List<PutRoleMappingRequest> requests = roleMappings.stream().map(PutRoleMappingRequest::fromMapping).toList();
 
         var exceptions = new ArrayList<Exception>();
         for (var request : requests) {
@@ -101,7 +101,7 @@ public class ReservedRoleMappingAction implements ReservedClusterStateHandler<Li
         TransformState prevState,
         ActionListener<NonStateTransformResult> listener
     ) {
-        Set<String> entities = requests.stream().map(r -> r.getName()).collect(Collectors.toSet());
+        Set<String> entities = requests.stream().map(PutRoleMappingRequest::getName).collect(Collectors.toSet());
         Set<String> toDelete = new HashSet<>(prevState.keys());
         toDelete.removeAll(entities);
 

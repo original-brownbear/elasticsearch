@@ -564,7 +564,7 @@ public class SSLService {
             return ks -> {
                 final AtomicInteger keyCount = new AtomicInteger(0);
                 final AtomicInteger caCount = new AtomicInteger(0);
-                KeyStoreUtil.stream(ks, exceptionHandler).filter(e -> e.isKeyEntry()).forEach(e -> {
+                KeyStoreUtil.stream(ks, exceptionHandler).filter(KeyStoreUtil.KeyStoreEntry::isKeyEntry).forEach(e -> {
                     keyCount.incrementAndGet();
                     if (isCA.test(e)) {
                         caCount.incrementAndGet();

@@ -114,7 +114,7 @@ class DefaultCheckpointProvider implements CheckpointProvider {
                     listener.onResponse(
                         indexCheckpoints.stream()
                             .flatMap(m -> m.entrySet().stream())
-                            .collect(Collectors.toMap(entry -> entry.getKey(), entry -> entry.getValue()))
+                            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
                     );
                 }, listener::onFailure);
 
@@ -206,7 +206,7 @@ class DefaultCheckpointProvider implements CheckpointProvider {
                         .collect(
                             Collectors.toMap(
                                 entry -> cluster + RemoteClusterService.REMOTE_CLUSTER_INDEX_SEPARATOR + entry.getKey(),
-                                entry -> entry.getValue()
+                                Map.Entry::getValue
                             )
                         )
                 ),

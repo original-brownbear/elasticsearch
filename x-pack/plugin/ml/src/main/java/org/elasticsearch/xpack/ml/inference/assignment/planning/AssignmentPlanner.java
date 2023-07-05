@@ -108,7 +108,7 @@ public class AssignmentPlanner {
     private AssignmentPlan solveAllocatingAtLeastOnceModelsThatWerePreviouslyAllocated() {
         logger.debug(() -> "Attempting to solve assigning at least one allocation to previously assigned deployments");
         List<AssignmentPlan.Deployment> previouslyAssignedModelsOnly = deployments.stream()
-            .filter(m -> m.hasEverBeenAllocated())
+            .filter(AssignmentPlan.Deployment::hasEverBeenAllocated)
             .map(
                 m -> new AssignmentPlan.Deployment(
                     m.id(),

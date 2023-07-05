@@ -33,7 +33,7 @@ public class AnalyticsCollection implements Writeable, ToXContentObject {
 
     private static final ObjectParser<AnalyticsCollection, String> PARSER = ObjectParser.fromBuilder(
         "analytics_collection",
-        name -> new AnalyticsCollection(name)
+        AnalyticsCollection::new
     );
 
     private final String name;

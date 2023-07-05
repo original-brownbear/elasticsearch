@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -166,12 +167,15 @@ public class SqlDataTypes {
         )
     ).sorted(Comparator.comparing(DataType::typeName)).toList();
 
-    private static final Map<String, DataType> NAME_TO_TYPE = TYPES.stream().collect(toUnmodifiableMap(DataType::typeName, t -> t));
+    private static final Map<String, DataType> NAME_TO_TYPE = TYPES.stream()
+        .collect(toUnmodifiableMap(DataType::typeName, Function.identity()));
 
     private static final Map<String, DataType> ES_TO_TYPE;
 
     static {
-        Map<String, DataType> map = TYPES.stream().filter(e -> e.esType() != null).collect(Collectors.toMap(DataType::esType, t -> t));
+        Map<String, DataType> map = TYPES.stream()
+            .filter(e -> e.esType() != null)
+            .collect(Collectors.toMap(DataType::esType, Function.identity()));
         map.put("date_nanos", DATETIME);
         ES_TO_TYPE = Collections.unmodifiableMap(map);
     }

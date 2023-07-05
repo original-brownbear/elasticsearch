@@ -2195,7 +2195,7 @@ public abstract class ResultSetTestCase extends JdbcIntegrationTestCase {
             assertThrowsWritesUnsupportedForUpdate(() -> r.updateObject("", null, 1));
             assertThrowsWritesUnsupportedForUpdate(() -> r.updateRef(1, null));
             assertThrowsWritesUnsupportedForUpdate(() -> r.updateRef("", null));
-            assertThrowsWritesUnsupportedForUpdate(() -> r.updateRow());
+            assertThrowsWritesUnsupportedForUpdate(r::updateRow);
             assertThrowsWritesUnsupportedForUpdate(() -> r.updateRowId(1, null));
             assertThrowsWritesUnsupportedForUpdate(() -> r.updateRowId("", null));
             assertThrowsWritesUnsupportedForUpdate(() -> r.updateSQLXML(1, null));
@@ -2208,16 +2208,16 @@ public abstract class ResultSetTestCase extends JdbcIntegrationTestCase {
             assertThrowsWritesUnsupportedForUpdate(() -> r.updateTime("", null));
             assertThrowsWritesUnsupportedForUpdate(() -> r.updateTimestamp(1, null));
             assertThrowsWritesUnsupportedForUpdate(() -> r.updateTimestamp("", null));
-            assertThrowsWritesUnsupportedForUpdate(() -> r.insertRow());
-            assertThrowsWritesUnsupportedForUpdate(() -> r.updateRow());
-            assertThrowsWritesUnsupportedForUpdate(() -> r.deleteRow());
-            assertThrowsWritesUnsupportedForUpdate(() -> r.cancelRowUpdates());
-            assertThrowsWritesUnsupportedForUpdate(() -> r.moveToInsertRow());
-            assertThrowsWritesUnsupportedForUpdate(() -> r.refreshRow());
-            assertThrowsWritesUnsupportedForUpdate(() -> r.moveToCurrentRow());
-            assertThrowsWritesUnsupportedForUpdate(() -> r.rowUpdated());
-            assertThrowsWritesUnsupportedForUpdate(() -> r.rowInserted());
-            assertThrowsWritesUnsupportedForUpdate(() -> r.rowDeleted());
+            assertThrowsWritesUnsupportedForUpdate(r::insertRow);
+            assertThrowsWritesUnsupportedForUpdate(r::updateRow);
+            assertThrowsWritesUnsupportedForUpdate(r::deleteRow);
+            assertThrowsWritesUnsupportedForUpdate(r::cancelRowUpdates);
+            assertThrowsWritesUnsupportedForUpdate(r::moveToInsertRow);
+            assertThrowsWritesUnsupportedForUpdate(r::refreshRow);
+            assertThrowsWritesUnsupportedForUpdate(r::moveToCurrentRow);
+            assertThrowsWritesUnsupportedForUpdate(r::rowUpdated);
+            assertThrowsWritesUnsupportedForUpdate(r::rowInserted);
+            assertThrowsWritesUnsupportedForUpdate(r::rowDeleted);
         }
     }
 

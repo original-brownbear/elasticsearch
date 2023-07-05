@@ -20,6 +20,6 @@ public class DeprecatedQueryPlugin extends Plugin implements SearchPlugin {
 
     @Override
     public List<QuerySpec<?>> getQueries() {
-        return singletonList(new QuerySpec<>("deprecated", DeprecatedQueryBuilder::new, p -> DeprecatedQueryBuilder.fromXContent(p)));
+        return singletonList(new QuerySpec<>("deprecated", DeprecatedQueryBuilder::new, DeprecatedQueryBuilder::fromXContent));
     }
 }

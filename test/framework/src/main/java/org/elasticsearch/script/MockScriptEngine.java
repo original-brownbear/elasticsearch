@@ -378,12 +378,12 @@ public class MockScriptEngine implements ScriptEngine {
             };
             return context.factoryClazz.cast(objectFieldScript);
         } else if (context.instanceClazz.equals(DoubleValuesScript.class)) {
-            DoubleValuesScript.Factory doubleValuesScript = () -> new MockDoubleValuesScript();
+            DoubleValuesScript.Factory doubleValuesScript = MockDoubleValuesScript::new;
             return context.factoryClazz.cast(doubleValuesScript);
         }
         ContextCompiler compiler = contexts.get(context);
         if (compiler != null) {
-            return context.factoryClazz.cast(compiler.compile(script::apply, params));
+            return context.factoryClazz.cast(compiler.compile(script, params));
         }
         throw new IllegalArgumentException("mock script engine does not know how to handle context [" + context.name + "]");
     }

@@ -317,7 +317,7 @@ public class ElasticsearchCluster implements TestClusterConfiguration, Named {
 
     @Internal
     public boolean isPreserveDataDir() {
-        return nodes.stream().anyMatch(node -> node.isPreserveDataDir());
+        return nodes.stream().anyMatch(ElasticsearchNode::isPreserveDataDir);
     }
 
     @Override
@@ -345,7 +345,7 @@ public class ElasticsearchCluster implements TestClusterConfiguration, Named {
 
     private void commonNodeConfig() {
         final String nodeNames;
-        if (nodes.stream().map(ElasticsearchNode::getName).anyMatch(name -> name == null)) {
+        if (nodes.stream().map(ElasticsearchNode::getName).anyMatch(Objects::isNull)) {
             nodeNames = null;
         } else {
             nodeNames = nodes.stream().map(ElasticsearchNode::getName).map(this::safeName).collect(Collectors.joining(","));

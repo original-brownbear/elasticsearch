@@ -29,6 +29,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 public class ObjectMapper extends Mapper implements Cloneable {
@@ -594,7 +595,7 @@ public class ObjectMapper extends Mapper implements Cloneable {
             Stream.concat(extra, mappers.values().stream())
                 .sorted(Comparator.comparing(Mapper::name))
                 .map(Mapper::syntheticFieldLoader)
-                .filter(l -> l != null)
+                .filter(Objects::nonNull)
                 .toList()
         );
     }

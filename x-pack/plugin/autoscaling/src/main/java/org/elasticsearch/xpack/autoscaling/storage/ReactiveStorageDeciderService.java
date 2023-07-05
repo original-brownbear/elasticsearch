@@ -684,7 +684,7 @@ public class ReactiveStorageDeciderService implements AutoscalingDeciderService 
             }
 
             public void applyRouting(RoutingTable.Builder routing) {
-                additionalIndices.keySet().forEach(indexMetadata -> routing.addAsNew(indexMetadata));
+                additionalIndices.keySet().forEach(routing::addAsNew);
             }
 
             public void applyMetadata(Metadata.Builder metadataBuilder) {

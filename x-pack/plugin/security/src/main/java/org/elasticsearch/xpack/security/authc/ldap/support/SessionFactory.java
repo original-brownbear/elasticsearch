@@ -281,8 +281,8 @@ public abstract class SessionFactory implements Closeable {
                 return true;
             }
 
-            final boolean allSecure = Arrays.stream(ldapUrls).allMatch(s -> STARTS_WITH_LDAPS.matcher(s).find());
-            final boolean allClear = Arrays.stream(ldapUrls).allMatch(s -> STARTS_WITH_LDAP.matcher(s).find());
+            final boolean allSecure = Arrays.stream(ldapUrls).allMatch(STARTS_WITH_LDAPS.asPredicate());
+            final boolean allClear = Arrays.stream(ldapUrls).allMatch(STARTS_WITH_LDAP.asPredicate());
 
             if (allSecure == false && allClear == false) {
                 // No mixing is allowed because we use the same socketfactory

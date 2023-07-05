@@ -114,7 +114,7 @@ public final class InternalItemSetMapReduceAggregation<
             MapFinalContext context = ((InternalItemSetMapReduceAggregation<MapContext, MapFinalContext, ReduceContext, Result>) agg)
                 .getMapFinalContext();
             return context;
-        }).filter(c -> c != null);
+        }).filter(Objects::nonNull);
 
         if (aggReduceContext.isFinalReduce()) {
             // we can use the reduce context big arrays, because we finalize here

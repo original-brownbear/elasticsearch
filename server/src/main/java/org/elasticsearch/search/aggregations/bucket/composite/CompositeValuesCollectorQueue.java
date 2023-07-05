@@ -83,7 +83,7 @@ final class CompositeValuesCollectorQueue extends PriorityQueue<Integer> impleme
         // tracking the highest competitive value.
         if (arrays[0] instanceof GlobalOrdinalValuesSource globalOrdinalValuesSource) {
             if (shouldApplyGlobalOrdinalDynamicPruningForLeadingSource(sources, size, indexReader)) {
-                competitiveBoundsChangedListener = topSlot -> globalOrdinalValuesSource.updateHighestCompetitiveValue(topSlot);
+                competitiveBoundsChangedListener = globalOrdinalValuesSource::updateHighestCompetitiveValue;
             } else {
                 competitiveBoundsChangedListener = null;
             }

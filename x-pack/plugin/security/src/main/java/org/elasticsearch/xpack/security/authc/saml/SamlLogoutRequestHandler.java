@@ -8,6 +8,7 @@ package org.elasticsearch.xpack.security.authc.saml;
 
 import org.elasticsearch.ElasticsearchSecurityException;
 import org.elasticsearch.core.TimeValue;
+import org.opensaml.core.xml.schema.XSString;
 import org.opensaml.saml.common.SAMLObject;
 import org.opensaml.saml.saml2.core.EncryptedID;
 import org.opensaml.saml.saml2.core.LogoutRequest;
@@ -117,7 +118,7 @@ public class SamlLogoutRequestHandler extends SamlObjectHandler {
     }
 
     private String getSessionIndex(LogoutRequest logoutRequest) {
-        return logoutRequest.getSessionIndexes().stream().map(as -> as.getValue()).filter(Objects::nonNull).findFirst().orElse(null);
+        return logoutRequest.getSessionIndexes().stream().map(XSString::getValue).filter(Objects::nonNull).findFirst().orElse(null);
     }
 
     private void checkDestination(LogoutRequest request) {

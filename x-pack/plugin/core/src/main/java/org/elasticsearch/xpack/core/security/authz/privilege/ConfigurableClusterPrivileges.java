@@ -46,7 +46,7 @@ public final class ConfigurableClusterPrivileges {
     public static final Writeable.Reader<ConfigurableClusterPrivilege> READER = in1 -> in1.readNamedWriteable(
         ConfigurableClusterPrivilege.class
     );
-    public static final Writeable.Writer<ConfigurableClusterPrivilege> WRITER = (out1, value) -> out1.writeNamedWriteable(value);
+    public static final Writeable.Writer<ConfigurableClusterPrivilege> WRITER = StreamOutput::writeNamedWriteable;
 
     private ConfigurableClusterPrivileges() {}
 
@@ -166,7 +166,7 @@ public final class ConfigurableClusterPrivileges {
                 if (request instanceof final UpdateProfileDataRequest updateProfileRequest) {
                     assert null == updateProfileRequest.validate();
                     final Collection<String> requestApplicationNames = updateProfileRequest.getApplicationNames();
-                    return requestApplicationNames.stream().allMatch(application -> applicationPredicate.test(application));
+                    return requestApplicationNames.stream().allMatch(applicationPredicate::test);
                 }
                 return false;
             };
@@ -274,7 +274,7 @@ public final class ConfigurableClusterPrivileges {
                     final Collection<String> requestApplicationNames = privRequest.getApplicationNames();
                     return requestApplicationNames.isEmpty()
                         ? this.applicationNames.contains("*")
-                        : requestApplicationNames.stream().allMatch(application -> applicationPredicate.test(application));
+                        : requestApplicationNames.stream().allMatch(applicationPredicate::test);
                 }
                 return false;
             };

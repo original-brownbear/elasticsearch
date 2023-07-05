@@ -54,7 +54,7 @@ public abstract class AbstractLocalSpecBuilder<T extends LocalSpecBuilder<?>> im
     }
 
     List<SettingsProvider> getSettingsProviders() {
-        return inherit(() -> parent.getSettingsProviders(), settingsProviders);
+        return inherit(parent::getSettingsProviders, settingsProviders);
     }
 
     @Override
@@ -76,7 +76,7 @@ public abstract class AbstractLocalSpecBuilder<T extends LocalSpecBuilder<?>> im
     }
 
     Map<String, String> getSettings() {
-        return inherit(() -> parent.getSettings(), settings);
+        return inherit(parent::getSettings, settings);
     }
 
     @Override
@@ -86,7 +86,7 @@ public abstract class AbstractLocalSpecBuilder<T extends LocalSpecBuilder<?>> im
     }
 
     List<EnvironmentProvider> getEnvironmentProviders() {
-        return inherit(() -> parent.getEnvironmentProviders(), environmentProviders);
+        return inherit(parent::getEnvironmentProviders, environmentProviders);
 
     }
 
@@ -103,7 +103,7 @@ public abstract class AbstractLocalSpecBuilder<T extends LocalSpecBuilder<?>> im
     }
 
     Map<String, String> getEnvironment() {
-        return inherit(() -> parent.getEnvironment(), environment);
+        return inherit(parent::getEnvironment, environment);
     }
 
     @Override
@@ -113,7 +113,7 @@ public abstract class AbstractLocalSpecBuilder<T extends LocalSpecBuilder<?>> im
     }
 
     DistributionType getDistributionType() {
-        return inherit(() -> parent.getDistributionType(), distributionType);
+        return inherit(parent::getDistributionType, distributionType);
     }
 
     @Override
@@ -123,7 +123,7 @@ public abstract class AbstractLocalSpecBuilder<T extends LocalSpecBuilder<?>> im
     }
 
     Set<String> getModules() {
-        return inherit(() -> parent.getModules(), modules);
+        return inherit(parent::getModules, modules);
     }
 
     @Override
@@ -133,7 +133,7 @@ public abstract class AbstractLocalSpecBuilder<T extends LocalSpecBuilder<?>> im
     }
 
     Set<String> getPlugins() {
-        return inherit(() -> parent.getPlugins(), plugins);
+        return inherit(parent::getPlugins, plugins);
     }
 
     @Override
@@ -143,7 +143,7 @@ public abstract class AbstractLocalSpecBuilder<T extends LocalSpecBuilder<?>> im
     }
 
     Set<FeatureFlag> getFeatures() {
-        return inherit(() -> parent.getFeatures(), features);
+        return inherit(parent::getFeatures, features);
     }
 
     @Override
@@ -153,7 +153,7 @@ public abstract class AbstractLocalSpecBuilder<T extends LocalSpecBuilder<?>> im
     }
 
     public Map<String, String> getKeystoreSettings() {
-        return inherit(() -> parent.getKeystoreSettings(), keystoreSettings);
+        return inherit(parent::getKeystoreSettings, keystoreSettings);
     }
 
     @Override
@@ -163,7 +163,7 @@ public abstract class AbstractLocalSpecBuilder<T extends LocalSpecBuilder<?>> im
     }
 
     public Map<String, Resource> getKeystoreFiles() {
-        return inherit(() -> parent.getKeystoreFiles(), keystoreFiles);
+        return inherit(parent::getKeystoreFiles, keystoreFiles);
     }
 
     @Override
@@ -185,7 +185,7 @@ public abstract class AbstractLocalSpecBuilder<T extends LocalSpecBuilder<?>> im
     }
 
     public List<SettingsProvider> getKeystoreProviders() {
-        return inherit(() -> parent.getKeystoreProviders(), keystoreProviders);
+        return inherit(parent::getKeystoreProviders, keystoreProviders);
     }
 
     @Override
@@ -195,7 +195,7 @@ public abstract class AbstractLocalSpecBuilder<T extends LocalSpecBuilder<?>> im
     }
 
     public Map<String, String> getSecrets() {
-        return inherit(() -> parent.getSecrets(), secrets);
+        return inherit(parent::getSecrets, secrets);
     }
 
     @Override
@@ -205,7 +205,7 @@ public abstract class AbstractLocalSpecBuilder<T extends LocalSpecBuilder<?>> im
     }
 
     public Map<String, Resource> getExtraConfigFiles() {
-        return inherit(() -> parent.getExtraConfigFiles(), extraConfigFiles);
+        return inherit(parent::getExtraConfigFiles, extraConfigFiles);
     }
 
     @Override
@@ -215,7 +215,7 @@ public abstract class AbstractLocalSpecBuilder<T extends LocalSpecBuilder<?>> im
     }
 
     public Map<String, String> getSystemProperties() {
-        return inherit(() -> parent.getSystemProperties(), systemProperties);
+        return inherit(parent::getSystemProperties, systemProperties);
     }
 
     @Override
@@ -225,7 +225,7 @@ public abstract class AbstractLocalSpecBuilder<T extends LocalSpecBuilder<?>> im
     }
 
     public String getKeystorePassword() {
-        return inherit(() -> parent.getKeystorePassword(), keystorePassword);
+        return inherit(parent::getKeystorePassword, keystorePassword);
     }
 
     @Override
@@ -235,7 +235,7 @@ public abstract class AbstractLocalSpecBuilder<T extends LocalSpecBuilder<?>> im
     }
 
     public Version getVersion() {
-        return inherit(() -> parent.getVersion(), version);
+        return inherit(parent::getVersion, version);
     }
 
     private <T> List<T> inherit(Supplier<List<T>> parent, List<T> child) {

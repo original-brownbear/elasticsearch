@@ -335,9 +335,9 @@ public class Coordinator extends AbstractLifecycleComponent implements ClusterSt
                 assert lastKnownLeader.isPresent();
                 if (logger.isDebugEnabled()) {
                     // TODO this is a workaround for log4j's Supplier. We should remove this, once using ES logging api
-                    logger.info(() -> message.get(), e);
+                    logger.info(message::get, e);
                 } else {
-                    logger.info(() -> message.get());
+                    logger.info(message::get);
                 }
             }
             becomeCandidate("onLeaderFailure");

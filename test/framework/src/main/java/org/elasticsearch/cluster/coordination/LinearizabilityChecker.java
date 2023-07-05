@@ -491,7 +491,7 @@ public class LinearizabilityChecker {
 
             // Get a unique set object per state permutation. We assume that the number of permutations of states are small.
             // We thus avoid the overhead of the set data structure.
-            states = statePermutations.computeIfAbsent(states, k -> k);
+            states = statePermutations.computeIfAbsent(states, Function.identity());
 
             smallMap.put(bits, states);
 

@@ -172,7 +172,7 @@ public class QueryParserHelperBenchmark {
 
         SimilarityService similarityService = new SimilarityService(indexSettings, null, Map.of());
         MapperService mapperService = new MapperService(
-            () -> TransportVersion.current(),
+            TransportVersion::current,
             indexSettings,
             (type, name) -> Lucene.STANDARD_ANALYZER,
             XContentParserConfiguration.EMPTY.withRegistry(new NamedXContentRegistry(ClusterModule.getNamedXWriteables()))

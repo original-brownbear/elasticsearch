@@ -49,6 +49,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -301,23 +302,13 @@ final class Lucene54DocValuesConsumer extends DocValuesConsumer implements Close
                 switch (numberType) {
                     case VALUE:
                         meta.writeByte((byte) 0);
-                        filteredMissingValues = new Iterable<Number>() {
-                            @Override
-                            public Iterator<Number> iterator() {
-                                return StreamSupport.stream(values.spliterator(), false).filter(value -> value != null).iterator();
-                            }
-                        };
+                        filteredMissingValues = () -> StreamSupport.stream(values.spliterator(), false).filter(Objects::nonNull).iterator();
                         break;
                     case ORDINAL:
                         meta.writeByte((byte) 1);
-                        filteredMissingValues = new Iterable<Number>() {
-                            @Override
-                            public Iterator<Number> iterator() {
-                                return StreamSupport.stream(values.spliterator(), false)
-                                    .filter(value -> value.longValue() != -1L)
-                                    .iterator();
-                            }
-                        };
+                        filteredMissingValues = () -> StreamSupport.stream(values.spliterator(), false)
+                            .filter(value -> value.longValue() != -1L)
+                            .iterator();
                         break;
                     default:
                         throw new AssertionError();

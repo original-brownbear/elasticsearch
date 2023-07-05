@@ -155,7 +155,7 @@ public class InternalStringStats extends InternalAggregation {
         return charOccurrences.entrySet()
             .stream()
             .sorted((e1, e2) -> e2.getValue().compareTo(e1.getValue()))
-            .collect(Collectors.toMap(e -> e.getKey(), e -> (double) e.getValue() / totalLength, (e1, e2) -> e2, LinkedHashMap::new));
+            .collect(Collectors.toMap(Map.Entry::getKey, e -> (double) e.getValue() / totalLength, (e1, e2) -> e2, LinkedHashMap::new));
     }
 
     /** Calculate base 2 logarithm */
@@ -214,7 +214,7 @@ public class InternalStringStats extends InternalAggregation {
             minLength = Math.min(minLength, stats.getMinLength());
             maxLength = Math.max(maxLength, stats.getMaxLength());
             totalLength += stats.totalLength;
-            stats.charOccurrences.forEach((k, v) -> occurs.merge(k, v, (oldValue, newValue) -> oldValue + newValue));
+            stats.charOccurrences.forEach((k, v) -> occurs.merge(k, v, Long::sum));
         }
 
         return new InternalStringStats(name, count, totalLength, minLength, maxLength, occurs, showDistribution, format, getMetadata());

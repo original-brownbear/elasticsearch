@@ -125,7 +125,7 @@ public class NetworkDirectionProcessor extends AbstractProcessor {
             }
             networks.addAll(stringList);
         } else {
-            networks = internalNetworks.stream().map(network -> d.renderTemplate(network)).toList();
+            networks = internalNetworks.stream().map(d::renderTemplate).toList();
         }
 
         String sourceIpAddrString = d.getFieldValue(sourceIpField, String.class, ignoreMissing);

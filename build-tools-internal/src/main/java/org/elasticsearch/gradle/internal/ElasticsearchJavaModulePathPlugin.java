@@ -61,7 +61,7 @@ public class ElasticsearchJavaModulePathPlugin implements Plugin<Project> {
 
         // test:framework has split pkgs with server, libs and more. do not use module path
         var projName = project.toString();
-        if (EXCLUDES.stream().anyMatch(name -> projName.contains(name))) {
+        if (EXCLUDES.stream().anyMatch(projName::contains)) {
             return;
         }
 

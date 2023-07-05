@@ -27,6 +27,6 @@ abstract class ParsedPercentileRanks extends ParsedPercentiles implements Percen
 
     @Override
     public Iterable<String> valueNames() {
-        return percentiles.keySet().stream().map(d -> d.toString()).toList();
+        return percentiles.keySet().stream().map(Object::toString).toList();
     }
 }

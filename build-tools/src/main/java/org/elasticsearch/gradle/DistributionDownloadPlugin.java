@@ -23,6 +23,7 @@ import org.gradle.api.provider.Property;
 import org.gradle.api.provider.Provider;
 
 import java.util.Comparator;
+import java.util.Objects;
 
 import javax.inject.Inject;
 
@@ -129,7 +130,7 @@ public class DistributionDownloadPlugin implements Plugin<Project> {
         return distributionsResolutionStrategiesContainer.stream()
             .sorted(Comparator.comparingInt(DistributionResolution::getPriority))
             .map(r -> r.getResolver().resolve(p, distribution))
-            .filter(d -> d != null)
+            .filter(Objects::nonNull)
             .findFirst()
             .orElseGet(() -> DistributionDependency.of(dependencyNotation(distribution)));
     }

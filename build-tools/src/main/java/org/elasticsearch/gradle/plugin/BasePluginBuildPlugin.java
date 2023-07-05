@@ -35,6 +35,7 @@ import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.SourceSetContainer;
 import org.gradle.api.tasks.Sync;
 import org.gradle.api.tasks.TaskProvider;
+import org.gradle.api.tasks.bundling.AbstractArchiveTask;
 import org.gradle.api.tasks.bundling.Zip;
 
 import java.io.File;
@@ -80,9 +81,9 @@ public class BasePluginBuildPlugin implements Plugin<Project> {
         var runCluster = testClusters.register("runTask", c -> {
             // TODO: use explodedPlugin here for modules
             if (GradleUtils.isModuleProject(project.getPath())) {
-                c.module(bundleTask.flatMap((Transformer<Provider<RegularFile>, Zip>) zip -> zip.getArchiveFile()));
+                c.module(bundleTask.flatMap((Transformer<Provider<RegularFile>, Zip>) AbstractArchiveTask::getArchiveFile));
             } else {
-                c.plugin(bundleTask.flatMap((Transformer<Provider<RegularFile>, Zip>) zip -> zip.getArchiveFile()));
+                c.plugin(bundleTask.flatMap((Transformer<Provider<RegularFile>, Zip>) AbstractArchiveTask::getArchiveFile));
             }
         });
 

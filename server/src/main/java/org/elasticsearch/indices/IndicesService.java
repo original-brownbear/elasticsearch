@@ -76,6 +76,7 @@ import org.elasticsearch.env.ShardLock;
 import org.elasticsearch.env.ShardLockObtainFailedException;
 import org.elasticsearch.gateway.MetaStateService;
 import org.elasticsearch.gateway.MetadataStateFormat;
+import org.elasticsearch.index.AbstractIndexComponent;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexMode;
 import org.elasticsearch.index.IndexModule;
@@ -409,7 +410,7 @@ public class IndicesService extends AbstractLifecycleComponent
         ExecutorService indicesStopExecutor = Executors.newFixedThreadPool(5, daemonThreadFactory(settings, "indices_shutdown"));
 
         // Copy indices because we modify it asynchronously in the body of the loop
-        final Set<Index> indices = this.indices.values().stream().map(s -> s.index()).collect(Collectors.toSet());
+        final Set<Index> indices = this.indices.values().stream().map(AbstractIndexComponent::index).collect(Collectors.toSet());
         final CountDownLatch latch = new CountDownLatch(indices.size());
         for (final Index index : indices) {
             indicesStopExecutor.execute(() -> {

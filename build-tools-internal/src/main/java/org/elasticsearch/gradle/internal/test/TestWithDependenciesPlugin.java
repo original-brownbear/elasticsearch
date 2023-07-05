@@ -54,8 +54,7 @@ public class TestWithDependenciesPlugin implements Plugin<Project> {
 
     private static void addPluginResources(final Project project, final Project pluginProject) {
         final File outputDir = new File(project.getBuildDir(), "/generated-test-resources/" + pluginProject.getName());
-        String camelProjectName = stream(pluginProject.getName().split("-")).map(t -> StringUtils.capitalize(t))
-            .collect(Collectors.joining());
+        String camelProjectName = stream(pluginProject.getName().split("-")).map(StringUtils::capitalize).collect(Collectors.joining());
         String taskName = "copy" + camelProjectName + "Metadata";
         project.getTasks().register(taskName, Copy.class, copy -> {
             copy.into(outputDir);

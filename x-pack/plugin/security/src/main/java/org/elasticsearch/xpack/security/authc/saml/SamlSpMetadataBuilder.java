@@ -181,7 +181,7 @@ public class SamlSpMetadataBuilder {
         return encryptionCertificates(
             credentials == null
                 ? Collections.emptyList()
-                : credentials.stream().map(credential -> credential.getEntityCertificate()).collect(Collectors.toList())
+                : credentials.stream().map(X509Credential::getEntityCertificate).collect(Collectors.toList())
         );
     }
 

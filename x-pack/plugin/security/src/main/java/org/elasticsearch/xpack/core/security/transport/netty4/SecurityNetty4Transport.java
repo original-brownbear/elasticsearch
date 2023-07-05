@@ -93,7 +93,7 @@ public class SecurityNetty4Transport extends Netty4Transport {
             circuitBreakerService,
             sharedGroupFactory
         );
-        this.exceptionHandler = new SecurityTransportExceptionHandler(logger, lifecycle, (c, e) -> super.onException(c, e));
+        this.exceptionHandler = new SecurityTransportExceptionHandler(logger, lifecycle, super::onException);
         this.sslService = sslService;
         this.transportSslEnabled = XPackSettings.TRANSPORT_SSL_ENABLED.get(settings);
         this.remoteClusterPortEnabled = REMOTE_CLUSTER_SERVER_ENABLED.get(settings);

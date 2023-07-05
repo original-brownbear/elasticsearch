@@ -17,6 +17,7 @@ import org.elasticsearch.index.analysis.AbstractTokenizerFactory;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -76,7 +77,7 @@ public class NGramTokenizerFactory extends AbstractTokenizerFactory {
                             + characterClass
                             + "', must be one of "
                             + Stream.of(MATCHERS.keySet(), Collections.singleton("custom"))
-                                .flatMap(x -> x.stream())
+                                .flatMap(Collection::stream)
                                 .collect(Collectors.toSet())
                     );
                 }

@@ -126,7 +126,7 @@ public class YamlRestTestPlugin implements Plugin<Project> {
             var nonInputProperties = new SystemPropertyCommandLineArgumentProvider();
             nonInputProperties.systemProperty("tests.rest.cluster", () -> String.join(",", cluster.getAllHttpSocketURI()));
             nonInputProperties.systemProperty("tests.cluster", () -> String.join(",", cluster.getAllTransportPortURI()));
-            nonInputProperties.systemProperty("tests.clustername", () -> cluster.getName());
+            nonInputProperties.systemProperty("tests.clustername", cluster::getName);
             task.getJvmArgumentProviders().add(nonInputProperties);
             task.systemProperty("tests.rest.load_packaged", Boolean.FALSE.toString());
         });

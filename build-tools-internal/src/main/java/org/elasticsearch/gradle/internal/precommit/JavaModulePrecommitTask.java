@@ -129,7 +129,7 @@ public class JavaModulePrecommitTask extends PrecommitTask {
         if (Files.exists(servicesRoot)) {
             try (var paths = Files.walk(servicesRoot)) {
                 paths.filter(Files::isRegularFile)
-                    .map(p -> servicesRoot.relativize(p))
+                    .map(servicesRoot::relativize)
                     .map(Path::toString)
                     .peek(s -> getLogger().info("%s checking service %s", this, s))
                     .forEach(service -> {

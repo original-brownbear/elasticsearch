@@ -163,6 +163,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static java.util.Collections.emptyMap;
@@ -373,7 +374,7 @@ public abstract class AggregatorTestCase extends ESTestCase {
             randomInt(),
             () -> 0L,
             () -> false,
-            q -> q,
+            Function.identity(),
             true,
             isInSortOrderExecutionRequired
         );
@@ -1222,7 +1223,7 @@ public abstract class AggregatorTestCase extends ESTestCase {
                 null,
                 null,
                 IndexVersion.current(),
-                () -> TransportVersion.current(),
+                TransportVersion::current,
                 null,
                 ScriptCompiler.NONE,
                 null,

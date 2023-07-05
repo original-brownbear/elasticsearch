@@ -133,7 +133,7 @@ public abstract class TestingConventionsCheckTask extends PrecommitTask {
             if (mismatchingBaseClasses.isEmpty() == false) {
                 throw new GradleException(
                     "Following test classes do not extend any supported base class:\n\t"
-                        + mismatchingBaseClasses.stream().map(c -> c.getName()).collect(Collectors.joining("\n\t"))
+                        + mismatchingBaseClasses.stream().map(Class::getName).collect(Collectors.joining("\n\t"))
                 );
             }
         }
@@ -148,7 +148,7 @@ public abstract class TestingConventionsCheckTask extends PrecommitTask {
                     "Following test classes do not match naming convention to use suffix "
                         + suffixes.stream().map(s -> "'" + s + "'").collect(Collectors.joining(" or "))
                         + ":\n\t"
-                        + matchingBaseClassNotMatchingSuffix.stream().map(c -> c.getName()).collect(Collectors.joining("\n\t"))
+                        + matchingBaseClassNotMatchingSuffix.stream().map(Class::getName).collect(Collectors.joining("\n\t"))
                 );
             }
         }

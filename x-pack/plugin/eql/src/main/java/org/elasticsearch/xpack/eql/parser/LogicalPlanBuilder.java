@@ -334,7 +334,7 @@ public abstract class LogicalPlanBuilder extends ExpressionBuilder {
             until = defaultUntil(source);
         }
 
-        if (maxSpan.duration() < 0 && queries.stream().anyMatch(x -> x.isMissingEventFilter())) {
+        if (maxSpan.duration() < 0 && queries.stream().anyMatch(KeyedFilter::isMissingEventFilter)) {
             throw new ParsingException(source, "[maxspan] is required for sequences with missing events queries; found none");
         }
 

@@ -185,7 +185,7 @@ public class NoticeTask extends DefaultTask {
     }
 
     private List<File> existingLicenseDirs() {
-        return licensesDirs.get().stream().filter(d -> d.exists()).collect(Collectors.toList());
+        return licensesDirs.get().stream().filter(File::exists).collect(Collectors.toList());
     }
 
     @InputFiles

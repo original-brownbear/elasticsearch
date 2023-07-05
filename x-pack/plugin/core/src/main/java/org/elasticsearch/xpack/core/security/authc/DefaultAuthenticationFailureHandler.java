@@ -47,7 +47,7 @@ public class DefaultAuthenticationFailureHandler implements AuthenticationFailur
             );
         } else {
             this.defaultFailureResponseHeaders = Collections.unmodifiableMap(
-                failureResponseHeaders.entrySet().stream().collect(Collectors.toMap(entry -> entry.getKey(), entry -> {
+                failureResponseHeaders.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, entry -> {
                     if (entry.getKey().equalsIgnoreCase("WWW-Authenticate")) {
                         List<String> values = new ArrayList<>(entry.getValue());
                         values.sort(Comparator.comparing(DefaultAuthenticationFailureHandler::authSchemePriority));

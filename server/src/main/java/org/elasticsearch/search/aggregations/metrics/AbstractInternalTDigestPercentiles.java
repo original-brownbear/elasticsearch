@@ -101,7 +101,7 @@ abstract class AbstractInternalTDigestPercentiles extends InternalNumericMetrics
 
     @Override
     public Iterable<String> valueNames() {
-        return Arrays.stream(getKeys()).mapToObj(d -> String.valueOf(d)).toList();
+        return Arrays.stream(getKeys()).mapToObj(String::valueOf).toList();
     }
 
     public abstract double value(double key);

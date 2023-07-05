@@ -212,6 +212,6 @@ public class WatcherLifeCycleService implements ClusterStateListener {
     }
 
     public Supplier<WatcherState> getState() {
-        return () -> state.get();
+        return state::get;
     }
 }

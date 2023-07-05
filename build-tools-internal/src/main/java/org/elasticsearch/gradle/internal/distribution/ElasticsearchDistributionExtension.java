@@ -40,7 +40,7 @@ public class ElasticsearchDistributionExtension {
         copyTask.configure(sync -> {
             var moduleConfig = moduleZip(module);
             sync.dependsOn(moduleConfig);
-            Callable<File> callableSingleFile = () -> moduleConfig.getSingleFile();
+            Callable<File> callableSingleFile = moduleConfig::getSingleFile;
             sync.from(callableSingleFile, spec -> {
                 spec.setIncludeEmptyDirs(false);
                 // these are handled separately in the log4j config tasks in the :distribution plugin

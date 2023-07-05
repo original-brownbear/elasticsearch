@@ -271,7 +271,7 @@ class TrainedModelAssignmentRebalancer {
     }
 
     private Map<List<String>, List<AssignmentPlan.Node>> createNodesByZoneMap() {
-        return mlNodesByZone.entrySet().stream().collect(Collectors.toMap(e -> e.getKey(), e -> {
+        return mlNodesByZone.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> {
             Collection<DiscoveryNode> discoveryNodes = e.getValue();
             List<AssignmentPlan.Node> nodes = new ArrayList<>();
             for (DiscoveryNode discoveryNode : discoveryNodes) {

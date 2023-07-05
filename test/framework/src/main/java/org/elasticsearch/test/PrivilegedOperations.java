@@ -55,7 +55,7 @@ public final class PrivilegedOperations {
 
     public static Boolean compilationTaskCall(JavaCompiler.CompilationTask compilationTask) {
         return AccessController.doPrivileged(
-            (PrivilegedAction<Boolean>) () -> compilationTask.call(),
+            (PrivilegedAction<Boolean>) compilationTask::call,
             context,
             new RuntimePermission("createClassLoader"),
             new RuntimePermission("closeClassLoader"),
@@ -66,7 +66,7 @@ public final class PrivilegedOperations {
 
     public static <T> T supplierWithCreateClassLoader(Supplier<T> supplier) {
         return AccessController.doPrivileged(
-            (PrivilegedAction<T>) () -> supplier.get(),
+            (PrivilegedAction<T>) supplier::get,
             context,
             new RuntimePermission("createClassLoader"),
             new RuntimePermission("closeClassLoader")

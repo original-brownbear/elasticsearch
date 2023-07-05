@@ -46,9 +46,7 @@ public final class ProfileCollectorManager<T> implements CollectorManager<Intern
             .collect(Collectors.toList());
         T returnValue = collectorManager.reduce(unwrapped);
 
-        List<CollectorResult> resultsPerProfiler = profileCollectors.stream()
-            .map(ipc -> ipc.getCollectorTree())
-            .collect(Collectors.toList());
+        List<CollectorResult> resultsPerProfiler = profileCollectors.stream().map(InternalProfileCollector::getCollectorTree).toList();
 
         long totalTime = resultsPerProfiler.stream().map(CollectorResult::getTime).reduce(0L, Long::sum);
         String collectorName = resultsPerProfiler.get(0).getName();

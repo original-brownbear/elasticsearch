@@ -21,6 +21,7 @@ import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.util.LazyInitializable;
+import org.elasticsearch.core.AbstractRefCounted;
 import org.elasticsearch.logging.LogManager;
 import org.elasticsearch.logging.Logger;
 
@@ -101,8 +102,8 @@ class AwsEc2ServiceImpl implements AwsEc2Service {
     public void refreshAndClearCache(Ec2ClientSettings clientSettings) {
         final LazyInitializable<AmazonEc2Reference, ElasticsearchException> newClient = new LazyInitializable<>(
             () -> new AmazonEc2Reference(buildClient(clientSettings)),
-            clientReference -> clientReference.incRef(),
-            clientReference -> clientReference.decRef()
+            AbstractRefCounted::incRef,
+            AbstractRefCounted::decRef
         );
         final LazyInitializable<AmazonEc2Reference, ElasticsearchException> oldClient = this.lazyClientReference.getAndSet(newClient);
         if (oldClient != null) {

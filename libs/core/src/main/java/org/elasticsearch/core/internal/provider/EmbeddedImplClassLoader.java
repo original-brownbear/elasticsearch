@@ -326,7 +326,7 @@ public final class EmbeddedImplClassLoader extends SecureClassLoader {
         Function<Path, Path[]> entries = path -> prefixes.stream()
             .map(EmbeddedImplClassLoader::basePrefix)
             .distinct()
-            .map(pfx -> path.resolve(pfx))
+            .map(path::resolve)
             .toArray(Path[]::new);
         if (rootURI.getScheme().equals("file")) {
             return entries.apply(Path.of(rootURI));
@@ -398,7 +398,7 @@ public final class EmbeddedImplClassLoader extends SecureClassLoader {
         Set<String> pkgs = new HashSet<>();
         Map<String, List<Integer>> pkgVersions = new HashMap<>();
         try (var paths = Files.find(dir, Integer.MAX_VALUE, ((path, attrs) -> attrs.isRegularFile()))) {
-            paths.map(path -> dir.relativize(path)).forEach(path -> {
+            paths.map(dir::relativize).forEach(path -> {
                 Path parent = path.getParent();
                 if (parent != null) {
                     if (parent.startsWith(MRJAR_VERSION_PREFIX)) {

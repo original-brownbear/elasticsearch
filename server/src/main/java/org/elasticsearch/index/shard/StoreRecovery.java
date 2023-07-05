@@ -111,7 +111,7 @@ public final class StoreRecovery {
             if (shards.isEmpty()) {
                 throw new IllegalArgumentException("shards must not be empty");
             }
-            Set<Index> indices = shards.stream().map((s) -> s.getIndex()).collect(Collectors.toSet());
+            Set<Index> indices = shards.stream().map(LocalShardSnapshot::getIndex).collect(Collectors.toSet());
             if (indices.size() > 1) {
                 throw new IllegalArgumentException("can't add shards from more than one index");
             }

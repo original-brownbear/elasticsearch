@@ -105,7 +105,7 @@ public interface UnpackTransform extends TransformAction<UnpackTransform.Paramet
     default Function<String, Path> pathResolver() {
         List<String> keepPatterns = getParameters().getKeepStructureFor();
         String trimmedPrefixPattern = getParameters().getTrimmedPrefixPattern();
-        return trimmedPrefixPattern != null ? (i) -> trimArchiveExtractPath(keepPatterns, trimmedPrefixPattern, i) : (i) -> Path.of(i);
+        return trimmedPrefixPattern != null ? (i) -> trimArchiveExtractPath(keepPatterns, trimmedPrefixPattern, i) : Path::of;
     }
 
     /*

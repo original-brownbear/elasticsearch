@@ -131,7 +131,12 @@ class SamlAuthenticator extends SamlResponseHandler {
     }
 
     private String getSessionIndex(Assertion assertion) {
-        return assertion.getAuthnStatements().stream().map(as -> as.getSessionIndex()).filter(Objects::nonNull).findFirst().orElse(null);
+        return assertion.getAuthnStatements()
+            .stream()
+            .map(AuthnStatement::getSessionIndex)
+            .filter(Objects::nonNull)
+            .findFirst()
+            .orElse(null);
     }
 
     private void checkResponseDestination(Response response) {

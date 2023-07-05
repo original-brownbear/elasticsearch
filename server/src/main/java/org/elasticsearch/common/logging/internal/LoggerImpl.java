@@ -23,7 +23,7 @@ public final class LoggerImpl implements Logger {
     }
 
     private org.apache.logging.log4j.util.Supplier<?> mapSupplier(Supplier<String> msgSupplier) {
-        return () -> msgSupplier.get();
+        return msgSupplier::get;
     }
 
     @Override

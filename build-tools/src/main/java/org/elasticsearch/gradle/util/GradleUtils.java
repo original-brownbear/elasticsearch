@@ -50,7 +50,7 @@ public abstract class GradleUtils {
     }
 
     public static void maybeConfigure(TaskContainer tasks, String name, Action<? super Task> config) {
-        tasks.matching(t -> t.getName().equals(name)).configureEach(t -> config.execute(t));
+        tasks.matching(t -> t.getName().equals(name)).configureEach(config);
     }
 
     public static <T extends Task> void maybeConfigure(
@@ -59,7 +59,7 @@ public abstract class GradleUtils {
         Class<? extends T> type,
         Action<? super T> config
     ) {
-        tasks.withType(type).matching((Spec<T>) t -> t.getName().equals(name)).configureEach(task -> { config.execute(task); });
+        tasks.withType(type).matching((Spec<T>) t -> t.getName().equals(name)).configureEach(config);
     }
 
     public static TaskProvider<?> findByName(TaskContainer tasks, String name) {

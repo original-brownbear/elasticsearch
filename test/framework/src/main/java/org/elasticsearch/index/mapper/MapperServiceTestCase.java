@@ -205,7 +205,7 @@ public abstract class MapperServiceTestCase extends ESTestCase {
 
         SimilarityService similarityService = new SimilarityService(indexSettings, null, Map.of());
         return new MapperService(
-            () -> TransportVersion.current(),
+            TransportVersion::current,
             indexSettings,
             createIndexAnalyzers(indexSettings),
             parserConfig(),

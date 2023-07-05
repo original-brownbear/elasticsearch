@@ -41,7 +41,7 @@ public final class JarUtils {
         Path jarpath = dir.resolve(name);
         UncheckedIOFunction<OutputStream, JarOutputStream> jarOutFunc;
         if (manifest == null) {
-            jarOutFunc = os -> new JarOutputStream(os);
+            jarOutFunc = JarOutputStream::new;
         } else {
             jarOutFunc = os -> new JarOutputStream(os, manifest);
         }

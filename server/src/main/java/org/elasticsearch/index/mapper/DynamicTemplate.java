@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Stream;
@@ -328,7 +329,7 @@ public class DynamicTemplate implements ToXContentObject {
 
         final MatchType matchType = MatchType.fromString(matchPattern);
         List<String> allPatterns = Stream.of(match.stream(), unmatch.stream(), pathMatch.stream(), pathUnmatch.stream())
-            .flatMap(s -> s)
+            .flatMap(Function.identity())
             .toList();
         for (String pattern : allPatterns) {
             // no need to check return value - the method impls either have side effects (set header warnings)

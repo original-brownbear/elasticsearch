@@ -102,7 +102,7 @@ public class LegacyGeoShapeFieldMapper extends AbstractShapeGeometryFieldMapper<
     }
 
     public static Set<String> getDeprecatedParameters(Set<String> paramKeys) {
-        return DEPRECATED_PARAMETERS.stream().filter((p) -> paramKeys.contains(p)).collect(Collectors.toSet());
+        return DEPRECATED_PARAMETERS.stream().filter(paramKeys::contains).collect(Collectors.toSet());
     }
 
     public static class Defaults {

@@ -251,7 +251,7 @@ public class GlobalBuildInfoPlugin implements Plugin<Project> {
         return getAvailableJavaInstallationLocationSteam().map(installationLocation -> {
             JvmInstallationMetadata metadata = metadataDetector.getMetadata(installationLocation);
             int actualVersion = Integer.parseInt(metadata.getLanguageVersion().getMajorVersion());
-            return JavaHome.of(actualVersion, providers.provider(() -> installationLocation.getLocation()));
+            return JavaHome.of(actualVersion, providers.provider(installationLocation::getLocation));
         }).collect(Collectors.toList());
     }
 
