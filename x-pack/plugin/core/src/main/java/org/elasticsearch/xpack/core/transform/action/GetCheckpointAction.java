@@ -116,7 +116,7 @@ public class GetCheckpointAction extends ActionType<GetCheckpointAction.Response
         }
 
         public Response(StreamInput in) throws IOException {
-            this.checkpoints = in.readOrderedMap(StreamInput::readString, StreamInput::readLongArray);
+            this.checkpoints = in.readOrderedMap(StreamInput.STRING_READER, StreamInput::readLongArray);
         }
 
         @Override

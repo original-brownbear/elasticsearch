@@ -72,7 +72,7 @@ public class WatchStatus implements ToXContentObject, Writeable {
             executionState = ExecutionState.resolve(in.readString());
         }
         if (in.readBoolean()) {
-            headers = in.readMap(StreamInput::readString);
+            headers = in.readMap(StreamInput.STRING_READER);
         } else {
             headers = Collections.emptyMap();
         }

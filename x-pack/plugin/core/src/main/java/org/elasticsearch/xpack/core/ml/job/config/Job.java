@@ -278,7 +278,7 @@ public class Job implements SimpleDiffable<Job>, Writeable, ToXContentObject {
         jobId = in.readString();
         jobType = in.readString();
         jobVersion = in.readBoolean() ? Version.readVersion(in) : null;
-        groups = in.readImmutableList(StreamInput::readString);
+        groups = in.readImmutableStringList();
         description = in.readOptionalString();
         createTime = new Date(in.readVLong());
         finishedTime = in.readBoolean() ? new Date(in.readVLong()) : null;

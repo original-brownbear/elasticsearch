@@ -75,7 +75,7 @@ public class GetIndexResponse extends ActionResponse implements ChunkedToXConten
     GetIndexResponse(StreamInput in) throws IOException {
         super(in);
         this.indices = in.readStringArray();
-        mappings = in.readImmutableOpenMap(StreamInput::readString, in.getTransportVersion().before(TransportVersion.V_8_0_0) ? i -> {
+        mappings = in.readImmutableOpenMap(StreamInput.STRING_READER, in.getTransportVersion().before(TransportVersion.V_8_0_0) ? i -> {
             int numMappings = i.readVInt();
             assert numMappings == 0 || numMappings == 1 : "Expected 0 or 1 mappings but got " + numMappings;
             if (numMappings == 1) {
@@ -87,10 +87,10 @@ public class GetIndexResponse extends ActionResponse implements ChunkedToXConten
             }
         } : i -> i.readBoolean() ? new MappingMetadata(i) : MappingMetadata.EMPTY_MAPPINGS);
 
-        aliases = in.readImmutableOpenMap(StreamInput::readString, i -> i.readList(AliasMetadata::new));
-        settings = in.readImmutableOpenMap(StreamInput::readString, Settings::readSettingsFromStream);
-        defaultSettings = in.readImmutableOpenMap(StreamInput::readString, Settings::readSettingsFromStream);
-        dataStreams = in.readImmutableOpenMap(StreamInput::readString, StreamInput::readOptionalString);
+        aliases = in.readImmutableOpenMap(StreamInput.STRING_READER, i -> i.readList(AliasMetadata::new));
+        settings = in.readImmutableOpenMap(StreamInput.STRING_READER, Settings::readSettingsFromStream);
+        defaultSettings = in.readImmutableOpenMap(StreamInput.STRING_READER, Settings::readSettingsFromStream);
+        dataStreams = in.readImmutableOpenMap(StreamInput.STRING_READER, StreamInput::readOptionalString);
     }
 
     public String[] indices() {

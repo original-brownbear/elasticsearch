@@ -86,7 +86,7 @@ public final class EclatMapReducer extends AbstractItemSetMapReducer<
 
         EclatResult(StreamInput in) throws IOException {
             this.frequentItemSets = in.readArray(FrequentItemSet::new, FrequentItemSet[]::new);
-            this.profilingInfo = in.readOrderedMap(StreamInput::readString, StreamInput::readGenericValue);
+            this.profilingInfo = in.readOrderedMap(StreamInput.STRING_READER, StreamInput::readGenericValue);
         }
 
         FrequentItemSet[] getFrequentItemSets() {

@@ -44,7 +44,7 @@ public class GetCheckpointNodeAction extends ActionType<GetCheckpointNodeAction.
         }
 
         public Response(StreamInput in) throws IOException {
-            this.checkpoints = in.readOrderedMap(StreamInput::readString, StreamInput::readLongArray);
+            this.checkpoints = in.readOrderedMap(StreamInput.STRING_READER, StreamInput::readLongArray);
         }
 
         @Override

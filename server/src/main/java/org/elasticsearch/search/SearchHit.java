@@ -187,7 +187,7 @@ public final class SearchHit implements Writeable, ToXContentObject, Iterable<Do
         sortValues = new SearchSortValues(in);
 
         if (in.getTransportVersion().onOrAfter(TransportVersion.V_8_8_0)) {
-            matchedQueries = in.readOrderedMap(StreamInput::readString, StreamInput::readFloat);
+            matchedQueries = in.readOrderedMap(StreamInput.STRING_READER, StreamInput::readFloat);
         } else {
             size = in.readVInt();
             matchedQueries = new LinkedHashMap<>(size);

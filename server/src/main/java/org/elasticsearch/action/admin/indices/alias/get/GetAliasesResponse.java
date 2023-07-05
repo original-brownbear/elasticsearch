@@ -31,7 +31,7 @@ public class GetAliasesResponse extends ActionResponse {
 
     public GetAliasesResponse(StreamInput in) throws IOException {
         super(in);
-        aliases = in.readImmutableOpenMap(StreamInput::readString, i -> i.readList(AliasMetadata::new));
+        aliases = in.readImmutableOpenMap(StreamInput.STRING_READER, i -> i.readList(AliasMetadata::new));
         dataStreamAliases = in.readMap(in1 -> in1.readList(DataStreamAlias::new));
     }
 

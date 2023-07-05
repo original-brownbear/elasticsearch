@@ -75,7 +75,7 @@ public class IndexFieldCapabilities implements Writeable {
             this.isDimension = false;
             this.metricType = null;
         }
-        this.meta = in.readMap(StreamInput::readString);
+        this.meta = in.readMap(StreamInput.STRING_READER);
     }
 
     @Override

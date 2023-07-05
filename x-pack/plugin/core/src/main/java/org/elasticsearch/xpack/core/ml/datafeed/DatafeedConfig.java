@@ -279,7 +279,7 @@ public class DatafeedConfig implements SimpleDiffable<DatafeedConfig>, ToXConten
         this.queryDelay = in.readOptionalTimeValue();
         this.frequency = in.readOptionalTimeValue();
         if (in.readBoolean()) {
-            this.indices = in.readImmutableList(StreamInput::readString);
+            this.indices = in.readImmutableStringList();
         } else {
             this.indices = null;
         }
@@ -295,7 +295,7 @@ public class DatafeedConfig implements SimpleDiffable<DatafeedConfig>, ToXConten
         }
         this.scrollSize = in.readOptionalVInt();
         this.chunkingConfig = in.readOptionalWriteable(ChunkingConfig::new);
-        this.headers = in.readImmutableMap(StreamInput::readString);
+        this.headers = in.readImmutableMap(StreamInput.STRING_READER);
         delayedDataCheckConfig = in.readOptionalWriteable(DelayedDataCheckConfig::new);
         maxEmptySearches = in.readOptionalVInt();
         indicesOptions = IndicesOptions.readIndicesOptions(in);
@@ -792,7 +792,7 @@ public class DatafeedConfig implements SimpleDiffable<DatafeedConfig>, ToXConten
             this.queryDelay = in.readOptionalTimeValue();
             this.frequency = in.readOptionalTimeValue();
             if (in.readBoolean()) {
-                this.indices = in.readImmutableList(StreamInput::readString);
+                this.indices = in.readImmutableStringList();
             } else {
                 this.indices = null;
             }
@@ -808,7 +808,7 @@ public class DatafeedConfig implements SimpleDiffable<DatafeedConfig>, ToXConten
             }
             this.scrollSize = in.readOptionalVInt();
             this.chunkingConfig = in.readOptionalWriteable(ChunkingConfig::new);
-            this.headers = in.readImmutableMap(StreamInput::readString);
+            this.headers = in.readImmutableMap(StreamInput.STRING_READER);
             delayedDataCheckConfig = in.readOptionalWriteable(DelayedDataCheckConfig::new);
             maxEmptySearches = in.readOptionalVInt();
             if (in.readBoolean()) {

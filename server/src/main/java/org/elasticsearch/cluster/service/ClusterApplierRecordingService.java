@@ -103,7 +103,7 @@ public final class ClusterApplierRecordingService {
         }
 
         public Stats(StreamInput in) throws IOException {
-            this(in.readOrderedMap(StreamInput::readString, Recording::new));
+            this(in.readOrderedMap(StreamInput.STRING_READER, Recording::new));
         }
 
         @Override

@@ -192,7 +192,7 @@ public final class ConfigurableClusterPrivileges {
         }
 
         public static WriteProfileDataPrivileges createFrom(StreamInput in) throws IOException {
-            final Set<String> applications = in.readSet(StreamInput::readString);
+            final Set<String> applications = in.readSet(StreamInput.STRING_READER);
             return new WriteProfileDataPrivileges(applications);
         }
 
@@ -301,7 +301,7 @@ public final class ConfigurableClusterPrivileges {
         }
 
         public static ManageApplicationPrivileges createFrom(StreamInput in) throws IOException {
-            final Set<String> applications = in.readSet(StreamInput::readString);
+            final Set<String> applications = in.readSet(StreamInput.STRING_READER);
             return new ManageApplicationPrivileges(applications);
         }
 

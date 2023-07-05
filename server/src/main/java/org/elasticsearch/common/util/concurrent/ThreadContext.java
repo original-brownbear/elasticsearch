@@ -463,7 +463,7 @@ public final class ThreadContext implements Writeable {
     }
 
     public static Tuple<Map<String, String>, Map<String, Set<String>>> readHeadersFromStream(StreamInput in) throws IOException {
-        final Map<String, String> requestHeaders = in.readMap(StreamInput::readString);
+        final Map<String, String> requestHeaders = in.readMap(StreamInput.STRING_READER);
         final Map<String, Set<String>> responseHeaders = in.readMap(input -> {
             final int size = input.readVInt();
             if (size == 0) {

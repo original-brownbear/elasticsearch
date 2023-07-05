@@ -68,6 +68,8 @@ import java.util.function.IntFunction;
  */
 public abstract class StreamInput extends InputStream {
 
+    public static final Writeable.Reader<String> STRING_READER = StreamInput::readString;
+
     private TransportVersion version = TransportVersion.current();
 
     /**
@@ -622,7 +624,7 @@ public abstract class StreamInput extends InputStream {
      * Same as {@link #readMap(Writeable.Reader, Writeable.Reader)} but always reading string keys.
      */
     public <V> Map<String, V> readMap(Writeable.Reader<V> valueReader) throws IOException {
-        return readMap(StreamInput::readString, valueReader, Maps::newHashMapWithExpectedSize);
+        return readMap(STRING_READER, valueReader, Maps::newHashMapWithExpectedSize);
     }
 
     /**
@@ -654,7 +656,7 @@ public abstract class StreamInput extends InputStream {
     /**
      * Read a {@link Map} of string keys to {@code V}-type {@link List}s.
      * <pre><code>
-     * Map&lt;String, List&lt;String&gt;&gt; map = in.readMapOfLists(StreamInput::readString);
+     * Map&lt;String, List&lt;String&gt;&gt; map = in.readMapOfLists(STRING_READER);
      * </code></pre>
      * If the map or a list in it contains any elements it will be mutable, otherwise either the empty map or empty lists it contains
      * might be immutable.
@@ -699,7 +701,7 @@ public abstract class StreamInput extends InputStream {
      * Same as {@link #readMap(Writeable.Reader, Writeable.Reader)} but always reading string keys.
      */
     public <V> Map<String, V> readImmutableMap(Writeable.Reader<V> valueReader) throws IOException {
-        return readImmutableMap(StreamInput::readString, valueReader);
+        return readImmutableMap(STRING_READER, valueReader);
     }
 
     /**
@@ -763,7 +765,7 @@ public abstract class StreamInput extends InputStream {
             case 8 -> readArray();
             case 9 -> getTransportVersion().onOrAfter(TransportVersion.V_8_7_0)
                 ? readOrderedMap(StreamInput::readGenericValue, StreamInput::readGenericValue)
-                : readOrderedMap(StreamInput::readString, StreamInput::readGenericValue);
+                : readOrderedMap(STRING_READER, StreamInput::readGenericValue);
             case 10 -> getTransportVersion().onOrAfter(TransportVersion.V_8_7_0)
                 ? readMap(StreamInput::readGenericValue, StreamInput::readGenericValue)
                 : readMap(StreamInput::readGenericValue);
@@ -1120,7 +1122,7 @@ public abstract class StreamInput extends InputStream {
      * @throws IOException on failure
      */
     public List<String> readImmutableStringList() throws IOException {
-        return readImmutableList(StreamInput::readString);
+        return readImmutableList(STRING_READER);
     }
 
     /**
@@ -1131,7 +1133,7 @@ public abstract class StreamInput extends InputStream {
      * @throws IOException if an I/O exception occurs reading the list
      */
     public List<String> readStringList() throws IOException {
-        return readList(StreamInput::readString);
+        return readList(STRING_READER);
     }
 
     /**
@@ -1153,7 +1155,7 @@ public abstract class StreamInput extends InputStream {
      * @throws IOException if an I/O exception occurs reading the list
      */
     public List<String> readOptionalStringList() throws IOException {
-        return readOptionalList(StreamInput::readString);
+        return readOptionalList(STRING_READER);
     }
 
     /**

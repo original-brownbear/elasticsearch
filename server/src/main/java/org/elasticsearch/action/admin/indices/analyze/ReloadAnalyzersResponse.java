@@ -159,8 +159,8 @@ public class ReloadAnalyzersResponse extends BroadcastResponse {
 
         ReloadDetails(StreamInput in) throws IOException {
             this.indexName = in.readString();
-            this.reloadedIndicesNodes = new HashSet<>(in.readList(StreamInput::readString));
-            this.reloadedAnalyzers = new HashSet<>(in.readList(StreamInput::readString));
+            this.reloadedIndicesNodes = new HashSet<>(in.readList(StreamInput.STRING_READER));
+            this.reloadedAnalyzers = new HashSet<>(in.readList(StreamInput.STRING_READER));
         }
 
         @Override

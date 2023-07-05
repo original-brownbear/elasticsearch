@@ -91,8 +91,8 @@ public class ClusterInfo implements ToXContentFragment, Writeable {
             ? in.readImmutableMap(ShardId::new, StreamInput::readLong)
             : Map.of();
         this.dataPath = in.getTransportVersion().onOrAfter(DATA_PATH_NEW_KEY_VERSION)
-            ? in.readImmutableMap(NodeAndShard::new, StreamInput::readString)
-            : in.readImmutableMap(nested -> NodeAndShard.from(new ShardRouting(nested)), StreamInput::readString);
+            ? in.readImmutableMap(NodeAndShard::new, StreamInput.STRING_READER)
+            : in.readImmutableMap(nested -> NodeAndShard.from(new ShardRouting(nested)), StreamInput.STRING_READER);
         this.reservedSpace = in.getTransportVersion().onOrAfter(StoreStats.RESERVED_BYTES_VERSION)
             ? in.readImmutableMap(NodeAndPath::new, ReservedSpace::new)
             : Map.of();

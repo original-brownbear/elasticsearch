@@ -280,7 +280,7 @@ public class JvmInfo implements ReportingService.Info {
         }
         bootClassPath = in.readString();
         classPath = in.readString();
-        systemProperties = in.readMap(StreamInput::readString);
+        systemProperties = in.readMap(StreamInput.STRING_READER);
         mem = new Mem(in);
         gcCollectors = in.readStringArray();
         memoryPools = in.readStringArray();

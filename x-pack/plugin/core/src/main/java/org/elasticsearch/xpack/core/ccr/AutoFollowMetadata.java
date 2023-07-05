@@ -107,8 +107,8 @@ public class AutoFollowMetadata extends AbstractNamedDiffable<Metadata.Custom> i
     public AutoFollowMetadata(StreamInput in) throws IOException {
         this(
             in.readMap(AutoFollowPattern::readFrom),
-            in.readMapOfLists(StreamInput::readString),
-            in.readMap(valIn -> valIn.readMap(StreamInput::readString))
+            in.readMapOfLists(StreamInput.STRING_READER),
+            in.readMap(valIn -> valIn.readMap(StreamInput.STRING_READER))
         );
     }
 

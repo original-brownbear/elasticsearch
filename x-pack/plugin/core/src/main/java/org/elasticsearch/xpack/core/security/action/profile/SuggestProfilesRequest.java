@@ -50,7 +50,7 @@ public class SuggestProfilesRequest extends ActionRequest {
 
     public SuggestProfilesRequest(StreamInput in) throws IOException {
         super(in);
-        this.dataKeys = in.readSet(StreamInput::readString);
+        this.dataKeys = in.readSet(StreamInput.STRING_READER);
         this.name = in.readOptionalString();
         this.size = in.readVInt();
         this.hint = in.readOptionalWriteable(Hint::new);
@@ -140,7 +140,7 @@ public class SuggestProfilesRequest extends ActionRequest {
 
         public Hint(StreamInput in) throws IOException {
             this.uids = in.readStringList();
-            this.labels = in.readMapOfLists(StreamInput::readString);
+            this.labels = in.readMapOfLists(StreamInput.STRING_READER);
         }
 
         public List<String> getUids() {

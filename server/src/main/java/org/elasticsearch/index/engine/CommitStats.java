@@ -38,7 +38,7 @@ public final class CommitStats implements Writeable, ToXContentFragment {
     }
 
     CommitStats(StreamInput in) throws IOException {
-        userData = in.readImmutableMap(StreamInput::readString);
+        userData = in.readImmutableMap(StreamInput.STRING_READER);
         generation = in.readLong();
         id = in.readOptionalString();
         numDocs = in.readInt();

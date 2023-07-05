@@ -39,8 +39,8 @@ public class GetProfilingResponse extends ActionResponse implements ChunkedToXCo
             ? in.readMap(
                 i -> new StackTrace(
                     i.readList(StreamInput::readInt),
-                    i.readList(StreamInput::readString),
-                    i.readList(StreamInput::readString),
+                    i.readStringList(),
+                    i.readStringList(),
                     i.readList(StreamInput::readInt)
                 )
             )
@@ -48,14 +48,14 @@ public class GetProfilingResponse extends ActionResponse implements ChunkedToXCo
         this.stackFrames = in.readBoolean()
             ? in.readMap(
                 i -> new StackFrame(
-                    i.readList(StreamInput::readString),
-                    i.readList(StreamInput::readString),
+                    i.readStringList(),
+                    i.readStringList(),
                     i.readList(StreamInput::readInt),
                     i.readList(StreamInput::readInt)
                 )
             )
             : null;
-        this.executables = in.readBoolean() ? in.readMap(StreamInput::readString) : null;
+        this.executables = in.readBoolean() ? in.readMap(StreamInput.STRING_READER) : null;
         this.stackTraceEvents = in.readBoolean() ? in.readMap(StreamInput::readInt) : null;
         this.totalFrames = in.readInt();
         this.samplingRate = in.readDouble();

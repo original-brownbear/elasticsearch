@@ -87,7 +87,7 @@ public class PutAutoscalingPolicyAction extends ActionType<AcknowledgedResponse>
             super(in);
             this.name = in.readString();
             if (in.readBoolean()) {
-                this.roles = in.readSet(StreamInput::readString).stream().collect(Sets.toUnmodifiableSortedSet());
+                this.roles = in.readSet(StreamInput.STRING_READER).stream().collect(Sets.toUnmodifiableSortedSet());
             } else {
                 this.roles = null;
             }

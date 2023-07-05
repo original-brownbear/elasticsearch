@@ -47,17 +47,17 @@ public class ItemUsage implements Writeable, ToXContentObject {
 
     public ItemUsage(StreamInput in) throws IOException {
         if (in.readBoolean()) {
-            this.indices = in.readSet(StreamInput::readString);
+            this.indices = in.readSet(StreamInput.STRING_READER);
         } else {
             this.indices = null;
         }
         if (in.readBoolean()) {
-            this.dataStreams = in.readSet(StreamInput::readString);
+            this.dataStreams = in.readSet(StreamInput.STRING_READER);
         } else {
             this.dataStreams = null;
         }
         if (in.readBoolean()) {
-            this.composableTemplates = in.readSet(StreamInput::readString);
+            this.composableTemplates = in.readSet(StreamInput.STRING_READER);
         } else {
             this.composableTemplates = null;
         }

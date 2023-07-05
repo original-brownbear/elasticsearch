@@ -81,7 +81,7 @@ public class GetTrainedModelsAction extends ActionType<GetTrainedModelsAction.Re
         }
 
         public Includes(StreamInput in) throws IOException {
-            this.includes = in.readSet(StreamInput::readString);
+            this.includes = in.readSet(StreamInput.STRING_READER);
         }
 
         @Override

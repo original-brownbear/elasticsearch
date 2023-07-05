@@ -44,11 +44,11 @@ public final class GetUserPrivilegesResponse extends ActionResponse {
 
     public GetUserPrivilegesResponse(StreamInput in) throws IOException {
         super(in);
-        cluster = in.readImmutableSet(StreamInput::readString);
+        cluster = in.readImmutableSet(StreamInput.STRING_READER);
         configurableClusterPrivileges = in.readImmutableSet(ConfigurableClusterPrivileges.READER);
         index = in.readImmutableSet(Indices::new);
         application = in.readImmutableSet(RoleDescriptor.ApplicationResourcePrivileges::new);
-        runAs = in.readImmutableSet(StreamInput::readString);
+        runAs = in.readImmutableSet(StreamInput.STRING_READER);
         if (in.getTransportVersion().onOrAfter(TRANSPORT_VERSION_ADVANCED_REMOTE_CLUSTER_SECURITY_CCS)) {
             remoteIndex = in.readImmutableSet(RemoteIndices::new);
         } else {
@@ -145,7 +145,7 @@ public final class GetUserPrivilegesResponse extends ActionResponse {
     public record RemoteIndices(Indices indices, Set<String> remoteClusters) implements ToXContentObject, Writeable {
 
         public RemoteIndices(StreamInput in) throws IOException {
-            this(new Indices(in), Collections.unmodifiableSet(new TreeSet<>(in.readSet(StreamInput::readString))));
+            this(new Indices(in), Collections.unmodifiableSet(new TreeSet<>(in.readSet(StreamInput.STRING_READER))));
         }
 
         @Override
@@ -191,8 +191,8 @@ public final class GetUserPrivilegesResponse extends ActionResponse {
 
         public Indices(StreamInput in) throws IOException {
             // The use of TreeSet is to provide a consistent order that can be relied upon in tests
-            indices = Collections.unmodifiableSet(new TreeSet<>(in.readSet(StreamInput::readString)));
-            privileges = Collections.unmodifiableSet(new TreeSet<>(in.readSet(StreamInput::readString)));
+            indices = Collections.unmodifiableSet(new TreeSet<>(in.readSet(StreamInput.STRING_READER)));
+            privileges = Collections.unmodifiableSet(new TreeSet<>(in.readSet(StreamInput.STRING_READER)));
             fieldSecurity = in.readImmutableSet(input -> {
                 final String[] grant = input.readOptionalStringArray();
                 final String[] exclude = input.readOptionalStringArray();

@@ -98,7 +98,7 @@ public class GrokProcessorGetAction extends ActionType<GrokProcessorGetAction.Re
 
         Response(StreamInput in) throws IOException {
             super(in);
-            grokPatterns = in.readMap(StreamInput::readString);
+            grokPatterns = in.readMap(StreamInput.STRING_READER);
         }
 
         public Map<String, String> getGrokPatterns() {

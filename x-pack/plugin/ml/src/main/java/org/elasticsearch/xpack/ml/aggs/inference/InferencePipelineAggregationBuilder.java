@@ -166,7 +166,7 @@ public class InferencePipelineAggregationBuilder extends AbstractPipelineAggrega
     ) throws IOException {
         super(in, NAME);
         modelId = in.readString();
-        bucketPathMap = in.readMap(StreamInput::readString);
+        bucketPathMap = in.readMap(StreamInput.STRING_READER);
         inferenceConfig = in.readOptionalNamedWriteable(InferenceConfigUpdate.class);
         this.modelLoadingService = modelLoadingService;
         this.model = null;

@@ -33,7 +33,7 @@ public class GetProfilesRequest extends ActionRequest {
     public GetProfilesRequest(StreamInput in) throws IOException {
         super(in);
         this.uids = in.readStringList();
-        this.dataKeys = in.readSet(StreamInput::readString);
+        this.dataKeys = in.readSet(StreamInput.STRING_READER);
     }
 
     public GetProfilesRequest(String uid, Set<String> dataKeys) {

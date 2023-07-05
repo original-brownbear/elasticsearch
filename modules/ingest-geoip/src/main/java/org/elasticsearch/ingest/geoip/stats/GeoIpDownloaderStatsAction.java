@@ -164,10 +164,10 @@ public class GeoIpDownloaderStatsAction extends ActionType<GeoIpDownloaderStatsA
         protected NodeResponse(StreamInput in) throws IOException {
             super(in);
             stats = in.readBoolean() ? new GeoIpDownloaderStats(in) : null;
-            databases = in.readImmutableSet(StreamInput::readString);
-            filesInTemp = in.readImmutableSet(StreamInput::readString);
+            databases = in.readImmutableSet(StreamInput.STRING_READER);
+            filesInTemp = in.readImmutableSet(StreamInput.STRING_READER);
             configDatabases = in.getTransportVersion().onOrAfter(TransportVersion.V_8_0_0)
-                ? in.readImmutableSet(StreamInput::readString)
+                ? in.readImmutableSet(StreamInput.STRING_READER)
                 : null;
         }
 
