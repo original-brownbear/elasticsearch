@@ -32,7 +32,7 @@ public class RecoveryResponse extends BaseBroadcastResponse implements ChunkedTo
 
     public RecoveryResponse(StreamInput in) throws IOException {
         super(in);
-        shardRecoveryStates = in.readMapOfLists(RecoveryState::readRecoveryState);
+        shardRecoveryStates = in.readMap(i -> i.readList(RecoveryState::readRecoveryState));
     }
 
     /**

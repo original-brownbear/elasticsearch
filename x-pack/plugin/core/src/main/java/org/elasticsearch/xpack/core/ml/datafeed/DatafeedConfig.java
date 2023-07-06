@@ -279,7 +279,7 @@ public class DatafeedConfig implements SimpleDiffable<DatafeedConfig>, ToXConten
         this.queryDelay = in.readOptionalTimeValue();
         this.frequency = in.readOptionalTimeValue();
         if (in.readBoolean()) {
-            this.indices = in.readImmutableList(StreamInput::readString);
+            this.indices = in.readImmutableStringList();
         } else {
             this.indices = null;
         }
@@ -792,7 +792,7 @@ public class DatafeedConfig implements SimpleDiffable<DatafeedConfig>, ToXConten
             this.queryDelay = in.readOptionalTimeValue();
             this.frequency = in.readOptionalTimeValue();
             if (in.readBoolean()) {
-                this.indices = in.readImmutableList(StreamInput::readString);
+                this.indices = in.readImmutableStringList();
             } else {
                 this.indices = null;
             }

@@ -114,7 +114,7 @@ public class Ensemble implements LenientlyParsedTrainedModel, StrictlyParsedTrai
     }
 
     public Ensemble(StreamInput in) throws IOException {
-        this.featureNames = in.readImmutableList(StreamInput::readString);
+        this.featureNames = in.readImmutableStringList();
         this.models = Collections.unmodifiableList(in.readNamedWriteableList(TrainedModel.class));
         this.outputAggregator = in.readNamedWriteable(OutputAggregator.class);
         this.targetType = TargetType.fromStream(in);

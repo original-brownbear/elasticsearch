@@ -51,6 +51,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.IntFunction;
@@ -652,21 +654,6 @@ public abstract class StreamInput extends InputStream {
     }
 
     /**
-     * Read a {@link Map} of string keys to {@code V}-type {@link List}s.
-     * <pre><code>
-     * Map&lt;String, List&lt;String&gt;&gt; map = in.readMapOfLists(StreamInput::readString);
-     * </code></pre>
-     * If the map or a list in it contains any elements it will be mutable, otherwise either the empty map or empty lists it contains
-     * might be immutable.
-     *
-     * @param valueReader The value reader
-     * @return Never {@code null}.
-     */
-    public <V> Map<String, List<V>> readMapOfLists(final Writeable.Reader<V> valueReader) throws IOException {
-        return readMap(i -> i.readList(valueReader));
-    }
-
-    /**
      * Reads a multiple {@code V}-values and then converts them to a {@code Map} using keyMapper.
      *
      * @param valueReader The value reader
@@ -1154,6 +1141,13 @@ public abstract class StreamInput extends InputStream {
      */
     public List<String> readOptionalStringList() throws IOException {
         return readOptionalList(StreamInput::readString);
+    }
+
+    /**
+     * Reads a sorted, immutable set of objects.
+     */
+    public <T> SortedSet<T> readImmutableSortedSet(Writeable.Reader<T> reader) throws IOException {
+        return Collections.unmodifiableSortedSet(readCollection(reader, size -> new TreeSet<>(), Collections.emptySortedSet()));
     }
 
     /**

@@ -250,7 +250,7 @@ public class TrainedModelConfig implements ToXContentObject, Writeable {
         description = in.readOptionalString();
         createTime = in.readInstant();
         definition = in.readOptionalWriteable(LazyModelDefinition::fromStreamInput);
-        tags = in.readImmutableList(StreamInput::readString);
+        tags = in.readImmutableStringList();
         metadata = in.readMap();
         input = new TrainedModelInput(in);
         modelSize = in.readVLong();

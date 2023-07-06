@@ -602,7 +602,7 @@ public class RecyclerBytesStreamOutputTests extends ESTestCase {
 
         final StreamInput in = StreamInput.wrap(BytesReference.toBytes(out.bytes()));
 
-        final Map<String, List<String>> loaded = in.readMapOfLists(StreamInput::readString);
+        final Map<String, List<String>> loaded = in.readMap(StreamInput::readStringList);
 
         assertThat(loaded.size(), equalTo(expected.size()));
 

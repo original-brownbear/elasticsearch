@@ -21,6 +21,7 @@ import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.regex.Regex;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.set.Sets;
@@ -153,13 +154,14 @@ public class DeprecationInfoAction extends ActionType<DeprecationInfoAction.Resp
             super(in);
             clusterSettingsIssues = in.readList(DeprecationIssue::new);
             nodeSettingsIssues = in.readList(DeprecationIssue::new);
-            indexSettingsIssues = in.readMapOfLists(DeprecationIssue::new);
+            final Writeable.Reader<List<DeprecationIssue>> issueListReader = i -> i.readList(DeprecationIssue::new);
+            indexSettingsIssues = in.readMap(issueListReader);
             if (in.getTransportVersion().before(TransportVersion.V_7_11_0)) {
                 List<DeprecationIssue> mlIssues = in.readList(DeprecationIssue::new);
                 pluginSettingsIssues = new HashMap<>();
                 pluginSettingsIssues.put("ml_settings", mlIssues);
             } else {
-                pluginSettingsIssues = in.readMapOfLists(DeprecationIssue::new);
+                pluginSettingsIssues = in.readMap(issueListReader);
             }
         }
 

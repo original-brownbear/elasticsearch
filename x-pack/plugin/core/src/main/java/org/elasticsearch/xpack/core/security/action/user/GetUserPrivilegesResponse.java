@@ -145,7 +145,7 @@ public final class GetUserPrivilegesResponse extends ActionResponse {
     public record RemoteIndices(Indices indices, Set<String> remoteClusters) implements ToXContentObject, Writeable {
 
         public RemoteIndices(StreamInput in) throws IOException {
-            this(new Indices(in), Collections.unmodifiableSet(new TreeSet<>(in.readSet(StreamInput::readString))));
+            this(new Indices(in), in.readImmutableSortedSet(StreamInput::readString));
         }
 
         @Override
@@ -191,8 +191,8 @@ public final class GetUserPrivilegesResponse extends ActionResponse {
 
         public Indices(StreamInput in) throws IOException {
             // The use of TreeSet is to provide a consistent order that can be relied upon in tests
-            indices = Collections.unmodifiableSet(new TreeSet<>(in.readSet(StreamInput::readString)));
-            privileges = Collections.unmodifiableSet(new TreeSet<>(in.readSet(StreamInput::readString)));
+            indices = in.readImmutableSortedSet(StreamInput::readString);
+            privileges = in.readImmutableSortedSet(StreamInput::readString);
             fieldSecurity = in.readImmutableSet(input -> {
                 final String[] grant = input.readOptionalStringArray();
                 final String[] exclude = input.readOptionalStringArray();
