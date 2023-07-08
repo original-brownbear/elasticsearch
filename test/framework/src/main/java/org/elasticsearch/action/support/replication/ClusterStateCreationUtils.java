@@ -94,7 +94,7 @@ public class ClusterStateCreationUtils {
             : "invalid shard states ["
                 + primaryState
                 + "] vs ["
-                + Arrays.toString(replicaStates.stream().map(t -> t.v1()).toArray(String[]::new))
+                + Arrays.toString(replicaStates.stream().map(Tuple::v1).toArray(ShardRoutingState[]::new))
                 + "]";
 
         final int numberOfReplicas = replicaStates.size();

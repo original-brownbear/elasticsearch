@@ -27,7 +27,7 @@ abstract class AbstractPreserveAllocations {
     }
 
     List<Node> nodesPreservingAllocations() {
-        return nodes.stream().map(n -> modifyNodePreservingAllocations(n)).toList();
+        return nodes.stream().map(this::modifyNodePreservingAllocations).toList();
     }
 
     private Node modifyNodePreservingAllocations(Node n) {
@@ -44,7 +44,7 @@ abstract class AbstractPreserveAllocations {
     }
 
     List<Deployment> modelsPreservingAllocations() {
-        return deployments.stream().map(m -> modifyModelPreservingPreviousAssignments(m)).toList();
+        return deployments.stream().map(this::modifyModelPreservingPreviousAssignments).toList();
     }
 
     Deployment modifyModelPreservingPreviousAssignments(Deployment m) {

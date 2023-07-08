@@ -307,7 +307,7 @@ public final class StringUtils {
             }
         }
         CollectionUtil.timSort(scoredMatches, (a, b) -> b.v1().compareTo(a.v1()));
-        return scoredMatches.stream().map(a -> a.v2()).collect(toList());
+        return scoredMatches.stream().map(Tuple::v2).collect(toList());
     }
 
     public static double parseDouble(String string) throws QlIllegalArgumentException {

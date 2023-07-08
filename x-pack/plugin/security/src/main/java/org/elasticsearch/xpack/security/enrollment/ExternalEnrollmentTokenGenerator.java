@@ -75,7 +75,7 @@ public class ExternalEnrollmentTokenGenerator extends BaseEnrollmentTokenGenerat
         return new EnrollmentToken(apiKey, fingerprint, httpInfo.v2(), httpInfo.v1());
     }
 
-    private HttpResponse.HttpResponseBuilder responseBuilder(InputStream is) throws IOException {
+    private static HttpResponse.HttpResponseBuilder responseBuilder(InputStream is) throws IOException {
         final HttpResponse.HttpResponseBuilder httpResponseBuilder = new HttpResponse.HttpResponseBuilder();
         if (is != null) {
             String responseBody = Streams.readFully(is).utf8ToString();
@@ -134,7 +134,7 @@ public class ExternalEnrollmentTokenGenerator extends BaseEnrollmentTokenGenerat
             user,
             password,
             createApiKeyRequestBodySupplier,
-            is -> responseBuilder(is)
+            ExternalEnrollmentTokenGenerator::responseBuilder
         );
         final int httpCode = httpResponseApiKey.getHttpStatus();
 
@@ -155,7 +155,14 @@ public class ExternalEnrollmentTokenGenerator extends BaseEnrollmentTokenGenerat
 
     protected Tuple<List<String>, String> getNodeInfo(String user, SecureString password, URL baseUrl) throws Exception {
         final URL httpInfoUrl = getHttpInfoUrl(baseUrl);
-        final HttpResponse httpResponseHttp = client.execute("GET", httpInfoUrl, user, password, () -> null, is -> responseBuilder(is));
+        final HttpResponse httpResponseHttp = client.execute(
+            "GET",
+            httpInfoUrl,
+            user,
+            password,
+            () -> null,
+            ExternalEnrollmentTokenGenerator::responseBuilder
+        );
         final int httpCode = httpResponseHttp.getHttpStatus();
 
         if (httpCode != HttpURLConnection.HTTP_OK) {

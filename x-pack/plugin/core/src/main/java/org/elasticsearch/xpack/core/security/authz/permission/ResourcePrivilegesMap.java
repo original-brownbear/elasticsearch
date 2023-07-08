@@ -81,7 +81,7 @@ public final class ResourcePrivilegesMap {
         public ResourcePrivilegesMap build() {
             Map<String, ResourcePrivileges> result = resourceToResourcePrivilegesBuilder.entrySet()
                 .stream()
-                .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().build()));
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().build()));
             return new ResourcePrivilegesMap(result);
         }
     }

@@ -245,7 +245,7 @@ public class InternalDistributionArchiveCheckPlugin implements Plugin<Project> {
     }
 
     private String calculateBuildTask(String projectName) {
-        return "build" + Arrays.stream(projectName.split("-")).map(f -> GUtils.capitalize(f)).collect(Collectors.joining());
+        return "build" + Arrays.stream(projectName.split("-")).map(GUtils::capitalize).collect(Collectors.joining());
     }
 
 }

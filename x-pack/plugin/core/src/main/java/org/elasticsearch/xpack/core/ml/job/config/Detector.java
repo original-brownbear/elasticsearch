@@ -395,7 +395,7 @@ public class Detector implements ToXContentObject, Writeable {
      */
     public List<String> extractAnalysisFields() {
         List<String> analysisFields = Arrays.asList(getByFieldName(), getOverFieldName(), getPartitionFieldName());
-        return analysisFields.stream().filter(item -> item != null).collect(Collectors.toList());
+        return analysisFields.stream().filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     public Set<String> extractReferencedFilters() {
@@ -684,7 +684,7 @@ public class Detector implements ToXContentObject, Writeable {
 
         public List<String> extractAnalysisFields() {
             List<String> analysisFields = Arrays.asList(byFieldName, overFieldName, partitionFieldName);
-            return analysisFields.stream().filter(item -> item != null).collect(Collectors.toList());
+            return analysisFields.stream().filter(Objects::nonNull).collect(Collectors.toList());
         }
 
         /**

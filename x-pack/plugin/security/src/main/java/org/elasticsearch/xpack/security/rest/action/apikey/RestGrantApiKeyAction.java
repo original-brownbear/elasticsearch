@@ -61,7 +61,7 @@ public final class RestGrantApiKeyAction extends ApiKeyBaseRestHandler implement
         );
         PARSER.declareString((req, str) -> req.getGrant().setRunAsUsername(str), new ParseField("run_as"));
         PARSER.declareObject(
-            (req, api) -> req.setApiKeyRequest(api),
+            GrantApiKeyRequest::setApiKeyRequest,
             (parser, ignore) -> CreateApiKeyRequestBuilder.parse(parser),
             new ParseField("api_key")
         );

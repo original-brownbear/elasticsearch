@@ -298,6 +298,6 @@ public final class IndexPrivilege extends Privilege {
      * @see Privilege#sortByAccessLevel
      */
     public static Collection<String> findPrivilegesThatGrant(String action) {
-        return VALUES.entrySet().stream().filter(e -> e.getValue().predicate.test(action)).map(e -> e.getKey()).toList();
+        return VALUES.entrySet().stream().filter(e -> e.getValue().predicate.test(action)).map(Map.Entry::getKey).toList();
     }
 }

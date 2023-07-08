@@ -25,7 +25,6 @@ import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientTestCase;
 import org.elasticsearch.client.sniff.Sniffer.DefaultScheduler;
 import org.elasticsearch.client.sniff.Sniffer.Scheduler;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import java.io.IOException;
@@ -300,16 +299,13 @@ public class SnifferTests extends RestClientTestCase {
                 public Future<?> schedule(final Sniffer.Task task, long delayMillis) {
                     if (initializing.compareAndSet(true, false)) {
                         assertEquals(0L, delayMillis);
-                        Future<?> future = executor.submit(new Runnable() {
-                            @Override
-                            public void run() {
-                                try {
-                                    task.run();
-                                } finally {
-                                    // we need to make sure that the sniffer is initialized, so the sniffOnFailure
-                                    // call does what it needs to do. Otherwise nothing happens until initialized.
-                                    initializingLatch.countDown();
-                                }
+                        Future<?> future = executor.submit(() -> {
+                            try {
+                                task.run();
+                            } finally {
+                                // we need to make sure that the sniffer is initialized, so the sniffOnFailure
+                                // call does what it needs to do. Otherwise nothing happens until initialized.
+                                initializingLatch.countDown();
                             }
                         });
                         assertTrue(initializingFuture.compareAndSet(null, future));
@@ -359,12 +355,7 @@ public class SnifferTests extends RestClientTestCase {
                 // with tasks executing quickly one after each other, it is very likely that the onFailure round gets skipped
                 // as another round is already running. We retry till enough runs get through as that's what we want to test.
                 while (onFailureTasks.size() < minNumOnFailureRounds) {
-                    onFailureFutures.add(onFailureExecutor.submit(new Runnable() {
-                        @Override
-                        public void run() {
-                            sniffer.sniffOnFailure();
-                        }
-                    }));
+                    onFailureFutures.add(onFailureExecutor.submit(sniffer::sniffOnFailure));
                 }
                 assertThat(onFailureFutures.size(), greaterThanOrEqualTo(minNumOnFailureRounds));
                 for (Future<?> onFailureFuture : onFailureFutures) {
@@ -593,12 +584,7 @@ public class SnifferTests extends RestClientTestCase {
         ScheduledExecutorService scheduledExecutorService = mock(ScheduledExecutorService.class);
         final ScheduledFuture<?> mockedFuture = mock(ScheduledFuture.class);
         when(scheduledExecutorService.schedule(any(Runnable.class), any(Long.class), any(TimeUnit.class))).then(
-            new Answer<ScheduledFuture<?>>() {
-                @Override
-                public ScheduledFuture<?> answer(InvocationOnMock invocationOnMock) {
-                    return mockedFuture;
-                }
-            }
+            (Answer<ScheduledFuture<?>>) invocationOnMock -> mockedFuture
         );
         DefaultScheduler scheduler = new DefaultScheduler(scheduledExecutorService);
         long delay = randomLongBetween(1, Long.MAX_VALUE);
@@ -621,12 +607,7 @@ public class SnifferTests extends RestClientTestCase {
             assertThat(executor.getThreadFactory(), instanceOf(Sniffer.SnifferThreadFactory.class));
             int iters = randomIntBetween(3, 10);
             for (int i = 1; i <= iters; i++) {
-                Thread thread = executor.getThreadFactory().newThread(new Runnable() {
-                    @Override
-                    public void run() {
-
-                    }
-                });
+                Thread thread = executor.getThreadFactory().newThread(() -> {});
                 assertThat(thread.getName(), equalTo("es_rest_client_sniffer[T#" + i + "]"));
                 assertThat(thread.isDaemon(), is(true));
             }

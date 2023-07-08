@@ -120,7 +120,7 @@ public class TransportGetFeatureUpgradeStatusAction extends TransportMasterNodeA
         PersistentTasksCustomMetadata.PersistentTask<SystemIndexMigrationTaskParams> migrationTask = PersistentTasksCustomMetadata
             .getTaskWithId(state, SYSTEM_INDEX_UPGRADE_TASK_NAME);
         final String currentFeature = Optional.ofNullable(migrationTask)
-            .map(task -> task.getState())
+            .map(PersistentTasksCustomMetadata.PersistentTask::getState)
             .map(taskState -> ((SystemIndexMigrationTaskState) taskState).getCurrentFeature())
             .orElse(null);
 

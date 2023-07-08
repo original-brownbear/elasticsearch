@@ -167,7 +167,7 @@ public class FunctionScoreQuery extends Query {
         Float minScore,
         float maxBoost
     ) {
-        if (Arrays.stream(functions).anyMatch(func -> func == null)) {
+        if (Arrays.stream(functions).anyMatch(Objects::isNull)) {
             throw new IllegalArgumentException("Score function should not be null");
         }
         this.subQuery = subQuery;

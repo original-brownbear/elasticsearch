@@ -27,6 +27,7 @@ import org.elasticsearch.search.aggregations.support.AggregationPath;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class MovingPercentilesPipelineAggregator extends PipelineAggregator {
@@ -75,7 +76,7 @@ public class MovingPercentilesPipelineAggregator extends PipelineAggregator {
 
         List<TDigestState> values = buckets.stream()
             .map(b -> resolveTDigestBucketValue(histo, b, bucketsPaths()[0]))
-            .filter(v -> v != null)
+            .filter(Objects::nonNull)
             .toList();
 
         int index = 0;
@@ -125,7 +126,7 @@ public class MovingPercentilesPipelineAggregator extends PipelineAggregator {
 
         List<DoubleHistogram> values = buckets.stream()
             .map(b -> resolveHDRBucketValue(histo, b, bucketsPaths()[0]))
-            .filter(v -> v != null)
+            .filter(Objects::nonNull)
             .toList();
 
         int index = 0;

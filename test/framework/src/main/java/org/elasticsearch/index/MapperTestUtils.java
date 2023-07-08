@@ -59,7 +59,7 @@ public class MapperTestUtils {
         IndexAnalyzers indexAnalyzers = createTestAnalysis(indexSettings, finalSettings).indexAnalyzers;
         SimilarityService similarityService = new SimilarityService(indexSettings, null, Collections.emptyMap());
         return new MapperService(
-            () -> TransportVersion.current(),
+            TransportVersion::current,
             indexSettings,
             indexAnalyzers,
             XContentParserConfiguration.EMPTY.withRegistry(xContentRegistry).withDeprecationHandler(LoggingDeprecationHandler.INSTANCE),

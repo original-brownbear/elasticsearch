@@ -291,7 +291,7 @@ class LinearProgrammingPlanSolver {
                 .setLinearFactorsSimple(varsForModel(m, allocationVars));
         }
 
-        double[] threadsPerAllocationPerModel = deployments.stream().mapToDouble(m -> m.threadsPerAllocation()).toArray();
+        double[] threadsPerAllocationPerModel = deployments.stream().mapToDouble(Deployment::threadsPerAllocation).toArray();
         for (Node n : nodes) {
             // Allocations should not use more cores than the node has.
             // We multiply the allocation variables with the threads per allocation for each model to find the total number of cores used.
@@ -338,7 +338,7 @@ class LinearProgrammingPlanSolver {
 
     @SuppressWarnings("removal")
     private static Optimisation.Result privilegedModelMaximise(ExpressionsBasedModel model) {
-        return AccessController.doPrivileged((PrivilegedAction<Optimisation.Result>) () -> model.maximise());
+        return AccessController.doPrivileged((PrivilegedAction<Optimisation.Result>) model::maximise);
     }
 
     private int memoryComplexity() {

@@ -10,6 +10,7 @@ package org.elasticsearch.gradle.internal.dra;
 
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.artifacts.repositories.IvyArtifactRepository;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.provider.ProviderFactory;
 
@@ -73,7 +74,7 @@ public class DraResolvePlugin implements Plugin<Project> {
                     String.format("/%s/%s/downloads/%s/[module]/[module]-[revision]-[classifier].[ext]", draKey, buildId, draKey)
                 );
             });
-            repo.metadataSources(metadataSources -> metadataSources.artifact());
+            repo.metadataSources(IvyArtifactRepository.MetadataSources::artifact);
             repo.content(repositoryContentDescriptor -> repositoryContentDescriptor.includeVersionByRegex(".*", ".*", includeVersionRegex));
         });
     }

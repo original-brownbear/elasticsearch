@@ -160,7 +160,7 @@ public class GceInstancesServiceImpl implements GceInstancesService {
             .setConnectTimeout(500)
             .setReadTimeout(500)
             .setHeaders(new HttpHeaders().set("Metadata-Flavor", "Google"));
-        HttpResponse response = Access.doPrivilegedIOException(() -> request.execute());
+        HttpResponse response = Access.doPrivilegedIOException(request::execute);
         return headerContainsMetadataFlavor(response) ? response.parseAsString() : null;
     }
 

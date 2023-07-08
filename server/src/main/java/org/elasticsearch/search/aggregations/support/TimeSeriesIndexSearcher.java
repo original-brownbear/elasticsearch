@@ -70,7 +70,7 @@ public class TimeSeriesIndexSearcher {
             throw new RuntimeException(e);
         }
         this.cancellations = cancellations;
-        cancellations.forEach(cancellation -> this.searcher.addQueryCancellation(cancellation));
+        cancellations.forEach(this.searcher::addQueryCancellation);
 
         assert TIME_SERIES_SORT.length == 2;
         assert TIME_SERIES_SORT[0].getField().equals(TimeSeriesIdFieldMapper.NAME);

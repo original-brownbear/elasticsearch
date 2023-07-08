@@ -68,7 +68,7 @@ public class ReservedAutoscalingPolicyAction implements ReservedClusterStateHand
             state = TransportPutAutoscalingPolicyAction.putAutoscalingPolicy(state, request, policyValidatorHolder.get());
         }
 
-        Set<String> entities = requests.stream().map(r -> r.name()).collect(Collectors.toSet());
+        Set<String> entities = requests.stream().map(PutAutoscalingPolicyAction.Request::name).collect(Collectors.toSet());
 
         Set<String> toDelete = new HashSet<>(prevState.keys());
         toDelete.removeAll(entities);

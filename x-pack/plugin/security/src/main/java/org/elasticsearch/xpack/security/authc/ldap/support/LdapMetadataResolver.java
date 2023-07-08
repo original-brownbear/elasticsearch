@@ -16,6 +16,7 @@ import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.xpack.core.security.authc.RealmConfig;
 import org.elasticsearch.xpack.core.security.authc.ldap.support.LdapMetadataResolverSettings;
+import org.elasticsearch.xpack.security.authc.ldap.ActiveDirectorySIDUtil;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -88,13 +89,13 @@ public class LdapMetadataResolver {
         return Arrays.stream(this.attributeNames)
             .map(attributes)
             .filter(Objects::nonNull)
-            .collect(Collectors.toUnmodifiableMap(attr -> attr.getName(), attr -> {
+            .collect(Collectors.toUnmodifiableMap(Attribute::getName, attr -> {
                 final String[] values = attr.getValues();
                 if (attr.getName().equals(TOKEN_GROUPS)) {
                     return values.length == 1
                         ? convertToString(attr.getValueByteArrays()[0])
                         : Arrays.stream(attr.getValueByteArrays())
-                            .map((sidBytes) -> convertToString(sidBytes))
+                            .map(ActiveDirectorySIDUtil::convertToString)
                             .collect(Collectors.toList());
                 }
                 return values.length == 1 ? values[0] : List.of(values);

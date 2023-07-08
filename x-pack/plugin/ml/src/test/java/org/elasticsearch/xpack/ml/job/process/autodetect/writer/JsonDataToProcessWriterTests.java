@@ -29,7 +29,6 @@ import org.elasticsearch.xpack.ml.job.process.DataCountsReporter;
 import org.elasticsearch.xpack.ml.job.process.autodetect.AutodetectProcess;
 import org.junit.Before;
 import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import java.io.ByteArrayInputStream;
@@ -70,14 +69,11 @@ public class JsonDataToProcessWriterTests extends ESTestCase {
         dataCountsReporter = Mockito.mock(DataCountsReporter.class);
 
         writtenRecords = new ArrayList<>();
-        doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocation) throws Throwable {
-                String[] record = (String[]) invocation.getArguments()[0];
-                String[] copy = Arrays.copyOf(record, record.length);
-                writtenRecords.add(copy);
-                return null;
-            }
+        doAnswer((Answer<Void>) invocation -> {
+            String[] record = (String[]) invocation.getArguments()[0];
+            String[] copy = Arrays.copyOf(record, record.length);
+            writtenRecords.add(copy);
+            return null;
         }).when(autodetectProcess).writeRecord(any(String[].class));
 
         dataDescription = new DataDescription.Builder();

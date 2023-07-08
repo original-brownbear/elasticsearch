@@ -509,7 +509,7 @@ public abstract class ESTestCase extends LuceneTestCase {
             if (warnings != null) {
                 // unit tests do not run with the bundled JDK, if there are warnings we need to filter the no-jdk deprecation warning
                 final List<String> filteredWarnings = warnings.stream()
-                    .filter(k -> filteredWarnings().stream().noneMatch(s -> k.contains(s)))
+                    .filter(k -> filteredWarnings().stream().noneMatch(k::contains))
                     .collect(Collectors.toList());
                 assertThat("unexpected warning headers", filteredWarnings, empty());
             } else {
@@ -695,7 +695,7 @@ public abstract class ESTestCase extends LuceneTestCase {
 
     // this must be a separate method from other ensure checks above so suite scoped integ tests can call...TODO: fix that
     public final void ensureAllSearchContextsReleased() throws Exception {
-        assertBusy(() -> MockSearchService.assertNoInFlightContext());
+        assertBusy(MockSearchService::assertNoInFlightContext);
     }
 
     // mockdirectorywrappers currently set this boolean if checkindex fails

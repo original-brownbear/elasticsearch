@@ -126,26 +126,23 @@ public abstract class AbstractActiveDirectoryTestCase extends ESTestCase {
     }
 
     protected static void assertConnectionCanReconnect(LDAPInterface conn) {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            @Override
-            public Void run() {
-                try {
-                    if (conn instanceof LDAPConnection) {
-                        ((LDAPConnection) conn).reconnect();
-                    } else if (conn instanceof LDAPConnectionPool) {
-                        try (LDAPConnection c = ((LDAPConnectionPool) conn).getConnection()) {
-                            c.reconnect();
-                        }
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            try {
+                if (conn instanceof LDAPConnection) {
+                    ((LDAPConnection) conn).reconnect();
+                } else if (conn instanceof LDAPConnectionPool) {
+                    try (LDAPConnection c = ((LDAPConnectionPool) conn).getConnection()) {
+                        c.reconnect();
                     }
-                } catch (LDAPException e) {
-                    fail(
-                        "Connection is not valid. It will not work on follow referral flow."
-                            + System.lineSeparator()
-                            + ExceptionsHelper.stackTrace(e)
-                    );
                 }
-                return null;
+            } catch (LDAPException e) {
+                fail(
+                    "Connection is not valid. It will not work on follow referral flow."
+                        + System.lineSeparator()
+                        + ExceptionsHelper.stackTrace(e)
+                );
             }
+            return null;
         });
     }
 

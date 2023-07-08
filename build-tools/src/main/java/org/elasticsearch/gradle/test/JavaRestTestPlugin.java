@@ -61,7 +61,7 @@ public class JavaRestTestPlugin implements Plugin<Project> {
                 var nonInputProperties = new SystemPropertyCommandLineArgumentProvider();
                 nonInputProperties.systemProperty("tests.rest.cluster", () -> String.join(",", cluster.getAllHttpSocketURI()));
                 nonInputProperties.systemProperty("tests.cluster", () -> String.join(",", cluster.getAllTransportPortURI()));
-                nonInputProperties.systemProperty("tests.clustername", () -> cluster.getName());
+                nonInputProperties.systemProperty("tests.clustername", cluster::getName);
                 nonInputProperties.systemProperty("tests.cluster.readiness", () -> String.join(",", cluster.getAllReadinessPortURI()));
                 task.getJvmArgumentProviders().add(nonInputProperties);
             });

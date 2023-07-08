@@ -103,8 +103,10 @@ public class AssignmentPlan implements Comparable<AssignmentPlan> {
         this.assignments = Objects.requireNonNull(assignments);
         this.remainingNodeMemory = remainingNodeMemory.entrySet()
             .stream()
-            .collect(Collectors.toMap(e -> e.getKey().id(), e -> e.getValue()));
-        this.remainingNodeCores = remainingNodeCores.entrySet().stream().collect(Collectors.toMap(e -> e.getKey().id(), e -> e.getValue()));
+            .collect(Collectors.toMap(e -> e.getKey().id(), Map.Entry::getValue));
+        this.remainingNodeCores = remainingNodeCores.entrySet()
+            .stream()
+            .collect(Collectors.toMap(e -> e.getKey().id(), Map.Entry::getValue));
         this.remainingModelAllocations = Objects.requireNonNull(remainingModelAllocations);
     }
 

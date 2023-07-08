@@ -152,17 +152,14 @@ abstract class TransactionStore implements Writeable, Releasable, Accountable {
     /*
      * Comparator for comparing items by count, the 1st value is the item id, the 2nd the count
      */
-    static final Comparator<Tuple<Long, Long>> ITEMS_BY_COUNT_COMPARATOR = new Comparator<Tuple<Long, Long>>() {
-        @Override
-        public int compare(Tuple<Long, Long> o1, Tuple<Long, Long> o2) {
+    static final Comparator<Tuple<Long, Long>> ITEMS_BY_COUNT_COMPARATOR = (o1, o2) -> {
 
-            // if counts are equal take the smaller item id first
-            if (o1.v2() == o2.v2()) {
-                return o1.v1().compareTo(o2.v1());
-            }
-
-            return o2.v2().compareTo(o1.v2());
+        // if counts are equal take the smaller item id first
+        if (o1.v2() == o2.v2()) {
+            return o1.v1().compareTo(o2.v1());
         }
+
+        return o2.v2().compareTo(o1.v2());
     };
 
     /**

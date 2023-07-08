@@ -7,6 +7,7 @@
 package org.elasticsearch.xpack.security.authc.ldap;
 
 import com.unboundid.ldap.sdk.Attribute;
+import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.LDAPInterface;
@@ -78,7 +79,7 @@ class SearchGroupsResolver implements GroupsResolver {
                         Math.toIntExact(timeout.seconds()),
                         ignoreReferralErrors,
                         ActionListener.wrap(
-                            (results) -> listener.onResponse(results.stream().map((r) -> r.getDN()).toList()),
+                            (results) -> listener.onResponse(results.stream().map(Entry::getDN).toList()),
                             listener::onFailure
                         ),
                         SearchRequest.NO_ATTRIBUTES

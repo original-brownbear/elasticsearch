@@ -35,7 +35,6 @@ import org.elasticsearch.xpack.security.tool.BaseRunAsSuperuserCommand;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import java.io.IOException;
@@ -253,16 +252,13 @@ public class BaseRunAsSuperuserCommandTests extends CommandTestCase {
         this.keyStoreWrapper = mock(KeyStoreWrapper.class);
         when(keyStoreWrapper.isLoaded()).thenReturn(true);
         when(keyStoreWrapper.hasPassword()).thenReturn(true);
-        doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocation) throws Throwable {
-                Object[] args = invocation.getArguments();
-                char[] password = (char[]) args[0];
-                if (Arrays.equals(password, "keystore-password".toCharArray()) == false) {
-                    throw new GeneralSecurityException("Wrong password");
-                }
-                return null;
+        doAnswer((Answer<Void>) invocation -> {
+            Object[] args = invocation.getArguments();
+            char[] password = (char[]) args[0];
+            if (Arrays.equals(password, "keystore-password".toCharArray()) == false) {
+                throw new GeneralSecurityException("Wrong password");
             }
+            return null;
         }).when(keyStoreWrapper).decrypt(any());
         terminal.addSecretInput("some-other-password");
         UserException e = expectThrows(UserException.class, this::execute);

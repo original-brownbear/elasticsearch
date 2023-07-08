@@ -24,7 +24,7 @@ public abstract class BodyPartSource implements ToXContentObject {
         if (sm != null) {
             sm.checkPermission(new SpecialPermission());
         }
-        fileTypeMap = AccessController.doPrivileged((PrivilegedAction<FileTypeMap>) () -> FileTypeMap.getDefaultFileTypeMap());
+        fileTypeMap = AccessController.doPrivileged((PrivilegedAction<FileTypeMap>) FileTypeMap::getDefaultFileTypeMap);
     }
 
     protected final String id;

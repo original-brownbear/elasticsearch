@@ -398,13 +398,13 @@ public class XPackLicenseState {
 
     /** Return the current license type. */
     public OperationMode getOperationMode() {
-        return executeAgainstStatus(statusToCheck -> statusToCheck.mode());
+        return executeAgainstStatus(XPackLicenseStatus::mode);
     }
 
     // Package private for tests
     /** Return true if the license is currently within its time boundaries, false otherwise. */
     public boolean isActive() {
-        return checkAgainstStatus(statusToCheck -> statusToCheck.active());
+        return checkAgainstStatus(XPackLicenseStatus::active);
     }
 
     public String statusDescription() {

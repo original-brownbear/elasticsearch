@@ -148,7 +148,7 @@ public final class IndexSortConfig {
         }
 
         List<String> fields = INDEX_SORT_FIELD_SETTING.get(settings);
-        this.sortSpecs = fields.stream().map((name) -> new FieldSortSpec(name)).toArray(FieldSortSpec[]::new);
+        this.sortSpecs = fields.stream().map(FieldSortSpec::new).toArray(FieldSortSpec[]::new);
 
         if (INDEX_SORT_ORDER_SETTING.exists(settings)) {
             List<SortOrder> orders = INDEX_SORT_ORDER_SETTING.get(settings);

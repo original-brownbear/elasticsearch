@@ -86,7 +86,7 @@ public final class Grok {
             expressionBytes.length,
             Option.DEFAULT,
             UTF8Encoding.INSTANCE,
-            message -> logCallBack.accept(message)
+            logCallBack::accept
         );
 
         List<GrokCaptureConfig> grokCaptureConfigs = new ArrayList<>();

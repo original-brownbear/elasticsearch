@@ -63,7 +63,7 @@ public class StandaloneRestIntegTestTask extends Test implements TestClustersAwa
             .doNotCacheIf(
                 "Caching disabled for this task since it is configured to preserve data directory",
                 // Don't cache the output of this task if it's not running from a clean data directory.
-                t -> getClusters().stream().anyMatch(cluster -> cluster.isPreserveDataDir())
+                t -> getClusters().stream().anyMatch(ElasticsearchCluster::isPreserveDataDir)
             );
     }
 

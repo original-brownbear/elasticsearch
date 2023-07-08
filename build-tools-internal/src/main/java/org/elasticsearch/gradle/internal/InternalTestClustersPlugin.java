@@ -33,7 +33,7 @@ public class InternalTestClustersPlugin implements Plugin<Project> {
         project.getPlugins().apply(InternalDistributionDownloadPlugin.class);
         project.getRootProject().getPluginManager().apply(InternalReaperPlugin.class);
         TestClustersPlugin testClustersPlugin = project.getPlugins().apply(TestClustersPlugin.class);
-        testClustersPlugin.setRuntimeJava(providerFactory.provider(() -> BuildParams.getRuntimeJavaHome()));
+        testClustersPlugin.setRuntimeJava(providerFactory.provider(BuildParams::getRuntimeJavaHome));
         testClustersPlugin.setIsReleasedVersion(
             version -> (version.equals(VersionProperties.getElasticsearchVersion()) && BuildParams.isSnapshotBuild() == false)
                 || BuildParams.getBwcVersions().unreleasedInfo(version) == null

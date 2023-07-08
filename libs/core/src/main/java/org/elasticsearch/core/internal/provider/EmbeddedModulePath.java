@@ -110,7 +110,7 @@ final class EmbeddedModulePath {
     static Set<String> explodedPackages(Path dir) {
         String separator = dir.getFileSystem().getSeparator();
         try (var stream = Files.find(dir, Integer.MAX_VALUE, ((path, attrs) -> attrs.isRegularFile()))) {
-            return stream.map(path -> dir.relativize(path))
+            return stream.map(dir::relativize)
                 .map(EmbeddedModulePath::maybeRemoveMRJARPrefix)
                 .map(path -> toPackageName(path, separator))
                 .flatMap(Optional::stream)

@@ -13,6 +13,7 @@ import org.elasticsearch.gradle.util.GradleUtils;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.provider.ProviderFactory;
+import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.TaskProvider;
 
 import java.util.stream.Collectors;
@@ -35,14 +36,11 @@ public class FilePermissionsPrecommitPlugin extends PrecommitPlugin {
             t.getSources()
                 .addAll(
                     providerFactory.provider(
-                        () -> GradleUtils.getJavaSourceSets(project).stream().map(s -> s.getAllSource()).collect(Collectors.toList())
+                        () -> GradleUtils.getJavaSourceSets(project).stream().map(SourceSet::getAllSource).collect(Collectors.toList())
                     )
                 );
             t.dependsOn(
-                GradleUtils.getJavaSourceSets(project)
-                    .stream()
-                    .map(sourceSet -> sourceSet.getProcessResourcesTaskName())
-                    .collect(Collectors.toList())
+                GradleUtils.getJavaSourceSets(project).stream().map(SourceSet::getProcessResourcesTaskName).collect(Collectors.toList())
             );
         });
     }

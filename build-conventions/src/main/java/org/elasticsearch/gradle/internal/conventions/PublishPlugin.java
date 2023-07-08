@@ -110,7 +110,7 @@ public class PublishPlugin implements Plugin<Project> {
         project.getTasks().named(LifecycleBasePlugin.ASSEMBLE_TASK_NAME).configure(assemble -> assemble.dependsOn(generatePomTask));
         var extensions = project.getExtensions();
         var archivesBaseName = providerFactory.provider(() -> getArchivesBaseName(extensions));
-        var projectVersion = providerFactory.provider(() -> project.getVersion());
+        var projectVersion = providerFactory.provider(project::getVersion);
         var generateMavenPoms = project.getTasks().withType(GenerateMavenPom.class);
         generateMavenPoms.configureEach(
             pomTask -> pomTask.setDestination(

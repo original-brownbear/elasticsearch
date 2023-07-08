@@ -35,9 +35,9 @@ class CreateEnrollmentTokenTool extends BaseRunAsSuperuserCommand {
 
     CreateEnrollmentTokenTool() {
         this(
-            environment -> new CommandLineHttpClient(environment),
+            CommandLineHttpClient::new,
             environment -> KeyStoreWrapper.load(environment.configFile()),
-            environment -> new ExternalEnrollmentTokenGenerator(environment)
+            ExternalEnrollmentTokenGenerator::new
         );
     }
 

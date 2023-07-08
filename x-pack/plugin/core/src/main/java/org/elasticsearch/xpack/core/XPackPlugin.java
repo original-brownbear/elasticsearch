@@ -137,17 +137,14 @@ public class XPackPlugin extends XPackClientPlugin
             sm.checkPermission(new SpecialPermission());
         }
         try {
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                @Override
-                public Void run() {
-                    try {
-                        Class.forName("com.unboundid.util.Debug");
-                        Class.forName("com.unboundid.ldap.sdk.LDAPConnectionOptions");
-                    } catch (ClassNotFoundException e) {
-                        throw new RuntimeException(e);
-                    }
-                    return null;
+            AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+                try {
+                    Class.forName("com.unboundid.util.Debug");
+                    Class.forName("com.unboundid.ldap.sdk.LDAPConnectionOptions");
+                } catch (ClassNotFoundException e) {
+                    throw new RuntimeException(e);
                 }
+                return null;
             });
             // TODO: fix gradle to add all security resources (plugin metadata) to test classpath
             // of watcher plugin, which depends on it directly. This prevents these plugins
