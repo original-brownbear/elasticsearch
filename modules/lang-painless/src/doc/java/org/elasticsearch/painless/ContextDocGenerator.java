@@ -464,18 +464,7 @@ public final class ContextDocGenerator {
             stream.print(className);
         }
 
-        stream.print("(");
-
-        for (int parameterIndex = 0; parameterIndex < constructorInfo.getParameters().size(); ++parameterIndex) {
-
-            stream.print(ContextGeneratorCommon.getType(javaNamesToDisplayNames, constructorInfo.getParameters().get(parameterIndex)));
-
-            if (parameterIndex + 1 < constructorInfo.getParameters().size()) {
-                stream.print(", ");
-            }
-        }
-
-        stream.println(")");
+        printParameters(stream, javaNamesToDisplayNames, constructorInfo.getParameters());
     }
 
     private static void printMethod(
@@ -494,13 +483,17 @@ public final class ContextDocGenerator {
             stream.print(methodInfo.getName());
         }
 
+        printParameters(stream, javaNamesToDisplayNames, methodInfo.getParameters());
+    }
+
+    private static void printParameters(PrintStream stream, Map<String, String> javaNamesToDisplayNames, List<String> parameters) {
         stream.print("(");
 
-        for (int parameterIndex = 0; parameterIndex < methodInfo.getParameters().size(); ++parameterIndex) {
+        for (int parameterIndex = 0; parameterIndex < parameters.size(); ++parameterIndex) {
 
-            stream.print(ContextGeneratorCommon.getType(javaNamesToDisplayNames, methodInfo.getParameters().get(parameterIndex)));
+            stream.print(ContextGeneratorCommon.getType(javaNamesToDisplayNames, parameters.get(parameterIndex)));
 
-            if (parameterIndex + 1 < methodInfo.getParameters().size()) {
+            if (parameterIndex + 1 < parameters.size()) {
                 stream.print(", ");
             }
         }
@@ -598,11 +591,15 @@ public final class ContextDocGenerator {
         javaDocLink.append(constructorInfo.getDeclaring().replace('.', '/'));
         javaDocLink.append(".html#<init>(");
 
-        for (int parameterIndex = 0; parameterIndex < constructorInfo.getParameters().size(); ++parameterIndex) {
+        return printParametersJavaDocLink(javaDocLink, constructorInfo.getParameters());
+    }
 
-            javaDocLink.append(getLinkType(constructorInfo.getParameters().get(parameterIndex)));
+    private static String printParametersJavaDocLink(StringBuilder javaDocLink, List<String> parameters) {
+        for (int parameterIndex = 0; parameterIndex < parameters.size(); ++parameterIndex) {
 
-            if (parameterIndex + 1 < constructorInfo.getParameters().size()) {
+            javaDocLink.append(getLinkType(parameters.get(parameterIndex)));
+
+            if (parameterIndex + 1 < parameters.size()) {
                 javaDocLink.append(",");
             }
         }
@@ -621,18 +618,7 @@ public final class ContextDocGenerator {
         javaDocLink.append(methodInfo.getName());
         javaDocLink.append("(");
 
-        for (int parameterIndex = 0; parameterIndex < methodInfo.getParameters().size(); ++parameterIndex) {
-
-            javaDocLink.append(getLinkType(methodInfo.getParameters().get(parameterIndex)));
-
-            if (parameterIndex + 1 < methodInfo.getParameters().size()) {
-                javaDocLink.append(",");
-            }
-        }
-
-        javaDocLink.append(")");
-
-        return javaDocLink.toString();
+        return printParametersJavaDocLink(javaDocLink, methodInfo.getParameters());
     }
 
     private static String getLinkType(String javaType) {
@@ -759,31 +745,7 @@ public final class ContextDocGenerator {
                 || classExcludes.contains(v)
         );
 
-        classInfos.sort((c1, c2) -> {
-            String n1 = c1.getName();
-            String n2 = c2.getName();
-            boolean i1 = c1.isImported();
-            boolean i2 = c2.isImported();
-
-            String p1 = n1.substring(0, n1.lastIndexOf('.'));
-            String p2 = n2.substring(0, n2.lastIndexOf('.'));
-
-            int compare = p1.compareTo(p2);
-
-            if (compare == 0) {
-                if (i1 && i2) {
-                    compare = n1.substring(n1.lastIndexOf('.') + 1).compareTo(n2.substring(n2.lastIndexOf('.') + 1));
-                } else if (i1 == false && i2 == false) {
-                    compare = n1.compareTo(n2);
-                } else {
-                    compare = Boolean.compare(i1, i2) * -1;
-                }
-            }
-
-            return compare;
-        });
-
-        return classInfos;
+        return ContextGeneratorCommon.sortClassInfosInPlace(classInfos);
     }
 
     private static Map<String, String> getDisplayNames(List<PainlessContextClassInfo> classInfos) {

@@ -17,6 +17,7 @@ import org.elasticsearch.painless.ir.CastNode;
 import org.elasticsearch.painless.ir.ComparisonNode;
 import org.elasticsearch.painless.ir.ConstantNode;
 import org.elasticsearch.painless.ir.ExpressionNode;
+import org.elasticsearch.painless.ir.IRNode;
 import org.elasticsearch.painless.ir.InvokeCallMemberNode;
 import org.elasticsearch.painless.ir.NullNode;
 import org.elasticsearch.painless.ir.StringConcatenationNode;
@@ -102,14 +103,7 @@ public class DefaultConstantFoldingOptimizationPhase extends IRExpressionModifyi
                 } else if (type == double.class) {
                     irConstantNode.attachDecoration(new IRDConstant(-(double) constantValue));
                 } else {
-                    throw irUnaryMathNode.getLocation()
-                        .createError(
-                            unaryError(
-                                PainlessLookupUtility.typeToCanonicalTypeName(type),
-                                operation.symbol,
-                                irConstantNode.getDecorationString(IRDConstant.class)
-                            )
-                        );
+                    throwUnaryError(irUnaryMathNode, irConstantNode, operation, type);
                 }
 
                 scope.accept(irConstantNode);
@@ -119,14 +113,7 @@ public class DefaultConstantFoldingOptimizationPhase extends IRExpressionModifyi
                 } else if (type == long.class) {
                     irConstantNode.attachDecoration(new IRDConstant(~(long) constantValue));
                 } else {
-                    throw irUnaryMathNode.getLocation()
-                        .createError(
-                            unaryError(
-                                PainlessLookupUtility.typeToCanonicalTypeName(type),
-                                operation.symbol,
-                                irConstantNode.getDecorationString(IRDConstant.class)
-                            )
-                        );
+                    throwUnaryError(irUnaryMathNode, irConstantNode, operation, type);
                 }
 
                 scope.accept(irConstantNode);
@@ -134,14 +121,7 @@ public class DefaultConstantFoldingOptimizationPhase extends IRExpressionModifyi
                 if (type == boolean.class) {
                     irConstantNode.attachDecoration(new IRDConstant(((boolean) constantValue) == false));
                 } else {
-                    throw irUnaryMathNode.getLocation()
-                        .createError(
-                            unaryError(
-                                PainlessLookupUtility.typeToCanonicalTypeName(type),
-                                operation.symbol,
-                                irConstantNode.getDecorationString(IRDConstant.class)
-                            )
-                        );
+                    throwUnaryError(irUnaryMathNode, irConstantNode, operation, type);
                 }
 
                 scope.accept(irConstantNode);
@@ -149,6 +129,17 @@ public class DefaultConstantFoldingOptimizationPhase extends IRExpressionModifyi
                 scope.accept(irConstantNode);
             }
         }
+    }
+
+    private static void throwUnaryError(UnaryMathNode irUnaryMathNode, ExpressionNode irConstantNode, Operation operation, Class<?> type) {
+        throw irUnaryMathNode.getLocation()
+            .createError(
+                unaryError(
+                    PainlessLookupUtility.typeToCanonicalTypeName(type),
+                    operation.symbol,
+                    irConstantNode.getDecorationString(IRDConstant.class)
+                )
+            );
     }
 
     @Override
@@ -174,15 +165,7 @@ public class DefaultConstantFoldingOptimizationPhase extends IRExpressionModifyi
                 } else if (type == double.class) {
                     irLeftConstantNode.attachDecoration(new IRDConstant((double) leftConstantValue * (double) rightConstantValue));
                 } else {
-                    throw irBinaryMathNode.getLocation()
-                        .createError(
-                            binaryError(
-                                PainlessLookupUtility.typeToCanonicalTypeName(type),
-                                operation.symbol,
-                                irLeftConstantNode.getDecorationString(IRDConstant.class),
-                                irRightConstantNode.getDecorationString(IRDConstant.class)
-                            )
-                        );
+                    throwBinaryError(irBinaryMathNode, irLeftConstantNode, irRightConstantNode, operation, type);
                 }
 
                 scope.accept(irLeftConstantNode);
@@ -197,15 +180,7 @@ public class DefaultConstantFoldingOptimizationPhase extends IRExpressionModifyi
                     } else if (type == double.class) {
                         irLeftConstantNode.attachDecoration(new IRDConstant((double) leftConstantValue / (double) rightConstantValue));
                     } else {
-                        throw irBinaryMathNode.getLocation()
-                            .createError(
-                                binaryError(
-                                    PainlessLookupUtility.typeToCanonicalTypeName(type),
-                                    operation.symbol,
-                                    irLeftConstantNode.getDecorationString(IRDConstant.class),
-                                    irRightConstantNode.getDecorationString(IRDConstant.class)
-                                )
-                            );
+                        throwBinaryError(irBinaryMathNode, irLeftConstantNode, irRightConstantNode, operation, type);
                     }
                 } catch (ArithmeticException ae) {
                     throw irBinaryMathNode.getLocation().createError(ae);
@@ -223,15 +198,7 @@ public class DefaultConstantFoldingOptimizationPhase extends IRExpressionModifyi
                     } else if (type == double.class) {
                         irLeftConstantNode.attachDecoration(new IRDConstant((double) leftConstantValue % (double) rightConstantValue));
                     } else {
-                        throw irBinaryMathNode.getLocation()
-                            .createError(
-                                binaryError(
-                                    PainlessLookupUtility.typeToCanonicalTypeName(type),
-                                    operation.symbol,
-                                    irLeftConstantNode.getDecorationString(IRDConstant.class),
-                                    irRightConstantNode.getDecorationString(IRDConstant.class)
-                                )
-                            );
+                        throwBinaryError(irBinaryMathNode, irLeftConstantNode, irRightConstantNode, operation, type);
                     }
                 } catch (ArithmeticException ae) {
                     throw irBinaryMathNode.getLocation().createError(ae);
@@ -248,15 +215,7 @@ public class DefaultConstantFoldingOptimizationPhase extends IRExpressionModifyi
                 } else if (type == double.class) {
                     irLeftConstantNode.attachDecoration(new IRDConstant((double) leftConstantValue + (double) rightConstantValue));
                 } else {
-                    throw irBinaryMathNode.getLocation()
-                        .createError(
-                            binaryError(
-                                PainlessLookupUtility.typeToCanonicalTypeName(type),
-                                operation.symbol,
-                                irLeftConstantNode.getDecorationString(IRDConstant.class),
-                                irRightConstantNode.getDecorationString(IRDConstant.class)
-                            )
-                        );
+                    throwBinaryError(irBinaryMathNode, irLeftConstantNode, irRightConstantNode, operation, type);
                 }
 
                 scope.accept(irLeftConstantNode);
@@ -270,15 +229,7 @@ public class DefaultConstantFoldingOptimizationPhase extends IRExpressionModifyi
                 } else if (type == double.class) {
                     irLeftConstantNode.attachDecoration(new IRDConstant((double) leftConstantValue - (double) rightConstantValue));
                 } else {
-                    throw irBinaryMathNode.getLocation()
-                        .createError(
-                            binaryError(
-                                PainlessLookupUtility.typeToCanonicalTypeName(type),
-                                operation.symbol,
-                                irLeftConstantNode.getDecorationString(IRDConstant.class),
-                                irRightConstantNode.getDecorationString(IRDConstant.class)
-                            )
-                        );
+                    throwBinaryError(irBinaryMathNode, irLeftConstantNode, irRightConstantNode, operation, type);
                 }
 
                 scope.accept(irLeftConstantNode);
@@ -288,15 +239,7 @@ public class DefaultConstantFoldingOptimizationPhase extends IRExpressionModifyi
                 } else if (type == long.class) {
                     irLeftConstantNode.attachDecoration(new IRDConstant((long) leftConstantValue << (int) rightConstantValue));
                 } else {
-                    throw irBinaryMathNode.getLocation()
-                        .createError(
-                            binaryError(
-                                PainlessLookupUtility.typeToCanonicalTypeName(type),
-                                operation.symbol,
-                                irLeftConstantNode.getDecorationString(IRDConstant.class),
-                                irRightConstantNode.getDecorationString(IRDConstant.class)
-                            )
-                        );
+                    throwBinaryError(irBinaryMathNode, irLeftConstantNode, irRightConstantNode, operation, type);
                 }
 
                 scope.accept(irLeftConstantNode);
@@ -306,15 +249,7 @@ public class DefaultConstantFoldingOptimizationPhase extends IRExpressionModifyi
                 } else if (type == long.class) {
                     irLeftConstantNode.attachDecoration(new IRDConstant((long) leftConstantValue >> (int) rightConstantValue));
                 } else {
-                    throw irBinaryMathNode.getLocation()
-                        .createError(
-                            binaryError(
-                                PainlessLookupUtility.typeToCanonicalTypeName(type),
-                                operation.symbol,
-                                irLeftConstantNode.getDecorationString(IRDConstant.class),
-                                irRightConstantNode.getDecorationString(IRDConstant.class)
-                            )
-                        );
+                    throwBinaryError(irBinaryMathNode, irLeftConstantNode, irRightConstantNode, operation, type);
                 }
 
                 scope.accept(irLeftConstantNode);
@@ -324,15 +259,7 @@ public class DefaultConstantFoldingOptimizationPhase extends IRExpressionModifyi
                 } else if (type == long.class) {
                     irLeftConstantNode.attachDecoration(new IRDConstant((long) leftConstantValue >>> (int) rightConstantValue));
                 } else {
-                    throw irBinaryMathNode.getLocation()
-                        .createError(
-                            binaryError(
-                                PainlessLookupUtility.typeToCanonicalTypeName(type),
-                                operation.symbol,
-                                irLeftConstantNode.getDecorationString(IRDConstant.class),
-                                irRightConstantNode.getDecorationString(IRDConstant.class)
-                            )
-                        );
+                    throwBinaryError(irBinaryMathNode, irLeftConstantNode, irRightConstantNode, operation, type);
                 }
 
                 scope.accept(irLeftConstantNode);
@@ -342,15 +269,7 @@ public class DefaultConstantFoldingOptimizationPhase extends IRExpressionModifyi
                 } else if (type == long.class) {
                     irLeftConstantNode.attachDecoration(new IRDConstant((long) leftConstantValue & (long) rightConstantValue));
                 } else {
-                    throw irBinaryMathNode.getLocation()
-                        .createError(
-                            binaryError(
-                                PainlessLookupUtility.typeToCanonicalTypeName(type),
-                                operation.symbol,
-                                irLeftConstantNode.getDecorationString(IRDConstant.class),
-                                irRightConstantNode.getDecorationString(IRDConstant.class)
-                            )
-                        );
+                    throwBinaryError(irBinaryMathNode, irLeftConstantNode, irRightConstantNode, operation, type);
                 }
 
                 scope.accept(irLeftConstantNode);
@@ -362,15 +281,7 @@ public class DefaultConstantFoldingOptimizationPhase extends IRExpressionModifyi
                 } else if (type == long.class) {
                     irLeftConstantNode.attachDecoration(new IRDConstant((long) leftConstantValue ^ (long) rightConstantValue));
                 } else {
-                    throw irBinaryMathNode.getLocation()
-                        .createError(
-                            binaryError(
-                                PainlessLookupUtility.typeToCanonicalTypeName(type),
-                                operation.symbol,
-                                irLeftConstantNode.getDecorationString(IRDConstant.class),
-                                irRightConstantNode.getDecorationString(IRDConstant.class)
-                            )
-                        );
+                    throwBinaryError(irBinaryMathNode, irLeftConstantNode, irRightConstantNode, operation, type);
                 }
 
                 scope.accept(irLeftConstantNode);
@@ -380,20 +291,30 @@ public class DefaultConstantFoldingOptimizationPhase extends IRExpressionModifyi
                 } else if (type == long.class) {
                     irLeftConstantNode.attachDecoration(new IRDConstant((long) leftConstantValue | (long) rightConstantValue));
                 } else {
-                    throw irBinaryMathNode.getLocation()
-                        .createError(
-                            binaryError(
-                                PainlessLookupUtility.typeToCanonicalTypeName(type),
-                                operation.symbol,
-                                irLeftConstantNode.getDecorationString(IRDConstant.class),
-                                irRightConstantNode.getDecorationString(IRDConstant.class)
-                            )
-                        );
+                    throwBinaryError(irBinaryMathNode, irLeftConstantNode, irRightConstantNode, operation, type);
                 }
 
                 scope.accept(irLeftConstantNode);
             }
         }
+    }
+
+    private static void throwBinaryError(
+        IRNode binaryNode,
+        ExpressionNode irLeftConstantNode,
+        ExpressionNode irRightConstantNode,
+        Operation operation,
+        Class<?> type
+    ) {
+        throw binaryNode.getLocation()
+            .createError(
+                binaryError(
+                    PainlessLookupUtility.typeToCanonicalTypeName(type),
+                    operation.symbol,
+                    irLeftConstantNode.getDecorationString(IRDConstant.class),
+                    irRightConstantNode.getDecorationString(IRDConstant.class)
+                )
+            );
     }
 
     @Override
@@ -465,15 +386,7 @@ public class DefaultConstantFoldingOptimizationPhase extends IRExpressionModifyi
                         )
                     );
                 } else {
-                    throw irBooleanNode.getLocation()
-                        .createError(
-                            binaryError(
-                                PainlessLookupUtility.typeToCanonicalTypeName(type),
-                                operation.symbol,
-                                irLeftConstantNode.getDecorationString(IRDConstant.class),
-                                irRightConstantNode.getDecorationString(IRDConstant.class)
-                            )
-                        );
+                    throwBinaryError(irBooleanNode, irLeftConstantNode, irRightConstantNode, operation, type);
                 }
 
                 scope.accept(irLeftConstantNode);
@@ -584,15 +497,7 @@ public class DefaultConstantFoldingOptimizationPhase extends IRExpressionModifyi
                     } else if (type == double.class) {
                         irLeftConstantNode.attachDecoration(new IRDConstant((double) leftConstantValue > (double) rightConstantValue));
                     } else {
-                        throw irComparisonNode.getLocation()
-                            .createError(
-                                comparisonError(
-                                    PainlessLookupUtility.typeToCanonicalTypeName(type),
-                                    operation.symbol,
-                                    irLeftConstantNode.getDecorationString(IRDConstant.class),
-                                    irRightConstantNode.getDecorationString(IRDConstant.class)
-                                )
-                            );
+                        throwComparisonError(irComparisonNode, irLeftConstantNode, irRightConstantNode, operation, type);
                     }
 
                     irLeftConstantNode.attachDecoration(new IRDExpressionType(boolean.class));
@@ -607,15 +512,7 @@ public class DefaultConstantFoldingOptimizationPhase extends IRExpressionModifyi
                     } else if (type == double.class) {
                         irLeftConstantNode.attachDecoration(new IRDConstant((double) leftConstantValue >= (double) rightConstantValue));
                     } else {
-                        throw irComparisonNode.getLocation()
-                            .createError(
-                                comparisonError(
-                                    PainlessLookupUtility.typeToCanonicalTypeName(type),
-                                    operation.symbol,
-                                    irLeftConstantNode.getDecorationString(IRDConstant.class),
-                                    irRightConstantNode.getDecorationString(IRDConstant.class)
-                                )
-                            );
+                        throwComparisonError(irComparisonNode, irLeftConstantNode, irRightConstantNode, operation, type);
                     }
 
                     irLeftConstantNode.attachDecoration(new IRDExpressionType(boolean.class));
@@ -630,15 +527,7 @@ public class DefaultConstantFoldingOptimizationPhase extends IRExpressionModifyi
                     } else if (type == double.class) {
                         irLeftConstantNode.attachDecoration(new IRDConstant((double) leftConstantValue < (double) rightConstantValue));
                     } else {
-                        throw irComparisonNode.getLocation()
-                            .createError(
-                                comparisonError(
-                                    PainlessLookupUtility.typeToCanonicalTypeName(type),
-                                    operation.symbol,
-                                    irLeftConstantNode.getDecorationString(IRDConstant.class),
-                                    irRightConstantNode.getDecorationString(IRDConstant.class)
-                                )
-                            );
+                        throwComparisonError(irComparisonNode, irLeftConstantNode, irRightConstantNode, operation, type);
                     }
 
                     irLeftConstantNode.attachDecoration(new IRDExpressionType(boolean.class));
@@ -653,15 +542,7 @@ public class DefaultConstantFoldingOptimizationPhase extends IRExpressionModifyi
                     } else if (type == double.class) {
                         irLeftConstantNode.attachDecoration(new IRDConstant((double) leftConstantValue <= (double) rightConstantValue));
                     } else {
-                        throw irComparisonNode.getLocation()
-                            .createError(
-                                comparisonError(
-                                    PainlessLookupUtility.typeToCanonicalTypeName(type),
-                                    operation.symbol,
-                                    irLeftConstantNode.getDecorationString(IRDConstant.class),
-                                    irRightConstantNode.getDecorationString(IRDConstant.class)
-                                )
-                            );
+                        throwComparisonError(irComparisonNode, irLeftConstantNode, irRightConstantNode, operation, type);
                     }
 
                     irLeftConstantNode.attachDecoration(new IRDExpressionType(boolean.class));
@@ -669,6 +550,24 @@ public class DefaultConstantFoldingOptimizationPhase extends IRExpressionModifyi
                 }
             }
         }
+    }
+
+    private static void throwComparisonError(
+        ComparisonNode irComparisonNode,
+        ExpressionNode irLeftConstantNode,
+        ExpressionNode irRightConstantNode,
+        Operation operation,
+        Class<?> type
+    ) {
+        throw irComparisonNode.getLocation()
+            .createError(
+                comparisonError(
+                    PainlessLookupUtility.typeToCanonicalTypeName(type),
+                    operation.symbol,
+                    irLeftConstantNode.getDecorationString(IRDConstant.class),
+                    irRightConstantNode.getDecorationString(IRDConstant.class)
+                )
+            );
     }
 
     @Override

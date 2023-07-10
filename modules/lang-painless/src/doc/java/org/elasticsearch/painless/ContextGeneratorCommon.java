@@ -109,6 +109,10 @@ public class ContextGeneratorCommon {
                 || isInternalClass(v.getName())
         );
 
+        return sortClassInfosInPlace(classInfos);
+    }
+
+    static List<PainlessContextClassInfo> sortClassInfosInPlace(List<PainlessContextClassInfo> classInfos) {
         classInfos.sort((c1, c2) -> {
             String n1 = c1.getName();
             String n2 = c2.getName();

@@ -63,6 +63,10 @@ final class EnhancedPainlessLexer extends PainlessLexer {
 
     @Override
     protected boolean isSlashRegex() {
+        return isSlashRegex(current);
+    }
+
+    static boolean isSlashRegex(Token current) {
         Token lastToken = current;
         if (lastToken == null) {
             return true;

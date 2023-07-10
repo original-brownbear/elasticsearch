@@ -49,24 +49,7 @@ public final class EnhancedSuggestLexer extends SuggestLexer {
 
     @Override
     protected boolean isSlashRegex() {
-        Token lastToken = current;
-        if (lastToken == null) {
-            return true;
-        }
-        switch (lastToken.getType()) {
-            case PainlessLexer.RBRACE:
-            case PainlessLexer.RP:
-            case PainlessLexer.OCTAL:
-            case PainlessLexer.HEX:
-            case PainlessLexer.INTEGER:
-            case PainlessLexer.DECIMAL:
-            case PainlessLexer.ID:
-            case PainlessLexer.DOTINTEGER:
-            case PainlessLexer.DOTID:
-                return false;
-            default:
-                return true;
-        }
+        return EnhancedPainlessLexer.isSlashRegex(current);
     }
 
     @Override

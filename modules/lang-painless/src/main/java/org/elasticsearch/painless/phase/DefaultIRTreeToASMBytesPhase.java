@@ -1188,17 +1188,7 @@ public class DefaultIRTreeToASMBytesPhase implements IRTreeVisitor<WriteScope> {
 
     @Override
     public void visitListInitialization(ListInitializationNode irListInitializationNode, WriteScope writeScope) {
-        MethodWriter methodWriter = writeScope.getMethodWriter();
-        methodWriter.writeDebugInfo(irListInitializationNode.getLocation());
-
-        PainlessConstructor painlessConstructor = irListInitializationNode.getDecorationValue(IRDConstructor.class);
-        methodWriter.newInstance(MethodWriter.getType(irListInitializationNode.getDecorationValue(IRDExpressionType.class)));
-        methodWriter.dup();
-        methodWriter.invokeConstructor(
-            Type.getType(painlessConstructor.javaConstructor().getDeclaringClass()),
-            Method.getMethod(painlessConstructor.javaConstructor())
-        );
-
+        MethodWriter methodWriter = visitCollectionInitialization(irListInitializationNode, writeScope);
         for (ExpressionNode irArgumentNode : irListInitializationNode.getArgumentNodes()) {
             methodWriter.dup();
             visit(irArgumentNode, writeScope);
@@ -1209,6 +1199,17 @@ public class DefaultIRTreeToASMBytesPhase implements IRTreeVisitor<WriteScope> {
 
     @Override
     public void visitMapInitialization(MapInitializationNode irMapInitializationNode, WriteScope writeScope) {
+        MethodWriter methodWriter = visitCollectionInitialization(irMapInitializationNode, writeScope);
+        for (int index = 0; index < irMapInitializationNode.getArgumentsSize(); ++index) {
+            methodWriter.dup();
+            visit(irMapInitializationNode.getKeyNode(index), writeScope);
+            visit(irMapInitializationNode.getValueNode(index), writeScope);
+            methodWriter.invokeMethodCall(irMapInitializationNode.getDecorationValue(IRDMethod.class));
+            methodWriter.pop();
+        }
+    }
+
+    private static MethodWriter visitCollectionInitialization(IRNode irMapInitializationNode, WriteScope writeScope) {
         MethodWriter methodWriter = writeScope.getMethodWriter();
         methodWriter.writeDebugInfo(irMapInitializationNode.getLocation());
 
@@ -1219,14 +1220,7 @@ public class DefaultIRTreeToASMBytesPhase implements IRTreeVisitor<WriteScope> {
             Type.getType(painlessConstructor.javaConstructor().getDeclaringClass()),
             Method.getMethod(painlessConstructor.javaConstructor())
         );
-
-        for (int index = 0; index < irMapInitializationNode.getArgumentsSize(); ++index) {
-            methodWriter.dup();
-            visit(irMapInitializationNode.getKeyNode(index), writeScope);
-            visit(irMapInitializationNode.getValueNode(index), writeScope);
-            methodWriter.invokeMethodCall(irMapInitializationNode.getDecorationValue(IRDMethod.class));
-            methodWriter.pop();
-        }
+        return methodWriter;
     }
 
     @Override
@@ -1326,7 +1320,18 @@ public class DefaultIRTreeToASMBytesPhase implements IRTreeVisitor<WriteScope> {
         // place holder for functional interface receiver
         // which is resolved and replace at runtime
         methodWriter.push((String) null);
+        visitInterfaceReference(irDefInterfaceReferenceNode, writeScope, methodWriter);
+    }
 
+    @Override
+    public void visitTypedInterfaceReference(TypedInterfaceReferenceNode irTypedInterfaceReferenceNode, WriteScope writeScope) {
+        MethodWriter methodWriter = writeScope.getMethodWriter();
+        methodWriter.writeDebugInfo(irTypedInterfaceReferenceNode.getLocation());
+        visitInterfaceReference(irTypedInterfaceReferenceNode, writeScope, methodWriter);
+        methodWriter.invokeLambdaCall(irTypedInterfaceReferenceNode.getDecorationValue(IRDReference.class));
+    }
+
+    private static void visitInterfaceReference(IRNode irDefInterfaceReferenceNode, WriteScope writeScope, MethodWriter methodWriter) {
         if (irDefInterfaceReferenceNode.hasCondition(IRCInstanceCapture.class)) {
             Variable capturedThis = writeScope.getInternalVariable("this");
             methodWriter.visitVarInsn(CLASS_TYPE.getOpcode(Opcodes.ILOAD), capturedThis.getSlot());
@@ -1346,34 +1351,6 @@ public class DefaultIRTreeToASMBytesPhase implements IRTreeVisitor<WriteScope> {
                 }
             }
         }
-    }
-
-    @Override
-    public void visitTypedInterfaceReference(TypedInterfaceReferenceNode irTypedInterfaceReferenceNode, WriteScope writeScope) {
-        MethodWriter methodWriter = writeScope.getMethodWriter();
-        methodWriter.writeDebugInfo(irTypedInterfaceReferenceNode.getLocation());
-
-        if (irTypedInterfaceReferenceNode.hasCondition(IRCInstanceCapture.class)) {
-            Variable capturedThis = writeScope.getInternalVariable("this");
-            methodWriter.visitVarInsn(CLASS_TYPE.getOpcode(Opcodes.ILOAD), capturedThis.getSlot());
-        }
-
-        List<String> captureNames = irTypedInterfaceReferenceNode.getDecorationValue(IRDCaptureNames.class);
-        boolean captureBox = irTypedInterfaceReferenceNode.hasCondition(IRCCaptureBox.class);
-
-        if (captureNames != null) {
-            for (String captureName : captureNames) {
-                Variable captureVariable = writeScope.getVariable(captureName);
-                methodWriter.visitVarInsn(captureVariable.getAsmType().getOpcode(Opcodes.ILOAD), captureVariable.getSlot());
-
-                if (captureBox) {
-                    methodWriter.box(captureVariable.getAsmType());
-                    captureBox = false;
-                }
-            }
-        }
-
-        methodWriter.invokeLambdaCall(irTypedInterfaceReferenceNode.getDecorationValue(IRDReference.class));
     }
 
     @Override

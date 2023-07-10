@@ -48,7 +48,7 @@ public class CIDRUtils {
         return isBetween(addr, lower, upper);
     }
 
-    private static Tuple<byte[], byte[]> getLowerUpper(Tuple<InetAddress, Integer> cidr) {
+    public static Tuple<byte[], byte[]> getLowerUpper(Tuple<InetAddress, Integer> cidr) {
         final InetAddress value = cidr.v1();
         final Integer prefixLength = cidr.v2();
 
@@ -69,7 +69,7 @@ public class CIDRUtils {
         return new Tuple<>(lower, upper);
     }
 
-    private static boolean isBetween(byte[] addr, byte[] lower, byte[] upper) {
+    public static boolean isBetween(byte[] addr, byte[] lower, byte[] upper) {
         // Encode the addresses bytes if lengths do not match
         if (addr.length != lower.length) {
             addr = encode(addr);
