@@ -48,7 +48,7 @@ public class BucketSelectorPipelineAggregationBuilder extends AbstractPipelineAg
      */
     public BucketSelectorPipelineAggregationBuilder(StreamInput in) throws IOException {
         super(in, NAME);
-        bucketsPathsMap = in.readMap(StreamInput::readString);
+        bucketsPathsMap = in.readStringStringMap();
         script = new Script(in);
         gapPolicy = GapPolicy.readFrom(in);
     }

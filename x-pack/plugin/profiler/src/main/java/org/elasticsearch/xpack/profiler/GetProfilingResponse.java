@@ -39,8 +39,8 @@ public class GetProfilingResponse extends ActionResponse implements ChunkedToXCo
             ? in.readMap(
                 i -> new StackTrace(
                     i.readList(StreamInput::readInt),
-                    i.readList(StreamInput::readString),
-                    i.readList(StreamInput::readString),
+                    i.readStringList(),
+                    i.readStringList(),
                     i.readList(StreamInput::readInt)
                 )
             )
@@ -48,14 +48,14 @@ public class GetProfilingResponse extends ActionResponse implements ChunkedToXCo
         this.stackFrames = in.readBoolean()
             ? in.readMap(
                 i -> new StackFrame(
-                    i.readList(StreamInput::readString),
-                    i.readList(StreamInput::readString),
+                    i.readStringList(),
+                    i.readStringList(),
                     i.readList(StreamInput::readInt),
                     i.readList(StreamInput::readInt)
                 )
             )
             : null;
-        this.executables = in.readBoolean() ? in.readMap(StreamInput::readString) : null;
+        this.executables = in.readBoolean() ? in.readStringStringMap() : null;
         this.stackTraceEvents = in.readBoolean() ? in.readMap(StreamInput::readInt) : null;
         this.totalFrames = in.readInt();
         this.samplingRate = in.readDouble();
@@ -83,8 +83,8 @@ public class GetProfilingResponse extends ActionResponse implements ChunkedToXCo
             out.writeBoolean(true);
             out.writeMap(stackTraces, StreamOutput::writeString, (o, v) -> {
                 o.writeCollection(v.addressOrLines, StreamOutput::writeInt);
-                o.writeCollection(v.fileIds, StreamOutput::writeString);
-                o.writeCollection(v.frameIds, StreamOutput::writeString);
+                o.writeStringCollection(v.fileIds);
+                o.writeStringCollection(v.frameIds);
                 o.writeCollection(v.typeIds, StreamOutput::writeInt);
             });
         } else {
@@ -93,8 +93,8 @@ public class GetProfilingResponse extends ActionResponse implements ChunkedToXCo
         if (stackFrames != null) {
             out.writeBoolean(true);
             out.writeMap(stackFrames, StreamOutput::writeString, (o, v) -> {
-                o.writeCollection(v.fileName, StreamOutput::writeString);
-                o.writeCollection(v.functionName, StreamOutput::writeString);
+                o.writeStringCollection(v.fileName);
+                o.writeStringCollection(v.functionName);
                 o.writeCollection(v.functionOffset, StreamOutput::writeInt);
                 o.writeCollection(v.lineNumber, StreamOutput::writeInt);
             });

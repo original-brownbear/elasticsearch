@@ -57,7 +57,7 @@ public class RollupJob implements SimpleDiffable<RollupJob>, PersistentTaskParam
 
     public RollupJob(StreamInput in) throws IOException {
         this.config = new RollupJobConfig(in);
-        headers = in.readMap(StreamInput::readString);
+        headers = in.readStringStringMap();
     }
 
     public RollupJobConfig getConfig() {

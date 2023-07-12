@@ -75,7 +75,7 @@ public class GetIndexResponse extends ActionResponse implements ChunkedToXConten
     GetIndexResponse(StreamInput in) throws IOException {
         super(in);
         this.indices = in.readStringArray();
-        mappings = in.readImmutableOpenMap(StreamInput::readString, in.getTransportVersion().before(TransportVersion.V_8_0_0) ? i -> {
+        mappings = in.readImmutableOpenMap(in.getTransportVersion().before(TransportVersion.V_8_0_0) ? i -> {
             int numMappings = i.readVInt();
             assert numMappings == 0 || numMappings == 1 : "Expected 0 or 1 mappings but got " + numMappings;
             if (numMappings == 1) {
@@ -87,10 +87,10 @@ public class GetIndexResponse extends ActionResponse implements ChunkedToXConten
             }
         } : i -> i.readBoolean() ? new MappingMetadata(i) : MappingMetadata.EMPTY_MAPPINGS);
 
-        aliases = in.readImmutableOpenMap(StreamInput::readString, i -> i.readList(AliasMetadata::new));
-        settings = in.readImmutableOpenMap(StreamInput::readString, Settings::readSettingsFromStream);
-        defaultSettings = in.readImmutableOpenMap(StreamInput::readString, Settings::readSettingsFromStream);
-        dataStreams = in.readImmutableOpenMap(StreamInput::readString, StreamInput::readOptionalString);
+        aliases = in.readImmutableOpenMap(i -> i.readList(AliasMetadata::new));
+        settings = in.readImmutableOpenMap(Settings::readSettingsFromStream);
+        defaultSettings = in.readImmutableOpenMap(Settings::readSettingsFromStream);
+        dataStreams = in.readImmutableOpenMap(StreamInput::readOptionalString);
     }
 
     public String[] indices() {
@@ -173,7 +173,7 @@ public class GetIndexResponse extends ActionResponse implements ChunkedToXConten
     public void writeTo(StreamOutput out) throws IOException {
         out.writeStringArray(indices);
         MappingMetadata.writeMappingMetadata(out, mappings);
-        out.writeMap(aliases, StreamOutput::writeString, StreamOutput::writeList);
+        out.writeMap(aliases, StreamOutput::writeString, (streamOutput, list) -> streamOutput.writeCollection(list));
         out.writeMap(settings, StreamOutput::writeString, (o, v) -> v.writeTo(o));
         out.writeMap(defaultSettings, StreamOutput::writeString, (o, v) -> v.writeTo(o));
         out.writeMap(dataStreams, StreamOutput::writeString, StreamOutput::writeOptionalString);

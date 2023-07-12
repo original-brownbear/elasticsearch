@@ -102,7 +102,7 @@ public class TrainedModelAssignmentMetadata implements Metadata.Custom {
     }
 
     private TrainedModelAssignmentMetadata(StreamInput in, String writeableName) throws IOException {
-        this.deploymentRoutingEntries = in.readOrderedMap(StreamInput::readString, TrainedModelAssignment::new);
+        this.deploymentRoutingEntries = in.readOrderedMap(TrainedModelAssignment::new);
         this.writeableName = writeableName;
     }
 

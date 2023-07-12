@@ -74,7 +74,7 @@ public class OneHotEncoding implements LenientlyParsedPreProcessor, StrictlyPars
 
     public OneHotEncoding(StreamInput in) throws IOException {
         this.field = in.readString();
-        this.hotMap = Collections.unmodifiableMap(new TreeMap<>(in.readMap(StreamInput::readString)));
+        this.hotMap = Collections.unmodifiableMap(new TreeMap<>(in.readStringStringMap()));
         this.custom = in.readBoolean();
     }
 

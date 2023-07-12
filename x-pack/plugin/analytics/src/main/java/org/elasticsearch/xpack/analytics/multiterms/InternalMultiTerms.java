@@ -67,7 +67,7 @@ public class InternalMultiTerms extends AbstractInternalTerms<InternalMultiTerms
 
         protected Bucket(StreamInput in, List<DocValueFormat> formats, List<KeyConverter> keyConverters, boolean showDocCountError)
             throws IOException {
-            terms = in.readList(StreamInput::readGenericValue);
+            terms = in.readGenericValueList();
             docCount = in.readVLong();
             aggregations = InternalAggregations.readFrom(in);
             this.showDocCountError = showDocCountError;
@@ -344,9 +344,9 @@ public class InternalMultiTerms extends AbstractInternalTerms<InternalMultiTerms
         writeSize(shardSize, out);
         out.writeBoolean(showTermDocCountError);
         out.writeVLong(otherDocCount);
-        out.writeCollection(formats, StreamOutput::writeNamedWriteable);
+        out.writeNamedWriteableList(formats);
         out.writeCollection(keyConverters, StreamOutput::writeEnum);
-        out.writeList(buckets);
+        out.writeCollection(buckets);
     }
 
     @Override

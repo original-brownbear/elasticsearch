@@ -167,7 +167,7 @@ public class DesiredBalanceResponse extends ActionResponse implements ChunkedToX
 
         @Override
         public void writeTo(StreamOutput out) throws IOException {
-            out.writeList(current);
+            out.writeCollection(current);
             desired.writeTo(out);
         }
 
@@ -290,12 +290,12 @@ public class DesiredBalanceResponse extends ActionResponse implements ChunkedToX
     public record ShardAssignmentView(Set<String> nodeIds, int total, int unassigned, int ignored) implements Writeable, ToXContentObject {
 
         public static ShardAssignmentView from(StreamInput in) throws IOException {
-            return new ShardAssignmentView(in.readSet(StreamInput::readString), in.readVInt(), in.readVInt(), in.readVInt());
+            return new ShardAssignmentView(in.readStringSet(), in.readVInt(), in.readVInt(), in.readVInt());
         }
 
         @Override
         public void writeTo(StreamOutput out) throws IOException {
-            out.writeCollection(nodeIds, StreamOutput::writeString);
+            out.writeStringCollection(nodeIds);
             out.writeVInt(total);
             out.writeVInt(unassigned);
             out.writeVInt(ignored);

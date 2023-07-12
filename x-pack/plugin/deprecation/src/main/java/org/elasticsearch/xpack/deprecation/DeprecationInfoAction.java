@@ -21,6 +21,7 @@ import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.regex.Regex;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.set.Sets;
@@ -144,6 +145,9 @@ public class DeprecationInfoAction extends ActionType<DeprecationInfoAction.Resp
 
     public static class Response extends ActionResponse implements ToXContentObject {
         static final Set<String> RESERVED_NAMES = Set.of("cluster_settings", "node_settings", "index_settings");
+
+        private static final Writeable.Reader<List<DeprecationIssue>> readDeprecationsList = i -> i.readList(DeprecationIssue::new);
+
         private final List<DeprecationIssue> clusterSettingsIssues;
         private final List<DeprecationIssue> nodeSettingsIssues;
         private final Map<String, List<DeprecationIssue>> indexSettingsIssues;
@@ -153,13 +157,13 @@ public class DeprecationInfoAction extends ActionType<DeprecationInfoAction.Resp
             super(in);
             clusterSettingsIssues = in.readList(DeprecationIssue::new);
             nodeSettingsIssues = in.readList(DeprecationIssue::new);
-            indexSettingsIssues = in.readMapOfLists(DeprecationIssue::new);
+            indexSettingsIssues = in.readMap(readDeprecationsList);
             if (in.getTransportVersion().before(TransportVersion.V_7_11_0)) {
                 List<DeprecationIssue> mlIssues = in.readList(DeprecationIssue::new);
                 pluginSettingsIssues = new HashMap<>();
                 pluginSettingsIssues.put("ml_settings", mlIssues);
             } else {
-                pluginSettingsIssues = in.readMapOfLists(DeprecationIssue::new);
+                pluginSettingsIssues = in.readMap(readDeprecationsList);
             }
         }
 
@@ -201,11 +205,11 @@ public class DeprecationInfoAction extends ActionType<DeprecationInfoAction.Resp
 
         @Override
         public void writeTo(StreamOutput out) throws IOException {
-            out.writeList(clusterSettingsIssues);
-            out.writeList(nodeSettingsIssues);
+            out.writeCollection(clusterSettingsIssues);
+            out.writeCollection(nodeSettingsIssues);
             out.writeMapOfLists(indexSettingsIssues, StreamOutput::writeString, (o, v) -> v.writeTo(o));
             if (out.getTransportVersion().before(TransportVersion.V_7_11_0)) {
-                out.writeList(pluginSettingsIssues.getOrDefault("ml_settings", Collections.emptyList()));
+                out.writeCollection(pluginSettingsIssues.getOrDefault("ml_settings", Collections.emptyList()));
             } else {
                 out.writeMapOfLists(pluginSettingsIssues, StreamOutput::writeString, (o, v) -> v.writeTo(o));
             }

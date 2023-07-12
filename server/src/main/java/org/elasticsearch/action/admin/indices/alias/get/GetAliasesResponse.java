@@ -31,7 +31,7 @@ public class GetAliasesResponse extends ActionResponse {
 
     public GetAliasesResponse(StreamInput in) throws IOException {
         super(in);
-        aliases = in.readImmutableOpenMap(StreamInput::readString, i -> i.readList(AliasMetadata::new));
+        aliases = in.readImmutableOpenMap(i -> i.readList(AliasMetadata::new));
         dataStreamAliases = in.readMap(in1 -> in1.readList(DataStreamAlias::new));
     }
 
@@ -45,8 +45,8 @@ public class GetAliasesResponse extends ActionResponse {
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
-        out.writeMap(aliases, StreamOutput::writeString, StreamOutput::writeList);
-        out.writeMap(dataStreamAliases, StreamOutput::writeString, StreamOutput::writeList);
+        out.writeMap(aliases, StreamOutput::writeString, (streamOutput1, list1) -> streamOutput1.writeCollection(list1));
+        out.writeMap(dataStreamAliases, StreamOutput::writeString, (streamOutput, list) -> streamOutput.writeCollection(list));
     }
 
     @Override

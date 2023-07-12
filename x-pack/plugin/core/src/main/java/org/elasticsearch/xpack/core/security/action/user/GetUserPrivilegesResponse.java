@@ -44,11 +44,11 @@ public final class GetUserPrivilegesResponse extends ActionResponse {
 
     public GetUserPrivilegesResponse(StreamInput in) throws IOException {
         super(in);
-        cluster = in.readImmutableSet(StreamInput::readString);
+        cluster = in.readImmutableStringSet();
         configurableClusterPrivileges = in.readImmutableSet(ConfigurableClusterPrivileges.READER);
         index = in.readImmutableSet(Indices::new);
         application = in.readImmutableSet(RoleDescriptor.ApplicationResourcePrivileges::new);
-        runAs = in.readImmutableSet(StreamInput::readString);
+        runAs = in.readImmutableStringSet();
         if (in.getTransportVersion().onOrAfter(TRANSPORT_VERSION_ADVANCED_REMOTE_CLUSTER_SECURITY_CCS)) {
             remoteIndex = in.readImmutableSet(RemoteIndices::new);
         } else {
@@ -102,11 +102,11 @@ public final class GetUserPrivilegesResponse extends ActionResponse {
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
-        out.writeCollection(cluster, StreamOutput::writeString);
-        out.writeCollection(configurableClusterPrivileges, ConfigurableClusterPrivileges.WRITER);
+        out.writeStringCollection(cluster);
+        out.writeCollection(configurableClusterPrivileges, StreamOutput::writeNamedWriteable);
         out.writeCollection(index);
         out.writeCollection(application);
-        out.writeCollection(runAs, StreamOutput::writeString);
+        out.writeStringCollection(runAs);
         if (out.getTransportVersion().onOrAfter(TRANSPORT_VERSION_ADVANCED_REMOTE_CLUSTER_SECURITY_CCS)) {
             out.writeCollection(remoteIndex);
         } else if (hasRemoteIndicesPrivileges()) {
@@ -145,7 +145,7 @@ public final class GetUserPrivilegesResponse extends ActionResponse {
     public record RemoteIndices(Indices indices, Set<String> remoteClusters) implements ToXContentObject, Writeable {
 
         public RemoteIndices(StreamInput in) throws IOException {
-            this(new Indices(in), Collections.unmodifiableSet(new TreeSet<>(in.readSet(StreamInput::readString))));
+            this(new Indices(in), Collections.unmodifiableSet(new TreeSet<>(in.readStringSet())));
         }
 
         @Override
@@ -191,8 +191,8 @@ public final class GetUserPrivilegesResponse extends ActionResponse {
 
         public Indices(StreamInput in) throws IOException {
             // The use of TreeSet is to provide a consistent order that can be relied upon in tests
-            indices = Collections.unmodifiableSet(new TreeSet<>(in.readSet(StreamInput::readString)));
-            privileges = Collections.unmodifiableSet(new TreeSet<>(in.readSet(StreamInput::readString)));
+            indices = Collections.unmodifiableSet(new TreeSet<>(in.readStringSet()));
+            privileges = Collections.unmodifiableSet(new TreeSet<>(in.readStringSet()));
             fieldSecurity = in.readImmutableSet(input -> {
                 final String[] grant = input.readOptionalStringArray();
                 final String[] exclude = input.readOptionalStringArray();
@@ -306,8 +306,8 @@ public final class GetUserPrivilegesResponse extends ActionResponse {
 
         @Override
         public void writeTo(StreamOutput out) throws IOException {
-            out.writeCollection(indices, StreamOutput::writeString);
-            out.writeCollection(privileges, StreamOutput::writeString);
+            out.writeStringCollection(indices);
+            out.writeStringCollection(privileges);
             out.writeCollection(fieldSecurity, (output, fields) -> {
                 output.writeOptionalStringArray(fields.getGrantedFields());
                 output.writeOptionalStringArray(fields.getExcludedFields());

@@ -45,8 +45,8 @@ public final class InvalidateApiKeyResponse extends ActionResponse implements To
 
     public InvalidateApiKeyResponse(StreamInput in) throws IOException {
         super(in);
-        this.invalidatedApiKeys = in.readList(StreamInput::readString);
-        this.previouslyInvalidatedApiKeys = in.readList(StreamInput::readString);
+        this.invalidatedApiKeys = in.readStringList();
+        this.previouslyInvalidatedApiKeys = in.readStringList();
         this.errors = in.readList(StreamInput::readException);
     }
 

@@ -158,7 +158,7 @@ public class IndexRequest extends ReplicatedWriteRequest<IndexRequest> implement
             requireAlias = false;
         }
         if (in.getTransportVersion().onOrAfter(TransportVersion.V_7_13_0)) {
-            dynamicTemplates = in.readMap(StreamInput::readString);
+            dynamicTemplates = in.readStringStringMap();
         }
     }
 

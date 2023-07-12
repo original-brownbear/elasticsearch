@@ -618,6 +618,10 @@ public abstract class StreamInput extends InputStream {
         return null;
     }
 
+    public Map<String, String> readStringStringMap() throws IOException {
+        return readMap(StreamInput::readString);
+    }
+
     /**
      * Same as {@link #readMap(Writeable.Reader, Writeable.Reader)} but always reading string keys.
      */
@@ -630,6 +634,10 @@ public abstract class StreamInput extends InputStream {
      */
     public <K, V> Map<K, V> readMap(Writeable.Reader<K> keyReader, Writeable.Reader<V> valueReader) throws IOException {
         return readMap(keyReader, valueReader, Maps::newHashMapWithExpectedSize);
+    }
+
+    public <V> Map<String, V> readOrderedMap(Writeable.Reader<V> valueReader) throws IOException {
+        return readOrderedMap(StreamInput::readString, valueReader);
     }
 
     public <K, V> Map<K, V> readOrderedMap(Writeable.Reader<K> keyReader, Writeable.Reader<V> valueReader) throws IOException {
@@ -649,21 +657,6 @@ public abstract class StreamInput extends InputStream {
             map.put(key, value);
         }
         return map;
-    }
-
-    /**
-     * Read a {@link Map} of string keys to {@code V}-type {@link List}s.
-     * <pre><code>
-     * Map&lt;String, List&lt;String&gt;&gt; map = in.readMapOfLists(StreamInput::readString);
-     * </code></pre>
-     * If the map or a list in it contains any elements it will be mutable, otherwise either the empty map or empty lists it contains
-     * might be immutable.
-     *
-     * @param valueReader The value reader
-     * @return Never {@code null}.
-     */
-    public <V> Map<String, List<V>> readMapOfLists(final Writeable.Reader<V> valueReader) throws IOException {
-        return readMap(i -> i.readList(valueReader));
     }
 
     /**
@@ -724,6 +717,10 @@ public abstract class StreamInput extends InputStream {
         return Map.ofEntries(entries);
     }
 
+    public <V> ImmutableOpenMap<String, V> readImmutableOpenMap(Writeable.Reader<V> valueReader) throws IOException {
+        return readImmutableOpenMap(StreamInput::readString, valueReader);
+    }
+
     /**
      * Read {@link ImmutableOpenMap} using given key and value readers.
      *
@@ -759,11 +756,11 @@ public abstract class StreamInput extends InputStream {
             case 4 -> readDouble();
             case 5 -> readBoolean();
             case 6 -> readByteArray();
-            case 7 -> readArrayList();
+            case 7 -> readGenericValueList();
             case 8 -> readArray();
             case 9 -> getTransportVersion().onOrAfter(TransportVersion.V_8_7_0)
                 ? readOrderedMap(StreamInput::readGenericValue, StreamInput::readGenericValue)
-                : readOrderedMap(StreamInput::readString, StreamInput::readGenericValue);
+                : readOrderedMap(StreamInput::readGenericValue);
             case 10 -> getTransportVersion().onOrAfter(TransportVersion.V_8_7_0)
                 ? readMap(StreamInput::readGenericValue, StreamInput::readGenericValue)
                 : readMap(StreamInput::readGenericValue);
@@ -784,7 +781,7 @@ public abstract class StreamInput extends InputStream {
             case 22 -> readGeoPoint();
             case 23 -> readZonedDateTime();
             case 24 -> readCollection(StreamInput::readGenericValue, Sets::newLinkedHashSetWithExpectedSize, Collections.emptySet());
-            case 25 -> readCollection(StreamInput::readGenericValue, Sets::newHashSetWithExpectedSize, Collections.emptySet());
+            case 25 -> readSet(StreamInput::readGenericValue);
             case 26 -> readBigInteger();
             case 27 -> readOffsetTime();
             case 28 -> readDuration();
@@ -810,16 +807,8 @@ public abstract class StreamInput extends InputStream {
         return present ? readInstant() : null;
     }
 
-    private List<Object> readArrayList() throws IOException {
-        int size = readArraySize();
-        if (size == 0) {
-            return Collections.emptyList();
-        }
-        List<Object> list = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            list.add(readGenericValue());
-        }
-        return list;
+    public List<Object> readGenericValueList() throws IOException {
+        return readList(StreamInput::readGenericValue);
     }
 
     private ZonedDateTime readZonedDateTime() throws IOException {
@@ -1077,7 +1066,7 @@ public abstract class StreamInput extends InputStream {
     }
 
     /**
-     * Reads a list of objects. The list is expected to have been written using {@link StreamOutput#writeList(List)}.
+     * Reads a list of objects. The list is expected to have been written using {@link StreamOutput#writeCollection(Collection)}}.
      * If the returned list contains any entries it will be mutable. If it is empty it might be immutable.
      *
      * @return the list of objects
@@ -1088,7 +1077,7 @@ public abstract class StreamInput extends InputStream {
     }
 
     /**
-     * Reads an list of objects. The list is expected to have been written using {@link StreamOutput#writeList(List)}.
+     * Reads an list of objects. The list is expected to have been written using {@link StreamOutput#writeCollection(Collection)}}.
      * The returned list is immutable.
      *
      * @return the list of objects
@@ -1156,11 +1145,19 @@ public abstract class StreamInput extends InputStream {
         return readOptionalList(StreamInput::readString);
     }
 
+    public Set<String> readStringSet() throws IOException {
+        return readSet(StreamInput::readString);
+    }
+
     /**
      * Reads a set of objects. If the returned set contains any entries it will be mutable. If it is empty it might be immutable.
      */
     public <T> Set<T> readSet(Writeable.Reader<T> reader) throws IOException {
         return readCollection(reader, Sets::newHashSetWithExpectedSize, Collections.emptySet());
+    }
+
+    public Set<String> readImmutableStringSet() throws IOException {
+        return readImmutableSet(StreamInput::readString);
     }
 
     /**

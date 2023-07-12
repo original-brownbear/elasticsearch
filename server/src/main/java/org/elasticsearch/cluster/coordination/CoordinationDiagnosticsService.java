@@ -1291,7 +1291,7 @@ public class CoordinationDiagnosticsService implements ClusterStateListener {
 
         private static Map<String, String> readClusterFormationStates(StreamInput in) throws IOException {
             if (in.readBoolean()) {
-                return in.readMap(StreamInput::readString);
+                return in.readStringStringMap();
             } else {
                 return Map.of();
             }
@@ -1320,7 +1320,7 @@ public class CoordinationDiagnosticsService implements ClusterStateListener {
                 out.writeBoolean(false);
             } else {
                 out.writeBoolean(true);
-                out.writeList(recentMasters);
+                out.writeCollection(recentMasters);
             }
             out.writeOptionalString(remoteExceptionMessage);
             out.writeOptionalString(remoteExceptionStackTrace);

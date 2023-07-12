@@ -87,10 +87,7 @@ public class DataStreamMetadata implements Metadata.Custom {
     }
 
     public DataStreamMetadata(StreamInput in) throws IOException {
-        this(
-            in.readImmutableOpenMap(StreamInput::readString, DataStream::new),
-            in.readImmutableOpenMap(StreamInput::readString, DataStreamAlias::new)
-        );
+        this(in.readImmutableOpenMap(DataStream::new), in.readImmutableOpenMap(DataStreamAlias::new));
     }
 
     public DataStreamMetadata withAddedDatastream(DataStream datastream) {

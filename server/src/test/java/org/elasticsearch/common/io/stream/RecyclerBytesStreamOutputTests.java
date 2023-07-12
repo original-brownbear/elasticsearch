@@ -516,7 +516,7 @@ public class RecyclerBytesStreamOutputTests extends ESTestCase {
         }
 
         final RecyclerBytesStreamOutput out = new RecyclerBytesStreamOutput(recycler);
-        out.writeList(expected);
+        out.writeCollection(expected);
 
         final StreamInput in = StreamInput.wrap(BytesReference.toBytes(out.bytes()));
 
@@ -561,7 +561,7 @@ public class RecyclerBytesStreamOutputTests extends ESTestCase {
         final RecyclerBytesStreamOutput out = new RecyclerBytesStreamOutput(recycler);
         out.writeMap(expected, StreamOutput::writeString, StreamOutput::writeString);
         final StreamInput in = StreamInput.wrap(BytesReference.toBytes(out.bytes()));
-        final ImmutableOpenMap<String, String> loaded = in.readImmutableOpenMap(StreamInput::readString, StreamInput::readString);
+        final ImmutableOpenMap<String, String> loaded = in.readImmutableOpenMap(StreamInput::readString);
 
         assertThat(expected, equalTo(loaded));
     }
@@ -602,7 +602,7 @@ public class RecyclerBytesStreamOutputTests extends ESTestCase {
 
         final StreamInput in = StreamInput.wrap(BytesReference.toBytes(out.bytes()));
 
-        final Map<String, List<String>> loaded = in.readMapOfLists(StreamInput::readString);
+        final Map<String, List<String>> loaded = in.readMap(StreamInput::readStringList);
 
         assertThat(loaded.size(), equalTo(expected.size()));
 

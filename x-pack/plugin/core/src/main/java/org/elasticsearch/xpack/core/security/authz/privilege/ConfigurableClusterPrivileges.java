@@ -46,7 +46,6 @@ public final class ConfigurableClusterPrivileges {
     public static final Writeable.Reader<ConfigurableClusterPrivilege> READER = in1 -> in1.readNamedWriteable(
         ConfigurableClusterPrivilege.class
     );
-    public static final Writeable.Writer<ConfigurableClusterPrivilege> WRITER = (out1, value) -> out1.writeNamedWriteable(value);
 
     private ConfigurableClusterPrivileges() {}
 
@@ -61,7 +60,7 @@ public final class ConfigurableClusterPrivileges {
      * Utility method to write an array of {@link ConfigurableClusterPrivilege} objects to a {@link StreamOutput}
      */
     public static void writeArray(StreamOutput out, ConfigurableClusterPrivilege[] privileges) throws IOException {
-        out.writeArray(WRITER, privileges);
+        out.writeArray(StreamOutput::writeNamedWriteable, privileges);
     }
 
     /**
@@ -188,11 +187,11 @@ public final class ConfigurableClusterPrivileges {
 
         @Override
         public void writeTo(StreamOutput out) throws IOException {
-            out.writeCollection(this.applicationNames, StreamOutput::writeString);
+            out.writeStringCollection(this.applicationNames);
         }
 
         public static WriteProfileDataPrivileges createFrom(StreamInput in) throws IOException {
-            final Set<String> applications = in.readSet(StreamInput::readString);
+            final Set<String> applications = in.readStringSet();
             return new WriteProfileDataPrivileges(applications);
         }
 
@@ -297,11 +296,11 @@ public final class ConfigurableClusterPrivileges {
 
         @Override
         public void writeTo(StreamOutput out) throws IOException {
-            out.writeCollection(this.applicationNames, StreamOutput::writeString);
+            out.writeStringCollection(this.applicationNames);
         }
 
         public static ManageApplicationPrivileges createFrom(StreamInput in) throws IOException {
-            final Set<String> applications = in.readSet(StreamInput::readString);
+            final Set<String> applications = in.readStringSet();
             return new ManageApplicationPrivileges(applications);
         }
 

@@ -81,12 +81,12 @@ public class GetTrainedModelsAction extends ActionType<GetTrainedModelsAction.Re
         }
 
         public Includes(StreamInput in) throws IOException {
-            this.includes = in.readSet(StreamInput::readString);
+            this.includes = in.readStringSet();
         }
 
         @Override
         public void writeTo(StreamOutput out) throws IOException {
-            out.writeCollection(this.includes, StreamOutput::writeString);
+            out.writeStringCollection(this.includes);
         }
 
         public boolean isIncludeModelDefinition() {

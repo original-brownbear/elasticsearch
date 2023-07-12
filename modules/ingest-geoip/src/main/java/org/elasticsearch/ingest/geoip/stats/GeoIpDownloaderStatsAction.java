@@ -103,7 +103,7 @@ public class GeoIpDownloaderStatsAction extends ActionType<GeoIpDownloaderStatsA
 
         @Override
         protected void writeNodesTo(StreamOutput out, List<NodeResponse> nodes) throws IOException {
-            out.writeList(nodes);
+            out.writeCollection(nodes);
         }
 
         @Override
@@ -164,11 +164,9 @@ public class GeoIpDownloaderStatsAction extends ActionType<GeoIpDownloaderStatsA
         protected NodeResponse(StreamInput in) throws IOException {
             super(in);
             stats = in.readBoolean() ? new GeoIpDownloaderStats(in) : null;
-            databases = in.readImmutableSet(StreamInput::readString);
-            filesInTemp = in.readImmutableSet(StreamInput::readString);
-            configDatabases = in.getTransportVersion().onOrAfter(TransportVersion.V_8_0_0)
-                ? in.readImmutableSet(StreamInput::readString)
-                : null;
+            databases = in.readImmutableStringSet();
+            filesInTemp = in.readImmutableStringSet();
+            configDatabases = in.getTransportVersion().onOrAfter(TransportVersion.V_8_0_0) ? in.readImmutableStringSet() : null;
         }
 
         protected NodeResponse(
@@ -208,10 +206,10 @@ public class GeoIpDownloaderStatsAction extends ActionType<GeoIpDownloaderStatsA
             if (stats != null) {
                 stats.writeTo(out);
             }
-            out.writeCollection(databases, StreamOutput::writeString);
-            out.writeCollection(filesInTemp, StreamOutput::writeString);
+            out.writeStringCollection(databases);
+            out.writeStringCollection(filesInTemp);
             if (out.getTransportVersion().onOrAfter(TransportVersion.V_8_0_0)) {
-                out.writeCollection(configDatabases, StreamOutput::writeString);
+                out.writeStringCollection(configDatabases);
             }
         }
 

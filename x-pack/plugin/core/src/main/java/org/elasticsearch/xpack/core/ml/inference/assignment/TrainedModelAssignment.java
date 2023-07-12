@@ -139,7 +139,7 @@ public class TrainedModelAssignment implements SimpleDiffable<TrainedModelAssign
 
     public TrainedModelAssignment(StreamInput in) throws IOException {
         this.taskParams = new StartTrainedModelDeploymentAction.TaskParams(in);
-        this.nodeRoutingTable = in.readOrderedMap(StreamInput::readString, RoutingInfo::new);
+        this.nodeRoutingTable = in.readOrderedMap(RoutingInfo::new);
         this.assignmentState = in.readEnum(AssignmentState.class);
         this.reason = in.readOptionalString();
         this.startTime = in.readInstant();

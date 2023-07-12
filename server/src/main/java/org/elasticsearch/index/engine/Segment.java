@@ -60,7 +60,7 @@ public class Segment implements Writeable {
         }
         segmentSort = readSegmentSort(in);
         if (in.readBoolean()) {
-            attributes = in.readMap(StreamInput::readString);
+            attributes = in.readStringStringMap();
         } else {
             attributes = null;
         }
