@@ -17,7 +17,7 @@ import org.elasticsearch.core.Nullable;
 import org.elasticsearch.license.License;
 import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
-import org.elasticsearch.xpack.core.XPackFeatureSet;
+import org.elasticsearch.xpack.core.XpackFeatureSetUsage;
 import org.elasticsearch.xpack.core.monitoring.MonitoredSystem;
 import org.elasticsearch.xpack.core.monitoring.exporter.MonitoringDoc;
 
@@ -53,7 +53,7 @@ public class ClusterStatsMonitoringDoc extends MonitoringDoc {
     private final String version;
     private final License license;
     private final boolean apmIndicesExist;
-    private final List<XPackFeatureSet.Usage> usages;
+    private final List<XpackFeatureSetUsage> usages;
     private final ClusterStatsResponse clusterStats;
     private final ClusterState clusterState;
     private final ClusterHealthStatus status;
@@ -69,7 +69,7 @@ public class ClusterStatsMonitoringDoc extends MonitoringDoc {
         final ClusterHealthStatus status,
         @Nullable final License license,
         final boolean apmIndicesExist,
-        @Nullable final List<XPackFeatureSet.Usage> usages,
+        @Nullable final List<XpackFeatureSetUsage> usages,
         @Nullable final ClusterStatsResponse clusterStats,
         @Nullable final ClusterState clusterState,
         final boolean clusterNeedsTLSEnabled
@@ -103,7 +103,7 @@ public class ClusterStatsMonitoringDoc extends MonitoringDoc {
         return apmIndicesExist;
     }
 
-    List<XPackFeatureSet.Usage> getUsages() {
+    List<XpackFeatureSetUsage> getUsages() {
         return usages;
     }
 
@@ -198,7 +198,7 @@ public class ClusterStatsMonitoringDoc extends MonitoringDoc {
 
             if (usages != null) {
                 builder.startObject("xpack");
-                for (final XPackFeatureSet.Usage usage : usages) {
+                for (final XpackFeatureSetUsage usage : usages) {
                     builder.field(usage.name(), usage);
                 }
                 builder.endObject();

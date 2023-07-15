@@ -81,7 +81,7 @@ public class AnalyticsTemplateRegistryTests extends ESTestCase {
         threadPool = new TestThreadPool(this.getClass().getName());
         client = new VerifyingClient(threadPool);
         ClusterService clusterService = ClusterServiceUtils.createClusterService(threadPool);
-        registry = new AnalyticsTemplateRegistry(clusterService, threadPool, client, NamedXContentRegistry.EMPTY);
+        registry = new AnalyticsTemplateRegistry(clusterService, threadPool, client);
     }
 
     @After

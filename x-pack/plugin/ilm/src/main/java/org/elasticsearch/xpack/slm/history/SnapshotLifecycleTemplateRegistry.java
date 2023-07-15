@@ -56,14 +56,8 @@ public class SnapshotLifecycleTemplateRegistry extends IndexTemplateRegistry {
 
     private final boolean slmHistoryEnabled;
 
-    public SnapshotLifecycleTemplateRegistry(
-        Settings nodeSettings,
-        ClusterService clusterService,
-        ThreadPool threadPool,
-        Client client,
-        NamedXContentRegistry xContentRegistry
-    ) {
-        super(nodeSettings, clusterService, threadPool, client, xContentRegistry);
+    public SnapshotLifecycleTemplateRegistry(Settings nodeSettings, ClusterService clusterService, ThreadPool threadPool, Client client) {
+        super(nodeSettings, clusterService, threadPool, client);
         slmHistoryEnabled = SLM_HISTORY_INDEX_ENABLED_SETTING.get(nodeSettings);
     }
 

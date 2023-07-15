@@ -13,7 +13,6 @@ import org.elasticsearch.cluster.metadata.ComposableIndexTemplate;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.threadpool.ThreadPool;
-import org.elasticsearch.xcontent.NamedXContentRegistry;
 import org.elasticsearch.xcontent.XContentParserConfiguration;
 import org.elasticsearch.xcontent.json.JsonXContent;
 import org.elasticsearch.xpack.core.ilm.LifecyclePolicy;
@@ -30,14 +29,8 @@ class TestRegistryWithCustomPlugin extends IndexTemplateRegistry {
 
     private boolean policyUpgradeRequired = false;
 
-    TestRegistryWithCustomPlugin(
-        Settings nodeSettings,
-        ClusterService clusterService,
-        ThreadPool threadPool,
-        Client client,
-        NamedXContentRegistry xContentRegistry
-    ) {
-        super(nodeSettings, clusterService, threadPool, client, xContentRegistry);
+    TestRegistryWithCustomPlugin(Settings nodeSettings, ClusterService clusterService, ThreadPool threadPool, Client client) {
+        super(nodeSettings, clusterService, threadPool, client);
     }
 
     @Override

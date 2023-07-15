@@ -27,7 +27,7 @@ import java.util.Objects;
  * See {@link TierSpecificStats} for the stats that are tracked on a per-tier
  * basis.
  */
-public class DataTiersFeatureSetUsage extends XPackFeatureSet.Usage {
+public class DataTiersFeatureSetUsage extends XpackFeatureSetUsage {
     private final Map<String, TierSpecificStats> tierStats;
 
     public DataTiersFeatureSetUsage(StreamInput in) throws IOException {

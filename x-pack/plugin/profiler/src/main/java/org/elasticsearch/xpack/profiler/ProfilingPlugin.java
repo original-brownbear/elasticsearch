@@ -87,7 +87,7 @@ public class ProfilingPlugin extends Plugin implements ActionPlugin {
         IndicesService indicesService
     ) {
         logger.info("Profiling is {}", enabled ? "enabled" : "disabled");
-        registry.set(new ProfilingIndexTemplateRegistry(settings, clusterService, threadPool, client, xContentRegistry));
+        registry.set(new ProfilingIndexTemplateRegistry(settings, clusterService, threadPool, client));
         indexManager.set(new ProfilingIndexManager(threadPool, client, clusterService));
         dataStreamManager.set(new ProfilingDataStreamManager(threadPool, client, clusterService));
         // set initial value

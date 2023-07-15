@@ -96,8 +96,8 @@ import org.elasticsearch.xpack.ccr.rest.RestPutFollowAction;
 import org.elasticsearch.xpack.ccr.rest.RestResumeAutoFollowPatternAction;
 import org.elasticsearch.xpack.ccr.rest.RestResumeFollowAction;
 import org.elasticsearch.xpack.ccr.rest.RestUnfollowAction;
-import org.elasticsearch.xpack.core.XPackFeatureSet;
 import org.elasticsearch.xpack.core.XPackField;
+import org.elasticsearch.xpack.core.XpackFeatureSetUsage;
 import org.elasticsearch.xpack.core.action.XPackInfoFeatureAction;
 import org.elasticsearch.xpack.core.action.XPackUsageFeatureAction;
 import org.elasticsearch.xpack.core.ccr.AutoFollowMetadata;
@@ -321,7 +321,7 @@ public class Ccr extends Plugin implements ActionPlugin, PersistentTaskPlugin, E
             ),
 
             // usage api
-            new NamedWriteableRegistry.Entry(XPackFeatureSet.Usage.class, XPackField.CCR, CCRInfoTransportAction.Usage::new)
+            new NamedWriteableRegistry.Entry(XpackFeatureSetUsage.class, XPackField.CCR, CCRInfoTransportAction.Usage::new)
         );
     }
 

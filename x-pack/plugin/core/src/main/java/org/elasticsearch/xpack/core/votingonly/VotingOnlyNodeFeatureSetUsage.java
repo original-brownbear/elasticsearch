@@ -8,12 +8,12 @@ package org.elasticsearch.xpack.core.votingonly;
 
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.common.io.stream.StreamInput;
-import org.elasticsearch.xpack.core.XPackFeatureSet;
 import org.elasticsearch.xpack.core.XPackField;
+import org.elasticsearch.xpack.core.XpackFeatureSetUsage;
 
 import java.io.IOException;
 
-public class VotingOnlyNodeFeatureSetUsage extends XPackFeatureSet.Usage {
+public class VotingOnlyNodeFeatureSetUsage extends XpackFeatureSetUsage {
     public VotingOnlyNodeFeatureSetUsage(StreamInput input) throws IOException {
         super(input);
     }

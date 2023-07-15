@@ -32,14 +32,8 @@ public class WatcherIndexTemplateRegistry extends IndexTemplateRegistry {
 
     private final boolean ilmManagementEnabled;
 
-    public WatcherIndexTemplateRegistry(
-        Settings nodeSettings,
-        ClusterService clusterService,
-        ThreadPool threadPool,
-        Client client,
-        NamedXContentRegistry xContentRegistry
-    ) {
-        super(nodeSettings, clusterService, threadPool, client, xContentRegistry);
+    public WatcherIndexTemplateRegistry(Settings nodeSettings, ClusterService clusterService, ThreadPool threadPool, Client client) {
+        super(nodeSettings, clusterService, threadPool, client);
         ilmManagementEnabled = Watcher.USE_ILM_INDEX_MANAGEMENT.get(nodeSettings);
     }
 

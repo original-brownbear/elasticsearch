@@ -8,14 +8,11 @@ package org.elasticsearch.license;
 
 import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.ActionResponse;
-import org.elasticsearch.cluster.NamedDiff;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
-import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.IndexScopedSettings;
-import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.settings.SettingsFilter;
 import org.elasticsearch.plugins.ActionPlugin;
@@ -26,23 +23,10 @@ import org.elasticsearch.xcontent.ParseField;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
 
 public class Licensing implements ActionPlugin {
-
-    public static final String NAME = "license";
-    protected final Settings settings;
-
-    // Until this is moved out to its own plugin (its currently in XPackPlugin.java, we need to make sure that any edits to this file
-    // are also carried out in XPackClientPlugin.java
-    public List<NamedWriteableRegistry.Entry> getNamedWriteables() {
-        List<NamedWriteableRegistry.Entry> entries = new ArrayList<>();
-        entries.add(new NamedWriteableRegistry.Entry(Metadata.Custom.class, LicensesMetadata.TYPE, LicensesMetadata::new));
-        entries.add(new NamedWriteableRegistry.Entry(NamedDiff.class, LicensesMetadata.TYPE, LicensesMetadata::readDiffFrom));
-        return entries;
-    }
 
     // Until this is moved out to its own plugin (its currently in XPackPlugin.java, we need to make sure that any edits to this file
     // are also carried out in XPackClientPlugin.java
@@ -55,8 +39,7 @@ public class Licensing implements ActionPlugin {
         return entries;
     }
 
-    public Licensing(Settings settings) {
-        this.settings = settings;
+    public Licensing() {
     }
 
     @Override
@@ -93,13 +76,6 @@ public class Licensing implements ActionPlugin {
         handlers.add(new RestPostStartBasicLicense());
         handlers.add(new RestGetFeatureUsageAction());
         return handlers;
-    }
-
-    // Until this is moved out to its own plugin (its currently in XPackPlugin.java, we need to make sure that any edits to this file
-    // are also carried out in XPackClientPlugin.java
-    public List<Setting<?>> getSettings() {
-        // TODO convert this wildcard to a real setting
-        return Collections.singletonList(Setting.groupSetting("license.", Setting.Property.NodeScope));
     }
 
 }

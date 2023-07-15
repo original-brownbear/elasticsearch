@@ -898,8 +898,7 @@ public class MachineLearning extends Plugin
             clusterService,
             threadPool,
             client,
-            machineLearningExtension.get().useIlm(),
-            xContentRegistry
+            machineLearningExtension.get().useIlm()
         );
         registry.initialize();
 

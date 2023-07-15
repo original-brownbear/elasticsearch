@@ -14,7 +14,6 @@ import org.elasticsearch.cluster.metadata.ComposableIndexTemplate;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.threadpool.ThreadPool;
-import org.elasticsearch.xcontent.NamedXContentRegistry;
 import org.elasticsearch.xcontent.XContentParserConfiguration;
 import org.elasticsearch.xcontent.json.JsonXContent;
 import org.elasticsearch.xpack.core.ilm.LifecyclePolicy;
@@ -112,13 +111,8 @@ public class AnalyticsTemplateRegistry extends IndexTemplateRegistry {
         )
     );
 
-    public AnalyticsTemplateRegistry(
-        ClusterService clusterService,
-        ThreadPool threadPool,
-        Client client,
-        NamedXContentRegistry xContentRegistry
-    ) {
-        super(Settings.EMPTY, clusterService, threadPool, client, xContentRegistry);
+    public AnalyticsTemplateRegistry(ClusterService clusterService, ThreadPool threadPool, Client client) {
+        super(Settings.EMPTY, clusterService, threadPool, client);
     }
 
     @Override

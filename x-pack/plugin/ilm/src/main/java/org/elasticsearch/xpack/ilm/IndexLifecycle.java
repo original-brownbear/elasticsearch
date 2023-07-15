@@ -218,13 +218,7 @@ public class IndexLifecycle extends Plugin implements ActionPlugin, HealthPlugin
         IndicesService indicesService
     ) {
         final List<Object> components = new ArrayList<>();
-        ILMHistoryTemplateRegistry ilmTemplateRegistry = new ILMHistoryTemplateRegistry(
-            settings,
-            clusterService,
-            threadPool,
-            client,
-            xContentRegistry
-        );
+        ILMHistoryTemplateRegistry ilmTemplateRegistry = new ILMHistoryTemplateRegistry(settings, clusterService, threadPool, client);
         ilmTemplateRegistry.initialize();
         ilmHistoryStore.set(new ILMHistoryStore(new OriginSettingClient(client, INDEX_LIFECYCLE_ORIGIN), clusterService, threadPool));
         /*
@@ -253,8 +247,7 @@ public class IndexLifecycle extends Plugin implements ActionPlugin, HealthPlugin
             settings,
             clusterService,
             threadPool,
-            client,
-            xContentRegistry
+            client
         );
         templateRegistry.initialize();
         snapshotHistoryStore.set(new SnapshotHistoryStore(new OriginSettingClient(client, INDEX_LIFECYCLE_ORIGIN), clusterService));

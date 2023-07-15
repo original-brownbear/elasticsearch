@@ -71,10 +71,6 @@ public class IndexTemplateConfig {
         this.variables = Objects.requireNonNull(variables);
     }
 
-    public String getFileName() {
-        return fileName;
-    }
-
     public String getTemplateName() {
         return templateName;
     }

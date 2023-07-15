@@ -75,14 +75,6 @@ public class LifecyclePolicyConfig {
         this.templateVariables = templateVariables;
     }
 
-    public String getPolicyName() {
-        return policyName;
-    }
-
-    public String getFileName() {
-        return fileName;
-    }
-
     public LifecyclePolicy load(NamedXContentRegistry xContentRegistry) {
         return LifecyclePolicyUtils.loadPolicy(policyName, fileName, templateVariables, xContentRegistry);
     }

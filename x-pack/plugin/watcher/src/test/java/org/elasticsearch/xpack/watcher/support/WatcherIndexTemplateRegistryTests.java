@@ -113,7 +113,7 @@ public class WatcherIndexTemplateRegistryTests extends ESTestCase {
             )
         );
         xContentRegistry = new NamedXContentRegistry(entries);
-        registry = new WatcherIndexTemplateRegistry(Settings.EMPTY, clusterService, threadPool, client, xContentRegistry);
+        registry = new WatcherIndexTemplateRegistry(Settings.EMPTY, clusterService, threadPool, client);
     }
 
     public void testThatNonExistingTemplatesAreAddedImmediately() {
@@ -150,8 +150,7 @@ public class WatcherIndexTemplateRegistryTests extends ESTestCase {
             Settings.builder().put(Watcher.USE_ILM_INDEX_MANAGEMENT.getKey(), false).build(),
             clusterService,
             threadPool,
-            client,
-            xContentRegistry
+            client
         );
         ClusterChangedEvent event = createClusterChangedEvent(Settings.EMPTY, Collections.emptyMap(), Collections.emptyMap(), nodes);
         registry.clusterChanged(event);
@@ -202,8 +201,7 @@ public class WatcherIndexTemplateRegistryTests extends ESTestCase {
             Settings.builder().put(Watcher.USE_ILM_INDEX_MANAGEMENT.getKey(), false).build(),
             clusterService,
             threadPool,
-            client,
-            xContentRegistry
+            client
         );
         ClusterChangedEvent event = createClusterChangedEvent(Settings.EMPTY, Collections.emptyMap(), Collections.emptyMap(), nodes);
         registry.clusterChanged(event);

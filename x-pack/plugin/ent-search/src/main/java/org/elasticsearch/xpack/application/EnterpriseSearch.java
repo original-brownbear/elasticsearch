@@ -218,21 +218,11 @@ public class EnterpriseSearch extends Plugin implements ActionPlugin, SystemInde
         }
 
         // Behavioral analytics components
-        final AnalyticsTemplateRegistry analyticsTemplateRegistry = new AnalyticsTemplateRegistry(
-            clusterService,
-            threadPool,
-            client,
-            xContentRegistry
-        );
+        final AnalyticsTemplateRegistry analyticsTemplateRegistry = new AnalyticsTemplateRegistry(clusterService, threadPool, client);
         analyticsTemplateRegistry.initialize();
 
         // Connector components
-        final ConnectorTemplateRegistry connectorTemplateRegistry = new ConnectorTemplateRegistry(
-            clusterService,
-            threadPool,
-            client,
-            xContentRegistry
-        );
+        final ConnectorTemplateRegistry connectorTemplateRegistry = new ConnectorTemplateRegistry(clusterService, threadPool, client);
         connectorTemplateRegistry.initialize();
 
         return Arrays.asList(analyticsTemplateRegistry, connectorTemplateRegistry);

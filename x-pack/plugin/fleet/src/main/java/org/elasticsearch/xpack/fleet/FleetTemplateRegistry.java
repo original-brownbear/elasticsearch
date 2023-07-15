@@ -12,7 +12,6 @@ import org.elasticsearch.cluster.metadata.ComposableIndexTemplate;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.threadpool.ThreadPool;
-import org.elasticsearch.xcontent.NamedXContentRegistry;
 import org.elasticsearch.xpack.core.ClientHelper;
 import org.elasticsearch.xpack.core.ilm.LifecyclePolicy;
 import org.elasticsearch.xpack.core.template.IndexTemplateConfig;
@@ -73,14 +72,8 @@ public class FleetTemplateRegistry extends IndexTemplateRegistry {
         )
     );
 
-    public FleetTemplateRegistry(
-        Settings nodeSettings,
-        ClusterService clusterService,
-        ThreadPool threadPool,
-        Client client,
-        NamedXContentRegistry xContentRegistry
-    ) {
-        super(nodeSettings, clusterService, threadPool, client, xContentRegistry);
+    public FleetTemplateRegistry(Settings nodeSettings, ClusterService clusterService, ThreadPool threadPool, Client client) {
+        super(nodeSettings, clusterService, threadPool, client);
     }
 
     @Override

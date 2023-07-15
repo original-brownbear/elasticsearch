@@ -58,14 +58,8 @@ public class ProfilingIndexTemplateRegistry extends IndexTemplateRegistry {
 
     private volatile boolean templatesEnabled;
 
-    public ProfilingIndexTemplateRegistry(
-        Settings nodeSettings,
-        ClusterService clusterService,
-        ThreadPool threadPool,
-        Client client,
-        NamedXContentRegistry xContentRegistry
-    ) {
-        super(nodeSettings, clusterService, threadPool, client, xContentRegistry);
+    public ProfilingIndexTemplateRegistry(Settings nodeSettings, ClusterService clusterService, ThreadPool threadPool, Client client) {
+        super(nodeSettings, clusterService, threadPool, client);
     }
 
     public void setTemplatesEnabled(boolean templatesEnabled) {

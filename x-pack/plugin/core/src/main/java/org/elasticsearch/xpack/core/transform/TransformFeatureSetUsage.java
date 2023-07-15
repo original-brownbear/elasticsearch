@@ -12,7 +12,7 @@ import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.xcontent.XContentBuilder;
-import org.elasticsearch.xpack.core.XPackFeatureSet.Usage;
+import org.elasticsearch.xpack.core.XpackFeatureSetUsage;
 import org.elasticsearch.xpack.core.XPackField;
 import org.elasticsearch.xpack.core.transform.transforms.TransformIndexerStats;
 
@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 
-public class TransformFeatureSetUsage extends Usage {
+public class TransformFeatureSetUsage extends XpackFeatureSetUsage {
 
     private static final String FEATURE_COUNTS = "feature_counts";
 

@@ -43,13 +43,6 @@ import static org.elasticsearch.xpack.core.security.authc.RealmSettings.DOMAIN_U
  */
 public class XPackSettings {
 
-    private static final boolean IS_DARWIN_AARCH64;
-    static {
-        final String name = System.getProperty("os.name");
-        final String arch = System.getProperty("os.arch");
-        IS_DARWIN_AARCH64 = "aarch64".equals(arch) && name.startsWith("Mac OS X");
-    }
-
     private XPackSettings() {
         throw new IllegalStateException("Utility class should not be instantiated");
     }
@@ -270,7 +263,6 @@ public class XPackSettings {
         DEFAULT_SUPPORTED_PROTOCOLS = supportsTLSv13 ? Arrays.asList("TLSv1.3", "TLSv1.2", "TLSv1.1") : Arrays.asList("TLSv1.2", "TLSv1.1");
     }
 
-    public static final SslClientAuthenticationMode CLIENT_AUTH_DEFAULT = SslClientAuthenticationMode.REQUIRED;
     public static final SslClientAuthenticationMode HTTP_CLIENT_AUTH_DEFAULT = SslClientAuthenticationMode.NONE;
     public static final SslClientAuthenticationMode REMOTE_CLUSTER_CLIENT_AUTH_DEFAULT = SslClientAuthenticationMode.NONE;
     public static final SslVerificationMode VERIFICATION_MODE_DEFAULT = SslVerificationMode.FULL;

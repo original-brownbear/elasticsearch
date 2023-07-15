@@ -13,7 +13,6 @@ import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.admin.indices.template.put.PutComposableIndexTemplateAction;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.internal.OriginSettingClient;
 import org.elasticsearch.cluster.metadata.ComposableIndexTemplate;
 import org.elasticsearch.cluster.service.ClusterService;
@@ -116,10 +115,6 @@ public abstract class AbstractAuditor<T extends AbstractAuditMessage> {
         indexDoc(messageFactory.newMessage(resourceId, message, Level.ERROR, new Date(), nodeName));
     }
 
-    private static void onIndexResponse(IndexResponse response) {
-        logger.trace("Successfully wrote audit message");
-    }
-
     private static void onIndexFailure(Exception exception) {
         logger.debug("Failed to write audit message", exception);
     }
@@ -183,7 +178,10 @@ public abstract class AbstractAuditor<T extends AbstractAuditMessage> {
     }
 
     private void writeDoc(ToXContent toXContent) {
-        client.index(indexRequest(toXContent), ActionListener.wrap(AbstractAuditor::onIndexResponse, AbstractAuditor::onIndexFailure));
+        client.index(
+            indexRequest(toXContent),
+            ActionListener.wrap(response -> logger.trace("Successfully wrote audit message"), AbstractAuditor::onIndexFailure)
+        );
     }
 
     private IndexRequest indexRequest(ToXContent toXContent) {

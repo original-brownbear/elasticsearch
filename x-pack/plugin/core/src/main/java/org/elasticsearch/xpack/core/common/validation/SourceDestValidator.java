@@ -125,24 +125,8 @@ public final class SourceDestValidator {
             this.license = license;
         }
 
-        public ClusterState getState() {
-            return state;
-        }
-
-        public RemoteClusterService getRemoteClusterService() {
-            return remoteClusterService;
-        }
-
         public RemoteClusterLicenseChecker getRemoteClusterLicenseChecker() {
             return remoteClusterLicenseChecker;
-        }
-
-        public IndexNameExpressionResolver getIndexNameExpressionResolver() {
-            return indexNameExpressionResolver;
-        }
-
-        public IngestService getIngestService() {
-            return ingestService;
         }
 
         public boolean isRemoteSearchEnabled() {

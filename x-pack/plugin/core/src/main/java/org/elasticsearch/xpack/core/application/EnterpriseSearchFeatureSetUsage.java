@@ -11,15 +11,15 @@ import org.elasticsearch.TransportVersion;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.xcontent.XContentBuilder;
-import org.elasticsearch.xpack.core.XPackFeatureSet;
 import org.elasticsearch.xpack.core.XPackField;
+import org.elasticsearch.xpack.core.XpackFeatureSetUsage;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 
-public class EnterpriseSearchFeatureSetUsage extends XPackFeatureSet.Usage {
+public class EnterpriseSearchFeatureSetUsage extends XpackFeatureSetUsage {
 
     public static final String SEARCH_APPLICATIONS = "search_applications";
     public static final String ANALYTICS_COLLECTIONS = "analytics_collections";

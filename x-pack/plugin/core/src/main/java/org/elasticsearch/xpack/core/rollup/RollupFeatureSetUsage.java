@@ -8,12 +8,12 @@ package org.elasticsearch.xpack.core.rollup;
 
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.common.io.stream.StreamInput;
-import org.elasticsearch.xpack.core.XPackFeatureSet;
 import org.elasticsearch.xpack.core.XPackField;
+import org.elasticsearch.xpack.core.XpackFeatureSetUsage;
 
 import java.io.IOException;
 
-public class RollupFeatureSetUsage extends XPackFeatureSet.Usage {
+public class RollupFeatureSetUsage extends XpackFeatureSetUsage {
 
     public RollupFeatureSetUsage(StreamInput input) throws IOException {
         super(input);

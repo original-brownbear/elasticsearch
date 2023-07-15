@@ -255,14 +255,6 @@ public class XPackInfoResponse extends ActionResponse implements ToXContentObjec
             output.writeString(timestamp);
         }
 
-        public String getHash() {
-            return hash;
-        }
-
-        public String getTimestamp() {
-            return timestamp;
-        }
-
         @Override
         public boolean equals(Object other) {
             if (other == null || other.getClass() != getClass()) return false;

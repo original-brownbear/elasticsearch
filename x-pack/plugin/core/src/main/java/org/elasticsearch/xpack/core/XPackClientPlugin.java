@@ -419,17 +419,17 @@ public class XPackClientPlugin extends Plugin implements ActionPlugin, NetworkPl
     public List<NamedWriteableRegistry.Entry> getNamedWriteables() {
         return Stream.of(
             // graph
-            new NamedWriteableRegistry.Entry(XPackFeatureSet.Usage.class, XPackField.GRAPH, GraphFeatureSetUsage::new),
+            new NamedWriteableRegistry.Entry(XpackFeatureSetUsage.class, XPackField.GRAPH, GraphFeatureSetUsage::new),
             // logstash
-            new NamedWriteableRegistry.Entry(XPackFeatureSet.Usage.class, XPackField.LOGSTASH, LogstashFeatureSetUsage::new),
+            new NamedWriteableRegistry.Entry(XpackFeatureSetUsage.class, XPackField.LOGSTASH, LogstashFeatureSetUsage::new),
             // ML
-            new NamedWriteableRegistry.Entry(XPackFeatureSet.Usage.class, XPackField.MACHINE_LEARNING, MachineLearningFeatureSetUsage::new),
+            new NamedWriteableRegistry.Entry(XpackFeatureSetUsage.class, XPackField.MACHINE_LEARNING, MachineLearningFeatureSetUsage::new),
             // monitoring
-            new NamedWriteableRegistry.Entry(XPackFeatureSet.Usage.class, XPackField.MONITORING, MonitoringFeatureSetUsage::new),
+            new NamedWriteableRegistry.Entry(XpackFeatureSetUsage.class, XPackField.MONITORING, MonitoringFeatureSetUsage::new),
             // security
             new NamedWriteableRegistry.Entry(ClusterState.Custom.class, TokenMetadata.TYPE, TokenMetadata::new),
             new NamedWriteableRegistry.Entry(NamedDiff.class, TokenMetadata.TYPE, TokenMetadata::readDiffFrom),
-            new NamedWriteableRegistry.Entry(XPackFeatureSet.Usage.class, XPackField.SECURITY, SecurityFeatureSetUsage::new),
+            new NamedWriteableRegistry.Entry(XpackFeatureSetUsage.class, XPackField.SECURITY, SecurityFeatureSetUsage::new),
             // security : conditional privileges
             new NamedWriteableRegistry.Entry(
                 ConfigurableClusterPrivilege.class,
@@ -447,18 +447,18 @@ public class XPackClientPlugin extends Plugin implements ActionPlugin, NetworkPl
             new NamedWriteableRegistry.Entry(RoleMapperExpression.class, FieldExpression.NAME, FieldExpression::new),
             new NamedWriteableRegistry.Entry(RoleMapperExpression.class, ExceptExpression.NAME, ExceptExpression::new),
             // eql
-            new NamedWriteableRegistry.Entry(XPackFeatureSet.Usage.class, XPackField.EQL, EqlFeatureSetUsage::new),
+            new NamedWriteableRegistry.Entry(XpackFeatureSetUsage.class, XPackField.EQL, EqlFeatureSetUsage::new),
             // sql
-            new NamedWriteableRegistry.Entry(XPackFeatureSet.Usage.class, XPackField.SQL, SqlFeatureSetUsage::new),
+            new NamedWriteableRegistry.Entry(XpackFeatureSetUsage.class, XPackField.SQL, SqlFeatureSetUsage::new),
             // watcher
             new NamedWriteableRegistry.Entry(Metadata.Custom.class, WatcherMetadata.TYPE, WatcherMetadata::new),
             new NamedWriteableRegistry.Entry(NamedDiff.class, WatcherMetadata.TYPE, WatcherMetadata::readDiffFrom),
-            new NamedWriteableRegistry.Entry(XPackFeatureSet.Usage.class, XPackField.WATCHER, WatcherFeatureSetUsage::new),
+            new NamedWriteableRegistry.Entry(XpackFeatureSetUsage.class, XPackField.WATCHER, WatcherFeatureSetUsage::new),
             // licensing
             new NamedWriteableRegistry.Entry(Metadata.Custom.class, LicensesMetadata.TYPE, LicensesMetadata::new),
             new NamedWriteableRegistry.Entry(NamedDiff.class, LicensesMetadata.TYPE, LicensesMetadata::readDiffFrom),
             // rollup
-            new NamedWriteableRegistry.Entry(XPackFeatureSet.Usage.class, XPackField.ROLLUP, RollupFeatureSetUsage::new),
+            new NamedWriteableRegistry.Entry(XpackFeatureSetUsage.class, XPackField.ROLLUP, RollupFeatureSetUsage::new),
             new NamedWriteableRegistry.Entry(PersistentTaskParams.class, RollupJob.NAME, RollupJob::new),
             new NamedWriteableRegistry.Entry(Task.Status.class, RollupJobStatus.NAME, RollupJobStatus::new),
             new NamedWriteableRegistry.Entry(PersistentTaskState.class, RollupJobStatus.NAME, RollupJobStatus::new),
@@ -472,9 +472,9 @@ public class XPackClientPlugin extends Plugin implements ActionPlugin, NetworkPl
                 in -> AutoFollowMetadata.readDiffFrom(Metadata.Custom.class, AutoFollowMetadata.TYPE, in)
             ),
             // ILM
-            new NamedWriteableRegistry.Entry(XPackFeatureSet.Usage.class, XPackField.INDEX_LIFECYCLE, IndexLifecycleFeatureSetUsage::new),
+            new NamedWriteableRegistry.Entry(XpackFeatureSetUsage.class, XPackField.INDEX_LIFECYCLE, IndexLifecycleFeatureSetUsage::new),
             // SLM
-            new NamedWriteableRegistry.Entry(XPackFeatureSet.Usage.class, XPackField.SNAPSHOT_LIFECYCLE, SLMFeatureSetUsage::new),
+            new NamedWriteableRegistry.Entry(XpackFeatureSetUsage.class, XPackField.SNAPSHOT_LIFECYCLE, SLMFeatureSetUsage::new),
             // ILM - Custom Metadata
             new NamedWriteableRegistry.Entry(Metadata.Custom.class, IndexLifecycleMetadata.TYPE, IndexLifecycleMetadata::new),
             new NamedWriteableRegistry.Entry(
@@ -512,7 +512,7 @@ public class XPackClientPlugin extends Plugin implements ActionPlugin, NetworkPl
             // Transforms
             new NamedWriteableRegistry.Entry(Metadata.Custom.class, TransformMetadata.TYPE, TransformMetadata::new),
             new NamedWriteableRegistry.Entry(NamedDiff.class, TransformMetadata.TYPE, TransformMetadata.TransformMetadataDiff::new),
-            new NamedWriteableRegistry.Entry(XPackFeatureSet.Usage.class, XPackField.TRANSFORM, TransformFeatureSetUsage::new),
+            new NamedWriteableRegistry.Entry(XpackFeatureSetUsage.class, XPackField.TRANSFORM, TransformFeatureSetUsage::new),
             new NamedWriteableRegistry.Entry(PersistentTaskParams.class, TransformField.TASK_NAME, TransformTaskParams::new),
             new NamedWriteableRegistry.Entry(Task.Status.class, TransformField.TASK_NAME, TransformState::new),
             new NamedWriteableRegistry.Entry(PersistentTaskState.class, TransformField.TASK_NAME, TransformState::new),
@@ -528,44 +528,44 @@ public class XPackClientPlugin extends Plugin implements ActionPlugin, NetworkPl
                 i -> NullRetentionPolicyConfig.INSTANCE
             ),
             // Voting Only Node
-            new NamedWriteableRegistry.Entry(XPackFeatureSet.Usage.class, XPackField.VOTING_ONLY, VotingOnlyNodeFeatureSetUsage::new),
+            new NamedWriteableRegistry.Entry(XpackFeatureSetUsage.class, XPackField.VOTING_ONLY, VotingOnlyNodeFeatureSetUsage::new),
             // Frozen indices
-            new NamedWriteableRegistry.Entry(XPackFeatureSet.Usage.class, XPackField.FROZEN_INDICES, FrozenIndicesFeatureSetUsage::new),
+            new NamedWriteableRegistry.Entry(XpackFeatureSetUsage.class, XPackField.FROZEN_INDICES, FrozenIndicesFeatureSetUsage::new),
             // Spatial
-            new NamedWriteableRegistry.Entry(XPackFeatureSet.Usage.class, XPackField.SPATIAL, SpatialFeatureSetUsage::new),
+            new NamedWriteableRegistry.Entry(XpackFeatureSetUsage.class, XPackField.SPATIAL, SpatialFeatureSetUsage::new),
             // Analytics
-            new NamedWriteableRegistry.Entry(XPackFeatureSet.Usage.class, XPackField.ANALYTICS, AnalyticsFeatureSetUsage::new),
+            new NamedWriteableRegistry.Entry(XpackFeatureSetUsage.class, XPackField.ANALYTICS, AnalyticsFeatureSetUsage::new),
             // Aggregate metric field type
-            new NamedWriteableRegistry.Entry(XPackFeatureSet.Usage.class, XPackField.AGGREGATE_METRIC, AggregateMetricFeatureSetUsage::new),
+            new NamedWriteableRegistry.Entry(XpackFeatureSetUsage.class, XPackField.AGGREGATE_METRIC, AggregateMetricFeatureSetUsage::new),
             // Enrich
-            new NamedWriteableRegistry.Entry(XPackFeatureSet.Usage.class, XPackField.ENRICH, EnrichFeatureSetUsage::new),
+            new NamedWriteableRegistry.Entry(XpackFeatureSetUsage.class, XPackField.ENRICH, EnrichFeatureSetUsage::new),
             new NamedWriteableRegistry.Entry(Task.Status.class, ExecuteEnrichPolicyStatus.NAME, ExecuteEnrichPolicyStatus::new),
             // Searchable snapshots
             new NamedWriteableRegistry.Entry(
-                XPackFeatureSet.Usage.class,
+                XpackFeatureSetUsage.class,
                 XPackField.SEARCHABLE_SNAPSHOTS,
                 SearchableSnapshotFeatureSetUsage::new
             ),
             // Data Streams
-            new NamedWriteableRegistry.Entry(XPackFeatureSet.Usage.class, XPackField.DATA_STREAMS, DataStreamFeatureSetUsage::new),
+            new NamedWriteableRegistry.Entry(XpackFeatureSetUsage.class, XPackField.DATA_STREAMS, DataStreamFeatureSetUsage::new),
             new NamedWriteableRegistry.Entry(
-                XPackFeatureSet.Usage.class,
+                XpackFeatureSetUsage.class,
                 XPackField.DATA_STREAM_LIFECYCLE,
                 DataStreamLifecycleFeatureSetUsage::new
             ),
             // Data Tiers
-            new NamedWriteableRegistry.Entry(XPackFeatureSet.Usage.class, XPackField.DATA_TIERS, DataTiersFeatureSetUsage::new),
+            new NamedWriteableRegistry.Entry(XpackFeatureSetUsage.class, XPackField.DATA_TIERS, DataTiersFeatureSetUsage::new),
             // Archive
-            new NamedWriteableRegistry.Entry(XPackFeatureSet.Usage.class, XPackField.ARCHIVE, ArchiveFeatureSetUsage::new),
+            new NamedWriteableRegistry.Entry(XpackFeatureSetUsage.class, XPackField.ARCHIVE, ArchiveFeatureSetUsage::new),
             // TSDB Downsampling
             new NamedWriteableRegistry.Entry(LifecycleAction.class, DownsampleAction.NAME, DownsampleAction::new),
             // Health API usage
-            new NamedWriteableRegistry.Entry(XPackFeatureSet.Usage.class, XPackField.HEALTH_API, HealthApiFeatureSetUsage::new),
+            new NamedWriteableRegistry.Entry(XpackFeatureSetUsage.class, XPackField.HEALTH_API, HealthApiFeatureSetUsage::new),
             // Remote cluster usage
-            new NamedWriteableRegistry.Entry(XPackFeatureSet.Usage.class, XPackField.REMOTE_CLUSTERS, RemoteClusterFeatureSetUsage::new),
+            new NamedWriteableRegistry.Entry(XpackFeatureSetUsage.class, XPackField.REMOTE_CLUSTERS, RemoteClusterFeatureSetUsage::new),
             // Enterprise Search
             new NamedWriteableRegistry.Entry(
-                XPackFeatureSet.Usage.class,
+                XpackFeatureSetUsage.class,
                 XPackField.ENTERPRISE_SEARCH,
                 EnterpriseSearchFeatureSetUsage::new
             )

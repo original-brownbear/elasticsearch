@@ -12,7 +12,6 @@ import org.elasticsearch.cluster.metadata.ComposableIndexTemplate;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.threadpool.ThreadPool;
-import org.elasticsearch.xcontent.NamedXContentRegistry;
 import org.elasticsearch.xpack.core.ClientHelper;
 import org.elasticsearch.xpack.core.ilm.LifecyclePolicy;
 import org.elasticsearch.xpack.core.ml.MlStatsIndex;
@@ -107,10 +106,9 @@ public class MlIndexTemplateRegistry extends IndexTemplateRegistry {
         ClusterService clusterService,
         ThreadPool threadPool,
         Client client,
-        boolean useIlm,
-        NamedXContentRegistry xContentRegistry
+        boolean useIlm
     ) {
-        super(nodeSettings, clusterService, threadPool, client, xContentRegistry);
+        super(nodeSettings, clusterService, threadPool, client);
         this.useIlm = useIlm;
         this.composableIndexTemplateConfigs = parseComposableTemplates(
             anomalyDetectionResultsTemplate(),

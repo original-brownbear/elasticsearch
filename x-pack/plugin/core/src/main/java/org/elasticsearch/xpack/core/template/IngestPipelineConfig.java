@@ -50,10 +50,6 @@ public class IngestPipelineConfig {
         return version;
     }
 
-    public String getVersionProperty() {
-        return versionProperty;
-    }
-
     public List<String> getPipelineDependencies() {
         return dependencies;
     }

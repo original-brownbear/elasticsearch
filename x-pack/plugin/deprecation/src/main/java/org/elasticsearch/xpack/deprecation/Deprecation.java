@@ -108,8 +108,7 @@ public class Deprecation extends Plugin implements ActionPlugin {
             environment.settings(),
             clusterService,
             threadPool,
-            client,
-            xContentRegistry
+            client
         );
         templateRegistry.initialize();
 

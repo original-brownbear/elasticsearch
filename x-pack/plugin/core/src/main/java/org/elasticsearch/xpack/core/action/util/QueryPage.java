@@ -29,7 +29,6 @@ import java.util.Objects;
 public final class QueryPage<T extends ToXContent & Writeable> implements ToXContentObject, Writeable {
 
     public static final ParseField COUNT = new ParseField("count");
-    public static final ParseField DEFAULT_RESULTS_FIELD = new ParseField("results_field");
 
     private final ParseField resultsField;
     private final List<T> results;

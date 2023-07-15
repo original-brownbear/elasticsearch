@@ -62,7 +62,7 @@ public class LicensesMetadataSerializationTests extends ESTestCase {
     }
 
     public void testLicenseMetadataParsingDoesNotSwallowOtherMetadata() throws Exception {
-        new Licensing(Settings.EMPTY); // makes sure LicensePlugin is registered in Custom Metadata
+        new Licensing(); // makes sure LicensePlugin is registered in Custom Metadata
         License license = TestUtils.generateSignedLicense(TimeValue.timeValueHours(2));
         LicensesMetadata licensesMetadata = new LicensesMetadata(license, Version.CURRENT);
         RepositoryMetadata repositoryMetadata = new RepositoryMetadata("repo", "fs", Settings.EMPTY);
@@ -146,7 +146,7 @@ public class LicensesMetadataSerializationTests extends ESTestCase {
     @Override
     protected NamedXContentRegistry xContentRegistry() {
         return new NamedXContentRegistry(
-            Stream.concat(new Licensing(Settings.EMPTY).getNamedXContent().stream(), ClusterModule.getNamedXWriteables().stream())
+            Stream.concat(new Licensing().getNamedXContent().stream(), ClusterModule.getNamedXWriteables().stream())
                 .collect(Collectors.toList())
         );
     }

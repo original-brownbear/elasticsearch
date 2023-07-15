@@ -7,14 +7,12 @@
 package org.elasticsearch.xpack.core.scheduler;
 
 import org.elasticsearch.ElasticsearchParseException;
-import org.elasticsearch.common.time.DateFormatter;
 import org.elasticsearch.xcontent.ToXContentFragment;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
 import java.time.ZoneOffset;
 import java.util.Calendar;
-import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -199,7 +197,6 @@ import static org.elasticsearch.xpack.core.watcher.support.Exceptions.illegalArg
  */
 public class Cron implements ToXContentFragment {
     protected static final TimeZone UTC = TimeZone.getTimeZone(ZoneOffset.UTC);
-    protected static final DateFormatter formatter = DateFormatter.forPattern("yyyy-MM-dd'T'HH:mm:ss");
 
     private static final int SECOND = 0;
     private static final int MINUTE = 1;
@@ -693,46 +690,6 @@ public class Cron implements ToXContentFragment {
         return expression;
     }
 
-    public String getExpressionSummary() {
-        StringBuilder buf = new StringBuilder();
-
-        buf.append("seconds: ");
-        buf.append(expressionSetSummary(seconds));
-        buf.append("\n");
-        buf.append("minutes: ");
-        buf.append(expressionSetSummary(minutes));
-        buf.append("\n");
-        buf.append("hours: ");
-        buf.append(expressionSetSummary(hours));
-        buf.append("\n");
-        buf.append("daysOfMonth: ");
-        buf.append(expressionSetSummary(daysOfMonth));
-        buf.append("\n");
-        buf.append("months: ");
-        buf.append(expressionSetSummary(months));
-        buf.append("\n");
-        buf.append("daysOfWeek: ");
-        buf.append(expressionSetSummary(daysOfWeek));
-        buf.append("\n");
-        buf.append("lastdayOfWeek: ");
-        buf.append(lastdayOfWeek);
-        buf.append("\n");
-        buf.append("nearestWeekday: ");
-        buf.append(nearestWeekday);
-        buf.append("\n");
-        buf.append("NthDayOfWeek: ");
-        buf.append(nthdayOfWeek);
-        buf.append("\n");
-        buf.append("lastdayOfMonth: ");
-        buf.append(lastdayOfMonth);
-        buf.append("\n");
-        buf.append("years: ");
-        buf.append(expressionSetSummary(years));
-        buf.append("\n");
-
-        return buf.toString();
-    }
-
     @Override
     public int hashCode() {
         return Objects.hash(expression);
@@ -758,23 +715,6 @@ public class Cron implements ToXContentFragment {
     @Override
     public String toString() {
         return expression;
-    }
-
-    /**
-     * Indicates whether the specified cron expression can be parsed into a
-     * valid cron expression
-     *
-     * @param expression the expression to evaluate
-     * @return a boolean indicating whether the given expression is a valid cron
-     *         expression
-     */
-    public static boolean isValid(String expression) {
-        try {
-            validate(expression);
-        } catch (IllegalArgumentException pe) {
-            return false;
-        }
-        return true;
     }
 
     public static void validate(String expression) throws IllegalArgumentException {
@@ -1166,32 +1106,6 @@ public class Cron implements ToXContentFragment {
         addToSet(val, end, 0, type);
         i++;
         return i;
-    }
-
-    private static String expressionSetSummary(java.util.Set<Integer> set) {
-
-        if (set.contains(NO_SPEC)) {
-            return "?";
-        }
-        if (set.contains(ALL_SPEC)) {
-            return "*";
-        }
-
-        StringBuilder buf = new StringBuilder();
-
-        Iterator<Integer> itr = set.iterator();
-        boolean first = true;
-        while (itr.hasNext()) {
-            Integer iVal = itr.next();
-            String val = iVal.toString();
-            if (first == false) {
-                buf.append(",");
-            }
-            buf.append(val);
-            first = false;
-        }
-
-        return buf.toString();
     }
 
     private static int skipWhiteSpace(int i, String s) {

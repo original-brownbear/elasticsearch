@@ -70,7 +70,7 @@ import java.util.stream.Collectors;
  *   "enabled": true
  * }
  */
-public class HealthApiFeatureSetUsage extends XPackFeatureSet.Usage {
+public class HealthApiFeatureSetUsage extends XpackFeatureSetUsage {
 
     private final Map<String, Object> usageStats;
 
@@ -122,10 +122,6 @@ public class HealthApiFeatureSetUsage extends XPackFeatureSet.Usage {
     @Override
     public TransportVersion getMinimalSupportedVersion() {
         return TransportVersion.V_8_7_0;
-    }
-
-    public Map<String, Object> stats() {
-        return usageStats;
     }
 
     @Override

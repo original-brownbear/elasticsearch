@@ -80,7 +80,7 @@ public class MonitoringTemplateRegistryTests extends ESTestCase {
         threadPool = new TestThreadPool(this.getClass().getName());
         client = new VerifyingClient(threadPool);
         clusterService = ClusterServiceUtils.createClusterService(threadPool);
-        registry = new MonitoringTemplateRegistry(Settings.EMPTY, clusterService, threadPool, client, NamedXContentRegistry.EMPTY);
+        registry = new MonitoringTemplateRegistry(Settings.EMPTY, clusterService, threadPool, client);
     }
 
     @After
@@ -108,13 +108,7 @@ public class MonitoringTemplateRegistryTests extends ESTestCase {
 
     public void testDisabledDoesNotAddTemplates() {
         Settings settings = Settings.builder().put(MonitoringTemplateRegistry.MONITORING_TEMPLATES_ENABLED.getKey(), false).build();
-        MonitoringTemplateRegistry disabledRegistry = new MonitoringTemplateRegistry(
-            settings,
-            clusterService,
-            threadPool,
-            client,
-            NamedXContentRegistry.EMPTY
-        );
+        MonitoringTemplateRegistry disabledRegistry = new MonitoringTemplateRegistry(settings, clusterService, threadPool, client);
         assertThat(disabledRegistry.getLegacyTemplateConfigs(), is(empty()));
         assertThat(disabledRegistry.getComposableTemplateConfigs(), anEmptyMap());
         assertThat(disabledRegistry.getPolicyConfigs(), hasSize(0));
@@ -188,13 +182,7 @@ public class MonitoringTemplateRegistryTests extends ESTestCase {
         ClusterChangedEvent event = createClusterChangedEvent(Collections.emptyMap(), nodes);
         if (historyDurationPresent) {
             Settings testSettings = Settings.builder().put(HISTORY_DURATION.getKey(), expectedDeleteMinAge).build();
-            MonitoringTemplateRegistry testRegistry = new MonitoringTemplateRegistry(
-                testSettings,
-                clusterService,
-                threadPool,
-                client,
-                NamedXContentRegistry.EMPTY
-            );
+            MonitoringTemplateRegistry testRegistry = new MonitoringTemplateRegistry(testSettings, clusterService, threadPool, client);
             testRegistry.clusterChanged(event);
         } else {
             registry.clusterChanged(event);

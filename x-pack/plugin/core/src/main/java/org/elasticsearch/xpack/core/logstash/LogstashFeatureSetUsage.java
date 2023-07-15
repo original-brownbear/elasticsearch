@@ -8,12 +8,12 @@ package org.elasticsearch.xpack.core.logstash;
 
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.common.io.stream.StreamInput;
-import org.elasticsearch.xpack.core.XPackFeatureSet;
 import org.elasticsearch.xpack.core.XPackField;
+import org.elasticsearch.xpack.core.XpackFeatureSetUsage;
 
 import java.io.IOException;
 
-public class LogstashFeatureSetUsage extends XPackFeatureSet.Usage {
+public class LogstashFeatureSetUsage extends XpackFeatureSetUsage {
 
     public LogstashFeatureSetUsage(StreamInput in) throws IOException {
         super(in);

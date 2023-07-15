@@ -338,8 +338,7 @@ public class Watcher extends Plugin implements SystemIndexPlugin, ScriptPlugin, 
             environment.settings(),
             clusterService,
             threadPool,
-            client,
-            xContentRegistry
+            client
         );
         templateRegistry.initialize();
 

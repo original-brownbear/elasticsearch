@@ -97,7 +97,7 @@ public class SnapshotLifecycleTemplateRegistryTests extends ESTestCase {
             )
         );
         xContentRegistry = new NamedXContentRegistry(entries);
-        registry = new SnapshotLifecycleTemplateRegistry(Settings.EMPTY, clusterService, threadPool, client, xContentRegistry);
+        registry = new SnapshotLifecycleTemplateRegistry(Settings.EMPTY, clusterService, threadPool, client);
     }
 
     @After
@@ -113,8 +113,7 @@ public class SnapshotLifecycleTemplateRegistryTests extends ESTestCase {
             settings,
             clusterService,
             threadPool,
-            client,
-            xContentRegistry
+            client
         );
         assertThat(disabledRegistry.getComposableTemplateConfigs(), anEmptyMap());
         assertThat(disabledRegistry.getPolicyConfigs(), hasSize(0));

@@ -48,7 +48,6 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -259,55 +258,6 @@ public class CommandLineHttpClient {
             return String.valueOf(((Map) error).get("type"));
         }
         return error.toString();
-    }
-
-    /**
-     * If cluster is not up yet (connection refused or master is unavailable), we will retry @retries number of times
-     * If status is 'Red', we will wait for 'Yellow' for 30s (default timeout)
-     */
-    public void checkClusterHealthWithRetriesWaitingForCluster(String username, SecureString password, int retries) throws Exception {
-        final URL clusterHealthUrl = createURL(new URL(getDefaultURL()), "_cluster/health", "?wait_for_status=yellow&pretty");
-        HttpResponse response;
-        try {
-            response = execute("GET", clusterHealthUrl, username, password, () -> null, CommandLineHttpClient::responseBuilder);
-        } catch (Exception e) {
-            if (retries > 0) {
-                Thread.sleep(1000);
-                retries -= 1;
-                checkClusterHealthWithRetriesWaitingForCluster(username, password, retries);
-                return;
-            } else {
-                throw new IllegalStateException("Failed to determine the health of the cluster. ", e);
-            }
-        }
-        final int responseStatus = response.getHttpStatus();
-        if (responseStatus != HttpURLConnection.HTTP_OK) {
-            if (responseStatus != HttpURLConnection.HTTP_UNAVAILABLE) {
-                if (retries > 0) {
-                    Thread.sleep(1000);
-                    retries -= 1;
-                    checkClusterHealthWithRetriesWaitingForCluster(username, password, retries);
-                    return;
-                } else {
-                    throw new IllegalStateException(
-                        "Failed to determine the health of the cluster. Unexpected http status [" + responseStatus + "]"
-                    );
-                }
-            }
-            throw new IllegalStateException(
-                "Failed to determine the health of the cluster. Unexpected http status [" + responseStatus + "]"
-            );
-        } else {
-            final String clusterStatus = Objects.toString(response.getResponseBody().get("status"), "");
-            if (clusterStatus.isEmpty()) {
-                throw new IllegalStateException(
-                    "Failed to determine the health of the cluster. Cluster health API did not return a status value."
-                );
-            } else if ("red".equalsIgnoreCase(clusterStatus)) {
-                throw new IllegalStateException("Failed to determine the health of the cluster. Cluster health is currently RED.");
-            }
-            // else it is yellow or green so we can continue
-        }
     }
 
     public static HttpResponse.HttpResponseBuilder responseBuilder(InputStream is) throws IOException {

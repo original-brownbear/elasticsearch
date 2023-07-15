@@ -18,7 +18,7 @@ import org.elasticsearch.rest.ServerlessScope;
 import org.elasticsearch.rest.action.RestBuilderListener;
 import org.elasticsearch.rest.action.RestCancellableNodeClient;
 import org.elasticsearch.xcontent.XContentBuilder;
-import org.elasticsearch.xpack.core.XPackFeatureSet;
+import org.elasticsearch.xpack.core.XpackFeatureSetUsage;
 import org.elasticsearch.xpack.core.action.XPackUsageRequestBuilder;
 import org.elasticsearch.xpack.core.action.XPackUsageResponse;
 
@@ -51,7 +51,7 @@ public class RestXPackUsageAction extends BaseRestHandler {
             @Override
             public RestResponse buildResponse(XPackUsageResponse response, XContentBuilder builder) throws Exception {
                 builder.startObject();
-                for (XPackFeatureSet.Usage usage : response.getUsages()) {
+                for (XpackFeatureSetUsage usage : response.getUsages()) {
                     builder.field(usage.name(), usage);
                 }
                 builder.endObject();

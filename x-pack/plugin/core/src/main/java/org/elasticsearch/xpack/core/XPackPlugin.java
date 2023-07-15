@@ -178,7 +178,7 @@ public class XPackPlugin extends XPackClientPlugin
         licenseService = new SetOnce<>();
         epochMillisSupplier = new SetOnce<>();
 
-        this.licensing = new Licensing(settings);
+        this.licensing = new Licensing();
     }
 
     // overridable by tests

@@ -9,9 +9,6 @@ package org.elasticsearch.xpack.core.action;
 import org.elasticsearch.action.ActionType;
 import org.elasticsearch.xpack.core.XPackField;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -50,39 +47,32 @@ public class XPackInfoFeatureAction extends ActionType<XPackInfoFeatureResponse>
     public static final XPackInfoFeatureAction ARCHIVE = new XPackInfoFeatureAction(XPackField.ARCHIVE);
     public static final XPackInfoFeatureAction ENTERPRISE_SEARCH = new XPackInfoFeatureAction(XPackField.ENTERPRISE_SEARCH);
 
-    public static final List<XPackInfoFeatureAction> ALL;
-    static {
-        final List<XPackInfoFeatureAction> actions = new ArrayList<>();
-        actions.addAll(
-            Arrays.asList(
-                SECURITY,
-                MONITORING,
-                WATCHER,
-                GRAPH,
-                MACHINE_LEARNING,
-                LOGSTASH,
-                EQL,
-                SQL,
-                ROLLUP,
-                INDEX_LIFECYCLE,
-                SNAPSHOT_LIFECYCLE,
-                CCR,
-                TRANSFORM,
-                VOTING_ONLY,
-                FROZEN_INDICES,
-                SPATIAL,
-                ANALYTICS,
-                ENRICH,
-                DATA_STREAMS,
-                SEARCHABLE_SNAPSHOTS,
-                DATA_TIERS,
-                AGGREGATE_METRIC,
-                ARCHIVE,
-                ENTERPRISE_SEARCH
-            )
-        );
-        ALL = Collections.unmodifiableList(actions);
-    }
+    public static final List<XPackInfoFeatureAction> ALL = List.of(
+        SECURITY,
+        MONITORING,
+        WATCHER,
+        GRAPH,
+        MACHINE_LEARNING,
+        LOGSTASH,
+        EQL,
+        SQL,
+        ROLLUP,
+        INDEX_LIFECYCLE,
+        SNAPSHOT_LIFECYCLE,
+        CCR,
+        TRANSFORM,
+        VOTING_ONLY,
+        FROZEN_INDICES,
+        SPATIAL,
+        ANALYTICS,
+        ENRICH,
+        DATA_STREAMS,
+        SEARCHABLE_SNAPSHOTS,
+        DATA_TIERS,
+        AGGREGATE_METRIC,
+        ARCHIVE,
+        ENTERPRISE_SEARCH
+    );
 
     private XPackInfoFeatureAction(String name) {
         super(BASE_NAME + name, XPackInfoFeatureResponse::new);

@@ -38,7 +38,6 @@ import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.test.client.NoOpClient;
 import org.elasticsearch.threadpool.TestThreadPool;
 import org.elasticsearch.threadpool.ThreadPool;
-import org.elasticsearch.xcontent.NamedXContentRegistry;
 import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Before;
@@ -76,8 +75,7 @@ public class ILMHistoryStoreTests extends ESTestCase {
             clusterService.getSettings(),
             clusterService,
             threadPool,
-            client,
-            NamedXContentRegistry.EMPTY
+            client
         );
         ClusterState state = clusterService.state();
         ClusterServiceUtils.setState(

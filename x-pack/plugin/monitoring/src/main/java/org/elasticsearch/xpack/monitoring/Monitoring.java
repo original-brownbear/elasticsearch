@@ -170,13 +170,7 @@ public class Monitoring extends Plugin implements ActionPlugin, ReloadablePlugin
 
         var usageServices = new MonitoringUsageServices(monitoringService, exporters);
 
-        MonitoringTemplateRegistry templateRegistry = new MonitoringTemplateRegistry(
-            settings,
-            clusterService,
-            threadPool,
-            client,
-            xContentRegistry
-        );
+        MonitoringTemplateRegistry templateRegistry = new MonitoringTemplateRegistry(settings, clusterService, threadPool, client);
         templateRegistry.initialize();
 
         return Arrays.asList(monitoringService, exporters, migrationCoordinator, cleanerService, usageServices, templateRegistry);

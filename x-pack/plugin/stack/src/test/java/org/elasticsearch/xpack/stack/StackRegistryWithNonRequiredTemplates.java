@@ -12,7 +12,6 @@ import org.elasticsearch.cluster.metadata.ComposableIndexTemplate;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.threadpool.ThreadPool;
-import org.elasticsearch.xcontent.NamedXContentRegistry;
 import org.elasticsearch.xpack.core.template.IndexTemplateConfig;
 
 import java.util.Map;
@@ -22,10 +21,9 @@ class StackRegistryWithNonRequiredTemplates extends StackTemplateRegistry {
         Settings nodeSettings,
         ClusterService clusterService,
         ThreadPool threadPool,
-        Client client,
-        NamedXContentRegistry xContentRegistry
+        Client client
     ) {
-        super(nodeSettings, clusterService, threadPool, client, xContentRegistry);
+        super(nodeSettings, clusterService, threadPool, client);
     }
 
     @Override

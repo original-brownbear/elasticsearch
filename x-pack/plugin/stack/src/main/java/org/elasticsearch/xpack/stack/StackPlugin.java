@@ -59,7 +59,7 @@ public class StackPlugin extends Plugin implements ActionPlugin {
         AllocationService allocationService,
         IndicesService indicesService
     ) {
-        StackTemplateRegistry templateRegistry = new StackTemplateRegistry(settings, clusterService, threadPool, client, xContentRegistry);
+        StackTemplateRegistry templateRegistry = new StackTemplateRegistry(settings, clusterService, threadPool, client);
         templateRegistry.initialize();
         return Collections.singleton(templateRegistry);
     }

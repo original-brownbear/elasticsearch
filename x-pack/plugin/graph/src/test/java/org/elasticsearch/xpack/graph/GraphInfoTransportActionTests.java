@@ -13,7 +13,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.license.MockLicenseState;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.transport.TransportService;
-import org.elasticsearch.xpack.core.XPackFeatureSet;
+import org.elasticsearch.xpack.core.XpackFeatureSetUsage;
 import org.elasticsearch.xpack.core.action.XPackUsageFeatureResponse;
 import org.elasticsearch.xpack.core.graph.GraphFeatureSetUsage;
 import org.junit.Before;
@@ -53,12 +53,12 @@ public class GraphInfoTransportActionTests extends ESTestCase {
         );
         PlainActionFuture<XPackUsageFeatureResponse> future = new PlainActionFuture<>();
         usageAction.masterOperation(null, null, null, future);
-        XPackFeatureSet.Usage usage = future.get().getUsage();
+        XpackFeatureSetUsage usage = future.get().getUsage();
         assertThat(usage.available(), is(available));
 
         BytesStreamOutput out = new BytesStreamOutput();
         usage.writeTo(out);
-        XPackFeatureSet.Usage serializedUsage = new GraphFeatureSetUsage(out.bytes().streamInput());
+        XpackFeatureSetUsage serializedUsage = new GraphFeatureSetUsage(out.bytes().streamInput());
         assertThat(serializedUsage.available(), is(available));
     }
 
@@ -91,12 +91,12 @@ public class GraphInfoTransportActionTests extends ESTestCase {
         );
         PlainActionFuture<XPackUsageFeatureResponse> future = new PlainActionFuture<>();
         usageAction.masterOperation(null, null, null, future);
-        XPackFeatureSet.Usage usage = future.get().getUsage();
+        XpackFeatureSetUsage usage = future.get().getUsage();
         assertThat(usage.enabled(), is(enabled));
 
         BytesStreamOutput out = new BytesStreamOutput();
         usage.writeTo(out);
-        XPackFeatureSet.Usage serializedUsage = new GraphFeatureSetUsage(out.bytes().streamInput());
+        XpackFeatureSetUsage serializedUsage = new GraphFeatureSetUsage(out.bytes().streamInput());
         assertThat(serializedUsage.enabled(), is(enabled));
     }
 

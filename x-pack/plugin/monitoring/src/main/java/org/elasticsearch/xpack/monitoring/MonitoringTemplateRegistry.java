@@ -16,7 +16,6 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.threadpool.ThreadPool;
-import org.elasticsearch.xcontent.NamedXContentRegistry;
 import org.elasticsearch.xpack.core.ClientHelper;
 import org.elasticsearch.xpack.core.ilm.LifecyclePolicy;
 import org.elasticsearch.xpack.core.monitoring.MonitoredSystem;
@@ -241,14 +240,8 @@ public class MonitoringTemplateRegistry extends IndexTemplateRegistry {
 
     private final List<LifecyclePolicy> ilmPolicies;
 
-    public MonitoringTemplateRegistry(
-        Settings nodeSettings,
-        ClusterService clusterService,
-        ThreadPool threadPool,
-        Client client,
-        NamedXContentRegistry xContentRegistry
-    ) {
-        super(nodeSettings, clusterService, threadPool, client, xContentRegistry);
+    public MonitoringTemplateRegistry(Settings nodeSettings, ClusterService clusterService, ThreadPool threadPool, Client client) {
+        super(nodeSettings, clusterService, threadPool, client);
         this.clusterService = clusterService;
         this.monitoringTemplatesEnabled = MONITORING_TEMPLATES_ENABLED.get(nodeSettings);
         this.ilmPolicies = loadPolicies(nodeSettings);

@@ -85,14 +85,7 @@ public class MlIndexTemplateRegistryTests extends ESTestCase {
     }
 
     public void testStatsTemplateWithIlm() {
-        MlIndexTemplateRegistry registry = new MlIndexTemplateRegistry(
-            Settings.EMPTY,
-            clusterService,
-            threadPool,
-            client,
-            true,
-            xContentRegistry
-        );
+        MlIndexTemplateRegistry registry = new MlIndexTemplateRegistry(Settings.EMPTY, clusterService, threadPool, client, true);
 
         registry.clusterChanged(createClusterChangedEvent(nodes));
 
@@ -109,14 +102,7 @@ public class MlIndexTemplateRegistryTests extends ESTestCase {
     }
 
     public void testStatsTemplateNoIlm() {
-        MlIndexTemplateRegistry registry = new MlIndexTemplateRegistry(
-            Settings.EMPTY,
-            clusterService,
-            threadPool,
-            client,
-            false,
-            xContentRegistry
-        );
+        MlIndexTemplateRegistry registry = new MlIndexTemplateRegistry(Settings.EMPTY, clusterService, threadPool, client, false);
 
         registry.clusterChanged(createClusterChangedEvent(nodes));
 

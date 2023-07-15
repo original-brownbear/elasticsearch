@@ -13,7 +13,6 @@ import org.elasticsearch.cluster.metadata.ComposableIndexTemplate;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.threadpool.ThreadPool;
-import org.elasticsearch.xcontent.NamedXContentRegistry;
 import org.elasticsearch.xcontent.XContentParserConfiguration;
 import org.elasticsearch.xcontent.json.JsonXContent;
 import org.elasticsearch.xpack.core.ilm.LifecyclePolicy;
@@ -43,14 +42,8 @@ public class DeprecationIndexingTemplateRegistry extends IndexTemplateRegistry {
     public static final String DEPRECATION_INDEXING_TEMPLATE_NAME = ".deprecation-indexing-template";
     public static final String DEPRECATION_INDEXING_POLICY_NAME = ".deprecation-indexing-ilm-policy";
 
-    public DeprecationIndexingTemplateRegistry(
-        Settings nodeSettings,
-        ClusterService clusterService,
-        ThreadPool threadPool,
-        Client client,
-        NamedXContentRegistry xContentRegistry
-    ) {
-        super(nodeSettings, clusterService, threadPool, client, xContentRegistry);
+    public DeprecationIndexingTemplateRegistry(Settings nodeSettings, ClusterService clusterService, ThreadPool threadPool, Client client) {
+        super(nodeSettings, clusterService, threadPool, client);
     }
 
     private static final Map<String, ComponentTemplate> COMPONENT_TEMPLATE_CONFIGS;

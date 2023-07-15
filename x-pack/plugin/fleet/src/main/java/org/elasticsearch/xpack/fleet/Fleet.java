@@ -97,13 +97,7 @@ public class Fleet extends Plugin implements SystemIndexPlugin {
         AllocationService allocationService,
         IndicesService indicesService
     ) {
-        FleetTemplateRegistry registry = new FleetTemplateRegistry(
-            environment.settings(),
-            clusterService,
-            threadPool,
-            client,
-            xContentRegistry
-        );
+        FleetTemplateRegistry registry = new FleetTemplateRegistry(environment.settings(), clusterService, threadPool, client);
         registry.initialize();
         return List.of();
     }

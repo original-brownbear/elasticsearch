@@ -82,7 +82,7 @@ public class StackTemplateRegistryTests extends ESTestCase {
         threadPool = new TestThreadPool(this.getClass().getName());
         client = new VerifyingClient(threadPool);
         clusterService = ClusterServiceUtils.createClusterService(threadPool);
-        registry = new StackTemplateRegistry(Settings.EMPTY, clusterService, threadPool, client, NamedXContentRegistry.EMPTY);
+        registry = new StackTemplateRegistry(Settings.EMPTY, clusterService, threadPool, client);
     }
 
     @After
@@ -94,13 +94,7 @@ public class StackTemplateRegistryTests extends ESTestCase {
 
     public void testDisabledDoesNotAddTemplates() {
         Settings settings = Settings.builder().put(StackTemplateRegistry.STACK_TEMPLATES_ENABLED.getKey(), false).build();
-        StackTemplateRegistry disabledRegistry = new StackTemplateRegistry(
-            settings,
-            clusterService,
-            threadPool,
-            client,
-            NamedXContentRegistry.EMPTY
-        );
+        StackTemplateRegistry disabledRegistry = new StackTemplateRegistry(settings, clusterService, threadPool, client);
         assertThat(disabledRegistry.getComponentTemplateConfigs(), anEmptyMap());
         assertThat(disabledRegistry.getComposableTemplateConfigs(), anEmptyMap());
         assertThat(disabledRegistry.getPolicyConfigs(), hasSize(0));
@@ -323,8 +317,7 @@ public class StackTemplateRegistryTests extends ESTestCase {
             Settings.EMPTY,
             clusterService,
             threadPool,
-            client,
-            NamedXContentRegistry.EMPTY
+            client
         );
 
         DiscoveryNode node = DiscoveryNodeUtils.create("node");

@@ -17,8 +17,8 @@ import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.xcontent.ParseField;
 import org.elasticsearch.xcontent.ToXContentObject;
 import org.elasticsearch.xcontent.XContentBuilder;
-import org.elasticsearch.xpack.core.XPackFeatureSet;
 import org.elasticsearch.xpack.core.XPackField;
+import org.elasticsearch.xpack.core.XpackFeatureSetUsage;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public class IndexLifecycleFeatureSetUsage extends XPackFeatureSet.Usage {
+public class IndexLifecycleFeatureSetUsage extends XpackFeatureSetUsage {
 
     private List<PolicyStats> policyStats;
 
