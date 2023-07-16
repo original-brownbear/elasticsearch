@@ -76,6 +76,10 @@ public class TransportShardBulkAction extends TransportWriteAction<BulkShardRequ
     public static final String ACTION_NAME = BulkAction.NAME + "[s]";
     public static final ActionType<BulkShardResponse> TYPE = new ActionType<>(ACTION_NAME, BulkShardResponse::new);
 
+    private static final TransportRequestOptions TRANSPORT_REQUEST_OPTIONS = TransportRequestOptions.of(
+        null,
+        TransportRequestOptions.Type.BULK
+    );
     private static final Logger logger = LogManager.getLogger(TransportShardBulkAction.class);
 
     private final UpdateHelper updateHelper;
@@ -119,7 +123,7 @@ public class TransportShardBulkAction extends TransportWriteAction<BulkShardRequ
 
     @Override
     protected TransportRequestOptions transportOptions() {
-        return BulkAction.INSTANCE.transportOptions();
+        return TRANSPORT_REQUEST_OPTIONS;
     }
 
     @Override

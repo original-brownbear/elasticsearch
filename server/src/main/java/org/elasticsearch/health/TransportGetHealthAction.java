@@ -19,7 +19,6 @@ import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.xcontent.ChunkedToXContent;
 import org.elasticsearch.core.Nullable;
@@ -39,13 +38,48 @@ import java.util.Objects;
 
 import static org.elasticsearch.action.ValidateActions.addValidationError;
 
-public class GetHealthAction extends ActionType<GetHealthAction.Response> {
+public class TransportGetHealthAction extends org.elasticsearch.action.support.TransportAction<
+    TransportGetHealthAction.Request,
+    TransportGetHealthAction.Response> {
 
-    public static final GetHealthAction INSTANCE = new GetHealthAction();
-    public static final String NAME = "cluster:monitor/health_api";
+    public static final ActionType<Response> ACTION = new ActionType<>("cluster:monitor/health_api", in -> {
+        throw new AssertionError("GetHealthAction should not be sent over the wire.");
+    });
+    private final ClusterService clusterService;
+    private final HealthService healthService;
+    private final NodeClient client;
+    private final HealthApiStats healthApiStats;
 
-    private GetHealthAction() {
-        super(NAME, GetHealthAction.Response::new);
+    @Inject
+    public TransportGetHealthAction(
+        ActionFilters actionFilters,
+        TransportService transportService,
+        ClusterService clusterService,
+        HealthService healthService,
+        NodeClient client,
+        HealthApiStats healthApiStats
+    ) {
+        super(ACTION.name(), actionFilters, transportService.getTaskManager());
+        this.clusterService = clusterService;
+        this.healthService = healthService;
+        this.client = client;
+        this.healthApiStats = healthApiStats;
+    }
+
+    @Override
+    protected void doExecute(Task task, Request request, ActionListener<Response> responseListener) {
+        assert task instanceof CancellableTask;
+        healthService.getHealth(
+            client,
+            request.indicatorName,
+            request.verbose,
+            request.size,
+            responseListener.map(healthIndicatorResults -> {
+                Response response = new Response(clusterService.getClusterName(), healthIndicatorResults, request.indicatorName == null);
+                healthApiStats.track(request.verbose, response);
+                return response;
+            })
+        );
     }
 
     public static class Response extends ActionResponse implements ChunkedToXContent {
@@ -54,10 +88,6 @@ public class GetHealthAction extends ActionType<GetHealthAction.Response> {
         @Nullable
         private final HealthStatus status;
         private final List<HealthIndicatorResult> indicators;
-
-        public Response(StreamInput in) {
-            throw new AssertionError("GetHealthAction should not be sent over the wire.");
-        }
 
         public Response(final ClusterName clusterName, final List<HealthIndicatorResult> indicators, boolean showTopLevelStatus) {
             this.indicators = indicators;
@@ -172,50 +202,6 @@ public class GetHealthAction extends ActionType<GetHealthAction.Response> {
         @Override
         public Task createTask(long id, String type, String action, TaskId parentTaskId, Map<String, String> headers) {
             return new CancellableTask(id, type, action, "", parentTaskId, headers);
-        }
-    }
-
-    public static class TransportAction extends org.elasticsearch.action.support.TransportAction<Request, Response> {
-
-        private final ClusterService clusterService;
-        private final HealthService healthService;
-        private final NodeClient client;
-        private final HealthApiStats healthApiStats;
-
-        @Inject
-        public TransportAction(
-            ActionFilters actionFilters,
-            TransportService transportService,
-            ClusterService clusterService,
-            HealthService healthService,
-            NodeClient client,
-            HealthApiStats healthApiStats
-        ) {
-            super(NAME, actionFilters, transportService.getTaskManager());
-            this.clusterService = clusterService;
-            this.healthService = healthService;
-            this.client = client;
-            this.healthApiStats = healthApiStats;
-        }
-
-        @Override
-        protected void doExecute(Task task, Request request, ActionListener<Response> responseListener) {
-            assert task instanceof CancellableTask;
-            healthService.getHealth(
-                client,
-                request.indicatorName,
-                request.verbose,
-                request.size,
-                responseListener.map(healthIndicatorResults -> {
-                    Response response = new Response(
-                        clusterService.getClusterName(),
-                        healthIndicatorResults,
-                        request.indicatorName == null
-                    );
-                    healthApiStats.track(request.verbose, response);
-                    return response;
-                })
-            );
         }
     }
 }

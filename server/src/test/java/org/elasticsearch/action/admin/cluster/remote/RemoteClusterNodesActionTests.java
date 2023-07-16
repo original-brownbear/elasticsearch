@@ -12,9 +12,9 @@ import org.elasticsearch.TransportVersion;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListenerResponseHandler;
 import org.elasticsearch.action.admin.cluster.node.info.NodeInfo;
-import org.elasticsearch.action.admin.cluster.node.info.NodesInfoAction;
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoRequest;
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
+import org.elasticsearch.action.admin.cluster.node.info.TransportNodesInfoAction;
 import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.cluster.ClusterName;
@@ -114,15 +114,13 @@ public class RemoteClusterNodesActionTests extends ESTestCase {
             final ActionListenerResponseHandler<NodesInfoResponse> handler = invocation.getArgument(3);
             handler.handleResponse(nodesInfoResponse);
             return null;
-        }).when(transportService).sendRequest(eq(localNode), eq(NodesInfoAction.NAME), any(NodesInfoRequest.class), any());
+        }).when(transportService)
+            .sendRequest(eq(localNode), eq(TransportNodesInfoAction.ACTION.name()), any(NodesInfoRequest.class), any());
 
-        final RemoteClusterNodesAction.TransportAction action = new RemoteClusterNodesAction.TransportAction(
-            transportService,
-            mock(ActionFilters.class)
-        );
+        final TransportRemoteClusterNodesAction action = new TransportRemoteClusterNodesAction(transportService, mock(ActionFilters.class));
 
-        final PlainActionFuture<RemoteClusterNodesAction.Response> future = new PlainActionFuture<>();
-        action.doExecute(mock(Task.class), RemoteClusterNodesAction.Request.INSTANCE, future);
+        final PlainActionFuture<TransportRemoteClusterNodesAction.Response> future = new PlainActionFuture<>();
+        action.doExecute(mock(Task.class), TransportRemoteClusterNodesAction.Request.INSTANCE, future);
 
         final List<DiscoveryNode> actualNodes = future.actionGet().getNodes();
         assertThat(Set.copyOf(actualNodes), equalTo(expectedRemoteServerNodes));

@@ -9,8 +9,11 @@
 package org.elasticsearch.action.admin.cluster.desirednodes;
 
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.action.ActionResponse;
+import org.elasticsearch.action.ActionType;
 import org.elasticsearch.action.support.ActionFilters;
+import org.elasticsearch.action.support.master.AcknowledgedRequest;
 import org.elasticsearch.action.support.master.TransportMasterNodeAction;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.ClusterStateTaskListener;
@@ -23,13 +26,19 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.cluster.service.MasterServiceTaskQueue;
 import org.elasticsearch.common.Priority;
 import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
 
-public class TransportDeleteDesiredNodesAction extends TransportMasterNodeAction<DeleteDesiredNodesAction.Request, ActionResponse.Empty> {
+import java.io.IOException;
 
+public class TransportDeleteDesiredNodesAction extends TransportMasterNodeAction<
+    TransportDeleteDesiredNodesAction.Request,
+    ActionResponse.Empty> {
+
+    public static final ActionType<ActionResponse.Empty> ACTION = ActionType.empty("cluster:admin/desired_nodes/delete");
     private final MasterServiceTaskQueue<DeleteDesiredNodesTask> taskQueue;
 
     @Inject
@@ -41,31 +50,27 @@ public class TransportDeleteDesiredNodesAction extends TransportMasterNodeAction
         IndexNameExpressionResolver indexNameExpressionResolver
     ) {
         super(
-            DeleteDesiredNodesAction.NAME,
+            ACTION.name(),
             transportService,
             clusterService,
             threadPool,
             actionFilters,
-            DeleteDesiredNodesAction.Request::new,
+            Request::new,
             indexNameExpressionResolver,
-            in -> ActionResponse.Empty.INSTANCE,
+            ACTION.getResponseReader(),
             ThreadPool.Names.SAME
         );
         this.taskQueue = clusterService.createTaskQueue("delete-desired-nodes", Priority.HIGH, new DeleteDesiredNodesExecutor());
     }
 
     @Override
-    protected void masterOperation(
-        Task task,
-        DeleteDesiredNodesAction.Request request,
-        ClusterState state,
-        ActionListener<ActionResponse.Empty> listener
-    ) throws Exception {
+    protected void masterOperation(Task task, Request request, ClusterState state, ActionListener<ActionResponse.Empty> listener)
+        throws Exception {
         taskQueue.submitTask("delete-desired-nodes", new DeleteDesiredNodesTask(listener), request.masterNodeTimeout());
     }
 
     @Override
-    protected ClusterBlockException checkBlock(DeleteDesiredNodesAction.Request request, ClusterState state) {
+    protected ClusterBlockException checkBlock(Request request, ClusterState state) {
         return state.blocks().globalBlockedException(ClusterBlockLevel.METADATA_WRITE);
     }
 
@@ -92,4 +97,18 @@ public class TransportDeleteDesiredNodesAction extends TransportMasterNodeAction
             return clusterState.copyAndUpdateMetadata(metadata -> metadata.removeCustom(DesiredNodesMetadata.TYPE));
         }
     }
+
+    public static class Request extends AcknowledgedRequest<Request> {
+        public Request() {}
+
+        public Request(StreamInput in) throws IOException {
+            super(in);
+        }
+
+        @Override
+        public ActionRequestValidationException validate() {
+            return null;
+        }
+    }
+
 }

@@ -11,7 +11,6 @@ package org.elasticsearch.health;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.xcontent.XContentHelper;
-import org.elasticsearch.health.GetHealthAction.Response;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentFactory;
@@ -32,7 +31,7 @@ public class GetHealthResponseTests extends ESTestCase {
         List<HealthIndicatorResult> indicatorResults = new ArrayList<>(2);
         indicatorResults.add(createRandomIndicatorResult());
         indicatorResults.add(createRandomIndicatorResult());
-        Response response = new Response(ClusterName.DEFAULT, indicatorResults, true);
+        var response = new TransportGetHealthAction.Response(ClusterName.DEFAULT, indicatorResults, true);
 
         XContentBuilder builder = XContentFactory.jsonBuilder().prettyPrint();
         response.toXContentChunked(EMPTY_PARAMS).forEachRemaining(xcontent -> {

@@ -44,9 +44,9 @@ public class RestGetHealthAction extends BaseRestHandler {
         String indicatorName = request.param("indicator");
         boolean verbose = request.paramAsBoolean(VERBOSE_PARAM, true);
         int size = request.paramAsInt(SIZE_PARAM, 1000);
-        GetHealthAction.Request getHealthRequest = new GetHealthAction.Request(indicatorName, verbose, size);
+        TransportGetHealthAction.Request getHealthRequest = new TransportGetHealthAction.Request(indicatorName, verbose, size);
         return channel -> new RestCancellableNodeClient(client, request.getHttpChannel()).execute(
-            GetHealthAction.INSTANCE,
+            TransportGetHealthAction.ACTION,
             getHealthRequest,
             new RestChunkedToXContentListener<>(channel)
         );

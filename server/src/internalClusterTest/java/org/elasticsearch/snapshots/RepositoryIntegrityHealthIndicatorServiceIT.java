@@ -10,8 +10,8 @@ package org.elasticsearch.snapshots;
 
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.health.GetHealthAction;
 import org.elasticsearch.health.HealthStatus;
+import org.elasticsearch.health.TransportGetHealthAction;
 import org.elasticsearch.repositories.RepositoryData;
 import org.elasticsearch.repositories.RepositoryException;
 import org.elasticsearch.repositories.blobstore.BlobStoreRepository;
@@ -67,7 +67,8 @@ public class RepositoryIntegrityHealthIndicatorServiceIT extends AbstractSnapsho
     }
 
     private void assertSnapshotRepositoryHealth(String message, Client client, HealthStatus status) {
-        var response = client.execute(GetHealthAction.INSTANCE, new GetHealthAction.Request(randomBoolean(), 1000)).actionGet();
+        var response = client.execute(TransportGetHealthAction.ACTION, new TransportGetHealthAction.Request(randomBoolean(), 1000))
+            .actionGet();
         assertThat(message, response.findIndicator(NAME).status(), equalTo(status));
     }
 

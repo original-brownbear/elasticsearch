@@ -9,7 +9,7 @@ package org.elasticsearch.transport;
 
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionListenerResponseHandler;
-import org.elasticsearch.action.admin.cluster.remote.RemoteClusterNodesAction;
+import org.elasticsearch.action.admin.cluster.remote.TransportRemoteClusterNodesAction;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateAction;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
@@ -124,15 +124,15 @@ final class RemoteClusterConnection implements Closeable {
                 if (REMOTE_CLUSTER_PROFILE.equals(remoteConnectionManager.getConnectionProfile().getTransportProfile())) {
                     transportService.sendRequest(
                         connection,
-                        RemoteClusterNodesAction.NAME,
-                        RemoteClusterNodesAction.Request.INSTANCE,
+                        TransportRemoteClusterNodesAction.ACTION.name(),
+                        TransportRemoteClusterNodesAction.Request.INSTANCE,
                         TransportRequestOptions.EMPTY,
                         new ActionListenerResponseHandler<>(contextPreservingActionListener.map(response -> {
                             final Map<String, DiscoveryNode> nodeLookup = response.getNodes()
                                 .stream()
                                 .collect(Collectors.toUnmodifiableMap(DiscoveryNode::getId, Function.identity()));
                             return nodeLookup::get;
-                        }), RemoteClusterNodesAction.Response::new)
+                        }), TransportRemoteClusterNodesAction.ACTION.getResponseReader())
                     );
                 } else {
                     final ClusterStateRequest request = new ClusterStateRequest();

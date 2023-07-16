@@ -121,7 +121,7 @@ public class TransportClearVotingConfigExclusionsActionTests extends ESTestCase 
         clearVotingConfigExclusionsRequest.setWaitForRemoval(false);
         transportService.sendRequest(
             localNode,
-            ClearVotingConfigExclusionsAction.NAME,
+            TransportClearVotingConfigExclusionsAction.ACTION.name(),
             clearVotingConfigExclusionsRequest,
             expectSuccess(r -> {
                 responseHolder.set(r);
@@ -142,7 +142,7 @@ public class TransportClearVotingConfigExclusionsActionTests extends ESTestCase 
         clearVotingConfigExclusionsRequest.setTimeout(TimeValue.timeValueMillis(100));
         transportService.sendRequest(
             localNode,
-            ClearVotingConfigExclusionsAction.NAME,
+            TransportClearVotingConfigExclusionsAction.ACTION.name(),
             clearVotingConfigExclusionsRequest,
             expectError(e -> {
                 responseHolder.set(e);
@@ -169,7 +169,7 @@ public class TransportClearVotingConfigExclusionsActionTests extends ESTestCase 
 
         transportService.sendRequest(
             localNode,
-            ClearVotingConfigExclusionsAction.NAME,
+            TransportClearVotingConfigExclusionsAction.ACTION.name(),
             new ClearVotingConfigExclusionsRequest(),
             expectSuccess(r -> {
                 responseHolder.set(r);

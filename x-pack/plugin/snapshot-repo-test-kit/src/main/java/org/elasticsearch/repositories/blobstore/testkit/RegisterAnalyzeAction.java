@@ -45,16 +45,14 @@ import java.util.concurrent.ExecutorService;
 /**
  * An action which atomically increments a register using {@link BlobContainer#compareAndExchangeRegister}.
  */
-public class RegisterAnalyzeAction extends ActionType<ActionResponse.Empty> {
+public class RegisterAnalyzeAction {
 
     private static final Logger logger = LogManager.getLogger(RegisterAnalyzeAction.class);
 
-    public static final RegisterAnalyzeAction INSTANCE = new RegisterAnalyzeAction();
     public static final String NAME = "cluster:admin/repository/analyze/register";
+    public static final ActionType<ActionResponse.Empty> INSTANCE = ActionType.empty(NAME);
 
-    private RegisterAnalyzeAction() {
-        super(NAME, in -> ActionResponse.Empty.INSTANCE);
-    }
+    private RegisterAnalyzeAction() {}
 
     public static class TransportAction extends HandledTransportAction<Request, ActionResponse.Empty> {
 

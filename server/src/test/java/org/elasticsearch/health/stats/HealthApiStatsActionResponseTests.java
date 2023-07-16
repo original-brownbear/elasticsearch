@@ -21,23 +21,29 @@ public class HealthApiStatsActionResponseTests extends ESTestCase {
 
     public void testMerging() {
 
-        HealthApiStatsAction.Response.Node nodeResponse1 = new HealthApiStatsAction.Response.Node(DiscoveryNodeUtils.create("remote_node"));
+        HealthApiStatsTransportAction.Response.Node nodeResponse1 = new HealthApiStatsTransportAction.Response.Node(
+            DiscoveryNodeUtils.create("remote_node")
+        );
         {
             Counters counters = new Counters();
             counters.inc("merged.metric", randomIntBetween(1, 10));
             counters.inc("only.one.metric", randomIntBetween(1, 10));
             nodeResponse1.setStats(counters);
         }
-        HealthApiStatsAction.Response.Node nodeResponse2 = new HealthApiStatsAction.Response.Node(DiscoveryNodeUtils.create("remote_node"));
+        HealthApiStatsTransportAction.Response.Node nodeResponse2 = new HealthApiStatsTransportAction.Response.Node(
+            DiscoveryNodeUtils.create("remote_node")
+        );
 
-        HealthApiStatsAction.Response.Node nodeResponse3 = new HealthApiStatsAction.Response.Node(DiscoveryNodeUtils.create("remote_node"));
+        HealthApiStatsTransportAction.Response.Node nodeResponse3 = new HealthApiStatsTransportAction.Response.Node(
+            DiscoveryNodeUtils.create("remote_node")
+        );
         {
             Counters counters = new Counters();
             counters.inc("merged.metric", randomIntBetween(1, 10));
             counters.inc("only.third.metric", randomIntBetween(1, 10));
             nodeResponse3.setStats(counters);
         }
-        HealthApiStatsAction.Response response = new HealthApiStatsAction.Response(
+        HealthApiStatsTransportAction.Response response = new HealthApiStatsTransportAction.Response(
             ClusterName.DEFAULT,
             List.of(nodeResponse1, nodeResponse2, nodeResponse3),
             List.of()

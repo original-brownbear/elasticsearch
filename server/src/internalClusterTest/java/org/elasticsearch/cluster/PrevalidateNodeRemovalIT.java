@@ -10,9 +10,9 @@ package org.elasticsearch.cluster;
 
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.cluster.node.shutdown.NodesRemovalPrevalidation;
-import org.elasticsearch.action.admin.cluster.node.shutdown.PrevalidateNodeRemovalAction;
 import org.elasticsearch.action.admin.cluster.node.shutdown.PrevalidateNodeRemovalRequest;
 import org.elasticsearch.action.admin.cluster.node.shutdown.PrevalidateNodeRemovalResponse;
+import org.elasticsearch.action.admin.cluster.node.shutdown.TransportPrevalidateNodeRemovalAction;
 import org.elasticsearch.action.admin.cluster.node.shutdown.TransportPrevalidateShardPathAction;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
@@ -63,7 +63,7 @@ public class PrevalidateNodeRemovalIT extends ESIntegTestCase {
             case 2 -> req.setExternalIds(internalCluster().clusterService(nodeName).localNode().getExternalId());
             default -> throw new IllegalStateException("Unexpected value");
         }
-        PrevalidateNodeRemovalResponse resp = client().execute(PrevalidateNodeRemovalAction.INSTANCE, req.build()).get();
+        PrevalidateNodeRemovalResponse resp = client().execute(TransportPrevalidateNodeRemovalAction.ACTION, req.build()).get();
         assertTrue(resp.getPrevalidation().isSafe());
         assertThat(resp.getPrevalidation().message(), equalTo("cluster status is not RED"));
         assertThat(resp.getPrevalidation().nodes().size(), equalTo(1));
@@ -77,7 +77,7 @@ public class PrevalidateNodeRemovalIT extends ESIntegTestCase {
         updateIndexSettings(Settings.builder().put("index.routing.allocation.require._name", node1), indexName);
         ensureYellow();
         PrevalidateNodeRemovalRequest req2 = PrevalidateNodeRemovalRequest.builder().setNames(node2).build();
-        PrevalidateNodeRemovalResponse resp2 = client().execute(PrevalidateNodeRemovalAction.INSTANCE, req2).get();
+        PrevalidateNodeRemovalResponse resp2 = client().execute(TransportPrevalidateNodeRemovalAction.ACTION, req2).get();
         assertTrue(resp2.getPrevalidation().isSafe());
         assertThat(resp2.getPrevalidation().message(), equalTo("cluster status is not RED"));
         assertThat(resp2.getPrevalidation().nodes().size(), equalTo(1));
@@ -109,7 +109,7 @@ public class PrevalidateNodeRemovalIT extends ESIntegTestCase {
         ensureRed(indexName);
         String[] otherNodeNames = otherNodes.toArray(new String[otherNodes.size()]);
         PrevalidateNodeRemovalRequest req = PrevalidateNodeRemovalRequest.builder().setNames(otherNodeNames).build();
-        PrevalidateNodeRemovalResponse resp = client().execute(PrevalidateNodeRemovalAction.INSTANCE, req).get();
+        PrevalidateNodeRemovalResponse resp = client().execute(TransportPrevalidateNodeRemovalAction.ACTION, req).get();
         assertTrue(resp.getPrevalidation().isSafe());
         assertThat(resp.getPrevalidation().message(), equalTo(""));
         assertThat(resp.getPrevalidation().nodes().size(), equalTo(otherNodes.size()));
@@ -157,7 +157,7 @@ public class PrevalidateNodeRemovalIT extends ESIntegTestCase {
         assertNotNull("local index shards not found", shardPath);
         // Prevalidate removal of node1
         PrevalidateNodeRemovalRequest req = PrevalidateNodeRemovalRequest.builder().setNames(node1).build();
-        PrevalidateNodeRemovalResponse resp = client().execute(PrevalidateNodeRemovalAction.INSTANCE, req).get();
+        PrevalidateNodeRemovalResponse resp = client().execute(TransportPrevalidateNodeRemovalAction.ACTION, req).get();
         String node1Id = internalCluster().clusterService(node1).localNode().getId();
         assertFalse(resp.getPrevalidation().isSafe());
         assertThat(resp.getPrevalidation().message(), equalTo("removal of the following nodes might not be safe: [" + node1Id + "]"));
@@ -190,7 +190,7 @@ public class PrevalidateNodeRemovalIT extends ESIntegTestCase {
             .setNames(node2)
             .build()
             .timeout(TimeValue.timeValueSeconds(1));
-        PrevalidateNodeRemovalResponse resp = client().execute(PrevalidateNodeRemovalAction.INSTANCE, req).get();
+        PrevalidateNodeRemovalResponse resp = client().execute(TransportPrevalidateNodeRemovalAction.ACTION, req).get();
         assertFalse("prevalidation result should return false", resp.getPrevalidation().isSafe());
         String node2Id = internalCluster().clusterService(node2).localNode().getId();
         assertThat(

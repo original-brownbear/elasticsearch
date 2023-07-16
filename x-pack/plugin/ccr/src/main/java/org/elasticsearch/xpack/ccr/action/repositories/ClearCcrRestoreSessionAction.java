@@ -20,20 +20,16 @@ import org.elasticsearch.transport.TransportActionProxy;
 import org.elasticsearch.transport.TransportService;
 import org.elasticsearch.xpack.ccr.repository.CcrRestoreSourceService;
 
-public class ClearCcrRestoreSessionAction extends ActionType<ActionResponse.Empty> {
+public class ClearCcrRestoreSessionAction {
 
-    public static final ClearCcrRestoreSessionAction INTERNAL_INSTANCE = new ClearCcrRestoreSessionAction();
     public static final String INTERNAL_NAME = "internal:admin/ccr/restore/session/clear";
+    public static final ActionType<ActionResponse.Empty> INTERNAL_INSTANCE = ActionType.empty(INTERNAL_NAME);
+
     public static final String NAME = "indices:internal/admin/ccr/restore/session/clear";
-    public static final ClearCcrRestoreSessionAction INSTANCE = new ClearCcrRestoreSessionAction(NAME);
 
-    private ClearCcrRestoreSessionAction() {
-        this(INTERNAL_NAME);
-    }
+    public static final ActionType<ActionResponse.Empty> INSTANCE = ActionType.empty(NAME);
 
-    private ClearCcrRestoreSessionAction(String name) {
-        super(name, in -> ActionResponse.Empty.INSTANCE);
-    }
+    private ClearCcrRestoreSessionAction() {}
 
     abstract static class TransportDeleteCcrRestoreSessionAction extends HandledTransportAction<
         ClearCcrRestoreSessionRequest,
@@ -48,7 +44,7 @@ public class ClearCcrRestoreSessionAction extends ActionType<ActionResponse.Empt
             CcrRestoreSourceService ccrRestoreService
         ) {
             super(actionName, transportService, actionFilters, ClearCcrRestoreSessionRequest::new, ThreadPool.Names.GENERIC);
-            TransportActionProxy.registerProxyAction(transportService, actionName, false, in -> ActionResponse.Empty.INSTANCE);
+            TransportActionProxy.registerProxyAction(transportService, actionName, false, INSTANCE.getResponseReader());
             this.ccrRestoreService = ccrRestoreService;
         }
 

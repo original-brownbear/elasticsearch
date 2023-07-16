@@ -16,11 +16,11 @@ import org.elasticsearch.client.Response;
 import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.Releasables;
-import org.elasticsearch.health.GetHealthAction;
 import org.elasticsearch.health.HealthIndicatorResult;
 import org.elasticsearch.health.HealthIndicatorService;
 import org.elasticsearch.health.HealthStatus;
 import org.elasticsearch.health.SimpleHealthIndicatorDetails;
+import org.elasticsearch.health.TransportGetHealthAction;
 import org.elasticsearch.health.node.HealthInfo;
 import org.elasticsearch.plugins.HealthPlugin;
 import org.elasticsearch.plugins.Plugin;
@@ -70,7 +70,7 @@ public class HealthRestCancellationIT extends HttpSmokeTestCase {
             logger.info("--> sending request");
             final Cancellable cancellable = getRestClient().performRequestAsync(request, wrapAsRestResponseListener(future));
 
-            awaitTaskWithPrefix(GetHealthAction.NAME);
+            awaitTaskWithPrefix(TransportGetHealthAction.ACTION.name());
 
             logger.info("--> waiting for at least one task to hit a block");
             assertBusy(() -> assertTrue(blocks.stream().anyMatch(Semaphore::hasQueuedThreads)));
@@ -79,12 +79,12 @@ public class HealthRestCancellationIT extends HttpSmokeTestCase {
             cancellable.cancel();
             expectThrows(CancellationException.class, future::actionGet);
 
-            assertAllCancellableTasksAreCancelled(GetHealthAction.NAME);
+            assertAllCancellableTasksAreCancelled(TransportGetHealthAction.ACTION.name());
         } finally {
             Releasables.close(releasables);
         }
 
-        assertAllTasksHaveFinished(GetHealthAction.NAME);
+        assertAllTasksHaveFinished(TransportGetHealthAction.ACTION.name());
     }
 
     public static class BlockingHealthPlugin extends Plugin implements HealthPlugin {

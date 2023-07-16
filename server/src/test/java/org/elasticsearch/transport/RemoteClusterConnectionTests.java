@@ -11,7 +11,7 @@ import org.apache.lucene.search.TotalHits;
 import org.apache.lucene.store.AlreadyClosedException;
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.admin.cluster.remote.RemoteClusterNodesAction;
+import org.elasticsearch.action.admin.cluster.remote.TransportRemoteClusterNodesAction;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateAction;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
@@ -182,10 +182,10 @@ public class RemoteClusterConnectionTests extends ESTestCase {
             );
             if (RemoteClusterPortSettings.REMOTE_CLUSTER_SERVER_ENABLED.get(s)) {
                 newService.registerRequestHandler(
-                    RemoteClusterNodesAction.NAME,
+                    TransportRemoteClusterNodesAction.ACTION.name(),
                     ThreadPool.Names.SAME,
-                    RemoteClusterNodesAction.Request::new,
-                    (request, channel, task) -> channel.sendResponse(new RemoteClusterNodesAction.Response(knownNodes))
+                    TransportRemoteClusterNodesAction.Request::new,
+                    (request, channel, task) -> channel.sendResponse(new TransportRemoteClusterNodesAction.Response(knownNodes))
                 );
             }
             newService.start();
@@ -630,7 +630,13 @@ public class RemoteClusterConnectionTests extends ESTestCase {
                 service.acceptIncomingRequests();
                 service.addSendBehavior((connection, requestId, action, request, options) -> {
                     if (hasClusterCredentials) {
-                        assertThat(action, oneOf(RemoteClusterService.REMOTE_CLUSTER_HANDSHAKE_ACTION_NAME, RemoteClusterNodesAction.NAME));
+                        assertThat(
+                            action,
+                            oneOf(
+                                RemoteClusterService.REMOTE_CLUSTER_HANDSHAKE_ACTION_NAME,
+                                TransportRemoteClusterNodesAction.ACTION.name()
+                            )
+                        );
                     } else {
                         assertThat(action, oneOf(TransportService.HANDSHAKE_ACTION_NAME, ClusterStateAction.NAME));
                     }

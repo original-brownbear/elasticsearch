@@ -13,6 +13,7 @@ import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.FailedNodeException;
 import org.elasticsearch.action.TaskOperationFailure;
 import org.elasticsearch.action.admin.cluster.node.tasks.list.ListTasksResponse;
+import org.elasticsearch.action.admin.cluster.node.tasks.list.TransportListTasksAction;
 import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.tasks.TransportTasksAction;
 import org.elasticsearch.client.internal.Client;
@@ -44,7 +45,7 @@ public class TransportRethrottleAction extends TransportTasksAction<BulkByScroll
             transportService,
             actionFilters,
             RethrottleRequest::new,
-            ListTasksResponse::new,
+            TransportListTasksAction.ACTION.getResponseReader(),
             TaskInfo::from,
             ThreadPool.Names.MANAGEMENT
         );

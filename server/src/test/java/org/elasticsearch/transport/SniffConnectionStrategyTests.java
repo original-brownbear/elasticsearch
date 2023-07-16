@@ -10,7 +10,7 @@ package org.elasticsearch.transport;
 
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.Version;
-import org.elasticsearch.action.admin.cluster.remote.RemoteClusterNodesAction;
+import org.elasticsearch.action.admin.cluster.remote.TransportRemoteClusterNodesAction;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateAction;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
@@ -132,10 +132,10 @@ public class SniffConnectionStrategyTests extends ESTestCase {
             );
             if (hasClusterCredentials) {
                 newService.registerRequestHandler(
-                    RemoteClusterNodesAction.NAME,
+                    TransportRemoteClusterNodesAction.ACTION.name(),
                     ThreadPool.Names.SAME,
-                    RemoteClusterNodesAction.Request::new,
-                    (request, channel, task) -> channel.sendResponse(new RemoteClusterNodesAction.Response(knownNodes))
+                    TransportRemoteClusterNodesAction.Request::new,
+                    (request, channel, task) -> channel.sendResponse(new TransportRemoteClusterNodesAction.Response(knownNodes))
                 );
             }
             newService.start();
@@ -1186,7 +1186,10 @@ public class SniffConnectionStrategyTests extends ESTestCase {
     private void addSendBehaviour(MockTransportService transportService) {
         transportService.addSendBehavior((connection, requestId, action, request, options) -> {
             if (hasClusterCredentials) {
-                assertThat(action, oneOf(RemoteClusterService.REMOTE_CLUSTER_HANDSHAKE_ACTION_NAME, RemoteClusterNodesAction.NAME));
+                assertThat(
+                    action,
+                    oneOf(RemoteClusterService.REMOTE_CLUSTER_HANDSHAKE_ACTION_NAME, TransportRemoteClusterNodesAction.ACTION.name())
+                );
             } else {
                 assertThat(action, oneOf(TransportService.HANDSHAKE_ACTION_NAME, ClusterStateAction.NAME));
             }

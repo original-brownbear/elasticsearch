@@ -9,9 +9,9 @@ package org.elasticsearch.xpack.searchablesnapshots;
 
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.cluster.node.shutdown.NodesRemovalPrevalidation;
-import org.elasticsearch.action.admin.cluster.node.shutdown.PrevalidateNodeRemovalAction;
 import org.elasticsearch.action.admin.cluster.node.shutdown.PrevalidateNodeRemovalRequest;
 import org.elasticsearch.action.admin.cluster.node.shutdown.PrevalidateNodeRemovalResponse;
+import org.elasticsearch.action.admin.cluster.node.shutdown.TransportPrevalidateNodeRemovalAction;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.common.Priority;
 import org.elasticsearch.common.settings.Settings;
@@ -67,7 +67,7 @@ public class PrevalidateNodeRemovalWithSearchableSnapshotIntegTests extends Base
             case 2 -> req.setExternalIds(internalCluster().clusterService(node2).localNode().getExternalId());
             default -> throw new IllegalStateException("Unexpected value");
         }
-        PrevalidateNodeRemovalResponse resp = client().execute(PrevalidateNodeRemovalAction.INSTANCE, req.build()).get();
+        PrevalidateNodeRemovalResponse resp = client().execute(TransportPrevalidateNodeRemovalAction.ACTION, req.build()).get();
         assertTrue(resp.getPrevalidation().isSafe());
         assertThat(resp.getPrevalidation().message(), equalTo("all red indices are searchable snapshot indices"));
         assertThat(resp.getPrevalidation().nodes().size(), equalTo(1));

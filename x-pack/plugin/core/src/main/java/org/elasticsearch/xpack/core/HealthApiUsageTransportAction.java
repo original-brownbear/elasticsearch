@@ -15,7 +15,7 @@ import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.health.stats.HealthApiStatsAction;
+import org.elasticsearch.health.stats.HealthApiStatsTransportAction;
 import org.elasticsearch.protocol.xpack.XPackUsageRequest;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -64,9 +64,9 @@ public class HealthApiUsageTransportAction extends XPackUsageFeatureTransportAct
         );
 
         if (state.nodesIfRecovered().getMinNodeVersion().onOrAfter(Version.V_8_7_0)) {
-            HealthApiStatsAction.Request statsRequest = new HealthApiStatsAction.Request();
+            HealthApiStatsTransportAction.Request statsRequest = new HealthApiStatsTransportAction.Request();
             statsRequest.setParentTask(clusterService.localNode().getId(), task.getId());
-            client.execute(HealthApiStatsAction.INSTANCE, statsRequest, preservingListener.delegateFailureAndWrap((l, r) -> {
+            client.execute(HealthApiStatsTransportAction.ACTION, statsRequest, preservingListener.delegateFailureAndWrap((l, r) -> {
                 HealthApiFeatureSetUsage usage = new HealthApiFeatureSetUsage(true, true, r.getStats());
                 l.onResponse(new XPackUsageFeatureResponse(usage));
             }));

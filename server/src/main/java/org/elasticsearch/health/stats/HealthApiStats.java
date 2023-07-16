@@ -11,9 +11,9 @@ package org.elasticsearch.health.stats;
 import org.elasticsearch.common.metrics.Counters;
 import org.elasticsearch.core.Strings;
 import org.elasticsearch.health.Diagnosis;
-import org.elasticsearch.health.GetHealthAction;
 import org.elasticsearch.health.HealthIndicatorResult;
 import org.elasticsearch.health.HealthStatus;
+import org.elasticsearch.health.TransportGetHealthAction;
 
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -43,7 +43,7 @@ public class HealthApiStats {
 
     public HealthApiStats() {}
 
-    public void track(boolean verbose, GetHealthAction.Response response) {
+    public void track(boolean verbose, TransportGetHealthAction.Response response) {
         stats.inc(TOTAL_INVOCATIONS);
         if (verbose) {
             stats.inc(VERBOSE_TRUE);

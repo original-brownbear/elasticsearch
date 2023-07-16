@@ -13,6 +13,7 @@ import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.ResourceNotFoundException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionListenerResponseHandler;
+import org.elasticsearch.action.ActionType;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.support.ActionFilters;
@@ -43,7 +44,6 @@ import org.elasticsearch.xcontent.XContentParser;
 import java.io.IOException;
 
 import static java.util.Objects.requireNonNullElse;
-import static org.elasticsearch.action.admin.cluster.node.tasks.get.GetTaskAction.TASKS_ORIGIN;
 import static org.elasticsearch.core.TimeValue.timeValueSeconds;
 
 /**
@@ -58,6 +58,8 @@ import static org.elasticsearch.core.TimeValue.timeValueSeconds;
  */
 public class TransportGetTaskAction extends HandledTransportAction<GetTaskRequest, GetTaskResponse> {
 
+    public static final ActionType<GetTaskResponse> ACTION = new ActionType<>("cluster:monitor/task/get", GetTaskResponse::new);
+    public static final String TASKS_ORIGIN = "tasks";
     private static final TimeValue DEFAULT_WAIT_FOR_COMPLETION_TIMEOUT = timeValueSeconds(30);
 
     private final ThreadPool threadPool;
@@ -75,7 +77,7 @@ public class TransportGetTaskAction extends HandledTransportAction<GetTaskReques
         Client client,
         NamedXContentRegistry xContentRegistry
     ) {
-        super(GetTaskAction.NAME, transportService, actionFilters, GetTaskRequest::new);
+        super(ACTION.name(), transportService, actionFilters, GetTaskRequest::new);
         this.threadPool = threadPool;
         this.clusterService = clusterService;
         this.transportService = transportService;
@@ -119,10 +121,10 @@ public class TransportGetTaskAction extends HandledTransportAction<GetTaskReques
         GetTaskRequest nodeRequest = request.nodeRequest(clusterService.localNode().getId(), thisTask.getId());
         transportService.sendRequest(
             node,
-            GetTaskAction.NAME,
+            ACTION.name(),
             nodeRequest,
             TransportRequestOptions.timeout(request.getTimeout()),
-            new ActionListenerResponseHandler<>(listener, GetTaskResponse::new, ThreadPool.Names.SAME)
+            new ActionListenerResponseHandler<>(listener, ACTION.getResponseReader(), ThreadPool.Names.SAME)
         );
     }
 

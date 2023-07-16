@@ -108,14 +108,10 @@ public class RetentionLeaseActions {
 
     }
 
-    public static class Add extends ActionType<ActionResponse.Empty> {
+    public static class Add {
 
-        public static final Add INSTANCE = new Add();
         public static final String ACTION_NAME = "indices:admin/seq_no/add_retention_lease";
-
-        private Add() {
-            super(ACTION_NAME, in -> ActionResponse.Empty.INSTANCE);
-        }
+        public static final ActionType<ActionResponse.Empty> INSTANCE = ActionType.empty(ACTION_NAME);
 
         public static class TransportAction extends TransportRetentionLeaseAction<AddRequest> {
 
@@ -156,14 +152,10 @@ public class RetentionLeaseActions {
         }
     }
 
-    public static class Renew extends ActionType<ActionResponse.Empty> {
+    public static class Renew {
 
-        public static final Renew INSTANCE = new Renew();
         public static final String ACTION_NAME = "indices:admin/seq_no/renew_retention_lease";
-
-        private Renew() {
-            super(ACTION_NAME, in -> ActionResponse.Empty.INSTANCE);
-        }
+        public static final ActionType<ActionResponse.Empty> INSTANCE = ActionType.empty(ACTION_NAME);
 
         public static class TransportAction extends TransportRetentionLeaseAction<RenewRequest> {
 
@@ -201,14 +193,10 @@ public class RetentionLeaseActions {
         }
     }
 
-    public static class Remove extends ActionType<ActionResponse.Empty> {
+    public static class Remove {
 
-        public static final Remove INSTANCE = new Remove();
         public static final String ACTION_NAME = "indices:admin/seq_no/remove_retention_lease";
-
-        private Remove() {
-            super(ACTION_NAME, in -> ActionResponse.Empty.INSTANCE);
-        }
+        public static final ActionType<ActionResponse.Empty> INSTANCE = ActionType.empty(ACTION_NAME);
 
         public static class TransportAction extends TransportRetentionLeaseAction<RemoveRequest> {
 

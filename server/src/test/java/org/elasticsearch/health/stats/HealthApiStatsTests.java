@@ -10,9 +10,9 @@ package org.elasticsearch.health.stats;
 
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.health.Diagnosis;
-import org.elasticsearch.health.GetHealthAction;
 import org.elasticsearch.health.HealthIndicatorResult;
 import org.elasticsearch.health.HealthStatus;
+import org.elasticsearch.health.TransportGetHealthAction;
 import org.elasticsearch.test.ESTestCase;
 
 import java.util.Arrays;
@@ -45,7 +45,7 @@ public class HealthApiStatsTests extends ESTestCase {
                 createHealthIndicatorResult("network_latency", GREEN),
                 createHealthIndicatorResult("shards_availability", GREEN)
             );
-            GetHealthAction.Response response = new GetHealthAction.Response(ClusterName.DEFAULT, indicators, true);
+            TransportGetHealthAction.Response response = new TransportGetHealthAction.Response(ClusterName.DEFAULT, indicators, true);
 
             healthApiStats.track(false, response);
             assertThat(healthApiStats.getStats().get("invocations.total"), equalTo(1L));
@@ -63,7 +63,7 @@ public class HealthApiStatsTests extends ESTestCase {
                 createHealthIndicatorResult("network_latency", GREEN),
                 createHealthIndicatorResult("shards_availability", YELLOW)
             );
-            GetHealthAction.Response response = new GetHealthAction.Response(ClusterName.DEFAULT, indicators, true);
+            TransportGetHealthAction.Response response = new TransportGetHealthAction.Response(ClusterName.DEFAULT, indicators, true);
 
             healthApiStats.track(true, response);
             assertThat(healthApiStats.getStats().get("invocations.total"), equalTo(2L));
@@ -82,7 +82,7 @@ public class HealthApiStatsTests extends ESTestCase {
                 createHealthIndicatorResult("disk", YELLOW, "add_disk_capacity_data_nodes"),
                 createHealthIndicatorResult("shards_availability", RED, "primary_unassigned")
             );
-            GetHealthAction.Response response = new GetHealthAction.Response(ClusterName.DEFAULT, indicators, true);
+            TransportGetHealthAction.Response response = new TransportGetHealthAction.Response(ClusterName.DEFAULT, indicators, true);
 
             healthApiStats.track(true, response);
             assertThat(healthApiStats.getStats().get("invocations.total"), equalTo(3L));
@@ -110,7 +110,7 @@ public class HealthApiStatsTests extends ESTestCase {
                 createHealthIndicatorResult("disk", RED, "add_disk_capacity_data_nodes"),
                 createHealthIndicatorResult("shards_availability", RED, "primary_unassigned")
             );
-            GetHealthAction.Response response = new GetHealthAction.Response(ClusterName.DEFAULT, indicators, true);
+            TransportGetHealthAction.Response response = new TransportGetHealthAction.Response(ClusterName.DEFAULT, indicators, true);
 
             healthApiStats.track(true, response);
             assertThat(healthApiStats.getStats().get("invocations.total"), equalTo(4L));

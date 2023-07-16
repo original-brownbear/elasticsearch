@@ -18,7 +18,7 @@ public class PrevalidateNodeRemovalResponseSerializationTests extends AbstractXC
 
     @Override
     protected Writeable.Reader<PrevalidateNodeRemovalResponse> instanceReader() {
-        return PrevalidateNodeRemovalResponse::new;
+        return TransportPrevalidateNodeRemovalAction.ACTION.getResponseReader();
     }
 
     @Override

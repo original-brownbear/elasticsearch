@@ -10,6 +10,7 @@ package org.elasticsearch.action.admin.cluster.node.tasks.cancel;
 
 import org.elasticsearch.ResourceNotFoundException;
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.ActionType;
 import org.elasticsearch.action.FailedNodeException;
 import org.elasticsearch.action.TaskOperationFailure;
 import org.elasticsearch.action.support.ActionFilters;
@@ -33,15 +34,19 @@ import java.util.List;
  */
 public class TransportCancelTasksAction extends TransportTasksAction<CancellableTask, CancelTasksRequest, CancelTasksResponse, TaskInfo> {
 
+    public static final String ACTION_NAME = "cluster:admin/tasks/cancel";
+
+    public static final ActionType<CancelTasksResponse> ACTION = new ActionType<>(ACTION_NAME, CancelTasksResponse::new);
+
     @Inject
     public TransportCancelTasksAction(ClusterService clusterService, TransportService transportService, ActionFilters actionFilters) {
         super(
-            CancelTasksAction.NAME,
+            ACTION.name(),
             clusterService,
             transportService,
             actionFilters,
             CancelTasksRequest::new,
-            CancelTasksResponse::new,
+            ACTION.getResponseReader(),
             TaskInfo::from,
             // Cancellation is usually lightweight, and runs on the transport thread if the task didn't even start yet, but some
             // implementations of CancellableTask#onCancelled() are nontrivial so we use GENERIC here. TODO could it be SAME?

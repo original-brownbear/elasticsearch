@@ -10,6 +10,7 @@ package org.elasticsearch.action.admin.cluster.node.shutdown;
 
 import org.elasticsearch.ResourceNotFoundException;
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.ActionType;
 import org.elasticsearch.action.FailedNodeException;
 import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.master.TransportMasterNodeReadAction;
@@ -50,6 +51,10 @@ public class TransportPrevalidateNodeRemovalAction extends TransportMasterNodeRe
     PrevalidateNodeRemovalRequest,
     PrevalidateNodeRemovalResponse> {
 
+    public static final ActionType<PrevalidateNodeRemovalResponse> ACTION = new ActionType<>(
+        "cluster:admin/shutdown/prevalidate_removal",
+        PrevalidateNodeRemovalResponse::new
+    );
     private static final Logger logger = LogManager.getLogger(TransportPrevalidateNodeRemovalAction.class);
 
     private final NodeClient client;
@@ -64,7 +69,7 @@ public class TransportPrevalidateNodeRemovalAction extends TransportMasterNodeRe
         NodeClient client
     ) {
         super(
-            PrevalidateNodeRemovalAction.NAME,
+            ACTION.name(),
             false,
             transportService,
             clusterService,
@@ -72,7 +77,7 @@ public class TransportPrevalidateNodeRemovalAction extends TransportMasterNodeRe
             actionFilters,
             PrevalidateNodeRemovalRequest::new,
             indexNameExpressionResolver,
-            PrevalidateNodeRemovalResponse::new,
+            ACTION.getResponseReader(),
             ThreadPool.Names.SAME
         );
         this.client = client;

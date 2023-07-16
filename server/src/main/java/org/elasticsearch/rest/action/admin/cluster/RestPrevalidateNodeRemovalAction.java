@@ -8,8 +8,8 @@
 
 package org.elasticsearch.rest.action.admin.cluster;
 
-import org.elasticsearch.action.admin.cluster.node.shutdown.PrevalidateNodeRemovalAction;
 import org.elasticsearch.action.admin.cluster.node.shutdown.PrevalidateNodeRemovalRequest;
+import org.elasticsearch.action.admin.cluster.node.shutdown.TransportPrevalidateNodeRemovalAction;
 import org.elasticsearch.client.internal.node.NodeClient;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.rest.BaseRestHandler;
@@ -46,7 +46,7 @@ public class RestPrevalidateNodeRemovalAction extends BaseRestHandler {
         prevalidationRequest.masterNodeTimeout(request.paramAsTime("master_timeout", prevalidationRequest.masterNodeTimeout()));
         prevalidationRequest.timeout(request.paramAsTime("timeout", prevalidationRequest.timeout()));
         return channel -> client.execute(
-            PrevalidateNodeRemovalAction.INSTANCE,
+            TransportPrevalidateNodeRemovalAction.ACTION,
             prevalidationRequest,
             new RestToXContentListener<>(channel)
         );

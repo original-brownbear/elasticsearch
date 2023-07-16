@@ -22,9 +22,9 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.health.Diagnosis;
-import org.elasticsearch.health.GetHealthAction;
 import org.elasticsearch.health.HealthIndicatorResult;
 import org.elasticsearch.health.HealthStatus;
+import org.elasticsearch.health.TransportGetHealthAction;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.test.ESIntegTestCase;
 import org.elasticsearch.test.hamcrest.ElasticsearchAssertions;
@@ -68,9 +68,9 @@ public class DataTierShardAvailabilityHealthIndicatorIT extends ESIntegTestCase 
             )
         );
         ensureYellow("test");
-        GetHealthAction.Response healthResponse = client().execute(
-            GetHealthAction.INSTANCE,
-            new GetHealthAction.Request(ShardsAvailabilityHealthIndicatorService.NAME, true, 1000)
+        TransportGetHealthAction.Response healthResponse = client().execute(
+            TransportGetHealthAction.ACTION,
+            new TransportGetHealthAction.Request(ShardsAvailabilityHealthIndicatorService.NAME, true, 1000)
         ).get();
         HealthIndicatorResult indicatorResult = healthResponse.findIndicator(ShardsAvailabilityHealthIndicatorService.NAME);
         assertThat(indicatorResult.status(), equalTo(HealthStatus.YELLOW));
@@ -105,9 +105,9 @@ public class DataTierShardAvailabilityHealthIndicatorIT extends ESIntegTestCase 
         indexRandomData("test");
         internalCluster().stopNode(findNodeWithReplicaShard("test", 0));
         ensureYellow("test");
-        GetHealthAction.Response healthResponse = client().execute(
-            GetHealthAction.INSTANCE,
-            new GetHealthAction.Request(ShardsAvailabilityHealthIndicatorService.NAME, true, 1000)
+        TransportGetHealthAction.Response healthResponse = client().execute(
+            TransportGetHealthAction.ACTION,
+            new TransportGetHealthAction.Request(ShardsAvailabilityHealthIndicatorService.NAME, true, 1000)
         ).get();
         ClusterAllocationExplanation explain = clusterAdmin().prepareAllocationExplain()
             .setIndex("test")
@@ -148,9 +148,9 @@ public class DataTierShardAvailabilityHealthIndicatorIT extends ESIntegTestCase 
         indexRandomData("test");
         internalCluster().stopNode(findNodeWithPrimaryShard("test", 0));
         ensureYellow("test");
-        GetHealthAction.Response healthResponse = client().execute(
-            GetHealthAction.INSTANCE,
-            new GetHealthAction.Request(ShardsAvailabilityHealthIndicatorService.NAME, true, 1000)
+        TransportGetHealthAction.Response healthResponse = client().execute(
+            TransportGetHealthAction.ACTION,
+            new TransportGetHealthAction.Request(ShardsAvailabilityHealthIndicatorService.NAME, true, 1000)
         ).get();
         HealthIndicatorResult indicatorResult = healthResponse.findIndicator(ShardsAvailabilityHealthIndicatorService.NAME);
         assertThat(indicatorResult.status(), equalTo(HealthStatus.YELLOW));

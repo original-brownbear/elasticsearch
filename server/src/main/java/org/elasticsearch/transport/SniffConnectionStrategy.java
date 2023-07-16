@@ -11,7 +11,7 @@ package org.elasticsearch.transport;
 import org.apache.lucene.util.SetOnce;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.admin.cluster.remote.RemoteClusterNodesAction;
+import org.elasticsearch.action.admin.cluster.remote.TransportRemoteClusterNodesAction;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateAction;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
@@ -308,8 +308,8 @@ public class SniffConnectionStrategy extends RemoteConnectionStrategy {
                 final AbstractSniffResponseHandler<?> sniffResponseHandler;
                 // Use different action to collect nodes information depending on the connection model
                 if (REMOTE_CLUSTER_PROFILE.equals(connectionManager.getConnectionProfile().getTransportProfile())) {
-                    action = RemoteClusterNodesAction.NAME;
-                    request = RemoteClusterNodesAction.Request.INSTANCE;
+                    action = TransportRemoteClusterNodesAction.ACTION.name();
+                    request = TransportRemoteClusterNodesAction.Request.INSTANCE;
                     sniffResponseHandler = new RemoteClusterNodesSniffResponseHandler(connection, listener, seedNodesSuppliers);
                 } else {
                     action = ClusterStateAction.NAME;
@@ -360,7 +360,7 @@ public class SniffConnectionStrategy extends RemoteConnectionStrategy {
         };
     }
 
-    private class RemoteClusterNodesSniffResponseHandler extends AbstractSniffResponseHandler<RemoteClusterNodesAction.Response> {
+    private class RemoteClusterNodesSniffResponseHandler extends AbstractSniffResponseHandler<TransportRemoteClusterNodesAction.Response> {
         RemoteClusterNodesSniffResponseHandler(
             Transport.Connection connection,
             ActionListener<Void> listener,
@@ -370,12 +370,12 @@ public class SniffConnectionStrategy extends RemoteConnectionStrategy {
         }
 
         @Override
-        public RemoteClusterNodesAction.Response read(StreamInput in) throws IOException {
-            return new RemoteClusterNodesAction.Response(in);
+        public TransportRemoteClusterNodesAction.Response read(StreamInput in) throws IOException {
+            return TransportRemoteClusterNodesAction.ACTION.getResponseReader().read(in);
         }
 
         @Override
-        public void handleResponse(RemoteClusterNodesAction.Response response) {
+        public void handleResponse(TransportRemoteClusterNodesAction.Response response) {
             handleNodes(response.getNodes().iterator());
         }
     }

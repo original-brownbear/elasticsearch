@@ -35,9 +35,8 @@ import java.util.Set;
 
 /**
  * Given a set of shard IDs, checks which of those shards have a matching directory in the local data path.
- * This is used by {@link PrevalidateNodeRemovalAction} to find out whether a node may contain some copy
- * of a specific shard. The response contains a subset of the request shard IDs which are in the cluster state
- * of this node and have a matching shard path on the local data path.
+ * This is used to find out whether a node may contain some copy of a specific shard. The response contains a subset of the request
+ * shard IDs which are in the cluster state of this node and have a matching shard path on the local data path.
  */
 public class TransportPrevalidateShardPathAction extends TransportNodesAction<
     PrevalidateShardPathRequest,

@@ -21,7 +21,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.env.NodeEnvironment;
 import org.elasticsearch.health.node.HealthInfo;
-import org.elasticsearch.health.stats.HealthApiStatsAction;
+import org.elasticsearch.health.stats.HealthApiStatsTransportAction;
 import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.plugins.HealthPlugin;
 import org.elasticsearch.plugins.Plugin;
@@ -204,8 +204,8 @@ public class GetHealthActionIT extends ESIntegTestCase {
                 ExecutionException exception = expectThrows(
                     ExecutionException.class,
                     () -> client.execute(
-                        GetHealthAction.INSTANCE,
-                        new GetHealthAction.Request(NONEXISTENT_INDICATOR_NAME, randomBoolean(), 1000)
+                        TransportGetHealthAction.ACTION,
+                        new TransportGetHealthAction.Request(NONEXISTENT_INDICATOR_NAME, randomBoolean(), 1000)
                     ).get()
                 );
                 assertThat(exception.getCause(), instanceOf(ResourceNotFoundException.class));
@@ -213,8 +213,10 @@ public class GetHealthActionIT extends ESIntegTestCase {
 
             // Check health api stats
             {
-                HealthApiStatsAction.Response response = client.execute(HealthApiStatsAction.INSTANCE, new HealthApiStatsAction.Request())
-                    .get();
+                HealthApiStatsTransportAction.Response response = client.execute(
+                    HealthApiStatsTransportAction.ACTION,
+                    new HealthApiStatsTransportAction.Request()
+                ).get();
                 Counters stats = response.getStats();
                 assertThat(stats.get("invocations.total"), equalTo(4L));
                 assertThat(stats.get("invocations.verbose_true"), equalTo(2L));
@@ -253,7 +255,7 @@ public class GetHealthActionIT extends ESIntegTestCase {
         HealthStatus clusterCoordinationIndicatorStatus,
         boolean verbose
     ) throws Exception {
-        var response = client.execute(GetHealthAction.INSTANCE, new GetHealthAction.Request(verbose, 1000)).get();
+        var response = client.execute(TransportGetHealthAction.ACTION, new TransportGetHealthAction.Request(verbose, 1000)).get();
 
         assertThat(
             response.getStatus(),
@@ -289,7 +291,10 @@ public class GetHealthActionIT extends ESIntegTestCase {
     }
 
     private void testIndicator(Client client, HealthStatus ilmIndicatorStatus, boolean verbose) throws Exception {
-        var response = client.execute(GetHealthAction.INSTANCE, new GetHealthAction.Request(ILM_INDICATOR_NAME, verbose, 1000)).get();
+        var response = client.execute(
+            TransportGetHealthAction.ACTION,
+            new TransportGetHealthAction.Request(ILM_INDICATOR_NAME, verbose, 1000)
+        ).get();
         assertNull(response.getStatus());
         assertThat(response.getClusterName(), equalTo(new ClusterName(cluster().getClusterName())));
         assertThat(

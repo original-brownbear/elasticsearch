@@ -12,8 +12,8 @@ import org.apache.logging.log4j.Logger;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.admin.cluster.node.info.NodeInfo;
-import org.elasticsearch.action.admin.cluster.node.info.NodesInfoAction;
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoRequest;
+import org.elasticsearch.action.admin.cluster.node.info.TransportNodesInfoAction;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.client.internal.OriginSettingClient;
 import org.elasticsearch.common.UUIDs;
@@ -67,7 +67,7 @@ public class InternalEnrollmentTokenGenerator extends BaseEnrollmentTokenGenerat
         final NodesInfoRequest nodesInfoRequest = new NodesInfoRequest().nodesIds("_local")
             .addMetrics(NodesInfoRequest.Metric.HTTP.metricName(), NodesInfoRequest.Metric.TRANSPORT.metricName());
 
-        client.execute(NodesInfoAction.INSTANCE, nodesInfoRequest, ActionListener.wrap(response -> {
+        client.execute(TransportNodesInfoAction.ACTION, nodesInfoRequest, ActionListener.wrap(response -> {
             assert response.getNodes().size() == 1;
             NodeInfo nodeInfo = response.getNodes().get(0);
             TransportInfo transportInfo = nodeInfo.getInfo(TransportInfo.class);
@@ -133,7 +133,7 @@ public class InternalEnrollmentTokenGenerator extends BaseEnrollmentTokenGenerat
         // the enrollment token can only be used against the node that generated it
         final NodesInfoRequest nodesInfoRequest = new NodesInfoRequest().nodesIds("_local")
             .addMetric(NodesInfoRequest.Metric.HTTP.metricName());
-        client.execute(NodesInfoAction.INSTANCE, nodesInfoRequest, ActionListener.wrap(response -> {
+        client.execute(TransportNodesInfoAction.ACTION, nodesInfoRequest, ActionListener.wrap(response -> {
             assert response.getNodes().size() == 1;
             NodeInfo nodeInfo = response.getNodes().get(0);
             HttpInfo httpInfo = nodeInfo.getInfo(HttpInfo.class);

@@ -75,10 +75,10 @@ import org.elasticsearch.xpack.ccr.action.TransportUnfollowAction;
 import org.elasticsearch.xpack.ccr.action.bulk.BulkShardOperationsAction;
 import org.elasticsearch.xpack.ccr.action.bulk.TransportBulkShardOperationsAction;
 import org.elasticsearch.xpack.ccr.action.repositories.ClearCcrRestoreSessionAction;
-import org.elasticsearch.xpack.ccr.action.repositories.DeleteInternalCcrRepositoryAction;
 import org.elasticsearch.xpack.ccr.action.repositories.GetCcrRestoreFileChunkAction;
 import org.elasticsearch.xpack.ccr.action.repositories.PutCcrRestoreSessionAction;
-import org.elasticsearch.xpack.ccr.action.repositories.PutInternalCcrRepositoryAction;
+import org.elasticsearch.xpack.ccr.action.repositories.TransportDeleteInternalRepositoryAction;
+import org.elasticsearch.xpack.ccr.action.repositories.TransportPutInternalRepositoryAction;
 import org.elasticsearch.xpack.ccr.allocation.CcrPrimaryFollowerAllocationDecider;
 import org.elasticsearch.xpack.ccr.index.engine.FollowingEngineFactory;
 import org.elasticsearch.xpack.ccr.repository.CcrRepository;
@@ -239,14 +239,8 @@ public class Ccr extends Plugin implements ActionPlugin, PersistentTaskPlugin, E
             // internal actions
             new ActionHandler<>(BulkShardOperationsAction.INSTANCE, TransportBulkShardOperationsAction.class),
             new ActionHandler<>(ShardChangesAction.INSTANCE, ShardChangesAction.TransportAction.class),
-            new ActionHandler<>(
-                PutInternalCcrRepositoryAction.INSTANCE,
-                PutInternalCcrRepositoryAction.TransportPutInternalRepositoryAction.class
-            ),
-            new ActionHandler<>(
-                DeleteInternalCcrRepositoryAction.INSTANCE,
-                DeleteInternalCcrRepositoryAction.TransportDeleteInternalRepositoryAction.class
-            ),
+            new ActionHandler<>(TransportPutInternalRepositoryAction.ACTION, TransportPutInternalRepositoryAction.class),
+            new ActionHandler<>(TransportDeleteInternalRepositoryAction.ACTION, TransportDeleteInternalRepositoryAction.class),
             new ActionHandler<>(PutCcrRestoreSessionAction.INTERNAL_INSTANCE, PutCcrRestoreSessionAction.InternalTransportAction.class),
             new ActionHandler<>(PutCcrRestoreSessionAction.INSTANCE, PutCcrRestoreSessionAction.TransportAction.class),
             new ActionHandler<>(ClearCcrRestoreSessionAction.INTERNAL_INSTANCE, ClearCcrRestoreSessionAction.InternalTransportAction.class),

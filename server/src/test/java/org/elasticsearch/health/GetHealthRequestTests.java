@@ -18,7 +18,7 @@ import static org.hamcrest.Matchers.notNullValue;
 public class GetHealthRequestTests extends ESTestCase {
 
     public void testValidation() {
-        var req = new GetHealthAction.Request(true, -1);
+        var req = new TransportGetHealthAction.Request(true, -1);
         ActionRequestValidationException validationException = req.validate();
         assertThat(validationException, notNullValue());
         assertThat(validationException.validationErrors().size(), is(1));

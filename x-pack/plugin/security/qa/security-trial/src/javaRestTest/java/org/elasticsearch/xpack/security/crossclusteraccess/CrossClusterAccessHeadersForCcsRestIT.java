@@ -12,7 +12,7 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.nio.entity.NStringEntity;
 import org.apache.lucene.search.TotalHits;
 import org.elasticsearch.TransportVersion;
-import org.elasticsearch.action.admin.cluster.remote.RemoteClusterNodesAction;
+import org.elasticsearch.action.admin.cluster.remote.TransportRemoteClusterNodesAction;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateAction;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
@@ -1045,7 +1045,7 @@ public class CrossClusterAccessHeadersForCcsRestIT extends SecurityOnTrialLicens
             expectedActions.add(SearchShardsAction.NAME);
         }
         if (false == useProxyMode) {
-            expectedActions.add(RemoteClusterNodesAction.NAME);
+            expectedActions.add(TransportRemoteClusterNodesAction.ACTION.name());
         }
         assertThat(
             actualActionsWithHeaders.stream().map(CapturedActionWithHeaders::action).collect(Collectors.toUnmodifiableSet()),
@@ -1055,7 +1055,7 @@ public class CrossClusterAccessHeadersForCcsRestIT extends SecurityOnTrialLicens
             switch (actual.action) {
                 // this action is run by the cross cluster access user, so we expect a cross cluster access header with an internal user
                 // authentication and pre-defined role descriptors intersection
-                case RemoteClusterNodesAction.NAME -> {
+                case TransportRemoteClusterNodesAction.ACTION_NAME -> {
                     // requests by internal users don't include an audit request ID; this is a current side effect of the audit setup where
                     // if the thread context is stashed, we don't persist the audit request ID by default
                     assertContainsHeadersExpectedForCrossClusterAccess(actual.headers(), false);
@@ -1126,14 +1126,14 @@ public class CrossClusterAccessHeadersForCcsRestIT extends SecurityOnTrialLicens
                 }
             );
             service.registerRequestHandler(
-                RemoteClusterNodesAction.NAME,
+                TransportRemoteClusterNodesAction.ACTION.name(),
                 ThreadPool.Names.SAME,
-                RemoteClusterNodesAction.Request::new,
+                TransportRemoteClusterNodesAction.Request::new,
                 (request, channel, task) -> {
                     capturedHeaders.add(
                         new CapturedActionWithHeaders(task.getAction(), Map.copyOf(threadPool.getThreadContext().getHeaders()))
                     );
-                    channel.sendResponse(new RemoteClusterNodesAction.Response(List.of()));
+                    channel.sendResponse(new TransportRemoteClusterNodesAction.Response(List.of()));
                 }
             );
             service.registerRequestHandler(

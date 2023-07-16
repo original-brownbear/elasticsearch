@@ -8,6 +8,7 @@
 
 package org.elasticsearch.action.admin.cluster.node.stats;
 
+import org.elasticsearch.action.ActionType;
 import org.elasticsearch.action.FailedNodeException;
 import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.nodes.TransportNodesAction;
@@ -35,6 +36,7 @@ public class TransportNodesStatsAction extends TransportNodesAction<
     TransportNodesStatsAction.NodeStatsRequest,
     NodeStats> {
 
+    public static final ActionType<NodesStatsResponse> ACTION = new ActionType<>("cluster:monitor/nodes/stats", NodesStatsResponse::new);
     private final NodeService nodeService;
 
     @Inject
@@ -46,7 +48,7 @@ public class TransportNodesStatsAction extends TransportNodesAction<
         ActionFilters actionFilters
     ) {
         super(
-            NodesStatsAction.NAME,
+            ACTION.name(),
             threadPool,
             clusterService,
             transportService,

@@ -16,10 +16,10 @@ import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.transport.RemoteClusterAware;
 import org.elasticsearch.transport.RemoteConnectionStrategy;
-import org.elasticsearch.xpack.ccr.action.repositories.DeleteInternalCcrRepositoryAction;
 import org.elasticsearch.xpack.ccr.action.repositories.DeleteInternalCcrRepositoryRequest;
-import org.elasticsearch.xpack.ccr.action.repositories.PutInternalCcrRepositoryAction;
 import org.elasticsearch.xpack.ccr.action.repositories.PutInternalCcrRepositoryRequest;
+import org.elasticsearch.xpack.ccr.action.repositories.TransportDeleteInternalRepositoryAction;
+import org.elasticsearch.xpack.ccr.action.repositories.TransportPutInternalRepositoryAction;
 import org.elasticsearch.xpack.ccr.repository.CcrRepository;
 
 import java.util.Set;
@@ -49,14 +49,14 @@ class CcrRepositoryManager extends AbstractLifecycleComponent {
     private void putRepository(String repositoryName) {
         ActionRequest request = new PutInternalCcrRepositoryRequest(repositoryName, CcrRepository.TYPE);
         PlainActionFuture<ActionResponse.Empty> f = PlainActionFuture.newFuture();
-        client.execute(PutInternalCcrRepositoryAction.INSTANCE, request, f);
+        client.execute(TransportPutInternalRepositoryAction.ACTION, request, f);
         assert f.isDone() : "Should be completed as it is executed synchronously";
     }
 
     private void deleteRepository(String repositoryName) {
         DeleteInternalCcrRepositoryRequest request = new DeleteInternalCcrRepositoryRequest(repositoryName);
         PlainActionFuture<ActionResponse.Empty> f = PlainActionFuture.newFuture();
-        client.execute(DeleteInternalCcrRepositoryAction.INSTANCE, request, f);
+        client.execute(TransportDeleteInternalRepositoryAction.ACTION, request, f);
         assert f.isDone() : "Should be completed as it is executed synchronously";
     }
 

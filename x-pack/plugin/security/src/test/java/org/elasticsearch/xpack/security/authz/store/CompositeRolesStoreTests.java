@@ -13,7 +13,7 @@ import org.elasticsearch.ElasticsearchSecurityException;
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.admin.cluster.node.stats.NodesStatsAction;
+import org.elasticsearch.action.admin.cluster.node.stats.TransportNodesStatsAction;
 import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsAction;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateAction;
 import org.elasticsearch.action.admin.cluster.stats.ClusterStatsAction;
@@ -2680,7 +2680,12 @@ public class CompositeRolesStoreTests extends ESTestCase {
     }
 
     public void testAsyncSearchUserHasNoClusterPrivileges() {
-        for (String action : Arrays.asList(ClusterStateAction.NAME, GetWatchAction.NAME, ClusterStatsAction.NAME, NodesStatsAction.NAME)) {
+        for (String action : Arrays.asList(
+            ClusterStateAction.NAME,
+            GetWatchAction.NAME,
+            ClusterStatsAction.NAME,
+            TransportNodesStatsAction.ACTION.name()
+        )) {
             assertThat(
                 getAsyncSearchUserRole().cluster().check(action, mock(TransportRequest.class), AuthenticationTestHelper.builder().build()),
                 Matchers.is(false)
@@ -2689,7 +2694,12 @@ public class CompositeRolesStoreTests extends ESTestCase {
     }
 
     public void testXpackUserHasClusterPrivileges() {
-        for (String action : Arrays.asList(ClusterStateAction.NAME, GetWatchAction.NAME, ClusterStatsAction.NAME, NodesStatsAction.NAME)) {
+        for (String action : Arrays.asList(
+            ClusterStateAction.NAME,
+            GetWatchAction.NAME,
+            ClusterStatsAction.NAME,
+            TransportNodesStatsAction.ACTION.name()
+        )) {
             assertThat(
                 getXPackUserRole().cluster().check(action, mock(TransportRequest.class), AuthenticationTestHelper.builder().build()),
                 Matchers.is(true)

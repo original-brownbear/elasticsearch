@@ -31,8 +31,8 @@ import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.common.xcontent.ChunkedToXContent;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.core.Tuple;
-import org.elasticsearch.health.GetHealthAction;
 import org.elasticsearch.health.HealthStatus;
+import org.elasticsearch.health.TransportGetHealthAction;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.test.ESIntegTestCase;
 import org.elasticsearch.test.disruption.LongGCDisruption;
@@ -134,8 +134,10 @@ public class StableMasterDisruptionIT extends ESIntegTestCase {
 
     private void assertMasterStability(Client client, HealthStatus expectedStatus, Matcher<String> expectedMatcher) throws Exception {
         assertBusy(() -> {
-            GetHealthAction.Response healthResponse = client.execute(GetHealthAction.INSTANCE, new GetHealthAction.Request(true, 1000))
-                .get();
+            TransportGetHealthAction.Response healthResponse = client.execute(
+                TransportGetHealthAction.ACTION,
+                new TransportGetHealthAction.Request(true, 1000)
+            ).get();
             String debugInformation = xContentToString(healthResponse);
             assertThat(debugInformation, healthResponse.findIndicator("master_is_stable").status(), equalTo(expectedStatus));
             assertThat(debugInformation, healthResponse.findIndicator("master_is_stable").symptom(), expectedMatcher);

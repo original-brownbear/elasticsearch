@@ -22,9 +22,8 @@ import java.util.Objects;
 
 public class StatelessPrimaryRelocationAction {
 
-    public static final ActionType<ActionResponse.Empty> INSTANCE = new ActionType<>(
-        "internal:index/shard/recovery/stateless_primary_relocation",
-        in -> ActionResponse.Empty.INSTANCE
+    public static final ActionType<ActionResponse.Empty> INSTANCE = ActionType.empty(
+        "internal:index/shard/recovery/stateless_primary_relocation"
     );
 
     public static class Request extends ActionRequest {
