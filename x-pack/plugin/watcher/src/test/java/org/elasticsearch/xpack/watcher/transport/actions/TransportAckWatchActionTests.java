@@ -25,11 +25,11 @@ import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
+import org.elasticsearch.xpack.core.XPackClientPlugin;
 import org.elasticsearch.xpack.core.watcher.WatcherMetadata;
 import org.elasticsearch.xpack.core.watcher.execution.WatchExecutionSnapshot;
 import org.elasticsearch.xpack.core.watcher.transport.actions.ack.AckWatchRequest;
 import org.elasticsearch.xpack.core.watcher.transport.actions.ack.AckWatchResponse;
-import org.elasticsearch.xpack.core.watcher.transport.actions.stats.WatcherStatsAction;
 import org.elasticsearch.xpack.core.watcher.transport.actions.stats.WatcherStatsResponse;
 import org.elasticsearch.xpack.core.watcher.watch.Watch;
 import org.elasticsearch.xpack.watcher.ClockHolder;
@@ -106,7 +106,7 @@ public class TransportAckWatchActionTests extends ESTestCase {
                 )
             );
             return null;
-        }).when(client).execute(eq(WatcherStatsAction.INSTANCE), any(), any());
+        }).when(client).execute(eq(XPackClientPlugin.WATCHER_STATS_ACTION), any(), any());
 
         AckWatchRequest ackWatchRequest = new AckWatchRequest(watchId);
         PlainActionFuture<AckWatchResponse> listener = PlainActionFuture.newFuture();
@@ -136,7 +136,7 @@ public class TransportAckWatchActionTests extends ESTestCase {
                 )
             );
             return null;
-        }).when(client).execute(eq(WatcherStatsAction.INSTANCE), any(), any());
+        }).when(client).execute(eq(XPackClientPlugin.WATCHER_STATS_ACTION), any(), any());
 
         AckWatchRequest ackWatchRequest = new AckWatchRequest(watchId);
         PlainActionFuture<AckWatchResponse> listener = PlainActionFuture.newFuture();

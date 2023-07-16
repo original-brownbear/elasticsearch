@@ -61,6 +61,7 @@ import org.elasticsearch.tracing.Tracer;
 import org.elasticsearch.watcher.ResourceWatcherService;
 import org.elasticsearch.xcontent.NamedXContentRegistry;
 import org.elasticsearch.xcontent.XContentBuilder;
+import org.elasticsearch.xpack.core.XPackClientPlugin;
 import org.elasticsearch.xpack.core.XPackPlugin;
 import org.elasticsearch.xpack.core.XPackSettings;
 import org.elasticsearch.xpack.core.action.XPackInfoFeatureAction;
@@ -77,17 +78,11 @@ import org.elasticsearch.xpack.core.watcher.history.HistoryStoreField;
 import org.elasticsearch.xpack.core.watcher.input.none.NoneInput;
 import org.elasticsearch.xpack.core.watcher.transform.TransformRegistry;
 import org.elasticsearch.xpack.core.watcher.transport.actions.QueryWatchesAction;
-import org.elasticsearch.xpack.core.watcher.transport.actions.ack.AckWatchAction;
-import org.elasticsearch.xpack.core.watcher.transport.actions.activate.ActivateWatchAction;
-import org.elasticsearch.xpack.core.watcher.transport.actions.delete.DeleteWatchAction;
 import org.elasticsearch.xpack.core.watcher.transport.actions.execute.ExecuteWatchAction;
-import org.elasticsearch.xpack.core.watcher.transport.actions.get.GetWatchAction;
 import org.elasticsearch.xpack.core.watcher.transport.actions.put.GetWatcherSettingsAction;
-import org.elasticsearch.xpack.core.watcher.transport.actions.put.PutWatchAction;
 import org.elasticsearch.xpack.core.watcher.transport.actions.put.UpdateWatcherSettingsAction;
 import org.elasticsearch.xpack.core.watcher.transport.actions.service.WatcherServiceAction;
 import org.elasticsearch.xpack.core.watcher.transport.actions.service.WatcherServiceRequest;
-import org.elasticsearch.xpack.core.watcher.transport.actions.stats.WatcherStatsAction;
 import org.elasticsearch.xpack.core.watcher.trigger.TriggerEvent;
 import org.elasticsearch.xpack.core.watcher.watch.Watch;
 import org.elasticsearch.xpack.watcher.actions.email.EmailAction;
@@ -674,12 +669,12 @@ public class Watcher extends Plugin implements SystemIndexPlugin, ScriptPlugin, 
             return Arrays.asList(usageAction, infoAction);
         }
         return Arrays.asList(
-            new ActionHandler<>(PutWatchAction.INSTANCE, TransportPutWatchAction.class),
-            new ActionHandler<>(DeleteWatchAction.INSTANCE, TransportDeleteWatchAction.class),
-            new ActionHandler<>(GetWatchAction.INSTANCE, TransportGetWatchAction.class),
-            new ActionHandler<>(WatcherStatsAction.INSTANCE, TransportWatcherStatsAction.class),
-            new ActionHandler<>(AckWatchAction.INSTANCE, TransportAckWatchAction.class),
-            new ActionHandler<>(ActivateWatchAction.INSTANCE, TransportActivateWatchAction.class),
+            new ActionHandler<>(XPackClientPlugin.PUT_WATCH_ACTION, TransportPutWatchAction.class),
+            new ActionHandler<>(XPackClientPlugin.DELETE_WATCH_ACTION, TransportDeleteWatchAction.class),
+            new ActionHandler<>(XPackClientPlugin.GET_WATCH_ACTION, TransportGetWatchAction.class),
+            new ActionHandler<>(XPackClientPlugin.WATCHER_STATS_ACTION, TransportWatcherStatsAction.class),
+            new ActionHandler<>(XPackClientPlugin.ACK_WATCH_ACTION, TransportAckWatchAction.class),
+            new ActionHandler<>(XPackClientPlugin.ACTIVATE_WATCH_ACTION, TransportActivateWatchAction.class),
             new ActionHandler<>(WatcherServiceAction.INSTANCE, TransportWatcherServiceAction.class),
             new ActionHandler<>(ExecuteWatchAction.INSTANCE, TransportExecuteWatchAction.class),
             new ActionHandler<>(QueryWatchesAction.INSTANCE, TransportQueryWatchesAction.class),

@@ -17,6 +17,7 @@ import org.elasticsearch.test.http.MockRequest;
 import org.elasticsearch.test.http.MockResponse;
 import org.elasticsearch.test.http.MockWebServer;
 import org.elasticsearch.test.junit.annotations.TestLogging;
+import org.elasticsearch.xpack.core.XPackClientPlugin;
 import org.elasticsearch.xpack.core.XPackSettings;
 import org.elasticsearch.xpack.core.monitoring.action.MonitoringBulkAction;
 import org.elasticsearch.xpack.core.monitoring.action.MonitoringBulkRequest;
@@ -24,7 +25,6 @@ import org.elasticsearch.xpack.core.monitoring.action.MonitoringBulkResponse;
 import org.elasticsearch.xpack.core.monitoring.action.MonitoringMigrateAlertsAction;
 import org.elasticsearch.xpack.core.monitoring.action.MonitoringMigrateAlertsRequest;
 import org.elasticsearch.xpack.core.monitoring.action.MonitoringMigrateAlertsResponse;
-import org.elasticsearch.xpack.core.watcher.transport.actions.get.GetWatchAction;
 import org.elasticsearch.xpack.core.watcher.transport.actions.get.GetWatchRequest;
 import org.elasticsearch.xpack.core.watcher.watch.Watch;
 import org.elasticsearch.xpack.monitoring.Monitoring;
@@ -533,7 +533,7 @@ public class TransportMonitoringMigrateAlertsActionTests extends MonitoringInteg
 
         Arrays.stream(ClusterAlertsUtil.WATCH_IDS)
             .map(n -> ClusterAlertsUtil.createUniqueWatchId(clusterService(), n))
-            .map(watch -> client().execute(GetWatchAction.INSTANCE, new GetWatchRequest(watch)).actionGet())
+            .map(watch -> client().execute(XPackClientPlugin.GET_WATCH_ACTION, new GetWatchRequest(watch)).actionGet())
             .filter(r -> r.isFound() != exist)
             .findAny()
             .ifPresent(r -> fail((exist ? "missing" : "found") + " watch [" + r.getId() + "]"));

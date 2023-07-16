@@ -15,7 +15,7 @@ import org.elasticsearch.core.RestApiVersion;
 import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.action.RestActions;
-import org.elasticsearch.xpack.core.watcher.transport.actions.stats.WatcherStatsAction;
+import org.elasticsearch.xpack.core.XPackClientPlugin;
 import org.elasticsearch.xpack.core.watcher.transport.actions.stats.WatcherStatsRequest;
 
 import java.util.Collections;
@@ -61,7 +61,11 @@ public class RestWatcherStatsAction extends BaseRestHandler {
             );
         }
 
-        return channel -> client.execute(WatcherStatsAction.INSTANCE, request, new RestActions.NodesResponseRestListener<>(channel));
+        return channel -> client.execute(
+            XPackClientPlugin.WATCHER_STATS_ACTION,
+            request,
+            new RestActions.NodesResponseRestListener<>(channel)
+        );
     }
 
     private static final Set<String> RESPONSE_PARAMS = Collections.singleton("emit_stacktraces");

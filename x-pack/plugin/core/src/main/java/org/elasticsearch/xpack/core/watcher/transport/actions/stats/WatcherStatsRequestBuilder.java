@@ -8,6 +8,7 @@ package org.elasticsearch.xpack.core.watcher.transport.actions.stats;
 
 import org.elasticsearch.action.support.nodes.NodesOperationRequestBuilder;
 import org.elasticsearch.client.internal.ElasticsearchClient;
+import org.elasticsearch.xpack.core.XPackClientPlugin;
 
 /**
  * Watcher stats request builder.
@@ -18,7 +19,7 @@ public class WatcherStatsRequestBuilder extends NodesOperationRequestBuilder<
     WatcherStatsRequestBuilder> {
 
     public WatcherStatsRequestBuilder(ElasticsearchClient client) {
-        super(client, WatcherStatsAction.INSTANCE, new WatcherStatsRequest());
+        super(client, XPackClientPlugin.WATCHER_STATS_ACTION, new WatcherStatsRequest());
     }
 
     public WatcherStatsRequestBuilder setIncludeCurrentWatches(boolean includeCurrentWatches) {

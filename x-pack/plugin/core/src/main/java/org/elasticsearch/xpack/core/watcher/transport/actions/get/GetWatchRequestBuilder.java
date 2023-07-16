@@ -8,6 +8,7 @@ package org.elasticsearch.xpack.core.watcher.transport.actions.get;
 
 import org.elasticsearch.action.ActionRequestBuilder;
 import org.elasticsearch.client.internal.ElasticsearchClient;
+import org.elasticsearch.xpack.core.XPackClientPlugin;
 
 /**
  * A delete document action request builder.
@@ -15,11 +16,11 @@ import org.elasticsearch.client.internal.ElasticsearchClient;
 public class GetWatchRequestBuilder extends ActionRequestBuilder<GetWatchRequest, GetWatchResponse> {
 
     public GetWatchRequestBuilder(ElasticsearchClient client, String id) {
-        super(client, GetWatchAction.INSTANCE, new GetWatchRequest(id));
+        super(client, XPackClientPlugin.GET_WATCH_ACTION, new GetWatchRequest(id));
     }
 
     public GetWatchRequestBuilder(ElasticsearchClient client) {
-        super(client, GetWatchAction.INSTANCE, new GetWatchRequest());
+        super(client, XPackClientPlugin.GET_WATCH_ACTION, new GetWatchRequest());
     }
 
     public GetWatchRequestBuilder setId(String id) {

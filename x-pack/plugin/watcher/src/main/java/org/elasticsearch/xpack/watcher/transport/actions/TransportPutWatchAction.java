@@ -26,8 +26,8 @@ import org.elasticsearch.transport.TransportService;
 import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xpack.core.ClientHelper;
+import org.elasticsearch.xpack.core.XPackClientPlugin;
 import org.elasticsearch.xpack.core.watcher.support.xcontent.WatcherParams;
-import org.elasticsearch.xpack.core.watcher.transport.actions.put.PutWatchAction;
 import org.elasticsearch.xpack.core.watcher.watch.Watch;
 import org.elasticsearch.xpack.watcher.ClockHolder;
 import org.elasticsearch.xpack.watcher.watch.WatchParser;
@@ -80,7 +80,7 @@ public class TransportPutWatchAction extends WatcherTransportAction<PutWatchRequ
         Client client,
         ClusterService clusterService
     ) {
-        super(PutWatchAction.NAME, transportService, actionFilters, licenseState, PutWatchRequest::new);
+        super(XPackClientPlugin.PUT_WATCH_ACTION.name(), transportService, actionFilters, licenseState, PutWatchRequest::new);
         this.threadPool = threadPool;
         this.clock = clockHolder.clock;
         this.parser = parser;

@@ -8,6 +8,7 @@ package org.elasticsearch.xpack.core.watcher.transport.actions.activate;
 
 import org.elasticsearch.action.ActionRequestBuilder;
 import org.elasticsearch.client.internal.ElasticsearchClient;
+import org.elasticsearch.xpack.core.XPackClientPlugin;
 
 /**
  * A activate watch action request builder.
@@ -15,11 +16,11 @@ import org.elasticsearch.client.internal.ElasticsearchClient;
 public class ActivateWatchRequestBuilder extends ActionRequestBuilder<ActivateWatchRequest, ActivateWatchResponse> {
 
     public ActivateWatchRequestBuilder(ElasticsearchClient client) {
-        super(client, ActivateWatchAction.INSTANCE, new ActivateWatchRequest());
+        super(client, XPackClientPlugin.ACTIVATE_WATCH_ACTION, new ActivateWatchRequest());
     }
 
     public ActivateWatchRequestBuilder(ElasticsearchClient client, String id, boolean activate) {
-        super(client, ActivateWatchAction.INSTANCE, new ActivateWatchRequest(id, activate));
+        super(client, XPackClientPlugin.ACTIVATE_WATCH_ACTION, new ActivateWatchRequest(id, activate));
     }
 
 }

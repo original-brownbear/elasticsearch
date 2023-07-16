@@ -26,6 +26,8 @@ import org.elasticsearch.persistent.PersistentTaskState;
 import org.elasticsearch.plugins.ActionPlugin;
 import org.elasticsearch.plugins.NetworkPlugin;
 import org.elasticsearch.plugins.Plugin;
+import org.elasticsearch.protocol.xpack.watcher.DeleteWatchResponse;
+import org.elasticsearch.protocol.xpack.watcher.PutWatchResponse;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.xcontent.NamedXContentRegistry;
 import org.elasticsearch.xcontent.ParseField;
@@ -223,14 +225,12 @@ import org.elasticsearch.xpack.core.transform.transforms.TransformTaskParams;
 import org.elasticsearch.xpack.core.votingonly.VotingOnlyNodeFeatureSetUsage;
 import org.elasticsearch.xpack.core.watcher.WatcherFeatureSetUsage;
 import org.elasticsearch.xpack.core.watcher.WatcherMetadata;
-import org.elasticsearch.xpack.core.watcher.transport.actions.ack.AckWatchAction;
-import org.elasticsearch.xpack.core.watcher.transport.actions.activate.ActivateWatchAction;
-import org.elasticsearch.xpack.core.watcher.transport.actions.delete.DeleteWatchAction;
+import org.elasticsearch.xpack.core.watcher.transport.actions.ack.AckWatchResponse;
+import org.elasticsearch.xpack.core.watcher.transport.actions.activate.ActivateWatchResponse;
 import org.elasticsearch.xpack.core.watcher.transport.actions.execute.ExecuteWatchAction;
-import org.elasticsearch.xpack.core.watcher.transport.actions.get.GetWatchAction;
-import org.elasticsearch.xpack.core.watcher.transport.actions.put.PutWatchAction;
+import org.elasticsearch.xpack.core.watcher.transport.actions.get.GetWatchResponse;
 import org.elasticsearch.xpack.core.watcher.transport.actions.service.WatcherServiceAction;
-import org.elasticsearch.xpack.core.watcher.transport.actions.stats.WatcherStatsAction;
+import org.elasticsearch.xpack.core.watcher.transport.actions.stats.WatcherStatsResponse;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -240,6 +240,32 @@ import java.util.stream.Stream;
 
 // TODO: merge this into XPackPlugin
 public class XPackClientPlugin extends Plugin implements ActionPlugin, NetworkPlugin {
+
+    public static final ActionType<AckWatchResponse> ACK_WATCH_ACTION = new ActionType<>(
+        "cluster:admin/xpack/watcher/watch/ack",
+        AckWatchResponse::new
+    );
+
+    public static final ActionType<PutWatchResponse> PUT_WATCH_ACTION = new ActionType<>(
+        "cluster:admin/xpack/watcher/watch/put",
+        PutWatchResponse::new
+    );
+    public static final ActionType<GetWatchResponse> GET_WATCH_ACTION = new ActionType<>(
+        "cluster:monitor/xpack/watcher/watch/get",
+        GetWatchResponse::new
+    );
+    public static final ActionType<DeleteWatchResponse> DELETE_WATCH_ACTION = new ActionType<>(
+        "cluster:admin/xpack/watcher/watch/delete",
+        DeleteWatchResponse::new
+    );
+    public static final ActionType<WatcherStatsResponse> WATCHER_STATS_ACTION = new ActionType<>(
+        "cluster:monitor/xpack/watcher/stats/dist",
+        WatcherStatsResponse::new
+    );
+    public static final ActionType<ActivateWatchResponse> ACTIVATE_WATCH_ACTION = new ActionType<>(
+        "cluster:admin/xpack/watcher/watch/activate",
+        ActivateWatchResponse::new
+    );
 
     @Override
     public List<Setting<?>> getSettings() {
@@ -349,12 +375,12 @@ public class XPackClientPlugin extends Plugin implements ActionPlugin, NetworkPl
             InvalidateApiKeyAction.INSTANCE,
             GetApiKeyAction.INSTANCE,
             // watcher
-            PutWatchAction.INSTANCE,
-            DeleteWatchAction.INSTANCE,
-            GetWatchAction.INSTANCE,
-            WatcherStatsAction.INSTANCE,
-            AckWatchAction.INSTANCE,
-            ActivateWatchAction.INSTANCE,
+            PUT_WATCH_ACTION,
+            DELETE_WATCH_ACTION,
+            GET_WATCH_ACTION,
+            WATCHER_STATS_ACTION,
+            ACK_WATCH_ACTION,
+            ACTIVATE_WATCH_ACTION,
             WatcherServiceAction.INSTANCE,
             ExecuteWatchAction.INSTANCE,
             // license

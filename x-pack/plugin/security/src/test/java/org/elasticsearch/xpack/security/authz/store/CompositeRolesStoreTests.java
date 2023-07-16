@@ -55,6 +55,7 @@ import org.elasticsearch.transport.TransportRequest;
 import org.elasticsearch.transport.TransportRequest.Empty;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentType;
+import org.elasticsearch.xpack.core.XPackClientPlugin;
 import org.elasticsearch.xpack.core.XPackPlugin;
 import org.elasticsearch.xpack.core.XPackSettings;
 import org.elasticsearch.xpack.core.security.action.saml.SamlAuthenticateAction;
@@ -99,7 +100,6 @@ import org.elasticsearch.xpack.core.security.user.InternalUser;
 import org.elasticsearch.xpack.core.security.user.InternalUsers;
 import org.elasticsearch.xpack.core.security.user.SystemUser;
 import org.elasticsearch.xpack.core.security.user.User;
-import org.elasticsearch.xpack.core.watcher.transport.actions.get.GetWatchAction;
 import org.elasticsearch.xpack.security.Security;
 import org.elasticsearch.xpack.security.audit.AuditUtil;
 import org.elasticsearch.xpack.security.authc.ApiKeyService;
@@ -2680,7 +2680,12 @@ public class CompositeRolesStoreTests extends ESTestCase {
     }
 
     public void testAsyncSearchUserHasNoClusterPrivileges() {
-        for (String action : Arrays.asList(ClusterStateAction.NAME, GetWatchAction.NAME, ClusterStatsAction.NAME, NodesStatsAction.NAME)) {
+        for (String action : Arrays.asList(
+            ClusterStateAction.NAME,
+            XPackClientPlugin.GET_WATCH_ACTION.name(),
+            ClusterStatsAction.NAME,
+            NodesStatsAction.NAME
+        )) {
             assertThat(
                 getAsyncSearchUserRole().cluster().check(action, mock(TransportRequest.class), AuthenticationTestHelper.builder().build()),
                 Matchers.is(false)
@@ -2689,7 +2694,12 @@ public class CompositeRolesStoreTests extends ESTestCase {
     }
 
     public void testXpackUserHasClusterPrivileges() {
-        for (String action : Arrays.asList(ClusterStateAction.NAME, GetWatchAction.NAME, ClusterStatsAction.NAME, NodesStatsAction.NAME)) {
+        for (String action : Arrays.asList(
+            ClusterStateAction.NAME,
+            XPackClientPlugin.GET_WATCH_ACTION.name(),
+            ClusterStatsAction.NAME,
+            NodesStatsAction.NAME
+        )) {
             assertThat(
                 getXPackUserRole().cluster().check(action, mock(TransportRequest.class), AuthenticationTestHelper.builder().build()),
                 Matchers.is(true)

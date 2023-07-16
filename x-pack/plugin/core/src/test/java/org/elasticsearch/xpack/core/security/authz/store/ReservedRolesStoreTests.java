@@ -68,6 +68,7 @@ import org.elasticsearch.rest.root.MainAction;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.transport.TcpTransport;
 import org.elasticsearch.transport.TransportRequest;
+import org.elasticsearch.xpack.core.XPackClientPlugin;
 import org.elasticsearch.xpack.core.XPackPlugin;
 import org.elasticsearch.xpack.core.action.XPackInfoAction;
 import org.elasticsearch.xpack.core.ilm.action.DeleteLifecycleAction;
@@ -204,14 +205,8 @@ import org.elasticsearch.xpack.core.transform.action.ValidateTransformAction;
 import org.elasticsearch.xpack.core.transform.transforms.persistence.TransformInternalIndexConstants;
 import org.elasticsearch.xpack.core.watcher.execution.TriggeredWatchStoreField;
 import org.elasticsearch.xpack.core.watcher.history.HistoryStoreField;
-import org.elasticsearch.xpack.core.watcher.transport.actions.ack.AckWatchAction;
-import org.elasticsearch.xpack.core.watcher.transport.actions.activate.ActivateWatchAction;
-import org.elasticsearch.xpack.core.watcher.transport.actions.delete.DeleteWatchAction;
 import org.elasticsearch.xpack.core.watcher.transport.actions.execute.ExecuteWatchAction;
-import org.elasticsearch.xpack.core.watcher.transport.actions.get.GetWatchAction;
-import org.elasticsearch.xpack.core.watcher.transport.actions.put.PutWatchAction;
 import org.elasticsearch.xpack.core.watcher.transport.actions.service.WatcherServiceAction;
-import org.elasticsearch.xpack.core.watcher.transport.actions.stats.WatcherStatsAction;
 import org.elasticsearch.xpack.core.watcher.watch.Watch;
 
 import java.util.ArrayList;
@@ -318,12 +313,12 @@ public class ReservedRolesStoreTests extends ESTestCase {
         assertThat(snapshotUserRole.cluster().check(ClusterRerouteAction.NAME, request, authentication), is(false));
         assertThat(snapshotUserRole.cluster().check(ClusterUpdateSettingsAction.NAME, request, authentication), is(false));
         assertThat(snapshotUserRole.cluster().check(MonitoringBulkAction.NAME, request, authentication), is(false));
-        assertThat(snapshotUserRole.cluster().check(GetWatchAction.NAME, request, authentication), is(false));
-        assertThat(snapshotUserRole.cluster().check(PutWatchAction.NAME, request, authentication), is(false));
-        assertThat(snapshotUserRole.cluster().check(DeleteWatchAction.NAME, request, authentication), is(false));
+        assertThat(snapshotUserRole.cluster().check(XPackClientPlugin.GET_WATCH_ACTION.name(), request, authentication), is(false));
+        assertThat(snapshotUserRole.cluster().check(XPackClientPlugin.PUT_WATCH_ACTION.name(), request, authentication), is(false));
+        assertThat(snapshotUserRole.cluster().check(XPackClientPlugin.DELETE_WATCH_ACTION.name(), request, authentication), is(false));
         assertThat(snapshotUserRole.cluster().check(ExecuteWatchAction.NAME, request, authentication), is(false));
-        assertThat(snapshotUserRole.cluster().check(AckWatchAction.NAME, request, authentication), is(false));
-        assertThat(snapshotUserRole.cluster().check(ActivateWatchAction.NAME, request, authentication), is(false));
+        assertThat(snapshotUserRole.cluster().check(XPackClientPlugin.ACK_WATCH_ACTION.name(), request, authentication), is(false));
+        assertThat(snapshotUserRole.cluster().check(XPackClientPlugin.ACTIVATE_WATCH_ACTION.name(), request, authentication), is(false));
         assertThat(snapshotUserRole.cluster().check(WatcherServiceAction.NAME, request, authentication), is(false));
         assertThat(snapshotUserRole.cluster().check(DelegatePkiAuthenticationAction.NAME, request, authentication), is(false));
 
@@ -1574,12 +1569,21 @@ public class ReservedRolesStoreTests extends ESTestCase {
         assertThat(remoteMonitoringAgentRole.cluster().check(ClusterRerouteAction.NAME, request, authentication), is(false));
         assertThat(remoteMonitoringAgentRole.cluster().check(ClusterUpdateSettingsAction.NAME, request, authentication), is(false));
         assertThat(remoteMonitoringAgentRole.cluster().check(MonitoringBulkAction.NAME, request, authentication), is(false));
-        assertThat(remoteMonitoringAgentRole.cluster().check(GetWatchAction.NAME, request, authentication), is(true));
-        assertThat(remoteMonitoringAgentRole.cluster().check(PutWatchAction.NAME, request, authentication), is(true));
-        assertThat(remoteMonitoringAgentRole.cluster().check(DeleteWatchAction.NAME, request, authentication), is(true));
+        assertThat(remoteMonitoringAgentRole.cluster().check(XPackClientPlugin.GET_WATCH_ACTION.name(), request, authentication), is(true));
+        assertThat(remoteMonitoringAgentRole.cluster().check(XPackClientPlugin.PUT_WATCH_ACTION.name(), request, authentication), is(true));
+        assertThat(
+            remoteMonitoringAgentRole.cluster().check(XPackClientPlugin.DELETE_WATCH_ACTION.name(), request, authentication),
+            is(true)
+        );
         assertThat(remoteMonitoringAgentRole.cluster().check(ExecuteWatchAction.NAME, request, authentication), is(false));
-        assertThat(remoteMonitoringAgentRole.cluster().check(AckWatchAction.NAME, request, authentication), is(false));
-        assertThat(remoteMonitoringAgentRole.cluster().check(ActivateWatchAction.NAME, request, authentication), is(false));
+        assertThat(
+            remoteMonitoringAgentRole.cluster().check(XPackClientPlugin.ACK_WATCH_ACTION.name(), request, authentication),
+            is(false)
+        );
+        assertThat(
+            remoteMonitoringAgentRole.cluster().check(XPackClientPlugin.ACTIVATE_WATCH_ACTION.name(), request, authentication),
+            is(false)
+        );
         assertThat(remoteMonitoringAgentRole.cluster().check(WatcherServiceAction.NAME, request, authentication), is(false));
         assertThat(remoteMonitoringAgentRole.cluster().check(DelegatePkiAuthenticationAction.NAME, request, authentication), is(false));
         assertThat(remoteMonitoringAgentRole.cluster().check(ActivateProfileAction.NAME, request, authentication), is(false));
@@ -1592,7 +1596,10 @@ public class ReservedRolesStoreTests extends ESTestCase {
         assertThat(remoteMonitoringAgentRole.cluster().check(PutLifecycleAction.NAME, request, authentication), is(true));
 
         // we get this from the cluster:monitor privilege
-        assertThat(remoteMonitoringAgentRole.cluster().check(WatcherStatsAction.NAME, request, authentication), is(true));
+        assertThat(
+            remoteMonitoringAgentRole.cluster().check(XPackClientPlugin.WATCHER_STATS_ACTION.name(), request, authentication),
+            is(true)
+        );
 
         assertThat(remoteMonitoringAgentRole.runAs().check(randomAlphaOfLengthBetween(1, 12)), is(false));
 
@@ -2908,14 +2915,14 @@ public class ReservedRolesStoreTests extends ESTestCase {
         assertThat(roleDescriptor.getMetadata(), hasEntry("_reserved", true));
 
         Role role = Role.buildFromRoleDescriptor(roleDescriptor, new FieldPermissionsCache(Settings.EMPTY), RESTRICTED_INDICES);
-        assertThat(role.cluster().check(PutWatchAction.NAME, request, authentication), is(true));
-        assertThat(role.cluster().check(GetWatchAction.NAME, request, authentication), is(true));
-        assertThat(role.cluster().check(DeleteWatchAction.NAME, request, authentication), is(true));
+        assertThat(role.cluster().check(XPackClientPlugin.PUT_WATCH_ACTION.name(), request, authentication), is(true));
+        assertThat(role.cluster().check(XPackClientPlugin.GET_WATCH_ACTION.name(), request, authentication), is(true));
+        assertThat(role.cluster().check(XPackClientPlugin.DELETE_WATCH_ACTION.name(), request, authentication), is(true));
         assertThat(role.cluster().check(ExecuteWatchAction.NAME, request, authentication), is(true));
-        assertThat(role.cluster().check(AckWatchAction.NAME, request, authentication), is(true));
-        assertThat(role.cluster().check(ActivateWatchAction.NAME, request, authentication), is(true));
+        assertThat(role.cluster().check(XPackClientPlugin.ACK_WATCH_ACTION.name(), request, authentication), is(true));
+        assertThat(role.cluster().check(XPackClientPlugin.ACTIVATE_WATCH_ACTION.name(), request, authentication), is(true));
         assertThat(role.cluster().check(WatcherServiceAction.NAME, request, authentication), is(true));
-        assertThat(role.cluster().check(WatcherStatsAction.NAME, request, authentication), is(true));
+        assertThat(role.cluster().check(XPackClientPlugin.WATCHER_STATS_ACTION.name(), request, authentication), is(true));
         assertThat(role.cluster().check(DelegatePkiAuthenticationAction.NAME, request, authentication), is(false));
 
         assertThat(role.runAs().check(randomAlphaOfLengthBetween(1, 30)), is(false));
@@ -2939,14 +2946,14 @@ public class ReservedRolesStoreTests extends ESTestCase {
         assertThat(roleDescriptor.getMetadata(), hasEntry("_reserved", true));
 
         Role role = Role.buildFromRoleDescriptor(roleDescriptor, new FieldPermissionsCache(Settings.EMPTY), RESTRICTED_INDICES);
-        assertThat(role.cluster().check(PutWatchAction.NAME, request, authentication), is(false));
-        assertThat(role.cluster().check(GetWatchAction.NAME, request, authentication), is(true));
-        assertThat(role.cluster().check(DeleteWatchAction.NAME, request, authentication), is(false));
+        assertThat(role.cluster().check(XPackClientPlugin.PUT_WATCH_ACTION.name(), request, authentication), is(false));
+        assertThat(role.cluster().check(XPackClientPlugin.GET_WATCH_ACTION.name(), request, authentication), is(true));
+        assertThat(role.cluster().check(XPackClientPlugin.DELETE_WATCH_ACTION.name(), request, authentication), is(false));
         assertThat(role.cluster().check(ExecuteWatchAction.NAME, request, authentication), is(false));
-        assertThat(role.cluster().check(AckWatchAction.NAME, request, authentication), is(false));
-        assertThat(role.cluster().check(ActivateWatchAction.NAME, request, authentication), is(false));
+        assertThat(role.cluster().check(XPackClientPlugin.ACK_WATCH_ACTION.name(), request, authentication), is(false));
+        assertThat(role.cluster().check(XPackClientPlugin.ACTIVATE_WATCH_ACTION.name(), request, authentication), is(false));
         assertThat(role.cluster().check(WatcherServiceAction.NAME, request, authentication), is(false));
-        assertThat(role.cluster().check(WatcherStatsAction.NAME, request, authentication), is(true));
+        assertThat(role.cluster().check(XPackClientPlugin.WATCHER_STATS_ACTION.name(), request, authentication), is(true));
         assertThat(role.cluster().check(DelegatePkiAuthenticationAction.NAME, request, authentication), is(false));
 
         assertThat(role.runAs().check(randomAlphaOfLengthBetween(1, 30)), is(false));

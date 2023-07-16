@@ -16,9 +16,9 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
+import org.elasticsearch.xpack.core.XPackClientPlugin;
 import org.elasticsearch.xpack.core.watcher.WatcherMetadata;
 import org.elasticsearch.xpack.core.watcher.common.stats.Counters;
-import org.elasticsearch.xpack.core.watcher.transport.actions.stats.WatcherStatsAction;
 import org.elasticsearch.xpack.core.watcher.transport.actions.stats.WatcherStatsRequest;
 import org.elasticsearch.xpack.core.watcher.transport.actions.stats.WatcherStatsResponse;
 import org.elasticsearch.xpack.watcher.WatcherLifeCycleService;
@@ -53,7 +53,7 @@ public class TransportWatcherStatsAction extends TransportNodesAction<
         TriggerService triggerService
     ) {
         super(
-            WatcherStatsAction.NAME,
+            XPackClientPlugin.WATCHER_STATS_ACTION.name(),
             threadPool,
             clusterService,
             transportService,

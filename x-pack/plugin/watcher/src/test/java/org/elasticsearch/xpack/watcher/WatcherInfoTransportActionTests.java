@@ -25,6 +25,7 @@ import org.elasticsearch.transport.TransportService;
 import org.elasticsearch.xcontent.ObjectPath;
 import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
+import org.elasticsearch.xpack.core.XPackClientPlugin;
 import org.elasticsearch.xpack.core.XPackFeatureSet;
 import org.elasticsearch.xpack.core.action.XPackUsageFeatureResponse;
 import org.elasticsearch.xpack.core.watcher.WatcherFeatureSetUsage;
@@ -32,7 +33,6 @@ import org.elasticsearch.xpack.core.watcher.WatcherField;
 import org.elasticsearch.xpack.core.watcher.WatcherMetadata;
 import org.elasticsearch.xpack.core.watcher.common.stats.Counters;
 import org.elasticsearch.xpack.core.watcher.support.xcontent.XContentSource;
-import org.elasticsearch.xpack.core.watcher.transport.actions.stats.WatcherStatsAction;
 import org.elasticsearch.xpack.core.watcher.transport.actions.stats.WatcherStatsResponse;
 import org.junit.Before;
 
@@ -123,7 +123,7 @@ public class WatcherInfoTransportActionTests extends ESTestCase {
                 new WatcherStatsResponse(new ClusterName("whatever"), new WatcherMetadata(false), nodes, Collections.emptyList())
             );
             return null;
-        }).when(client).execute(eq(WatcherStatsAction.INSTANCE), any(), any());
+        }).when(client).execute(eq(XPackClientPlugin.WATCHER_STATS_ACTION), any(), any());
         ClusterService clusterService = mock(ClusterService.class);
         final DiscoveryNode mockNode = mock(DiscoveryNode.class);
         when(mockNode.getId()).thenReturn("mocknode");

@@ -21,6 +21,7 @@ import org.elasticsearch.protocol.xpack.XPackUsageRequest;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
+import org.elasticsearch.xpack.core.XPackClientPlugin;
 import org.elasticsearch.xpack.core.XPackSettings;
 import org.elasticsearch.xpack.core.action.XPackUsageFeatureAction;
 import org.elasticsearch.xpack.core.action.XPackUsageFeatureResponse;
@@ -28,7 +29,6 @@ import org.elasticsearch.xpack.core.action.XPackUsageFeatureTransportAction;
 import org.elasticsearch.xpack.core.watcher.WatcherFeatureSetUsage;
 import org.elasticsearch.xpack.core.watcher.WatcherField;
 import org.elasticsearch.xpack.core.watcher.common.stats.Counters;
-import org.elasticsearch.xpack.core.watcher.transport.actions.stats.WatcherStatsAction;
 import org.elasticsearch.xpack.core.watcher.transport.actions.stats.WatcherStatsRequest;
 import org.elasticsearch.xpack.core.watcher.transport.actions.stats.WatcherStatsResponse;
 
@@ -83,7 +83,7 @@ public class WatcherUsageTransportAction extends XPackUsageFeatureTransportActio
                 WatcherStatsRequest statsRequest = new WatcherStatsRequest();
                 statsRequest.includeStats(true);
                 statsRequest.setParentTask(clusterService.localNode().getId(), task.getId());
-                client.execute(WatcherStatsAction.INSTANCE, statsRequest, ActionListener.wrap(r -> {
+                client.execute(XPackClientPlugin.WATCHER_STATS_ACTION, statsRequest, ActionListener.wrap(r -> {
                     List<Counters> countersPerNode = r.getNodes()
                         .stream()
                         .map(WatcherStatsResponse.Node::getStats)

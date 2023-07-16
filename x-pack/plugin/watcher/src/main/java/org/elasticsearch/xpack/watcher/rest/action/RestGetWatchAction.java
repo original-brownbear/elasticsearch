@@ -15,7 +15,7 @@ import org.elasticsearch.rest.RestResponse;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.rest.action.RestBuilderListener;
 import org.elasticsearch.xcontent.XContentBuilder;
-import org.elasticsearch.xpack.core.watcher.transport.actions.get.GetWatchAction;
+import org.elasticsearch.xpack.core.XPackClientPlugin;
 import org.elasticsearch.xpack.core.watcher.transport.actions.get.GetWatchRequest;
 import org.elasticsearch.xpack.core.watcher.transport.actions.get.GetWatchResponse;
 
@@ -40,7 +40,7 @@ public class RestGetWatchAction extends BaseRestHandler {
     @Override
     protected RestChannelConsumer prepareRequest(final RestRequest request, NodeClient client) {
         final GetWatchRequest getWatchRequest = new GetWatchRequest(request.param("id"));
-        return channel -> client.execute(GetWatchAction.INSTANCE, getWatchRequest, new RestBuilderListener<>(channel) {
+        return channel -> client.execute(XPackClientPlugin.GET_WATCH_ACTION, getWatchRequest, new RestBuilderListener<>(channel) {
             @Override
             public RestResponse buildResponse(GetWatchResponse response, XContentBuilder builder) throws Exception {
                 response.toXContent(builder, request);

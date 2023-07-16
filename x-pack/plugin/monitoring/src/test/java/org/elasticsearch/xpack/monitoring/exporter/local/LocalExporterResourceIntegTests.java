@@ -20,9 +20,9 @@ import org.elasticsearch.test.ESIntegTestCase;
 import org.elasticsearch.xcontent.ObjectPath;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentType;
+import org.elasticsearch.xpack.core.XPackClientPlugin;
 import org.elasticsearch.xpack.core.monitoring.MonitoredSystem;
 import org.elasticsearch.xpack.core.monitoring.exporter.MonitoringTemplateUtils;
-import org.elasticsearch.xpack.core.watcher.transport.actions.put.PutWatchAction;
 import org.elasticsearch.xpack.monitoring.MonitoringTemplateRegistry;
 import org.elasticsearch.xpack.monitoring.exporter.ClusterAlertsUtil;
 import org.elasticsearch.xpack.monitoring.exporter.MonitoringMigrationCoordinator;
@@ -199,7 +199,7 @@ public class LocalExporterResourceIntegTests extends LocalExporterIntegTestCase 
         for (final String watchId : ClusterAlertsUtil.WATCH_IDS) {
             final String uniqueWatchId = ClusterAlertsUtil.createUniqueWatchId(clusterService(), watchId);
             final BytesReference watch = generateWatchSource(watchId, clusterService().state().metadata().clusterUUID(), version);
-            client().execute(PutWatchAction.INSTANCE, new PutWatchRequest(uniqueWatchId, watch, XContentType.JSON)).actionGet();
+            client().execute(XPackClientPlugin.PUT_WATCH_ACTION, new PutWatchRequest(uniqueWatchId, watch, XContentType.JSON)).actionGet();
         }
     }
 

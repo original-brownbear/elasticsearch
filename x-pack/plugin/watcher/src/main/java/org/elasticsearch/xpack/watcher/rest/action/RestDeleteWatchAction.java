@@ -17,7 +17,7 @@ import org.elasticsearch.rest.RestResponse;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.rest.action.RestBuilderListener;
 import org.elasticsearch.xcontent.XContentBuilder;
-import org.elasticsearch.xpack.core.watcher.transport.actions.delete.DeleteWatchAction;
+import org.elasticsearch.xpack.core.XPackClientPlugin;
 
 import java.util.List;
 
@@ -42,7 +42,7 @@ public class RestDeleteWatchAction extends BaseRestHandler {
     @Override
     protected RestChannelConsumer prepareRequest(final RestRequest request, NodeClient client) {
         DeleteWatchRequest deleteWatchRequest = new DeleteWatchRequest(request.param("id"));
-        return channel -> client.execute(DeleteWatchAction.INSTANCE, deleteWatchRequest, new RestBuilderListener<>(channel) {
+        return channel -> client.execute(XPackClientPlugin.DELETE_WATCH_ACTION, deleteWatchRequest, new RestBuilderListener<>(channel) {
             @Override
             public RestResponse buildResponse(DeleteWatchResponse response, XContentBuilder builder) throws Exception {
                 builder.startObject()

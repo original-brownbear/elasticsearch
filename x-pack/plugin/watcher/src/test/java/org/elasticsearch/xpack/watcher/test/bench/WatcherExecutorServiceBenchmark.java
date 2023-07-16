@@ -16,8 +16,8 @@ import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.xcontent.XContentType;
+import org.elasticsearch.xpack.core.XPackClientPlugin;
 import org.elasticsearch.xpack.core.watcher.client.WatchSourceBuilder;
-import org.elasticsearch.xpack.core.watcher.transport.actions.put.PutWatchAction;
 import org.elasticsearch.xpack.watcher.Watcher;
 import org.elasticsearch.xpack.watcher.common.http.HttpRequestTemplate;
 import org.elasticsearch.xpack.watcher.condition.ScriptCondition;
@@ -90,7 +90,7 @@ public class WatcherExecutorServiceBenchmark {
                     XContentType.JSON
                 );
                 putAlertRequest.setId(name);
-                client.execute(PutWatchAction.INSTANCE, putAlertRequest).actionGet();
+                client.execute(XPackClientPlugin.PUT_WATCH_ACTION, putAlertRequest).actionGet();
             }
 
             int numThreads = 50;
@@ -136,7 +136,7 @@ public class WatcherExecutorServiceBenchmark {
                     XContentType.JSON
                 );
                 putAlertRequest.setId(name);
-                client.execute(PutWatchAction.INSTANCE, putAlertRequest).actionGet();
+                client.execute(XPackClientPlugin.PUT_WATCH_ACTION, putAlertRequest).actionGet();
             }
 
             int numThreads = 50;
@@ -191,7 +191,7 @@ public class WatcherExecutorServiceBenchmark {
                     XContentType.JSON
                 );
                 putAlertRequest.setId(name);
-                client.execute(PutWatchAction.INSTANCE, putAlertRequest).actionGet();
+                client.execute(XPackClientPlugin.PUT_WATCH_ACTION, putAlertRequest).actionGet();
             }
 
             int numThreads = 50;

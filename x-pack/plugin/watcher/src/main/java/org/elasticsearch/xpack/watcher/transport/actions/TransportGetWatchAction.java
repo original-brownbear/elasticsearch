@@ -19,9 +19,9 @@ import org.elasticsearch.license.XPackLicenseState;
 import org.elasticsearch.transport.TransportService;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentType;
+import org.elasticsearch.xpack.core.XPackClientPlugin;
 import org.elasticsearch.xpack.core.watcher.support.xcontent.WatcherParams;
 import org.elasticsearch.xpack.core.watcher.support.xcontent.XContentSource;
-import org.elasticsearch.xpack.core.watcher.transport.actions.get.GetWatchAction;
 import org.elasticsearch.xpack.core.watcher.transport.actions.get.GetWatchRequest;
 import org.elasticsearch.xpack.core.watcher.transport.actions.get.GetWatchResponse;
 import org.elasticsearch.xpack.core.watcher.watch.Watch;
@@ -51,7 +51,7 @@ public class TransportGetWatchAction extends WatcherTransportAction<GetWatchRequ
         ClockHolder clockHolder,
         Client client
     ) {
-        super(GetWatchAction.NAME, transportService, actionFilters, licenseState, GetWatchRequest::new);
+        super(XPackClientPlugin.GET_WATCH_ACTION.name(), transportService, actionFilters, licenseState, GetWatchRequest::new);
         this.parser = parser;
         this.clock = clockHolder.clock;
         this.client = client;

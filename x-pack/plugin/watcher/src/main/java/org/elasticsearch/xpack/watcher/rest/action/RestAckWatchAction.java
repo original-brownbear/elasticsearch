@@ -15,8 +15,8 @@ import org.elasticsearch.rest.RestResponse;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.rest.action.RestBuilderListener;
 import org.elasticsearch.xcontent.XContentBuilder;
+import org.elasticsearch.xpack.core.XPackClientPlugin;
 import org.elasticsearch.xpack.core.watcher.support.xcontent.WatcherParams;
-import org.elasticsearch.xpack.core.watcher.transport.actions.ack.AckWatchAction;
 import org.elasticsearch.xpack.core.watcher.transport.actions.ack.AckWatchRequest;
 import org.elasticsearch.xpack.core.watcher.transport.actions.ack.AckWatchResponse;
 import org.elasticsearch.xpack.core.watcher.watch.WatchField;
@@ -57,17 +57,21 @@ public class RestAckWatchAction extends BaseRestHandler {
         if (actions != null) {
             ackWatchRequest.setActionIds(actions);
         }
-        return channel -> client.execute(AckWatchAction.INSTANCE, ackWatchRequest, new RestBuilderListener<AckWatchResponse>(channel) {
-            @Override
-            public RestResponse buildResponse(AckWatchResponse response, XContentBuilder builder) throws Exception {
-                return new RestResponse(
-                    RestStatus.OK,
-                    builder.startObject()
-                        .field(WatchField.STATUS.getPreferredName(), response.getStatus(), WatcherParams.HIDE_SECRETS)
-                        .endObject()
-                );
+        return channel -> client.execute(
+            XPackClientPlugin.ACK_WATCH_ACTION,
+            ackWatchRequest,
+            new RestBuilderListener<AckWatchResponse>(channel) {
+                @Override
+                public RestResponse buildResponse(AckWatchResponse response, XContentBuilder builder) throws Exception {
+                    return new RestResponse(
+                        RestStatus.OK,
+                        builder.startObject()
+                            .field(WatchField.STATUS.getPreferredName(), response.getStatus(), WatcherParams.HIDE_SECRETS)
+                            .endObject()
+                    );
 
+                }
             }
-        });
+        );
     }
 }

@@ -19,7 +19,7 @@ import org.elasticsearch.rest.RestResponse;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.rest.action.RestBuilderListener;
 import org.elasticsearch.xcontent.XContentBuilder;
-import org.elasticsearch.xpack.core.watcher.transport.actions.put.PutWatchAction;
+import org.elasticsearch.xpack.core.XPackClientPlugin;
 
 import java.util.List;
 import java.util.Set;
@@ -51,7 +51,7 @@ public class RestPutWatchAction extends BaseRestHandler implements RestRequestFi
         putWatchRequest.setIfSeqNo(request.paramAsLong("if_seq_no", putWatchRequest.getIfSeqNo()));
         putWatchRequest.setIfPrimaryTerm(request.paramAsLong("if_primary_term", putWatchRequest.getIfPrimaryTerm()));
         putWatchRequest.setActive(request.paramAsBoolean("active", putWatchRequest.isActive()));
-        return channel -> client.execute(PutWatchAction.INSTANCE, putWatchRequest, new RestBuilderListener<>(channel) {
+        return channel -> client.execute(XPackClientPlugin.PUT_WATCH_ACTION, putWatchRequest, new RestBuilderListener<>(channel) {
             @Override
             public RestResponse buildResponse(PutWatchResponse response, XContentBuilder builder) throws Exception {
                 response.toXContent(builder, request);

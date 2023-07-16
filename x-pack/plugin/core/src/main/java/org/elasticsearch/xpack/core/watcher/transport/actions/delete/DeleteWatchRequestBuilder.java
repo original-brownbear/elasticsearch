@@ -10,6 +10,7 @@ import org.elasticsearch.action.ActionRequestBuilder;
 import org.elasticsearch.client.internal.ElasticsearchClient;
 import org.elasticsearch.protocol.xpack.watcher.DeleteWatchRequest;
 import org.elasticsearch.protocol.xpack.watcher.DeleteWatchResponse;
+import org.elasticsearch.xpack.core.XPackClientPlugin;
 
 /**
  * A delete document action request builder.
@@ -17,11 +18,11 @@ import org.elasticsearch.protocol.xpack.watcher.DeleteWatchResponse;
 public class DeleteWatchRequestBuilder extends ActionRequestBuilder<DeleteWatchRequest, DeleteWatchResponse> {
 
     public DeleteWatchRequestBuilder(ElasticsearchClient client) {
-        super(client, DeleteWatchAction.INSTANCE, new DeleteWatchRequest());
+        super(client, XPackClientPlugin.DELETE_WATCH_ACTION, new DeleteWatchRequest());
     }
 
     public DeleteWatchRequestBuilder(ElasticsearchClient client, String id) {
-        super(client, DeleteWatchAction.INSTANCE, new DeleteWatchRequest(id));
+        super(client, XPackClientPlugin.DELETE_WATCH_ACTION, new DeleteWatchRequest(id));
     }
 
     /**

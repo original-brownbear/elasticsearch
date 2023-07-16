@@ -12,16 +12,17 @@ import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.protocol.xpack.watcher.PutWatchRequest;
 import org.elasticsearch.protocol.xpack.watcher.PutWatchResponse;
 import org.elasticsearch.xcontent.XContentType;
+import org.elasticsearch.xpack.core.XPackClientPlugin;
 import org.elasticsearch.xpack.core.watcher.client.WatchSourceBuilder;
 
 public class PutWatchRequestBuilder extends ActionRequestBuilder<PutWatchRequest, PutWatchResponse> {
 
     public PutWatchRequestBuilder(ElasticsearchClient client) {
-        super(client, PutWatchAction.INSTANCE, new PutWatchRequest());
+        super(client, XPackClientPlugin.PUT_WATCH_ACTION, new PutWatchRequest());
     }
 
     public PutWatchRequestBuilder(ElasticsearchClient client, String id) {
-        super(client, PutWatchAction.INSTANCE, new PutWatchRequest());
+        super(client, XPackClientPlugin.PUT_WATCH_ACTION, new PutWatchRequest());
         request.setId(id);
     }
 

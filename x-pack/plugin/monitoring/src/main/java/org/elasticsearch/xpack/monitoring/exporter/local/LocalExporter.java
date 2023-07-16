@@ -36,14 +36,12 @@ import org.elasticsearch.license.XPackLicenseState;
 import org.elasticsearch.protocol.xpack.watcher.DeleteWatchRequest;
 import org.elasticsearch.protocol.xpack.watcher.PutWatchRequest;
 import org.elasticsearch.xcontent.XContentType;
+import org.elasticsearch.xpack.core.XPackClientPlugin;
 import org.elasticsearch.xpack.core.XPackSettings;
 import org.elasticsearch.xpack.core.monitoring.MonitoredSystem;
 import org.elasticsearch.xpack.core.monitoring.exporter.MonitoringTemplateUtils;
-import org.elasticsearch.xpack.core.watcher.transport.actions.delete.DeleteWatchAction;
-import org.elasticsearch.xpack.core.watcher.transport.actions.get.GetWatchAction;
 import org.elasticsearch.xpack.core.watcher.transport.actions.get.GetWatchRequest;
 import org.elasticsearch.xpack.core.watcher.transport.actions.get.GetWatchResponse;
-import org.elasticsearch.xpack.core.watcher.transport.actions.put.PutWatchAction;
 import org.elasticsearch.xpack.core.watcher.watch.Watch;
 import org.elasticsearch.xpack.monitoring.Monitoring;
 import org.elasticsearch.xpack.monitoring.MonitoringTemplateRegistry;
@@ -510,7 +508,7 @@ public class LocalExporter extends Exporter implements ClusterStateListener, Cle
 
                     asyncActions.add(
                         () -> client.execute(
-                            GetWatchAction.INSTANCE,
+                            XPackClientPlugin.GET_WATCH_ACTION,
                             new GetWatchRequest(uniqueWatchId),
                             new GetAndPutWatchResponseActionListener(client, watchId, uniqueWatchId, pendingResponses)
                         )
@@ -520,7 +518,7 @@ public class LocalExporter extends Exporter implements ClusterStateListener, Cle
 
                     asyncActions.add(
                         () -> client.execute(
-                            DeleteWatchAction.INSTANCE,
+                            XPackClientPlugin.DELETE_WATCH_ACTION,
                             new DeleteWatchRequest(uniqueWatchId),
                             new ResponseActionListener<>("watch", uniqueWatchId, pendingResponses)
                         )
@@ -555,7 +553,7 @@ public class LocalExporter extends Exporter implements ClusterStateListener, Cle
                 logger.trace("pruning monitoring watch [{}]", uniqueWatchId);
                 asyncActions.add(
                     () -> client.execute(
-                        DeleteWatchAction.INSTANCE,
+                        XPackClientPlugin.DELETE_WATCH_ACTION,
                         new DeleteWatchRequest(uniqueWatchId),
                         new ErrorCapturingResponseListener<>("watch", uniqueWatchId, pendingResponses, setupListener, errors, this.name())
                     )
@@ -577,7 +575,7 @@ public class LocalExporter extends Exporter implements ClusterStateListener, Cle
         executeAsyncWithOrigin(
             clientToUse,
             MONITORING_ORIGIN,
-            PutWatchAction.INSTANCE,
+            XPackClientPlugin.PUT_WATCH_ACTION,
             new PutWatchRequest(uniqueWatchId, new BytesArray(watch), XContentType.JSON),
             new ResponseActionListener<>("watch", uniqueWatchId, pendingResponses, watcherSetup)
         );

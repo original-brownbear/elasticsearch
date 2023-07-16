@@ -15,8 +15,8 @@ import org.elasticsearch.rest.RestResponse;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.rest.action.RestBuilderListener;
 import org.elasticsearch.xcontent.XContentBuilder;
+import org.elasticsearch.xpack.core.XPackClientPlugin;
 import org.elasticsearch.xpack.core.watcher.support.xcontent.WatcherParams;
-import org.elasticsearch.xpack.core.watcher.transport.actions.activate.ActivateWatchAction;
 import org.elasticsearch.xpack.core.watcher.transport.actions.activate.ActivateWatchRequest;
 import org.elasticsearch.xpack.core.watcher.transport.actions.activate.ActivateWatchResponse;
 import org.elasticsearch.xpack.core.watcher.watch.WatchField;
@@ -52,7 +52,7 @@ public class RestActivateWatchAction extends BaseRestHandler {
     public RestChannelConsumer prepareRequest(RestRequest request, NodeClient client) {
         String watchId = request.param("id");
         return channel -> client.execute(
-            ActivateWatchAction.INSTANCE,
+            XPackClientPlugin.ACTIVATE_WATCH_ACTION,
             new ActivateWatchRequest(watchId, true),
             new RestBuilderListener<ActivateWatchResponse>(channel) {
                 @Override
@@ -91,7 +91,7 @@ public class RestActivateWatchAction extends BaseRestHandler {
         public RestChannelConsumer prepareRequest(RestRequest request, NodeClient client) {
             String watchId = request.param("id");
             return channel -> client.execute(
-                ActivateWatchAction.INSTANCE,
+                XPackClientPlugin.ACTIVATE_WATCH_ACTION,
                 new ActivateWatchRequest(watchId, false),
                 new RestBuilderListener<ActivateWatchResponse>(channel) {
                     @Override
