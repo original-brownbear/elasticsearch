@@ -14,7 +14,6 @@ import org.apache.lucene.util.SetOnce;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.TransportVersion;
-import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.NoShardAvailableActionException;
 import org.elasticsearch.action.OriginalIndices;
@@ -225,36 +224,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
             skipShard(iterator);
         }
         if (shardsIts.size() > 0) {
-            assert request.allowPartialSearchResults() != null : "SearchRequest missing setting for allowPartialSearchResults";
-            if (request.allowPartialSearchResults() == false) {
-                final StringBuilder missingShards = new StringBuilder();
-                // Fail-fast verification of all shards being available
-                for (int index = 0; index < shardsIts.size(); index++) {
-                    final SearchShardIterator shardRoutings = shardsIts.get(index);
-                    if (shardRoutings.size() == 0) {
-                        if (missingShards.length() > 0) {
-                            missingShards.append(", ");
-                        }
-                        missingShards.append(shardRoutings.shardId());
-                    }
-                }
-                if (missingShards.length() > 0) {
-                    // Status red - shard is missing all copies and would produce partial results for an index search
-                    final String msg = "Search rejected due to missing shards ["
-                        + missingShards
-                        + "]. Consider using `allow_partial_search_results` setting to bypass this error.";
-                    throw new SearchPhaseExecutionException(getName(), msg, null, ShardSearchFailure.EMPTY_ARRAY);
-                }
-            }
-            Version version = request.minCompatibleShardNode();
-            if (version != null && Version.CURRENT.minimumCompatibilityVersion().equals(version) == false) {
-                if (checkMinimumVersion(shardsIts) == false) {
-                    throw new VersionMismatchException(
-                        "One of the shards is incompatible with the required minimum version [{}]",
-                        request.minCompatibleShardNode()
-                    );
-                }
-            }
+            checkNoMissingShards(nodeIdToConnection, request, shardsIts);
             for (int i = 0; i < shardsIts.size(); i++) {
                 final SearchShardIterator shardRoutings = shardsIts.get(i);
                 assert shardRoutings.skip() == false;
@@ -270,21 +240,6 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
         skippedOps.incrementAndGet();
         assert iterator.skip();
         successfulShardExecution(iterator);
-    }
-
-    private boolean checkMinimumVersion(GroupShardsIterator<SearchShardIterator> shardsIts) {
-        for (SearchShardIterator it : shardsIts) {
-            if (it.getTargetNodeIds().isEmpty() == false) {
-                boolean isCompatible = it.getTargetNodeIds().stream().anyMatch(nodeId -> {
-                    Transport.Connection conn = getConnection(it.getClusterAlias(), nodeId);
-                    return conn == null ? true : conn.getVersion().onOrAfter(request.minCompatibleShardNode());
-                });
-                if (isCompatible == false) {
-                    return false;
-                }
-            }
-        }
-        return true;
     }
 
     private static boolean assertExecuteOnStartThread() {
@@ -763,12 +718,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
 
     @Override
     public final Transport.Connection getConnection(String clusterAlias, String nodeId) {
-        Transport.Connection conn = nodeIdToConnection.apply(clusterAlias, nodeId);
-        Version minVersion = request.minCompatibleShardNode();
-        if (minVersion != null && conn != null && conn.getVersion().before(minVersion)) {
-            throw new VersionMismatchException("One of the shards is incompatible with the required minimum version [{}]", minVersion);
-        }
-        return conn;
+        return getConnection(nodeIdToConnection, request, clusterAlias, nodeId);
     }
 
     @Override
@@ -838,7 +788,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
     private static final class PendingExecutions {
         private final int permits;
         private int permitsTaken = 0;
-        private ArrayDeque<Runnable> queue = new ArrayDeque<>();
+        private final ArrayDeque<Runnable> queue = new ArrayDeque<>();
 
         PendingExecutions(int permits) {
             assert permits > 0 : "not enough permits: " + permits;

@@ -11,7 +11,6 @@ package org.elasticsearch.action.search;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.util.CollectionUtil;
 import org.apache.lucene.util.FixedBitSet;
-import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.cluster.routing.GroupShardsIterator;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
@@ -129,16 +128,7 @@ final class CanMatchPreFilterSearchPhase extends SearchPhase {
     @Override
     public void run() throws IOException {
         assert assertSearchCoordinationThread();
-        checkNoMissingShards();
-        Version version = request.minCompatibleShardNode();
-        if (version != null && Version.CURRENT.minimumCompatibilityVersion().equals(version) == false) {
-            if (checkMinimumVersion(shardsIts) == false) {
-                throw new VersionMismatchException(
-                    "One of the shards is incompatible with the required minimum version [{}]",
-                    request.minCompatibleShardNode()
-                );
-            }
-        }
+        checkNoMissingShards(nodeIdToConnection, request, shardsIts);
         runCoordinatorRewritePhase();
     }
 
@@ -190,31 +180,6 @@ final class CanMatchPreFilterSearchPhase extends SearchPhase {
         }
     }
 
-    private void checkNoMissingShards() {
-        assert assertSearchCoordinationThread();
-        assert request.allowPartialSearchResults() != null : "SearchRequest missing setting for allowPartialSearchResults";
-        if (request.allowPartialSearchResults() == false) {
-            final StringBuilder missingShards = new StringBuilder();
-            // Fail-fast verification of all shards being available
-            for (int index = 0; index < shardsIts.size(); index++) {
-                final SearchShardIterator shardRoutings = shardsIts.get(index);
-                if (shardRoutings.size() == 0) {
-                    if (missingShards.length() > 0) {
-                        missingShards.append(", ");
-                    }
-                    missingShards.append(shardRoutings.shardId());
-                }
-            }
-            if (missingShards.length() > 0) {
-                // Status red - shard is missing all copies and would produce partial results for an index search
-                final String msg = "Search rejected due to missing shards ["
-                    + missingShards
-                    + "]. Consider using `allow_partial_search_results` setting to bypass this error.";
-                throw new SearchPhaseExecutionException(getName(), msg, null, ShardSearchFailure.EMPTY_ARRAY);
-            }
-        }
-    }
-
     private Map<SendingTarget, List<SearchShardIterator>> groupByNode(GroupShardsIterator<SearchShardIterator> shards) {
         Map<SendingTarget, List<SearchShardIterator>> requests = new HashMap<>();
         for (int i = 0; i < shards.size(); i++) {
@@ -257,6 +222,7 @@ final class CanMatchPreFilterSearchPhase extends SearchPhase {
                 CanMatchNodeRequest canMatchNodeRequest = createCanMatchRequest(entry);
                 List<CanMatchNodeRequest.Shard> shardLevelRequests = canMatchNodeRequest.getShardLevelRequests();
 
+                var nodeId = entry.getKey().nodeId;
                 if (entry.getKey().nodeId == null) {
                     // no target node: just mark the requests as failed
                     for (CanMatchNodeRequest.Shard shard : shardLevelRequests) {
@@ -266,31 +232,36 @@ final class CanMatchPreFilterSearchPhase extends SearchPhase {
                 }
 
                 try {
-                    searchTransportService.sendCanMatch(getConnection(entry.getKey()), canMatchNodeRequest, task, new ActionListener<>() {
-                        @Override
-                        public void onResponse(CanMatchNodeResponse canMatchNodeResponse) {
-                            assert canMatchNodeResponse.getResponses().size() == canMatchNodeRequest.getShardLevelRequests().size();
-                            for (int i = 0; i < canMatchNodeResponse.getResponses().size(); i++) {
-                                CanMatchNodeResponse.ResponseOrFailure response = canMatchNodeResponse.getResponses().get(i);
-                                if (response.getResponse() != null) {
-                                    CanMatchShardResponse shardResponse = response.getResponse();
-                                    shardResponse.setShardIndex(shardLevelRequests.get(i).getShardRequestIndex());
-                                    onOperation(shardResponse.getShardIndex(), shardResponse);
-                                } else {
-                                    Exception failure = response.getException();
-                                    assert failure != null;
-                                    onOperationFailed(shardLevelRequests.get(i).getShardRequestIndex(), failure);
+                    searchTransportService.sendCanMatch(
+                        getConnection(nodeIdToConnection, request, entry.getKey().clusterAlias, nodeId),
+                        canMatchNodeRequest,
+                        task,
+                        new ActionListener<>() {
+                            @Override
+                            public void onResponse(CanMatchNodeResponse canMatchNodeResponse) {
+                                assert canMatchNodeResponse.getResponses().size() == canMatchNodeRequest.getShardLevelRequests().size();
+                                for (int i = 0; i < canMatchNodeResponse.getResponses().size(); i++) {
+                                    CanMatchNodeResponse.ResponseOrFailure response = canMatchNodeResponse.getResponses().get(i);
+                                    if (response.getResponse() != null) {
+                                        CanMatchShardResponse shardResponse = response.getResponse();
+                                        shardResponse.setShardIndex(shardLevelRequests.get(i).getShardRequestIndex());
+                                        onOperation(shardResponse.getShardIndex(), shardResponse);
+                                    } else {
+                                        Exception failure = response.getException();
+                                        assert failure != null;
+                                        onOperationFailed(shardLevelRequests.get(i).getShardRequestIndex(), failure);
+                                    }
+                                }
+                            }
+
+                            @Override
+                            public void onFailure(Exception e) {
+                                for (CanMatchNodeRequest.Shard shard : shardLevelRequests) {
+                                    onOperationFailed(shard.getShardRequestIndex(), e);
                                 }
                             }
                         }
-
-                        @Override
-                        public void onFailure(Exception e) {
-                            for (CanMatchNodeRequest.Shard shard : shardLevelRequests) {
-                                onOperationFailed(shard.getShardRequestIndex(), e);
-                            }
-                        }
-                    });
+                    );
                 } catch (Exception e) {
                     for (CanMatchNodeRequest.Shard shard : shardLevelRequests) {
                         onOperationFailed(shard.getShardRequestIndex(), e);
@@ -393,21 +364,6 @@ final class CanMatchPreFilterSearchPhase extends SearchPhase {
         );
     }
 
-    private boolean checkMinimumVersion(GroupShardsIterator<SearchShardIterator> shardsIts) {
-        for (SearchShardIterator it : shardsIts) {
-            if (it.getTargetNodeIds().isEmpty() == false) {
-                boolean isCompatible = it.getTargetNodeIds().stream().anyMatch(nodeId -> {
-                    Transport.Connection conn = getConnection(new SendingTarget(it.getClusterAlias(), nodeId));
-                    return conn == null || conn.getVersion().onOrAfter(request.minCompatibleShardNode());
-                });
-                if (isCompatible == false) {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
     @Override
     public void start() {
         if (getNumShards() == 0) {
@@ -433,15 +389,6 @@ final class CanMatchPreFilterSearchPhase extends SearchPhase {
 
     public void onPhaseFailure(String msg, Exception cause) {
         listener.onFailure(new SearchPhaseExecutionException(getName(), msg, cause, ShardSearchFailure.EMPTY_ARRAY));
-    }
-
-    public Transport.Connection getConnection(SendingTarget sendingTarget) {
-        Transport.Connection conn = nodeIdToConnection.apply(sendingTarget.clusterAlias, sendingTarget.nodeId);
-        Version minVersion = request.minCompatibleShardNode();
-        if (minVersion != null && conn != null && conn.getVersion().before(minVersion)) {
-            throw new VersionMismatchException("One of the shards is incompatible with the required minimum version [{}]", minVersion);
-        }
-        return conn;
     }
 
     private int getNumShards() {
