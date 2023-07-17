@@ -35,14 +35,6 @@ public class PatternReplaceCharFilterFactory extends AbstractCharFilterFactory i
         replacement = settings.get("replacement", ""); // when not set or set to "", use "".
     }
 
-    public Pattern getPattern() {
-        return pattern;
-    }
-
-    public String getReplacement() {
-        return replacement;
-    }
-
     @Override
     public Reader create(Reader tokenStream) {
         return new PatternReplaceCharFilter(pattern, replacement, tokenStream);

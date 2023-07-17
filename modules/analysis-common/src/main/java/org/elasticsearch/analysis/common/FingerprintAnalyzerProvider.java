@@ -23,11 +23,10 @@ import org.elasticsearch.xcontent.ParseField;
  */
 public class FingerprintAnalyzerProvider extends AbstractIndexAnalyzerProvider<Analyzer> {
 
-    public static ParseField SEPARATOR = new ParseField("separator");
-    public static ParseField MAX_OUTPUT_SIZE = new ParseField("max_output_size");
+    public static final ParseField MAX_OUTPUT_SIZE = new ParseField("max_output_size");
 
-    public static int DEFAULT_MAX_OUTPUT_SIZE = 255;
-    public static CharArraySet DEFAULT_STOP_WORDS = CharArraySet.EMPTY_SET;
+    public static final int DEFAULT_MAX_OUTPUT_SIZE = 255;
+    public static final CharArraySet DEFAULT_STOP_WORDS = CharArraySet.EMPTY_SET;
     public static final char DEFAULT_SEPARATOR = ' ';
 
     private final FingerprintAnalyzer analyzer;
@@ -48,7 +47,7 @@ public class FingerprintAnalyzerProvider extends AbstractIndexAnalyzerProvider<A
     }
 
     public static char parseSeparator(Settings settings) throws IllegalArgumentException {
-        String customSeparator = settings.get(SEPARATOR.getPreferredName());
+        String customSeparator = settings.get("separator");
         if (customSeparator == null) {
             return DEFAULT_SEPARATOR;
         } else if (customSeparator.length() == 1) {

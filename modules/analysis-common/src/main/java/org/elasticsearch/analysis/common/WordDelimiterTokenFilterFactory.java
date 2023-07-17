@@ -111,11 +111,8 @@ public class WordDelimiterTokenFilterFactory extends AbstractTokenFilterFactory 
     static byte[] parseTypes(Collection<String> rules) {
         SortedMap<Character, Byte> typeMap = new TreeMap<>();
         for (String rule : rules) {
-            Matcher m = typePattern.matcher(rule);
-            if (m.find() == false) {
-                throw new RuntimeException("Invalid Mapping Rule : [" + rule + "]");
-            }
-            String lhs = parseString(m.group(1).trim());
+            Matcher m = matchType(rule);
+            String lhs = parseString(m.group(1).trim(), new char[256]);
             Byte rhs = parseType(m.group(2).trim());
             if (lhs.length() != 1) throw new RuntimeException("Invalid Mapping Rule : [" + rule + "]. Only a single character is allowed.");
             if (rhs == null) throw new RuntimeException("Invalid Mapping Rule : [" + rule + "]. Illegal type.");
@@ -131,18 +128,27 @@ public class WordDelimiterTokenFilterFactory extends AbstractTokenFilterFactory 
         return types;
     }
 
-    private static Byte parseType(String s) {
-        if (s.equals("LOWER")) return WordDelimiterFilter.LOWER;
-        else if (s.equals("UPPER")) return WordDelimiterFilter.UPPER;
-        else if (s.equals("ALPHA")) return WordDelimiterFilter.ALPHA;
-        else if (s.equals("DIGIT")) return WordDelimiterFilter.DIGIT;
-        else if (s.equals("ALPHANUM")) return WordDelimiterFilter.ALPHANUM;
-        else if (s.equals("SUBWORD_DELIM")) return WordDelimiterFilter.SUBWORD_DELIM;
-        else return null;
+    static Matcher matchType(String rule) {
+        Matcher m = typePattern.matcher(rule);
+        if (m.find() == false) {
+            throw new RuntimeException("Invalid Mapping Rule : [" + rule + "]");
+        }
+        return m;
     }
 
-    private static String parseString(String s) {
-        char[] out = new char[256];
+    private static Byte parseType(String s) {
+        return switch (s) {
+            case "LOWER" -> WordDelimiterFilter.LOWER;
+            case "UPPER" -> WordDelimiterFilter.UPPER;
+            case "ALPHA" -> WordDelimiterFilter.ALPHA;
+            case "DIGIT" -> WordDelimiterFilter.DIGIT;
+            case "ALPHANUM" -> WordDelimiterFilter.ALPHANUM;
+            case "SUBWORD_DELIM" -> WordDelimiterFilter.SUBWORD_DELIM;
+            default -> null;
+        };
+    }
+
+    static String parseString(String s, char[] scratch) {
         int readPos = 0;
         int len = s.length();
         int writePos = 0;
@@ -165,9 +171,9 @@ public class WordDelimiterTokenFilterFactory extends AbstractTokenFilterFactory 
                     }
                 }
             }
-            out[writePos++] = c;
+            scratch[writePos++] = c;
         }
-        return new String(out, 0, writePos);
+        return new String(scratch, 0, writePos);
     }
 
     @Override

@@ -20,7 +20,6 @@ import org.elasticsearch.index.analysis.NormalizingCharFilterFactory;
 import java.io.Reader;
 import java.util.List;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class MappingCharFilterFactory extends AbstractCharFilterFactory implements NormalizingCharFilterFactory {
 
@@ -44,53 +43,16 @@ public class MappingCharFilterFactory extends AbstractCharFilterFactory implemen
         return new MappingCharFilter(normMap, tokenStream);
     }
 
-    // source => target
-    private static Pattern rulePattern = Pattern.compile("(.*)\\s*=>\\s*(.*)\\s*$");
-
     /**
      * parses a list of MappingCharFilter style rules into a normalize char map
      */
     private void parseRules(List<String> rules, NormalizeCharMap.Builder map) {
         for (String rule : rules) {
-            Matcher m = rulePattern.matcher(rule);
-            if (m.find() == false) {
-                throw new RuntimeException("Invalid Mapping Rule : [" + rule + "]");
-            }
-            String lhs = parseString(m.group(1).trim());
-            String rhs = parseString(m.group(2).trim());
-            if (lhs == null || rhs == null) throw new RuntimeException("Invalid Mapping Rule : [" + rule + "]. Illegal mapping.");
+            Matcher m = WordDelimiterTokenFilterFactory.matchType(rule);
+            char[] scratch = new char[256];
+            String lhs = WordDelimiterTokenFilterFactory.parseString(m.group(1).trim(), scratch);
+            String rhs = WordDelimiterTokenFilterFactory.parseString(m.group(2).trim(), scratch);
             map.add(lhs, rhs);
         }
     }
-
-    char[] out = new char[256];
-
-    private String parseString(String s) {
-        int readPos = 0;
-        int len = s.length();
-        int writePos = 0;
-        while (readPos < len) {
-            char c = s.charAt(readPos++);
-            if (c == '\\') {
-                if (readPos >= len) throw new RuntimeException("Invalid escaped char in [" + s + "]");
-                c = s.charAt(readPos++);
-                switch (c) {
-                    case '\\' -> c = '\\';
-                    case 'n' -> c = '\n';
-                    case 't' -> c = '\t';
-                    case 'r' -> c = '\r';
-                    case 'b' -> c = '\b';
-                    case 'f' -> c = '\f';
-                    case 'u' -> {
-                        if (readPos + 3 >= len) throw new RuntimeException("Invalid escaped char in [" + s + "]");
-                        c = (char) Integer.parseInt(s.substring(readPos, readPos + 4), 16);
-                        readPos += 4;
-                    }
-                }
-            }
-            out[writePos++] = c;
-        }
-        return new String(out, 0, writePos);
-    }
-
 }

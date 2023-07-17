@@ -79,7 +79,7 @@ public class StemmerTokenFilterFactory extends AbstractTokenFilterFactory {
 
     private static final TokenStream EMPTY_TOKEN_STREAM = new EmptyTokenStream();
 
-    private String language;
+    private final String language;
 
     StemmerTokenFilterFactory(IndexSettings indexSettings, Environment environment, String name, Settings settings) throws IOException {
         super(name, settings);

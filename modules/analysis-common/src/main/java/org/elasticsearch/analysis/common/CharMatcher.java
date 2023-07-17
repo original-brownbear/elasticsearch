@@ -56,32 +56,21 @@ public interface CharMatcher {
         PUNCTUATION {
             @Override
             public boolean isTokenChar(int c) {
-                switch (Character.getType(c)) {
-                    case Character.START_PUNCTUATION:
-                    case Character.END_PUNCTUATION:
-                    case Character.OTHER_PUNCTUATION:
-                    case Character.CONNECTOR_PUNCTUATION:
-                    case Character.DASH_PUNCTUATION:
-                    case Character.INITIAL_QUOTE_PUNCTUATION:
-                    case Character.FINAL_QUOTE_PUNCTUATION:
-                        return true;
-                    default:
-                        return false;
-                }
+                return switch (Character.getType(c)) {
+                    case Character.START_PUNCTUATION, Character.END_PUNCTUATION, Character.OTHER_PUNCTUATION,
+                        Character.CONNECTOR_PUNCTUATION, Character.DASH_PUNCTUATION, Character.INITIAL_QUOTE_PUNCTUATION,
+                        Character.FINAL_QUOTE_PUNCTUATION -> true;
+                    default -> false;
+                };
             }
         },
         SYMBOL {
             @Override
             public boolean isTokenChar(int c) {
-                switch (Character.getType(c)) {
-                    case Character.CURRENCY_SYMBOL:
-                    case Character.MATH_SYMBOL:
-                    case Character.OTHER_SYMBOL:
-                    case Character.MODIFIER_SYMBOL:
-                        return true;
-                    default:
-                        return false;
-                }
+                return switch (Character.getType(c)) {
+                    case Character.CURRENCY_SYMBOL, Character.MATH_SYMBOL, Character.OTHER_SYMBOL, Character.MODIFIER_SYMBOL -> true;
+                    default -> false;
+                };
             }
         }
     }

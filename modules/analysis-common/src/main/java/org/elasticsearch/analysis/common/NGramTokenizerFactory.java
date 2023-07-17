@@ -11,20 +11,19 @@ package org.elasticsearch.analysis.common;
 import org.apache.lucene.analysis.Tokenizer;
 import org.apache.lucene.analysis.ngram.NGramTokenizer;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.analysis.AbstractTokenizerFactory;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.util.Collections.unmodifiableMap;
 
@@ -53,7 +52,6 @@ public class NGramTokenizerFactory extends AbstractTokenizerFactory {
                     matchers.put(field.getName().toLowerCase(Locale.ROOT), CharMatcher.ByUnicodeCategory.of(field.getByte(null)));
                 } catch (Exception e) {
                     // just ignore
-                    continue;
                 }
             }
         }
@@ -72,12 +70,7 @@ public class NGramTokenizerFactory extends AbstractTokenizerFactory {
             if (matcher == null) {
                 if (characterClass.equals("custom") == false) {
                     throw new IllegalArgumentException(
-                        "Unknown token type: '"
-                            + characterClass
-                            + "', must be one of "
-                            + Stream.of(MATCHERS.keySet(), Collections.singleton("custom"))
-                                .flatMap(x -> x.stream())
-                                .collect(Collectors.toSet())
+                        "Unknown token type: '" + characterClass + "', must be one of " + Sets.addToCopy(MATCHERS.keySet(), "custom")
                     );
                 }
                 String customCharacters = settings.get("custom_token_chars");

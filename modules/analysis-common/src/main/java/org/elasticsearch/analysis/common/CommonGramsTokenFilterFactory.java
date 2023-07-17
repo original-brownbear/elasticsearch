@@ -23,15 +23,12 @@ public class CommonGramsTokenFilterFactory extends AbstractTokenFilterFactory {
 
     private final CharArraySet words;
 
-    private final boolean ignoreCase;
-
     private final boolean queryMode;
 
     CommonGramsTokenFilterFactory(IndexSettings indexSettings, Environment env, String name, Settings settings) {
         super(name, settings);
-        this.ignoreCase = settings.getAsBoolean("ignore_case", false);
         this.queryMode = settings.getAsBoolean("query_mode", false);
-        this.words = Analysis.parseCommonWords(env, settings, null, ignoreCase);
+        this.words = Analysis.parseCommonWords(env, settings, null, settings.getAsBoolean("ignore_case", false));
 
         if (this.words == null) {
             throw new IllegalArgumentException(

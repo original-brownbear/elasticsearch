@@ -54,7 +54,7 @@ public class PredicateTokenFilterScriptFactory extends AbstractTokenFilterFactor
         }
 
         @Override
-        protected boolean accept() throws IOException {
+        protected boolean accept() {
             token.updatePosition();
             return script.execute(token);
         }

@@ -41,10 +41,32 @@ public class CharGroupTokenizerFactory extends AbstractTokenizerFactory {
                 throw new RuntimeException("[tokenize_on_chars] cannot contain empty characters");
             }
 
+            int len = c.length();
             if (c.length() == 1) {
                 tokenizeOnChars.add((int) c.charAt(0));
             } else if (c.charAt(0) == '\\') {
-                tokenizeOnChars.add((int) parseEscapedChar(c));
+                char result;
+                if (c.charAt(0) == '\\') {
+                    char c1 = c.charAt(1);
+                    switch (c1) {
+                        case '\\' -> result = '\\';
+                        case 'n' -> result = '\n';
+                        case 't' -> result = '\t';
+                        case 'r' -> result = '\r';
+                        case 'b' -> result = '\b';
+                        case 'f' -> result = '\f';
+                        case 'u' -> {
+                            if (len > 6) {
+                                throw new RuntimeException("Invalid escaped char in [" + c + "]");
+                            }
+                            result = (char) Integer.parseInt(c.substring(2), 16);
+                        }
+                        default -> throw new RuntimeException("Invalid escaped char " + c1 + " in [" + c + "]");
+                    }
+                } else {
+                    throw new RuntimeException("Invalid escaped char [" + c + "]");
+                }
+                tokenizeOnChars.add((int) result);
             } else {
                 switch (c) {
                     case "letter" -> tokenizeOnLetter = true;
@@ -55,38 +77,6 @@ public class CharGroupTokenizerFactory extends AbstractTokenizerFactory {
                     default -> throw new RuntimeException("Invalid escaped char in [" + c + "]");
                 }
             }
-        }
-    }
-
-    private static char parseEscapedChar(final String s) {
-        int len = s.length();
-        char c = s.charAt(0);
-        if (c == '\\') {
-            if (1 >= len) throw new RuntimeException("Invalid escaped char in [" + s + "]");
-            c = s.charAt(1);
-            switch (c) {
-                case '\\':
-                    return '\\';
-                case 'n':
-                    return '\n';
-                case 't':
-                    return '\t';
-                case 'r':
-                    return '\r';
-                case 'b':
-                    return '\b';
-                case 'f':
-                    return '\f';
-                case 'u':
-                    if (len > 6) {
-                        throw new RuntimeException("Invalid escaped char in [" + s + "]");
-                    }
-                    return (char) Integer.parseInt(s.substring(2), 16);
-                default:
-                    throw new RuntimeException("Invalid escaped char " + c + " in [" + s + "]");
-            }
-        } else {
-            throw new RuntimeException("Invalid escaped char [" + s + "]");
         }
     }
 
