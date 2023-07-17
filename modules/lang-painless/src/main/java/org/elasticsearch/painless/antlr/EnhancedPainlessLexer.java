@@ -63,23 +63,17 @@ final class EnhancedPainlessLexer extends PainlessLexer {
 
     @Override
     protected boolean isSlashRegex() {
-        Token lastToken = current;
-        if (lastToken == null) {
+        return isSlashRegex(current);
+    }
+
+    public static boolean isSlashRegex(Token current) {
+        if (current == null) {
             return true;
         }
-        switch (lastToken.getType()) {
-            case PainlessLexer.RBRACE:
-            case PainlessLexer.RP:
-            case PainlessLexer.OCTAL:
-            case PainlessLexer.HEX:
-            case PainlessLexer.INTEGER:
-            case PainlessLexer.DECIMAL:
-            case PainlessLexer.ID:
-            case PainlessLexer.DOTINTEGER:
-            case PainlessLexer.DOTID:
-                return false;
-            default:
-                return true;
-        }
+        return switch (current.getType()) {
+            case PainlessLexer.RBRACE, PainlessLexer.RP, PainlessLexer.OCTAL, PainlessLexer.HEX, PainlessLexer.INTEGER,
+                PainlessLexer.DECIMAL, PainlessLexer.ID, PainlessLexer.DOTINTEGER, PainlessLexer.DOTID -> false;
+            default -> true;
+        };
     }
 }
