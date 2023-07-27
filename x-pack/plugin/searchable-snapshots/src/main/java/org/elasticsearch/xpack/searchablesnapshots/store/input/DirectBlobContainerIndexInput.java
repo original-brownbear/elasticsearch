@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.LongAdder;
 
 import static org.elasticsearch.blobcache.BlobCacheUtils.toIntBytes;
-import static org.elasticsearch.xpack.searchablesnapshots.store.input.MetadataCachingIndexInput.assertCurrentThreadIsNotCacheFetchAsync;
+import static org.elasticsearch.xpack.searchablesnapshots.store.input.CachedBlobContainerIndexInput.assertCurrentThreadIsNotCacheFetchAsync;
 
 /**
  * A {@link DirectBlobContainerIndexInput} instance corresponds to a single file from a Lucene directory that has been snapshotted. Because
@@ -122,7 +122,7 @@ public final class DirectBlobContainerIndexInput extends BufferedIndexInput {
         final int bytesToRead = b.remaining();
         // We can detect that we're going to read the last 16 bytes (that contains the footer checksum) of the file. Such reads are often
         // executed when opening a Directory and since we have the checksum in the snapshot metadata we can use it to fill the ByteBuffer.
-        if (MetadataCachingIndexInput.maybeReadChecksumFromFileInfo(fileInfo, getFilePointer() + offset, isClone, b)) {
+        if (IndexInputUtils.maybeReadChecksumFromFileInfo(fileInfo, getFilePointer() + offset, isClone, b)) {
             logger.trace("read footer of file [{}], bypassing all caches", fileInfo.physicalName());
         } else {
             doReadInternal(b);
@@ -338,7 +338,7 @@ public final class DirectBlobContainerIndexInput extends BufferedIndexInput {
     }
 
     private InputStream openBlobStream(int part, long pos, long length) throws IOException {
-        assert MetadataCachingIndexInput.assertCurrentThreadMayAccessBlobStore();
+        assert IndexInputUtils.assertCurrentThreadMayAccessBlobStore();
         stats.addBlobStoreBytesRequested(length);
         return blobContainer.readBlob(fileInfo.partName(part), pos, length);
     }
