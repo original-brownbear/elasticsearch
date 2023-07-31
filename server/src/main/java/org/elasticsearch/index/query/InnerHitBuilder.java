@@ -16,6 +16,7 @@ import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.script.Script;
+import org.elasticsearch.search.aggregations.metrics.TopHitsAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder.ScriptField;
 import org.elasticsearch.search.collapse.CollapseBuilder;
@@ -507,37 +508,15 @@ public final class InnerHitBuilder implements Writeable, ToXContentObject {
         if (fetchSourceContext != null) {
             builder.field(SearchSourceBuilder._SOURCE_FIELD.getPreferredName(), fetchSourceContext, params);
         }
-        if (storedFieldsContext != null) {
-            storedFieldsContext.toXContent(SearchSourceBuilder.STORED_FIELDS_FIELD.getPreferredName(), builder);
-        }
-        if (docValueFields != null) {
-            builder.startArray(SearchSourceBuilder.DOCVALUE_FIELDS_FIELD.getPreferredName());
-            for (FieldAndFormat docValueField : docValueFields) {
-                docValueField.toXContent(builder, params);
-            }
-            builder.endArray();
-        }
-        if (fetchFields != null) {
-            builder.startArray(SearchSourceBuilder.FETCH_FIELDS_FIELD.getPreferredName());
-            for (FieldAndFormat docValueField : fetchFields) {
-                docValueField.toXContent(builder, params);
-            }
-            builder.endArray();
-        }
-        if (scriptFields != null) {
-            builder.startObject(SearchSourceBuilder.SCRIPT_FIELDS_FIELD.getPreferredName());
-            for (ScriptField scriptField : scriptFields) {
-                scriptField.toXContent(builder, params);
-            }
-            builder.endObject();
-        }
-        if (sorts != null) {
-            builder.startArray(SearchSourceBuilder.SORT_FIELD.getPreferredName());
-            for (SortBuilder<?> sort : sorts) {
-                sort.toXContent(builder, params);
-            }
-            builder.endArray();
-        }
+        TopHitsAggregationBuilder.commonFieldsToXContent(
+            builder,
+            params,
+            storedFieldsContext,
+            docValueFields,
+            fetchFields,
+            scriptFields,
+            sorts
+        );
         if (highlightBuilder != null) {
             builder.field(SearchSourceBuilder.HIGHLIGHT_FIELD.getPreferredName(), highlightBuilder, params);
         }

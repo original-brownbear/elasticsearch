@@ -675,40 +675,7 @@ public class TopHitsAggregationBuilder extends AbstractAggregationBuilder<TopHit
         if (fetchSourceContext != null) {
             builder.field(SearchSourceBuilder._SOURCE_FIELD.getPreferredName(), fetchSourceContext);
         }
-        if (storedFieldsContext != null) {
-            storedFieldsContext.toXContent(SearchSourceBuilder.STORED_FIELDS_FIELD.getPreferredName(), builder);
-        }
-
-        if (docValueFields != null) {
-            builder.startArray(SearchSourceBuilder.DOCVALUE_FIELDS_FIELD.getPreferredName());
-            for (FieldAndFormat docValueField : docValueFields) {
-                docValueField.toXContent(builder, params);
-            }
-            builder.endArray();
-        }
-
-        if (fetchFields != null) {
-            builder.startArray(SearchSourceBuilder.FETCH_FIELDS_FIELD.getPreferredName());
-            for (FieldAndFormat docValueField : fetchFields) {
-                docValueField.toXContent(builder, params);
-            }
-            builder.endArray();
-        }
-
-        if (scriptFields != null) {
-            builder.startObject(SearchSourceBuilder.SCRIPT_FIELDS_FIELD.getPreferredName());
-            for (ScriptField scriptField : scriptFields) {
-                scriptField.toXContent(builder, params);
-            }
-            builder.endObject();
-        }
-        if (sorts != null) {
-            builder.startArray(SearchSourceBuilder.SORT_FIELD.getPreferredName());
-            for (SortBuilder<?> sort : sorts) {
-                sort.toXContent(builder, params);
-            }
-            builder.endArray();
-        }
+        commonFieldsToXContent(builder, params, storedFieldsContext, docValueFields, fetchFields, scriptFields, sorts);
         if (trackScores) {
             builder.field(SearchSourceBuilder.TRACK_SCORES_FIELD.getPreferredName(), true);
         }
@@ -717,6 +684,36 @@ public class TopHitsAggregationBuilder extends AbstractAggregationBuilder<TopHit
         }
         builder.endObject();
         return builder;
+    }
+
+    public static void commonFieldsToXContent(
+        XContentBuilder builder,
+        Params params,
+        StoredFieldsContext storedFieldsContext,
+        List<FieldAndFormat> docValueFields,
+        List<FieldAndFormat> fetchFields,
+        Set<ScriptField> scriptFields,
+        List<SortBuilder<?>> sorts
+    ) throws IOException {
+        if (storedFieldsContext != null) {
+            storedFieldsContext.toXContent(SearchSourceBuilder.STORED_FIELDS_FIELD.getPreferredName(), builder);
+        }
+        if (docValueFields != null) {
+            builder.xContentList(SearchSourceBuilder.DOCVALUE_FIELDS_FIELD.getPreferredName(), docValueFields);
+        }
+        if (fetchFields != null) {
+            builder.xContentList(SearchSourceBuilder.FETCH_FIELDS_FIELD.getPreferredName(), fetchFields);
+        }
+        if (scriptFields != null) {
+            builder.startObject(SearchSourceBuilder.SCRIPT_FIELDS_FIELD.getPreferredName());
+            for (ScriptField scriptField : scriptFields) {
+                scriptField.toXContent(builder, params);
+            }
+            builder.endObject();
+        }
+        if (sorts != null) {
+            builder.xContentList(SearchSourceBuilder.SORT_FIELD.getPreferredName(), sorts);
+        }
     }
 
     public static TopHitsAggregationBuilder parse(String aggregationName, XContentParser parser) throws IOException {
