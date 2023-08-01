@@ -170,8 +170,6 @@ public class HotThreadsTests extends ESTestCase {
             )
         ).toArray(new StackTraceElement[0]);
 
-        HotThreads hotThreads = new HotThreads();
-
         // We can simplify this with records when the toolchain is upgraded
         class SimilarityTestCase {
             final StackTraceElement[] one;
@@ -831,7 +829,6 @@ public class HotThreadsTests extends ESTestCase {
         when(mockedSunThreadInfo.isThreadAllocatedMemorySupported()).thenReturn(false);
 
         long[] threadIds = new long[] { 1, 2, 3, 4 }; // Adds up to 10, the intervalNanos for calculating time percentages
-        long mockCurrentThreadId = 0L;
         when(mockedMXBean.getAllThreadIds()).thenReturn(threadIds);
 
         List<ThreadInfo> allInfos = makeThreadInfoMocksHelper(mockedMXBean, "Thread", threadIds);

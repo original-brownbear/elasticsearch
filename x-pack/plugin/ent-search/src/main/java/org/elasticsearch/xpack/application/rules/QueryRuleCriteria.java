@@ -16,8 +16,6 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.core.Nullable;
-import org.elasticsearch.logging.LogManager;
-import org.elasticsearch.logging.Logger;
 import org.elasticsearch.xcontent.ConstructingObjectParser;
 import org.elasticsearch.xcontent.ParseField;
 import org.elasticsearch.xcontent.ToXContentObject;
@@ -40,8 +38,6 @@ public class QueryRuleCriteria implements Writeable, ToXContentObject {
     private final QueryRuleCriteriaType criteriaType;
     private final String criteriaMetadata;
     private final List<Object> criteriaValues;
-
-    private static final Logger logger = LogManager.getLogger(QueryRuleCriteria.class);
 
     /**
      *

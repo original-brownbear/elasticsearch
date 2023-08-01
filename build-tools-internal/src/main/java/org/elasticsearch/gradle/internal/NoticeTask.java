@@ -60,11 +60,9 @@ public class NoticeTask extends DefaultTask {
     private final ListProperty<File> licensesDirs;
 
     private final FileOperations fileOperations;
-    private ObjectFactory objectFactory;
 
     @Inject
     public NoticeTask(BuildLayout buildLayout, ProjectLayout projectLayout, FileOperations fileOperations, ObjectFactory objectFactory) {
-        this.objectFactory = objectFactory;
         this.fileOperations = fileOperations;
         setDescription("Create a notice file from dependencies");
         // Default licenses directory is ${projectDir}/licenses (if it exists)

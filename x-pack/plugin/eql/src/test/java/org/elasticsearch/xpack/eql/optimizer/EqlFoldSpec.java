@@ -14,13 +14,11 @@ import java.util.Objects;
 public class EqlFoldSpec {
 
     private final String name;
-    private final String description;
     private final String expression;
     private final Object expected;
 
     EqlFoldSpec(String name, String description, String expression, Object expected) {
         this.name = name;
-        this.description = description;
         this.expression = expression;
         this.expected = expected;
     }

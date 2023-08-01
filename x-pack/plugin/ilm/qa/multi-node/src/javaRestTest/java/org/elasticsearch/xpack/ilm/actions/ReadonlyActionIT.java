@@ -35,7 +35,6 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.nullValue;
 
 public class ReadonlyActionIT extends ESRestTestCase {
-    private static final String FAILED_STEP_RETRY_COUNT_FIELD = "failed_step_retry_count";
 
     private String policy;
     private String index;

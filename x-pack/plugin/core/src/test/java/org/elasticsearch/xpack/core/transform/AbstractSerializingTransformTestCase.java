@@ -7,11 +7,7 @@
 
 package org.elasticsearch.xpack.core.transform;
 
-import org.elasticsearch.TransportVersion;
-import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
-import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -30,7 +26,6 @@ import org.elasticsearch.xpack.core.transform.transforms.TimeRetentionPolicyConf
 import org.elasticsearch.xpack.core.transform.transforms.TimeSyncConfig;
 import org.junit.Before;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
@@ -109,24 +104,6 @@ public abstract class AbstractSerializingTransformTestCase<T extends ToXContent 
     @Override
     protected NamedXContentRegistry xContentRegistry() {
         return namedXContentRegistry;
-    }
-
-    protected <X extends Writeable, Y extends Writeable> Y writeAndReadBWCObject(
-        X original,
-        NamedWriteableRegistry registry,
-        Writeable.Writer<X> writer,
-        Writeable.Reader<Y> reader,
-        TransportVersion version
-    ) throws IOException {
-        try (BytesStreamOutput output = new BytesStreamOutput()) {
-            output.setTransportVersion(version);
-            original.writeTo(output);
-
-            try (StreamInput in = new NamedWriteableAwareStreamInput(output.bytes().streamInput(), getNamedWriteableRegistry())) {
-                in.setTransportVersion(version);
-                return reader.read(in);
-            }
-        }
     }
 
 }

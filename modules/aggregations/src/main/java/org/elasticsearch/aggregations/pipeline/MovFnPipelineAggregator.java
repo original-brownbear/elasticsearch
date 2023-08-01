@@ -50,7 +50,6 @@ public class MovFnPipelineAggregator extends PipelineAggregator {
     private final DocValueFormat formatter;
     private final BucketHelpers.GapPolicy gapPolicy;
     private final Script script;
-    private final String bucketsPath;
     private final int window;
     private final int shift;
 
@@ -65,7 +64,6 @@ public class MovFnPipelineAggregator extends PipelineAggregator {
         Map<String, Object> metadata
     ) {
         super(name, new String[] { bucketsPath }, metadata);
-        this.bucketsPath = bucketsPath;
         this.script = script;
         this.formatter = formatter;
         this.gapPolicy = gapPolicy;

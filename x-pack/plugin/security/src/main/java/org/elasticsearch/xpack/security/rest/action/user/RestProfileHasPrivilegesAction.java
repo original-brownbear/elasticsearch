@@ -33,11 +33,8 @@ import static org.elasticsearch.rest.RestRequest.Method.POST;
 @ServerlessScope(Scope.INTERNAL)
 public class RestProfileHasPrivilegesAction extends SecurityBaseRestHandler {
 
-    private final SecurityContext securityContext;
-
     public RestProfileHasPrivilegesAction(Settings settings, SecurityContext securityContext, XPackLicenseState licenseState) {
         super(settings, licenseState);
-        this.securityContext = securityContext;
     }
 
     @Override

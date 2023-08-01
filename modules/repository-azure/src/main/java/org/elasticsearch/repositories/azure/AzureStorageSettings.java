@@ -125,9 +125,6 @@ final class AzureStorageSettings {
 
     private final String account;
 
-    @Nullable
-    private final String sasToken;
-
     private final String connectString;
     private final String endpointSuffix;
     private final TimeValue timeout;
@@ -148,7 +145,6 @@ final class AzureStorageSettings {
         String secondaryEndpoint
     ) {
         this.account = account;
-        this.sasToken = sasToken;
         this.connectString = buildConnectString(account, key, sasToken, endpointSuffix, endpoint, secondaryEndpoint);
         this.endpointSuffix = endpointSuffix;
         this.timeout = timeout;

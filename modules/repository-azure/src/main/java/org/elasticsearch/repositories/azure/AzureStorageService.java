@@ -9,7 +9,6 @@
 package org.elasticsearch.repositories.azure;
 
 import com.azure.core.http.ProxyOptions;
-import com.azure.core.util.logging.ClientLogger;
 import com.azure.storage.common.policy.RequestRetryOptions;
 import com.azure.storage.common.policy.RetryPolicyType;
 
@@ -70,7 +69,6 @@ public class AzureStorageService {
     // 'package' for testing
     volatile Map<String, AzureStorageSettings> storageSettings = emptyMap();
     private final AzureClientProvider azureClientProvider;
-    private final ClientLogger clientLogger = new ClientLogger(AzureStorageService.class);
 
     public AzureStorageService(Settings settings, AzureClientProvider azureClientProvider) {
         // eagerly load client settings so that secure settings are read

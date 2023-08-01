@@ -59,7 +59,6 @@ import org.elasticsearch.xpack.watcher.actions.logging.LoggingActionFactory;
 import org.elasticsearch.xpack.watcher.actions.webhook.ExecutableWebhookAction;
 import org.elasticsearch.xpack.watcher.actions.webhook.WebhookAction;
 import org.elasticsearch.xpack.watcher.actions.webhook.WebhookActionFactory;
-import org.elasticsearch.xpack.watcher.common.http.HttpClient;
 import org.elasticsearch.xpack.watcher.common.http.HttpMethod;
 import org.elasticsearch.xpack.watcher.common.http.HttpRequestTemplate;
 import org.elasticsearch.xpack.watcher.common.text.TextTemplate;
@@ -152,21 +151,18 @@ public class WatchTests extends ESTestCase {
 
     private ScriptService scriptService;
     private Client client;
-    private HttpClient httpClient;
     private EmailService emailService;
     private WebhookService webhookService;
     private TextTemplateEngine templateEngine;
     private HtmlSanitizer htmlSanitizer;
     private XPackLicenseState licenseState;
     private Logger logger;
-    private Settings settings = Settings.EMPTY;
     private WatcherSearchTemplateService searchTemplateService;
 
     @Before
     public void init() throws Exception {
         scriptService = mock(ScriptService.class);
         client = mock(Client.class);
-        httpClient = mock(HttpClient.class);
         emailService = mock(EmailService.class);
         webhookService = mock(WebhookService.class);
         templateEngine = mock(TextTemplateEngine.class);
@@ -537,7 +533,7 @@ public class WatchTests extends ESTestCase {
     private InputRegistry registry(String inputType) {
         return switch (inputType) {
             case SearchInput.TYPE -> new InputRegistry(
-                Map.of(SearchInput.TYPE, new SearchInputFactory(settings, client, xContentRegistry(), scriptService))
+                Map.of(SearchInput.TYPE, new SearchInputFactory(Settings.EMPTY, client, xContentRegistry(), scriptService))
             );
             default -> new InputRegistry(Map.of(SimpleInput.TYPE, new SimpleInputFactory()));
         };
@@ -596,7 +592,7 @@ public class WatchTests extends ESTestCase {
                 ScriptTransform.TYPE,
                 new ScriptTransformFactory(scriptService),
                 SearchTransform.TYPE,
-                new SearchTransformFactory(settings, client, xContentRegistry(), scriptService)
+                new SearchTransformFactory(Settings.EMPTY, client, xContentRegistry(), scriptService)
             )
         );
     }
@@ -676,9 +672,9 @@ public class WatchTests extends ESTestCase {
             switch (action.action().type()) {
                 case EmailAction.TYPE -> parsers.put(
                     EmailAction.TYPE,
-                    new EmailActionFactory(settings, emailService, templateEngine, new EmailAttachmentsParser(Collections.emptyMap()))
+                    new EmailActionFactory(Settings.EMPTY, emailService, templateEngine, new EmailAttachmentsParser(Collections.emptyMap()))
                 );
-                case IndexAction.TYPE -> parsers.put(IndexAction.TYPE, new IndexActionFactory(settings, client));
+                case IndexAction.TYPE -> parsers.put(IndexAction.TYPE, new IndexActionFactory(Settings.EMPTY, client));
                 case WebhookAction.TYPE -> parsers.put(WebhookAction.TYPE, new WebhookActionFactory(webhookService, templateEngine));
                 case LoggingAction.TYPE -> parsers.put(LoggingAction.TYPE, new LoggingActionFactory(new MockTextTemplateEngine()));
             }

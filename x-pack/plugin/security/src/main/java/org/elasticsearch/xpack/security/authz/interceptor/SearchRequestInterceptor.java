@@ -20,11 +20,8 @@ import java.util.Map;
 
 public class SearchRequestInterceptor extends FieldAndDocumentLevelSecurityRequestInterceptor {
 
-    private final ClusterService clusterService;
-
     public SearchRequestInterceptor(ThreadPool threadPool, XPackLicenseState licenseState, ClusterService clusterService) {
         super(threadPool.getThreadContext(), licenseState);
-        this.clusterService = clusterService;
     }
 
     @Override

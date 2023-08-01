@@ -553,7 +553,6 @@ public class AssignmentPlannerTests extends ESTestCase {
     }
 
     public static Deployment randomModel(String idSuffix) {
-        int allocations = randomIntBetween(1, 32);
         return new Deployment(
             "m_" + idSuffix,
             randomLongBetween(ByteSizeValue.ofMb(100).getBytes(), ByteSizeValue.ofGb(10).getBytes()),

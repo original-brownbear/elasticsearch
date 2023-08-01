@@ -12,7 +12,6 @@ import org.elasticsearch.Build;
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.admin.cluster.node.info.NodeInfo;
-import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.ClusterState;
@@ -29,8 +28,6 @@ import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.ingest.ProcessorInfo;
 import org.elasticsearch.plugins.IngestPlugin;
 import org.elasticsearch.reservedstate.TransformState;
-import org.elasticsearch.reservedstate.service.FileSettingsService;
-import org.elasticsearch.reservedstate.service.ReservedClusterStateService;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.xcontent.XContentParser;
@@ -40,7 +37,6 @@ import org.junit.Before;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static java.util.Collections.emptySet;
@@ -71,7 +67,6 @@ public class ReservedPipelineActionTests extends ESTestCase {
 
     private ThreadPool threadPool;
     private IngestService ingestService;
-    private FileSettingsService fileSettingsService;
 
     @Before
     public void setup() {
@@ -114,7 +109,6 @@ public class ReservedPipelineActionTests extends ESTestCase {
             null,
             null
         );
-        NodesInfoResponse response = new NodesInfoResponse(new ClusterName("elasticsearch"), List.of(nodeInfo), List.of());
 
         var clusterService = spy(
             new ClusterService(
@@ -123,10 +117,6 @@ public class ReservedPipelineActionTests extends ESTestCase {
                 threadPool,
                 null
             )
-        );
-
-        fileSettingsService = spy(
-            new FileSettingsService(clusterService, mock(ReservedClusterStateService.class), newEnvironment(Settings.EMPTY))
         );
     }
 

@@ -25,8 +25,6 @@ import org.elasticsearch.env.NodeEnvironment;
 import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.indices.SystemIndexDescriptor;
 import org.elasticsearch.license.XPackLicenseState;
-import org.elasticsearch.logging.LogManager;
-import org.elasticsearch.logging.Logger;
 import org.elasticsearch.plugins.ActionPlugin;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.plugins.SearchPlugin;
@@ -110,8 +108,6 @@ public class EnterpriseSearch extends Plugin implements ActionPlugin, SystemInde
     public static final String BEHAVIORAL_ANALYTICS_API_ENDPOINT = APPLICATION_API_ENDPOINT + "/analytics";
 
     public static final String QUERY_RULES_API_ENDPOINT = "_query_rules";
-
-    private static final Logger logger = LogManager.getLogger(EnterpriseSearch.class);
 
     public static final String FEATURE_NAME = "ent_search";
 

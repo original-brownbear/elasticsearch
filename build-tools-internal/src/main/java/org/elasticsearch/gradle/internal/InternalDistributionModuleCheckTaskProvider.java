@@ -13,8 +13,6 @@ import org.gradle.api.Action;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
-import org.gradle.api.logging.Logger;
-import org.gradle.api.logging.Logging;
 import org.gradle.api.tasks.Copy;
 import org.gradle.api.tasks.TaskProvider;
 
@@ -37,8 +35,6 @@ import static java.util.stream.Collectors.joining;
  * Currently, ES modular jar files are in the lib directory.
  */
 public class InternalDistributionModuleCheckTaskProvider {
-
-    private static final Logger LOGGER = Logging.getLogger(InternalDistributionModuleCheckTaskProvider.class);
 
     private static final String MODULE_INFO = "module-info.class";
 

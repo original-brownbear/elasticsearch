@@ -38,7 +38,6 @@ import static org.hamcrest.CoreMatchers.equalTo;
 
 public class SearchApplicationIndexServiceTests extends ESSingleNodeTestCase {
     private static final int NUM_INDICES = 10;
-    private static final long UPDATED_AT = System.currentTimeMillis();
 
     private SearchApplicationIndexService searchAppService;
     private ClusterService clusterService;

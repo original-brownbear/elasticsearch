@@ -7,8 +7,6 @@
 
 package org.elasticsearch.xpack.idp;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.client.internal.Client;
@@ -81,7 +79,6 @@ public class IdentityProviderPlugin extends Plugin implements ActionPlugin {
 
     private static final Setting<Boolean> ENABLED_SETTING = Setting.boolSetting("xpack.idp.enabled", false, Setting.Property.NodeScope);
 
-    private final Logger logger = LogManager.getLogger(IdentityProviderPlugin.class);
     private boolean enabled;
     private Settings settings;
 

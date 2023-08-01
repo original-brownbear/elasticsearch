@@ -2190,7 +2190,6 @@ public class MasterServiceTests extends ESTestCase {
             final var testHeader = "test-header";
 
             class TestTask implements ClusterStateTaskListener {
-                private final String expectedHeader = threadPool.getThreadContext().getHeader(testHeader);
 
                 @Override
                 public void onFailure(Exception e) {

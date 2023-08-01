@@ -27,7 +27,6 @@ public class AbstractRangeAggregatorFactory<R extends Range> extends ValuesSourc
     private final InternalRange.Factory<?, ?> rangeFactory;
     private final R[] ranges;
     private final boolean keyed;
-    private final ValuesSourceRegistry.RegistryKey<RangeAggregatorSupplier> registryKey;
     private final RangeAggregatorSupplier aggregatorSupplier;
 
     public AbstractRangeAggregatorFactory(
@@ -47,7 +46,6 @@ public class AbstractRangeAggregatorFactory<R extends Range> extends ValuesSourc
         this.ranges = ranges;
         this.keyed = keyed;
         this.rangeFactory = rangeFactory;
-        this.registryKey = registryKey;
         this.aggregatorSupplier = aggregatorSupplier;
     }
 

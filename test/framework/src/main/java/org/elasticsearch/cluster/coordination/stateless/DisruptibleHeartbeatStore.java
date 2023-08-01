@@ -8,14 +8,10 @@
 
 package org.elasticsearch.cluster.coordination.stateless;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.cluster.coordination.AbstractCoordinatorTestCase;
 
 public class DisruptibleHeartbeatStore implements HeartbeatStore {
-
-    private static final Logger logger = LogManager.getLogger(DisruptibleHeartbeatStore.class);
 
     private final HeartbeatStore delegate;
     private final AbstractCoordinatorTestCase.DisruptibleRegisterConnection disruptibleRegisterConnection;

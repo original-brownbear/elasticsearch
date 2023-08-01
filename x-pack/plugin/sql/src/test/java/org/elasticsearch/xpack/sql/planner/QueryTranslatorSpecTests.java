@@ -71,13 +71,11 @@ public class QueryTranslatorSpecTests extends ESTestCase {
         testContext = new TestContext("mapping-multi-field-variation.json");
     }
 
-    private final String filename;
     private final String name;
     private final String query;
     private final List<Matcher<String>> matchers;
 
-    public QueryTranslatorSpecTests(String filename, String name, String query, List<Matcher<String>> matchers) {
-        this.filename = filename;
+    public QueryTranslatorSpecTests(String name, String query, List<Matcher<String>> matchers) {
         this.name = name;
         this.query = query;
         this.matchers = matchers;

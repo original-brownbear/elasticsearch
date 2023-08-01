@@ -37,11 +37,9 @@ public class TomlFoldTests extends ESTestCase {
     private static final EqlParser PARSER = new EqlParser();
     private static final Analyzer ANALYZER = analyzer();
 
-    private final int num;
     private final EqlFoldSpec spec;
 
     public TomlFoldTests(int num, EqlFoldSpec spec) {
-        this.num = num;
         this.spec = spec;
     }
 

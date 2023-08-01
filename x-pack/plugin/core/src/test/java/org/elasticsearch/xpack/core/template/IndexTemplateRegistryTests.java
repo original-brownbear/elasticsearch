@@ -71,7 +71,6 @@ import static org.mockito.Mockito.when;
 
 public class IndexTemplateRegistryTests extends ESTestCase {
     private TestRegistryWithCustomPlugin registry;
-    private ClusterService clusterService;
     private ThreadPool threadPool;
     private VerifyingClient client;
 
@@ -79,7 +78,7 @@ public class IndexTemplateRegistryTests extends ESTestCase {
     public void createRegistryAndClient() {
         threadPool = new TestThreadPool(this.getClass().getName());
         client = new VerifyingClient(threadPool);
-        clusterService = ClusterServiceUtils.createClusterService(threadPool);
+        ClusterService clusterService = ClusterServiceUtils.createClusterService(threadPool);
         registry = new TestRegistryWithCustomPlugin(Settings.EMPTY, clusterService, threadPool, client, NamedXContentRegistry.EMPTY);
     }
 
@@ -210,7 +209,7 @@ public class IndexTemplateRegistryTests extends ESTestCase {
         AtomicInteger calledTimes = new AtomicInteger(0);
         client.setVerifier((action, request, listener) -> {
             if (action instanceof PutComposableIndexTemplateAction) {
-                assertPutComposableIndexTemplateAction(calledTimes, action, request, listener);
+                assertPutComposableIndexTemplateAction(calledTimes, request, listener);
                 return AcknowledgedResponse.TRUE;
             } else if (action instanceof PutLifecycleAction) {
                 // ignore lifecycle policies in this case
@@ -253,7 +252,7 @@ public class IndexTemplateRegistryTests extends ESTestCase {
                 assertPutComponentTemplate(calledTimes, action, request, listener);
                 return AcknowledgedResponse.TRUE;
             } else if (action instanceof PutComposableIndexTemplateAction) {
-                assertPutComposableIndexTemplateAction(calledTimes, action, request, listener);
+                assertPutComposableIndexTemplateAction(calledTimes, request, listener);
                 return AcknowledgedResponse.TRUE;
             } else {
                 fail("client called with unexpected request: " + request.toString());
@@ -485,7 +484,6 @@ public class IndexTemplateRegistryTests extends ESTestCase {
 
     private static void assertPutComposableIndexTemplateAction(
         AtomicInteger calledTimes,
-        ActionType<?> action,
         ActionRequest request,
         ActionListener<?> listener
     ) {

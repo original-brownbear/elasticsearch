@@ -9,31 +9,12 @@
 package org.elasticsearch.search.runtime;
 
 import org.apache.lucene.search.Explanation;
-import org.elasticsearch.script.AbstractFieldScript;
-import org.elasticsearch.script.Script;
 import org.elasticsearch.test.ESTestCase;
-
-import java.io.IOException;
 
 import static org.hamcrest.Matchers.equalTo;
 
 public class AbstractScriptFieldQueryTests extends ESTestCase {
-    public void testExplainMatched() throws IOException {
-        AbstractScriptFieldQuery<AbstractFieldScript> query = new AbstractScriptFieldQuery<AbstractFieldScript>(
-            new Script("test"),
-            "test",
-            null
-        ) {
-            @Override
-            protected boolean matches(AbstractFieldScript scriptContext, int docId) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public String toString(String field) {
-                throw new UnsupportedOperationException();
-            }
-        };
+    public void testExplainMatched() {
         float boost = randomBoolean() ? 1.0f : randomFloat();
         String dummyDescription = randomAlphaOfLength(10);
         assertThat(

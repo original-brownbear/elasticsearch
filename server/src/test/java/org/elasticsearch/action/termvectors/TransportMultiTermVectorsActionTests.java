@@ -67,7 +67,6 @@ public class TransportMultiTermVectorsActionTests extends ESTestCase {
     private static TransportService transportService;
     private static ClusterService clusterService;
     private static TransportMultiTermVectorsAction transportAction;
-    private static TransportShardMultiTermsVectorAction shardAction;
 
     @BeforeClass
     public static void beforeClass() throws Exception {
@@ -161,7 +160,7 @@ public class TransportMultiTermVectorsActionTests extends ESTestCase {
         when(clusterService.state()).thenReturn(clusterState);
         when(clusterService.operationRouting()).thenReturn(operationRouting);
 
-        shardAction = new TransportShardMultiTermsVectorAction(
+        new TransportShardMultiTermsVectorAction(
             clusterService,
             transportService,
             mock(IndicesService.class),
@@ -185,7 +184,6 @@ public class TransportMultiTermVectorsActionTests extends ESTestCase {
         transportService = null;
         clusterService = null;
         transportAction = null;
-        shardAction = null;
     }
 
     public void testTransportMultiGetAction() {

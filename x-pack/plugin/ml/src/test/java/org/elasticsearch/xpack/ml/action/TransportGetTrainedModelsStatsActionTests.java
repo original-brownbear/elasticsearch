@@ -19,7 +19,6 @@ import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.ingest.IngestDocument;
-import org.elasticsearch.ingest.IngestService;
 import org.elasticsearch.ingest.IngestStats;
 import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.license.MockLicenseState;
@@ -103,7 +102,6 @@ public class TransportGetTrainedModelsStatsActionTests extends ESTestCase {
     };
 
     private ClusterService clusterService;
-    private IngestService ingestService;
     private Client client;
 
     @Before
@@ -125,16 +123,6 @@ public class TransportGetTrainedModelsStatsActionTests extends ESTestCase {
             )
         );
         clusterService = new ClusterService(settings, clusterSettings, tp, null);
-        ingestService = new IngestService(
-            clusterService,
-            tp,
-            null,
-            null,
-            null,
-            Collections.singletonList(SKINNY_INGEST_PLUGIN),
-            client,
-            null
-        );
     }
 
     public void testInferenceIngestStatsByModelId() {

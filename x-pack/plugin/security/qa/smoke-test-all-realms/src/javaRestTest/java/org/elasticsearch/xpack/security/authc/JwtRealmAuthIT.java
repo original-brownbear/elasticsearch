@@ -7,8 +7,6 @@
 
 package org.elasticsearch.xpack.security.authc;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.xpack.core.security.authc.Authentication;
 import org.elasticsearch.xpack.security.authc.jwt.JwtRealm;
@@ -20,7 +18,6 @@ import java.util.Map;
  * Integration Rest Test for testing authentication when all possible realms are configured
  */
 public class JwtRealmAuthIT extends SecurityRealmSmokeTestCase {
-    private static final Logger LOGGER = LogManager.getLogger(JwtRealmAuthIT.class);
 
     // Declared in build.gradle
     private static final String USERNAME = "security_test_user";

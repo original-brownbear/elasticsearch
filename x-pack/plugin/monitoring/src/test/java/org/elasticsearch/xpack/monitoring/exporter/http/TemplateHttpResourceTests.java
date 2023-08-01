@@ -13,8 +13,6 @@ import org.elasticsearch.action.support.ActionTestUtils;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.xpack.core.monitoring.exporter.MonitoringTemplateUtils;
 
-import java.util.function.Supplier;
-
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.Mockito.mock;
@@ -52,29 +50,6 @@ public class TemplateHttpResourceTests extends AbstractPublishableHttpResourceTe
           },
           "aliases": {}
         }""";
-    private final String templateValueExternal = """
-        {
-          "order": 0,
-          "index_patterns": [ ".xyz-*" ],
-          "settings": {},
-          "mappings": {
-            "properties": {
-              "one": {
-                "properties": {
-                  "two": {
-                    "properties": {
-                      "name": {
-                        "type": "keyword"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "aliases": {}
-        }""";
-    private final Supplier<String> template = () -> templateValueInternal;
     private final int minimumVersion = Math.min(MonitoringTemplateUtils.LAST_UPDATED_VERSION, Version.CURRENT.id);
 
     private final TemplateHttpResource resource = new TemplateHttpResource(owner, masterTimeout, templateName);

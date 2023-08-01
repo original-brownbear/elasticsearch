@@ -10,8 +10,6 @@ package org.elasticsearch.xpack.ilm;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.util.EntityUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
@@ -49,7 +47,6 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
 public class ExplainLifecycleIT extends ESRestTestCase {
-    private static final Logger logger = LogManager.getLogger(ExplainLifecycleIT.class);
     private static final String FAILED_STEP_RETRY_COUNT_FIELD = "failed_step_retry_count";
     private static final String IS_AUTO_RETRYABLE_ERROR_FIELD = "is_auto_retryable_error";
 

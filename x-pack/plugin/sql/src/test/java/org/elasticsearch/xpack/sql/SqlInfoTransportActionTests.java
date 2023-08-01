@@ -57,11 +57,7 @@ public class SqlInfoTransportActionTests extends ESTestCase {
     }
 
     public void testAvailable() {
-        SqlInfoTransportAction featureSet = new SqlInfoTransportAction(
-            mock(TransportService.class),
-            mock(ActionFilters.class),
-            licenseState
-        );
+        SqlInfoTransportAction featureSet = new SqlInfoTransportAction(mock(TransportService.class), mock(ActionFilters.class));
         assertThat(featureSet.available(), is(true));
     }
 

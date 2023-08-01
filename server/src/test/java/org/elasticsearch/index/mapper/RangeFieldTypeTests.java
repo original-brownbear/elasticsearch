@@ -50,12 +50,10 @@ import static org.hamcrest.Matchers.instanceOf;
 public class RangeFieldTypeTests extends FieldTypeTestCase {
     RangeType type;
     protected static int DISTANCE = 10;
-    private static long nowInMillis;
 
     @Before
     public void setupProperties() {
         type = randomFrom(RangeType.values());
-        nowInMillis = randomNonNegativeLong();
     }
 
     private RangeFieldType createDefaultFieldType() {

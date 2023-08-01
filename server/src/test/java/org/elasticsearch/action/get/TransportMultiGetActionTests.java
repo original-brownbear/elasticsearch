@@ -66,7 +66,6 @@ public class TransportMultiGetActionTests extends ESTestCase {
     private static TransportService transportService;
     private static ClusterService clusterService;
     private static TransportMultiGetAction transportAction;
-    private static TransportShardMultiGetAction shardAction;
 
     @BeforeClass
     public static void beforeClass() throws Exception {
@@ -161,7 +160,7 @@ public class TransportMultiGetActionTests extends ESTestCase {
         when(clusterService.operationRouting()).thenReturn(operationRouting);
         final NodeClient client = new NodeClient(Settings.EMPTY, threadPool);
 
-        shardAction = new TransportShardMultiGetAction(
+        new TransportShardMultiGetAction(
             clusterService,
             transportService,
             mock(IndicesService.class),
@@ -183,7 +182,6 @@ public class TransportMultiGetActionTests extends ESTestCase {
         transportService = null;
         clusterService = null;
         transportAction = null;
-        shardAction = null;
     }
 
     public void testTransportMultiGetAction() {

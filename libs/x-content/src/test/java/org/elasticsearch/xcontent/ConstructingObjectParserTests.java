@@ -766,7 +766,7 @@ public class ConstructingObjectParserTests extends ESTestCase {
         // real usage would have RestApiVersion.V_7 instead of currentVersion or minimumSupported
         static final ConstructingObjectParser<StructRemovalField, Void> PARSER = new ConstructingObjectParser<>(
             "struct_removal",
-            a -> new StructRemovalField((String) a[0])
+            a -> new StructRemovalField()
         );
 
         static {
@@ -778,7 +778,7 @@ public class ConstructingObjectParserTests extends ESTestCase {
             // the field was removed so there is nothing to suggest.
             // The deprecation shoudl be done manually
             PARSER.declareInt(
-                logWarningDoNothing("old_name"),
+                logWarningDoNothing(),
                 new ParseField("old_name").forRestApiVersion(RestApiVersion.equalTo(RestApiVersion.minimumSupported()))
             );
 
@@ -789,13 +789,9 @@ public class ConstructingObjectParserTests extends ESTestCase {
             );
         }
 
-        private final String secondField;
+        public StructRemovalField() {}
 
-        public StructRemovalField(String secondField) {
-            this.secondField = secondField;
-        }
-
-        private static BiConsumer<StructRemovalField, Integer> logWarningDoNothing(String old_name) {
+        private static BiConsumer<StructRemovalField, Integer> logWarningDoNothing() {
             return (struct, value) -> deprecationLogger.compatibleCritical(
                 "struct_removal",
                 "The field old_name has been removed and is being ignored"
@@ -825,17 +821,15 @@ public class ConstructingObjectParserTests extends ESTestCase {
         }
     }
 
-    public void testDoubleDeclarationThrowsException() throws IOException {
+    public void testDoubleDeclarationThrowsException() {
         class DoubleFieldDeclaration {
-            private int intField;
 
-            DoubleFieldDeclaration(int intField) {
-                this.intField = intField;
+            DoubleFieldDeclaration() {
             }
         }
         ConstructingObjectParser<DoubleFieldDeclaration, Void> PARSER = new ConstructingObjectParser<>(
             "double_field_declaration",
-            a -> new DoubleFieldDeclaration((int) a[0])
+            a -> new DoubleFieldDeclaration()
         );
         PARSER.declareInt(constructorArg(), new ParseField("name"));
 

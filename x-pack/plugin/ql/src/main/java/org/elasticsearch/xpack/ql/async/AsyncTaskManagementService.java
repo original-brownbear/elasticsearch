@@ -58,7 +58,6 @@ public class AsyncTaskManagementService<
     private final AsyncOperation<Request, Response, T> operation;
     private final ThreadPool threadPool;
     private final ClusterService clusterService;
-    private final Class<T> taskClass;
 
     public interface AsyncOperation<
         Request extends TaskAwareRequest,
@@ -157,7 +156,6 @@ public class AsyncTaskManagementService<
         this.taskManager = taskManager;
         this.action = action;
         this.operation = operation;
-        this.taskClass = taskClass;
         this.asyncTaskIndexService = new AsyncTaskIndexService<>(
             index,
             clusterService,

@@ -12,7 +12,6 @@ import org.apache.lucene.search.MatchNoDocsQuery;
 import org.elasticsearch.Version;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.routing.allocation.DataTier;
-import org.elasticsearch.common.regex.Regex;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.mapper.MappedFieldType;
@@ -28,7 +27,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Predicate;
 
 import static java.util.Collections.singletonList;
 import static org.hamcrest.Matchers.containsString;
@@ -112,7 +110,6 @@ public class DataTierFieldTypeTests extends MapperServiceTestCase {
             .build();
         IndexSettings indexSettings = new IndexSettings(indexMetadata, Settings.EMPTY);
 
-        Predicate<String> indexNameMatcher = pattern -> Regex.simpleMatch(pattern, "index");
         return SearchExecutionContextHelper.createSimple(indexSettings, parserConfig(), writableRegistry());
     }
 

@@ -13,8 +13,6 @@ import org.gradle.api.DefaultTask;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.ProjectLayout;
 import org.gradle.api.file.RegularFileProperty;
-import org.gradle.api.logging.Logger;
-import org.gradle.api.logging.Logging;
 import org.gradle.api.tasks.CompileClasspath;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.OutputFile;
@@ -23,27 +21,23 @@ import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.process.ExecOperations;
 import org.gradle.process.ExecResult;
-import org.gradle.workers.WorkerExecutor;
 
 import java.io.File;
 
 import javax.inject.Inject;
 
 public abstract class GenerateNamedComponentsTask extends DefaultTask {
-    private static final Logger LOGGER = Logging.getLogger(GenerateNamedComponentsTask.class);
     private static final String NAMED_COMPONENTS_DIR = "generated-named-components/";
     private static final String NAMED_COMPONENTS_FILE = "named_components.json";
     private static final String NAMED_COMPONENTS_PATH = NAMED_COMPONENTS_DIR + NAMED_COMPONENTS_FILE;
 
-    private final WorkerExecutor workerExecutor;
     private FileCollection pluginScannerClasspath;
     private FileCollection classpath;
-    private ExecOperations execOperations;
-    private ProjectLayout projectLayout;
+    private final ExecOperations execOperations;
+    private final ProjectLayout projectLayout;
 
     @Inject
-    public GenerateNamedComponentsTask(WorkerExecutor workerExecutor, ExecOperations execOperations, ProjectLayout projectLayout) {
-        this.workerExecutor = workerExecutor;
+    public GenerateNamedComponentsTask(ExecOperations execOperations, ProjectLayout projectLayout) {
         this.execOperations = execOperations;
         this.projectLayout = projectLayout;
 

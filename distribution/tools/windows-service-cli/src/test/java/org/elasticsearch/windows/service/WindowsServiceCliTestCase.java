@@ -164,7 +164,6 @@ public abstract class WindowsServiceCliTestCase extends CommandTestCase {
     @Before
     public void resetMockProcess() throws Exception {
         javaHome = createTempDir();
-        Path javaBin = javaHome.resolve("bin");
         sysprops.put("java.home", javaHome.toString());
         binDir = esHomeDir.resolve("bin");
         Files.createDirectories(binDir);

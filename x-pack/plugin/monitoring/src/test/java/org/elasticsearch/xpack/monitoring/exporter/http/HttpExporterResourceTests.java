@@ -197,7 +197,6 @@ public class HttpExporterResourceTests extends AbstractPublishableHttpResourceTe
 
     public void testWatcherCheckBlocksAfterSuccessfulTemplatePublish() {
         final int successfulGetTemplates = randomIntBetween(0, EXPECTED_TEMPLATES);
-        final int unsuccessfulGetTemplates = EXPECTED_TEMPLATES - successfulGetTemplates;
         final Exception exception = failureGetException();
 
         whenValidVersionResponse();
@@ -691,13 +690,6 @@ public class HttpExporterResourceTests extends AbstractPublishableHttpResourceTe
     private void verifyGetTemplates(final int called) {
         verify(client, times(called)).performRequestAsync(
             argThat(new RequestMatcher(is("GET"), startsWith("/_template/"))::matches),
-            any(ResponseListener.class)
-        );
-    }
-
-    private void verifyPutTemplates(final int called) {
-        verify(client, times(called)).performRequestAsync(
-            argThat(new RequestMatcher(is("PUT"), startsWith("/_template/"))::matches),
             any(ResponseListener.class)
         );
     }

@@ -255,8 +255,6 @@ public class ActionModuleTests extends ESTestCase {
     }
 
     public void test3rdPartyHandlerIsNotInstalled() {
-        Settings settings = Settings.builder().put("xpack.security.enabled", false).put("path.home", createTempDir()).build();
-
         SettingsModule settingsModule = new SettingsModule(Settings.EMPTY);
         ThreadPool threadPool = new TestThreadPool(getTestName());
         ActionPlugin secPlugin = new SecPlugin();

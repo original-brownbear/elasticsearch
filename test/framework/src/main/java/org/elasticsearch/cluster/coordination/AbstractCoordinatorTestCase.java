@@ -1764,7 +1764,6 @@ public class AbstractCoordinatorTestCase extends ESTestCase {
         private final String nodeName;
         private final String nodeId;
         private final DeterministicTaskQueue deterministicTaskQueue;
-        private final ThreadPool threadPool;
         ClusterStateApplyResponse clusterStateApplyResponse = ClusterStateApplyResponse.SUCCEED;
         private boolean applicationMayFail;
 
@@ -1780,7 +1779,6 @@ public class AbstractCoordinatorTestCase extends ESTestCase {
             this.nodeName = nodeName;
             this.nodeId = nodeId;
             this.deterministicTaskQueue = deterministicTaskQueue;
-            this.threadPool = threadPool;
             addStateApplier(event -> {
                 switch (clusterStateApplyResponse) {
                     case SUCCEED, HANG -> {

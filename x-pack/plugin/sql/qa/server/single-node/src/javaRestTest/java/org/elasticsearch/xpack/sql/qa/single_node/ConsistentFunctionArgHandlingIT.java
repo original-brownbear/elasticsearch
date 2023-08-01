@@ -111,11 +111,6 @@ public class ConsistentFunctionArgHandlingIT extends JdbcIntegrationTestCase {
             return this;
         }
 
-        public Fn ignore() {
-            this.ignored = true;
-            return this;
-        }
-
         @Override
         public String toString() {
             return name + "(" + arguments.stream().map(a -> String.valueOf(a.exampleValue)).collect(joining(", ")) + ")";

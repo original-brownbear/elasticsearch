@@ -144,11 +144,8 @@ public class EqlParser {
     }
 
     private class PostProcessor extends EqlBaseBaseListener {
-        private final List<String> ruleNames;
 
-        PostProcessor(List<String> ruleNames) {
-            this.ruleNames = ruleNames;
-        }
+        PostProcessor(List<String> ruleNames) {}
 
         @Override
         public void exitProcessCheck(EqlBaseParser.ProcessCheckContext context) {

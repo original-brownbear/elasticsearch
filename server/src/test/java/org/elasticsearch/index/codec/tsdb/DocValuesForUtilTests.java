@@ -29,7 +29,6 @@ import java.util.Arrays;
 import java.util.Random;
 
 public class DocValuesForUtilTests extends LuceneTestCase {
-    private final ES87TSDBDocValuesEncoder encoder = new ES87TSDBDocValuesEncoder();
     private static final ForUtil forUtil = new ForUtil();
 
     public void testEncodeDecode() throws IOException {

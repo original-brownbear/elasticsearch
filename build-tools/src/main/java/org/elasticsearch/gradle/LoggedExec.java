@@ -241,18 +241,12 @@ public abstract class LoggedExec extends DefaultTask implements FileSystemOperat
 
         @Override
         public void write(int b) throws IOException {
-            int[] arr = { b };
-            write(arr, 0, 1);
-        }
-
-        public void write(int[] bytes, int offset, int length) throws IOException {
-            for (int i = 0; i < bytes.length; i++) {
-                delegate.write(bytes[i]);
-                if (bytes[i] == '\n') {
-                    delegate.write(indent);
-                }
+            delegate.write(b);
+            if (b == '\n') {
+                delegate.write(indent);
             }
         }
+
     }
 
     public void args(Object... args) {

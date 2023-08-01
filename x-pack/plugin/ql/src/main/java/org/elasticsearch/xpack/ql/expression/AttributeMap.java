@@ -148,8 +148,6 @@ public class AttributeMap<E> implements Map<Attribute, E> {
         return EMPTY;
     }
 
-    private static final Object NOT_FOUND = new Object();
-
     private final Map<AttributeWrapper, E> delegate;
     private Set<Attribute> keySet = null;
     private Collection<E> values = null;

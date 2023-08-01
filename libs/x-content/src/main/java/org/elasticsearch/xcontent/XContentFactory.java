@@ -140,7 +140,6 @@ public class XContentFactory {
         if (length == 0) {
             return null;
         }
-        char first = content.charAt(0);
         if (JsonXContent.jsonXContent.detectContent(content)) {
             return XContentType.JSON;
         }

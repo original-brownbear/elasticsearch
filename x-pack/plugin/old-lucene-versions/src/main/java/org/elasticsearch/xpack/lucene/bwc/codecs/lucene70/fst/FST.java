@@ -115,14 +115,6 @@ public final class FST<T> implements Accountable {
     // Increment version to change it
     private static final String FILE_FORMAT_NAME = "FST";
     private static final int VERSION_START = 0;
-    /** Changed numBytesPerArc for array'd case from byte to int. */
-    private static final int VERSION_INT_NUM_BYTES_PER_ARC = 1;
-
-    /** Write BYTE2 labels as 2-byte short, not vInt. */
-    private static final int VERSION_SHORT_BYTE2_LABELS = 2;
-
-    /** Added optional packed format. */
-    private static final int VERSION_PACKED = 3;
 
     /** Changed from int to vInt for encoding arc targets.
      *  Also changed maxBytesPerArc from int to vInt in the array case. */

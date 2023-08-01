@@ -35,7 +35,6 @@ import org.elasticsearch.xpack.ql.type.DataTypes;
 import org.elasticsearch.xpack.ql.type.EsField;
 import org.elasticsearch.xpack.ql.type.TypesTests;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -73,7 +72,6 @@ public class AnalyzerTests extends ESTestCase {
         assertEquals("test", ((Literal) check.right()).value());
         assertTrue(check.left() instanceof Concat);
         Concat concat = (Concat) check.left();
-        List<Expression> arguments = new ArrayList<>(3);
         checkMissingOptional(concat.arguments().get(0));
         assertEquals(new Literal(Source.EMPTY, " ", DataTypes.KEYWORD), concat.arguments().get(1));
         checkMissingOptional(concat.arguments().get(2));

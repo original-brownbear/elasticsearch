@@ -25,11 +25,8 @@ public class ShardSearchRequestInterceptor extends FieldAndDocumentLevelSecurity
 
     private static final Logger logger = LogManager.getLogger(ShardSearchRequestInterceptor.class);
 
-    private final ClusterService clusterService;
-
     public ShardSearchRequestInterceptor(ThreadPool threadPool, XPackLicenseState licenseState, ClusterService clusterService) {
         super(threadPool.getThreadContext(), licenseState);
-        this.clusterService = clusterService;
     }
 
     @Override

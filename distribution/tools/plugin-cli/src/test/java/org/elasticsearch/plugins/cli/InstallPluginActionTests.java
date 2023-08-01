@@ -48,7 +48,6 @@ import org.elasticsearch.core.SuppressForbidden;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.env.TestEnvironment;
-import org.elasticsearch.plugin.scanner.NamedComponentScanner;
 import org.elasticsearch.plugins.Platforms;
 import org.elasticsearch.plugins.PluginDescriptor;
 import org.elasticsearch.plugins.PluginTestUtil;
@@ -89,7 +88,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -128,7 +126,6 @@ public class InstallPluginActionTests extends ESTestCase {
     private MockTerminal terminal;
     private Tuple<Path, Environment> env;
     private Path pluginDir;
-    private NamedComponentScanner namedComponentScanner;
 
     private final boolean isPosix;
     private final boolean isReal;
@@ -1578,15 +1575,6 @@ public class InstallPluginActionTests extends ESTestCase {
 
         assertPlugin("stable1", pluginDir, env.v2());
         assertNamedComponentFile("stable1", env.v2().pluginsFile(), namedComponentsJSON());
-    }
-
-    private Map<String, Map<String, String>> namedComponentsMap() {
-        Map<String, Map<String, String>> result = new LinkedHashMap<>();
-        Map<String, String> extensibles = new LinkedHashMap<>();
-        extensibles.put("a_component", "p.A");
-        extensibles.put("b_component", "p.B");
-        result.put("org.elasticsearch.plugins.cli.test_model.ExtensibleInterface", extensibles);
-        return result;
     }
 
     private static String namedComponentsJSON() {

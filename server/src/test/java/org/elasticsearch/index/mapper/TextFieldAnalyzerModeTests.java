@@ -11,8 +11,6 @@ package org.elasticsearch.index.mapper;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.elasticsearch.Version;
-import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.analysis.AbstractTokenFilterFactory;
@@ -40,12 +38,6 @@ public class TextFieldAnalyzerModeTests extends ESTestCase {
         analyzers.put(DEFAULT_ANALYZER_NAME, new NamedAnalyzer("default", AnalyzerScope.INDEX, null));
         return analyzers;
     }
-
-    private static final IndexMetadata EMPTY_INDEX_METADATA = IndexMetadata.builder("")
-        .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT))
-        .numberOfShards(1)
-        .numberOfReplicas(0)
-        .build();
 
     private Analyzer createAnalyzerWithMode(AnalysisMode mode) {
         TokenFilterFactory tokenFilter = new AbstractTokenFilterFactory("my_analyzer", Settings.EMPTY) {

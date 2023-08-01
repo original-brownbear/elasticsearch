@@ -71,11 +71,11 @@ public class DistributionDownloadPlugin implements Plugin<Project> {
         });
 
         setupResolutionsContainer(project);
-        setupDistributionContainer(project, dockerAvailability);
+        setupDistributionContainer(project);
         setupDownloadServiceRepo(project);
     }
 
-    private void setupDistributionContainer(Project project, Property<Boolean> dockerAvailable) {
+    private void setupDistributionContainer(Project project) {
         distributionsContainer = project.container(ElasticsearchDistribution.class, name -> {
             Configuration fileConfiguration = project.getConfigurations().create("es_distro_file_" + name);
             Configuration extractedConfiguration = project.getConfigurations().create(DISTRO_EXTRACTED_CONFIG_PREFIX + name);
