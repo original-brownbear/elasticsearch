@@ -247,15 +247,6 @@ public class TaskExecutorTests extends ESTestCase {
         assertThat(executeCalled.get(), equalTo(false));
     }
 
-    static class TaskExecutor implements TestExecutor<Integer> {
-        List<Integer> tasks = new ArrayList<>();
-
-        @Override
-        public void execute(List<Integer> tasks) {
-            this.tasks.addAll(tasks);
-        }
-    }
-
     /**
      * Note, this test can only work as long as we have a single thread executor executing the state update tasks!
      */

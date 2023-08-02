@@ -19,8 +19,6 @@ import org.elasticsearch.index.fielddata.SortedBinaryDocValues;
 import org.elasticsearch.search.aggregations.AggregationExecutionException;
 import org.elasticsearch.search.aggregations.support.AggregationContext;
 import org.elasticsearch.search.aggregations.support.ValuesSource;
-import org.elasticsearch.xcontent.ToXContentFragment;
-import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xpack.spatial.common.CartesianPoint;
 import org.elasticsearch.xpack.spatial.index.fielddata.IndexCartesianPointFieldData;
 
@@ -91,14 +89,6 @@ public abstract class CartesianPointValuesSource extends ValuesSource {
         @Override
         public CartesianPoint pointValue() throws IOException {
             return point.resetFromEncoded(values.longValue());
-        }
-    }
-
-    public static final class CartesianPointValue implements ToXContentFragment {
-
-        @Override
-        public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
-            return null;
         }
     }
 

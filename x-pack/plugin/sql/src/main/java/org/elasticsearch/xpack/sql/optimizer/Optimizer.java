@@ -486,17 +486,6 @@ public class Optimizer extends RuleExecutor<LogicalPlan> {
         }
     }
 
-    static class CombineLimits extends OptimizerRule<Limit> {
-
-        @Override
-        protected LogicalPlan rule(Limit limit) {
-            if (limit.child() instanceof Limit) {
-                throw new UnsupportedOperationException("not implemented yet");
-            }
-            throw new UnsupportedOperationException("not implemented yet");
-        }
-    }
-
     static class PruneCast extends OptimizerRules.PruneCast<Cast> {
 
         PruneCast() {

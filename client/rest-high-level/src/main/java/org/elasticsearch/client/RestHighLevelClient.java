@@ -406,8 +406,7 @@ public class RestHighLevelClient implements Closeable {
     }
 
     /**
-     * @deprecated If creating a new HLRC ReST API call, consider creating new actions instead of reusing server actions. The Validation
-     * layer has been added to the ReST client, and requests should extend {@link Validatable} instead of {@link ActionRequest}.
+     * @deprecated If creating a new HLRC ReST API call, consider creating new actions instead of reusing server actions.
      */
     @Deprecated
     protected final <Req extends ActionRequest, Resp> Resp performRequestAndParseEntity(
@@ -421,8 +420,7 @@ public class RestHighLevelClient implements Closeable {
     }
 
     /**
-     * @deprecated If creating a new HLRC ReST API call, consider creating new actions instead of reusing server actions. The Validation
-     * layer has been added to the ReST client, and requests should extend {@link Validatable} instead of {@link ActionRequest}.
+     * @deprecated If creating a new HLRC ReST API call, consider creating new actions instead of reusing server actions.
      */
     @Deprecated
     protected final <Req extends ActionRequest, Resp> Resp performRequest(
@@ -442,17 +440,13 @@ public class RestHighLevelClient implements Closeable {
     /**
      * Defines a helper method for performing a request.
      */
-    protected final <Req extends Validatable, Resp> Resp performRequest(
+    protected final <Req, Resp> Resp performRequest(
         Req request,
         CheckedFunction<Req, Request, IOException> requestConverter,
         RequestOptions options,
         CheckedFunction<Response, Resp, IOException> responseConverter,
         Set<Integer> ignores
     ) throws IOException {
-        Optional<ValidationException> validationException = request.validate();
-        if (validationException != null && validationException.isPresent()) {
-            throw validationException.get();
-        }
         return internalPerformRequest(request, requestConverter, options, responseConverter, ignores);
     }
 
@@ -494,8 +488,7 @@ public class RestHighLevelClient implements Closeable {
     }
 
     /**
-     * @deprecated If creating a new HLRC ReST API call, consider creating new actions instead of reusing server actions. The Validation
-     * layer has been added to the ReST client, and requests should extend {@link Validatable} instead of {@link ActionRequest}.
+     * @deprecated If creating a new HLRC ReST API call, consider creating new actions instead of reusing server actions.
      * @return Cancellable instance that may be used to cancel the request
      */
     @Deprecated
@@ -518,8 +511,7 @@ public class RestHighLevelClient implements Closeable {
     }
 
     /**
-     * @deprecated If creating a new HLRC ReST API call, consider creating new actions instead of reusing server actions. The Validation
-     * layer has been added to the ReST client, and requests should extend {@link Validatable} instead of {@link ActionRequest}.
+     * @deprecated If creating a new HLRC ReST API call, consider creating new actions instead of reusing server actions.
      * @return Cancellable instance that may be used to cancel the request
      */
     @Deprecated

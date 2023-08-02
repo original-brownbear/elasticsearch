@@ -7,8 +7,6 @@
  */
 package org.elasticsearch.search;
 
-import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.util.CharsRefBuilder;
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.common.CheckedBiConsumer;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -55,12 +53,8 @@ import org.elasticsearch.search.rescore.QueryRescorerBuilder;
 import org.elasticsearch.search.rescore.RescoreContext;
 import org.elasticsearch.search.rescore.RescorerBuilder;
 import org.elasticsearch.search.suggest.Suggest.Suggestion;
-import org.elasticsearch.search.suggest.Suggest.Suggestion.Entry;
-import org.elasticsearch.search.suggest.Suggest.Suggestion.Entry.Option;
-import org.elasticsearch.search.suggest.Suggester;
 import org.elasticsearch.search.suggest.SuggestionBuilder;
 import org.elasticsearch.search.suggest.SuggestionSearchContext;
-import org.elasticsearch.search.suggest.SuggestionSearchContext.SuggestionContext;
 import org.elasticsearch.search.suggest.term.TermSuggestion;
 import org.elasticsearch.search.suggest.term.TermSuggestionBuilder;
 import org.elasticsearch.test.ESTestCase;
@@ -653,28 +647,6 @@ public class SearchModuleTests extends ESTestCase {
         @Override
         public TransportVersion getMinimalSupportedVersion() {
             return TransportVersion.ZERO;
-        }
-    }
-
-    private static class TestSuggester extends Suggester<SuggestionSearchContext.SuggestionContext> {
-
-        @Override
-        protected Suggestion<? extends Suggestion.Entry<? extends Suggestion.Entry.Option>> innerExecute(
-            String name,
-            SuggestionSearchContext.SuggestionContext suggestion,
-            IndexSearcher searcher,
-            CharsRefBuilder spare
-        ) throws IOException {
-            return null;
-        }
-
-        @Override
-        protected Suggestion<? extends Entry<? extends Option>> emptySuggestion(
-            String name,
-            SuggestionContext suggestion,
-            CharsRefBuilder spare
-        ) throws IOException {
-            return null;
         }
     }
 

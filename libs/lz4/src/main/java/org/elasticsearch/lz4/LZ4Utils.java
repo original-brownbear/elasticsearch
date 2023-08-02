@@ -57,23 +57,4 @@ enum LZ4Utils {
         return (i * -1640531535) >>> ((MIN_MATCH * 8) - HASH_LOG_HC);
     }
 
-    static class Match {
-        int start, ref, len;
-
-        void fix(int correction) {
-            start += correction;
-            ref += correction;
-            len -= correction;
-        }
-
-        int end() {
-            return start + len;
-        }
-    }
-
-    static void copyTo(LZ4Utils.Match m1, LZ4Utils.Match m2) {
-        m2.len = m1.len;
-        m2.start = m1.start;
-        m2.ref = m1.ref;
-    }
 }
