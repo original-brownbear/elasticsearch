@@ -19,7 +19,7 @@ import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
 import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
-import org.elasticsearch.xpack.core.XPackFeatureSet;
+import org.elasticsearch.xpack.core.XPackFeatureSetUsage;
 import org.elasticsearch.xpack.core.action.XPackUsageFeatureResponse;
 import org.elasticsearch.xpack.core.monitoring.MonitoringFeatureSetUsage;
 import org.elasticsearch.xpack.monitoring.exporter.Exporter;
@@ -110,8 +110,8 @@ public class MonitoringInfoTransportActionTests extends ESTestCase {
         monitoringUsage.writeTo(out);
         StreamInput in = out.bytes().streamInput();
         in.setTransportVersion(serializedVersion);
-        XPackFeatureSet.Usage serializedUsage = new MonitoringFeatureSetUsage(in);
-        for (XPackFeatureSet.Usage usage : Arrays.asList(monitoringUsage, serializedUsage)) {
+        XPackFeatureSetUsage serializedUsage = new MonitoringFeatureSetUsage(in);
+        for (XPackFeatureSetUsage usage : Arrays.asList(monitoringUsage, serializedUsage)) {
             ObjectPath source;
             try (XContentBuilder builder = jsonBuilder()) {
                 usage.toXContent(builder, ToXContent.EMPTY_PARAMS);

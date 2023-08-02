@@ -12,7 +12,7 @@ import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
-import org.elasticsearch.xpack.core.XPackFeatureSet;
+import org.elasticsearch.xpack.core.XPackFeatureSetUsage;
 import org.elasticsearch.xpack.core.action.XPackUsageFeatureResponse;
 import org.elasticsearch.xpack.core.rollup.RollupFeatureSetUsage;
 
@@ -44,10 +44,10 @@ public class RollupInfoTransportActionTests extends ESTestCase {
         );
         PlainActionFuture<XPackUsageFeatureResponse> future = new PlainActionFuture<>();
         usageAction.masterOperation(null, null, null, future);
-        XPackFeatureSet.Usage rollupUsage = future.get().getUsage();
+        XPackFeatureSetUsage rollupUsage = future.get().getUsage();
         BytesStreamOutput out = new BytesStreamOutput();
         rollupUsage.writeTo(out);
-        XPackFeatureSet.Usage serializedUsage = new RollupFeatureSetUsage(out.bytes().streamInput());
+        XPackFeatureSetUsage serializedUsage = new RollupFeatureSetUsage(out.bytes().streamInput());
         assertThat(rollupUsage.name(), is(serializedUsage.name()));
         assertThat(rollupUsage.enabled(), is(serializedUsage.enabled()));
     }

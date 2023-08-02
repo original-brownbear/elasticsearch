@@ -58,7 +58,7 @@ import org.elasticsearch.test.BuildUtils;
 import org.elasticsearch.test.VersionUtils;
 import org.elasticsearch.transport.TransportInfo;
 import org.elasticsearch.xcontent.XContentType;
-import org.elasticsearch.xpack.core.XPackFeatureSet;
+import org.elasticsearch.xpack.core.XPackFeatureSetUsage;
 import org.elasticsearch.xpack.core.monitoring.MonitoredSystem;
 import org.elasticsearch.xpack.core.monitoring.MonitoringFeatureSetUsage;
 import org.elasticsearch.xpack.core.monitoring.exporter.MonitoringDoc;
@@ -89,7 +89,7 @@ public class ClusterStatsMonitoringDocTests extends BaseMonitoringDocTestCase<Cl
     private String clusterName;
     private String version;
     private ClusterHealthStatus clusterStatus;
-    private List<XPackFeatureSet.Usage> usages;
+    private List<XPackFeatureSetUsage> usages;
     private ClusterStatsResponse clusterStats;
     private ClusterState clusterState;
     private License license;
@@ -311,7 +311,7 @@ public class ClusterStatsMonitoringDocTests extends BaseMonitoringDocTestCase<Cl
             .maxNodes(2)
             .build();
 
-        final List<XPackFeatureSet.Usage> usageList = singletonList(new MonitoringFeatureSetUsage(false, null));
+        final List<XPackFeatureSetUsage> usageList = singletonList(new MonitoringFeatureSetUsage(false, null));
 
         final NodeInfo mockNodeInfo = mock(NodeInfo.class);
         Version mockNodeVersion = Version.CURRENT.minimumCompatibilityVersion();

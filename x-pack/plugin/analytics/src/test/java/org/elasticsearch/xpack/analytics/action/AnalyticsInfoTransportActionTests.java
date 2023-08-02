@@ -19,7 +19,7 @@ import org.elasticsearch.tasks.Task;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
-import org.elasticsearch.xpack.core.XPackFeatureSet;
+import org.elasticsearch.xpack.core.XPackFeatureSetUsage;
 import org.elasticsearch.xpack.core.action.XPackUsageFeatureResponse;
 import org.elasticsearch.xpack.core.analytics.AnalyticsFeatureSetUsage;
 import org.elasticsearch.xpack.core.analytics.action.AnalyticsStatsAction;
@@ -72,12 +72,12 @@ public class AnalyticsInfoTransportActionTests extends ESTestCase {
         );
         PlainActionFuture<XPackUsageFeatureResponse> future = new PlainActionFuture<>();
         usageAction.masterOperation(task, null, clusterState, future);
-        XPackFeatureSet.Usage usage = future.get().getUsage();
+        XPackFeatureSetUsage usage = future.get().getUsage();
         assertThat(usage.available(), is(true));
 
         BytesStreamOutput out = new BytesStreamOutput();
         usage.writeTo(out);
-        XPackFeatureSet.Usage serializedUsage = new AnalyticsFeatureSetUsage(out.bytes().streamInput());
+        XPackFeatureSetUsage serializedUsage = new AnalyticsFeatureSetUsage(out.bytes().streamInput());
         assertThat(serializedUsage.available(), is(true));
         verify(client, times(1)).execute(any(), any(), any());
         verifyNoMoreInteractions(client);
@@ -98,12 +98,12 @@ public class AnalyticsInfoTransportActionTests extends ESTestCase {
         );
         PlainActionFuture<XPackUsageFeatureResponse> future = new PlainActionFuture<>();
         usageAction.masterOperation(task, null, clusterState, future);
-        XPackFeatureSet.Usage usage = future.get().getUsage();
+        XPackFeatureSetUsage usage = future.get().getUsage();
         assertTrue(usage.enabled());
 
         BytesStreamOutput out = new BytesStreamOutput();
         usage.writeTo(out);
-        XPackFeatureSet.Usage serializedUsage = new AnalyticsFeatureSetUsage(out.bytes().streamInput());
+        XPackFeatureSetUsage serializedUsage = new AnalyticsFeatureSetUsage(out.bytes().streamInput());
         assertTrue(serializedUsage.enabled());
         verify(client, times(1)).execute(any(), any(), any());
         verifyNoMoreInteractions(client);

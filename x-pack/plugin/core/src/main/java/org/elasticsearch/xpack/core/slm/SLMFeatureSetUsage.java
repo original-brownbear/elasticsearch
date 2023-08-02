@@ -12,13 +12,13 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.xcontent.XContentBuilder;
-import org.elasticsearch.xpack.core.XPackFeatureSet;
+import org.elasticsearch.xpack.core.XPackFeatureSetUsage;
 import org.elasticsearch.xpack.core.XPackField;
 
 import java.io.IOException;
 import java.util.Objects;
 
-public class SLMFeatureSetUsage extends XPackFeatureSet.Usage {
+public class SLMFeatureSetUsage extends XPackFeatureSetUsage {
     @Nullable
     private final SnapshotLifecycleStats slmStats;
 

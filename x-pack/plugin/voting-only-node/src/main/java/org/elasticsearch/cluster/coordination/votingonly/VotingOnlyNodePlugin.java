@@ -64,13 +64,11 @@ public class VotingOnlyNodePlugin extends Plugin implements ClusterCoordinationP
 
     private static final String VOTING_ONLY_ELECTION_STRATEGY = "supports_voting_only";
 
-    private final Settings settings;
     private final SetOnce<ThreadPool> threadPool;
 
     private final boolean isVotingOnlyNode;
 
     public VotingOnlyNodePlugin(Settings settings) {
-        this.settings = settings;
         threadPool = new SetOnce<>();
         isVotingOnlyNode = DiscoveryNode.hasRole(settings, DiscoveryNodeRole.VOTING_ONLY_NODE_ROLE);
     }
@@ -107,8 +105,8 @@ public class VotingOnlyNodePlugin extends Plugin implements ClusterCoordinationP
     @Override
     public List<ActionHandler<? extends ActionRequest, ? extends ActionResponse>> getActions() {
         return Arrays.asList(
-            new ActionHandler<>(XPackUsageFeatureAction.VOTING_ONLY, VotingOnlyNodeFeatureSet.UsageTransportAction.class),
-            new ActionHandler<>(XPackInfoFeatureAction.VOTING_ONLY, VotingOnlyNodeFeatureSet.UsageInfoAction.class)
+            new ActionHandler<>(XPackUsageFeatureAction.VOTING_ONLY, VotingOnlyNodeUsageTransportAction.class),
+            new ActionHandler<>(XPackInfoFeatureAction.VOTING_ONLY, VotingOnlyNodeUsageInfoAction.class)
         );
     }
 
