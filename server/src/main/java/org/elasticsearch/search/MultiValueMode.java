@@ -571,7 +571,6 @@ public enum MultiValueMode implements Writeable {
         final long missingValue,
         final BitSet parentDocs,
         final DocIdSetIterator childDocs,
-        int maxDoc,
         int maxChildren
     ) throws IOException {
         if (parentDocs == null || childDocs == null) {
@@ -682,7 +681,6 @@ public enum MultiValueMode implements Writeable {
         final double missingValue,
         final BitSet parentDocs,
         final DocIdSetIterator childDocs,
-        int maxDoc,
         int maxChildren
     ) throws IOException {
         if (parentDocs == null || childDocs == null) {
@@ -804,7 +802,6 @@ public enum MultiValueMode implements Writeable {
         final BytesRef missingValue,
         final BitSet parentDocs,
         final DocIdSetIterator childDocs,
-        int maxDoc,
         int maxChildren
     ) throws IOException {
         if (parentDocs == null || childDocs == null) {

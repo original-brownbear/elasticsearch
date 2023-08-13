@@ -65,7 +65,7 @@ public class ValuesSourceConfig {
             timeZone,
             format,
             defaultValueSourceType,
-            ValuesSourceConfig::getMappingFromRegistry
+            (fieldContext, i, ii) -> fieldContext.indexFieldData().getValuesSourceType()
         );
     }
 
@@ -196,14 +196,6 @@ public class ValuesSourceConfig {
             ValuesSourceType defaultValuesSourceType
         );
 
-    }
-
-    private static ValuesSourceType getMappingFromRegistry(
-        FieldContext fieldContext,
-        ValueType userValueTypeHint,
-        ValuesSourceType defaultValuesSourceType
-    ) {
-        return fieldContext.indexFieldData().getValuesSourceType();
     }
 
     private static ValuesSourceType getLegacyMapping(

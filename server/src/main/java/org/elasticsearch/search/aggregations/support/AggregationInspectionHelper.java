@@ -21,11 +21,8 @@ import org.elasticsearch.search.aggregations.bucket.nested.InternalNested;
 import org.elasticsearch.search.aggregations.bucket.nested.InternalReverseNested;
 import org.elasticsearch.search.aggregations.bucket.range.InternalRange;
 import org.elasticsearch.search.aggregations.bucket.sampler.InternalSampler;
-import org.elasticsearch.search.aggregations.bucket.sampler.UnmappedSampler;
 import org.elasticsearch.search.aggregations.bucket.terms.InternalSignificantTerms;
 import org.elasticsearch.search.aggregations.bucket.terms.InternalTerms;
-import org.elasticsearch.search.aggregations.bucket.terms.UnmappedSignificantTerms;
-import org.elasticsearch.search.aggregations.bucket.terms.UnmappedTerms;
 import org.elasticsearch.search.aggregations.metrics.InternalAvg;
 import org.elasticsearch.search.aggregations.metrics.InternalBounds;
 import org.elasticsearch.search.aggregations.metrics.InternalCardinality;
@@ -67,18 +64,6 @@ import java.util.stream.StreamSupport;
 public class AggregationInspectionHelper {
     public static <A extends InternalTerms<A, B>, B extends InternalTerms.Bucket<B>> boolean hasValue(InternalTerms<A, B> agg) {
         return agg.getBuckets().stream().anyMatch(bucket -> bucket.getDocCount() > 0);
-    }
-
-    public static boolean hasValue(UnmappedTerms agg) {
-        return false;
-    }
-
-    public static boolean hasValue(UnmappedSignificantTerms agg) {
-        return false;
-    }
-
-    public static boolean hasValue(UnmappedSampler agg) {
-        return false;
     }
 
     public static boolean hasValue(MultiBucketsAggregation agg) {

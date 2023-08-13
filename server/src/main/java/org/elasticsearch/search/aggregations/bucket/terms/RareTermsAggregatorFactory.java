@@ -8,7 +8,6 @@
 
 package org.elasticsearch.search.aggregations.bucket.terms;
 
-import org.elasticsearch.common.logging.DeprecationLogger;
 import org.elasticsearch.search.DocValueFormat;
 import org.elasticsearch.search.aggregations.Aggregator;
 import org.elasticsearch.search.aggregations.AggregatorFactories;
@@ -216,13 +215,6 @@ public class RareTermsAggregatorFactory extends ValuesSourceAggregatorFactory {
             }
 
         };
-
-        public static ExecutionMode fromString(String value, final DeprecationLogger deprecationLogger) {
-            return switch (value) {
-                case "map" -> MAP;
-                default -> throw new IllegalArgumentException("Unknown `execution_hint`: [" + value + "], expected any of [map]");
-            };
-        }
 
         private final ParseField parseField;
 
