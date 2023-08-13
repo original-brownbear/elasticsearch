@@ -106,46 +106,25 @@ public class InboundHandler {
         assert header.needsToReadVariableHeader() == false;
 
         TransportResponseHandler<?> responseHandler = null;
-        final boolean isRequest = message.getHeader().isRequest();
-
         ThreadContext threadContext = threadPool.getThreadContext();
         try (ThreadContext.StoredContext existing = threadContext.stashContext()) {
             // Place the context with the headers from the message
             threadContext.setHeaders(header.getHeaders());
             threadContext.putTransient("_remote_address", remoteAddress);
-            if (isRequest) {
-                handleRequest(channel, header, message);
+            if (header.isRequest()) {
+                if (header.isHandshake()) {
+                    assert header.getActionName().equals(TransportHandshaker.HANDSHAKE_ACTION_NAME);
+                    handleHandshake(channel, message);
+                } else {
+                    handleRequest(channel, message);
+                }
             } else {
                 // Responses do not support short circuiting currently
                 assert message.isShortCircuit() == false;
-                long requestId = header.getRequestId();
-                if (header.isHandshake()) {
-                    responseHandler = handshaker.removeHandlerForHandshake(requestId);
-                } else {
-                    final TransportResponseHandler<? extends TransportResponse> theHandler = responseHandlers.onResponseReceived(
-                        requestId,
-                        messageListener
-                    );
-                    if (theHandler == null && header.isError()) {
-                        responseHandler = handshaker.removeHandlerForHandshake(requestId);
-                    } else {
-                        responseHandler = theHandler;
-                    }
-                }
+                responseHandler = getResponseHandler(header);
                 // ignore if its null, the service logs it
                 if (responseHandler != null) {
-                    if (message.getContentLength() > 0 || header.getVersion().equals(TransportVersion.current()) == false) {
-                        final StreamInput streamInput = namedWriteableStream(message.openOrGetStreamInput());
-                        assertRemoteVersion(streamInput, header.getVersion());
-                        if (header.isError()) {
-                            handlerResponseError(streamInput, message, responseHandler);
-                        } else {
-                            handleResponse(remoteAddress, streamInput, responseHandler, message);
-                        }
-                    } else {
-                        assert header.isError() == false;
-                        handleResponse(remoteAddress, EMPTY_STREAM_INPUT, responseHandler, message);
-                    }
+                    invokeResponseHandler(message, responseHandler, remoteAddress);
                 }
             }
         } finally {
@@ -153,24 +132,59 @@ public class InboundHandler {
             handlingTimeTracker.addHandlingTime(took);
             final long logThreshold = slowLogThresholdMs;
             if (logThreshold > 0 && took > logThreshold) {
-                if (isRequest) {
-                    logger.warn(
-                        "handling request [{}] took [{}ms] which is above the warn threshold of [{}ms]",
-                        message,
-                        took,
-                        logThreshold
-                    );
-                } else {
-                    logger.warn(
-                        "handling response [{}] on handler [{}] took [{}ms] which is above the warn threshold of [{}ms]",
-                        message,
-                        responseHandler,
-                        took,
-                        logThreshold
-                    );
-                }
+                logSlowMessage(message, took, logThreshold, responseHandler);
             }
         }
+    }
+
+    private static void logSlowMessage(InboundMessage message, long took, long logThreshold, TransportResponseHandler<?> responseHandler) {
+        if (message.getHeader().isRequest()) {
+            logger.warn("handling request [{}] took [{}ms] which is above the warn threshold of [{}ms]", message, took, logThreshold);
+        } else {
+            logger.warn(
+                "handling response [{}] on handler [{}] took [{}ms] which is above the warn threshold of [{}ms]",
+                message,
+                responseHandler,
+                took,
+                logThreshold
+            );
+        }
+    }
+
+    private void invokeResponseHandler(InboundMessage message, TransportResponseHandler<?> responseHandler, InetSocketAddress remoteAddress)
+        throws IOException {
+        final var header = message.getHeader();
+        if (message.getContentLength() > 0 || header.getVersion().equals(TransportVersion.current()) == false) {
+            final StreamInput streamInput = namedWriteableStream(message.openOrGetStreamInput());
+            assertRemoteVersion(streamInput, header.getVersion());
+            if (header.isError()) {
+                handlerResponseError(streamInput, message, responseHandler);
+            } else {
+                handleResponse(remoteAddress, streamInput, responseHandler, message);
+            }
+        } else {
+            assert header.isError() == false;
+            handleResponse(remoteAddress, EMPTY_STREAM_INPUT, responseHandler, message);
+        }
+    }
+
+    private TransportResponseHandler<?> getResponseHandler(Header header) {
+        TransportResponseHandler<?> responseHandler;
+        final long requestId = header.getRequestId();
+        if (header.isHandshake()) {
+            responseHandler = handshaker.removeHandlerForHandshake(requestId);
+        } else {
+            final TransportResponseHandler<? extends TransportResponse> theHandler = responseHandlers.onResponseReceived(
+                requestId,
+                messageListener
+            );
+            if (theHandler == null && header.isError()) {
+                responseHandler = handshaker.removeHandlerForHandshake(requestId);
+            } else {
+                responseHandler = theHandler;
+            }
+        }
+        return responseHandler;
     }
 
     private void verifyResponseReadFully(Header header, TransportResponseHandler<?> responseHandler, StreamInput streamInput)
@@ -193,158 +207,170 @@ public class InboundHandler {
         }
     }
 
-    private <T extends TransportRequest> void handleRequest(TcpChannel channel, Header header, InboundMessage message) throws IOException {
+    private <T extends TransportRequest> void handleRequest(TcpChannel channel, InboundMessage message) {
+        final var header = message.getHeader();
         final String action = header.getActionName();
         final long requestId = header.getRequestId();
         final TransportVersion version = header.getVersion();
-        if (header.isHandshake()) {
-            messageListener.onRequestReceived(requestId, action);
-            // Cannot short circuit handshakes
-            assert message.isShortCircuit() == false;
-            final StreamInput stream = namedWriteableStream(message.openOrGetStreamInput());
-            assertRemoteVersion(stream, header.getVersion());
-            final TransportChannel transportChannel = new TcpTransportChannel(
+        final TransportChannel transportChannel;
+        final RequestHandlerRegistry<T> reg;
+        try {
+            reg = requestHandlers.getHandler(action);
+            assert message.isShortCircuit() || reg != null : action;
+            transportChannel = new TcpTransportChannel(
                 outboundHandler,
                 channel,
                 action,
                 requestId,
                 version,
                 header.getCompressionScheme(),
-                ResponseStatsConsumer.NONE,
+                reg == null ? ResponseStatsConsumer.NONE : reg,
                 header.isHandshake(),
                 message.takeBreakerReleaseControl()
             );
-            try {
-                handshaker.handleHandshake(transportChannel, requestId, stream);
-            } catch (Exception e) {
-                logger.warn(() -> "error processing handshake version [" + version + "] received on [" + channel + "], closing channel", e);
-                channel.close();
-            }
-        } else {
-            final TransportChannel transportChannel;
-            final RequestHandlerRegistry<T> reg;
-            try {
-                reg = requestHandlers.getHandler(action);
-                assert message.isShortCircuit() || reg != null : action;
-                transportChannel = new TcpTransportChannel(
+        } catch (Exception e) {
+            assert false : e;
+            sendErrorResponse(
+                action,
+                new TcpTransportChannel(
                     outboundHandler,
                     channel,
                     action,
                     requestId,
                     version,
                     header.getCompressionScheme(),
-                    reg == null ? ResponseStatsConsumer.NONE : reg,
+                    ResponseStatsConsumer.NONE,
                     header.isHandshake(),
                     message.takeBreakerReleaseControl()
-                );
-            } catch (Exception e) {
-                assert false : e;
-                sendErrorResponse(
-                    action,
-                    new TcpTransportChannel(
-                        outboundHandler,
-                        channel,
-                        action,
-                        requestId,
-                        version,
-                        header.getCompressionScheme(),
-                        ResponseStatsConsumer.NONE,
-                        header.isHandshake(),
-                        message.takeBreakerReleaseControl()
-                    ),
-                    e
-                );
-                return;
+                ),
+                e
+            );
+            return;
+        }
+
+        try {
+            messageListener.onRequestReceived(requestId, action);
+            if (reg != null) {
+                reg.addRequestStats(header.getNetworkMessageSize() + TcpHeader.BYTES_REQUIRED_FOR_MESSAGE_SIZE);
             }
 
-            try {
-                messageListener.onRequestReceived(requestId, action);
-                if (reg != null) {
-                    reg.addRequestStats(header.getNetworkMessageSize() + TcpHeader.BYTES_REQUIRED_FOR_MESSAGE_SIZE);
+            if (message.isShortCircuit()) {
+                sendErrorResponse(action, transportChannel, message.getException());
+            } else {
+                assert reg != null;
+                final StreamInput stream = namedWriteableStream(message.openOrGetStreamInput());
+                assertRemoteVersion(stream, header.getVersion());
+                final T request;
+                try {
+                    request = reg.newRequest(stream);
+                } catch (Exception e) {
+                    assert ignoreDeserializationErrors : e;
+                    throw e;
                 }
-
-                if (message.isShortCircuit()) {
-                    sendErrorResponse(action, transportChannel, message.getException());
-                } else {
-                    assert reg != null;
-                    final StreamInput stream = namedWriteableStream(message.openOrGetStreamInput());
-                    assertRemoteVersion(stream, header.getVersion());
-                    final T request;
-                    try {
-                        request = reg.newRequest(stream);
-                    } catch (Exception e) {
-                        assert ignoreDeserializationErrors : e;
-                        throw e;
-                    }
-                    try {
-                        request.remoteAddress(channel.getRemoteAddress());
-                        assert requestId > 0;
-                        request.setRequestId(requestId);
-                        // in case we throw an exception, i.e. when the limit is hit, we don't want to verify
-                        final int nextByte = stream.read();
-                        // calling read() is useful to make sure the message is fully read, even if there some kind of EOS marker
-                        if (nextByte != -1) {
-                            final IllegalStateException exception = new IllegalStateException(
-                                "Message not fully read (request) for requestId ["
-                                    + requestId
-                                    + "], action ["
-                                    + action
-                                    + "], available ["
-                                    + stream.available()
-                                    + "]; resetting"
-                            );
-                            assert ignoreDeserializationErrors : exception;
-                            throw exception;
-                        }
-                        final String executor = reg.getExecutor();
-                        if (ThreadPool.Names.SAME.equals(executor)) {
-                            try (var ignored = threadPool.getThreadContext().newTraceContext()) {
-                                try {
-                                    reg.processMessageReceived(request, transportChannel);
-                                } catch (Exception e) {
-                                    sendErrorResponse(reg.getAction(), transportChannel, e);
-                                }
-                            }
-                        } else {
-                            boolean success = false;
-                            request.incRef();
+                try {
+                    request.remoteAddress(channel.getRemoteAddress());
+                    assert requestId > 0;
+                    request.setRequestId(requestId);
+                    verifyRequestReadFully(stream, requestId, action);
+                    final String executor = reg.getExecutor();
+                    if (ThreadPool.Names.SAME.equals(executor)) {
+                        try (var ignored = threadPool.getThreadContext().newTraceContext()) {
                             try {
-                                threadPool.executor(executor)
-                                    .execute(threadPool.getThreadContext().preserveContextWithTracing(new AbstractRunnable() {
-                                        @Override
-                                        protected void doRun() throws Exception {
-                                            reg.processMessageReceived(request, transportChannel);
-                                        }
-
-                                        @Override
-                                        public boolean isForceExecution() {
-                                            return reg.isForceExecution();
-                                        }
-
-                                        @Override
-                                        public void onFailure(Exception e) {
-                                            sendErrorResponse(reg.getAction(), transportChannel, e);
-                                        }
-
-                                        @Override
-                                        public void onAfter() {
-                                            request.decRef();
-                                        }
-                                    }));
-                                success = true;
-                            } finally {
-                                if (success == false) {
-                                    request.decRef();
-                                }
+                                reg.processMessageReceived(request, transportChannel);
+                            } catch (Exception e) {
+                                sendErrorResponse(reg.getAction(), transportChannel, e);
                             }
                         }
-                    } finally {
-                        request.decRef();
+                    } else {
+                        handleRequestForking(request, reg, transportChannel);
                     }
+                } finally {
+                    request.decRef();
                 }
-            } catch (Exception e) {
-                sendErrorResponse(action, transportChannel, e);
             }
+        } catch (Exception e) {
+            sendErrorResponse(action, transportChannel, e);
+        }
+    }
+
+    private void verifyRequestReadFully(StreamInput stream, long requestId, String action) throws IOException {
+        // in case we throw an exception, i.e. when the limit is hit, we don't want to verify
+        final int nextByte = stream.read();
+        // calling read() is useful to make sure the message is fully read, even if there some kind of EOS marker
+        if (nextByte != -1) {
+            final IllegalStateException exception = new IllegalStateException(
+                "Message not fully read (request) for requestId ["
+                    + requestId
+                    + "], action ["
+                    + action
+                    + "], available ["
+                    + stream.available()
+                    + "]; resetting"
+            );
+            assert ignoreDeserializationErrors : exception;
+            throw exception;
+        }
+    }
+
+    private <T extends TransportRequest> void handleRequestForking(T request, RequestHandlerRegistry<T> reg, TransportChannel channel) {
+        boolean success = false;
+        request.incRef();
+        try {
+            threadPool.executor(reg.getExecutor()).execute(threadPool.getThreadContext().preserveContextWithTracing(new AbstractRunnable() {
+                @Override
+                protected void doRun() throws Exception {
+                    reg.processMessageReceived(request, channel);
+                }
+
+                @Override
+                public boolean isForceExecution() {
+                    return reg.isForceExecution();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    sendErrorResponse(reg.getAction(), channel, e);
+                }
+
+                @Override
+                public void onAfter() {
+                    request.decRef();
+                }
+            }));
+            success = true;
+        } finally {
+            if (success == false) {
+                request.decRef();
+            }
+        }
+    }
+
+    private void handleHandshake(TcpChannel channel, InboundMessage message) throws IOException {
+        final long requestId = message.getHeader().getRequestId();
+        messageListener.onRequestReceived(requestId, TransportHandshaker.HANDSHAKE_ACTION_NAME);
+        // Cannot short circuit handshakes
+        assert message.isShortCircuit() == false;
+        var header = message.getHeader();
+        assert header.isHandshake();
+        final StreamInput stream = namedWriteableStream(message.openOrGetStreamInput());
+        final var version = header.getVersion();
+        assertRemoteVersion(stream, version);
+        final TransportChannel transportChannel = new TcpTransportChannel(
+            outboundHandler,
+            channel,
+            TransportHandshaker.HANDSHAKE_ACTION_NAME,
+            requestId,
+            version,
+            header.getCompressionScheme(),
+            ResponseStatsConsumer.NONE,
+            header.isHandshake(),
+            message.takeBreakerReleaseControl()
+        );
+        try {
+            handshaker.handleHandshake(transportChannel, requestId, stream);
+        } catch (Exception e) {
+            logger.warn(() -> "error processing handshake version [" + version + "] received on [" + channel + "], closing channel", e);
+            channel.close();
         }
     }
 
