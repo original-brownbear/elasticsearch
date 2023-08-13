@@ -12,6 +12,7 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.cluster.ClusterInfoSimulator;
+import org.elasticsearch.cluster.routing.RoutingChangesObserver;
 import org.elasticsearch.cluster.routing.RoutingNodes;
 import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.routing.UnassignedInfo;
@@ -79,7 +80,6 @@ public class DesiredBalanceComputer {
 
         final var routingAllocation = desiredBalanceInput.routingAllocation().mutableCloneForSimulation();
         final var routingNodes = routingAllocation.routingNodes();
-        final var knownNodeIds = routingNodes.getAllNodeIds();
         final var changes = routingAllocation.changes();
         final var ignoredShards = getIgnoredShardsWithDiscardedAllocationStatus(desiredBalanceInput.ignoredShards());
         final var clusterInfoSimulator = new ClusterInfoSimulator(routingAllocation.clusterInfo());
@@ -89,44 +89,198 @@ public class DesiredBalanceComputer {
         }
 
         // we assume that all ongoing recoveries will complete
-        for (final var routingNode : routingNodes) {
-            for (final var shardRouting : routingNode) {
-                if (shardRouting.initializing()) {
-                    clusterInfoSimulator.simulateShardStarted(shardRouting);
-                    routingNodes.startShard(logger, shardRouting, changes, 0L);
-                }
-            }
-        }
+        startInitializing(routingNodes, clusterInfoSimulator, changes);
 
         // we are not responsible for allocating unassigned primaries of existing shards, and we're only responsible for allocating
         // unassigned replicas if the ReplicaShardAllocator gives up, so we must respect these ignored shards
         final var unassignedPrimaries = new HashSet<ShardId>();
         final var shardRoutings = new HashMap<ShardId, ShardRoutings>();
-        for (final var primary : new boolean[] { true, false }) {
-            final RoutingNodes.UnassignedShards unassigned = routingNodes.unassigned();
-            for (final var iterator = unassigned.iterator(); iterator.hasNext();) {
-                final var shardRouting = iterator.next();
-                if (shardRouting.primary() == primary) {
-                    var lastAllocatedNodeId = shardRouting.unassignedInfo().getLastAllocatedNodeId();
-                    if (knownNodeIds.contains(lastAllocatedNodeId)
-                        || ignoredShards.contains(discardAllocationStatus(shardRouting)) == false) {
-                        shardRoutings.computeIfAbsent(shardRouting.shardId(), ShardRoutings::new).unassigned().add(shardRouting);
-                    } else {
-                        iterator.removeAndIgnore(UnassignedInfo.AllocationStatus.NO_ATTEMPT, changes);
-                        if (shardRouting.primary()) {
-                            unassignedPrimaries.add(shardRouting.shardId());
-                        }
-                    }
-                }
-            }
-        }
+        collectUnassigned(true, routingNodes, ignoredShards, shardRoutings, changes, unassignedPrimaries);
+        collectUnassigned(false, routingNodes, ignoredShards, shardRoutings, changes, unassignedPrimaries);
 
         for (final var assigned : routingNodes.getAssignedShards().entrySet()) {
             shardRoutings.computeIfAbsent(assigned.getKey(), ShardRoutings::new).assigned().addAll(assigned.getValue());
         }
 
-        // we can assume that all possible shards will be allocated/relocated to one of their desired locations
+        initializeUnassigned(
+            previousDesiredBalance,
+            shardRoutings,
+            routingNodes,
+            routingAllocation,
+            changes,
+            clusterInfoSimulator,
+            unassignedPrimaries
+        );
+
+        executePendingDesiredBalanceMoves(pendingDesiredBalanceMoves, routingAllocation);
+
+        final int iterationCountReportInterval = computeIterationCountReportInterval(routingAllocation);
+        final long timeWarningInterval = progressLogInterval.millis();
+        final long computationStartedTime = threadPool.relativeTimeInMillis();
+        long nextReportTime = computationStartedTime + timeWarningInterval;
+
+        int i = 0;
+        boolean hasChanges = false;
+        while (true) {
+            if (hasChanges) {
+                resetIgnored(routingNodes, ignoredShards, changes);
+            }
+
+            routingAllocation.setSimulatedClusterInfo(clusterInfoSimulator.getClusterInfo());
+            logger.trace("running delegate allocator");
+            delegateAllocator.allocate(routingAllocation);
+            assert routingNodes.unassigned().isEmpty(); // any unassigned shards should now be ignored
+
+            hasChanges = startInitializing(routingNodes, clusterInfoSimulator, changes);
+
+            i++;
+            final long currentTime = threadPool.relativeTimeInMillis();
+            final boolean reportByTime = nextReportTime <= currentTime;
+            final boolean reportByIterationCount = i % iterationCountReportInterval == 0;
+            if (reportByTime || reportByIterationCount) {
+                nextReportTime = currentTime + timeWarningInterval;
+            }
+
+            if (hasChanges == false) {
+                logger.debug(
+                    "Desired balance computation for [{}] converged after [{}] and [{}] iterations",
+                    desiredBalanceInput.index(),
+                    TimeValue.timeValueMillis(currentTime - computationStartedTime).toString(),
+                    i
+                );
+                break;
+            }
+            if (isFresh.test(desiredBalanceInput) == false) {
+                // we run at least one iteration, but if another reroute happened meanwhile
+                // then publish the interim state and restart the calculation
+                logger.debug(
+                    "Desired balance computation for [{}] interrupted after [{}] and [{}] iterations as newer cluster state received. "
+                        + "Publishing intermediate desired balance and restarting computation",
+                    desiredBalanceInput.index(),
+                    i,
+                    TimeValue.timeValueMillis(currentTime - computationStartedTime).toString()
+                );
+                break;
+            }
+
+            final int iterations = i;
+            logger.log(
+                reportByIterationCount || reportByTime ? Level.INFO : i % 100 == 0 ? Level.DEBUG : Level.TRACE,
+                () -> Strings.format(
+                    "Desired balance computation for [%d] is still not converged after [%s] and [%d] iterations",
+                    desiredBalanceInput.index(),
+                    TimeValue.timeValueMillis(currentTime - computationStartedTime).toString(),
+                    iterations
+                )
+            );
+        }
+        iterations.inc(i);
+
+        return buildDesiredBalance(previousDesiredBalance, desiredBalanceInput, routingNodes, hasChanges);
+    }
+
+    private static void resetIgnored(RoutingNodes routingNodes, Set<ShardRouting> ignoredShards, RoutingChangesObserver changes) {
+        // Not the first iteration, so every remaining unassigned shard has been ignored, perhaps due to throttling. We must bring
+        // them all back out of the ignored list to give the allocator another go...
+        routingNodes.unassigned().resetIgnored();
+
+        // ... but not if they're ignored because they're out of scope for allocation
+        for (final var iterator = routingNodes.unassigned().iterator(); iterator.hasNext();) {
+            final var shardRouting = iterator.next();
+            if (ignoredShards.contains(discardAllocationStatus(shardRouting))) {
+                iterator.removeAndIgnore(UnassignedInfo.AllocationStatus.NO_ATTEMPT, changes);
+            }
+        }
+    }
+
+    private static void collectUnassigned(
+        boolean primary,
+        RoutingNodes routingNodes,
+        Set<ShardRouting> ignoredShards,
+        Map<ShardId, ShardRoutings> shardRoutings,
+        RoutingChangesObserver changes,
+        Set<ShardId> unassignedPrimaries
+    ) {
+        final RoutingNodes.UnassignedShards unassigned = routingNodes.unassigned();
+        for (final var iterator = unassigned.iterator(); iterator.hasNext();) {
+            final var shardRouting = iterator.next();
+            if (shardRouting.primary() == primary) {
+                var lastAllocatedNodeId = shardRouting.unassignedInfo().getLastAllocatedNodeId();
+                if (routingNodes.node(lastAllocatedNodeId) != null
+                    || ignoredShards.contains(discardAllocationStatus(shardRouting)) == false) {
+                    shardRoutings.computeIfAbsent(shardRouting.shardId(), ShardRoutings::new).unassigned().add(shardRouting);
+                } else {
+                    iterator.removeAndIgnore(UnassignedInfo.AllocationStatus.NO_ATTEMPT, changes);
+                    if (shardRouting.primary()) {
+                        unassignedPrimaries.add(shardRouting.shardId());
+                    }
+                }
+            }
+        }
+    }
+
+    private static DesiredBalance buildDesiredBalance(
+        DesiredBalance previousDesiredBalance,
+        DesiredBalanceInput desiredBalanceInput,
+        RoutingNodes routingNodes,
+        boolean hasChanges
+    ) {
+        final var assignments = new HashMap<ShardId, ShardAssignment>();
+        for (var shardAndAssignments : routingNodes.getAssignedShards().entrySet()) {
+            assignments.put(shardAndAssignments.getKey(), ShardAssignment.ofAssignedShards(shardAndAssignments.getValue()));
+        }
+
+        for (var shard : routingNodes.unassigned().ignored()) {
+            var info = shard.unassignedInfo();
+            assert assertUnassignedInfoForIgnored(info);
+
+            // Simulation could not progress due to missing information in any of the deciders.
+            // Currently, this could happen if `HasFrozenCacheAllocationDecider` is still fetching the data.
+            // Progress would be made after the followup reroute call.
+            hasChanges = hasChanges || info.getLastAllocationStatus() == UnassignedInfo.AllocationStatus.DECIDERS_THROTTLED;
+
+            var ignored = info.getLastAllocationStatus() == UnassignedInfo.AllocationStatus.DECIDERS_NO ? 0 : 1;
+            assignments.compute(
+                shard.shardId(),
+                (key, oldValue) -> oldValue == null
+                    ? new ShardAssignment(Set.of(), 1, 1, ignored)
+                    : new ShardAssignment(oldValue.nodeIds(), oldValue.total() + 1, oldValue.unassigned() + 1, oldValue.ignored() + ignored)
+            );
+        }
+
+        long lastConvergedIndex = hasChanges ? previousDesiredBalance.lastConvergedIndex() : desiredBalanceInput.index();
+        return new DesiredBalance(lastConvergedIndex, assignments);
+    }
+
+    private static boolean startInitializing(
+        RoutingNodes routingNodes,
+        ClusterInfoSimulator clusterInfoSimulator,
+        RoutingChangesObserver changes
+    ) {
+        boolean hasChanges = false;
+        for (final var routingNode : routingNodes) {
+            for (final var shardRouting : routingNode) {
+                if (shardRouting.initializing()) {
+                    hasChanges = true;
+                    clusterInfoSimulator.simulateShardStarted(shardRouting);
+                    routingNodes.startShard(logger, shardRouting, changes, 0L);
+                    logger.trace("starting shard {}", shardRouting);
+                }
+            }
+        }
+        return hasChanges;
+    }
+
+    private static Map<ShardRouting, LinkedList<String>> unassignedShardsToInitialize(
+        DesiredBalance previousDesiredBalance,
+        HashMap<ShardId, ShardRoutings> shardRoutings,
+        RoutingNodes routingNodes,
+        RoutingAllocation routingAllocation,
+        RoutingChangesObserver changes,
+        ClusterInfoSimulator clusterInfoSimulator
+    ) {
         final var unassignedShardsToInitialize = new HashMap<ShardRouting, LinkedList<String>>();
+        var knownNodeIds = routingNodes.getAllNodeIds();
         for (final var entry : shardRoutings.entrySet()) {
             final var shardId = entry.getKey();
             final var routings = entry.getValue();
@@ -188,47 +342,21 @@ public class DesiredBalanceComputer {
                 }
             }
         }
+        return unassignedShardsToInitialize;
+    }
 
-        final var unassignedPrimaryIterator = routingNodes.unassigned().iterator();
-        while (unassignedPrimaryIterator.hasNext()) {
-            final var shardRouting = unassignedPrimaryIterator.next();
-            if (shardRouting.primary()) {
-                final var nodeIds = unassignedShardsToInitialize.get(shardRouting);
-                if (nodeIds != null && nodeIds.isEmpty() == false) {
-                    final var nodeId = nodeIds.removeFirst();
-                    final var routingNode = routingNodes.node(nodeId);
-                    if (routingNode != null
-                        && routingAllocation.deciders()
-                            .canAllocate(shardRouting, routingNode, routingAllocation)
-                            .type() != Decision.Type.NO) {
-                        final var shardToInitialize = unassignedPrimaryIterator.initialize(nodeId, null, 0L, changes);
-                        clusterInfoSimulator.simulateShardStarted(shardToInitialize);
-                        routingNodes.startShard(logger, shardToInitialize, changes, 0L);
-                    }
-                }
-            }
-        }
+    private static boolean assertUnassignedInfoForIgnored(UnassignedInfo info) {
+        assert info != null
+            && (info.getLastAllocationStatus() == UnassignedInfo.AllocationStatus.DECIDERS_NO
+                || info.getLastAllocationStatus() == UnassignedInfo.AllocationStatus.NO_ATTEMPT
+                || info.getLastAllocationStatus() == UnassignedInfo.AllocationStatus.DECIDERS_THROTTLED) : "Unexpected stats in: " + info;
+        return true;
+    }
 
-        final var unassignedReplicaIterator = routingNodes.unassigned().iterator();
-        while (unassignedReplicaIterator.hasNext()) {
-            final var shardRouting = unassignedReplicaIterator.next();
-            if (unassignedPrimaries.contains(shardRouting.shardId()) == false) {
-                final var nodeIds = unassignedShardsToInitialize.get(shardRouting);
-                if (nodeIds != null && nodeIds.isEmpty() == false) {
-                    final var nodeId = nodeIds.removeFirst();
-                    final var routingNode = routingNodes.node(nodeId);
-                    if (routingNode != null
-                        && routingAllocation.deciders()
-                            .canAllocate(shardRouting, routingNode, routingAllocation)
-                            .type() != Decision.Type.NO) {
-                        final var shardToInitialize = unassignedReplicaIterator.initialize(nodeId, null, 0L, changes);
-                        clusterInfoSimulator.simulateShardStarted(shardToInitialize);
-                        routingNodes.startShard(logger, shardToInitialize, changes, 0L);
-                    }
-                }
-            }
-        }
-
+    private static void executePendingDesiredBalanceMoves(
+        Queue<List<MoveAllocationCommand>> pendingDesiredBalanceMoves,
+        RoutingAllocation routingAllocation
+    ) {
         List<MoveAllocationCommand> commands;
         while ((commands = pendingDesiredBalanceMoves.poll()) != null) {
             for (MoveAllocationCommand command : commands) {
@@ -246,120 +374,79 @@ public class DesiredBalanceComputer {
                 }
             }
         }
+    }
 
-        final int iterationCountReportInterval = computeIterationCountReportInterval(routingAllocation);
-        final long timeWarningInterval = progressLogInterval.millis();
-        final long computationStartedTime = threadPool.relativeTimeInMillis();
-        long nextReportTime = computationStartedTime + timeWarningInterval;
-
-        int i = 0;
-        boolean hasChanges = false;
-        while (true) {
-            if (hasChanges) {
-                // Not the first iteration, so every remaining unassigned shard has been ignored, perhaps due to throttling. We must bring
-                // them all back out of the ignored list to give the allocator another go...
-                routingNodes.unassigned().resetIgnored();
-
-                // ... but not if they're ignored because they're out of scope for allocation
-                for (final var iterator = routingNodes.unassigned().iterator(); iterator.hasNext();) {
-                    final var shardRouting = iterator.next();
-                    if (ignoredShards.contains(discardAllocationStatus(shardRouting))) {
-                        iterator.removeAndIgnore(UnassignedInfo.AllocationStatus.NO_ATTEMPT, changes);
-                    }
-                }
-            }
-
-            routingAllocation.setSimulatedClusterInfo(clusterInfoSimulator.getClusterInfo());
-            logger.trace("running delegate allocator");
-            delegateAllocator.allocate(routingAllocation);
-            assert routingNodes.unassigned().size() == 0; // any unassigned shards should now be ignored
-
-            hasChanges = false;
-            for (final var routingNode : routingNodes) {
-                for (final var shardRouting : routingNode) {
-                    if (shardRouting.initializing()) {
-                        hasChanges = true;
-                        clusterInfoSimulator.simulateShardStarted(shardRouting);
-                        routingNodes.startShard(logger, shardRouting, changes, 0L);
-                        logger.trace("starting shard {}", shardRouting);
-                    }
-                }
-            }
-
-            i++;
-            final int iterations = i;
-            final long currentTime = threadPool.relativeTimeInMillis();
-            final boolean reportByTime = nextReportTime <= currentTime;
-            final boolean reportByIterationCount = i % iterationCountReportInterval == 0;
-            if (reportByTime || reportByIterationCount) {
-                nextReportTime = currentTime + timeWarningInterval;
-            }
-
-            if (hasChanges == false) {
-                logger.debug(
-                    "Desired balance computation for [{}] converged after [{}] and [{}] iterations",
-                    desiredBalanceInput.index(),
-                    TimeValue.timeValueMillis(currentTime - computationStartedTime).toString(),
-                    i
+    private static void initializeUnassigned(
+        DesiredBalance previousDesiredBalance,
+        HashMap<ShardId, ShardRoutings> shardRoutings,
+        RoutingNodes routingNodes,
+        RoutingAllocation routingAllocation,
+        RoutingChangesObserver changes,
+        ClusterInfoSimulator clusterInfoSimulator,
+        HashSet<ShardId> unassignedPrimaries
+    ) {
+        // we can assume that all possible shards will be allocated/relocated to one of their desired locations
+        var unassignedShardsToInitialize = unassignedShardsToInitialize(
+            previousDesiredBalance,
+            shardRoutings,
+            routingNodes,
+            routingAllocation,
+            changes,
+            clusterInfoSimulator
+        );
+        final var unassignedPrimaryIterator = routingNodes.unassigned().iterator();
+        while (unassignedPrimaryIterator.hasNext()) {
+            final var shardRouting = unassignedPrimaryIterator.next();
+            if (shardRouting.primary()) {
+                initializeUnassigned(
+                    routingAllocation,
+                    routingNodes,
+                    changes,
+                    clusterInfoSimulator,
+                    unassignedShardsToInitialize,
+                    unassignedPrimaryIterator,
+                    shardRouting
                 );
-                break;
             }
-            if (isFresh.test(desiredBalanceInput) == false) {
-                // we run at least one iteration, but if another reroute happened meanwhile
-                // then publish the interim state and restart the calculation
-                logger.debug(
-                    "Desired balance computation for [{}] interrupted after [{}] and [{}] iterations as newer cluster state received. "
-                        + "Publishing intermediate desired balance and restarting computation",
-                    desiredBalanceInput.index(),
-                    i,
-                    TimeValue.timeValueMillis(currentTime - computationStartedTime).toString()
+        }
+
+        final var unassignedReplicaIterator = routingNodes.unassigned().iterator();
+        while (unassignedReplicaIterator.hasNext()) {
+            final var shardRouting = unassignedReplicaIterator.next();
+            if (unassignedPrimaries.contains(shardRouting.shardId()) == false) {
+                initializeUnassigned(
+                    routingAllocation,
+                    routingNodes,
+                    changes,
+                    clusterInfoSimulator,
+                    unassignedShardsToInitialize,
+                    unassignedReplicaIterator,
+                    shardRouting
                 );
-                break;
             }
-
-            logger.log(
-                reportByIterationCount || reportByTime ? Level.INFO : i % 100 == 0 ? Level.DEBUG : Level.TRACE,
-                () -> Strings.format(
-                    "Desired balance computation for [%d] is still not converged after [%s] and [%d] iterations",
-                    desiredBalanceInput.index(),
-                    TimeValue.timeValueMillis(currentTime - computationStartedTime).toString(),
-                    iterations
-                )
-            );
         }
-        iterations.inc(i);
+    }
 
-        final var assignments = new HashMap<ShardId, ShardAssignment>();
-        for (var shardAndAssignments : routingNodes.getAssignedShards().entrySet()) {
-            assignments.put(shardAndAssignments.getKey(), ShardAssignment.ofAssignedShards(shardAndAssignments.getValue()));
-        }
-
-        for (var shard : routingNodes.unassigned().ignored()) {
-            var info = shard.unassignedInfo();
-            assert info != null
-                && (info.getLastAllocationStatus() == UnassignedInfo.AllocationStatus.DECIDERS_NO
-                    || info.getLastAllocationStatus() == UnassignedInfo.AllocationStatus.NO_ATTEMPT
-                    || info.getLastAllocationStatus() == UnassignedInfo.AllocationStatus.DECIDERS_THROTTLED)
-                : "Unexpected stats in: " + info;
-
-            if (hasChanges == false && info.getLastAllocationStatus() == UnassignedInfo.AllocationStatus.DECIDERS_THROTTLED) {
-                // Simulation could not progress due to missing information in any of the deciders.
-                // Currently, this could happen if `HasFrozenCacheAllocationDecider` is still fetching the data.
-                // Progress would be made after the followup reroute call.
-                hasChanges = true;
+    private static void initializeUnassigned(
+        RoutingAllocation routingAllocation,
+        RoutingNodes routingNodes,
+        RoutingChangesObserver changes,
+        ClusterInfoSimulator clusterInfoSimulator,
+        Map<ShardRouting, LinkedList<String>> unassignedShardsToInitialize,
+        RoutingNodes.UnassignedShards.UnassignedIterator unassignedIterator,
+        ShardRouting shardRouting
+    ) {
+        final var nodeIds = unassignedShardsToInitialize.get(shardRouting);
+        if (nodeIds != null && nodeIds.isEmpty() == false) {
+            final var nodeId = nodeIds.removeFirst();
+            final var routingNode = routingNodes.node(nodeId);
+            if (routingNode != null
+                && routingAllocation.deciders().canAllocate(shardRouting, routingNode, routingAllocation).type() != Decision.Type.NO) {
+                final var shardToInitialize = unassignedIterator.initialize(nodeId, null, 0L, changes);
+                clusterInfoSimulator.simulateShardStarted(shardToInitialize);
+                routingNodes.startShard(logger, shardToInitialize, changes, 0L);
             }
-
-            var ignored = shard.unassignedInfo().getLastAllocationStatus() == UnassignedInfo.AllocationStatus.DECIDERS_NO ? 0 : 1;
-            assignments.compute(
-                shard.shardId(),
-                (key, oldValue) -> oldValue == null
-                    ? new ShardAssignment(Set.of(), 1, 1, ignored)
-                    : new ShardAssignment(oldValue.nodeIds(), oldValue.total() + 1, oldValue.unassigned() + 1, oldValue.ignored() + ignored)
-            );
         }
-
-        long lastConvergedIndex = hasChanges ? previousDesiredBalance.lastConvergedIndex() : desiredBalanceInput.index();
-        return new DesiredBalance(lastConvergedIndex, assignments);
     }
 
     private record ShardRoutings(List<ShardRouting> unassigned, List<ShardRouting> assigned) {
