@@ -211,15 +211,15 @@ public class SharedBytes extends AbstractRefCounted {
     public static int readCacheFile(
         final IO fc,
         long channelPos,
-        long relativePos,
-        long length,
+        int relativePos,
+        int length,
         final ByteBufferReference byteBufferReference
     ) throws IOException {
         if (length == 0L) {
             return 0;
         }
         final int bytesRead;
-        final ByteBuffer dup = byteBufferReference.tryAcquire(Math.toIntExact(relativePos), Math.toIntExact(length));
+        final ByteBuffer dup = byteBufferReference.tryAcquire(relativePos, length);
         if (dup != null) {
             try {
                 bytesRead = fc.read(dup, channelPos);
@@ -231,7 +231,7 @@ public class SharedBytes extends AbstractRefCounted {
             }
         } else {
             // return fake response
-            return Math.toIntExact(length);
+            return length;
         }
         return bytesRead;
     }

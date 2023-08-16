@@ -855,8 +855,8 @@ public class SharedBlobCacheService<KeyType> implements Releasable {
                         final int read = reader.onRangeAvailable(
                             ioRef,
                             physicalStartOffset + rangeToRead.start(),
-                            rangeToRead.start(),
-                            rangeToRead.length()
+                            Math.toIntExact(rangeToRead.start()),
+                            Math.toIntExact(rangeToRead.length())
                         );
                         assert read == rangeToRead.length()
                             : "partial read ["
@@ -1072,7 +1072,7 @@ public class SharedBlobCacheService<KeyType> implements Releasable {
             final RangeAvailableHandler adjustedReader = (channel, channelPos, relativePos, len) -> reader.onRangeAvailable(
                 channel,
                 channelPos,
-                relativePos - readOffset,
+                Math.toIntExact(relativePos - readOffset),
                 len
             );
             if (Assertions.ENABLED) {
@@ -1104,7 +1104,7 @@ public class SharedBlobCacheService<KeyType> implements Releasable {
     public interface RangeAvailableHandler {
         // caller that wants to read from x should instead do a positional read from x + relativePos
         // caller should also only read up to length, further bytes will be offered by another call to this method
-        int onRangeAvailable(SharedBytes.IO channel, long channelPos, long relativePos, long length) throws IOException;
+        int onRangeAvailable(SharedBytes.IO channel, long channelPos, int relativePos, int length) throws IOException;
     }
 
     @FunctionalInterface
