@@ -28,7 +28,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.function.IntConsumer;
-import java.util.function.LongConsumer;
 
 public class SharedBytes extends AbstractRefCounted {
 
@@ -148,7 +147,7 @@ public class SharedBytes extends AbstractRefCounted {
      *
      * @param fc output cache file reference
      * @param input stream to read from
-     * @param fileChannelPos position in {@code fc} to write to
+     * @param pagePos position in {@code fc} to write to
      * @param relativePos relative position in the Lucene file the is read from {@code input}
      * @param length number of bytes to copy
      * @param progressUpdater callback to invoke with the number of copied bytes as they are copied
@@ -158,21 +157,20 @@ public class SharedBytes extends AbstractRefCounted {
     public static void copyToCacheFileAligned(
         IO fc,
         InputStream input,
-        long fileChannelPos,
+        int pagePos,
         long relativePos,
-        long length,
-        LongConsumer progressUpdater,
+        int length,
+        IntConsumer progressUpdater,
         ByteBuffer buf
     ) throws IOException {
-        long bytesCopied = 0L;
-        long remaining = length;
-        while (remaining > 0L) {
+        int bytesCopied = 0;
+        int remaining = length;
+        while (remaining > 0) {
             final int bytesRead = BlobCacheUtils.readSafe(input, buf, relativePos, remaining);
             if (buf.hasRemaining()) {
                 break;
             }
-            long bytesWritten = positionalWrite(fc, fileChannelPos + bytesCopied, buf);
-            bytesCopied += bytesWritten;
+            bytesCopied += positionalWrite(fc, pagePos + bytesCopied, buf);
             progressUpdater.accept(bytesCopied);
             remaining -= bytesRead;
         }
@@ -181,15 +179,14 @@ public class SharedBytes extends AbstractRefCounted {
             final int remainder = buf.position() % PAGE_SIZE;
             final int adjustment = remainder == 0 ? 0 : PAGE_SIZE - remainder;
             buf.position(buf.position() + adjustment);
-            long bytesWritten = positionalWrite(fc, fileChannelPos + bytesCopied, buf);
-            bytesCopied += bytesWritten;
-            final long adjustedBytesCopied = bytesCopied - adjustment; // adjust to not break RangeFileTracker
+            bytesCopied += positionalWrite(fc, pagePos + bytesCopied, buf);
+            final int adjustedBytesCopied = bytesCopied - adjustment; // adjust to not break RangeFileTracker
             assert adjustedBytesCopied == length : adjustedBytesCopied + " vs " + length;
             progressUpdater.accept(adjustedBytesCopied);
         }
     }
 
-    private static int positionalWrite(IO fc, long start, ByteBuffer byteBuffer) throws IOException {
+    private static int positionalWrite(IO fc, int start, ByteBuffer byteBuffer) throws IOException {
         byteBuffer.flip();
         int written = fc.write(byteBuffer, start);
         assert byteBuffer.hasRemaining() == false;
@@ -201,20 +198,15 @@ public class SharedBytes extends AbstractRefCounted {
      * Read {@code length} bytes from given shared bytes at given {@code channelPos} into {@code byteBufferReference} at given
      * {@code relativePos}.
      * @param fc shared bytes channel to read from
-     * @param channelPos position in {@code fc} to read from
+     * @param pagePos position in {@code fc} (relative to the beginning of the page it points to) to read from
      * @param relativePos position in {@code byteBufferReference}
      * @param length number of bytes to read
      * @param byteBufferReference buffer reference
      * @return number of bytes read
      * @throws IOException on failure
      */
-    public static int readCacheFile(
-        final IO fc,
-        long channelPos,
-        long relativePos,
-        long length,
-        final ByteBufferReference byteBufferReference
-    ) throws IOException {
+    public static int readCacheFile(final IO fc, int pagePos, long relativePos, long length, final ByteBufferReference byteBufferReference)
+        throws IOException {
         if (length == 0L) {
             return 0;
         }
@@ -222,9 +214,9 @@ public class SharedBytes extends AbstractRefCounted {
         final ByteBuffer dup = byteBufferReference.tryAcquire(Math.toIntExact(relativePos), Math.toIntExact(length));
         if (dup != null) {
             try {
-                bytesRead = fc.read(dup, channelPos);
+                bytesRead = fc.read(dup, pagePos);
                 if (bytesRead == -1) {
-                    BlobCacheUtils.throwEOF(channelPos, dup.remaining());
+                    BlobCacheUtils.throwEOF(pagePos, dup.remaining());
                 }
             } finally {
                 byteBufferReference.release();
@@ -268,23 +260,22 @@ public class SharedBytes extends AbstractRefCounted {
         }
 
         @SuppressForbidden(reason = "Use positional reads on purpose")
-        public int read(ByteBuffer dst, long position) throws IOException {
+        public int read(ByteBuffer dst, int position) throws IOException {
             checkOffsets(position, dst.remaining());
             final int bytesRead;
             if (mmap) {
                 bytesRead = dst.remaining();
                 int startPosition = dst.position();
-                dst.put(startPosition, mappedByteBuffer, Math.toIntExact(position - pageStart), bytesRead)
-                    .position(startPosition + bytesRead);
+                dst.put(startPosition, mappedByteBuffer, position, bytesRead).position(startPosition + bytesRead);
             } else {
-                bytesRead = fileChannel.read(dst, position);
+                bytesRead = fileChannel.read(dst, pageStart + position);
             }
             readBytes.accept(bytesRead);
             return bytesRead;
         }
 
         @SuppressForbidden(reason = "Use positional writes on purpose")
-        public int write(ByteBuffer src, long position) throws IOException {
+        public int write(ByteBuffer src, int position) throws IOException {
             // check if writes are page size aligned for optimal performance
             assert position % PAGE_SIZE == 0;
             assert src.remaining() % PAGE_SIZE == 0;
@@ -292,18 +283,17 @@ public class SharedBytes extends AbstractRefCounted {
             final int bytesWritten;
             if (mmap) {
                 bytesWritten = src.remaining();
-                mappedByteBuffer.put(Math.toIntExact(position - pageStart), src, src.position(), bytesWritten);
+                mappedByteBuffer.put(position, src, src.position(), bytesWritten);
                 src.position(src.position() + bytesWritten);
             } else {
-                bytesWritten = fileChannel.write(src, position);
+                bytesWritten = fileChannel.write(src, pageStart + position);
             }
             writeBytes.accept(bytesWritten);
             return bytesWritten;
         }
 
-        private void checkOffsets(long position, long length) {
-            long pageEnd = pageStart + regionSize;
-            if (position < pageStart || position > pageEnd || position + length > pageEnd) {
+        private void checkOffsets(int position, int length) {
+            if (position < 0 || position + length > regionSize) {
                 assert false;
                 throw new IllegalArgumentException("bad access");
             }
