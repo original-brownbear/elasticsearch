@@ -104,52 +104,13 @@ public class IndexResolver {
         }
     }
 
-    public static class IndexInfo {
-        private final String cluster;
-        private final String name;
-        private final IndexType type;
-
-        public IndexInfo(String cluster, String name, IndexType type) {
-            this.cluster = cluster;
-            this.name = name;
-            this.type = type;
-        }
-
-        public String cluster() {
-            return cluster;
-        }
-
-        public String name() {
-            return name;
-        }
-
-        public IndexType type() {
-            return type;
-        }
+    public record IndexInfo(String cluster, String name, IndexType type) {
 
         @Override
         public String toString() {
             return buildRemoteIndexName(cluster, name);
         }
 
-        @Override
-        public int hashCode() {
-            return Objects.hash(cluster, name, type);
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-
-            if (obj == null || getClass() != obj.getClass()) {
-                return false;
-            }
-
-            IndexResolver.IndexInfo other = (IndexResolver.IndexInfo) obj;
-            return Objects.equals(cluster, other.cluster) && Objects.equals(name, other.name) && Objects.equals(type, other.type);
-        }
     }
 
     public static final String SQL_TABLE = "TABLE";
@@ -272,7 +233,7 @@ public class IndexResolver {
                     indexRequest.indicesOptions(FROZEN_INDICES_OPTIONS);
                 }
 
-                client.admin().indices().getIndex(indexRequest, wrap(indices -> {
+                client.admin().indices().getIndex(indexRequest, listener.delegateFailureAndWrap((delegate, indices) -> {
                     if (indices != null) {
                         for (String indexName : indices.getIndices()) {
                             boolean isFrozen = retrieveFrozenIndices
@@ -282,8 +243,8 @@ public class IndexResolver {
                             );
                         }
                     }
-                    resolveRemoteIndices(clusterWildcard, indexWildcards, javaRegex, retrieveFrozenIndices, indexInfos, listener);
-                }, listener::onFailure));
+                    resolveRemoteIndices(clusterWildcard, indexWildcards, javaRegex, retrieveFrozenIndices, indexInfos, delegate);
+                }));
             } else {
                 resolveRemoteIndices(clusterWildcard, indexWildcards, javaRegex, retrieveFrozenIndices, indexInfos, listener);
             }
@@ -360,11 +321,7 @@ public class IndexResolver {
         Map<String, Object> runtimeMappings,
         ActionListener<IndexResolution> listener
     ) {
-        FieldCapabilitiesRequest fieldRequest = createFieldCapsRequest(indexWildcard, indicesOptions, runtimeMappings);
-        client.fieldCaps(
-            fieldRequest,
-            ActionListener.wrap(response -> listener.onResponse(mergedMappings(typeRegistry, indexWildcard, response)), listener::onFailure)
-        );
+        executeFieldCaps(indexWildcard, createFieldCapsRequest(indexWildcard, indicesOptions, runtimeMappings), listener);
     }
 
     /**
@@ -376,10 +333,13 @@ public class IndexResolver {
         Map<String, Object> runtimeMappings,
         ActionListener<IndexResolution> listener
     ) {
-        FieldCapabilitiesRequest fieldRequest = createFieldCapsRequest(indexWildcard, includeFrozen, runtimeMappings);
+        executeFieldCaps(indexWildcard, createFieldCapsRequest(indexWildcard, includeFrozen, runtimeMappings), listener);
+    }
+
+    private void executeFieldCaps(String indexWildcard, FieldCapabilitiesRequest request, ActionListener<IndexResolution> listener) {
         client.fieldCaps(
-            fieldRequest,
-            ActionListener.wrap(response -> listener.onResponse(mergedMappings(typeRegistry, indexWildcard, response)), listener::onFailure)
+            request,
+            listener.delegateFailureAndWrap((l, response) -> l.onResponse(mergedMappings(typeRegistry, indexWildcard, response)))
         );
     }
 
@@ -508,7 +468,7 @@ public class IndexResolver {
 
         EsField esField = field.apply(fieldName);
 
-        if (parent != null && parent instanceof UnsupportedEsField unsupportedParent) {
+        if (parent instanceof UnsupportedEsField unsupportedParent) {
             String inherited = unsupportedParent.getInherited();
             String type = unsupportedParent.getOriginalType();
 
@@ -591,17 +551,26 @@ public class IndexResolver {
         ActionListener<List<EsIndex>> listener
     ) {
         FieldCapabilitiesRequest fieldRequest = createFieldCapsRequest(indexWildcard, includeFrozen, runtimeMappings);
-        client.fieldCaps(fieldRequest, wrap(response -> {
-            client.admin().indices().getAliases(createGetAliasesRequest(response, includeFrozen), wrap(aliases -> {
-                listener.onResponse(separateMappings(typeRegistry, javaRegex, response, aliases.getAliases()));
-            }, ex -> {
-                if (ex instanceof IndexNotFoundException || ex instanceof ElasticsearchSecurityException) {
-                    listener.onResponse(separateMappings(typeRegistry, javaRegex, response, null));
-                } else {
-                    listener.onFailure(ex);
-                }
-            }));
-        }, listener::onFailure));
+        client.fieldCaps(
+            fieldRequest,
+            listener.delegateFailureAndWrap(
+                (delegate, response) -> client.admin()
+                    .indices()
+                    .getAliases(
+                        createGetAliasesRequest(response, includeFrozen),
+                        wrap(
+                            aliases -> delegate.onResponse(separateMappings(typeRegistry, javaRegex, response, aliases.getAliases())),
+                            ex -> {
+                                if (ex instanceof IndexNotFoundException || ex instanceof ElasticsearchSecurityException) {
+                                    delegate.onResponse(separateMappings(typeRegistry, javaRegex, response, null));
+                                } else {
+                                    delegate.onFailure(ex);
+                                }
+                            }
+                        )
+                    )
+            )
+        );
 
     }
 
@@ -659,9 +628,7 @@ public class IndexResolver {
         Pattern pattern = javaRegex != null ? Pattern.compile(javaRegex) : null;
 
         // sort fields in reverse order to build the field hierarchy
-        Set<Entry<String, Map<String, FieldCapabilities>>> sortedFields = new TreeSet<>(
-            Collections.reverseOrder(Comparator.comparing(Entry::getKey))
-        );
+        Set<Entry<String, Map<String, FieldCapabilities>>> sortedFields = new TreeSet<>(Collections.reverseOrder(Entry.comparingByKey()));
         final Map<String, Map<String, FieldCapabilities>> fieldCaps = fieldCapsResponse.get();
         sortedFields.addAll(fieldCaps.entrySet());
 
@@ -686,7 +653,7 @@ public class IndexResolver {
                 String[] capIndices = typeCap.indices();
 
                 // compute the actual indices - if any are specified, take into account the unmapped indices
-                List<String> concreteIndices = null;
+                final List<String> concreteIndices;
                 if (capIndices != null) {
                     if (unmappedIndices.isEmpty()) {
                         concreteIndices = new ArrayList<>(asList(capIndices));
