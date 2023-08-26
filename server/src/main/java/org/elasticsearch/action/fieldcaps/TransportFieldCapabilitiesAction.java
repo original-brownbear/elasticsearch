@@ -23,6 +23,7 @@ import org.elasticsearch.cluster.block.ClusterBlockLevel;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.core.Nullable;
@@ -310,20 +311,15 @@ public class TransportFieldCapabilitiesAction extends HandledTransportAction<Fie
         }
 
         task.ensureNotCancelled();
-        return new FieldCapabilitiesResponse(
-            indices,
-            buildResponseMap(indexResponsesMap, responseMapBuilder, request.includeUnmapped()),
-            failures
-        );
+        return new FieldCapabilitiesResponse(indices, buildResponseMap(indices, responseMapBuilder, request.includeUnmapped()), failures);
     }
 
     private static Map<String, Map<String, FieldCapabilities>> buildResponseMap(
-        Map<String, FieldCapabilitiesIndexResponse> indexResponsesMap,
+        String[] indices,
         Map<String, Map<String, FieldCapabilities.Builder>> responseMapBuilder,
         boolean includeUnmapped
     ) {
         Map<String, Map<String, FieldCapabilities>> responseMap = Maps.newMapWithExpectedSize(responseMapBuilder.size());
-        final var indices = indexResponsesMap.keySet();
         final Set<String> mappedScratch = includeUnmapped ? new HashSet<>() : null;
         for (Map.Entry<String, Map<String, FieldCapabilities.Builder>> entry : responseMapBuilder.entrySet()) {
             var typeMapBuilder = entry.getValue().entrySet();
@@ -353,13 +349,13 @@ public class TransportFieldCapabilitiesAction extends HandledTransportAction<Fie
     }
 
     @Nullable
-    private static Function<Boolean, FieldCapabilities> getUnmappedFields(Set<String> indices, String field, Set<String> mappedIndices) {
-        if (mappedIndices.size() != indices.size()) {
+    private static Function<Boolean, FieldCapabilities> getUnmappedFields(String[] indices, String field, Set<String> mappedIndices) {
+        if (mappedIndices.size() != indices.length) {
             return mt -> {
                 final String[] diff;
                 if (mt) {
-                    diff = new String[indices.size() - mappedIndices.size()];
-                    Iterator<String> indicesIter = indices.iterator();
+                    diff = new String[indices.length - mappedIndices.size()];
+                    Iterator<String> indicesIter = Iterators.forArray(indices);
                     for (int i = 0; i < diff.length; i++) {
                         diff[i] = nextIndex(indicesIter, mappedIndices);
                     }
