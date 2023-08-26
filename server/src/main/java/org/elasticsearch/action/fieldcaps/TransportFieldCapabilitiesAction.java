@@ -25,7 +25,6 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.util.Maps;
-import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.index.shard.ShardId;
@@ -47,6 +46,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -355,23 +355,30 @@ public class TransportFieldCapabilitiesAction extends HandledTransportAction<Fie
     @Nullable
     private static Function<Boolean, FieldCapabilities> getUnmappedFields(Set<String> indices, String field, Set<String> mappedIndices) {
         if (mappedIndices.size() != indices.size()) {
-            return mt -> new FieldCapabilities(
-                field,
-                "unmapped",
-                false,
-                false,
-                false,
-                false,
-                null,
-                mt ? Sets.difference(indices, mappedIndices).toArray(Strings.EMPTY_ARRAY) : null,
-                null,
-                null,
-                null,
-                null,
-                Map.of()
-            );
+            return mt -> {
+                final String[] diff;
+                if (mt) {
+                    diff = new String[indices.size() - mappedIndices.size()];
+                    Iterator<String> indicesIter = indices.iterator();
+                    for (int i = 0; i < diff.length; i++) {
+                        diff[i] = nextIndex(indicesIter, mappedIndices);
+                    }
+                } else {
+                    diff = null;
+                }
+                return new FieldCapabilities(field, "unmapped", false, false, false, false, null, diff, null, null, null, null, Map.of());
+            };
         }
         return null;
+    }
+
+    private static String nextIndex(Iterator<String> iter, Set<String> filtered) {
+        while (true) {
+            String index = iter.next();
+            if (filtered.contains(index) == false) {
+                return index;
+            }
+        }
     }
 
     private static void innerMerge(
