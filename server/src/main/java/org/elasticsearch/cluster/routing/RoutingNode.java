@@ -16,7 +16,6 @@ import org.elasticsearch.index.shard.ShardId;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -82,7 +81,7 @@ public class RoutingNode implements Iterable<ShardRouting> {
 
     @Override
     public Iterator<ShardRouting> iterator() {
-        return Collections.unmodifiableCollection(shards.values()).iterator();
+        return shards.values().iterator();
     }
 
     /**
