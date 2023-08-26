@@ -324,17 +324,18 @@ public class TransportFieldCapabilitiesAction extends HandledTransportAction<Fie
     ) {
         Map<String, Map<String, FieldCapabilities>> responseMap = Maps.newMapWithExpectedSize(responseMapBuilder.size());
         final var indices = indexResponsesMap.keySet();
+        final Set<String> mappedScratch = includeUnmapped ? new HashSet<>() : null;
         for (Map.Entry<String, Map<String, FieldCapabilities.Builder>> entry : responseMapBuilder.entrySet()) {
             var typeMapBuilder = entry.getValue().entrySet();
 
             Function<Boolean, FieldCapabilities> unmapped = null;
             if (includeUnmapped) {
                 // do this directly, rather than using the builder, to save creating a whole lot of objects we don't need
-                unmapped = getUnmappedFields(
-                    indices,
-                    entry.getKey(),
-                    typeMapBuilder.stream().flatMap(t -> t.getValue().getIndices()).collect(Collectors.toSet())
-                );
+                mappedScratch.clear();
+                for (Map.Entry<String, FieldCapabilities.Builder> b : typeMapBuilder) {
+                    b.getValue().getIndices(mappedScratch);
+                }
+                unmapped = getUnmappedFields(indices, entry.getKey(), mappedScratch);
             }
 
             final int resSize = typeMapBuilder.size() + (unmapped == null ? 0 : 1);
