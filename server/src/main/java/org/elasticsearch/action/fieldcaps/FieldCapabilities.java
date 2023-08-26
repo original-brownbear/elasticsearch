@@ -545,8 +545,11 @@ public class FieldCapabilities implements Writeable, ToXContentObject {
         }
 
         void getIndices(Set<String> into) {
-            for (IndexCaps indexCaps : indicesList) {
-                Collections.addAll(into, indexCaps.indices);
+            for (int i = 0; i < indicesList.size(); i++) {
+                IndexCaps indexCaps = indicesList.get(i);
+                for (String element : indexCaps.indices) {
+                    into.add(element);
+                }
             }
         }
 
