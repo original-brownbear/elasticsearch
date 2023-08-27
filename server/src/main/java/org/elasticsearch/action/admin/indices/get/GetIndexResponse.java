@@ -173,7 +173,7 @@ public class GetIndexResponse extends ActionResponse implements ChunkedToXConten
     public void writeTo(StreamOutput out) throws IOException {
         out.writeStringArray(indices);
         MappingMetadata.writeMappingMetadata(out, mappings);
-        out.writeMap(aliases, StreamOutput::writeList);
+        out.writeMap(aliases, (streamOutput, list) -> streamOutput.writeCollection(list));
         out.writeMap(settings, (o, v) -> v.writeTo(o));
         out.writeMap(defaultSettings, (o, v) -> v.writeTo(o));
         out.writeMap(dataStreams, StreamOutput::writeOptionalString);

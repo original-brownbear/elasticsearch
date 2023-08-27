@@ -161,7 +161,7 @@ public class PhraseSuggestionBuilder extends SuggestionBuilder<PhraseSuggestionB
         }
         out.writeMapWithConsistentOrder(collateParams);
         out.writeOptionalBoolean(collatePrune);
-        out.writeMap(this.generators, StreamOutput::writeList);
+        out.writeMap(this.generators, (streamOutput, list) -> streamOutput.writeCollection(list));
     }
 
     /**

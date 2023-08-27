@@ -96,7 +96,7 @@ public class RankEvalSpec implements Writeable, ToXContentObject {
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
-        out.writeList(ratedRequests);
+        out.writeCollection(ratedRequests);
         out.writeNamedWriteable(metric);
         out.writeMap(templates, (o, v) -> v.writeTo(o));
         out.writeVInt(maxConcurrentSearches);

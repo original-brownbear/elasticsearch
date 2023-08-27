@@ -1031,13 +1031,6 @@ public abstract class StreamOutput extends OutputStream {
     }
 
     /**
-     * Writes a list of {@link Writeable} objects
-     */
-    public void writeList(List<? extends Writeable> list) throws IOException {
-        writeCollection(list);
-    }
-
-    /**
      * Writes a collection of objects via a {@link Writer}.
      *
      * @param collection the collection of objects
