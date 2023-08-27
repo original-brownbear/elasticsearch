@@ -627,6 +627,19 @@ public abstract class StreamOutput extends OutputStream {
     }
 
     /**
+     * Write a {@link Map} of String keys to {@code V}-type.
+     *
+     * @param valueWriter The value writer
+     */
+    public final <V> void writeMap(final Map<String, V> map, final Writer<V> valueWriter) throws IOException {
+        writeVInt(map.size());
+        for (final Map.Entry<String, V> entry : map.entrySet()) {
+            writeString(entry.getKey());
+            valueWriter.write(this, entry.getValue());
+        }
+    }
+
+    /**
      * Writes an {@link Instant} to the stream with nanosecond resolution
      */
     public final void writeInstant(Instant instant) throws IOException {
@@ -695,7 +708,7 @@ public abstract class StreamOutput extends OutputStream {
             } else {
                 @SuppressWarnings("unchecked")
                 final Map<String, ?> map = (Map<String, ?>) v;
-                o.writeMap(map, StreamOutput::writeString, StreamOutput::writeGenericValue);
+                o.writeMap(map, StreamOutput::writeGenericValue);
             }
         }),
         entry(Byte.class, (o, v) -> {
@@ -1069,7 +1082,10 @@ public abstract class StreamOutput extends OutputStream {
      * @throws IOException if an I/O exception occurs writing the collection
      */
     public void writeStringCollection(final Collection<String> collection) throws IOException {
-        writeCollection(collection, StreamOutput::writeString);
+        writeVInt(collection.size());
+        for (final String val : collection) {
+            writeString(val);
+        }
     }
 
     /**
