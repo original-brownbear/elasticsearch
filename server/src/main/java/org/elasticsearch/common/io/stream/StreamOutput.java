@@ -502,10 +502,7 @@ public abstract class StreamOutput extends OutputStream {
         if (array == null) {
             writeVInt(0);
         } else {
-            writeVInt(array.length);
-            for (String s : array) {
-                writeString(s);
-            }
+            writeStringArray(array);
         }
     }
 
@@ -659,18 +656,12 @@ public abstract class StreamOutput extends OutputStream {
         }),
         entry(byte[].class, (o, v) -> {
             o.writeByte((byte) 6);
-            final byte[] bytes = (byte[]) v;
-            o.writeVInt(bytes.length);
-            o.writeBytes(bytes);
+            o.writeByteArray((byte[]) v);
         }),
         entry(List.class, (o, v) -> o.writeGenericList((List<?>) v, StreamOutput::writeGenericValue)),
         entry(Object[].class, (o, v) -> {
             o.writeByte((byte) 8);
-            final Object[] list = (Object[]) v;
-            o.writeVInt(list.length);
-            for (Object item : list) {
-                o.writeGenericValue(item);
-            }
+            o.writeArray(StreamOutput::writeGenericValue, (Object[]) v);
         }),
         entry(Map.class, (o, v) -> {
             if (v instanceof LinkedHashMap) {
@@ -1118,10 +1109,7 @@ public abstract class StreamOutput extends OutputStream {
      * Writes an EnumSet with type E that by serialized it based on it's ordinal value
      */
     public <E extends Enum<E>> void writeEnumSet(EnumSet<E> enumSet) throws IOException {
-        writeVInt(enumSet.size());
-        for (E e : enumSet) {
-            writeEnum(e);
-        }
+        writeCollection(enumSet, StreamOutput::writeEnum);
     }
 
     /**
