@@ -582,26 +582,6 @@ public abstract class StreamOutput extends OutputStream {
     }
 
     /**
-     * Write a {@link Map} of {@code K}-type keys to {@code V}-type {@link List}s.
-     * <pre><code>
-     * Map&lt;String, List&lt;String&gt;&gt; map = ...;
-     * out.writeMapOfLists(map, StreamOutput::writeString, StreamOutput::writeString);
-     * </code></pre>
-     *
-     * @param keyWriter The key writer
-     * @param valueWriter The value writer
-     */
-    public final <K, V> void writeMapOfLists(final Map<K, List<V>> map, final Writer<K> keyWriter, final Writer<V> valueWriter)
-        throws IOException {
-        writeMap(map, keyWriter, (stream, list) -> {
-            writeVInt(list.size());
-            for (final V value : list) {
-                valueWriter.write(this, value);
-            }
-        });
-    }
-
-    /**
      * Write a {@link Map} of {@code K}-type keys to {@code V}-type.
      */
     public final <K extends Writeable, V extends Writeable> void writeMap(final Map<K, V> map) throws IOException {
@@ -632,11 +612,7 @@ public abstract class StreamOutput extends OutputStream {
      * @param valueWriter The value writer
      */
     public final <V> void writeMap(final Map<String, V> map, final Writer<V> valueWriter) throws IOException {
-        writeVInt(map.size());
-        for (final Map.Entry<String, V> entry : map.entrySet()) {
-            writeString(entry.getKey());
-            valueWriter.write(this, entry.getValue());
-        }
+        writeMap(map, StreamOutput::writeString, valueWriter);
     }
 
     /**
@@ -1082,10 +1058,7 @@ public abstract class StreamOutput extends OutputStream {
      * @throws IOException if an I/O exception occurs writing the collection
      */
     public void writeStringCollection(final Collection<String> collection) throws IOException {
-        writeVInt(collection.size());
-        for (final String val : collection) {
-            writeString(val);
-        }
+        writeCollection(collection, StreamOutput::writeString);
     }
 
     /**
