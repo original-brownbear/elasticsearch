@@ -740,11 +740,7 @@ public final class XContentBuilder implements Closeable, Flushable {
         if (values == null) {
             return nullValue();
         }
-        startArray();
-        for (String s : values) {
-            value(s);
-        }
-        endArray();
+        generator.writeStringArray(values, 0, values.length);
         return this;
     }
 

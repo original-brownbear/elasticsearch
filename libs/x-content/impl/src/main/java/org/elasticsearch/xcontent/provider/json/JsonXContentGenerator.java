@@ -365,6 +365,15 @@ public class JsonXContentGenerator implements XContentGenerator {
     }
 
     @Override
+    public void writeStringArray(String[] array, int offset, int length) throws IOException {
+        try {
+            generator.writeArray(array, offset, length);
+        } catch (JsonGenerationException e) {
+            throw new XContentGenerationException(e);
+        }
+    }
+
+    @Override
     public void writeString(char[] value, int offset, int len) throws IOException {
         try {
             generator.writeString(value, offset, len);
