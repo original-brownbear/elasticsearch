@@ -19,6 +19,7 @@ import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -132,23 +133,19 @@ public class ScriptLanguagesInfo implements ToXContentObject, Writeable {
 
     @Override
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
-        builder.startObject().startArray(TYPES_ALLOWED.getPreferredName());
-        for (String type : typesAllowed.stream().sorted().toList()) {
-            builder.value(type);
-        }
+        builder.startObject().array(TYPES_ALLOWED.getPreferredName(), typesAllowed.stream().sorted().toArray(String[]::new));
 
-        builder.endArray().startArray(LANGUAGE_CONTEXTS.getPreferredName());
+        builder.startArray(LANGUAGE_CONTEXTS.getPreferredName());
         List<Map.Entry<String, Set<String>>> languagesByName = languageContexts.entrySet()
             .stream()
             .sorted(Map.Entry.comparingByKey())
             .toList();
 
         for (Map.Entry<String, Set<String>> languageContext : languagesByName) {
-            builder.startObject().field(LANGUAGE.getPreferredName(), languageContext.getKey()).startArray(CONTEXTS.getPreferredName());
-            for (String context : languageContext.getValue().stream().sorted().toList()) {
-                builder.value(context);
-            }
-            builder.endArray().endObject();
+            builder.startObject()
+                .field(LANGUAGE.getPreferredName(), languageContext.getKey())
+                .array(CONTEXTS.getPreferredName(), languageContext.getValue().stream().sorted().toArray(String[]::new))
+                .endObject();
         }
 
         return builder.endArray().endObject();

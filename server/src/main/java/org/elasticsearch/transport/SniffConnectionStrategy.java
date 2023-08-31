@@ -594,11 +594,7 @@ public class SniffConnectionStrategy extends RemoteConnectionStrategy {
 
         @Override
         public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
-            builder.startArray("seeds");
-            for (String address : seedNodes) {
-                builder.value(address);
-            }
-            builder.endArray();
+            builder.stringListField("seeds", seedNodes);
             builder.field("num_nodes_connected", numNodesConnected);
             builder.field("max_connections_per_cluster", maxConnectionsPerCluster);
             return builder;

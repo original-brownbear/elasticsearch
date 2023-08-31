@@ -82,39 +82,19 @@ public class MigrateToDataTiersResponse extends ActionResponse implements ToXCon
             builder.field(REMOVED_LEGACY_TEMPLATE.getPreferredName(), this.removedIndexTemplateName);
         }
         if (migratedPolicies.size() > 0) {
-            builder.startArray(MIGRATED_ILM_POLICIES.getPreferredName());
-            for (String policy : migratedPolicies) {
-                builder.value(policy);
-            }
-            builder.endArray();
+            builder.stringListField(MIGRATED_ILM_POLICIES.getPreferredName(), migratedPolicies);
         }
         if (migratedIndices.size() > 0) {
-            builder.startArray(MIGRATED_INDICES.getPreferredName());
-            for (String index : migratedIndices) {
-                builder.value(index);
-            }
-            builder.endArray();
+            builder.stringListField(MIGRATED_INDICES.getPreferredName(), migratedIndices);
         }
         if (migratedLegacyTemplates.size() > 0) {
-            builder.startArray(MIGRATED_LEGACY_TEMPLATES.getPreferredName());
-            for (String legacyTemplate : migratedLegacyTemplates) {
-                builder.value(legacyTemplate);
-            }
-            builder.endArray();
+            builder.stringListField(MIGRATED_LEGACY_TEMPLATES.getPreferredName(), migratedLegacyTemplates);
         }
         if (migratedComposableTemplates.size() > 0) {
-            builder.startArray(MIGRATED_COMPOSABLE_TEMPLATES.getPreferredName());
-            for (String composableTemplate : migratedComposableTemplates) {
-                builder.value(composableTemplate);
-            }
-            builder.endArray();
+            builder.stringListField(MIGRATED_COMPOSABLE_TEMPLATES.getPreferredName(), migratedComposableTemplates);
         }
         if (migratedComponentTemplates.size() > 0) {
-            builder.startArray(MIGRATED_COMPONENT_TEMPLATES.getPreferredName());
-            for (String componentTemplate : migratedComponentTemplates) {
-                builder.value(componentTemplate);
-            }
-            builder.endArray();
+            builder.stringListField(MIGRATED_COMPONENT_TEMPLATES.getPreferredName(), migratedComponentTemplates);
         }
         builder.endObject();
         return builder;

@@ -542,11 +542,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
 
         public XContentBuilder toXContent(XContentBuilder builder) throws IOException {
             if (copyToFields.isEmpty() == false) {
-                builder.startArray("copy_to");
-                for (String field : copyToFields) {
-                    builder.value(field);
-                }
-                builder.endArray();
+                builder.stringListField("copy_to", copyToFields);
             }
             return builder;
         }

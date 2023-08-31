@@ -74,11 +74,7 @@ public class SnapshotFeatureInfo implements Writeable, ToXContentObject {
         builder.startObject();
         {
             builder.field("feature_name", pluginName);
-            builder.startArray("indices");
-            for (String index : indices) {
-                builder.value(index);
-            }
-            builder.endArray();
+            builder.stringListField("indices", indices);
         }
         builder.endObject();
         return builder;

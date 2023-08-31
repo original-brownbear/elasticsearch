@@ -406,11 +406,7 @@ public class ElasticsearchException extends RuntimeException implements ToXConte
             if (values.size() == 1) {
                 builder.field(key, values.get(0));
             } else {
-                builder.startArray(key);
-                for (String value : values) {
-                    builder.value(value);
-                }
-                builder.endArray();
+                builder.stringListField(key, values);
             }
         }
     }

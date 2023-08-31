@@ -768,11 +768,7 @@ public final class SearchHit implements Writeable, ToXContentObject, Iterable<Do
                 }
                 builder.endObject();
             } else {
-                builder.startArray(Fields.MATCHED_QUERIES);
-                for (String matchedFilter : matchedQueries.keySet()) {
-                    builder.value(matchedFilter);
-                }
-                builder.endArray();
+                builder.stringListField(Fields.MATCHED_QUERIES, matchedQueries.keySet());
             }
         }
         if (getExplanation() != null) {

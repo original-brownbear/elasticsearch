@@ -234,11 +234,7 @@ public class ExpressionRoleMapping implements ToXContentObject, Writeable {
         builder.startObject();
         builder.field(Fields.ENABLED.getPreferredName(), enabled);
         if (roles.isEmpty() == false) {
-            builder.startArray(Fields.ROLES.getPreferredName());
-            for (String r : roles) {
-                builder.value(r);
-            }
-            builder.endArray();
+            builder.stringListField(Fields.ROLES.getPreferredName(), roles);
         }
         if (roleTemplates.isEmpty() == false) {
             builder.startArray(Fields.ROLE_TEMPLATES.getPreferredName());

@@ -64,11 +64,7 @@ public class AggregationInfo implements ReportingService.Info {
         builder.startObject("aggregations");
         for (Map.Entry<String, Set<String>> e : aggs.entrySet()) {
             builder.startObject(e.getKey());
-            builder.startArray("types");
-            for (String s : e.getValue()) {
-                builder.value(s);
-            }
-            builder.endArray();
+            builder.stringListField("types", e.getValue());
             builder.endObject();
         }
         builder.endObject();

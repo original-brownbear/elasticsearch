@@ -38,11 +38,7 @@ public class ParsedBucketMetricValue extends ParsedSingleValueNumericMetricsAggr
         if (hasValue && valueAsString != null) {
             builder.field(CommonFields.VALUE_AS_STRING.getPreferredName(), valueAsString);
         }
-        builder.startArray(InternalBucketMetricValue.KEYS_FIELD.getPreferredName());
-        for (String key : keys) {
-            builder.value(key);
-        }
-        builder.endArray();
+        builder.stringListField(InternalBucketMetricValue.KEYS_FIELD.getPreferredName(), keys);
         return builder;
     }
 

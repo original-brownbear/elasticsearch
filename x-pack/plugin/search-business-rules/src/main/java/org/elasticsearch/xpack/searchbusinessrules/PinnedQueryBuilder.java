@@ -280,18 +280,10 @@ public class PinnedQueryBuilder extends AbstractQueryBuilder<PinnedQueryBuilder>
             organicQuery.toXContent(builder, params);
         }
         if (ids != null) {
-            builder.startArray(IDS_FIELD.getPreferredName());
-            for (String value : ids) {
-                builder.value(value);
-            }
-            builder.endArray();
+            builder.stringListField(IDS_FIELD.getPreferredName(), ids);
         }
         if (docs != null) {
-            builder.startArray(DOCS_FIELD.getPreferredName());
-            for (Item item : docs) {
-                builder.value(item);
-            }
-            builder.endArray();
+            builder.xContentList(DOCS_FIELD.getPreferredName(), docs);
         }
         boostAndQueryNameToXContent(builder);
         builder.endObject();

@@ -300,11 +300,7 @@ public class RatedRequest implements Writeable, ToXContentObject {
             builder.endObject();
         }
         if (this.summaryFields.isEmpty() == false) {
-            builder.startArray(FIELDS_FIELD.getPreferredName());
-            for (String field : this.summaryFields) {
-                builder.value(field);
-            }
-            builder.endArray();
+            builder.stringListField(FIELDS_FIELD.getPreferredName(), this.summaryFields);
         }
         builder.endObject();
         return builder;

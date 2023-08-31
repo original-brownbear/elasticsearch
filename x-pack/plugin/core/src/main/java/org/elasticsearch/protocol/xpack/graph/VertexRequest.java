@@ -224,11 +224,7 @@ public class VertexRequest implements ToXContentObject, Writeable {
             builder.endArray();
         }
         if (excludes != null) {
-            builder.startArray("exclude");
-            for (String value : excludes) {
-                builder.value(value);
-            }
-            builder.endArray();
+            builder.stringListField("exclude", excludes);
         }
         builder.endObject();
         return builder;

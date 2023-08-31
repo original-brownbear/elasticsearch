@@ -2311,12 +2311,7 @@ public class IndexMetadata implements Diffable<IndexMetadata>, ToXContentFragmen
                 }
                 builder.endArray();
             } else {
-                builder.startArray(KEY_ALIASES);
-                for (Map.Entry<String, AliasMetadata> cursor : indexMetadata.getAliases().entrySet()) {
-                    builder.value(cursor.getKey());
-                }
-                builder.endArray();
-
+                builder.stringListField(KEY_ALIASES, indexMetadata.getAliases().keySet());
                 builder.startObject(IndexMetadata.KEY_PRIMARY_TERMS);
                 for (int shard = 0; shard < indexMetadata.getNumberOfShards(); shard++) {
                     builder.field(Integer.toString(shard), indexMetadata.primaryTerm(shard));
@@ -2326,11 +2321,7 @@ public class IndexMetadata implements Diffable<IndexMetadata>, ToXContentFragmen
 
             builder.startObject(KEY_IN_SYNC_ALLOCATIONS);
             for (Map.Entry<Integer, Set<String>> cursor : indexMetadata.inSyncAllocationIds.entrySet()) {
-                builder.startArray(String.valueOf(cursor.getKey()));
-                for (String allocationId : cursor.getValue()) {
-                    builder.value(allocationId);
-                }
-                builder.endArray();
+                builder.stringListField(String.valueOf(cursor.getKey()), cursor.getValue());
             }
             builder.endObject();
 

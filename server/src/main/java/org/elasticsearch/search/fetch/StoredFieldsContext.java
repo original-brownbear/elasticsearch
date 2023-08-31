@@ -134,11 +134,7 @@ public class StoredFieldsContext implements Writeable {
             if (fieldNames.size() == 1) {
                 builder.field(preferredName, fieldNames.get(0));
             } else {
-                builder.startArray(preferredName);
-                for (String fieldName : fieldNames) {
-                    builder.value(fieldName);
-                }
-                builder.endArray();
+                builder.stringListField(preferredName, fieldNames);
             }
         }
     }

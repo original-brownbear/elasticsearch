@@ -410,13 +410,7 @@ public class RestoreInProgress extends AbstractNamedDiffable<Custom> implements 
                 builder.field("snapshot", entry.snapshot().getSnapshotId().getName());
                 builder.field("repository", entry.snapshot().getRepository());
                 builder.field("state", entry.state());
-                builder.startArray("indices");
-                {
-                    for (String index : entry.indices()) {
-                        builder.value(index);
-                    }
-                }
-                builder.endArray();
+                builder.stringListField("indices", entry.indices());
                 builder.startArray("shards");
                 {
                     for (Map.Entry<ShardId, ShardRestoreStatus> shardEntry : entry.shards.entrySet()) {

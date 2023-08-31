@@ -83,11 +83,7 @@ public class EnrollmentToken {
         final XContentBuilder builder = JsonXContent.contentBuilder();
         builder.startObject();
         builder.field("ver", version);
-        builder.startArray("adr");
-        for (String bound_address : boundAddress) {
-            builder.value(bound_address);
-        }
-        builder.endArray();
+        builder.stringListField("adr", boundAddress);
         builder.field("fgr", fingerprint);
         builder.field("key", apiKey);
         builder.endObject();

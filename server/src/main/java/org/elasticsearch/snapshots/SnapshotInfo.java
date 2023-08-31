@@ -786,11 +786,7 @@ public final class SnapshotInfo implements Comparable<SnapshotInfo>, ToXContentF
             builder.endObject();
         }
 
-        builder.startArray(DATA_STREAMS);
-        for (String dataStream : dataStreams) {
-            builder.value(dataStream);
-        }
-        builder.endArray();
+        builder.stringListField(DATA_STREAMS, dataStreams);
         if (includeGlobalState != null) {
             builder.field(INCLUDE_GLOBAL_STATE, includeGlobalState);
         }
@@ -849,16 +845,8 @@ public final class SnapshotInfo implements Comparable<SnapshotInfo>, ToXContentF
         builder.field(UUID, snapshotId.getUUID());
         assert version != null : "version must always be known when writing a snapshot metadata blob";
         builder.field(VERSION_ID, version.id());
-        builder.startArray(INDICES);
-        for (String index : indices) {
-            builder.value(index);
-        }
-        builder.endArray();
-        builder.startArray(DATA_STREAMS);
-        for (String dataStream : dataStreams) {
-            builder.value(dataStream);
-        }
-        builder.endArray();
+        builder.stringListField(INDICES, indices);
+        builder.stringListField(DATA_STREAMS, dataStreams);
         builder.field(STATE, state);
         if (reason != null) {
             builder.field(REASON, reason);

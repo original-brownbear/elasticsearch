@@ -93,11 +93,7 @@ public class RestoreInfo implements ToXContentObject, Writeable {
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
         builder.startObject();
         builder.field("snapshot", name);
-        builder.startArray("indices");
-        for (String index : indices) {
-            builder.value(index);
-        }
-        builder.endArray();
+        builder.stringListField("indices", indices);
         builder.startObject("shards");
         builder.field("total", totalShards);
         builder.field("failed", failedShards());

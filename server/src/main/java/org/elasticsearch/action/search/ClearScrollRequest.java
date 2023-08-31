@@ -79,11 +79,7 @@ public class ClearScrollRequest extends ActionRequest implements ToXContentObjec
     @Override
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
         builder.startObject();
-        builder.startArray("scroll_id");
-        for (String scrollId : scrollIds) {
-            builder.value(scrollId);
-        }
-        builder.endArray();
+        builder.stringListField("scroll_id", scrollIds);
         builder.endObject();
         return builder;
     }
