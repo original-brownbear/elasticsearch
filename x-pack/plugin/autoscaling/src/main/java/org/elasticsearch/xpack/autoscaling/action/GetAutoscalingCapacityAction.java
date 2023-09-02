@@ -90,7 +90,7 @@ public class GetAutoscalingCapacityAction extends ActionType<GetAutoscalingCapac
 
         @Override
         public void writeTo(final StreamOutput out) throws IOException {
-            out.writeMap(results, StreamOutput::writeWriteable);
+            out.writeWriteableMap(results);
         }
 
         public SortedMap<String, AutoscalingDeciderResults> results() {

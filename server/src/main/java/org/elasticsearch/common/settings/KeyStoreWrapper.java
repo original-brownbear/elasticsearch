@@ -637,7 +637,7 @@ public class KeyStoreWrapper implements SecureSettings {
         out.writeBoolean(hasPassword);
         out.writeOptionalByteArray(dataBytes);
         var entriesMap = entries.get();
-        out.writeMap((entriesMap == null) ? Map.of() : entriesMap, StreamOutput::writeWriteable);
+        out.writeWriteableMap((entriesMap == null) ? Map.of() : entriesMap);
         out.writeBoolean(closed);
     }
 }

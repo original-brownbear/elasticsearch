@@ -74,7 +74,7 @@ public class FeatureMigrationResults implements Metadata.Custom {
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
-        out.writeMap(featureStatuses, StreamOutput::writeWriteable);
+        out.writeWriteableMap(featureStatuses);
     }
 
     @Override

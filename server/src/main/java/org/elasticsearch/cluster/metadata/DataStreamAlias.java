@@ -399,7 +399,7 @@ public class DataStreamAlias implements SimpleDiffable<DataStreamAlias>, ToXCont
         out.writeStringCollection(dataStreams);
         out.writeOptionalString(writeDataStream);
         if (out.getTransportVersion().onOrAfter(TransportVersion.V_8_7_0)) {
-            out.writeMap(dataStreamToFilterMap, StreamOutput::writeWriteable);
+            out.writeWriteableMap(dataStreamToFilterMap);
         } else {
             if (dataStreamToFilterMap.isEmpty()) {
                 out.writeBoolean(false);

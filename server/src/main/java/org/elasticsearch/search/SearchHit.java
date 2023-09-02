@@ -264,8 +264,8 @@ public final class SearchHit implements Writeable, ToXContentObject, Iterable<Do
             writeExplanation(out, explanation);
         }
         if (out.getTransportVersion().onOrAfter(TransportVersion.V_7_8_0)) {
-            out.writeMap(documentFields, StreamOutput::writeWriteable);
-            out.writeMap(metaFields, StreamOutput::writeWriteable);
+            out.writeWriteableMap(documentFields);
+            out.writeWriteableMap(metaFields);
         } else {
             writeFields(out, this.getFields());
         }
@@ -279,13 +279,13 @@ public final class SearchHit implements Writeable, ToXContentObject, Iterable<Do
         if (out.getTransportVersion().onOrAfter(TransportVersion.V_8_8_0)) {
             out.writeMap(matchedQueries, StreamOutput::writeFloat);
         } else {
-            out.writeStringArray(matchedQueries.keySet().toArray(new String[0]));
+            out.writeStringCollection(matchedQueries.keySet());
         }
         out.writeOptionalWriteable(shard);
         if (innerHits == null) {
             out.writeVInt(0);
         } else {
-            out.writeMap(innerHits, StreamOutput::writeWriteable);
+            out.writeWriteableMap(innerHits);
         }
     }
 

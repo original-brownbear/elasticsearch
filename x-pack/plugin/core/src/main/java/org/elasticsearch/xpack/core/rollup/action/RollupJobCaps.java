@@ -94,7 +94,7 @@ public class RollupJobCaps implements Writeable, ToXContentObject {
         out.writeString(jobID);
         out.writeString(rollupIndex);
         out.writeString(indexPattern);
-        out.writeMap(fieldCapLookup, StreamOutput::writeWriteable);
+        out.writeWriteableMap(fieldCapLookup);
     }
 
     @Override

@@ -79,8 +79,8 @@ public class GetSettingsResponse extends ActionResponse implements ChunkedToXCon
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
-        out.writeMap(indexToSettings, StreamOutput::writeWriteable);
-        out.writeMap(indexToDefaultSettings, StreamOutput::writeWriteable);
+        out.writeWriteableMap(indexToSettings);
+        out.writeWriteableMap(indexToDefaultSettings);
     }
 
     private static void parseSettingsField(

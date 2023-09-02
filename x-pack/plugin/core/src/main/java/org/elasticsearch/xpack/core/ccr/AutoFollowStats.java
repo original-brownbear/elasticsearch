@@ -137,7 +137,7 @@ public class AutoFollowStats implements Writeable, ToXContentObject {
             out1.writeZLong(value.v1());
             out1.writeException(value.v2());
         });
-        out.writeMap(autoFollowedClusters, StreamOutput::writeWriteable);
+        out.writeWriteableMap(autoFollowedClusters);
     }
 
     public long getNumberOfFailedFollowIndices() {

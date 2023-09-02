@@ -97,7 +97,7 @@ public class ComposableIndexTemplateMetadata implements Metadata.Custom {
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
-        out.writeMap(this.indexTemplates, StreamOutput::writeWriteable);
+        out.writeWriteableMap(this.indexTemplates);
     }
 
     @Override

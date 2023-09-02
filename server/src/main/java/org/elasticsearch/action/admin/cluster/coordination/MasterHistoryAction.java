@@ -24,7 +24,6 @@ import org.elasticsearch.tasks.Task;
 import org.elasticsearch.transport.TransportService;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -82,11 +81,7 @@ public class MasterHistoryAction extends ActionType<MasterHistoryAction.Response
         }
 
         public Response(StreamInput in) throws IOException {
-            int mastersCount = in.readVInt();
-            masterHistory = new ArrayList<>(mastersCount);
-            for (int i = 0; i < mastersCount; i++) {
-                masterHistory.add(in.readOptionalWriteable(DiscoveryNode::new));
-            }
+            masterHistory = in.readList(i -> in.readOptionalWriteable(DiscoveryNode::new));
         }
 
         /**
@@ -101,10 +96,7 @@ public class MasterHistoryAction extends ActionType<MasterHistoryAction.Response
 
         @Override
         public void writeTo(StreamOutput out) throws IOException {
-            out.writeVInt(masterHistory.size());
-            for (DiscoveryNode master : masterHistory) {
-                out.writeOptionalWriteable(master);
-            }
+            out.writeCollection(masterHistory, StreamOutput::writeOptionalWriteable);
         }
 
         @Override

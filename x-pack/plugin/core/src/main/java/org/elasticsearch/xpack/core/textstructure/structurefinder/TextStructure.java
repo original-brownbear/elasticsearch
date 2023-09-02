@@ -296,7 +296,7 @@ public class TextStructure implements ToXContentObject, Writeable {
             out.writeBoolean(true);
             out.writeGenericMap(ingestPipeline);
         }
-        out.writeMap(fieldStats, StreamOutput::writeWriteable);
+        out.writeWriteableMap(fieldStats);
         out.writeStringCollection(explanation);
     }
 

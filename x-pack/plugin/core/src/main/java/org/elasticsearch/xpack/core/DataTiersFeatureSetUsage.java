@@ -52,7 +52,7 @@ public class DataTiersFeatureSetUsage extends XPackFeatureSet.Usage {
     @Override
     public void writeTo(StreamOutput out) throws IOException {
         super.writeTo(out);
-        out.writeMap(tierStats, StreamOutput::writeWriteable);
+        out.writeWriteableMap(tierStats);
     }
 
     @Override

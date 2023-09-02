@@ -57,7 +57,7 @@ public class FieldUsageStats implements ToXContentObject, Writeable {
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
-        out.writeMap(stats, StreamOutput::writeWriteable);
+        out.writeWriteableMap(stats);
     }
 
     @Override

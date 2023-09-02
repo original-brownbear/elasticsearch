@@ -60,7 +60,7 @@ final class FieldCapabilitiesIndexResponse implements Writeable {
     @Override
     public void writeTo(StreamOutput out) throws IOException {
         out.writeString(indexName);
-        out.writeMap(responseMap, StreamOutput::writeWriteable);
+        out.writeWriteableMap(responseMap);
         out.writeBoolean(canMatch);
         if (out.getTransportVersion().onOrAfter(MAPPING_HASH_VERSION)) {
             out.writeOptionalString(indexMappingHash);
@@ -78,7 +78,7 @@ final class FieldCapabilitiesIndexResponse implements Writeable {
         public void writeTo(StreamOutput out) throws IOException {
             out.writeStringCollection(indices);
             out.writeString(indexMappingHash);
-            out.writeMap(responseMap, StreamOutput::writeWriteable);
+            out.writeWriteableMap(responseMap);
         }
 
         Stream<FieldCapabilitiesIndexResponse> getResponses() {

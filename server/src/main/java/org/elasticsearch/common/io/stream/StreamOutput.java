@@ -502,10 +502,7 @@ public abstract class StreamOutput extends OutputStream {
         if (array == null) {
             writeVInt(0);
         } else {
-            writeVInt(array.length);
-            for (String s : array) {
-                writeString(s);
-            }
+            writeStringArray(array);
         }
     }
 
@@ -579,26 +576,6 @@ public abstract class StreamOutput extends OutputStream {
     }
 
     /**
-     * Write a {@link Map} of {@code K}-type keys to {@code V}-type {@link List}s.
-     * <pre><code>
-     * Map&lt;String, List&lt;String&gt;&gt; map = ...;
-     * out.writeMapOfLists(map, StreamOutput::writeString, StreamOutput::writeString);
-     * </code></pre>
-     *
-     * @param keyWriter The key writer
-     * @param valueWriter The value writer
-     */
-    public final <K, V> void writeMapOfLists(final Map<K, List<V>> map, final Writer<K> keyWriter, final Writer<V> valueWriter)
-        throws IOException {
-        writeMap(map, keyWriter, (stream, list) -> {
-            writeVInt(list.size());
-            for (final V value : list) {
-                valueWriter.write(this, value);
-            }
-        });
-    }
-
-    /**
      * Write a {@link Map} of {@code K}-type keys to {@code V}-type.
      */
     public final <K extends Writeable, V extends Writeable> void writeMap(final Map<K, V> map) throws IOException {
@@ -628,6 +605,13 @@ public abstract class StreamOutput extends OutputStream {
      */
     public final <V> void writeMap(final Map<String, V> map, final Writer<V> valueWriter) throws IOException {
         writeMap(map, StreamOutput::writeString, valueWriter);
+    }
+
+    /**
+     * Same as {@link #writeMap(Map, Writer)} but with {@link Writeable} values.
+     */
+    public final void writeWriteableMap(final Map<String, ? extends Writeable> map) throws IOException {
+        writeMap(map, StreamOutput::writeString, StreamOutput::writeWriteable);
     }
 
     /**

@@ -153,7 +153,7 @@ public class FieldCapabilitiesResponse extends ActionResponse implements Chunked
     }
 
     private static void writeField(StreamOutput out, Map<String, FieldCapabilities> map) throws IOException {
-        out.writeMap(map, StreamOutput::writeWriteable);
+        out.writeWriteableMap(map);
     }
 
     @Override
