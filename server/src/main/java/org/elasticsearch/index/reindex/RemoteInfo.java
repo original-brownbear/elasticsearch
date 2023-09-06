@@ -275,7 +275,7 @@ public class RemoteInfo implements Writeable, ToXContentObject, Closeable {
                 bytesReference.streamInput()
             )
         ) {
-            Map<String, Object> query = parser.map();
+            parser.map();
             return true;
         } catch (IOException e) {
             throw new AssertionError("Could not parse JSON", e);

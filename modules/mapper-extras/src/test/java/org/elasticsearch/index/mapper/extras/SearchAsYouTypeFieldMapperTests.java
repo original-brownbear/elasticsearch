@@ -30,6 +30,7 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.SynonymQuery;
 import org.apache.lucene.search.TermQuery;
 import org.elasticsearch.common.lucene.search.MultiPhrasePrefixQuery;
+import org.elasticsearch.common.util.iterable.Iterables;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.analysis.AnalyzerScope;
 import org.elasticsearch.index.analysis.IndexAnalyzers;
@@ -261,7 +262,6 @@ public class SearchAsYouTypeFieldMapperTests extends MapperTestCase {
             assertMultiField(shingleSize, mapperService, "field.suggest", "field");
         }
         for (int shingleSize = 2; shingleSize < 4; shingleSize++) {
-            String path = "field";
             int size = shingleSize;
             MapperService mapperService = createMapperService(fieldMapping(b -> {
                 b.field("type", "search_as_you_type").field("max_shingle_size", size);
@@ -707,10 +707,7 @@ public class SearchAsYouTypeFieldMapperTests extends MapperTestCase {
 
         final Set<String> fieldsUsingSourcePath = new HashSet<>();
         mapper.sourcePathUsedBy().forEachRemaining(mapper1 -> fieldsUsingSourcePath.add(mapper1.name()));
-        int multiFields = 0;
-        for (FieldMapper ignored : mapper.multiFields()) {
-            multiFields++;
-        }
+        int multiFields = Iterables.size(mapper.multiFields());
         assertThat(fieldsUsingSourcePath.size(), equalTo(numberOfShingleSubfields + 1 + multiFields));
 
         final Set<String> expectedFieldsUsingSourcePath = new HashSet<>();

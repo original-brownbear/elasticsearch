@@ -169,12 +169,12 @@ public class IndexingSlowLogTests extends ESTestCase {
         LoggerContext context = (LoggerContext) LogManager.getContext(false);
 
         IndexSettings index1Settings = new IndexSettings(createIndexMetadata("index1", settings(UUIDs.randomBase64UUID())), Settings.EMPTY);
-        IndexingSlowLog log1 = new IndexingSlowLog(index1Settings);
+        new IndexingSlowLog(index1Settings);
 
         int numberOfLoggersBefore = context.getLoggers().size();
 
         IndexSettings index2Settings = new IndexSettings(createIndexMetadata("index2", settings(UUIDs.randomBase64UUID())), Settings.EMPTY);
-        IndexingSlowLog log2 = new IndexingSlowLog(index2Settings);
+        new IndexingSlowLog(index2Settings);
         context = (LoggerContext) LogManager.getContext(false);
 
         int numberOfLoggersAfter = context.getLoggers().size();

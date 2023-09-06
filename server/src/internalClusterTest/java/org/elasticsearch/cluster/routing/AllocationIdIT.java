@@ -72,7 +72,7 @@ public class AllocationIdIT extends ESIntegTestCase {
 
         // initial set up
         final String indexName = "index42";
-        final String master = internalCluster().startMasterOnlyNode();
+        internalCluster().startMasterOnlyNode();
         String node1 = internalCluster().startNode();
         createIndex(indexName, indexSettings(1, 1).put(IndexSettings.INDEX_CHECK_ON_STARTUP.getKey(), "checksum").build());
         final int numDocs = indexDocs(indexName, "foo", "bar");

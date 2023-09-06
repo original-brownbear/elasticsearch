@@ -441,7 +441,6 @@ public class IndexShardTests extends IndexShardTestCase {
         final CountDownLatch operationLatch = new CountDownLatch(1);
         final List<Thread> threads = new ArrayList<>();
         for (int i = 0; i < operations; i++) {
-            final String id = "t_" + i;
             final Thread thread = new Thread(() -> {
                 try {
                     barrier.await();
@@ -494,7 +493,6 @@ public class IndexShardTests extends IndexShardTestCase {
         final AtomicLong counter = new AtomicLong();
         final List<Thread> delayedThreads = new ArrayList<>();
         for (int i = 0; i < delayedOperations; i++) {
-            final String id = "d_" + i;
             final Thread thread = new Thread(() -> {
                 try {
                     delayedOperationsBarrier.await();
@@ -1717,7 +1715,7 @@ public class IndexShardTests extends IndexShardTestCase {
             } else {
                 exceptionToThrow.set(() -> new IOException("Test IOException"));
             }
-            ElasticsearchException e = expectThrows(ElasticsearchException.class, shard::storeStats);
+            expectThrows(ElasticsearchException.class, shard::storeStats);
             assertTrue(failureCallbackTriggered.get());
 
             if (corruptIndexException && throwWhenMarkingStoreCorrupted.get() == false) {
@@ -2509,7 +2507,6 @@ public class IndexShardTests extends IndexShardTestCase {
 
     public void testRecoverFromStoreRemoveStaleOperations() throws Exception {
         final IndexShard shard = newStartedShard(false);
-        final String indexName = shard.shardId().getIndexName();
         // Index #0, index #1
         shard.applyIndexOperationOnReplica(
             0,

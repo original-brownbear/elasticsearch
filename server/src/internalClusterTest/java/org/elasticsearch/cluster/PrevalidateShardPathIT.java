@@ -66,7 +66,7 @@ public class PrevalidateShardPathIT extends ESIntegTestCase {
             assertThat(nodeResponse.getShardIds(), equalTo(shardIds));
         }
         // Check that after relocation the source node doesn't have the shard path
-        String node3 = internalCluster().startDataOnlyNode();
+        internalCluster().startDataOnlyNode();
         updateIndexSettings(Settings.builder().put("index.routing.allocation.exclude._name", node2), indexName);
         ensureGreen(indexName);
         assertBusy(() -> {

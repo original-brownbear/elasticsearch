@@ -14,6 +14,7 @@ import org.apache.lucene.analysis.Tokenizer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.elasticsearch.common.Explicit;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.util.iterable.Iterables;
 import org.elasticsearch.index.analysis.AnalyzerScope;
 import org.elasticsearch.index.analysis.NamedAnalyzer;
 import org.elasticsearch.index.mapper.TimeSeriesParams.MetricType;
@@ -52,7 +53,7 @@ public class MappingLookupTests extends ESTestCase {
             emptyList(),
             Collections.singletonList(new TestRuntimeField("test", "type"))
         );
-        assertEquals(0, size(mappingLookup.fieldMappers()));
+        assertEquals(0, Iterables.size(mappingLookup.fieldMappers()));
         assertEquals(0, mappingLookup.objectMappers().size());
         assertNull(mappingLookup.getMapper("test"));
         assertThat(mappingLookup.fieldTypesLookup().get("test"), instanceOf(TestRuntimeField.TestRuntimeFieldType.class));
@@ -66,7 +67,7 @@ public class MappingLookupTests extends ESTestCase {
             Collections.singletonList(new TestRuntimeField("test", "type"))
         );
         assertThat(mappingLookup.getMapper("test"), instanceOf(MockFieldMapper.class));
-        assertEquals(1, size(mappingLookup.fieldMappers()));
+        assertEquals(1, Iterables.size(mappingLookup.fieldMappers()));
         assertEquals(0, mappingLookup.objectMappers().size());
         assertThat(mappingLookup.fieldTypesLookup().get("test"), instanceOf(TestRuntimeField.TestRuntimeFieldType.class));
     }
@@ -87,7 +88,7 @@ public class MappingLookupTests extends ESTestCase {
             Collections.singletonList(new TestRuntimeField("object.subfield", "type"))
         );
         assertThat(mappingLookup.getMapper("object.subfield"), instanceOf(MockFieldMapper.class));
-        assertEquals(1, size(mappingLookup.fieldMappers()));
+        assertEquals(1, Iterables.size(mappingLookup.fieldMappers()));
         assertEquals(1, mappingLookup.objectMappers().size());
         assertThat(mappingLookup.fieldTypesLookup().get("object.subfield"), instanceOf(TestRuntimeField.TestRuntimeFieldType.class));
     }
@@ -190,14 +191,6 @@ public class MappingLookupTests extends ESTestCase {
             assertTrue(tok.incrementToken());
             assertEquals(output, term.toString());
         }
-    }
-
-    private static int size(Iterable<?> iterable) {
-        int count = 0;
-        for (Object obj : iterable) {
-            count++;
-        }
-        return count;
     }
 
     private static class FakeAnalyzer extends Analyzer {

@@ -95,6 +95,7 @@ public class TransportAnalyzeIndexDiskUsageActionTests extends ESTestCase {
         }
         TestTransportService transportService = new TestTransportService(threadPool, r -> {});
         ClusterService clusterService = mockClusterService(ClusterState.builder(ClusterState.EMPTY_STATE).nodes(nodes).build());
+        @SuppressWarnings({ "checkstyle:UnusedLocalVariable" })
         TransportAnalyzeIndexDiskUsageAction transportAction = createTransportAction(clusterService, transportService, groupShardRoutings);
         int maxConcurrentRequests = randomIntBetween(1, 5);
         PlainActionFuture<AnalyzeIndexDiskUsageResponse> future = new PlainActionFuture<>();

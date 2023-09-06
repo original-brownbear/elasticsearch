@@ -21,6 +21,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static org.hamcrest.Matchers.instanceOf;
+
 public class ToXContentTests extends ScriptTestCase {
     public void testUserFunction() {
         Map<?, ?> func = getFunction("def twofive(int i) { return 25 + i; } int j = 23; twofive(j)", "twofive");
@@ -36,7 +38,7 @@ public class ToXContentTests extends ScriptTestCase {
         Map<?, ?> execute = getExecute("int i = 5; return i;");
         Map<?, ?> block = getNode(execute, "block", "SBlock");
         for (Object obj : (List<?>) block.get("statements")) {
-            Map<?, ?> statement = (Map<?, ?>) obj;
+            assertThat(obj, instanceOf(Map.class));
         }
         Map<?, ?> decl = getStatement(block, "SDeclBlock");
         List<?> decls = (List<?>) decl.get("declarations");

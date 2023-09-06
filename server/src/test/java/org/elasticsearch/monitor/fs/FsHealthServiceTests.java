@@ -129,6 +129,7 @@ public class FsHealthServiceTests extends ESTestCase {
 
         MockLogAppender mockAppender = new MockLogAppender();
         try (NodeEnvironment env = newNodeEnvironment(); var ignored = mockAppender.capturing(FsHealthService.class)) {
+            @SuppressWarnings({ "unused", "checkstyle:UnusedLocalVariable" })
             FsHealthService fsHealthService = new FsHealthService(settings, clusterSettings, testThreadPool, env);
             int counter = 0;
             for (Path path : env.nodeDataPaths()) {

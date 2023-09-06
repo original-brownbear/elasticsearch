@@ -88,7 +88,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
-import java.util.function.LongSupplier;
 import java.util.stream.Collectors;
 
 import static org.elasticsearch.cluster.service.ClusterStateTaskExecutorUtils.executeAndAssertSuccessful;
@@ -623,7 +622,6 @@ public class IngestServiceTests extends ESTestCase {
     }
 
     public void testGetProcessorsInPipelineComplexConditional() throws Exception {
-        LongSupplier relativeTimeProvider = mock(LongSupplier.class);
         String scriptName = "conditionalScript";
         ScriptService scriptService = new ScriptService(
             Settings.builder().build(),

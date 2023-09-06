@@ -385,7 +385,7 @@ public class TimeValue implements Comparable<TimeValue> {
             return value;
         } catch (final NumberFormatException e) {
             try {
-                @SuppressWarnings("unused")
+                @SuppressWarnings({ "unused", "checkstyle:UnusedLocalVariable" })
                 final double ignored = Double.parseDouble(s);
                 throw new IllegalArgumentException("failed to parse [" + initialInput + "], fractional time values are not supported", e);
             } catch (final NumberFormatException ignored) {

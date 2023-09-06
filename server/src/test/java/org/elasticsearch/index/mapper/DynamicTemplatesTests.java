@@ -2503,7 +2503,7 @@ public class DynamicTemplatesTests extends MapperServiceTestCase {
                 // should not throw an Exception
                 matchType.validate(c.pattern, "my-template");
             } else {
-                Exception e = expectThrows(
+                expectThrows(
                     MapperParsingException.class,
                     "pattern tested: " + c.pattern,
                     () -> matchType.validate(c.pattern, "my-template")

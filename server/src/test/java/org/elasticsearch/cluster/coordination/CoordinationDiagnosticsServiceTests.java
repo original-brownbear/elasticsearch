@@ -1124,10 +1124,6 @@ public class CoordinationDiagnosticsServiceTests extends AbstractCoordinatorTest
             createAndAddNonMasterNode(cluster);
             cluster.runRandomly();
             cluster.stabilise();
-            List<DiscoveryNode> masterNodes = cluster.clusterNodes.stream()
-                .map(Cluster.ClusterNode::getLocalNode)
-                .filter(DiscoveryNode::isMasterNode)
-                .toList();
             cluster.clusterNodes.stream().filter(node -> node.getLocalNode().isMasterNode() == false).forEach(node -> {
                 List<CoordinationDiagnosticsService.RemoteMasterHealthResult> healthResults = new ArrayList<>();
                 AtomicReference<Scheduler.Cancellable> cancellableReference = new AtomicReference<>();

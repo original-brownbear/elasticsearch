@@ -11,7 +11,6 @@ package org.elasticsearch.cluster.shards;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsResponse;
 import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotResponse;
-import org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotResponse;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.cluster.ClusterState;
@@ -313,7 +312,7 @@ public class ClusterShardLimitIT extends ESIntegTestCase {
 
         logger.info("--> restore one index after deletion");
         try {
-            RestoreSnapshotResponse restoreSnapshotResponse = client.admin()
+            client.admin()
                 .cluster()
                 .prepareRestoreSnapshot("test-repo", "test-snap")
                 .setWaitForCompletion(true)

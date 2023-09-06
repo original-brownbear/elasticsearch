@@ -298,7 +298,6 @@ public final class PainlessScriptEngine implements ScriptEngine {
         constructor.endMethod();
 
         Method reflect = null;
-        Method docFieldsReflect = null;
 
         for (Method method : context.factoryClazz.getMethods()) {
             if ("newInstance".equals(method.getName())) {

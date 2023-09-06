@@ -69,6 +69,9 @@
     <!-- Unused imports are forbidden -->
     <module name="UnusedImports" />
 
+    <!-- Unused local variables are forbidden -->
+    <module name="UnusedLocalVariable"/>
+
     <!-- Non-inner classes must be in files that match their names. -->
     <module name="OuterTypeFilename" />
 

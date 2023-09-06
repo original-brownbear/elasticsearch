@@ -1417,7 +1417,7 @@ public class ConcurrentSnapshotsIT extends AbstractSnapshotIntegTestCase {
         awaitNumberOfSnapshotsInProgress(2);
 
         assertAcked(startDeleteSnapshot(repoName, snapshotTwo).get());
-        final SnapshotException sne = expectThrows(SnapshotException.class, createSnapshot2Future::actionGet);
+        expectThrows(SnapshotException.class, createSnapshot2Future::actionGet);
 
         assertFalse(createSnapshot1Future.isDone());
         unblockNode(repoName, dataNode);

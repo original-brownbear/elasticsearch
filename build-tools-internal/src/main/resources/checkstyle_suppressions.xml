@@ -35,4 +35,9 @@
 
   <!-- Gradle requires inputs to be seriablizable -->
   <suppress files="build-tools-internal[/\\]src[/\\]main[/\\]java[/\\]org[/\\]elasticsearch[/\\]gradle[/\\]internal[/\\]precommit[/\\]TestingConventionRule.java" checks="RegexpSinglelineJava" />
+
+  <!-- Documentation needs some unused local variables for example snippets to make sense -->
+ <suppress files="client[/\\]rest[/\\]src[/\\]test[/\\]java[/\\]org[/\\]elasticsearch[/\\]client[/\\]documentation[/\\]RestClientDocumentation.java" checks="UnusedLocalVariable" />
+ <suppress files="client[/\\]sniffer[/\\]src[/\\]test[/\\]java[/\\]org[/\\]elasticsearch[/\\]client[/\\]sniff[/\\]documentation[/\\]SnifferDocumentation.java" checks="UnusedLocalVariable" />
+ <suppress files="modules[/\\]reindex[/\\]src[/\\]internalClusterTest[/\\]java[/\\]org[/\\]elasticsearch[/\\]client[/\\]documentation[/\\]ReindexDocumentationIT" checks="UnusedLocalVariable" />
 </suppressions>

@@ -26,8 +26,6 @@ public class ScriptCacheTests extends ESTestCase {
         final Integer size = ScriptService.SCRIPT_CACHE_SIZE_SETTING.getConcreteSettingForNamespace(context).get(Settings.EMPTY);
         Setting<ScriptCache.CompilationRate> rateSetting = ScriptService.SCRIPT_MAX_COMPILATIONS_RATE_SETTING
             .getConcreteSettingForNamespace(context);
-        ScriptCache.CompilationRate rate = ScriptService.SCRIPT_MAX_COMPILATIONS_RATE_SETTING.getConcreteSettingForNamespace(context)
-            .get(Settings.EMPTY);
         String rateSettingName = rateSetting.getKey();
         ScriptCache cache = new ScriptCache(
             size,

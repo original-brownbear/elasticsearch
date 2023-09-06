@@ -241,7 +241,6 @@ public class PluginsUtilsTests extends ESTestCase {
 
     public void testJarHellWhenExtendedPluginJarNotFound() throws Exception {
         Path pluginDir = createTempDir();
-        Path pluginJar = pluginDir.resolve("dummy.jar");
 
         Path otherDir = createTempDir();
         Path extendedPlugin = otherDir.resolve("extendedDep-not-present.jar");

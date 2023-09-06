@@ -819,7 +819,7 @@ public class ConstructingObjectParserTests extends ESTestCase {
             // old_name with compatibility is still parsed, but ignored and results in a warning
             XContentParser parser = createParserWithCompatibilityFor(JsonXContent.jsonXContent, """
                 {"old_name": 1, "second_field": "someString"}""", RestApiVersion.minimumSupported());
-            StructRemovalField parse = StructRemovalField.PARSER.parse(parser, null);
+            StructRemovalField.PARSER.parse(parser, null);
 
             assertCriticalWarnings("The field old_name has been removed and is being ignored");
         }

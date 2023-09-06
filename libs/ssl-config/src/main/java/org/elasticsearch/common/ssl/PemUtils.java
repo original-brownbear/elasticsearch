@@ -420,6 +420,7 @@ public final class PemUtils {
             if (PBES2_OID.equals(algId)) {
                 final DerParser.Asn1Object algData = parser.readAsn1Object(DerParser.Type.SEQUENCE);
                 parser = algData.getParser();
+                @SuppressWarnings({ "unused", "checkstyle:UnusedLocalVariable" })
                 final DerParser.Asn1Object ignoreKdf = parser.readAsn1Object(DerParser.Type.SEQUENCE);
                 final DerParser.Asn1Object cryptSeq = parser.readAsn1Object(DerParser.Type.SEQUENCE);
                 parser = cryptSeq.getParser();

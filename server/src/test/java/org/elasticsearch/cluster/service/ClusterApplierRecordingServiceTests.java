@@ -45,7 +45,7 @@ public class ClusterApplierRecordingServiceTests extends ESTestCase {
 
     public void testRecorderAlreadyRecording() {
         var recorder = new Recorder(() -> 1L);
-        Releasable releasable = recorder.record("action1");
+        recorder.record("action1");
         expectThrows(IllegalStateException.class, () -> recorder.record("action2"));
     }
 

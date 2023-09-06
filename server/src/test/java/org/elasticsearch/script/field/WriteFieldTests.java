@@ -694,7 +694,7 @@ public class WriteFieldTests extends ESTestCase {
         expectThrows(NoSuchElementException.class, it::next);
 
         wf.doc(2);
-        NestedDocument doc = wf.doc(0);
+        wf.doc(0);
         assertThat(getList(root, "a.b").get(0), equalTo(b));
     }
 

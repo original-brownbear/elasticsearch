@@ -138,7 +138,7 @@ public final class Grok {
             String namedPatternRef = groupMatch(NAME_GROUP, region, grokPattern);
             String subName = groupMatch(SUBNAME_GROUP, region, grokPattern);
             // TODO(tal): Support definitions
-            @SuppressWarnings("unused")
+            @SuppressWarnings({ "unused", "checkstyle:UnusedLocalVariable" })
             String definition = groupMatch(DEFINITION_GROUP, region, grokPattern);
             String patternName = groupMatch(PATTERN_GROUP, region, grokPattern);
             String pattern = patternBank.get(patternName);

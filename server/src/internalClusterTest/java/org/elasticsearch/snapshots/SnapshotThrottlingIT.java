@@ -85,7 +85,7 @@ public class SnapshotThrottlingIT extends AbstractSnapshotIntegTestCase {
                 .put(NODE_BANDWIDTH_RECOVERY_DISK_READ_SETTING.getKey(), "25k")
                 .put(NODE_BANDWIDTH_RECOVERY_DISK_WRITE_SETTING.getKey(), "25k");
         }
-        final String primaryNode = internalCluster().startNode(primaryNodeSettings);
+        internalCluster().startNode(primaryNodeSettings);
 
         logger.info("--> create index");
         createIndexWithRandomDocs("test-idx", 50);
@@ -136,7 +136,7 @@ public class SnapshotThrottlingIT extends AbstractSnapshotIntegTestCase {
                 .put(NODE_BANDWIDTH_RECOVERY_DISK_READ_SETTING.getKey(), "100m")
                 .put(NODE_BANDWIDTH_RECOVERY_DISK_WRITE_SETTING.getKey(), "100m");
         }
-        final String primaryNode = internalCluster().startNode(primaryNodeSettings);
+        internalCluster().startNode(primaryNodeSettings);
 
         final MockLogAppender mockLogAppender = new MockLogAppender();
         try {

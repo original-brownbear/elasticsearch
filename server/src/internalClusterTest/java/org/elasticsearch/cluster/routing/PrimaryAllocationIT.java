@@ -83,7 +83,7 @@ public class PrimaryAllocationIT extends ESIntegTestCase {
     }
 
     public void testBulkWeirdScenario() throws Exception {
-        String master = internalCluster().startMasterOnlyNode(Settings.EMPTY);
+        internalCluster().startMasterOnlyNode(Settings.EMPTY);
         internalCluster().startDataOnlyNodes(2);
 
         assertAcked(

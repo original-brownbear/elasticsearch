@@ -123,7 +123,7 @@ public class FieldMaskingSpanQueryBuilderTests extends AbstractQueryTestCase<Fie
                 "_name" : "KPI"
               }
             }""";
-        Query q = parseQuery(json).toQuery(createSearchExecutionContext());
+        parseQuery(json).toQuery(createSearchExecutionContext());
         assertWarnings("Deprecated field [field_masking_span] used, expected [" + NAME.getPreferredName() + "] instead");
     }
 }

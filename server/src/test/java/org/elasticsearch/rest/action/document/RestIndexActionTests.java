@@ -51,8 +51,6 @@ public class RestIndexActionTests extends RestActionTestCase {
     }
 
     public void testCreateOpTypeValidation() {
-        RestIndexAction.CreateHandler create = new CreateHandler();
-
         String opType = randomFrom("CREATE", null);
         CreateHandler.validateOpType(opType);
 

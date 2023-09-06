@@ -604,6 +604,7 @@ public class TransportReplicationActionTests extends ESTestCase {
         PlainActionFuture<TestResponse> listener = new PlainActionFuture<>();
         ReplicationTask task = maybeTask();
 
+        @SuppressWarnings({ "unused", "checkstyle:UnusedLocalVariable" })
         TestAction action = new TestAction(
             Settings.EMPTY,
             "internal:testActionWithBlocks",
@@ -1359,7 +1360,7 @@ public class TransportReplicationActionTests extends ESTestCase {
     }
 
     public void testIsRetryableClusterBlockException() {
-        final TestAction action = new TestAction(
+        new TestAction(
             Settings.EMPTY,
             "internal:testIsRetryableClusterBlockException",
             transportService,

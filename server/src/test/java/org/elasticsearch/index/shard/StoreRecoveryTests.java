@@ -83,7 +83,6 @@ public class StoreRecoveryTests extends ESTestCase {
             writer.commit();
             writer.close();
         }
-        StoreRecovery storeRecovery = new StoreRecovery(new ShardId("foo", "bar", 1), logger);
         RecoveryState.Index indexStats = new RecoveryState.Index();
         Directory target = newFSDirectory(createTempDir());
         final long maxSeqNo = randomNonNegativeLong();
@@ -150,7 +149,6 @@ public class StoreRecoveryTests extends ESTestCase {
 
         writer.commit();
         writer.close();
-        StoreRecovery storeRecovery = new StoreRecovery(new ShardId("foo", "bar", 1), logger);
         RecoveryState.Index indexStats = new RecoveryState.Index();
         Directory target = newFSDirectory(createTempDir());
         final long maxSeqNo = randomNonNegativeLong();

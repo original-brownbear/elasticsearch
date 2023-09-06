@@ -206,14 +206,14 @@ public class SearchSlowLogTests extends ESSingleNodeTestCase {
     public void testMultipleSlowLoggersUseSingleLog4jLogger() {
         LoggerContext context = (LoggerContext) LogManager.getContext(false);
 
-        SearchContext ctx1 = searchContextWithSourceAndTask(createIndex("index-1"));
+        searchContextWithSourceAndTask(createIndex("index-1"));
         IndexSettings settings1 = new IndexSettings(createIndexMetadata("index-1", settings(UUIDs.randomBase64UUID())), Settings.EMPTY);
-        SearchSlowLog log1 = new SearchSlowLog(settings1);
+        new SearchSlowLog(settings1);
         int numberOfLoggersBefore = context.getLoggers().size();
 
-        SearchContext ctx2 = searchContextWithSourceAndTask(createIndex("index-2"));
+        searchContextWithSourceAndTask(createIndex("index-2"));
         IndexSettings settings2 = new IndexSettings(createIndexMetadata("index-2", settings(UUIDs.randomBase64UUID())), Settings.EMPTY);
-        SearchSlowLog log2 = new SearchSlowLog(settings2);
+        new SearchSlowLog(settings2);
 
         int numberOfLoggersAfter = context.getLoggers().size();
         assertThat(numberOfLoggersAfter, equalTo(numberOfLoggersBefore));

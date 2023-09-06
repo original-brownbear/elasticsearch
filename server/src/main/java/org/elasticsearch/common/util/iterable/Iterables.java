@@ -9,6 +9,7 @@
 package org.elasticsearch.common.util.iterable;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -77,7 +78,15 @@ public class Iterables {
         return -1;
     }
 
-    public static long size(Iterable<?> iterable) {
-        return StreamSupport.stream(iterable.spliterator(), true).count();
+    @SuppressWarnings({ "checkstyle:UnusedLocalVariable" })
+    public static int size(Iterable<?> iterable) {
+        if (iterable instanceof Collection<?> c) {
+            return c.size();
+        }
+        int count = 0;
+        for (Object ignored : iterable) {
+            count++;
+        }
+        return count;
     }
 }

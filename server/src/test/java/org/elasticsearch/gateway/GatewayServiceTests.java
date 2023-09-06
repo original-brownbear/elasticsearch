@@ -67,6 +67,7 @@ public class GatewayServiceTests extends ESTestCase {
     }
 
     public void testRecoverStateUpdateTask() throws Exception {
+        @SuppressWarnings({ "unused", "checkstyle:UnusedLocalVariable" })
         GatewayService service = createService(Settings.builder());
         ClusterStateUpdateTask clusterStateUpdateTask = service.new RecoverStateUpdateTask();
         String nodeId = randomAlphaOfLength(10);

@@ -156,7 +156,6 @@ public class PrioritizedThrottledTaskRunnerTests extends ESTestCase {
         CountDownLatch executedCountDown = new CountDownLatch(enqueued + newTasks);
         PrioritizedThrottledTaskRunner<TestTask> taskRunner = new PrioritizedThrottledTaskRunner<>("test", maxTasks, executor);
         for (int i = 0; i < enqueued; i++) {
-            final int taskId = i;
             taskRunner.enqueueTask(new TestTask(() -> {
                 try {
                     taskBlocker.await();
@@ -169,7 +168,6 @@ public class PrioritizedThrottledTaskRunnerTests extends ESTestCase {
         }
         // Enqueueing one or more new tasks would create only one new running task
         for (int i = 0; i < newTasks; i++) {
-            final int taskId = i;
             taskRunner.enqueueTask(new TestTask(() -> {
                 try {
                     taskBlocker.await();

@@ -1989,7 +1989,6 @@ public class RecoverySourceHandlerTests extends MapperServiceTestCase {
 
     private static List<Translog.Operation> generateOperations(int numOps) {
         final List<Translog.Operation> operations = new ArrayList<>(numOps);
-        final BytesArray source = new BytesArray("{}".getBytes(StandardCharsets.UTF_8));
         final Set<Long> seqNos = new HashSet<>();
         for (int i = 0; i < numOps; i++) {
             final long seqNo = randomValueOtherThanMany(n -> seqNos.add(n) == false, ESTestCase::randomNonNegativeLong);

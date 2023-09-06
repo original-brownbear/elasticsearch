@@ -280,7 +280,7 @@ class FlattenedFieldSyntheticWriterHelper {
     }
 
     private static void endObject(final XContentBuilder b, final List<String> objects) throws IOException {
-        for (final String ignored : objects) {
+        for (int i = 0; i < objects.size(); i++) {
             b.endObject();
         }
     }

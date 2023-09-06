@@ -58,7 +58,6 @@ import org.mockito.MockitoAnnotations;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
@@ -291,7 +290,7 @@ public class TransportBulkActionIngestTests extends ESTestCase {
         assertTrue(failureCalled.get());
 
         // now check success
-        Iterator<DocWriteRequest<?>> req = bulkDocsItr.getValue().iterator();
+        bulkDocsItr.getValue().iterator();
         failureHandler.getValue().accept(0, exception); // have an exception for our one index request
         indexRequest2.setPipeline(IngestService.NOOP_PIPELINE_NAME); // this is done by the real pipeline execution service when processing
         completionHandler.getValue().accept(DUMMY_WRITE_THREAD, null);
@@ -379,7 +378,7 @@ public class TransportBulkActionIngestTests extends ESTestCase {
         assertTrue(failureCalled.get());
 
         // now check success
-        Iterator<DocWriteRequest<?>> req = bulkDocsItr.getValue().iterator();
+        bulkDocsItr.getValue().iterator();
         failureHandler.getValue().accept(0, exception); // have an exception for our one index request
         indexRequest2.setPipeline(IngestService.NOOP_PIPELINE_NAME); // this is done by the real pipeline execution service when processing
         completionHandler.getValue().accept(DUMMY_WRITE_THREAD, null);

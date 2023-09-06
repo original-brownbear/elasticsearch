@@ -454,6 +454,7 @@ public class SnifferTests extends RestClientTestCase {
             @Override
             public void shutdown() {}
         };
+        @SuppressWarnings({ "checkstyle:UnusedLocalVariable" })
         Sniffer sniffer = new Sniffer(restClient, nodesSniffer, noOpScheduler, 0L, 0L);
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
         try {
@@ -587,8 +588,7 @@ public class SnifferTests extends RestClientTestCase {
 
             }
         };
-        Sniffer sniffer = new Sniffer(restClient, nodesSniffer, noOpScheduler, 0L, 0L);
-        Sniffer.Task task = sniffer.new Task(randomLongBetween(1, Long.MAX_VALUE));
+        Sniffer.Task task = new Sniffer(restClient, nodesSniffer, noOpScheduler, 0L, 0L).new Task(randomLongBetween(1, Long.MAX_VALUE));
 
         ScheduledExecutorService scheduledExecutorService = mock(ScheduledExecutorService.class);
         final ScheduledFuture<?> mockedFuture = mock(ScheduledFuture.class);

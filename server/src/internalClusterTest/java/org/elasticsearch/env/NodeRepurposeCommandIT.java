@@ -61,7 +61,7 @@ public class NodeRepurposeCommandIT extends ESIntegTestCase {
 
         // verify test setup
         logger.info("--> restarting node with node.data=false and node.master=false");
-        IllegalStateException ex = expectThrows(
+        expectThrows(
             IllegalStateException.class,
             "Node started with node.data=false and node.master=false while having existing index metadata must fail",
             () -> internalCluster().startCoordinatingOnlyNode(dataNodeDataPathSettings)

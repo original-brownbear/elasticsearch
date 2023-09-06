@@ -121,8 +121,6 @@ public class RestCreateIndexActionTests extends ESTestCase {
     }
 
     public void testTypeInMapping() throws IOException {
-        RestCreateIndexAction action = new RestCreateIndexAction();
-
         List<String> contentTypeHeader = Collections.singletonList(compatibleMediaType(XContentType.VND_JSON, RestApiVersion.V_7));
 
         String content = """

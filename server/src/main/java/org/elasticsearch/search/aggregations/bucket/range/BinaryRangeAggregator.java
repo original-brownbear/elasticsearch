@@ -98,16 +98,18 @@ public final class BinaryRangeAggregator extends BucketsAggregator {
             return LeafBucketCollector.NO_OP_COLLECTOR;
         }
         if (valuesSource instanceof ValuesSource.Bytes.WithOrdinals) {
-            SortedSetDocValues values = ((ValuesSource.Bytes.WithOrdinals) valuesSource).ordinalsValues(aggCtx.getLeafReaderContext());
-            return new SortedSetRangeLeafCollector(values, ranges, sub) {
+            return new SortedSetRangeLeafCollector(
+                ((ValuesSource.Bytes.WithOrdinals) valuesSource).ordinalsValues(aggCtx.getLeafReaderContext()),
+                ranges,
+                sub
+            ) {
                 @Override
                 protected void doCollect(LeafBucketCollector sub, int doc, long bucket) throws IOException {
                     collectBucket(sub, doc, bucket);
                 }
             };
         } else {
-            SortedBinaryDocValues values = valuesSource.bytesValues(aggCtx.getLeafReaderContext());
-            return new SortedBinaryRangeLeafCollector(values, ranges, sub) {
+            return new SortedBinaryRangeLeafCollector(valuesSource.bytesValues(aggCtx.getLeafReaderContext()), ranges, sub) {
                 @Override
                 protected void doCollect(LeafBucketCollector sub, int doc, long bucket) throws IOException {
                     collectBucket(sub, doc, bucket);

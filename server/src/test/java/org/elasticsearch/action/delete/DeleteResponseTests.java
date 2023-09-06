@@ -122,7 +122,6 @@ public class DeleteResponseTests extends ESTestCase {
         String index = randomAlphaOfLength(5);
         String indexUUid = randomAlphaOfLength(5);
         int shardId = randomIntBetween(0, 5);
-        String type = randomAlphaOfLength(5);
         String id = randomAlphaOfLength(5);
         long seqNo = randomFrom(SequenceNumbers.UNASSIGNED_SEQ_NO, randomNonNegativeLong(), (long) randomIntBetween(0, 10000));
         long primaryTerm = seqNo == SequenceNumbers.UNASSIGNED_SEQ_NO ? 0 : randomIntBetween(1, 10000);

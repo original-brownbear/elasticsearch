@@ -651,11 +651,6 @@ public class TransportMasterNodeActionTests extends ESTestCase {
             }
         }, task, request, listener);
 
-        final int genericThreads = threadPool.info(ThreadPool.Names.GENERIC).getMax();
-        final EsThreadPoolExecutor executor = (EsThreadPoolExecutor) threadPool.executor(ThreadPool.Names.GENERIC);
-        final CyclicBarrier barrier = new CyclicBarrier(genericThreads + 1);
-        final CountDownLatch latch = new CountDownLatch(1);
-
         if (cancelBeforeStart == false) {
             assertThat(listener.isDone(), equalTo(false));
 

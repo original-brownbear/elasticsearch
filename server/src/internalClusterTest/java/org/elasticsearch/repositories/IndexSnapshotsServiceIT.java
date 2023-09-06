@@ -203,6 +203,7 @@ public class IndexSnapshotsServiceIT extends AbstractSnapshotIntegTestCase {
         final String indexName = "test-idx";
         createIndexWithContent(indexName);
 
+        @SuppressWarnings({ "checkstyle:UnusedLocalVariable" })
         int snapshotIdx = 0;
         Object[] args1 = new Object[] { snapshotIdx++ };
         createSnapshot(failingRepoName, Strings.format("snap-%03d", args1), Collections.singletonList(indexName));
@@ -261,6 +262,7 @@ public class IndexSnapshotsServiceIT extends AbstractSnapshotIntegTestCase {
         final String indexName = "test-idx";
         createIndexWithContent(indexName);
 
+        @SuppressWarnings({ "checkstyle:UnusedLocalVariable" })
         int snapshotIdx = 0;
         SnapshotInfo expectedLatestSnapshot = null;
         for (String repository : repositories) {

@@ -45,7 +45,6 @@ public class AtomicRegisterPreVoteCollectorTests extends ESTestCase {
         final var currentTermProvider = new AtomicLong(1);
         final var heartbeatFrequency = TimeValue.timeValueSeconds(randomIntBetween(15, 30));
         final var maxTimeSinceLastHeartbeat = TimeValue.timeValueSeconds(2 * heartbeatFrequency.seconds());
-        final var leaderNode = DiscoveryNodeUtils.create("master");
 
         final var fakeClock = new AtomicLong();
         final var heartbeatStore = new InMemoryHeartbeatStore();

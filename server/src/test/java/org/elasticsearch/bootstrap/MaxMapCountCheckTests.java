@@ -219,13 +219,11 @@ public class MaxMapCountCheckTests extends AbstractBootstrapCheckTestCase {
         final String rawProcSysVmMaxMapCount = Long.toString(randomIntBetween(1, Integer.MAX_VALUE));
         final BufferedReader reader = mock(BufferedReader.class);
         when(reader.readLine()).thenReturn(rawProcSysVmMaxMapCount);
-        final BootstrapChecks.MaxMapCountCheck check = new BootstrapChecks.MaxMapCountCheck();
         assertThat(BootstrapChecks.MaxMapCountCheck.readProcSysVmMaxMapCount(reader), equalTo(rawProcSysVmMaxMapCount));
     }
 
     public void testMaxMapCountCheckParse() {
         final long procSysVmMaxMapCount = randomIntBetween(1, Integer.MAX_VALUE);
-        final BootstrapChecks.MaxMapCountCheck check = new BootstrapChecks.MaxMapCountCheck();
         assertThat(
             BootstrapChecks.MaxMapCountCheck.parseProcSysVmMaxMapCount(Long.toString(procSysVmMaxMapCount)),
             equalTo(procSysVmMaxMapCount)

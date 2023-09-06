@@ -320,7 +320,6 @@ public class TransportBroadcastUnpromotableActionTests extends ESTestCase {
         }
         IndexShardRoutingTable wrongRoutingTable = wrongRoutingTableBuilder.build();
 
-        PlainActionFuture<ActionResponse.Empty> response = PlainActionFuture.newFuture();
         logger.debug("--> executing for wrong shard routing table: {}", wrongRoutingTable);
 
         // The request fails if we don't mark shards as stale
@@ -376,8 +375,6 @@ public class TransportBroadcastUnpromotableActionTests extends ESTestCase {
     }
 
     public void testNullIndexShardRoutingTable() {
-        PlainActionFuture<ActionResponse.Empty> response = PlainActionFuture.newFuture();
-        IndexShardRoutingTable shardRoutingTable = null;
         assertThat(
             expectThrows(
                 NullPointerException.class,
@@ -385,7 +382,7 @@ public class TransportBroadcastUnpromotableActionTests extends ESTestCase {
                     f -> ActionTestUtils.execute(
                         broadcastUnpromotableAction,
                         null,
-                        new TestBroadcastUnpromotableRequest(shardRoutingTable),
+                        new TestBroadcastUnpromotableRequest((IndexShardRoutingTable) null),
                         f
                     ),
                     10,

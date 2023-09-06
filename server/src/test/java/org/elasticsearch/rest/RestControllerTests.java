@@ -53,11 +53,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -144,9 +142,6 @@ public class RestControllerTests extends ESTestCase {
 
     public void testRequestWithDisallowedMultiValuedHeader() {
         final ThreadContext threadContext = client.threadPool().getThreadContext();
-        Set<RestHeaderDefinition> headers = new HashSet<>(
-            Arrays.asList(new RestHeaderDefinition("header.1", true), new RestHeaderDefinition("header.2", false))
-        );
         final RestController restController = new RestController(null, null, circuitBreakerService, usageService, tracer);
         Map<String, List<String>> restHeaders = new HashMap<>();
         restHeaders.put("header.1", Collections.singletonList("boo"));
@@ -188,9 +183,6 @@ public class RestControllerTests extends ESTestCase {
 
     public void testRequestWithDisallowedMultiValuedHeaderButSameValues() {
         final ThreadContext threadContext = client.threadPool().getThreadContext();
-        Set<RestHeaderDefinition> headers = new HashSet<>(
-            Arrays.asList(new RestHeaderDefinition("header.1", true), new RestHeaderDefinition("header.2", false))
-        );
         final RestController restController = new RestController(null, client, circuitBreakerService, usageService, tracer);
         Map<String, List<String>> restHeaders = new HashMap<>();
         restHeaders.put("header.1", Collections.singletonList("boo"));

@@ -15,8 +15,6 @@ import org.elasticsearch.script.ScriptContextInfo.ScriptMethodInfo.ParameterInfo
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.xcontent.DeprecationHandler;
 import org.elasticsearch.xcontent.NamedXContentRegistry;
-import org.elasticsearch.xcontent.XContentBuilder;
-import org.elasticsearch.xcontent.XContentFactory;
 import org.elasticsearch.xcontent.XContentParser;
 import org.elasticsearch.xcontent.XContentType;
 
@@ -270,8 +268,6 @@ public class ScriptContextInfoTests extends ESTestCase {
     }
 
     public void testParameterInfoParser() throws IOException {
-        XContentBuilder builder = XContentFactory.jsonBuilder();
-
         XContentParser parser = XContentType.JSON.xContent()
             .createParser(
                 NamedXContentRegistry.EMPTY,

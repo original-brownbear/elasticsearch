@@ -209,7 +209,7 @@ public final class CompressedXContent implements Writeable {
             sha256 = in.readString();
             compressedData = in.readByteArray();
         } else {
-            int crc32 = in.readInt();
+            in.readInt();
             compressedData = in.readByteArray();
             sha256 = sha256FromCompressed(compressedData);
         }

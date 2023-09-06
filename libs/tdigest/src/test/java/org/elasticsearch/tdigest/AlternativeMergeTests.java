@@ -50,7 +50,7 @@ public class AlternativeMergeTests extends ESTestCase {
                 List<Double> counts = new ArrayList<>();
                 double soFar = 0;
                 double current = 0;
-                for (Double x : data) {
+                for (int i = 0; i < data.size(); i++) {
                     double q = (soFar + (current + 1.0) / 2) / n;
                     if (current == 0 || current + 1 < n * Math.PI / compression * Math.sqrt(q * (1 - q))) {
                         current += 1;

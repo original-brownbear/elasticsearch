@@ -3778,7 +3778,6 @@ public class InternalEngineTests extends EngineTestCase {
         try (Store store = createStore()) {
             final ParsedDocument doc1 = testParsedDocument("1", null, testDocumentWithTextField(), B_1, null);
             final ParsedDocument doc2 = testParsedDocument("2", null, testDocumentWithTextField(), B_1, null);
-            final ParsedDocument doc3 = testParsedDocument("3", null, testDocumentWithTextField(), B_1, null);
 
             AtomicReference<ThrowingIndexWriter> throwingIndexWriter = new AtomicReference<>();
             try (InternalEngine engine = createEngine(defaultSettings, store, createTempDir(), NoMergePolicy.INSTANCE, (directory, iwc) -> {
@@ -4890,7 +4889,6 @@ public class InternalEngineTests extends EngineTestCase {
             return testParsedDocument("1", null, document, B_1, null);
         };
         final Term uid = newUid("1");
-        final BiFunction<String, Engine.SearcherScope, Engine.Searcher> searcherFactory = engine::acquireSearcher;
         for (int i = 0; i < numberOfOperations; i++) {
             if (randomBoolean()) {
                 final Engine.Index index = new Engine.Index(
@@ -6182,7 +6180,6 @@ public class InternalEngineTests extends EngineTestCase {
         try (Store store = createStore()) {
             EngineConfig config = config(defaultSettings, store, createTempDir(), newMergePolicy(), null, null, globalCheckpoint::get);
             final List<Long> commitMaxSeqNo = new ArrayList<>();
-            final long minTranslogGen;
             try (InternalEngine engine = createEngine(config)) {
                 for (int i = 0; i < seqNos.size(); i++) {
                     ParsedDocument doc = testParsedDocument(Long.toString(seqNos.get(i)), null, testDocument(), new BytesArray("{}"), null);
@@ -6209,7 +6206,6 @@ public class InternalEngineTests extends EngineTestCase {
                 }
                 globalCheckpoint.set(randomInt(maxSeqNo));
                 engine.syncTranslog();
-                minTranslogGen = engine.getTranslog().getMinFileGeneration();
             }
 
             store.trimUnsafeCommits(config.getTranslogConfig().getTranslogPath());

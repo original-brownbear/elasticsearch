@@ -20,7 +20,6 @@ import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.AliasMetadata;
 import org.elasticsearch.cluster.metadata.IndexAbstraction;
@@ -1253,11 +1252,10 @@ public class IndexAliasesIT extends ESIntegTestCase {
 
         assertAcked(indicesAdmin().prepareAliases().addAliasAction(AliasActions.add().index(index1).alias(alias)));
 
-        IllegalStateException ex = expectThrows(IllegalStateException.class, () -> {
-            AcknowledgedResponse res = indicesAdmin().prepareAliases()
-                .addAliasAction(AliasActions.add().index(index2).alias(alias).isHidden(true))
-                .get();
-        });
+        IllegalStateException ex = expectThrows(
+            IllegalStateException.class,
+            () -> indicesAdmin().prepareAliases().addAliasAction(AliasActions.add().index(index2).alias(alias).isHidden(true)).get()
+        );
         logger.error("exception: {}", ex.getMessage());
         assertThat(ex.getMessage(), containsString("has is_hidden set to true on indices"));
 
@@ -1360,12 +1358,6 @@ public class IndexAliasesIT extends ESIntegTestCase {
             () -> indicesAdmin().prepareCreate(indexName).addAlias(new Alias(indexName)).execute().actionGet()
         );
         assertEquals("alias name [" + indexName + "] self-conflicts with index name", iae.getMessage());
-    }
-
-    public void testGetAliasAndAliasExistsForHiddenAliases() {
-        final String writeIndex = randomAlphaOfLength(5).toLowerCase(Locale.ROOT);
-        final String nonWriteIndex = randomAlphaOfLength(6).toLowerCase(Locale.ROOT);
-        final String alias = "alias-" + randomAlphaOfLength(7).toLowerCase(Locale.ROOT);
     }
 
     private void checkAliases() {

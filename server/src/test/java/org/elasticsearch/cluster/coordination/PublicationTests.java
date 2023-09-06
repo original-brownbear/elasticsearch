@@ -82,8 +82,11 @@ public class PublicationTests extends ESTestCase {
             ClusterStatePublisher.AckListener ackListener,
             Set<DiscoveryNode> faultyNodes
         ) {
-            PublishRequest publishRequest = coordinationState.handleClientValue(clusterState);
-            MockPublication currentPublication = new MockPublication(publishRequest, ackListener, () -> 0L) {
+            MockPublication currentPublication = new MockPublication(
+                coordinationState.handleClientValue(clusterState),
+                ackListener,
+                () -> 0L
+            ) {
                 @Override
                 protected boolean isPublishQuorum(CoordinationState.VoteCollection votes) {
                     return coordinationState.isPublishQuorum(votes);

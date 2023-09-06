@@ -1078,7 +1078,7 @@ public class RemoteClusterServiceTests extends ESTestCase {
         }
         {
             Settings brokenSettingsType = Settings.builder().put("cluster.remote.foo.skip_unavailable", "broken").build();
-            IllegalArgumentException iae = expectThrows(
+            expectThrows(
                 IllegalArgumentException.class,
                 () -> RemoteClusterService.REMOTE_CLUSTER_SKIP_UNAVAILABLE.getAllConcreteSettings(brokenSettingsType)
                     .forEach(setting -> setting.get(brokenSettingsType))

@@ -136,13 +136,6 @@ public class CoordinationDiagnosticsServiceIT extends ESIntegTestCase {
         String blockedNode = nodeNames.stream().filter(n -> n.equals(master) == false).findAny().get();
         assertNotNull(blockedNode);
 
-        DiscoveryNodes discoveryNodes = internalCluster().getInstance(ClusterService.class, master).state().nodes();
-        Set<DiscoveryNode> nodesWithoutBlockedNode = discoveryNodes.getNodes()
-            .values()
-            .stream()
-            .filter(n -> n.getName().equals(blockedNode) == false)
-            .collect(Collectors.toSet());
-
         BlockClusterStateProcessing disruption = new BlockClusterStateProcessing(blockedNode, random());
         internalCluster().setDisruptionScheme(disruption);
         // stop processing cluster state changes
