@@ -7,8 +7,8 @@
 package org.elasticsearch.xpack.ml;
 
 import org.elasticsearch.action.ActionFuture;
-import org.elasticsearch.action.admin.indices.settings.get.GetSettingsAction;
 import org.elasticsearch.action.admin.indices.settings.get.GetSettingsResponse;
+import org.elasticsearch.action.admin.indices.settings.get.TransportGetSettingsAction;
 import org.elasticsearch.client.internal.AdminClient;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.client.internal.IndicesAdminClient;
@@ -59,7 +59,7 @@ public class MlInitializationServiceTests extends ESTestCase {
         @SuppressWarnings("unchecked")
         ActionFuture<GetSettingsResponse> actionFuture = mock(ActionFuture.class);
         when(actionFuture.actionGet()).thenReturn(new GetSettingsResponse(Map.of(), Map.of()));
-        when(client.execute(eq(GetSettingsAction.INSTANCE), any())).thenReturn(actionFuture);
+        when(client.execute(eq(TransportGetSettingsAction.ACTION_TYPE), any())).thenReturn(actionFuture);
     }
 
     public void testInitialize() {

@@ -8,12 +8,12 @@ package org.elasticsearch.xpack.ml.action;
 
 import org.elasticsearch.ResourceNotFoundException;
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.get.GetAction;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
-import org.elasticsearch.action.index.IndexAction;
+import org.elasticsearch.action.get.TransportGetAction;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.index.TransportIndexAction;
 import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.HandledTransportAction;
 import org.elasticsearch.action.support.WriteRequest;
@@ -128,7 +128,7 @@ public class TransportUpdateFilterAction extends HandledTransportAction<UpdateFi
             throw new IllegalStateException("Failed to serialise filter with id [" + filter.getId() + "]", e);
         }
 
-        executeAsyncWithOrigin(client, ML_ORIGIN, IndexAction.INSTANCE, indexRequest, new ActionListener<IndexResponse>() {
+        executeAsyncWithOrigin(client, ML_ORIGIN, TransportIndexAction.ACTION_TYPE, indexRequest, new ActionListener<IndexResponse>() {
             @Override
             public void onResponse(IndexResponse indexResponse) {
                 jobManager.notifyFilterChanged(
@@ -157,25 +157,31 @@ public class TransportUpdateFilterAction extends HandledTransportAction<UpdateFi
 
     private void getFilterWithVersion(String filterId, ActionListener<FilterWithSeqNo> listener) {
         GetRequest getRequest = new GetRequest(MlMetaIndex.indexName(), MlFilter.documentId(filterId));
-        executeAsyncWithOrigin(client, ML_ORIGIN, GetAction.INSTANCE, getRequest, listener.delegateFailure((l, getDocResponse) -> {
-            try {
-                if (getDocResponse.isExists()) {
-                    BytesReference docSource = getDocResponse.getSourceAsBytesRef();
-                    try (
-                        InputStream stream = docSource.streamInput();
-                        XContentParser parser = XContentFactory.xContent(XContentType.JSON)
-                            .createParser(NamedXContentRegistry.EMPTY, LoggingDeprecationHandler.INSTANCE, stream)
-                    ) {
-                        MlFilter filter = MlFilter.LENIENT_PARSER.apply(parser, null).build();
-                        l.onResponse(new FilterWithSeqNo(filter, getDocResponse));
+        executeAsyncWithOrigin(
+            client,
+            ML_ORIGIN,
+            TransportGetAction.ACTION_TYPE,
+            getRequest,
+            listener.delegateFailure((l, getDocResponse) -> {
+                try {
+                    if (getDocResponse.isExists()) {
+                        BytesReference docSource = getDocResponse.getSourceAsBytesRef();
+                        try (
+                            InputStream stream = docSource.streamInput();
+                            XContentParser parser = XContentFactory.xContent(XContentType.JSON)
+                                .createParser(NamedXContentRegistry.EMPTY, LoggingDeprecationHandler.INSTANCE, stream)
+                        ) {
+                            MlFilter filter = MlFilter.LENIENT_PARSER.apply(parser, null).build();
+                            l.onResponse(new FilterWithSeqNo(filter, getDocResponse));
+                        }
+                    } else {
+                        l.onFailure(new ResourceNotFoundException(Messages.getMessage(Messages.FILTER_NOT_FOUND, filterId)));
                     }
-                } else {
-                    l.onFailure(new ResourceNotFoundException(Messages.getMessage(Messages.FILTER_NOT_FOUND, filterId)));
+                } catch (Exception e) {
+                    l.onFailure(e);
                 }
-            } catch (Exception e) {
-                l.onFailure(e);
-            }
-        }));
+            })
+        );
     }
 
     private static class FilterWithSeqNo {

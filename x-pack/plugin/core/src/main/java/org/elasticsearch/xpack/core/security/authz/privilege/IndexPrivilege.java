@@ -11,7 +11,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.lucene.util.automaton.Automaton;
 import org.elasticsearch.action.admin.cluster.shards.ClusterSearchShardsAction;
 import org.elasticsearch.action.admin.indices.alias.get.GetAliasesAction;
-import org.elasticsearch.action.admin.indices.close.CloseIndexAction;
+import org.elasticsearch.action.admin.indices.close.TransportCloseIndexAction;
 import org.elasticsearch.action.admin.indices.create.AutoCreateAction;
 import org.elasticsearch.action.admin.indices.create.CreateIndexAction;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexAction;
@@ -21,7 +21,7 @@ import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsAction;
 import org.elasticsearch.action.admin.indices.mapping.put.AutoPutMappingAction;
 import org.elasticsearch.action.admin.indices.resolve.ResolveIndexAction;
 import org.elasticsearch.action.admin.indices.rollover.RolloverAction;
-import org.elasticsearch.action.admin.indices.settings.get.GetSettingsAction;
+import org.elasticsearch.action.admin.indices.settings.get.TransportGetSettingsAction;
 import org.elasticsearch.action.admin.indices.stats.IndicesStatsAction;
 import org.elasticsearch.action.admin.indices.validate.query.ValidateQueryAction;
 import org.elasticsearch.action.datastreams.CreateDataStreamAction;
@@ -115,7 +115,7 @@ public final class IndexPrivilege extends Privilege {
         ClusterSearchShardsAction.NAME,
         SearchShardsAction.NAME,
         ValidateQueryAction.NAME + "*",
-        GetSettingsAction.NAME,
+        TransportGetSettingsAction.NAME,
         ExplainLifecycleAction.NAME,
         "indices:admin/data_stream/lifecycle/get",
         "indices:admin/data_stream/lifecycle/explain",
@@ -128,7 +128,7 @@ public final class IndexPrivilege extends Privilege {
     private static final Automaton MANAGE_FOLLOW_INDEX_AUTOMATON = patterns(
         PutFollowAction.NAME,
         UnfollowAction.NAME,
-        CloseIndexAction.NAME + "*",
+        TransportCloseIndexAction.NAME + "*",
         PromoteDataStreamAction.NAME,
         RolloverAction.NAME
     );

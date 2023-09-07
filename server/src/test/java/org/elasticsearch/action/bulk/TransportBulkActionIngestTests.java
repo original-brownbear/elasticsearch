@@ -12,9 +12,9 @@ import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.DocWriteRequest;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
-import org.elasticsearch.action.index.IndexAction;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.index.TransportIndexAction;
 import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.ActionTestUtils;
 import org.elasticsearch.action.support.AutoCreateIndex;
@@ -166,7 +166,7 @@ public class TransportBulkActionIngestTests extends ESTestCase {
 
         TestSingleItemBulkWriteAction(TestTransportBulkAction bulkAction) {
             super(
-                IndexAction.NAME,
+                TransportIndexAction.NAME,
                 TransportBulkActionIngestTests.this.transportService,
                 new ActionFilters(Collections.emptySet()),
                 IndexRequest::new,

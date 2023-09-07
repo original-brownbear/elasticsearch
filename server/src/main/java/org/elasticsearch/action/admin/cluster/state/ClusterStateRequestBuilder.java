@@ -8,6 +8,7 @@
 
 package org.elasticsearch.action.admin.cluster.state;
 
+import org.elasticsearch.action.ActionType;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.action.support.master.MasterNodeReadOperationRequestBuilder;
 import org.elasticsearch.client.internal.ElasticsearchClient;
@@ -19,7 +20,7 @@ public class ClusterStateRequestBuilder extends MasterNodeReadOperationRequestBu
     ClusterStateResponse,
     ClusterStateRequestBuilder> {
 
-    public ClusterStateRequestBuilder(ElasticsearchClient client, ClusterStateAction action) {
+    public ClusterStateRequestBuilder(ElasticsearchClient client, ActionType<ClusterStateResponse> action) {
         super(client, action, new ClusterStateRequest());
     }
 

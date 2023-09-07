@@ -27,8 +27,8 @@ import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
-import org.elasticsearch.action.index.IndexAction;
 import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.index.TransportIndexAction;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.ContextPreservingActionListener;
@@ -436,7 +436,7 @@ public final class TokenService {
                 () -> executeAsyncWithOrigin(
                     client,
                     SECURITY_ORIGIN,
-                    IndexAction.INSTANCE,
+                    TransportIndexAction.ACTION_TYPE,
                     indexTokenRequest,
                     ActionListener.wrap(indexResponse -> {
                         if (indexResponse.getResult() == Result.CREATED) {

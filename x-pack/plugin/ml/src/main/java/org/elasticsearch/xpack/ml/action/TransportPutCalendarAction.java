@@ -8,9 +8,9 @@ package org.elasticsearch.xpack.ml.action;
 
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.DocWriteRequest;
-import org.elasticsearch.action.index.IndexAction;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.index.TransportIndexAction;
 import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.HandledTransportAction;
 import org.elasticsearch.action.support.WriteRequest;
@@ -64,7 +64,7 @@ public class TransportPutCalendarAction extends HandledTransportAction<PutCalend
         indexRequest.opType(DocWriteRequest.OpType.CREATE);
         indexRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
 
-        executeAsyncWithOrigin(client, ML_ORIGIN, IndexAction.INSTANCE, indexRequest, new ActionListener<IndexResponse>() {
+        executeAsyncWithOrigin(client, ML_ORIGIN, TransportIndexAction.ACTION_TYPE, indexRequest, new ActionListener<IndexResponse>() {
             @Override
             public void onResponse(IndexResponse indexResponse) {
                 listener.onResponse(new PutCalendarAction.Response(calendar));

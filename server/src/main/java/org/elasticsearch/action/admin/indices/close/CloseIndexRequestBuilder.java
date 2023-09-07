@@ -8,6 +8,7 @@
 
 package org.elasticsearch.action.admin.indices.close;
 
+import org.elasticsearch.action.ActionType;
 import org.elasticsearch.action.support.ActiveShardCount;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.action.support.master.AcknowledgedRequestBuilder;
@@ -18,11 +19,7 @@ import org.elasticsearch.client.internal.ElasticsearchClient;
  */
 public class CloseIndexRequestBuilder extends AcknowledgedRequestBuilder<CloseIndexRequest, CloseIndexResponse, CloseIndexRequestBuilder> {
 
-    public CloseIndexRequestBuilder(ElasticsearchClient client, CloseIndexAction action) {
-        super(client, action, new CloseIndexRequest());
-    }
-
-    public CloseIndexRequestBuilder(ElasticsearchClient client, CloseIndexAction action, String... indices) {
+    public CloseIndexRequestBuilder(ElasticsearchClient client, ActionType<CloseIndexResponse> action, String... indices) {
         super(client, action, new CloseIndexRequest(indices));
     }
 

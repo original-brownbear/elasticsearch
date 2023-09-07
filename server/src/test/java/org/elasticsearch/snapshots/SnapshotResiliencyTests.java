@@ -36,7 +36,6 @@ import org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotA
 import org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotRequest;
 import org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotResponse;
 import org.elasticsearch.action.admin.cluster.snapshots.restore.TransportRestoreSnapshotAction;
-import org.elasticsearch.action.admin.cluster.state.ClusterStateAction;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
 import org.elasticsearch.action.admin.cluster.state.TransportClusterStateAction;
@@ -2087,7 +2086,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
                     )
                 );
                 actions.put(
-                    ClusterStateAction.INSTANCE,
+                    TransportClusterStateAction.ACTION_TYPE,
                     new TransportClusterStateAction(
                         transportService,
                         clusterService,

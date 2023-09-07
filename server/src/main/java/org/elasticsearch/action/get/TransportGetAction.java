@@ -11,6 +11,7 @@ package org.elasticsearch.action.get;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionListenerResponseHandler;
 import org.elasticsearch.action.ActionRunnable;
+import org.elasticsearch.action.ActionType;
 import org.elasticsearch.action.NoShardAvailableActionException;
 import org.elasticsearch.action.admin.indices.refresh.TransportShardRefreshAction;
 import org.elasticsearch.action.support.ActionFilters;
@@ -44,6 +45,8 @@ import java.io.IOException;
  */
 public class TransportGetAction extends TransportSingleShardAction<GetRequest, GetResponse> {
 
+    public static final String NAME = "indices:data/read/get";
+    public static final ActionType<GetResponse> ACTION_TYPE = new ActionType<>(NAME, GetResponse::new);
     private static final Logger logger = LogManager.getLogger(TransportGetAction.class);
 
     private final IndicesService indicesService;
@@ -62,7 +65,7 @@ public class TransportGetAction extends TransportSingleShardAction<GetRequest, G
         NodeClient client
     ) {
         super(
-            GetAction.NAME,
+            NAME,
             threadPool,
             clusterService,
             transportService,

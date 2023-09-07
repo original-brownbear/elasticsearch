@@ -17,7 +17,7 @@ import org.elasticsearch.action.admin.cluster.shards.ClusterSearchShardsAction;
 import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotAction;
 import org.elasticsearch.action.admin.cluster.snapshots.get.GetSnapshotsAction;
 import org.elasticsearch.action.admin.cluster.snapshots.status.SnapshotsStatusAction;
-import org.elasticsearch.action.admin.cluster.state.ClusterStateAction;
+import org.elasticsearch.action.admin.cluster.state.TransportClusterStateAction;
 import org.elasticsearch.action.admin.cluster.stats.ClusterStatsAction;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesAction;
 import org.elasticsearch.action.admin.indices.alias.get.GetAliasesAction;
@@ -32,7 +32,7 @@ import org.elasticsearch.action.admin.indices.recovery.RecoveryAction;
 import org.elasticsearch.action.admin.indices.resolve.ResolveIndexAction;
 import org.elasticsearch.action.admin.indices.rollover.RolloverAction;
 import org.elasticsearch.action.admin.indices.segments.IndicesSegmentsAction;
-import org.elasticsearch.action.admin.indices.settings.get.GetSettingsAction;
+import org.elasticsearch.action.admin.indices.settings.get.TransportGetSettingsAction;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsAction;
 import org.elasticsearch.action.admin.indices.shards.IndicesShardStoresAction;
 import org.elasticsearch.action.admin.indices.stats.IndicesStatsAction;
@@ -44,10 +44,10 @@ import org.elasticsearch.action.bulk.BulkAction;
 import org.elasticsearch.action.datastreams.CreateDataStreamAction;
 import org.elasticsearch.action.datastreams.DeleteDataStreamAction;
 import org.elasticsearch.action.datastreams.GetDataStreamAction;
-import org.elasticsearch.action.delete.DeleteAction;
+import org.elasticsearch.action.delete.TransportDeleteAction;
 import org.elasticsearch.action.fieldcaps.FieldCapabilitiesAction;
-import org.elasticsearch.action.get.GetAction;
-import org.elasticsearch.action.index.IndexAction;
+import org.elasticsearch.action.get.TransportGetAction;
+import org.elasticsearch.action.index.TransportIndexAction;
 import org.elasticsearch.action.ingest.DeletePipelineAction;
 import org.elasticsearch.action.ingest.GetPipelineAction;
 import org.elasticsearch.action.ingest.PutPipelineAction;
@@ -57,7 +57,7 @@ import org.elasticsearch.action.search.SearchAction;
 import org.elasticsearch.action.search.SearchShardsAction;
 import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.action.support.WriteRequest;
-import org.elasticsearch.action.update.UpdateAction;
+import org.elasticsearch.action.update.TransportUpdateAction;
 import org.elasticsearch.cluster.metadata.AliasMetadata;
 import org.elasticsearch.cluster.metadata.IndexAbstraction;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
@@ -328,7 +328,7 @@ public class ReservedRolesStoreTests extends ESTestCase {
 
         assertThat(
             snapshotUserRole.indices()
-                .allowedIndicesMatcher(IndexAction.NAME)
+                .allowedIndicesMatcher(TransportIndexAction.NAME)
                 .test(mockIndexAbstraction(randomAlphaOfLengthBetween(8, 24))),
             is(false)
         );
@@ -337,11 +337,15 @@ public class ReservedRolesStoreTests extends ESTestCase {
             is(false)
         );
         assertThat(
-            snapshotUserRole.indices().allowedIndicesMatcher(GetAction.NAME).test(mockIndexAbstraction(randomAlphaOfLengthBetween(8, 24))),
+            snapshotUserRole.indices()
+                .allowedIndicesMatcher(TransportGetAction.NAME)
+                .test(mockIndexAbstraction(randomAlphaOfLengthBetween(8, 24))),
             is(false)
         );
         assertThat(
-            snapshotUserRole.indices().allowedIndicesMatcher(GetAction.NAME).test(mockIndexAbstraction(randomAlphaOfLengthBetween(8, 24))),
+            snapshotUserRole.indices()
+                .allowedIndicesMatcher(TransportGetAction.NAME)
+                .test(mockIndexAbstraction(randomAlphaOfLengthBetween(8, 24))),
             is(false)
         );
 
@@ -393,13 +397,15 @@ public class ReservedRolesStoreTests extends ESTestCase {
         assertThat(ingestAdminRole.cluster().check(GetProfilesAction.NAME, request, authentication), is(false));
         assertThat(ingestAdminRole.cluster().check(ProfileHasPrivilegesAction.NAME, request, authentication), is(false));
 
-        assertThat(ingestAdminRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(mockIndexAbstraction("foo")), is(false));
+        assertThat(ingestAdminRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(mockIndexAbstraction("foo")), is(false));
         assertThat(
             ingestAdminRole.indices().allowedIndicesMatcher("indices:foo").test(mockIndexAbstraction(randomAlphaOfLengthBetween(8, 24))),
             is(false)
         );
         assertThat(
-            ingestAdminRole.indices().allowedIndicesMatcher(GetAction.NAME).test(mockIndexAbstraction(randomAlphaOfLengthBetween(8, 24))),
+            ingestAdminRole.indices()
+                .allowedIndicesMatcher(TransportGetAction.NAME)
+                .test(mockIndexAbstraction(randomAlphaOfLengthBetween(8, 24))),
             is(false)
         );
 
@@ -420,7 +426,7 @@ public class ReservedRolesStoreTests extends ESTestCase {
 
         Role kibanaRole = Role.buildFromRoleDescriptor(roleDescriptor, new FieldPermissionsCache(Settings.EMPTY), RESTRICTED_INDICES);
         assertThat(kibanaRole.cluster().check(ClusterHealthAction.NAME, request, authentication), is(true));
-        assertThat(kibanaRole.cluster().check(ClusterStateAction.NAME, request, authentication), is(true));
+        assertThat(kibanaRole.cluster().check(TransportClusterStateAction.NAME, request, authentication), is(true));
         assertThat(kibanaRole.cluster().check(ClusterStatsAction.NAME, request, authentication), is(true));
         assertThat(kibanaRole.cluster().check(PutIndexTemplateAction.NAME, request, authentication), is(true));
         assertThat(kibanaRole.cluster().check(GetIndexTemplatesAction.NAME, request, authentication), is(true));
@@ -574,8 +580,11 @@ public class ReservedRolesStoreTests extends ESTestCase {
         assertThat(kibanaRole.runAs().check(randomAlphaOfLengthBetween(1, 12)), is(false));
         assertThat(kibanaRole.cluster().check(DelegatePkiAuthenticationAction.NAME, request, authentication), is(true));
 
-        assertThat(kibanaRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(mockIndexAbstraction("foo")), is(false));
-        assertThat(kibanaRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(mockIndexAbstraction(".reporting")), is(false));
+        assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(mockIndexAbstraction("foo")), is(false));
+        assertThat(
+            kibanaRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(mockIndexAbstraction(".reporting")),
+            is(false)
+        );
         assertThat(
             kibanaRole.indices().allowedIndicesMatcher("indices:foo").test(mockIndexAbstraction(randomAlphaOfLengthBetween(8, 24))),
             is(false)
@@ -605,12 +614,12 @@ public class ReservedRolesStoreTests extends ESTestCase {
             assertThat(kibanaRole.indices().allowedIndicesMatcher("indices:bar").test(mockIndexAbstraction(index)), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteIndexAction.NAME).test(mockIndexAbstraction(index)), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(CreateIndexAction.NAME).test(mockIndexAbstraction(index)), is(false));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(mockIndexAbstraction(index)), is(false));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteAction.NAME).test(mockIndexAbstraction(index)), is(false));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(mockIndexAbstraction(index)), is(false));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportDeleteAction.NAME).test(mockIndexAbstraction(index)), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(UpdateSettingsAction.NAME).test(mockIndexAbstraction(index)), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(SearchAction.NAME).test(mockIndexAbstraction(index)), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(MultiSearchAction.NAME).test(mockIndexAbstraction(index)), is(true));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(GetAction.NAME).test(mockIndexAbstraction(index)), is(true));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(mockIndexAbstraction(index)), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(READ_CROSS_CLUSTER_NAME).test(mockIndexAbstraction(index)), is(true));
         });
 
@@ -624,12 +633,12 @@ public class ReservedRolesStoreTests extends ESTestCase {
             assertThat(kibanaRole.indices().allowedIndicesMatcher("indices:bar").test(mockIndexAbstraction(index)), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteIndexAction.NAME).test(mockIndexAbstraction(index)), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(CreateIndexAction.NAME).test(mockIndexAbstraction(index)), is(false));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(mockIndexAbstraction(index)), is(false));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteAction.NAME).test(mockIndexAbstraction(index)), is(false));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(mockIndexAbstraction(index)), is(false));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportDeleteAction.NAME).test(mockIndexAbstraction(index)), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(UpdateSettingsAction.NAME).test(mockIndexAbstraction(index)), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(SearchAction.NAME).test(mockIndexAbstraction(index)), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(MultiSearchAction.NAME).test(mockIndexAbstraction(index)), is(true));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(GetAction.NAME).test(mockIndexAbstraction(index)), is(true));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(mockIndexAbstraction(index)), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(READ_CROSS_CLUSTER_NAME).test(mockIndexAbstraction(index)), is(false));
         });
 
@@ -643,12 +652,12 @@ public class ReservedRolesStoreTests extends ESTestCase {
             assertThat(kibanaRole.indices().allowedIndicesMatcher("indices:bar").test(mockIndexAbstraction(index)), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteIndexAction.NAME).test(mockIndexAbstraction(index)), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(CreateIndexAction.NAME).test(mockIndexAbstraction(index)), is(false));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(mockIndexAbstraction(index)), is(true));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteAction.NAME).test(mockIndexAbstraction(index)), is(true));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(mockIndexAbstraction(index)), is(true));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportDeleteAction.NAME).test(mockIndexAbstraction(index)), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(UpdateSettingsAction.NAME).test(mockIndexAbstraction(index)), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(SearchAction.NAME).test(mockIndexAbstraction(index)), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(MultiSearchAction.NAME).test(mockIndexAbstraction(index)), is(true));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(GetAction.NAME).test(mockIndexAbstraction(index)), is(true));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(mockIndexAbstraction(index)), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(READ_CROSS_CLUSTER_NAME).test(mockIndexAbstraction(index)), is(false));
         });
 
@@ -659,12 +668,12 @@ public class ReservedRolesStoreTests extends ESTestCase {
             assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteIndexAction.NAME).test(mockIndexAbstraction(index)), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(GetIndexAction.NAME).test(mockIndexAbstraction(index)), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(CreateIndexAction.NAME).test(mockIndexAbstraction(index)), is(false));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(mockIndexAbstraction(index)), is(false));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteAction.NAME).test(mockIndexAbstraction(index)), is(false));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(mockIndexAbstraction(index)), is(false));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportDeleteAction.NAME).test(mockIndexAbstraction(index)), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(UpdateSettingsAction.NAME).test(mockIndexAbstraction(index)), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(SearchAction.NAME).test(mockIndexAbstraction(index)), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(MultiSearchAction.NAME).test(mockIndexAbstraction(index)), is(true));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(GetAction.NAME).test(mockIndexAbstraction(index)), is(true));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(mockIndexAbstraction(index)), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(READ_CROSS_CLUSTER_NAME).test(mockIndexAbstraction(index)), is(true));
         });
 
@@ -679,11 +688,11 @@ public class ReservedRolesStoreTests extends ESTestCase {
             assertThat(kibanaRole.indices().allowedIndicesMatcher("indices:bar").test(mockIndexAbstraction(index)), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(GetIndexAction.NAME).test(mockIndexAbstraction(index)), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(CreateIndexAction.NAME).test(mockIndexAbstraction(index)), is(false));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(mockIndexAbstraction(index)), is(false));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteAction.NAME).test(mockIndexAbstraction(index)), is(false));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(mockIndexAbstraction(index)), is(false));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportDeleteAction.NAME).test(mockIndexAbstraction(index)), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(SearchAction.NAME).test(mockIndexAbstraction(index)), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(MultiSearchAction.NAME).test(mockIndexAbstraction(index)), is(true));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(GetAction.NAME).test(mockIndexAbstraction(index)), is(true));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(mockIndexAbstraction(index)), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(READ_CROSS_CLUSTER_NAME).test(mockIndexAbstraction(index)), is(true));
         });
 
@@ -693,11 +702,11 @@ public class ReservedRolesStoreTests extends ESTestCase {
             assertThat(kibanaRole.indices().allowedIndicesMatcher("indices:bar").test(mockIndexAbstraction(index)), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(GetIndexAction.NAME).test(mockIndexAbstraction(index)), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(CreateIndexAction.NAME).test(mockIndexAbstraction(index)), is(false));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(mockIndexAbstraction(index)), is(false));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteAction.NAME).test(mockIndexAbstraction(index)), is(false));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(mockIndexAbstraction(index)), is(false));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportDeleteAction.NAME).test(mockIndexAbstraction(index)), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(SearchAction.NAME).test(mockIndexAbstraction(index)), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(MultiSearchAction.NAME).test(mockIndexAbstraction(index)), is(true));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(GetAction.NAME).test(mockIndexAbstraction(index)), is(true));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(mockIndexAbstraction(index)), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(READ_CROSS_CLUSTER_NAME).test(mockIndexAbstraction(index)), is(false));
 
             // Privileges needed for Fleet package upgrades
@@ -716,11 +725,11 @@ public class ReservedRolesStoreTests extends ESTestCase {
             assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteIndexAction.NAME).test(indexAbstraction), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(GetIndexAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(CreateIndexAction.NAME).test(indexAbstraction), is(false));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(indexAbstraction), is(false));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteAction.NAME).test(indexAbstraction), is(false));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(indexAbstraction), is(false));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportDeleteAction.NAME).test(indexAbstraction), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(SearchAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(MultiSearchAction.NAME).test(indexAbstraction), is(true));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(GetAction.NAME).test(indexAbstraction), is(true));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(READ_CROSS_CLUSTER_NAME).test(indexAbstraction), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(UpdateSettingsAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(PutMappingAction.NAME).test(indexAbstraction), is(true));
@@ -735,11 +744,11 @@ public class ReservedRolesStoreTests extends ESTestCase {
             assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteIndexAction.NAME).test(indexAbstraction), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(GetIndexAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(CreateIndexAction.NAME).test(indexAbstraction), is(false));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(indexAbstraction), is(false));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteAction.NAME).test(indexAbstraction), is(false));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(indexAbstraction), is(false));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportDeleteAction.NAME).test(indexAbstraction), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(SearchAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(MultiSearchAction.NAME).test(indexAbstraction), is(true));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(GetAction.NAME).test(indexAbstraction), is(true));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(READ_CROSS_CLUSTER_NAME).test(indexAbstraction), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(UpdateSettingsAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(PutMappingAction.NAME).test(indexAbstraction), is(true));
@@ -761,11 +770,11 @@ public class ReservedRolesStoreTests extends ESTestCase {
         assertThat(kibanaRole.indices().allowedIndicesMatcher("indices:bar").test(dotFleetSecretsIndex), is(false));
         assertThat(kibanaRole.indices().allowedIndicesMatcher(GetIndexAction.NAME).test(dotFleetSecretsIndex), is(true));
         assertThat(kibanaRole.indices().allowedIndicesMatcher(CreateIndexAction.NAME).test(dotFleetSecretsIndex), is(true));
-        assertThat(kibanaRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(dotFleetSecretsIndex), is(true));
-        assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteAction.NAME).test(dotFleetSecretsIndex), is(true));
+        assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(dotFleetSecretsIndex), is(true));
+        assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportDeleteAction.NAME).test(dotFleetSecretsIndex), is(true));
         assertThat(kibanaRole.indices().allowedIndicesMatcher(SearchAction.NAME).test(dotFleetSecretsIndex), is(false));
         assertThat(kibanaRole.indices().allowedIndicesMatcher(MultiSearchAction.NAME).test(dotFleetSecretsIndex), is(false));
-        assertThat(kibanaRole.indices().allowedIndicesMatcher(GetAction.NAME).test(dotFleetSecretsIndex), is(false));
+        assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(dotFleetSecretsIndex), is(false));
         assertThat(kibanaRole.indices().allowedIndicesMatcher(UpdateSettingsAction.NAME).test(dotFleetSecretsIndex), is(false));
 
         assertThat(kibanaRole.cluster().check("cluster:admin/fleet/secrets/get", request, authentication), is(false));
@@ -778,11 +787,11 @@ public class ReservedRolesStoreTests extends ESTestCase {
             assertThat(kibanaRole.indices().allowedIndicesMatcher("indices:bar").test(mockIndexAbstraction(index)), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(GetIndexAction.NAME).test(mockIndexAbstraction(index)), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(CreateIndexAction.NAME).test(mockIndexAbstraction(index)), is(false));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(mockIndexAbstraction(index)), is(false));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteAction.NAME).test(mockIndexAbstraction(index)), is(false));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(mockIndexAbstraction(index)), is(false));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportDeleteAction.NAME).test(mockIndexAbstraction(index)), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(SearchAction.NAME).test(mockIndexAbstraction(index)), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(MultiSearchAction.NAME).test(mockIndexAbstraction(index)), is(true));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(GetAction.NAME).test(mockIndexAbstraction(index)), is(true));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(mockIndexAbstraction(index)), is(true));
         });
 
         // read-only index for Endpoint and Osquery manager specific action responses
@@ -793,11 +802,11 @@ public class ReservedRolesStoreTests extends ESTestCase {
             assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteIndexAction.NAME).test(indexAbstraction), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(GetIndexAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(CreateIndexAction.NAME).test(indexAbstraction), is(false));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(indexAbstraction), is(false));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteAction.NAME).test(indexAbstraction), is(false));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(indexAbstraction), is(false));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportDeleteAction.NAME).test(indexAbstraction), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(SearchAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(MultiSearchAction.NAME).test(indexAbstraction), is(true));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(GetAction.NAME).test(indexAbstraction), is(true));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(READ_CROSS_CLUSTER_NAME).test(indexAbstraction), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(UpdateSettingsAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(PutMappingAction.NAME).test(indexAbstraction), is(true));
@@ -811,11 +820,11 @@ public class ReservedRolesStoreTests extends ESTestCase {
             assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteIndexAction.NAME).test(indexAbstraction), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(GetIndexAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(CreateIndexAction.NAME).test(indexAbstraction), is(true));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(indexAbstraction), is(true));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteAction.NAME).test(indexAbstraction), is(true));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(indexAbstraction), is(true));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportDeleteAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(SearchAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(MultiSearchAction.NAME).test(indexAbstraction), is(true));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(GetAction.NAME).test(indexAbstraction), is(true));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(READ_CROSS_CLUSTER_NAME).test(indexAbstraction), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(UpdateSettingsAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(PutMappingAction.NAME).test(indexAbstraction), is(true));
@@ -830,11 +839,11 @@ public class ReservedRolesStoreTests extends ESTestCase {
             assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteIndexAction.NAME).test(indexAbstraction), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(GetIndexAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(CreateIndexAction.NAME).test(indexAbstraction), is(false));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(indexAbstraction), is(true));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteAction.NAME).test(indexAbstraction), is(true));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(indexAbstraction), is(true));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportDeleteAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(SearchAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(MultiSearchAction.NAME).test(indexAbstraction), is(true));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(GetAction.NAME).test(indexAbstraction), is(true));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(READ_CROSS_CLUSTER_NAME).test(indexAbstraction), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(UpdateSettingsAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(PutMappingAction.NAME).test(indexAbstraction), is(true));
@@ -849,11 +858,11 @@ public class ReservedRolesStoreTests extends ESTestCase {
             assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteIndexAction.NAME).test(indexAbstraction), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(GetIndexAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(CreateIndexAction.NAME).test(indexAbstraction), is(false));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(indexAbstraction), is(false));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteAction.NAME).test(indexAbstraction), is(false));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(indexAbstraction), is(false));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportDeleteAction.NAME).test(indexAbstraction), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(SearchAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(MultiSearchAction.NAME).test(indexAbstraction), is(true));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(GetAction.NAME).test(indexAbstraction), is(true));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(READ_CROSS_CLUSTER_NAME).test(indexAbstraction), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(UpdateSettingsAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(PutMappingAction.NAME).test(indexAbstraction), is(true));
@@ -870,12 +879,12 @@ public class ReservedRolesStoreTests extends ESTestCase {
             assertThat(kibanaRole.indices().allowedIndicesMatcher("indices:bar").test(mockIndexAbstraction(index)), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteIndexAction.NAME).test(mockIndexAbstraction(index)), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(CreateIndexAction.NAME).test(mockIndexAbstraction(index)), is(false));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(mockIndexAbstraction(index)), is(false));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteAction.NAME).test(mockIndexAbstraction(index)), is(false));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(mockIndexAbstraction(index)), is(false));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportDeleteAction.NAME).test(mockIndexAbstraction(index)), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(UpdateSettingsAction.NAME).test(mockIndexAbstraction(index)), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(SearchAction.NAME).test(mockIndexAbstraction(index)), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(MultiSearchAction.NAME).test(mockIndexAbstraction(index)), is(false));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(GetAction.NAME).test(mockIndexAbstraction(index)), is(false));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(mockIndexAbstraction(index)), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(READ_CROSS_CLUSTER_NAME).test(mockIndexAbstraction(index)), is(false));
         });
 
@@ -909,11 +918,11 @@ public class ReservedRolesStoreTests extends ESTestCase {
             assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteIndexAction.NAME).test(indexAbstraction), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(GetIndexAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(CreateIndexAction.NAME).test(indexAbstraction), is(false));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(indexAbstraction), is(false));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteAction.NAME).test(indexAbstraction), is(false));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(indexAbstraction), is(false));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportDeleteAction.NAME).test(indexAbstraction), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(SearchAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(MultiSearchAction.NAME).test(indexAbstraction), is(true));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(GetAction.NAME).test(indexAbstraction), is(true));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(READ_CROSS_CLUSTER_NAME).test(indexAbstraction), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(UpdateSettingsAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(PutMappingAction.NAME).test(indexAbstraction), is(true));
@@ -928,11 +937,11 @@ public class ReservedRolesStoreTests extends ESTestCase {
             assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteIndexAction.NAME).test(indexAbstraction), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(GetIndexAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(CreateIndexAction.NAME).test(indexAbstraction), is(false));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(indexAbstraction), is(false));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteAction.NAME).test(indexAbstraction), is(false));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(indexAbstraction), is(false));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportDeleteAction.NAME).test(indexAbstraction), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(SearchAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(MultiSearchAction.NAME).test(indexAbstraction), is(true));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(GetAction.NAME).test(indexAbstraction), is(true));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(READ_CROSS_CLUSTER_NAME).test(indexAbstraction), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(UpdateSettingsAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(PutMappingAction.NAME).test(indexAbstraction), is(true));
@@ -945,12 +954,12 @@ public class ReservedRolesStoreTests extends ESTestCase {
         assertThat(kibanaRole.indices().allowedIndicesMatcher("indices:bar").test(mockIndexAbstraction(index)), is(false));
         assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteIndexAction.NAME).test(mockIndexAbstraction(index)), is(false));
         assertThat(kibanaRole.indices().allowedIndicesMatcher(CreateIndexAction.NAME).test(mockIndexAbstraction(index)), is(true));
-        assertThat(kibanaRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(mockIndexAbstraction(index)), is(true));
-        assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteAction.NAME).test(mockIndexAbstraction(index)), is(true));
+        assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(mockIndexAbstraction(index)), is(true));
+        assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportDeleteAction.NAME).test(mockIndexAbstraction(index)), is(true));
         assertThat(kibanaRole.indices().allowedIndicesMatcher(UpdateSettingsAction.NAME).test(mockIndexAbstraction(index)), is(false));
         assertThat(kibanaRole.indices().allowedIndicesMatcher(SearchAction.NAME).test(mockIndexAbstraction(index)), is(true));
         assertThat(kibanaRole.indices().allowedIndicesMatcher(MultiSearchAction.NAME).test(mockIndexAbstraction(index)), is(true));
-        assertThat(kibanaRole.indices().allowedIndicesMatcher(GetAction.NAME).test(mockIndexAbstraction(index)), is(true));
+        assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(mockIndexAbstraction(index)), is(true));
         assertThat(kibanaRole.indices().allowedIndicesMatcher(READ_CROSS_CLUSTER_NAME).test(mockIndexAbstraction(index)), is(false));
 
         assertNoAccessAllowed(kibanaRole, TestRestrictedIndices.SAMPLE_RESTRICTED_NAMES);
@@ -1012,8 +1021,14 @@ public class ReservedRolesStoreTests extends ESTestCase {
             assertThat(kibanaRole.indices().allowedIndicesMatcher(CreateIndexAction.NAME).test(indexAbstraction), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(AutoCreateAction.NAME).test(indexAbstraction), is(isAlsoAutoCreateIndex));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(CreateDataStreamAction.NAME).test(indexAbstraction), is(false));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(indexAbstraction), is(isAlsoAutoCreateIndex));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteAction.NAME).test(indexAbstraction), is(isAlsoAutoCreateIndex));
+            assertThat(
+                kibanaRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(indexAbstraction),
+                is(isAlsoAutoCreateIndex)
+            );
+            assertThat(
+                kibanaRole.indices().allowedIndicesMatcher(TransportDeleteAction.NAME).test(indexAbstraction),
+                is(isAlsoAutoCreateIndex)
+            );
 
             // Endpoint diagnostic and actions data streams also have read access, all others should not.
             final boolean isAlsoReadIndex = indexName.startsWith(".logs-endpoint.diagnostic.collection-")
@@ -1021,7 +1036,7 @@ public class ReservedRolesStoreTests extends ESTestCase {
                 || indexName.startsWith(".logs-endpoint.action.responses-")
                 || indexName.startsWith(".logs-endpoint.heartbeat-")
                 || indexName.startsWith(".logs-osquery_manager.actions-");
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(GetAction.NAME).test(indexAbstraction), is(isAlsoReadIndex));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(indexAbstraction), is(isAlsoReadIndex));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(SearchAction.NAME).test(indexAbstraction), is(isAlsoReadIndex));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(MultiSearchAction.NAME).test(indexAbstraction), is(isAlsoReadIndex));
 
@@ -1072,9 +1087,9 @@ public class ReservedRolesStoreTests extends ESTestCase {
             final IndexAbstraction indexAbstraction = mockIndexAbstraction(indexName);
             // Allow indexing
             assertThat(kibanaRole.indices().allowedIndicesMatcher(SearchAction.NAME).test(indexAbstraction), is(true));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(GetAction.NAME).test(indexAbstraction), is(true));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(indexAbstraction), is(true));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(UpdateAction.NAME).test(indexAbstraction), is(true));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(indexAbstraction), is(true));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(indexAbstraction), is(true));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportUpdateAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(BulkAction.NAME).test(indexAbstraction), is(true));
             // Allow create and delete index, modifying aliases, and updating index settings
             assertThat(kibanaRole.indices().allowedIndicesMatcher(CreateIndexAction.NAME).test(indexAbstraction), is(true));
@@ -1100,7 +1115,7 @@ public class ReservedRolesStoreTests extends ESTestCase {
             );
 
             // Deny deleting documents and rollover
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteAction.NAME).test(indexAbstraction), is(false));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportDeleteAction.NAME).test(indexAbstraction), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(RolloverAction.NAME).test(indexAbstraction), is(false));
         });
 
@@ -1110,9 +1125,9 @@ public class ReservedRolesStoreTests extends ESTestCase {
             final IndexAbstraction indexAbstraction = mockIndexAbstraction(indexName);
             // Allow search and indexing
             assertThat(kibanaRole.indices().allowedIndicesMatcher(SearchAction.NAME).test(indexAbstraction), is(true));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(GetAction.NAME).test(indexAbstraction), is(true));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(indexAbstraction), is(true));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(UpdateAction.NAME).test(indexAbstraction), is(true));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(indexAbstraction), is(true));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(indexAbstraction), is(true));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportUpdateAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(BulkAction.NAME).test(indexAbstraction), is(true));
             // Allow create and delete index, modifying aliases, and updating index settings
             assertThat(kibanaRole.indices().allowedIndicesMatcher(CreateIndexAction.NAME).test(indexAbstraction), is(true));
@@ -1122,7 +1137,7 @@ public class ReservedRolesStoreTests extends ESTestCase {
             assertThat(kibanaRole.indices().allowedIndicesMatcher(UpdateSettingsAction.NAME).test(indexAbstraction), is(true));
 
             // Allow deleting documents
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteAction.NAME).test(indexAbstraction), is(true));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportDeleteAction.NAME).test(indexAbstraction), is(true));
 
             // Implied by the overall view_index_metadata and monitor privilege
             assertViewIndexMetadata(kibanaRole, indexName);
@@ -1145,15 +1160,15 @@ public class ReservedRolesStoreTests extends ESTestCase {
             assertThat(kibanaRole.indices().allowedIndicesMatcher("indices:foo").test(indexAbstraction), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher("indices:bar").test(indexAbstraction), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(CreateIndexAction.NAME).test(indexAbstraction), is(false));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(indexAbstraction), is(false));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteAction.NAME).test(indexAbstraction), is(false));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(indexAbstraction), is(false));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportDeleteAction.NAME).test(indexAbstraction), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(UpdateSettingsAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(PutMappingAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(RolloverAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteIndexAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(SearchAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(MultiSearchAction.NAME).test(indexAbstraction), is(true));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(GetAction.NAME).test(indexAbstraction), is(true));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(indexAbstraction), is(true));
 
             // Implied by the overall view_index_metadata and monitor privilege
             assertViewIndexMetadata(kibanaRole, indexName);
@@ -1171,9 +1186,9 @@ public class ReservedRolesStoreTests extends ESTestCase {
             final IndexAbstraction indexAbstraction = mockIndexAbstraction(indexName);
             // Allow indexing
             assertThat(kibanaRole.indices().allowedIndicesMatcher(SearchAction.NAME).test(indexAbstraction), is(true));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(GetAction.NAME).test(indexAbstraction), is(true));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(indexAbstraction), is(true));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(UpdateAction.NAME).test(indexAbstraction), is(true));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(indexAbstraction), is(true));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(indexAbstraction), is(true));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportUpdateAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(BulkAction.NAME).test(indexAbstraction), is(true));
             // Allow create and delete index
             assertThat(kibanaRole.indices().allowedIndicesMatcher(CreateIndexAction.NAME).test(indexAbstraction), is(true));
@@ -1196,11 +1211,11 @@ public class ReservedRolesStoreTests extends ESTestCase {
             assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteIndexAction.NAME).test(indexAbstraction), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(GetIndexAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(CreateIndexAction.NAME).test(indexAbstraction), is(false));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(indexAbstraction), is(false));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteAction.NAME).test(indexAbstraction), is(false));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(indexAbstraction), is(false));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportDeleteAction.NAME).test(indexAbstraction), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(SearchAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(MultiSearchAction.NAME).test(indexAbstraction), is(true));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(GetAction.NAME).test(indexAbstraction), is(true));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(READ_CROSS_CLUSTER_NAME).test(indexAbstraction), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(UpdateSettingsAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(PutMappingAction.NAME).test(indexAbstraction), is(true));
@@ -1214,11 +1229,11 @@ public class ReservedRolesStoreTests extends ESTestCase {
             assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteIndexAction.NAME).test(indexAbstraction), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(GetIndexAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(CreateIndexAction.NAME).test(indexAbstraction), is(false));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(indexAbstraction), is(false));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteAction.NAME).test(indexAbstraction), is(false));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(indexAbstraction), is(false));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportDeleteAction.NAME).test(indexAbstraction), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(SearchAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(MultiSearchAction.NAME).test(indexAbstraction), is(true));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(GetAction.NAME).test(indexAbstraction), is(true));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(READ_CROSS_CLUSTER_NAME).test(indexAbstraction), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(UpdateSettingsAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(PutMappingAction.NAME).test(indexAbstraction), is(true));
@@ -1237,9 +1252,9 @@ public class ReservedRolesStoreTests extends ESTestCase {
             final IndexAbstraction indexAbstraction = mockIndexAbstraction(indexName);
             // Allow indexing
             assertThat(kibanaRole.indices().allowedIndicesMatcher(SearchAction.NAME).test(indexAbstraction), is(true));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(GetAction.NAME).test(indexAbstraction), is(true));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(indexAbstraction), is(true));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(UpdateAction.NAME).test(indexAbstraction), is(true));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(indexAbstraction), is(true));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(indexAbstraction), is(true));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportUpdateAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(BulkAction.NAME).test(indexAbstraction), is(true));
             // Allow create and delete index, modifying aliases, and updating index settings
             assertThat(kibanaRole.indices().allowedIndicesMatcher(CreateIndexAction.NAME).test(indexAbstraction), is(true));
@@ -1271,11 +1286,11 @@ public class ReservedRolesStoreTests extends ESTestCase {
             assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteIndexAction.NAME).test(indexAbstraction), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(GetIndexAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(CreateIndexAction.NAME).test(indexAbstraction), is(false));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(indexAbstraction), is(false));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(DeleteAction.NAME).test(indexAbstraction), is(false));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(indexAbstraction), is(false));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportDeleteAction.NAME).test(indexAbstraction), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(SearchAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(MultiSearchAction.NAME).test(indexAbstraction), is(true));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(GetAction.NAME).test(indexAbstraction), is(true));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(READ_CROSS_CLUSTER_NAME).test(indexAbstraction), is(false));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(UpdateSettingsAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(PutMappingAction.NAME).test(indexAbstraction), is(true));
@@ -1312,9 +1327,9 @@ public class ReservedRolesStoreTests extends ESTestCase {
             final IndexAbstraction indexAbstraction = mockIndexAbstraction(indexName);
             // Allow search and indexing
             assertThat(kibanaRole.indices().allowedIndicesMatcher(SearchAction.NAME).test(indexAbstraction), is(true));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(GetAction.NAME).test(indexAbstraction), is(true));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(indexAbstraction), is(true));
-            assertThat(kibanaRole.indices().allowedIndicesMatcher(UpdateAction.NAME).test(indexAbstraction), is(true));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(indexAbstraction), is(true));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(indexAbstraction), is(true));
+            assertThat(kibanaRole.indices().allowedIndicesMatcher(TransportUpdateAction.NAME).test(indexAbstraction), is(true));
             assertThat(kibanaRole.indices().allowedIndicesMatcher(BulkAction.NAME).test(indexAbstraction), is(true));
             // Allow create and delete index, modifying aliases, and updating index settings
             assertThat(kibanaRole.indices().allowedIndicesMatcher(CreateIndexAction.NAME).test(indexAbstraction), is(true));
@@ -1352,7 +1367,7 @@ public class ReservedRolesStoreTests extends ESTestCase {
             List.of(new ApplicationPrivilegeDescriptor("kibana-.kibana", "all", Set.of(allowedApplicationActionPattern), Map.of()))
         );
         assertThat(kibanaAdminRole.cluster().check(ClusterHealthAction.NAME, request, authentication), is(false));
-        assertThat(kibanaAdminRole.cluster().check(ClusterStateAction.NAME, request, authentication), is(false));
+        assertThat(kibanaAdminRole.cluster().check(TransportClusterStateAction.NAME, request, authentication), is(false));
         assertThat(kibanaAdminRole.cluster().check(ClusterStatsAction.NAME, request, authentication), is(false));
         assertThat(kibanaAdminRole.cluster().check(PutIndexTemplateAction.NAME, request, authentication), is(false));
         assertThat(kibanaAdminRole.cluster().check(ClusterRerouteAction.NAME, request, authentication), is(false));
@@ -1362,8 +1377,11 @@ public class ReservedRolesStoreTests extends ESTestCase {
 
         assertThat(kibanaAdminRole.runAs().check(randomAlphaOfLengthBetween(1, 12)), is(false));
 
-        assertThat(kibanaAdminRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(mockIndexAbstraction("foo")), is(false));
-        assertThat(kibanaAdminRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(mockIndexAbstraction(".reporting")), is(false));
+        assertThat(kibanaAdminRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(mockIndexAbstraction("foo")), is(false));
+        assertThat(
+            kibanaAdminRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(mockIndexAbstraction(".reporting")),
+            is(false)
+        );
         assertThat(
             kibanaAdminRole.indices().allowedIndicesMatcher("indices:foo").test(mockIndexAbstraction(randomAlphaOfLengthBetween(8, 24))),
             is(false)
@@ -1413,7 +1431,7 @@ public class ReservedRolesStoreTests extends ESTestCase {
             List.of(new ApplicationPrivilegeDescriptor("kibana-.kibana", "all", Set.of(allowedApplicationActionPattern), Map.of()))
         );
         assertThat(kibanaUserRole.cluster().check(ClusterHealthAction.NAME, request, authentication), is(false));
-        assertThat(kibanaUserRole.cluster().check(ClusterStateAction.NAME, request, authentication), is(false));
+        assertThat(kibanaUserRole.cluster().check(TransportClusterStateAction.NAME, request, authentication), is(false));
         assertThat(kibanaUserRole.cluster().check(ClusterStatsAction.NAME, request, authentication), is(false));
         assertThat(kibanaUserRole.cluster().check(PutIndexTemplateAction.NAME, request, authentication), is(false));
         assertThat(kibanaUserRole.cluster().check(ClusterRerouteAction.NAME, request, authentication), is(false));
@@ -1423,8 +1441,11 @@ public class ReservedRolesStoreTests extends ESTestCase {
 
         assertThat(kibanaUserRole.runAs().check(randomAlphaOfLengthBetween(1, 12)), is(false));
 
-        assertThat(kibanaUserRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(mockIndexAbstraction("foo")), is(false));
-        assertThat(kibanaUserRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(mockIndexAbstraction(".reporting")), is(false));
+        assertThat(kibanaUserRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(mockIndexAbstraction("foo")), is(false));
+        assertThat(
+            kibanaUserRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(mockIndexAbstraction(".reporting")),
+            is(false)
+        );
         assertThat(
             kibanaUserRole.indices().allowedIndicesMatcher("indices:foo").test(mockIndexAbstraction(randomAlphaOfLengthBetween(8, 24))),
             is(false)
@@ -1493,7 +1514,7 @@ public class ReservedRolesStoreTests extends ESTestCase {
         assertThat(monitoringUserRole.cluster().check(XPackInfoAction.NAME, request, authentication), is(true));
         assertThat(monitoringUserRole.cluster().check(RemoteInfoAction.NAME, request, authentication), is(true));
         assertThat(monitoringUserRole.cluster().check(ClusterHealthAction.NAME, request, authentication), is(false));
-        assertThat(monitoringUserRole.cluster().check(ClusterStateAction.NAME, request, authentication), is(false));
+        assertThat(monitoringUserRole.cluster().check(TransportClusterStateAction.NAME, request, authentication), is(false));
         assertThat(monitoringUserRole.cluster().check(ClusterStatsAction.NAME, request, authentication), is(false));
         assertThat(monitoringUserRole.cluster().check(PutIndexTemplateAction.NAME, request, authentication), is(false));
         assertThat(monitoringUserRole.cluster().check(ClusterRerouteAction.NAME, request, authentication), is(false));
@@ -1536,14 +1557,20 @@ public class ReservedRolesStoreTests extends ESTestCase {
         assertThat(monitoringUserRole.indices().allowedIndicesMatcher("indices:bar").test(mockIndexAbstraction(index)), is(false));
         assertThat(monitoringUserRole.indices().allowedIndicesMatcher(DeleteIndexAction.NAME).test(mockIndexAbstraction(index)), is(false));
         assertThat(monitoringUserRole.indices().allowedIndicesMatcher(CreateIndexAction.NAME).test(mockIndexAbstraction(index)), is(false));
-        assertThat(monitoringUserRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(mockIndexAbstraction(index)), is(false));
-        assertThat(monitoringUserRole.indices().allowedIndicesMatcher(DeleteAction.NAME).test(mockIndexAbstraction(index)), is(false));
+        assertThat(
+            monitoringUserRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(mockIndexAbstraction(index)),
+            is(false)
+        );
+        assertThat(
+            monitoringUserRole.indices().allowedIndicesMatcher(TransportDeleteAction.NAME).test(mockIndexAbstraction(index)),
+            is(false)
+        );
         assertThat(
             monitoringUserRole.indices().allowedIndicesMatcher(UpdateSettingsAction.NAME).test(mockIndexAbstraction(index)),
             is(false)
         );
         assertThat(monitoringUserRole.indices().allowedIndicesMatcher(SearchAction.NAME).test(mockIndexAbstraction(index)), is(true));
-        assertThat(monitoringUserRole.indices().allowedIndicesMatcher(GetAction.NAME).test(mockIndexAbstraction(index)), is(true));
+        assertThat(monitoringUserRole.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(mockIndexAbstraction(index)), is(true));
         assertThat(monitoringUserRole.indices().allowedIndicesMatcher(READ_CROSS_CLUSTER_NAME).test(mockIndexAbstraction(index)), is(true));
 
         assertNoAccessAllowed(monitoringUserRole, TestRestrictedIndices.SAMPLE_RESTRICTED_NAMES);
@@ -1608,7 +1635,7 @@ public class ReservedRolesStoreTests extends ESTestCase {
             RESTRICTED_INDICES
         );
         assertThat(remoteMonitoringAgentRole.cluster().check(ClusterHealthAction.NAME, request, authentication), is(true));
-        assertThat(remoteMonitoringAgentRole.cluster().check(ClusterStateAction.NAME, request, authentication), is(true));
+        assertThat(remoteMonitoringAgentRole.cluster().check(TransportClusterStateAction.NAME, request, authentication), is(true));
         assertThat(remoteMonitoringAgentRole.cluster().check(ClusterStatsAction.NAME, request, authentication), is(true));
         assertThat(remoteMonitoringAgentRole.cluster().check(PutIndexTemplateAction.NAME, request, authentication), is(true));
         assertThat(remoteMonitoringAgentRole.cluster().check(ClusterRerouteAction.NAME, request, authentication), is(false));
@@ -1673,11 +1700,15 @@ public class ReservedRolesStoreTests extends ESTestCase {
             is(true)
         );
         assertThat(
-            remoteMonitoringAgentRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(mockIndexAbstraction(monitoringIndex)),
+            remoteMonitoringAgentRole.indices()
+                .allowedIndicesMatcher(TransportIndexAction.NAME)
+                .test(mockIndexAbstraction(monitoringIndex)),
             is(true)
         );
         assertThat(
-            remoteMonitoringAgentRole.indices().allowedIndicesMatcher(DeleteAction.NAME).test(mockIndexAbstraction(monitoringIndex)),
+            remoteMonitoringAgentRole.indices()
+                .allowedIndicesMatcher(TransportDeleteAction.NAME)
+                .test(mockIndexAbstraction(monitoringIndex)),
             is(true)
         );
         assertThat(
@@ -1691,7 +1722,7 @@ public class ReservedRolesStoreTests extends ESTestCase {
             is(true)
         );
         assertThat(
-            remoteMonitoringAgentRole.indices().allowedIndicesMatcher(GetAction.NAME).test(mockIndexAbstraction(monitoringIndex)),
+            remoteMonitoringAgentRole.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(mockIndexAbstraction(monitoringIndex)),
             is(true)
         );
         assertThat(
@@ -1717,7 +1748,9 @@ public class ReservedRolesStoreTests extends ESTestCase {
             is(true)
         );
         assertThat(
-            remoteMonitoringAgentRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(mockIndexAbstraction(metricbeatIndex)),
+            remoteMonitoringAgentRole.indices()
+                .allowedIndicesMatcher(TransportIndexAction.NAME)
+                .test(mockIndexAbstraction(metricbeatIndex)),
             is(true)
         );
         assertThat(
@@ -1751,7 +1784,9 @@ public class ReservedRolesStoreTests extends ESTestCase {
             is(false)
         );
         assertThat(
-            remoteMonitoringAgentRole.indices().allowedIndicesMatcher(DeleteAction.NAME).test(mockIndexAbstraction(metricbeatIndex)),
+            remoteMonitoringAgentRole.indices()
+                .allowedIndicesMatcher(TransportDeleteAction.NAME)
+                .test(mockIndexAbstraction(metricbeatIndex)),
             is(false)
         );
         assertThat(
@@ -1765,7 +1800,7 @@ public class ReservedRolesStoreTests extends ESTestCase {
             is(false)
         );
         assertThat(
-            remoteMonitoringAgentRole.indices().allowedIndicesMatcher(GetAction.NAME).test(mockIndexAbstraction(metricbeatIndex)),
+            remoteMonitoringAgentRole.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(mockIndexAbstraction(metricbeatIndex)),
             is(false)
         );
 
@@ -1787,7 +1822,7 @@ public class ReservedRolesStoreTests extends ESTestCase {
             RESTRICTED_INDICES
         );
         assertThat(remoteMonitoringCollectorRole.cluster().check(ClusterHealthAction.NAME, request, authentication), is(true));
-        assertThat(remoteMonitoringCollectorRole.cluster().check(ClusterStateAction.NAME, request, authentication), is(true));
+        assertThat(remoteMonitoringCollectorRole.cluster().check(TransportClusterStateAction.NAME, request, authentication), is(true));
         assertThat(remoteMonitoringCollectorRole.cluster().check(ClusterStatsAction.NAME, request, authentication), is(true));
         assertThat(remoteMonitoringCollectorRole.cluster().check(GetIndexTemplatesAction.NAME, request, authentication), is(true));
         assertThat(remoteMonitoringCollectorRole.cluster().check(PutIndexTemplateAction.NAME, request, authentication), is(false));
@@ -1816,7 +1851,7 @@ public class ReservedRolesStoreTests extends ESTestCase {
             is(true)
         );
         assertThat(
-            remoteMonitoringCollectorRole.indices().allowedIndicesMatcher(GetAction.NAME).test(mockIndexAbstraction(".kibana")),
+            remoteMonitoringCollectorRole.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(mockIndexAbstraction(".kibana")),
             is(true)
         );
         assertThat(
@@ -1848,7 +1883,7 @@ public class ReservedRolesStoreTests extends ESTestCase {
                 is(false)
             );
             assertThat(
-                remoteMonitoringCollectorRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(mockIndexAbstraction(index)),
+                remoteMonitoringCollectorRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(mockIndexAbstraction(index)),
                 is(false)
             );
             assertThat(
@@ -1866,7 +1901,7 @@ public class ReservedRolesStoreTests extends ESTestCase {
                 is(false)
             );
             assertThat(
-                remoteMonitoringCollectorRole.indices().allowedIndicesMatcher(DeleteAction.NAME).test(mockIndexAbstraction(index)),
+                remoteMonitoringCollectorRole.indices().allowedIndicesMatcher(TransportDeleteAction.NAME).test(mockIndexAbstraction(index)),
                 is(false)
             );
             assertThat(
@@ -1878,7 +1913,7 @@ public class ReservedRolesStoreTests extends ESTestCase {
                 is(false)
             );
             assertThat(
-                remoteMonitoringCollectorRole.indices().allowedIndicesMatcher(GetAction.NAME).test(mockIndexAbstraction(index)),
+                remoteMonitoringCollectorRole.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(mockIndexAbstraction(index)),
                 is(false)
             );
             assertThat(
@@ -1891,13 +1926,13 @@ public class ReservedRolesStoreTests extends ESTestCase {
         // (but ideally, the monitoring user should see all indices).
         assertThat(
             remoteMonitoringCollectorRole.indices()
-                .allowedIndicesMatcher(GetSettingsAction.NAME)
+                .allowedIndicesMatcher(TransportGetSettingsAction.NAME)
                 .test(mockIndexAbstraction(randomFrom(TestRestrictedIndices.SAMPLE_RESTRICTED_NAMES))),
             is(true)
         );
         assertThat(
             remoteMonitoringCollectorRole.indices()
-                .allowedIndicesMatcher(GetSettingsAction.NAME)
+                .allowedIndicesMatcher(TransportGetSettingsAction.NAME)
                 .test(mockIndexAbstraction(XPackPlugin.ASYNC_RESULTS_INDEX + randomAlphaOfLengthBetween(0, 2))),
             is(true)
         );
@@ -1964,37 +1999,37 @@ public class ReservedRolesStoreTests extends ESTestCase {
         );
         assertThat(
             remoteMonitoringCollectorRole.indices()
-                .allowedIndicesMatcher(GetAction.NAME)
+                .allowedIndicesMatcher(TransportGetAction.NAME)
                 .test(mockIndexAbstraction(randomFrom(TestRestrictedIndices.SAMPLE_RESTRICTED_NAMES))),
             is(false)
         );
         assertThat(
             remoteMonitoringCollectorRole.indices()
-                .allowedIndicesMatcher(GetAction.NAME)
+                .allowedIndicesMatcher(TransportGetAction.NAME)
                 .test(mockIndexAbstraction(XPackPlugin.ASYNC_RESULTS_INDEX + randomAlphaOfLengthBetween(0, 2))),
             is(false)
         );
         assertThat(
             remoteMonitoringCollectorRole.indices()
-                .allowedIndicesMatcher(DeleteAction.NAME)
+                .allowedIndicesMatcher(TransportDeleteAction.NAME)
                 .test(mockIndexAbstraction(randomFrom(TestRestrictedIndices.SAMPLE_RESTRICTED_NAMES))),
             is(false)
         );
         assertThat(
             remoteMonitoringCollectorRole.indices()
-                .allowedIndicesMatcher(DeleteAction.NAME)
+                .allowedIndicesMatcher(TransportDeleteAction.NAME)
                 .test(mockIndexAbstraction(XPackPlugin.ASYNC_RESULTS_INDEX + randomAlphaOfLengthBetween(0, 2))),
             is(false)
         );
         assertThat(
             remoteMonitoringCollectorRole.indices()
-                .allowedIndicesMatcher(IndexAction.NAME)
+                .allowedIndicesMatcher(TransportIndexAction.NAME)
                 .test(mockIndexAbstraction(randomFrom(TestRestrictedIndices.SAMPLE_RESTRICTED_NAMES))),
             is(false)
         );
         assertThat(
             remoteMonitoringCollectorRole.indices()
-                .allowedIndicesMatcher(IndexAction.NAME)
+                .allowedIndicesMatcher(TransportIndexAction.NAME)
                 .test(mockIndexAbstraction(XPackPlugin.ASYNC_RESULTS_INDEX + randomAlphaOfLengthBetween(0, 2))),
             is(false)
         );
@@ -2023,7 +2058,7 @@ public class ReservedRolesStoreTests extends ESTestCase {
         final List<String> indexMonitoringActionNamesList = Arrays.asList(
             IndicesStatsAction.NAME,
             IndicesSegmentsAction.NAME,
-            GetSettingsAction.NAME,
+            TransportGetSettingsAction.NAME,
             IndicesShardStoresAction.NAME,
             RecoveryAction.NAME
         );
@@ -2057,7 +2092,7 @@ public class ReservedRolesStoreTests extends ESTestCase {
             RESTRICTED_INDICES
         );
         assertThat(reportingUserRole.cluster().check(ClusterHealthAction.NAME, request, authentication), is(false));
-        assertThat(reportingUserRole.cluster().check(ClusterStateAction.NAME, request, authentication), is(false));
+        assertThat(reportingUserRole.cluster().check(TransportClusterStateAction.NAME, request, authentication), is(false));
         assertThat(reportingUserRole.cluster().check(ClusterStatsAction.NAME, request, authentication), is(false));
         assertThat(reportingUserRole.cluster().check(PutIndexTemplateAction.NAME, request, authentication), is(false));
         assertThat(reportingUserRole.cluster().check(ClusterRerouteAction.NAME, request, authentication), is(false));
@@ -2088,10 +2123,19 @@ public class ReservedRolesStoreTests extends ESTestCase {
             is(false)
         );
         assertThat(reportingUserRole.indices().allowedIndicesMatcher(SearchAction.NAME).test(mockIndexAbstraction(index)), is(false));
-        assertThat(reportingUserRole.indices().allowedIndicesMatcher(GetAction.NAME).test(mockIndexAbstraction(index)), is(false));
-        assertThat(reportingUserRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(mockIndexAbstraction(index)), is(false));
-        assertThat(reportingUserRole.indices().allowedIndicesMatcher(UpdateAction.NAME).test(mockIndexAbstraction(index)), is(false));
-        assertThat(reportingUserRole.indices().allowedIndicesMatcher(DeleteAction.NAME).test(mockIndexAbstraction(index)), is(false));
+        assertThat(reportingUserRole.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(mockIndexAbstraction(index)), is(false));
+        assertThat(
+            reportingUserRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(mockIndexAbstraction(index)),
+            is(false)
+        );
+        assertThat(
+            reportingUserRole.indices().allowedIndicesMatcher(TransportUpdateAction.NAME).test(mockIndexAbstraction(index)),
+            is(false)
+        );
+        assertThat(
+            reportingUserRole.indices().allowedIndicesMatcher(TransportDeleteAction.NAME).test(mockIndexAbstraction(index)),
+            is(false)
+        );
         assertThat(reportingUserRole.indices().allowedIndicesMatcher(BulkAction.NAME).test(mockIndexAbstraction(index)), is(false));
 
         assertNoAccessAllowed(reportingUserRole, TestRestrictedIndices.SAMPLE_RESTRICTED_NAMES);
@@ -2162,7 +2206,7 @@ public class ReservedRolesStoreTests extends ESTestCase {
         iac = superuserRole.indices().authorize(DeleteIndexAction.NAME, Sets.newHashSet("a1", "ba"), lookup, fieldPermissionsCache);
         assertThat(iac.hasIndexPermissions("a1"), is(true));
         assertThat(iac.hasIndexPermissions("b"), is(true));
-        iac = superuserRole.indices().authorize(IndexAction.NAME, Sets.newHashSet("a2", "ba"), lookup, fieldPermissionsCache);
+        iac = superuserRole.indices().authorize(TransportIndexAction.NAME, Sets.newHashSet("a2", "ba"), lookup, fieldPermissionsCache);
         assertThat(iac.hasIndexPermissions("a2"), is(true));
         assertThat(iac.hasIndexPermissions("b"), is(true));
         iac = superuserRole.indices().authorize(UpdateSettingsAction.NAME, Sets.newHashSet("aaaaaa", "ba"), lookup, fieldPermissionsCache);
@@ -2183,7 +2227,7 @@ public class ReservedRolesStoreTests extends ESTestCase {
         // Write security indices => denied
         iac = superuserRole.indices()
             .authorize(
-                randomFrom(IndexAction.NAME, DeleteIndexAction.NAME),
+                randomFrom(TransportIndexAction.NAME, DeleteIndexAction.NAME),
                 Sets.newHashSet(TestRestrictedIndices.SECURITY_MAIN_ALIAS),
                 lookup,
                 fieldPermissionsCache
@@ -2199,13 +2243,13 @@ public class ReservedRolesStoreTests extends ESTestCase {
         // Read security indices => allowed
         assertThat(
             superuserRole.indices()
-                .allowedIndicesMatcher(randomFrom(GetAction.NAME, IndicesStatsAction.NAME))
+                .allowedIndicesMatcher(randomFrom(TransportGetAction.NAME, IndicesStatsAction.NAME))
                 .test(mockIndexAbstraction(TestRestrictedIndices.SECURITY_MAIN_ALIAS)),
             is(true)
         );
         assertThat(
             superuserRole.indices()
-                .allowedIndicesMatcher(randomFrom(GetAction.NAME, IndicesStatsAction.NAME))
+                .allowedIndicesMatcher(randomFrom(TransportGetAction.NAME, IndicesStatsAction.NAME))
                 .test(mockIndexAbstraction(internalSecurityIndex)),
             is(true)
         );
@@ -2213,13 +2257,13 @@ public class ReservedRolesStoreTests extends ESTestCase {
         // Write security indices => denied
         assertThat(
             superuserRole.indices()
-                .allowedIndicesMatcher(randomFrom(IndexAction.NAME, DeleteIndexAction.NAME))
+                .allowedIndicesMatcher(randomFrom(TransportIndexAction.NAME, DeleteIndexAction.NAME))
                 .test(mockIndexAbstraction(TestRestrictedIndices.SECURITY_MAIN_ALIAS)),
             is(false)
         );
         assertThat(
             superuserRole.indices()
-                .allowedIndicesMatcher(randomFrom(IndexAction.NAME, DeleteIndexAction.NAME))
+                .allowedIndicesMatcher(randomFrom(TransportIndexAction.NAME, DeleteIndexAction.NAME))
                 .test(mockIndexAbstraction(internalSecurityIndex)),
             is(false)
         );
@@ -2239,7 +2283,7 @@ public class ReservedRolesStoreTests extends ESTestCase {
             RESTRICTED_INDICES
         );
         assertThat(logstashSystemRole.cluster().check(ClusterHealthAction.NAME, request, authentication), is(true));
-        assertThat(logstashSystemRole.cluster().check(ClusterStateAction.NAME, request, authentication), is(true));
+        assertThat(logstashSystemRole.cluster().check(TransportClusterStateAction.NAME, request, authentication), is(true));
         assertThat(logstashSystemRole.cluster().check(ClusterStatsAction.NAME, request, authentication), is(true));
         assertThat(logstashSystemRole.cluster().check(PutIndexTemplateAction.NAME, request, authentication), is(false));
         assertThat(logstashSystemRole.cluster().check(ClusterRerouteAction.NAME, request, authentication), is(false));
@@ -2249,9 +2293,12 @@ public class ReservedRolesStoreTests extends ESTestCase {
 
         assertThat(logstashSystemRole.runAs().check(randomAlphaOfLengthBetween(1, 30)), is(false));
 
-        assertThat(logstashSystemRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(mockIndexAbstraction("foo")), is(false));
         assertThat(
-            logstashSystemRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(mockIndexAbstraction(".reporting")),
+            logstashSystemRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(mockIndexAbstraction("foo")),
+            is(false)
+        );
+        assertThat(
+            logstashSystemRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(mockIndexAbstraction(".reporting")),
             is(false)
         );
         assertThat(
@@ -2277,7 +2324,7 @@ public class ReservedRolesStoreTests extends ESTestCase {
             RESTRICTED_INDICES
         );
         assertThat(beatsAdminRole.cluster().check(ClusterHealthAction.NAME, request, authentication), is(false));
-        assertThat(beatsAdminRole.cluster().check(ClusterStateAction.NAME, request, authentication), is(false));
+        assertThat(beatsAdminRole.cluster().check(TransportClusterStateAction.NAME, request, authentication), is(false));
         assertThat(beatsAdminRole.cluster().check(ClusterStatsAction.NAME, request, authentication), is(false));
         assertThat(beatsAdminRole.cluster().check(PutIndexTemplateAction.NAME, request, authentication), is(false));
         assertThat(beatsAdminRole.cluster().check(ClusterRerouteAction.NAME, request, authentication), is(false));
@@ -2303,12 +2350,12 @@ public class ReservedRolesStoreTests extends ESTestCase {
         assertThat(beatsAdminRole.indices().allowedIndicesMatcher("indices:bar").test(mockIndexAbstraction(index)), is(true));
         assertThat(beatsAdminRole.indices().allowedIndicesMatcher(DeleteIndexAction.NAME).test(mockIndexAbstraction(index)), is(true));
         assertThat(beatsAdminRole.indices().allowedIndicesMatcher(CreateIndexAction.NAME).test(mockIndexAbstraction(index)), is(true));
-        assertThat(beatsAdminRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(mockIndexAbstraction(index)), is(true));
-        assertThat(beatsAdminRole.indices().allowedIndicesMatcher(DeleteAction.NAME).test(mockIndexAbstraction(index)), is(true));
+        assertThat(beatsAdminRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(mockIndexAbstraction(index)), is(true));
+        assertThat(beatsAdminRole.indices().allowedIndicesMatcher(TransportDeleteAction.NAME).test(mockIndexAbstraction(index)), is(true));
         assertThat(beatsAdminRole.indices().allowedIndicesMatcher(UpdateSettingsAction.NAME).test(mockIndexAbstraction(index)), is(true));
         assertThat(beatsAdminRole.indices().allowedIndicesMatcher(SearchAction.NAME).test(mockIndexAbstraction(index)), is(true));
         assertThat(beatsAdminRole.indices().allowedIndicesMatcher(MultiSearchAction.NAME).test(mockIndexAbstraction(index)), is(true));
-        assertThat(beatsAdminRole.indices().allowedIndicesMatcher(GetAction.NAME).test(mockIndexAbstraction(index)), is(true));
+        assertThat(beatsAdminRole.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(mockIndexAbstraction(index)), is(true));
 
         assertNoAccessAllowed(beatsAdminRole, TestRestrictedIndices.SAMPLE_RESTRICTED_NAMES);
         assertNoAccessAllowed(beatsAdminRole, XPackPlugin.ASYNC_RESULTS_INDEX + randomAlphaOfLengthBetween(0, 2));
@@ -2324,7 +2371,7 @@ public class ReservedRolesStoreTests extends ESTestCase {
 
         Role beatsSystemRole = Role.buildFromRoleDescriptor(roleDescriptor, new FieldPermissionsCache(Settings.EMPTY), RESTRICTED_INDICES);
         assertThat(beatsSystemRole.cluster().check(ClusterHealthAction.NAME, request, authentication), is(true));
-        assertThat(beatsSystemRole.cluster().check(ClusterStateAction.NAME, request, authentication), is(true));
+        assertThat(beatsSystemRole.cluster().check(TransportClusterStateAction.NAME, request, authentication), is(true));
         assertThat(beatsSystemRole.cluster().check(ClusterStatsAction.NAME, request, authentication), is(true));
         assertThat(beatsSystemRole.cluster().check(PutIndexTemplateAction.NAME, request, authentication), is(false));
         assertThat(beatsSystemRole.cluster().check(ClusterRerouteAction.NAME, request, authentication), is(false));
@@ -2341,15 +2388,21 @@ public class ReservedRolesStoreTests extends ESTestCase {
 
         final String index = ".monitoring-beats-" + randomIntBetween(0, 5);
         logger.info("beats monitoring index name [{}]", index);
-        assertThat(beatsSystemRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(mockIndexAbstraction("foo")), is(false));
-        assertThat(beatsSystemRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(mockIndexAbstraction(".reporting")), is(false));
+        assertThat(beatsSystemRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(mockIndexAbstraction("foo")), is(false));
+        assertThat(
+            beatsSystemRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(mockIndexAbstraction(".reporting")),
+            is(false)
+        );
         assertThat(
             beatsSystemRole.indices().allowedIndicesMatcher("indices:foo").test(mockIndexAbstraction(randomAlphaOfLengthBetween(8, 24))),
             is(false)
         );
         assertThat(beatsSystemRole.indices().allowedIndicesMatcher(CreateIndexAction.NAME).test(mockIndexAbstraction(index)), is(true));
-        assertThat(beatsSystemRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(mockIndexAbstraction(index)), is(true));
-        assertThat(beatsSystemRole.indices().allowedIndicesMatcher(DeleteAction.NAME).test(mockIndexAbstraction(index)), is(false));
+        assertThat(beatsSystemRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(mockIndexAbstraction(index)), is(true));
+        assertThat(
+            beatsSystemRole.indices().allowedIndicesMatcher(TransportDeleteAction.NAME).test(mockIndexAbstraction(index)),
+            is(false)
+        );
         assertThat(beatsSystemRole.indices().allowedIndicesMatcher(BulkAction.NAME).test(mockIndexAbstraction(index)), is(true));
 
         assertNoAccessAllowed(beatsSystemRole, TestRestrictedIndices.SAMPLE_RESTRICTED_NAMES);
@@ -2366,7 +2419,7 @@ public class ReservedRolesStoreTests extends ESTestCase {
 
         Role APMSystemRole = Role.buildFromRoleDescriptor(roleDescriptor, new FieldPermissionsCache(Settings.EMPTY), RESTRICTED_INDICES);
         assertThat(APMSystemRole.cluster().check(ClusterHealthAction.NAME, request, authentication), is(true));
-        assertThat(APMSystemRole.cluster().check(ClusterStateAction.NAME, request, authentication), is(true));
+        assertThat(APMSystemRole.cluster().check(TransportClusterStateAction.NAME, request, authentication), is(true));
         assertThat(APMSystemRole.cluster().check(ClusterStatsAction.NAME, request, authentication), is(true));
         assertThat(APMSystemRole.cluster().check(PutIndexTemplateAction.NAME, request, authentication), is(false));
         assertThat(APMSystemRole.cluster().check(ClusterRerouteAction.NAME, request, authentication), is(false));
@@ -2376,8 +2429,11 @@ public class ReservedRolesStoreTests extends ESTestCase {
 
         assertThat(APMSystemRole.runAs().check(randomAlphaOfLengthBetween(1, 30)), is(false));
 
-        assertThat(APMSystemRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(mockIndexAbstraction("foo")), is(false));
-        assertThat(APMSystemRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(mockIndexAbstraction(".reporting")), is(false));
+        assertThat(APMSystemRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(mockIndexAbstraction("foo")), is(false));
+        assertThat(
+            APMSystemRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(mockIndexAbstraction(".reporting")),
+            is(false)
+        );
         assertThat(
             APMSystemRole.indices().allowedIndicesMatcher("indices:foo").test(mockIndexAbstraction(randomAlphaOfLengthBetween(8, 24))),
             is(false)
@@ -2391,7 +2447,7 @@ public class ReservedRolesStoreTests extends ESTestCase {
             APMSystemRole.indices().allowedIndicesMatcher("indices:data/write/index:op_type/create").test(mockIndexAbstraction(index)),
             is(true)
         );
-        assertThat(APMSystemRole.indices().allowedIndicesMatcher(DeleteAction.NAME).test(mockIndexAbstraction(index)), is(false));
+        assertThat(APMSystemRole.indices().allowedIndicesMatcher(TransportDeleteAction.NAME).test(mockIndexAbstraction(index)), is(false));
         assertThat(APMSystemRole.indices().allowedIndicesMatcher(BulkAction.NAME).test(mockIndexAbstraction(index)), is(true));
 
         assertThat(
@@ -2960,7 +3016,7 @@ public class ReservedRolesStoreTests extends ESTestCase {
 
         assertThat(role.runAs().check(randomAlphaOfLengthBetween(1, 30)), is(false));
 
-        assertThat(role.indices().allowedIndicesMatcher(IndexAction.NAME).test(mockIndexAbstraction("foo")), is(false));
+        assertThat(role.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(mockIndexAbstraction("foo")), is(false));
 
         for (String index : new String[] { Watch.INDEX, HistoryStoreField.DATA_STREAM, TriggeredWatchStoreField.INDEX_NAME }) {
             assertOnlyReadAllowed(role, index);
@@ -2991,9 +3047,9 @@ public class ReservedRolesStoreTests extends ESTestCase {
 
         assertThat(role.runAs().check(randomAlphaOfLengthBetween(1, 30)), is(false));
 
-        assertThat(role.indices().allowedIndicesMatcher(IndexAction.NAME).test(mockIndexAbstraction("foo")), is(false));
+        assertThat(role.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(mockIndexAbstraction("foo")), is(false));
         assertThat(
-            role.indices().allowedIndicesMatcher(IndexAction.NAME).test(mockIndexAbstraction(TriggeredWatchStoreField.INDEX_NAME)),
+            role.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(mockIndexAbstraction(TriggeredWatchStoreField.INDEX_NAME)),
             is(false)
         );
 
@@ -3022,7 +3078,7 @@ public class ReservedRolesStoreTests extends ESTestCase {
         );
         // No cluster privileges
         assertThat(role.cluster().check(ClusterHealthAction.NAME, request, authentication), is(false));
-        assertThat(role.cluster().check(ClusterStateAction.NAME, request, authentication), is(false));
+        assertThat(role.cluster().check(TransportClusterStateAction.NAME, request, authentication), is(false));
         assertThat(role.cluster().check(ClusterStatsAction.NAME, request, authentication), is(false));
         assertThat(role.cluster().check(PutIndexTemplateAction.NAME, request, authentication), is(false));
         assertThat(role.cluster().check(ClusterRerouteAction.NAME, request, authentication), is(false));
@@ -3094,7 +3150,7 @@ public class ReservedRolesStoreTests extends ESTestCase {
 
         // No cluster privileges
         assertThat(role.cluster().check(ClusterHealthAction.NAME, request, authentication), is(false));
-        assertThat(role.cluster().check(ClusterStateAction.NAME, request, authentication), is(false));
+        assertThat(role.cluster().check(TransportClusterStateAction.NAME, request, authentication), is(false));
         assertThat(role.cluster().check(ClusterStatsAction.NAME, request, authentication), is(false));
         assertThat(role.cluster().check(PutIndexTemplateAction.NAME, request, authentication), is(false));
         assertThat(role.cluster().check(ClusterRerouteAction.NAME, request, authentication), is(false));
@@ -3207,12 +3263,12 @@ public class ReservedRolesStoreTests extends ESTestCase {
         assertThat(role.indices().allowedIndicesMatcher(DeleteIndexAction.NAME).test(mockIndexAbstraction(index)), is(true));
         assertThat(role.indices().allowedIndicesMatcher(GetIndexAction.NAME).test(mockIndexAbstraction(index)), is(true));
         assertThat(role.indices().allowedIndicesMatcher(CreateIndexAction.NAME).test(mockIndexAbstraction(index)), is(true));
-        assertThat(role.indices().allowedIndicesMatcher(IndexAction.NAME).test(mockIndexAbstraction(index)), is(true));
-        assertThat(role.indices().allowedIndicesMatcher(DeleteAction.NAME).test(mockIndexAbstraction(index)), is(true));
+        assertThat(role.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(mockIndexAbstraction(index)), is(true));
+        assertThat(role.indices().allowedIndicesMatcher(TransportDeleteAction.NAME).test(mockIndexAbstraction(index)), is(true));
         assertThat(role.indices().allowedIndicesMatcher(UpdateSettingsAction.NAME).test(mockIndexAbstraction(index)), is(true));
         assertThat(role.indices().allowedIndicesMatcher(SearchAction.NAME).test(mockIndexAbstraction(index)), is(true));
         assertThat(role.indices().allowedIndicesMatcher(MultiSearchAction.NAME).test(mockIndexAbstraction(index)), is(true));
-        assertThat(role.indices().allowedIndicesMatcher(GetAction.NAME).test(mockIndexAbstraction(index)), is(true));
+        assertThat(role.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(mockIndexAbstraction(index)), is(true));
         // inherits from 'all'
         assertThat(role.indices().allowedIndicesMatcher(READ_CROSS_CLUSTER_NAME).test(mockIndexAbstraction(index)), is(true));
     }
@@ -3220,10 +3276,10 @@ public class ReservedRolesStoreTests extends ESTestCase {
     private void assertReadWriteDocsAndMaintenanceButNotDeleteIndexAllowed(Role role, String index) {
         assertThat(role.indices().allowedIndicesMatcher(DeleteIndexAction.NAME).test(mockIndexAbstraction(index)), is(false));
         assertThat(role.indices().allowedIndicesMatcher(SearchAction.NAME).test(mockIndexAbstraction(index)), is(true));
-        assertThat(role.indices().allowedIndicesMatcher(GetAction.NAME).test(mockIndexAbstraction(index)), is(true));
-        assertThat(role.indices().allowedIndicesMatcher(IndexAction.NAME).test(mockIndexAbstraction(index)), is(true));
-        assertThat(role.indices().allowedIndicesMatcher(UpdateAction.NAME).test(mockIndexAbstraction(index)), is(true));
-        assertThat(role.indices().allowedIndicesMatcher(DeleteAction.NAME).test(mockIndexAbstraction(index)), is(true));
+        assertThat(role.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(mockIndexAbstraction(index)), is(true));
+        assertThat(role.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(mockIndexAbstraction(index)), is(true));
+        assertThat(role.indices().allowedIndicesMatcher(TransportUpdateAction.NAME).test(mockIndexAbstraction(index)), is(true));
+        assertThat(role.indices().allowedIndicesMatcher(TransportDeleteAction.NAME).test(mockIndexAbstraction(index)), is(true));
         assertThat(role.indices().allowedIndicesMatcher(BulkAction.NAME).test(mockIndexAbstraction(index)), is(true));
         assertThat(role.indices().allowedIndicesMatcher("indices:admin/refresh*").test(mockIndexAbstraction(index)), is(true));
         assertThat(role.indices().allowedIndicesMatcher("indices:admin/flush*").test(mockIndexAbstraction(index)), is(true));
@@ -3234,10 +3290,10 @@ public class ReservedRolesStoreTests extends ESTestCase {
     private void assertReadWriteDocsButNotDeleteIndexAllowed(Role role, String index) {
         assertThat(role.indices().allowedIndicesMatcher(DeleteIndexAction.NAME).test(mockIndexAbstraction(index)), is(false));
         assertThat(role.indices().allowedIndicesMatcher(SearchAction.NAME).test(mockIndexAbstraction(index)), is(true));
-        assertThat(role.indices().allowedIndicesMatcher(GetAction.NAME).test(mockIndexAbstraction(index)), is(true));
-        assertThat(role.indices().allowedIndicesMatcher(IndexAction.NAME).test(mockIndexAbstraction(index)), is(true));
-        assertThat(role.indices().allowedIndicesMatcher(UpdateAction.NAME).test(mockIndexAbstraction(index)), is(true));
-        assertThat(role.indices().allowedIndicesMatcher(DeleteAction.NAME).test(mockIndexAbstraction(index)), is(true));
+        assertThat(role.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(mockIndexAbstraction(index)), is(true));
+        assertThat(role.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(mockIndexAbstraction(index)), is(true));
+        assertThat(role.indices().allowedIndicesMatcher(TransportUpdateAction.NAME).test(mockIndexAbstraction(index)), is(true));
+        assertThat(role.indices().allowedIndicesMatcher(TransportDeleteAction.NAME).test(mockIndexAbstraction(index)), is(true));
         assertThat(role.indices().allowedIndicesMatcher(BulkAction.NAME).test(mockIndexAbstraction(index)), is(true));
     }
 
@@ -3246,10 +3302,10 @@ public class ReservedRolesStoreTests extends ESTestCase {
         assertThat(role.indices().allowedIndicesMatcher(CreateIndexAction.NAME).test(mockIndexAbstraction(index)), is(false));
         assertThat(role.indices().allowedIndicesMatcher(UpdateSettingsAction.NAME).test(mockIndexAbstraction(index)), is(false));
         assertThat(role.indices().allowedIndicesMatcher(SearchAction.NAME).test(mockIndexAbstraction(index)), is(true));
-        assertThat(role.indices().allowedIndicesMatcher(GetAction.NAME).test(mockIndexAbstraction(index)), is(true));
-        assertThat(role.indices().allowedIndicesMatcher(IndexAction.NAME).test(mockIndexAbstraction(index)), is(false));
-        assertThat(role.indices().allowedIndicesMatcher(UpdateAction.NAME).test(mockIndexAbstraction(index)), is(false));
-        assertThat(role.indices().allowedIndicesMatcher(DeleteAction.NAME).test(mockIndexAbstraction(index)), is(false));
+        assertThat(role.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(mockIndexAbstraction(index)), is(true));
+        assertThat(role.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(mockIndexAbstraction(index)), is(false));
+        assertThat(role.indices().allowedIndicesMatcher(TransportUpdateAction.NAME).test(mockIndexAbstraction(index)), is(false));
+        assertThat(role.indices().allowedIndicesMatcher(TransportDeleteAction.NAME).test(mockIndexAbstraction(index)), is(false));
         assertThat(role.indices().allowedIndicesMatcher(BulkAction.NAME).test(mockIndexAbstraction(index)), is(false));
 
         assertNoAccessAllowed(role, TestRestrictedIndices.SAMPLE_RESTRICTED_NAMES);
@@ -3265,7 +3321,7 @@ public class ReservedRolesStoreTests extends ESTestCase {
             ClusterSearchShardsAction.NAME,
             SearchShardsAction.NAME,
             ValidateQueryAction.NAME + "*",
-            GetSettingsAction.NAME,
+            TransportGetSettingsAction.NAME,
             ExplainLifecycleAction.NAME,
             GetDataStreamAction.NAME,
             ResolveIndexAction.NAME,
@@ -3285,10 +3341,10 @@ public class ReservedRolesStoreTests extends ESTestCase {
         assertThat(role.indices().allowedIndicesMatcher(CreateIndexAction.NAME).test(mockIndexAbstraction(index)), is(false));
         assertThat(role.indices().allowedIndicesMatcher(UpdateSettingsAction.NAME).test(mockIndexAbstraction(index)), is(false));
         assertThat(role.indices().allowedIndicesMatcher(SearchAction.NAME).test(mockIndexAbstraction(index)), is(false));
-        assertThat(role.indices().allowedIndicesMatcher(GetAction.NAME).test(mockIndexAbstraction(index)), is(false));
-        assertThat(role.indices().allowedIndicesMatcher(IndexAction.NAME).test(mockIndexAbstraction(index)), is(false));
-        assertThat(role.indices().allowedIndicesMatcher(UpdateAction.NAME).test(mockIndexAbstraction(index)), is(false));
-        assertThat(role.indices().allowedIndicesMatcher(DeleteAction.NAME).test(mockIndexAbstraction(index)), is(false));
+        assertThat(role.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(mockIndexAbstraction(index)), is(false));
+        assertThat(role.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(mockIndexAbstraction(index)), is(false));
+        assertThat(role.indices().allowedIndicesMatcher(TransportUpdateAction.NAME).test(mockIndexAbstraction(index)), is(false));
+        assertThat(role.indices().allowedIndicesMatcher(TransportDeleteAction.NAME).test(mockIndexAbstraction(index)), is(false));
         assertThat(role.indices().allowedIndicesMatcher(BulkAction.NAME).test(mockIndexAbstraction(index)), is(false));
     }
 
@@ -3317,9 +3373,18 @@ public class ReservedRolesStoreTests extends ESTestCase {
 
         assertThat(logstashAdminRole.runAs().check(randomAlphaOfLengthBetween(1, 30)), is(false));
 
-        assertThat(logstashAdminRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(mockIndexAbstraction("foo")), is(false));
-        assertThat(logstashAdminRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(mockIndexAbstraction(".reporting")), is(false));
-        assertThat(logstashAdminRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(mockIndexAbstraction(".logstash")), is(true));
+        assertThat(
+            logstashAdminRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(mockIndexAbstraction("foo")),
+            is(false)
+        );
+        assertThat(
+            logstashAdminRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(mockIndexAbstraction(".reporting")),
+            is(false)
+        );
+        assertThat(
+            logstashAdminRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(mockIndexAbstraction(".logstash")),
+            is(true)
+        );
         assertThat(
             logstashAdminRole.indices().allowedIndicesMatcher("indices:foo").test(mockIndexAbstraction(randomAlphaOfLengthBetween(8, 24))),
             is(false)
@@ -3327,11 +3392,17 @@ public class ReservedRolesStoreTests extends ESTestCase {
 
         final String index = ".logstash-" + randomIntBetween(0, 5);
 
-        assertThat(logstashAdminRole.indices().allowedIndicesMatcher(DeleteAction.NAME).test(mockIndexAbstraction(index)), is(true));
+        assertThat(
+            logstashAdminRole.indices().allowedIndicesMatcher(TransportDeleteAction.NAME).test(mockIndexAbstraction(index)),
+            is(true)
+        );
         assertThat(logstashAdminRole.indices().allowedIndicesMatcher(DeleteIndexAction.NAME).test(mockIndexAbstraction(index)), is(true));
         assertThat(logstashAdminRole.indices().allowedIndicesMatcher(CreateIndexAction.NAME).test(mockIndexAbstraction(index)), is(true));
-        assertThat(logstashAdminRole.indices().allowedIndicesMatcher(IndexAction.NAME).test(mockIndexAbstraction(index)), is(true));
-        assertThat(logstashAdminRole.indices().allowedIndicesMatcher(GetAction.NAME).test(mockIndexAbstraction(index)), is(true));
+        assertThat(
+            logstashAdminRole.indices().allowedIndicesMatcher(TransportIndexAction.NAME).test(mockIndexAbstraction(index)),
+            is(true)
+        );
+        assertThat(logstashAdminRole.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(mockIndexAbstraction(index)), is(true));
         assertThat(logstashAdminRole.indices().allowedIndicesMatcher(SearchAction.NAME).test(mockIndexAbstraction(index)), is(true));
         assertThat(logstashAdminRole.indices().allowedIndicesMatcher(MultiSearchAction.NAME).test(mockIndexAbstraction(index)), is(true));
         assertThat(

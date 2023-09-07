@@ -9,9 +9,9 @@
 package org.elasticsearch.rest.action.admin.cluster;
 
 import org.elasticsearch.ElasticsearchTimeoutException;
-import org.elasticsearch.action.admin.cluster.state.ClusterStateAction;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
+import org.elasticsearch.action.admin.cluster.state.TransportClusterStateAction;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.client.internal.node.NodeClient;
 import org.elasticsearch.cluster.ClusterState;
@@ -111,7 +111,7 @@ public class RestClusterStateAction extends BaseRestHandler {
         settingsFilter.addFilterSettingParams(request);
 
         return channel -> new RestCancellableNodeClient(client, request.getHttpChannel()).execute(
-            ClusterStateAction.INSTANCE,
+            TransportClusterStateAction.ACTION_TYPE,
             clusterStateRequest,
             new RestChunkedToXContentListener<RestClusterStateResponse>(
                 channel,

@@ -14,15 +14,15 @@ import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.DelegatingActionListener;
 import org.elasticsearch.action.DocWriteRequest;
 import org.elasticsearch.action.DocWriteResponse;
-import org.elasticsearch.action.delete.DeleteAction;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
-import org.elasticsearch.action.get.GetAction;
+import org.elasticsearch.action.delete.TransportDeleteAction;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
-import org.elasticsearch.action.index.IndexAction;
+import org.elasticsearch.action.get.TransportGetAction;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.index.TransportIndexAction;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.IndicesOptions;
@@ -128,14 +128,20 @@ public class JobConfigProvider {
                 .opType(DocWriteRequest.OpType.CREATE)
                 .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
 
-            executeAsyncWithOrigin(client, ML_ORIGIN, IndexAction.INSTANCE, indexRequest, ActionListener.wrap(listener::onResponse, e -> {
-                if (ExceptionsHelper.unwrapCause(e) instanceof VersionConflictEngineException) {
-                    // the job already exists
-                    listener.onFailure(ExceptionsHelper.jobAlreadyExists(job.getId()));
-                } else {
-                    listener.onFailure(e);
-                }
-            }));
+            executeAsyncWithOrigin(
+                client,
+                ML_ORIGIN,
+                TransportIndexAction.ACTION_TYPE,
+                indexRequest,
+                ActionListener.wrap(listener::onResponse, e -> {
+                    if (ExceptionsHelper.unwrapCause(e) instanceof VersionConflictEngineException) {
+                        // the job already exists
+                        listener.onFailure(ExceptionsHelper.jobAlreadyExists(job.getId()));
+                    } else {
+                        listener.onFailure(e);
+                    }
+                })
+            );
 
         } catch (IOException e) {
             listener.onFailure(new ElasticsearchParseException("Failed to serialise job with id [" + job.getId() + "]", e));
@@ -197,16 +203,22 @@ public class JobConfigProvider {
         DeleteRequest request = new DeleteRequest(MlConfigIndex.indexName(), Job.documentId(jobId));
         request.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
 
-        executeAsyncWithOrigin(client, ML_ORIGIN, DeleteAction.INSTANCE, request, actionListener.delegateFailure((l, deleteResponse) -> {
-            if (errorIfMissing) {
-                if (deleteResponse.getResult() == DocWriteResponse.Result.NOT_FOUND) {
-                    l.onFailure(ExceptionsHelper.missingJobException(jobId));
-                    return;
+        executeAsyncWithOrigin(
+            client,
+            ML_ORIGIN,
+            TransportDeleteAction.ACTION_TYPE,
+            request,
+            actionListener.delegateFailure((l, deleteResponse) -> {
+                if (errorIfMissing) {
+                    if (deleteResponse.getResult() == DocWriteResponse.Result.NOT_FOUND) {
+                        l.onFailure(ExceptionsHelper.missingJobException(jobId));
+                        return;
+                    }
+                    assert deleteResponse.getResult() == DocWriteResponse.Result.DELETED;
                 }
-                assert deleteResponse.getResult() == DocWriteResponse.Result.DELETED;
-            }
-            l.onResponse(deleteResponse);
-        }));
+                l.onResponse(deleteResponse);
+            })
+        );
     }
 
     /**
@@ -224,37 +236,43 @@ public class JobConfigProvider {
     public void updateJob(String jobId, JobUpdate update, ByteSizeValue maxModelMemoryLimit, ActionListener<Job> updatedJobListener) {
         GetRequest getRequest = new GetRequest(MlConfigIndex.indexName(), Job.documentId(jobId));
 
-        executeAsyncWithOrigin(client, ML_ORIGIN, GetAction.INSTANCE, getRequest, new DelegatingActionListener<>(updatedJobListener) {
-            @Override
-            public void onResponse(GetResponse getResponse) {
-                if (getResponse.isExists() == false) {
-                    delegate.onFailure(ExceptionsHelper.missingJobException(jobId));
-                    return;
-                }
+        executeAsyncWithOrigin(
+            client,
+            ML_ORIGIN,
+            TransportGetAction.ACTION_TYPE,
+            getRequest,
+            new DelegatingActionListener<>(updatedJobListener) {
+                @Override
+                public void onResponse(GetResponse getResponse) {
+                    if (getResponse.isExists() == false) {
+                        delegate.onFailure(ExceptionsHelper.missingJobException(jobId));
+                        return;
+                    }
 
-                final long seqNo = getResponse.getSeqNo();
-                final long primaryTerm = getResponse.getPrimaryTerm();
-                BytesReference source = getResponse.getSourceAsBytesRef();
-                Job.Builder jobBuilder;
-                try {
-                    jobBuilder = parseJobLenientlyFromSource(source);
-                } catch (IOException e) {
-                    delegate.onFailure(new ElasticsearchParseException("Failed to parse job configuration [" + jobId + "]", e));
-                    return;
-                }
+                    final long seqNo = getResponse.getSeqNo();
+                    final long primaryTerm = getResponse.getPrimaryTerm();
+                    BytesReference source = getResponse.getSourceAsBytesRef();
+                    Job.Builder jobBuilder;
+                    try {
+                        jobBuilder = parseJobLenientlyFromSource(source);
+                    } catch (IOException e) {
+                        delegate.onFailure(new ElasticsearchParseException("Failed to parse job configuration [" + jobId + "]", e));
+                        return;
+                    }
 
-                Job updatedJob;
-                try {
-                    // Applying the update may result in a validation error
-                    updatedJob = update.mergeWithJob(jobBuilder.build(), maxModelMemoryLimit);
-                } catch (Exception e) {
-                    delegate.onFailure(e);
-                    return;
-                }
+                    Job updatedJob;
+                    try {
+                        // Applying the update may result in a validation error
+                        updatedJob = update.mergeWithJob(jobBuilder.build(), maxModelMemoryLimit);
+                    } catch (Exception e) {
+                        delegate.onFailure(e);
+                        return;
+                    }
 
-                indexUpdatedJob(updatedJob, seqNo, primaryTerm, delegate);
+                    indexUpdatedJob(updatedJob, seqNo, primaryTerm, delegate);
+                }
             }
-        });
+        );
     }
 
     /**
@@ -286,7 +304,7 @@ public class JobConfigProvider {
     ) {
         GetRequest getRequest = new GetRequest(MlConfigIndex.indexName(), Job.documentId(jobId));
 
-        executeAsyncWithOrigin(client, ML_ORIGIN, GetAction.INSTANCE, getRequest, ActionListener.wrap(getResponse -> {
+        executeAsyncWithOrigin(client, ML_ORIGIN, TransportGetAction.ACTION_TYPE, getRequest, ActionListener.wrap(getResponse -> {
             if (getResponse.isExists() == false) {
                 listener.onFailure(ExceptionsHelper.missingJobException(jobId));
                 return;
@@ -333,7 +351,7 @@ public class JobConfigProvider {
             indexRequest.setIfSeqNo(seqNo);
             indexRequest.setIfPrimaryTerm(primaryTerm);
 
-            executeAsyncWithOrigin(client, ML_ORIGIN, IndexAction.INSTANCE, indexRequest, ActionListener.wrap(indexResponse -> {
+            executeAsyncWithOrigin(client, ML_ORIGIN, TransportIndexAction.ACTION_TYPE, indexRequest, ActionListener.wrap(indexResponse -> {
                 assert indexResponse.getResult() == DocWriteResponse.Result.UPDATED;
                 updatedJobListener.onResponse(updatedJob);
             }, updatedJobListener::onFailure));
@@ -367,7 +385,7 @@ public class JobConfigProvider {
             getRequest.setParentTask(parentTaskId);
         }
 
-        executeAsyncWithOrigin(client, ML_ORIGIN, GetAction.INSTANCE, getRequest, ActionListener.wrap(getResponse -> {
+        executeAsyncWithOrigin(client, ML_ORIGIN, TransportGetAction.ACTION_TYPE, getRequest, ActionListener.wrap(getResponse -> {
             if (getResponse.isExists() == false) {
                 if (errorIfMissing) {
                     listener.onFailure(ExceptionsHelper.missingJobException(jobId));

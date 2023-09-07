@@ -17,8 +17,8 @@ import org.elasticsearch.action.admin.indices.close.CloseIndexResponse;
 import org.elasticsearch.action.admin.indices.refresh.RefreshAction;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequestBuilder;
 import org.elasticsearch.action.admin.indices.refresh.RefreshResponse;
-import org.elasticsearch.action.get.GetAction;
 import org.elasticsearch.action.get.GetRequest;
+import org.elasticsearch.action.get.TransportGetAction;
 import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.Request;
@@ -2804,7 +2804,7 @@ public class ApiKeyIntegTests extends SecurityIntegTestCase {
     }
 
     private Map<String, Object> getApiKeyDocument(String apiKeyId) {
-        return client().execute(GetAction.INSTANCE, new GetRequest(SECURITY_MAIN_ALIAS, apiKeyId)).actionGet().getSource();
+        return client().execute(TransportGetAction.ACTION_TYPE, new GetRequest(SECURITY_MAIN_ALIAS, apiKeyId)).actionGet().getSource();
     }
 
     private ApiKey getApiKeyInfo(Client client, String apiKeyId, boolean withLimitedBy, boolean useGetApiKey) {

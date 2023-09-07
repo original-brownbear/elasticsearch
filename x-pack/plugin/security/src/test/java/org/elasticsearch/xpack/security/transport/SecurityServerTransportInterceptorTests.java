@@ -10,8 +10,8 @@ import org.elasticsearch.ElasticsearchSecurityException;
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.TransportVersions;
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.admin.cluster.state.ClusterStateAction;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
+import org.elasticsearch.action.admin.cluster.state.TransportClusterStateAction;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexAction;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.support.DestructiveOperations;
@@ -682,7 +682,7 @@ public class SecurityServerTransportInterceptorTests extends ESTestCase {
             action = randomAlphaOfLengthBetween(5, 30);
             request = mock(TransportRequest.class);
         } else {
-            action = ClusterStateAction.NAME;
+            action = TransportClusterStateAction.NAME;
             request = mock(ClusterStateRequest.class);
         }
         doTestSendWithCrossClusterAccessHeaders(
@@ -723,7 +723,7 @@ public class SecurityServerTransportInterceptorTests extends ESTestCase {
             authc -> authc.getAuthenticationType() == Authentication.AuthenticationType.INTERNAL,
             () -> AuthenticationTestHelper.builder().build()
         );
-        final String action = ClusterStateAction.NAME;
+        final String action = TransportClusterStateAction.NAME;
         final TransportRequest request = mock(ClusterStateRequest.class);
         doTestSendWithCrossClusterAccessHeaders(true, action, request, authentication);
     }

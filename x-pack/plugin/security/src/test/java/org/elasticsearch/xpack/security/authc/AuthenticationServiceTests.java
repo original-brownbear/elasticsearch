@@ -14,18 +14,18 @@ import org.apache.lucene.util.SetOnce;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchSecurityException;
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.get.GetAction;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetRequestBuilder;
 import org.elasticsearch.action.get.GetResponse;
-import org.elasticsearch.action.get.MultiGetAction;
 import org.elasticsearch.action.get.MultiGetRequestBuilder;
-import org.elasticsearch.action.index.IndexAction;
+import org.elasticsearch.action.get.TransportGetAction;
+import org.elasticsearch.action.get.TransportMultiGetAction;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.index.TransportIndexAction;
 import org.elasticsearch.action.support.PlainActionFuture;
-import org.elasticsearch.action.update.UpdateAction;
+import org.elasticsearch.action.update.TransportUpdateAction;
 import org.elasticsearch.action.update.UpdateRequestBuilder;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
@@ -287,9 +287,9 @@ public class AuthenticationServiceTests extends ESTestCase {
         threadContext = threadPool.getThreadContext();
         when(client.threadPool()).thenReturn(threadPool);
         when(client.settings()).thenReturn(settings);
-        when(client.prepareIndex(nullable(String.class))).thenReturn(new IndexRequestBuilder(client, IndexAction.INSTANCE));
+        when(client.prepareIndex(nullable(String.class))).thenReturn(new IndexRequestBuilder(client, TransportIndexAction.ACTION_TYPE));
         when(client.prepareUpdate(nullable(String.class), nullable(String.class))).thenReturn(
-            new UpdateRequestBuilder(client, UpdateAction.INSTANCE)
+            new UpdateRequestBuilder(client, TransportUpdateAction.ACTION_TYPE)
         );
         doAnswer(invocationOnMock -> {
             @SuppressWarnings("unchecked")
@@ -305,9 +305,9 @@ public class AuthenticationServiceTests extends ESTestCase {
                 )
             );
             return null;
-        }).when(client).execute(eq(IndexAction.INSTANCE), any(IndexRequest.class), anyActionListener());
+        }).when(client).execute(eq(TransportIndexAction.ACTION_TYPE), any(IndexRequest.class), anyActionListener());
         doAnswer(invocationOnMock -> {
-            GetRequestBuilder builder = new GetRequestBuilder(client, GetAction.INSTANCE);
+            GetRequestBuilder builder = new GetRequestBuilder(client, TransportGetAction.ACTION_TYPE);
             builder.setIndex((String) invocationOnMock.getArguments()[0]).setId((String) invocationOnMock.getArguments()[1]);
             return builder;
         }).when(client).prepareGet(nullable(String.class), nullable(String.class));
@@ -1907,7 +1907,7 @@ public class AuthenticationServiceTests extends ESTestCase {
             );
         }
         String token = tokenFuture.get().getAccessToken();
-        when(client.prepareMultiGet()).thenReturn(new MultiGetRequestBuilder(client, MultiGetAction.INSTANCE));
+        when(client.prepareMultiGet()).thenReturn(new MultiGetRequestBuilder(client, TransportMultiGetAction.ACTION_TYPE));
         mockGetTokenFromAccessTokenBytes(tokenService, newTokenBytes.v1(), expected, Map.of(), false, null, client);
         when(securityIndex.freeze()).thenReturn(securityIndex);
         when(securityIndex.isAvailable()).thenReturn(true);

@@ -15,7 +15,7 @@ import org.elasticsearch.action.admin.cluster.repositories.get.GetRepositoriesAc
 import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotAction;
 import org.elasticsearch.action.admin.cluster.snapshots.get.GetSnapshotsAction;
 import org.elasticsearch.action.admin.cluster.snapshots.status.SnapshotsStatusAction;
-import org.elasticsearch.action.admin.cluster.state.ClusterStateAction;
+import org.elasticsearch.action.admin.cluster.state.TransportClusterStateAction;
 import org.elasticsearch.action.admin.indices.template.get.GetComponentTemplateAction;
 import org.elasticsearch.action.admin.indices.template.get.GetComposableIndexTemplateAction;
 import org.elasticsearch.action.admin.indices.template.get.GetIndexTemplatesAction;
@@ -126,7 +126,7 @@ public class ClusterPrivilegeResolver {
     private static final Set<String> MANAGE_ROLLUP_PATTERN = Set.of("cluster:admin/xpack/rollup/*", "cluster:monitor/xpack/rollup/*");
     private static final Set<String> MANAGE_CCR_PATTERN = Set.of(
         "cluster:admin/xpack/ccr/*",
-        ClusterStateAction.NAME,
+        TransportClusterStateAction.NAME,
         HasPrivilegesAction.NAME
     );
     private static final Set<String> CREATE_SNAPSHOT_PATTERN = Set.of(
@@ -142,7 +142,7 @@ public class ClusterPrivilegeResolver {
         SnapshotsStatusAction.NAME,
         GetRepositoriesAction.NAME
     );
-    private static final Set<String> READ_CCR_PATTERN = Set.of(ClusterStateAction.NAME, HasPrivilegesAction.NAME);
+    private static final Set<String> READ_CCR_PATTERN = Set.of(TransportClusterStateAction.NAME, HasPrivilegesAction.NAME);
     private static final Set<String> MANAGE_ILM_PATTERN = Set.of("cluster:admin/ilm/*");
     private static final Set<String> READ_ILM_PATTERN = Set.of(GetLifecycleAction.NAME, GetStatusAction.NAME);
     private static final Set<String> MANAGE_SLM_PATTERN = Set.of(
@@ -170,7 +170,7 @@ public class ClusterPrivilegeResolver {
         RemoteClusterService.REMOTE_CLUSTER_HANDSHAKE_ACTION_NAME,
         RemoteClusterNodesAction.NAME,
         XPackInfoAction.NAME,
-        ClusterStateAction.NAME
+        TransportClusterStateAction.NAME
     );
     private static final Set<String> MANAGE_ENRICH_AUTOMATON = Set.of("cluster:admin/xpack/enrich/*");
 

@@ -7,8 +7,8 @@
 
 package org.elasticsearch.xpack.ml.integration;
 
-import org.elasticsearch.action.index.IndexAction;
 import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.index.TransportIndexAction;
 import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.cluster.node.DiscoveryNodeRole;
 import org.elasticsearch.common.bytes.BytesArray;
@@ -105,7 +105,7 @@ public class JobsAndModelsIT extends BaseMlIntegTestCase {
         try (XContentBuilder builder = JsonXContent.contentBuilder()) {
             modelDefinitionDoc.toXContent(builder, null);
             client().execute(
-                IndexAction.INSTANCE,
+                TransportIndexAction.ACTION_TYPE,
                 new IndexRequest(InferenceIndexConstants.nativeDefinitionStore()).source(builder)
                     .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE)
             ).actionGet();

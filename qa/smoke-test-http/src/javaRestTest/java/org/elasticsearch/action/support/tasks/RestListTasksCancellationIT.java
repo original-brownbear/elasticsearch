@@ -10,7 +10,7 @@ package org.elasticsearch.action.support.tasks;
 
 import org.apache.http.client.methods.HttpGet;
 import org.elasticsearch.action.admin.cluster.node.tasks.list.ListTasksAction;
-import org.elasticsearch.action.admin.cluster.state.ClusterStateAction;
+import org.elasticsearch.action.admin.cluster.state.TransportClusterStateAction;
 import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.client.Cancellable;
 import org.elasticsearch.client.Request;
@@ -39,10 +39,10 @@ public class RestListTasksCancellationIT extends HttpSmokeTestCase {
             wrapAsRestResponseListener(clusterStateFuture)
         );
 
-        awaitTaskWithPrefix(ClusterStateAction.NAME);
+        awaitTaskWithPrefix(TransportClusterStateAction.NAME);
 
         final Request tasksRequest = new Request(HttpGet.METHOD_NAME, "/_tasks");
-        tasksRequest.addParameter("actions", ClusterStateAction.NAME);
+        tasksRequest.addParameter("actions", TransportClusterStateAction.NAME);
         tasksRequest.addParameter("wait_for_completion", Boolean.toString(true));
         tasksRequest.addParameter("timeout", "1h");
 

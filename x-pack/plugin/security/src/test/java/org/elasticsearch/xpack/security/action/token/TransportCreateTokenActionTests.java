@@ -10,21 +10,21 @@ package org.elasticsearch.xpack.security.action.token;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchSecurityException;
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.get.GetAction;
 import org.elasticsearch.action.get.GetRequestBuilder;
 import org.elasticsearch.action.get.GetResponse;
-import org.elasticsearch.action.get.MultiGetAction;
 import org.elasticsearch.action.get.MultiGetItemResponse;
 import org.elasticsearch.action.get.MultiGetRequest;
 import org.elasticsearch.action.get.MultiGetRequestBuilder;
 import org.elasticsearch.action.get.MultiGetResponse;
-import org.elasticsearch.action.index.IndexAction;
+import org.elasticsearch.action.get.TransportGetAction;
+import org.elasticsearch.action.get.TransportMultiGetAction;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.index.TransportIndexAction;
 import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.PlainActionFuture;
-import org.elasticsearch.action.update.UpdateAction;
+import org.elasticsearch.action.update.TransportUpdateAction;
 import org.elasticsearch.action.update.UpdateRequestBuilder;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.cluster.service.ClusterService;
@@ -105,11 +105,11 @@ public class TransportCreateTokenActionTests extends ESTestCase {
         when(client.threadPool()).thenReturn(threadPool);
         when(client.settings()).thenReturn(SETTINGS);
         doAnswer(invocationOnMock -> {
-            GetRequestBuilder builder = new GetRequestBuilder(client, GetAction.INSTANCE);
+            GetRequestBuilder builder = new GetRequestBuilder(client, TransportGetAction.ACTION_TYPE);
             builder.setIndex((String) invocationOnMock.getArguments()[0]).setId((String) invocationOnMock.getArguments()[1]);
             return builder;
         }).when(client).prepareGet(anyString(), anyString());
-        when(client.prepareMultiGet()).thenReturn(new MultiGetRequestBuilder(client, MultiGetAction.INSTANCE));
+        when(client.prepareMultiGet()).thenReturn(new MultiGetRequestBuilder(client, TransportMultiGetAction.ACTION_TYPE));
         doAnswer(invocationOnMock -> {
             @SuppressWarnings("unchecked")
             ActionListener<MultiGetResponse> listener = (ActionListener<MultiGetResponse>) invocationOnMock.getArguments()[1];
@@ -127,9 +127,9 @@ public class TransportCreateTokenActionTests extends ESTestCase {
             listener.onResponse(response);
             return Void.TYPE;
         }).when(client).multiGet(any(MultiGetRequest.class), anyActionListener());
-        when(client.prepareIndex(nullable(String.class))).thenReturn(new IndexRequestBuilder(client, IndexAction.INSTANCE));
+        when(client.prepareIndex(nullable(String.class))).thenReturn(new IndexRequestBuilder(client, TransportIndexAction.ACTION_TYPE));
         when(client.prepareUpdate(any(String.class), any(String.class))).thenReturn(
-            new UpdateRequestBuilder(client, UpdateAction.INSTANCE)
+            new UpdateRequestBuilder(client, TransportUpdateAction.ACTION_TYPE)
         );
         doAnswer(invocationOnMock -> {
             idxReqReference.set((IndexRequest) invocationOnMock.getArguments()[1]);
@@ -146,7 +146,7 @@ public class TransportCreateTokenActionTests extends ESTestCase {
                 )
             );
             return null;
-        }).when(client).execute(eq(IndexAction.INSTANCE), any(IndexRequest.class), anyActionListener());
+        }).when(client).execute(eq(TransportIndexAction.ACTION_TYPE), any(IndexRequest.class), anyActionListener());
 
         securityContext = new SecurityContext(Settings.EMPTY, threadPool.getThreadContext());
 

@@ -10,9 +10,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.util.SetOnce;
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.index.IndexAction;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.index.TransportIndexAction;
 import org.elasticsearch.action.search.SearchAction;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
@@ -260,7 +260,7 @@ public class DataFrameAnalyticsTask extends LicensedAllocatedPersistentTask impl
                 storedProgress.get().toXContent(jsonBuilder, Payload.XContent.EMPTY_PARAMS);
                 indexRequest.source(jsonBuilder);
             }
-            executeAsyncWithOrigin(clientToUse, ML_ORIGIN, IndexAction.INSTANCE, indexRequest, indexProgressDocListener);
+            executeAsyncWithOrigin(clientToUse, ML_ORIGIN, TransportIndexAction.ACTION_TYPE, indexRequest, indexProgressDocListener);
         }, e -> {
             LOGGER.error(
                 () -> format("[%s] cannot persist progress as an error occurred while retrieving former progress document", jobId),

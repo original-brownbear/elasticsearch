@@ -10,17 +10,17 @@ package org.elasticsearch.xpack.security.test;
 import org.elasticsearch.ResourceNotFoundException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionType;
-import org.elasticsearch.action.get.GetAction;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetRequestBuilder;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.get.MultiGetItemResponse;
 import org.elasticsearch.action.get.MultiGetRequest;
 import org.elasticsearch.action.get.MultiGetResponse;
-import org.elasticsearch.action.index.IndexAction;
+import org.elasticsearch.action.get.TransportGetAction;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.index.TransportIndexAction;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
@@ -102,7 +102,7 @@ public final class SecurityMocks {
     }
 
     public static void mockGetRequest(Client client, String indexAliasName, String documentId, GetResult result) {
-        final GetRequestBuilder requestBuilder = new GetRequestBuilder(client, GetAction.INSTANCE);
+        final GetRequestBuilder requestBuilder = new GetRequestBuilder(client, TransportGetAction.ACTION_TYPE);
         requestBuilder.setIndex(indexAliasName);
         requestBuilder.setId(documentId);
         when(client.prepareGet(indexAliasName, documentId)).thenReturn(requestBuilder);
@@ -124,7 +124,7 @@ public final class SecurityMocks {
     }
 
     public static void mockGetRequestException(Client client, Exception e) {
-        when(client.prepareGet(anyString(), anyString())).thenReturn(new GetRequestBuilder(client, GetAction.INSTANCE));
+        when(client.prepareGet(anyString(), anyString())).thenReturn(new GetRequestBuilder(client, TransportGetAction.ACTION_TYPE));
         doAnswer(inv -> {
             @SuppressWarnings("unchecked")
             ActionListener<GetResponse> listener = (ActionListener<GetResponse>) inv.getArguments()[1];
@@ -206,7 +206,7 @@ public final class SecurityMocks {
             Assert.assertThat(inv.getArguments(), arrayWithSize(1));
             final Object requestIndex = inv.getArguments()[0];
             Assert.assertThat(requestIndex, instanceOf(String.class));
-            return new IndexRequestBuilder(client, IndexAction.INSTANCE).setIndex((String) requestIndex);
+            return new IndexRequestBuilder(client, TransportIndexAction.ACTION_TYPE).setIndex((String) requestIndex);
         }).when(client).prepareIndex(anyString());
         doAnswer(inv -> {
             Assert.assertThat(inv.getArguments(), arrayWithSize(3));
@@ -221,7 +221,7 @@ public final class SecurityMocks {
             final ShardId shardId = new ShardId(request.index(), ESTestCase.randomAlphaOfLength(12), 0);
             listener.onResponse(new IndexResponse(shardId, request.id(), 1, 1, 1, true));
             return null;
-        }).when(client).execute(eq(IndexAction.INSTANCE), any(IndexRequest.class), anyActionListener());
+        }).when(client).execute(eq(TransportIndexAction.ACTION_TYPE), any(IndexRequest.class), anyActionListener());
     }
 
     @SuppressWarnings("unchecked")

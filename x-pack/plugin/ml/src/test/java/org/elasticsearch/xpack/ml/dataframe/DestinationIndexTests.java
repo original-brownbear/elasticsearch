@@ -17,9 +17,9 @@ import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsRequest;
 import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsResponse;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingAction;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
-import org.elasticsearch.action.admin.indices.settings.get.GetSettingsAction;
 import org.elasticsearch.action.admin.indices.settings.get.GetSettingsRequest;
 import org.elasticsearch.action.admin.indices.settings.get.GetSettingsResponse;
+import org.elasticsearch.action.admin.indices.settings.get.TransportGetSettingsAction;
 import org.elasticsearch.action.fieldcaps.FieldCapabilities;
 import org.elasticsearch.action.fieldcaps.FieldCapabilitiesAction;
 import org.elasticsearch.action.fieldcaps.FieldCapabilitiesRequest;
@@ -254,7 +254,7 @@ public class DestinationIndexTests extends ESTestCase {
         GetSettingsResponse getSettingsResponse = new GetSettingsResponse(indexToSettings, Map.of());
 
         doAnswer(callListenerOnResponse(getSettingsResponse)).when(client)
-            .execute(eq(GetSettingsAction.INSTANCE), getSettingsRequestCaptor.capture(), any());
+            .execute(eq(TransportGetSettingsAction.ACTION_TYPE), getSettingsRequestCaptor.capture(), any());
 
         Map<String, Object> indexMappings = Map.of(
             "properties",
@@ -570,7 +570,8 @@ public class DestinationIndexTests extends ESTestCase {
         Map<String, MappingMetadata> mappings = Map.of("", new MappingMetadata("_doc", Map.of("properties", Map.of("ml", "some-mapping"))));
         GetMappingsResponse getMappingsResponse = new GetMappingsResponse(mappings);
 
-        doAnswer(callListenerOnResponse(getSettingsResponse)).when(client).execute(eq(GetSettingsAction.INSTANCE), any(), any());
+        doAnswer(callListenerOnResponse(getSettingsResponse)).when(client)
+            .execute(eq(TransportGetSettingsAction.ACTION_TYPE), any(), any());
         doAnswer(callListenerOnResponse(getMappingsResponse)).when(client).execute(eq(GetMappingsAction.INSTANCE), any(), any());
 
         DestinationIndex.createDestinationIndex(

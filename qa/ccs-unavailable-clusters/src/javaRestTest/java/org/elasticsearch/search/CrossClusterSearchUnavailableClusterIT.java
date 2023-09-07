@@ -14,9 +14,9 @@ import org.apache.http.nio.entity.NStringEntity;
 import org.apache.lucene.search.TotalHits;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.TransportVersion;
-import org.elasticsearch.action.admin.cluster.state.ClusterStateAction;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
+import org.elasticsearch.action.admin.cluster.state.TransportClusterStateAction;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchAction;
 import org.elasticsearch.action.search.SearchRequest;
@@ -132,7 +132,7 @@ public class CrossClusterSearchUnavailableClusterIT extends ESRestTestCase {
                 channel.sendResponse(searchResponse);
             });
             newService.registerRequestHandler(
-                ClusterStateAction.NAME,
+                TransportClusterStateAction.NAME,
                 ThreadPool.Names.SAME,
                 ClusterStateRequest::new,
                 (request, channel, task) -> {

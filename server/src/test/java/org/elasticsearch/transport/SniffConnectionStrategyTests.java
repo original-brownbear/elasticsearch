@@ -12,9 +12,9 @@ import org.elasticsearch.TransportVersion;
 import org.elasticsearch.TransportVersions;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.admin.cluster.remote.RemoteClusterNodesAction;
-import org.elasticsearch.action.admin.cluster.state.ClusterStateAction;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
+import org.elasticsearch.action.admin.cluster.state.TransportClusterStateAction;
 import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.ClusterState;
@@ -119,7 +119,7 @@ public class SniffConnectionStrategyTests extends ESTestCase {
         MockTransportService newService = MockTransportService.createNewService(s, version, transportVersion, threadPool);
         try {
             newService.registerRequestHandler(
-                ClusterStateAction.NAME,
+                TransportClusterStateAction.NAME,
                 ThreadPool.Names.SAME,
                 ClusterStateRequest::new,
                 (request, channel, task) -> {
@@ -1192,7 +1192,7 @@ public class SniffConnectionStrategyTests extends ESTestCase {
             if (hasClusterCredentials) {
                 assertThat(action, oneOf(RemoteClusterService.REMOTE_CLUSTER_HANDSHAKE_ACTION_NAME, RemoteClusterNodesAction.NAME));
             } else {
-                assertThat(action, oneOf(TransportService.HANDSHAKE_ACTION_NAME, ClusterStateAction.NAME));
+                assertThat(action, oneOf(TransportService.HANDSHAKE_ACTION_NAME, TransportClusterStateAction.NAME));
             }
             connection.sendRequest(requestId, action, request, options);
         });

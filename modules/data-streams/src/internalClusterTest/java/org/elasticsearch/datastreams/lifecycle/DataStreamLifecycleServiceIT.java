@@ -17,9 +17,9 @@ import org.elasticsearch.action.admin.indices.flush.FlushResponse;
 import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeAction;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.admin.indices.rollover.RolloverRequest;
-import org.elasticsearch.action.admin.indices.settings.get.GetSettingsAction;
 import org.elasticsearch.action.admin.indices.settings.get.GetSettingsRequest;
 import org.elasticsearch.action.admin.indices.settings.get.GetSettingsResponse;
+import org.elasticsearch.action.admin.indices.settings.get.TransportGetSettingsAction;
 import org.elasticsearch.action.admin.indices.template.put.PutComposableIndexTemplateAction;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
@@ -589,7 +589,8 @@ public class DataStreamLifecycleServiceIT extends ESIntegTestCase {
 
         assertBusy(() -> {
             GetSettingsRequest getSettingsRequest = new GetSettingsRequest().indices(firstGenerationIndex).includeDefaults(true);
-            GetSettingsResponse getSettingsResponse = client().execute(GetSettingsAction.INSTANCE, getSettingsRequest).actionGet();
+            GetSettingsResponse getSettingsResponse = client().execute(TransportGetSettingsAction.ACTION_TYPE, getSettingsRequest)
+                .actionGet();
             assertThat(
                 getSettingsResponse.getSetting(firstGenerationIndex, MergePolicyConfig.INDEX_MERGE_POLICY_MERGE_FACTOR_SETTING.getKey()),
                 is(targetFactor.toString())
@@ -623,7 +624,8 @@ public class DataStreamLifecycleServiceIT extends ESIntegTestCase {
         // check the 2nd generation index picked up the new setting values
         assertBusy(() -> {
             GetSettingsRequest getSettingsRequest = new GetSettingsRequest().indices(secondGenerationIndex).includeDefaults(true);
-            GetSettingsResponse getSettingsResponse = client().execute(GetSettingsAction.INSTANCE, getSettingsRequest).actionGet();
+            GetSettingsResponse getSettingsResponse = client().execute(TransportGetSettingsAction.ACTION_TYPE, getSettingsRequest)
+                .actionGet();
             assertThat(
                 getSettingsResponse.getSetting(secondGenerationIndex, MergePolicyConfig.INDEX_MERGE_POLICY_MERGE_FACTOR_SETTING.getKey()),
                 is("5")

@@ -8,6 +8,7 @@
 
 package org.elasticsearch.action.update;
 
+import org.elasticsearch.action.ActionType;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.support.ActiveShardCount;
 import org.elasticsearch.action.support.WriteRequestBuilder;
@@ -26,11 +27,11 @@ public class UpdateRequestBuilder extends InstanceShardOperationRequestBuilder<U
     implements
         WriteRequestBuilder<UpdateRequestBuilder> {
 
-    public UpdateRequestBuilder(ElasticsearchClient client, UpdateAction action) {
+    public UpdateRequestBuilder(ElasticsearchClient client, ActionType<UpdateResponse> action) {
         super(client, action, new UpdateRequest());
     }
 
-    public UpdateRequestBuilder(ElasticsearchClient client, UpdateAction action, String index, String id) {
+    public UpdateRequestBuilder(ElasticsearchClient client, ActionType<UpdateResponse> action, String index, String id) {
         super(client, action, new UpdateRequest(index, id));
     }
 

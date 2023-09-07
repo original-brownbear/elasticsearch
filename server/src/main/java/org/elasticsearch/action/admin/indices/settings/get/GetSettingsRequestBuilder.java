@@ -8,6 +8,7 @@
 
 package org.elasticsearch.action.admin.indices.settings.get;
 
+import org.elasticsearch.action.ActionType;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.action.support.master.MasterNodeReadOperationRequestBuilder;
 import org.elasticsearch.client.internal.ElasticsearchClient;
@@ -18,7 +19,7 @@ public class GetSettingsRequestBuilder extends MasterNodeReadOperationRequestBui
     GetSettingsResponse,
     GetSettingsRequestBuilder> {
 
-    public GetSettingsRequestBuilder(ElasticsearchClient client, GetSettingsAction action, String... indices) {
+    public GetSettingsRequestBuilder(ElasticsearchClient client, ActionType<GetSettingsResponse> action, String... indices) {
         super(client, action, new GetSettingsRequest().indices(indices));
     }
 

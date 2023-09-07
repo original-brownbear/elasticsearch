@@ -8,6 +8,7 @@
 
 package org.elasticsearch.action.index;
 
+import org.elasticsearch.action.ActionType;
 import org.elasticsearch.action.bulk.TransportBulkAction;
 import org.elasticsearch.action.bulk.TransportSingleItemBulkWriteAction;
 import org.elasticsearch.action.support.ActionFilters;
@@ -29,8 +30,11 @@ import org.elasticsearch.transport.TransportService;
 @Deprecated
 public class TransportIndexAction extends TransportSingleItemBulkWriteAction<IndexRequest, IndexResponse> {
 
+    public static final String NAME = "indices:data/write/index";
+    public static final ActionType<IndexResponse> ACTION_TYPE = new ActionType<>(NAME, IndexResponse::new);
+
     @Inject
     public TransportIndexAction(ActionFilters actionFilters, TransportService transportService, TransportBulkAction bulkAction) {
-        super(IndexAction.NAME, transportService, actionFilters, IndexRequest::new, bulkAction);
+        super(NAME, transportService, actionFilters, IndexRequest::new, bulkAction);
     }
 }

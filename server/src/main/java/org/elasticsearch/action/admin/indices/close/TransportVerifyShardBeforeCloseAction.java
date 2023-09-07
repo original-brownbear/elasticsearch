@@ -41,7 +41,7 @@ public class TransportVerifyShardBeforeCloseAction extends TransportReplicationA
     TransportVerifyShardBeforeCloseAction.ShardRequest,
     ReplicationResponse> {
 
-    public static final String NAME = CloseIndexAction.NAME + "[s]";
+    public static final String NAME = TransportCloseIndexAction.NAME + "[s]";
     public static final ActionType<ReplicationResponse> TYPE = new ActionType<>(NAME, ReplicationResponse::new);
     protected Logger logger = LogManager.getLogger(getClass());
 

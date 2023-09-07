@@ -13,8 +13,8 @@ import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest.AliasActions;
 import org.elasticsearch.action.admin.indices.alias.get.GetAliasesAction;
 import org.elasticsearch.action.admin.indices.alias.get.GetAliasesRequest;
-import org.elasticsearch.action.admin.indices.close.CloseIndexAction;
 import org.elasticsearch.action.admin.indices.close.CloseIndexRequest;
+import org.elasticsearch.action.admin.indices.close.TransportCloseIndexAction;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexAction;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingAction;
@@ -1526,7 +1526,10 @@ public class IndicesAndAliasesResolverTests extends ESTestCase {
     public void testNonRemotableRequestDoesNotAllowRemoteIndices() {
         IndicesOptions options = IndicesOptions.fromOptions(true, false, false, false);
         Tuple<TransportRequest, String> tuple = randomFrom(
-            new Tuple<TransportRequest, String>(new CloseIndexRequest("remote:foo").indicesOptions(options), CloseIndexAction.NAME),
+            new Tuple<TransportRequest, String>(
+                new CloseIndexRequest("remote:foo").indicesOptions(options),
+                TransportCloseIndexAction.NAME
+            ),
             new Tuple<TransportRequest, String>(new DeleteIndexRequest("remote:foo").indicesOptions(options), DeleteIndexAction.NAME),
             new Tuple<TransportRequest, String>(new PutMappingRequest("remote:foo").indicesOptions(options), PutMappingAction.NAME)
         );
@@ -1540,7 +1543,7 @@ public class IndicesAndAliasesResolverTests extends ESTestCase {
     public void testNonRemotableRequestDoesNotAllowRemoteWildcardIndices() {
         IndicesOptions options = IndicesOptions.fromOptions(randomBoolean(), true, true, true);
         Tuple<TransportRequest, String> tuple = randomFrom(
-            new Tuple<TransportRequest, String>(new CloseIndexRequest("*:*").indicesOptions(options), CloseIndexAction.NAME),
+            new Tuple<TransportRequest, String>(new CloseIndexRequest("*:*").indicesOptions(options), TransportCloseIndexAction.NAME),
             new Tuple<TransportRequest, String>(new DeleteIndexRequest("*:*").indicesOptions(options), DeleteIndexAction.NAME),
             new Tuple<TransportRequest, String>(new PutMappingRequest("*:*").indicesOptions(options), PutMappingAction.NAME)
         );

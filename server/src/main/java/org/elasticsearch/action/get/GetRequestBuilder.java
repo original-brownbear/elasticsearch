@@ -8,6 +8,7 @@
 
 package org.elasticsearch.action.get;
 
+import org.elasticsearch.action.ActionType;
 import org.elasticsearch.action.support.single.shard.SingleShardOperationRequestBuilder;
 import org.elasticsearch.client.internal.ElasticsearchClient;
 import org.elasticsearch.common.Strings;
@@ -20,11 +21,11 @@ import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
  */
 public class GetRequestBuilder extends SingleShardOperationRequestBuilder<GetRequest, GetResponse, GetRequestBuilder> {
 
-    public GetRequestBuilder(ElasticsearchClient client, GetAction action) {
+    public GetRequestBuilder(ElasticsearchClient client, ActionType<GetResponse> action) {
         super(client, action, new GetRequest());
     }
 
-    public GetRequestBuilder(ElasticsearchClient client, GetAction action, @Nullable String index) {
+    public GetRequestBuilder(ElasticsearchClient client, ActionType<GetResponse> action, @Nullable String index) {
         super(client, action, new GetRequest(index));
     }
 

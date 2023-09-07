@@ -9,6 +9,7 @@
 package org.elasticsearch.action.admin.indices.settings.get;
 
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.ActionType;
 import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.master.TransportMasterNodeReadAction;
 import org.elasticsearch.cluster.ClusterState;
@@ -36,6 +37,8 @@ import static java.util.Collections.unmodifiableMap;
 
 public class TransportGetSettingsAction extends TransportMasterNodeReadAction<GetSettingsRequest, GetSettingsResponse> {
 
+    public static final String NAME = "indices:monitor/settings/get";
+    public static final ActionType<GetSettingsResponse> ACTION_TYPE = new ActionType<>(NAME, GetSettingsResponse::new);
     private final SettingsFilter settingsFilter;
     private final IndexScopedSettings indexScopedSettings;
 
@@ -50,7 +53,7 @@ public class TransportGetSettingsAction extends TransportMasterNodeReadAction<Ge
         IndexScopedSettings indexedScopedSettings
     ) {
         super(
-            GetSettingsAction.NAME,
+            NAME,
             transportService,
             clusterService,
             threadPool,

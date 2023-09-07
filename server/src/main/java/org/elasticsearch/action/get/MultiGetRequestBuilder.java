@@ -9,6 +9,7 @@
 package org.elasticsearch.action.get;
 
 import org.elasticsearch.action.ActionRequestBuilder;
+import org.elasticsearch.action.ActionType;
 import org.elasticsearch.client.internal.ElasticsearchClient;
 
 /**
@@ -16,7 +17,7 @@ import org.elasticsearch.client.internal.ElasticsearchClient;
  */
 public class MultiGetRequestBuilder extends ActionRequestBuilder<MultiGetRequest, MultiGetResponse> {
 
-    public MultiGetRequestBuilder(ElasticsearchClient client, MultiGetAction action) {
+    public MultiGetRequestBuilder(ElasticsearchClient client, ActionType<MultiGetResponse> action) {
         super(client, action, new MultiGetRequest());
     }
 

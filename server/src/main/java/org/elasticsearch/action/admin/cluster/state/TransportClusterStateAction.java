@@ -11,6 +11,7 @@ package org.elasticsearch.action.admin.cluster.state;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.ActionType;
 import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.master.TransportMasterNodeReadAction;
 import org.elasticsearch.cluster.ClusterState;
@@ -42,6 +43,8 @@ import java.util.function.Predicate;
 
 public class TransportClusterStateAction extends TransportMasterNodeReadAction<ClusterStateRequest, ClusterStateResponse> {
 
+    public static final String NAME = "cluster:monitor/state";
+    public static final ActionType<ClusterStateResponse> ACTION_TYPE = new ActionType<>(NAME, ClusterStateResponse::new);
     private static final Logger logger = LogManager.getLogger(TransportClusterStateAction.class);
 
     @Inject
@@ -53,7 +56,7 @@ public class TransportClusterStateAction extends TransportMasterNodeReadAction<C
         IndexNameExpressionResolver indexNameExpressionResolver
     ) {
         super(
-            ClusterStateAction.NAME,
+            NAME,
             false,
             transportService,
             clusterService,

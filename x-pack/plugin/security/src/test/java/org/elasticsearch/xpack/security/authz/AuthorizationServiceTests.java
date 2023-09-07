@@ -31,8 +31,8 @@ import org.elasticsearch.action.admin.indices.recovery.RecoveryAction;
 import org.elasticsearch.action.admin.indices.recovery.RecoveryRequest;
 import org.elasticsearch.action.admin.indices.segments.IndicesSegmentsAction;
 import org.elasticsearch.action.admin.indices.segments.IndicesSegmentsRequest;
-import org.elasticsearch.action.admin.indices.settings.get.GetSettingsAction;
 import org.elasticsearch.action.admin.indices.settings.get.GetSettingsRequest;
+import org.elasticsearch.action.admin.indices.settings.get.TransportGetSettingsAction;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsAction;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
 import org.elasticsearch.action.admin.indices.shards.IndicesShardStoresAction;
@@ -48,14 +48,14 @@ import org.elasticsearch.action.bulk.BulkShardRequest;
 import org.elasticsearch.action.bulk.BulkShardResponse;
 import org.elasticsearch.action.bulk.MappingUpdatePerformer;
 import org.elasticsearch.action.bulk.TransportShardBulkAction;
-import org.elasticsearch.action.delete.DeleteAction;
 import org.elasticsearch.action.delete.DeleteRequest;
-import org.elasticsearch.action.get.GetAction;
+import org.elasticsearch.action.delete.TransportDeleteAction;
 import org.elasticsearch.action.get.GetRequest;
-import org.elasticsearch.action.get.MultiGetAction;
 import org.elasticsearch.action.get.MultiGetRequest;
-import org.elasticsearch.action.index.IndexAction;
+import org.elasticsearch.action.get.TransportGetAction;
+import org.elasticsearch.action.get.TransportMultiGetAction;
 import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.index.TransportIndexAction;
 import org.elasticsearch.action.search.ClearScrollAction;
 import org.elasticsearch.action.search.ClearScrollRequest;
 import org.elasticsearch.action.search.ClosePointInTimeAction;
@@ -79,7 +79,7 @@ import org.elasticsearch.action.termvectors.MultiTermVectorsAction;
 import org.elasticsearch.action.termvectors.MultiTermVectorsRequest;
 import org.elasticsearch.action.termvectors.TermVectorsAction;
 import org.elasticsearch.action.termvectors.TermVectorsRequest;
-import org.elasticsearch.action.update.UpdateAction;
+import org.elasticsearch.action.update.TransportUpdateAction;
 import org.elasticsearch.action.update.UpdateHelper;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.cluster.ClusterState;
@@ -1958,7 +1958,10 @@ public class AuthorizationServiceTests extends ESTestCase {
             new Tuple<>(BulkAction.NAME + "[s]", new DeleteRequest(randomFrom(SECURITY_MAIN_ALIAS, INTERNAL_SECURITY_MAIN_INDEX_7), "id"))
         );
         requests.add(
-            new Tuple<>(UpdateAction.NAME, new UpdateRequest(randomFrom(SECURITY_MAIN_ALIAS, INTERNAL_SECURITY_MAIN_INDEX_7), "id"))
+            new Tuple<>(
+                TransportUpdateAction.NAME,
+                new UpdateRequest(randomFrom(SECURITY_MAIN_ALIAS, INTERNAL_SECURITY_MAIN_INDEX_7), "id")
+            )
         );
         requests.add(
             new Tuple<>(BulkAction.NAME + "[s]", new IndexRequest(randomFrom(SECURITY_MAIN_ALIAS, INTERNAL_SECURITY_MAIN_INDEX_7)))
@@ -1970,7 +1973,9 @@ public class AuthorizationServiceTests extends ESTestCase {
                 new TermVectorsRequest(randomFrom(SECURITY_MAIN_ALIAS, INTERNAL_SECURITY_MAIN_INDEX_7), "id")
             )
         );
-        requests.add(new Tuple<>(GetAction.NAME, new GetRequest(randomFrom(SECURITY_MAIN_ALIAS, INTERNAL_SECURITY_MAIN_INDEX_7), "id")));
+        requests.add(
+            new Tuple<>(TransportGetAction.NAME, new GetRequest(randomFrom(SECURITY_MAIN_ALIAS, INTERNAL_SECURITY_MAIN_INDEX_7), "id"))
+        );
         requests.add(
             new Tuple<>(
                 IndicesAliasesAction.NAME,
@@ -2001,7 +2006,7 @@ public class AuthorizationServiceTests extends ESTestCase {
         );
         requests.add(
             new Tuple<>(
-                GetSettingsAction.NAME,
+                TransportGetSettingsAction.NAME,
                 new GetSettingsRequest().indices(randomFrom(SECURITY_MAIN_ALIAS, INTERNAL_SECURITY_MAIN_INDEX_7))
             )
         );
@@ -2089,7 +2094,7 @@ public class AuthorizationServiceTests extends ESTestCase {
         requests.add(new Tuple<>(IndicesStatsAction.NAME, new IndicesStatsRequest().indices(SECURITY_MAIN_ALIAS)));
         requests.add(new Tuple<>(RecoveryAction.NAME, new RecoveryRequest().indices(SECURITY_MAIN_ALIAS)));
         requests.add(new Tuple<>(IndicesSegmentsAction.NAME, new IndicesSegmentsRequest().indices(SECURITY_MAIN_ALIAS)));
-        requests.add(new Tuple<>(GetSettingsAction.NAME, new GetSettingsRequest().indices(SECURITY_MAIN_ALIAS)));
+        requests.add(new Tuple<>(TransportGetSettingsAction.NAME, new GetSettingsRequest().indices(SECURITY_MAIN_ALIAS)));
         requests.add(new Tuple<>(IndicesShardStoresAction.NAME, new IndicesShardStoresRequest().indices(SECURITY_MAIN_ALIAS)));
 
         for (final Tuple<String, ? extends TransportRequest> requestTuple : requests) {
@@ -2151,7 +2156,9 @@ public class AuthorizationServiceTests extends ESTestCase {
                 new TermVectorsRequest(randomFrom(SECURITY_MAIN_ALIAS, INTERNAL_SECURITY_MAIN_INDEX_7), "id")
             )
         );
-        requests.add(new Tuple<>(GetAction.NAME, new GetRequest(randomFrom(SECURITY_MAIN_ALIAS, INTERNAL_SECURITY_MAIN_INDEX_7), "id")));
+        requests.add(
+            new Tuple<>(TransportGetAction.NAME, new GetRequest(randomFrom(SECURITY_MAIN_ALIAS, INTERNAL_SECURITY_MAIN_INDEX_7), "id"))
+        );
         requests.add(
             new Tuple<>(ClusterHealthAction.NAME, new ClusterHealthRequest(randomFrom(SECURITY_MAIN_ALIAS, INTERNAL_SECURITY_MAIN_INDEX_7)))
         );
@@ -2355,7 +2362,7 @@ public class AuthorizationServiceTests extends ESTestCase {
         final String action;
         switch (randomIntBetween(0, 4)) {
             case 0 -> {
-                action = MultiGetAction.NAME + "[shard]";
+                action = TransportMultiGetAction.NAME + "[shard]";
                 request = mockRequest;
             }
             case 1 -> {
@@ -2596,10 +2603,10 @@ public class AuthorizationServiceTests extends ESTestCase {
         );
         // there's only one "access granted" record for all the bulk items
         verify(auditTrail).explicitIndexAccessEvent(eq(requestId), eq(AuditLevel.ACCESS_GRANTED), eq(authentication), eq(switch (opType) {
-            case INDEX -> IndexAction.NAME + ":op_type/index";
-            case CREATE -> IndexAction.NAME + ":op_type/create";
-            case UPDATE -> UpdateAction.NAME;
-            case DELETE -> DeleteAction.NAME;
+            case INDEX -> TransportIndexAction.NAME + ":op_type/index";
+            case CREATE -> TransportIndexAction.NAME + ":op_type/create";
+            case UPDATE -> TransportUpdateAction.NAME;
+            case DELETE -> TransportDeleteAction.NAME;
         }),
             argThat(
                 indicesArrays -> indicesArrays.length == allIndexNames.size() && allIndexNames.containsAll(Arrays.asList(indicesArrays))
@@ -2636,10 +2643,10 @@ public class AuthorizationServiceTests extends ESTestCase {
             eq(AuditLevel.ACCESS_DENIED),
             eq(badAuthentication),
             eq(switch (opType) {
-                case INDEX -> IndexAction.NAME + ":op_type/index";
-                case CREATE -> IndexAction.NAME + ":op_type/create";
-                case UPDATE -> UpdateAction.NAME;
-                case DELETE -> DeleteAction.NAME;
+                case INDEX -> TransportIndexAction.NAME + ":op_type/index";
+                case CREATE -> TransportIndexAction.NAME + ":op_type/create";
+                case UPDATE -> TransportUpdateAction.NAME;
+                case DELETE -> TransportDeleteAction.NAME;
             }),
             argThat(
                 indicesArrays -> indicesArrays.length == allIndexNames.size() && allIndexNames.containsAll(Arrays.asList(indicesArrays))
@@ -2664,26 +2671,26 @@ public class AuthorizationServiceTests extends ESTestCase {
         final BulkItemRequest[] items = randomArray(1, 8, BulkItemRequest[]::new, () -> {
             switch (randomFrom(DocWriteRequest.OpType.values())) {
                 case INDEX -> {
-                    actionTypes.add(IndexAction.NAME + ":op_type/index");
+                    actionTypes.add(TransportIndexAction.NAME + ":op_type/index");
                     return new BulkItemRequest(
                         idCounter.get(),
                         new IndexRequest(indexName).id("id" + idCounter.incrementAndGet()).opType(DocWriteRequest.OpType.INDEX)
                     );
                 }
                 case CREATE -> {
-                    actionTypes.add(IndexAction.NAME + ":op_type/create");
+                    actionTypes.add(TransportIndexAction.NAME + ":op_type/create");
                     return new BulkItemRequest(
                         idCounter.get(),
                         new IndexRequest(indexName).id("id" + idCounter.incrementAndGet()).opType(DocWriteRequest.OpType.CREATE)
                     );
                 }
                 case DELETE -> {
-                    actionTypes.add(DeleteAction.NAME);
+                    actionTypes.add(TransportDeleteAction.NAME);
                     deleteItems.add(idCounter.get());
                     return new BulkItemRequest(idCounter.get(), new DeleteRequest(indexName, "id" + idCounter.incrementAndGet()));
                 }
                 case UPDATE -> {
-                    actionTypes.add(UpdateAction.NAME);
+                    actionTypes.add(TransportUpdateAction.NAME);
                     return new BulkItemRequest(idCounter.get(), new UpdateRequest(indexName, "id" + idCounter.incrementAndGet()));
                 }
                 default -> throw new IllegalStateException("Unexpected value");
@@ -2760,7 +2767,7 @@ public class AuthorizationServiceTests extends ESTestCase {
         );
         // there's a single granted audit entry for each action type, less the delete action (which is denied)
         actionTypes.forEach(actionType -> {
-            if (actionType.equals(DeleteAction.NAME) == false) {
+            if (actionType.equals(TransportDeleteAction.NAME) == false) {
                 verify(auditTrail).explicitIndexAccessEvent(
                     eq(indexRequestId),
                     eq(AuditLevel.ACCESS_GRANTED),
@@ -2779,7 +2786,7 @@ public class AuthorizationServiceTests extends ESTestCase {
                 eq(indexRequestId),
                 eq(AuditLevel.ACCESS_DENIED),
                 eq(indexAuthentication),
-                eq(DeleteAction.NAME),
+                eq(TransportDeleteAction.NAME),
                 eq(new String[] { indexName }),
                 eq(BulkItemRequest.class.getSimpleName()),
                 eq(request.remoteAddress()),
@@ -2828,7 +2835,7 @@ public class AuthorizationServiceTests extends ESTestCase {
             eq(requestId),
             eq(AuditLevel.ACCESS_GRANTED),
             eq(authentication),
-            eq(DeleteAction.NAME),
+            eq(TransportDeleteAction.NAME),
             argThat(indicesArrays -> {
                 Arrays.sort(indicesArrays);
                 return Arrays.equals(indicesArrays, new String[] { "alias-2", "concrete-index" });
@@ -2841,7 +2848,7 @@ public class AuthorizationServiceTests extends ESTestCase {
             eq(requestId),
             eq(AuditLevel.ACCESS_GRANTED),
             eq(authentication),
-            eq(IndexAction.NAME + ":op_type/index"),
+            eq(TransportIndexAction.NAME + ":op_type/index"),
             argThat(indicesArrays -> {
                 Arrays.sort(indicesArrays);
                 return Arrays.equals(indicesArrays, new String[] { "alias-1", "concrete-index" });
@@ -2854,7 +2861,7 @@ public class AuthorizationServiceTests extends ESTestCase {
             eq(requestId),
             eq(AuditLevel.ACCESS_DENIED),
             eq(authentication),
-            eq(DeleteAction.NAME),
+            eq(TransportDeleteAction.NAME),
             eq(new String[] { "alias-1" }),
             eq(BulkItemRequest.class.getSimpleName()),
             eq(request.remoteAddress()),
@@ -2864,7 +2871,7 @@ public class AuthorizationServiceTests extends ESTestCase {
             eq(requestId),
             eq(AuditLevel.ACCESS_DENIED),
             eq(authentication),
-            eq(IndexAction.NAME + ":op_type/index"),
+            eq(TransportIndexAction.NAME + ":op_type/index"),
             eq(new String[] { "alias-2" }),
             eq(BulkItemRequest.class.getSimpleName()),
             eq(request.remoteAddress()),
@@ -2915,7 +2922,7 @@ public class AuthorizationServiceTests extends ESTestCase {
             eq(requestId),
             eq(AuditLevel.ACCESS_DENIED),
             eq(authentication),
-            eq(DeleteAction.NAME),
+            eq(TransportDeleteAction.NAME),
             argThat(indices -> indices.length == 2 && indices[0].startsWith("datemath-") && indices[1].startsWith("datemath-")),
             eq(BulkItemRequest.class.getSimpleName()),
             eq(request.remoteAddress()),
@@ -2926,7 +2933,7 @@ public class AuthorizationServiceTests extends ESTestCase {
             eq(requestId),
             eq(AuditLevel.ACCESS_GRANTED),
             eq(authentication),
-            eq(IndexAction.NAME + ":op_type/index"),
+            eq(TransportIndexAction.NAME + ":op_type/index"),
             argThat(indices -> indices.length == 2 && indices[0].startsWith("datemath-") && indices[1].startsWith("datemath-")),
             eq(BulkItemRequest.class.getSimpleName()),
             eq(request.remoteAddress()),
@@ -2954,7 +2961,7 @@ public class AuthorizationServiceTests extends ESTestCase {
 
     private static Tuple<String, TransportRequest> randomCompositeRequest() {
         return switch (randomIntBetween(0, 7)) {
-            case 0 -> Tuple.tuple(MultiGetAction.NAME, new MultiGetRequest().add("index", "id"));
+            case 0 -> Tuple.tuple(TransportMultiGetAction.NAME, new MultiGetRequest().add("index", "id"));
             case 1 -> Tuple.tuple(MultiSearchAction.NAME, new MultiSearchRequest().add(new SearchRequest()));
             case 2 -> Tuple.tuple(MultiTermVectorsAction.NAME, new MultiTermVectorsRequest().add("index", "id"));
             case 3 -> Tuple.tuple(BulkAction.NAME, new BulkRequest().add(new DeleteRequest("index", "id")));

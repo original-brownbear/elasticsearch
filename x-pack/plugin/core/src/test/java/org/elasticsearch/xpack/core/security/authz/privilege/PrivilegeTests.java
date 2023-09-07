@@ -11,7 +11,7 @@ import org.elasticsearch.action.admin.cluster.health.ClusterHealthAction;
 import org.elasticsearch.action.admin.cluster.node.tasks.cancel.CancelTasksAction;
 import org.elasticsearch.action.admin.cluster.reroute.ClusterRerouteAction;
 import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsAction;
-import org.elasticsearch.action.admin.cluster.state.ClusterStateAction;
+import org.elasticsearch.action.admin.cluster.state.TransportClusterStateAction;
 import org.elasticsearch.action.admin.cluster.stats.ClusterStatsAction;
 import org.elasticsearch.action.admin.indices.template.get.GetIndexTemplatesAction;
 import org.elasticsearch.action.admin.indices.template.put.PutIndexTemplateAction;
@@ -302,7 +302,7 @@ public class PrivilegeTests extends ESTestCase {
             CreateApiKeyAction.NAME,
             InvalidateApiKeyAction.NAME,
             ClusterHealthAction.NAME,
-            ClusterStateAction.NAME,
+            TransportClusterStateAction.NAME,
             ClusterStatsAction.NAME,
             NodeEnrollmentAction.NAME,
             KibanaEnrollmentAction.NAME,
@@ -354,7 +354,7 @@ public class PrivilegeTests extends ESTestCase {
         verifyClusterActionDenied(
             ClusterPrivilegeResolver.MANAGE_USER_PROFILE,
             ClusterHealthAction.NAME,
-            ClusterStateAction.NAME,
+            TransportClusterStateAction.NAME,
             ClusterStatsAction.NAME,
             PutIndexTemplateAction.NAME,
             GetIndexTemplatesAction.NAME,

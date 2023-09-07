@@ -12,7 +12,7 @@ import org.apache.lucene.util.automaton.CharacterRunAutomaton;
 import org.apache.lucene.util.automaton.Operations;
 import org.elasticsearch.action.admin.cluster.node.tasks.cancel.CancelTasksAction;
 import org.elasticsearch.action.admin.cluster.repositories.cleanup.CleanupRepositoryAction;
-import org.elasticsearch.action.admin.cluster.state.ClusterStateAction;
+import org.elasticsearch.action.admin.cluster.state.TransportClusterStateAction;
 import org.elasticsearch.action.admin.cluster.storedscripts.DeleteStoredScriptAction;
 import org.elasticsearch.action.admin.indices.create.CreateIndexAction;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexAction;
@@ -27,7 +27,7 @@ import org.elasticsearch.action.admin.indices.stats.IndicesStatsAction;
 import org.elasticsearch.action.admin.indices.template.put.PutComponentTemplateAction;
 import org.elasticsearch.action.bulk.BulkAction;
 import org.elasticsearch.action.downsample.DownsampleAction;
-import org.elasticsearch.action.get.GetAction;
+import org.elasticsearch.action.get.TransportGetAction;
 import org.elasticsearch.cluster.metadata.DataStream;
 import org.elasticsearch.cluster.metadata.IndexAbstraction;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
@@ -78,7 +78,7 @@ public class InternalUsersTests extends ESTestCase {
         assertThat(role.remoteIndices(), is(RemoteIndicesPermission.NONE));
 
         final List<String> sampleClusterActions = List.of(
-            ClusterStateAction.NAME,
+            TransportClusterStateAction.NAME,
             PutComponentTemplateAction.NAME,
             DeleteStoredScriptAction.NAME,
             UpdateJobAction.NAME,
@@ -87,7 +87,7 @@ public class InternalUsersTests extends ESTestCase {
         checkClusterAccess(InternalUsers.XPACK_USER, role, randomFrom(sampleClusterActions), true);
 
         final List<String> sampleIndexActions = List.of(
-            GetAction.NAME,
+            TransportGetAction.NAME,
             BulkAction.NAME,
             RefreshAction.NAME,
             CreateIndexAction.NAME,
@@ -113,7 +113,7 @@ public class InternalUsersTests extends ESTestCase {
         assertThat(role.remoteIndices(), is(RemoteIndicesPermission.NONE));
 
         final List<String> sampleClusterActions = List.of(
-            ClusterStateAction.NAME,
+            TransportClusterStateAction.NAME,
             PutComponentTemplateAction.NAME,
             DeleteStoredScriptAction.NAME,
             UpdateJobAction.NAME,
@@ -122,7 +122,7 @@ public class InternalUsersTests extends ESTestCase {
         checkClusterAccess(InternalUsers.XPACK_SECURITY_USER, role, randomFrom(sampleClusterActions), true);
 
         final List<String> sampleIndexActions = List.of(
-            GetAction.NAME,
+            TransportGetAction.NAME,
             BulkAction.NAME,
             RefreshAction.NAME,
             CreateIndexAction.NAME,
@@ -149,7 +149,7 @@ public class InternalUsersTests extends ESTestCase {
         assertThat(role.remoteIndices(), is(RemoteIndicesPermission.NONE));
 
         final List<String> sampleAllowedActions = List.of(
-            GetAction.NAME,
+            TransportGetAction.NAME,
             BulkAction.NAME,
             RefreshAction.NAME,
             CreateIndexAction.NAME,
@@ -177,10 +177,10 @@ public class InternalUsersTests extends ESTestCase {
         assertThat(role.remoteIndices(), is(RemoteIndicesPermission.NONE));
 
         checkClusterAccess(InternalUsers.ASYNC_SEARCH_USER, role, CancelTasksAction.NAME, true);
-        checkClusterAccess(InternalUsers.ASYNC_SEARCH_USER, role, ClusterStateAction.NAME, false);
+        checkClusterAccess(InternalUsers.ASYNC_SEARCH_USER, role, TransportClusterStateAction.NAME, false);
 
         final List<String> sampleAllowedActions = List.of(
-            GetAction.NAME,
+            TransportGetAction.NAME,
             BulkAction.NAME,
             RefreshAction.NAME,
             CreateIndexAction.NAME,
@@ -212,7 +212,12 @@ public class InternalUsersTests extends ESTestCase {
         checkIndexAccess(role, randomFrom(sampleAllowedActions), ".ds-" + randomAlphaOfLengthBetween(4, 8), true);
         checkIndexAccess(role, randomFrom(sampleAllowedActions), INTERNAL_SECURITY_MAIN_INDEX_7, true);
 
-        final List<String> sampleDeniedActions = List.of(GetAction.NAME, BulkAction.NAME, PutMappingAction.NAME, DeleteIndexAction.NAME);
+        final List<String> sampleDeniedActions = List.of(
+            TransportGetAction.NAME,
+            BulkAction.NAME,
+            PutMappingAction.NAME,
+            DeleteIndexAction.NAME
+        );
         checkIndexAccess(role, randomFrom(sampleDeniedActions), randomAlphaOfLengthBetween(4, 8), false);
         checkIndexAccess(role, randomFrom(sampleDeniedActions), ".ds-" + randomAlphaOfLengthBetween(4, 8), false);
         checkIndexAccess(role, randomFrom(sampleDeniedActions), INTERNAL_SECURITY_MAIN_INDEX_7, false);

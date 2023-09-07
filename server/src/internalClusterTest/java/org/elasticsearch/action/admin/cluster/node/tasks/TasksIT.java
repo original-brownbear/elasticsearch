@@ -24,8 +24,8 @@ import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeAction;
 import org.elasticsearch.action.admin.indices.refresh.RefreshAction;
 import org.elasticsearch.action.admin.indices.validate.query.ValidateQueryAction;
 import org.elasticsearch.action.bulk.BulkAction;
-import org.elasticsearch.action.index.IndexAction;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.index.TransportIndexAction;
 import org.elasticsearch.action.search.SearchAction;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchTransportService;
@@ -434,7 +434,7 @@ public class TasksIT extends ESIntegTestCase {
                 ((MockTaskManager) transportService.getTaskManager()).addListener(new MockTaskManagerListener() {
                     @Override
                     public void onTaskRegistered(Task task) {
-                        if (task.getAction().startsWith(IndexAction.NAME)) {
+                        if (task.getAction().startsWith(TransportIndexAction.NAME)) {
                             taskRegistered.countDown();
                             logger.debug("Blocking [{}] starting", task);
                             try {

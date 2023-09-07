@@ -10,9 +10,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ResourceNotFoundException;
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.admin.indices.settings.get.GetSettingsAction;
 import org.elasticsearch.action.admin.indices.settings.get.GetSettingsRequest;
 import org.elasticsearch.action.admin.indices.settings.get.GetSettingsResponse;
+import org.elasticsearch.action.admin.indices.settings.get.TransportGetSettingsAction;
 import org.elasticsearch.action.fieldcaps.FieldCapabilities;
 import org.elasticsearch.action.fieldcaps.FieldCapabilitiesAction;
 import org.elasticsearch.action.fieldcaps.FieldCapabilitiesRequest;
@@ -210,6 +210,6 @@ public class ExtractedFieldsDetectorFactory {
         getSettingsRequest.indices(index);
         getSettingsRequest.includeDefaults(true);
         getSettingsRequest.names(IndexSettings.MAX_DOCVALUE_FIELDS_SEARCH_SETTING.getKey());
-        executeAsyncWithOrigin(client, ML_ORIGIN, GetSettingsAction.INSTANCE, getSettingsRequest, settingsListener);
+        executeAsyncWithOrigin(client, ML_ORIGIN, TransportGetSettingsAction.ACTION_TYPE, getSettingsRequest, settingsListener);
     }
 }

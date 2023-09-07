@@ -17,11 +17,11 @@ import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.bulk.BulkAction;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.TransportBulkAction;
-import org.elasticsearch.action.delete.DeleteAction;
 import org.elasticsearch.action.delete.DeleteRequest;
-import org.elasticsearch.action.get.GetAction;
+import org.elasticsearch.action.delete.TransportDeleteAction;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.get.TransportGetAction;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
@@ -106,7 +106,7 @@ public class IndexServiceAccountTokenStore extends CachingServiceAccountTokenSto
             () -> executeAsyncWithOrigin(
                 client,
                 SECURITY_ORIGIN,
-                GetAction.INSTANCE,
+                TransportGetAction.ACTION_TYPE,
                 getRequest,
                 ActionListener.<GetResponse>wrap(response -> {
                     if (response.isExists()) {
@@ -223,7 +223,7 @@ public class IndexServiceAccountTokenStore extends CachingServiceAccountTokenSto
                 executeAsyncWithOrigin(
                     client,
                     SECURITY_ORIGIN,
-                    DeleteAction.INSTANCE,
+                    TransportDeleteAction.ACTION_TYPE,
                     deleteRequest,
                     ActionListener.wrap(deleteResponse -> {
                         final ClearSecurityCacheRequest clearSecurityCacheRequest = new ClearSecurityCacheRequest().cacheName(

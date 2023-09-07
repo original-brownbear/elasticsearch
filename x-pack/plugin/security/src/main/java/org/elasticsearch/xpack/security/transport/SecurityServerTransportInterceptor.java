@@ -10,7 +10,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.admin.cluster.state.ClusterStateAction;
+import org.elasticsearch.action.admin.cluster.state.TransportClusterStateAction;
 import org.elasticsearch.action.support.DestructiveOperations;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.ssl.SslConfiguration;
@@ -336,7 +336,7 @@ public class SecurityServerTransportInterceptor implements TransportInterceptor 
                     final String message = "Internal user [" + user.principal() + "] should not be used for cross cluster requests";
                     assert false : message;
                     throw illegalArgumentExceptionWithDebugLog(message);
-                } else if (SystemUser.is(user) || action.equals(ClusterStateAction.NAME)) {
+                } else if (SystemUser.is(user) || action.equals(TransportClusterStateAction.NAME)) {
                     if (SystemUser.is(user)) {
                         logger.trace(
                             "Request [{}] for action [{}] towards [{}] initiated by the system user. "

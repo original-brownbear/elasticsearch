@@ -14,15 +14,15 @@ import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.bulk.BulkAction;
 import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.get.GetAction;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
-import org.elasticsearch.action.get.MultiGetAction;
 import org.elasticsearch.action.get.MultiGetItemResponse;
 import org.elasticsearch.action.get.MultiGetRequest;
 import org.elasticsearch.action.get.MultiGetResponse;
-import org.elasticsearch.action.index.IndexAction;
+import org.elasticsearch.action.get.TransportGetAction;
+import org.elasticsearch.action.get.TransportMultiGetAction;
 import org.elasticsearch.action.index.IndexRequestBuilder;
+import org.elasticsearch.action.index.TransportIndexAction;
 import org.elasticsearch.action.search.MultiSearchAction;
 import org.elasticsearch.action.search.MultiSearchRequest;
 import org.elasticsearch.action.search.MultiSearchRequestBuilder;
@@ -32,7 +32,7 @@ import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.PlainActionFuture;
-import org.elasticsearch.action.update.UpdateAction;
+import org.elasticsearch.action.update.TransportUpdateAction;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateRequestBuilder;
 import org.elasticsearch.action.update.UpdateResponse;
@@ -355,7 +355,7 @@ public class ProfileServiceTests extends ESTestCase {
             final ActionListener<MultiGetResponse> listener = (ActionListener<MultiGetResponse>) invocation.getArguments()[2];
             listener.onResponse(new MultiGetResponse(responses.toArray(MultiGetItemResponse[]::new)));
             return null;
-        }).when(client).execute(eq(MultiGetAction.INSTANCE), any(MultiGetRequest.class), anyActionListener());
+        }).when(client).execute(eq(TransportMultiGetAction.ACTION_TYPE), any(MultiGetRequest.class), anyActionListener());
 
         final PlainActionFuture<ResultsAndErrors<Map.Entry<String, Subject>>> future = new PlainActionFuture<>();
         profileService.getProfileSubjects(allProfileUids, future);
@@ -389,7 +389,7 @@ public class ProfileServiceTests extends ESTestCase {
             final ActionListener<MultiGetResponse> listener = (ActionListener<MultiGetResponse>) invocation.getArguments()[2];
             listener.onFailure(mGetException);
             return null;
-        }).when(client).execute(eq(MultiGetAction.INSTANCE), any(MultiGetRequest.class), anyActionListener());
+        }).when(client).execute(eq(TransportMultiGetAction.ACTION_TYPE), any(MultiGetRequest.class), anyActionListener());
         final PlainActionFuture<ResultsAndErrors<Map.Entry<String, Subject>>> future = new PlainActionFuture<>();
         profileService.getProfileSubjects(randomList(1, 5, () -> randomAlphaOfLength(20)), future);
         ExecutionException e = expectThrows(ExecutionException.class, () -> future.get());
@@ -422,7 +422,7 @@ public class ProfileServiceTests extends ESTestCase {
             final ActionListener<MultiGetResponse> listener = (ActionListener<MultiGetResponse>) invocation.getArguments()[2];
             listener.onResponse(new MultiGetResponse(responses.toArray(MultiGetItemResponse[]::new)));
             return null;
-        }).when(client).execute(eq(MultiGetAction.INSTANCE), any(MultiGetRequest.class), anyActionListener());
+        }).when(client).execute(eq(TransportMultiGetAction.ACTION_TYPE), any(MultiGetRequest.class), anyActionListener());
 
         final PlainActionFuture<ResultsAndErrors<Map.Entry<String, Subject>>> future2 = new PlainActionFuture<>();
         profileService.getProfileSubjects(allProfileUids, future2);
@@ -593,7 +593,7 @@ public class ProfileServiceTests extends ESTestCase {
         }).when(client).execute(eq(MultiSearchAction.INSTANCE), any(MultiSearchRequest.class), anyActionListener());
 
         when(client.prepareIndex(SECURITY_PROFILE_ALIAS)).thenReturn(
-            new IndexRequestBuilder(client, IndexAction.INSTANCE, SECURITY_PROFILE_ALIAS)
+            new IndexRequestBuilder(client, TransportIndexAction.ACTION_TYPE, SECURITY_PROFILE_ALIAS)
         );
 
         final RuntimeException expectedException = new RuntimeException("expected");
@@ -621,7 +621,7 @@ public class ProfileServiceTests extends ESTestCase {
             final ActionListener<?> listener = (ActionListener<?>) invocation.getArguments()[2];
             listener.onFailure(expectedException);
             return null;
-        }).when(client).execute(eq(UpdateAction.INSTANCE), any(UpdateRequest.class), anyActionListener());
+        }).when(client).execute(eq(TransportUpdateAction.ACTION_TYPE), any(UpdateRequest.class), anyActionListener());
         final PlainActionFuture<UpdateResponse> future2 = new PlainActionFuture<>();
         profileService.doUpdate(mock(UpdateRequest.class), future2);
         final RuntimeException e2 = expectThrows(RuntimeException.class, future2::actionGet);
@@ -884,7 +884,7 @@ public class ProfileServiceTests extends ESTestCase {
         doAnswer(
             invocation -> new UpdateRequestBuilder(
                 client,
-                UpdateAction.INSTANCE,
+                TransportUpdateAction.ACTION_TYPE,
                 SECURITY_PROFILE_ALIAS,
                 (String) invocation.getArguments()[1]
             )
@@ -920,7 +920,7 @@ public class ProfileServiceTests extends ESTestCase {
         doAnswer(
             invocation -> new UpdateRequestBuilder(
                 client,
-                UpdateAction.INSTANCE,
+                TransportUpdateAction.ACTION_TYPE,
                 SECURITY_PROFILE_ALIAS,
                 (String) invocation.getArguments()[1]
             )
@@ -959,7 +959,7 @@ public class ProfileServiceTests extends ESTestCase {
             final var listener = (ActionListener<GetResponse>) invocation.getArguments()[2];
             client.get(getRequest, listener);
             return null;
-        }).when(client).execute(eq(GetAction.INSTANCE), any(GetRequest.class), anyActionListener());
+        }).when(client).execute(eq(TransportGetAction.ACTION_TYPE), any(GetRequest.class), anyActionListener());
 
         // First check returns false, second check return true or false randomly
         final boolean secondCheckResult = randomBoolean();
@@ -982,7 +982,7 @@ public class ProfileServiceTests extends ESTestCase {
         doAnswer(
             invocation -> new UpdateRequestBuilder(
                 client,
-                UpdateAction.INSTANCE,
+                TransportUpdateAction.ACTION_TYPE,
                 SECURITY_PROFILE_ALIAS,
                 (String) invocation.getArguments()[1]
             )
@@ -1008,7 +1008,7 @@ public class ProfileServiceTests extends ESTestCase {
             final var listener = (ActionListener<GetResponse>) invocation.getArguments()[2];
             client.get(getRequest, listener);
             return null;
-        }).when(client).execute(eq(GetAction.INSTANCE), any(GetRequest.class), anyActionListener());
+        }).when(client).execute(eq(TransportGetAction.ACTION_TYPE), any(GetRequest.class), anyActionListener());
 
         // First check returns false
         doAnswer(invocation -> false).when(service).shouldSkipUpdateForActivate(any(), any());
@@ -1085,7 +1085,7 @@ public class ProfileServiceTests extends ESTestCase {
             final ActionListener<MultiGetResponse> listener = (ActionListener<MultiGetResponse>) invocation.getArguments()[2];
             client.multiGet(multiGetRequest, listener);
             return null;
-        }).when(client).execute(eq(MultiGetAction.INSTANCE), any(MultiGetRequest.class), anyActionListener());
+        }).when(client).execute(eq(TransportMultiGetAction.ACTION_TYPE), any(MultiGetRequest.class), anyActionListener());
 
         final Map<String, String> results = sampleDocumentParameters.stream()
             .collect(

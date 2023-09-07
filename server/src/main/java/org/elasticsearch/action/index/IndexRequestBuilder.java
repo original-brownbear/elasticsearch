@@ -8,6 +8,7 @@
 
 package org.elasticsearch.action.index;
 
+import org.elasticsearch.action.ActionType;
 import org.elasticsearch.action.DocWriteRequest;
 import org.elasticsearch.action.support.WriteRequestBuilder;
 import org.elasticsearch.action.support.replication.ReplicationRequestBuilder;
@@ -27,11 +28,11 @@ public class IndexRequestBuilder extends ReplicationRequestBuilder<IndexRequest,
     implements
         WriteRequestBuilder<IndexRequestBuilder> {
 
-    public IndexRequestBuilder(ElasticsearchClient client, IndexAction action) {
+    public IndexRequestBuilder(ElasticsearchClient client, ActionType<IndexResponse> action) {
         super(client, action, new IndexRequest());
     }
 
-    public IndexRequestBuilder(ElasticsearchClient client, IndexAction action, @Nullable String index) {
+    public IndexRequestBuilder(ElasticsearchClient client, ActionType<IndexResponse> action, @Nullable String index) {
         super(client, action, new IndexRequest(index));
     }
 

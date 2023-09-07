@@ -8,7 +8,7 @@
 package org.elasticsearch.xpack.security.crossclusteraccess;
 
 import org.elasticsearch.ElasticsearchSecurityException;
-import org.elasticsearch.action.admin.cluster.state.ClusterStateAction;
+import org.elasticsearch.action.admin.cluster.state.TransportClusterStateAction;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.common.UUIDs;
@@ -361,7 +361,7 @@ public class CrossClusterAccessAuthenticationServiceIntegTests extends SecurityI
         Consumer<String> errorMessageAssertion
     ) {
         final PlainActionFuture<Authentication> future = new PlainActionFuture<>();
-        service.authenticate(ClusterStateAction.NAME, new SearchRequest(), future);
+        service.authenticate(TransportClusterStateAction.NAME, new SearchRequest(), future);
         final ExecutionException actualException = expectThrows(ExecutionException.class, future::get);
         assertThat(actualException.getCause(), instanceOf(ElasticsearchSecurityException.class));
         assertThat(actualException.getCause().getCause(), instanceOf(IllegalArgumentException.class));

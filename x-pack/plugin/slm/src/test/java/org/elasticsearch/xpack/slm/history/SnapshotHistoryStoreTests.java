@@ -10,9 +10,9 @@ package org.elasticsearch.xpack.slm.history;
 import org.elasticsearch.action.admin.indices.create.CreateIndexAction;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
-import org.elasticsearch.action.index.IndexAction;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.index.TransportIndexAction;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.cluster.service.ClusterService;
@@ -103,7 +103,7 @@ public class SnapshotHistoryStoreTests extends ESTestCase {
             AtomicInteger calledTimes = new AtomicInteger(0);
             client.setVerifier((action, request, listener) -> {
                 calledTimes.incrementAndGet();
-                assertThat(action, instanceOf(IndexAction.class));
+                assertSame(action, TransportIndexAction.ACTION_TYPE);
                 assertThat(request, instanceOf(IndexRequest.class));
                 IndexRequest indexRequest = (IndexRequest) request;
                 assertEquals(SLM_HISTORY_DATA_STREAM, indexRequest.index());
@@ -141,7 +141,7 @@ public class SnapshotHistoryStoreTests extends ESTestCase {
                     return new CreateIndexResponse(true, true, ((CreateIndexRequest) request).index());
                 }
                 calledTimes.incrementAndGet();
-                assertThat(action, instanceOf(IndexAction.class));
+                assertSame(action, TransportIndexAction.ACTION_TYPE);
                 assertThat(request, instanceOf(IndexRequest.class));
                 IndexRequest indexRequest = (IndexRequest) request;
                 assertEquals(SLM_HISTORY_DATA_STREAM, indexRequest.index());

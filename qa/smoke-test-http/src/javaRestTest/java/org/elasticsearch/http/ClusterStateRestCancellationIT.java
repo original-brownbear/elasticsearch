@@ -10,7 +10,7 @@ package org.elasticsearch.http;
 
 import org.apache.http.client.methods.HttpGet;
 import org.elasticsearch.TransportVersion;
-import org.elasticsearch.action.admin.cluster.state.ClusterStateAction;
+import org.elasticsearch.action.admin.cluster.state.TransportClusterStateAction;
 import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.client.Cancellable;
 import org.elasticsearch.client.Request;
@@ -80,7 +80,7 @@ public class ClusterStateRestCancellationIT extends HttpSmokeTestCase {
         logger.info("--> sending cluster state request");
         final Cancellable cancellable = getRestClient().performRequestAsync(clusterStateRequest, wrapAsRestResponseListener(future));
 
-        awaitTaskWithPrefix(ClusterStateAction.NAME);
+        awaitTaskWithPrefix(TransportClusterStateAction.NAME);
 
         logger.info("--> cancelling cluster state request");
         cancellable.cancel();
@@ -90,7 +90,7 @@ public class ClusterStateRestCancellationIT extends HttpSmokeTestCase {
         assertBusy(() -> {
             updateClusterState(clusterService, s -> ClusterState.builder(s).build());
             final List<TaskInfo> tasks = clusterAdmin().prepareListTasks().get().getTasks();
-            assertTrue(tasks.toString(), tasks.stream().noneMatch(t -> t.action().equals(ClusterStateAction.NAME)));
+            assertTrue(tasks.toString(), tasks.stream().noneMatch(t -> t.action().equals(TransportClusterStateAction.NAME)));
         });
 
         updateClusterState(clusterService, s -> ClusterState.builder(s).removeCustom(AssertingCustom.NAME).build());

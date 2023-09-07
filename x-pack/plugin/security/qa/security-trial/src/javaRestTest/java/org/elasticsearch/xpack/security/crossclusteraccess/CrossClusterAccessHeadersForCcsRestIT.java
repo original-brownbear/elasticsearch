@@ -13,9 +13,9 @@ import org.apache.http.nio.entity.NStringEntity;
 import org.apache.lucene.search.TotalHits;
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.action.admin.cluster.remote.RemoteClusterNodesAction;
-import org.elasticsearch.action.admin.cluster.state.ClusterStateAction;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
+import org.elasticsearch.action.admin.cluster.state.TransportClusterStateAction;
 import org.elasticsearch.action.search.SearchAction;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
@@ -1107,7 +1107,7 @@ public class CrossClusterAccessHeadersForCcsRestIT extends SecurityOnTrialLicens
         );
         try {
             service.registerRequestHandler(
-                ClusterStateAction.NAME,
+                TransportClusterStateAction.NAME,
                 ThreadPool.Names.SAME,
                 ClusterStateRequest::new,
                 (request, channel, task) -> {
