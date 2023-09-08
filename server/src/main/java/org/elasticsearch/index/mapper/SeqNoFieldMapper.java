@@ -58,9 +58,9 @@ public class SeqNoFieldMapper extends MetadataFieldMapper {
 
         private final BytesRef pointValue;
 
-        SingleValueLongField(String field, long value) {
-            super(field, FIELD_TYPE);
-            fieldsData = value;
+        SingleValueLongField() {
+            super(SeqNoFieldMapper.NAME, FIELD_TYPE);
+            fieldsData = SequenceNumbers.UNASSIGNED_SEQ_NO;
             pointValue = new BytesRef(new byte[Long.BYTES]);
             assert pointValue.offset == 0;
             assert pointValue.length == Long.BYTES;
@@ -127,16 +127,12 @@ public class SeqNoFieldMapper extends MetadataFieldMapper {
          * calling {@link #set}.
          */
         public static SequenceIDFields emptySeqID() {
-            return new SequenceIDFields(
-                new SingleValueLongField(NAME, SequenceNumbers.UNASSIGNED_SEQ_NO),
-                new NumericDocValuesField(PRIMARY_TERM_NAME, 0),
-                null
-            );
+            return new SequenceIDFields(new SingleValueLongField(), new NumericDocValuesField(PRIMARY_TERM_NAME, 0), null);
         }
 
         public static SequenceIDFields tombstone() {
             return new SequenceIDFields(
-                new SingleValueLongField(NAME, SequenceNumbers.UNASSIGNED_SEQ_NO),
+                new SingleValueLongField(),
                 new NumericDocValuesField(PRIMARY_TERM_NAME, 0),
                 new NumericDocValuesField(TOMBSTONE_NAME, 1)
             );

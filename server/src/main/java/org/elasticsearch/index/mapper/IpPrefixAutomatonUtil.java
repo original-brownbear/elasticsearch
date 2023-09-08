@@ -151,11 +151,11 @@ public class IpPrefixAutomatonUtil {
         return result;
     }
 
-    private static Pattern IPV4_GROUP_MATCHER = Pattern.compile(
+    private static final Pattern IPV4_GROUP_MATCHER = Pattern.compile(
         "^((?:0|[1-9][0-9]{0,2})\\.)?" + "((?:0|[1-9][0-9]{0,2})\\.)?" + "((?:0|[1-9][0-9]{0,2})\\.)?" + "((?:0|[1-9][0-9]{0,2}))?$"
     );
 
-    private static Pattern ONLY_ZEROS = Pattern.compile("^0+$");
+    private static final Pattern ONLY_ZEROS = Pattern.compile("^0+$");
 
     /**
      * Creates an {@link Automaton} that accepts all ipv4 address byte representation
@@ -213,7 +213,7 @@ public class IpPrefixAutomatonUtil {
         return new StringBuilder("0".repeat(leadingZeros)).append(input).toString();
     }
 
-    private static Pattern IP6_BLOCK_MATCHER = Pattern.compile(
+    private static final Pattern IP6_BLOCK_MATCHER = Pattern.compile(
         "([a-f0-9]{0,4}:)|([a-f0-9]{1,4}$)" // the ipv6 specific notation
             + "|((?:(?:0|[1-9][0-9]{0,2})\\.){1,3}(?:0|[1-9][0-9]{0,2})?$)" // the optional ipv4 part
     );

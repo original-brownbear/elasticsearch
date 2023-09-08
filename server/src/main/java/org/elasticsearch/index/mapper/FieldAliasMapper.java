@@ -133,16 +133,10 @@ public final class FieldAliasMapper extends Mapper {
     }
 
     public static class Builder extends Mapper.Builder {
-        private String name;
         private String path;
 
         protected Builder(String name) {
             super(name);
-            this.name = name;
-        }
-
-        public String name() {
-            return this.name;
         }
 
         public Builder path(String path) {

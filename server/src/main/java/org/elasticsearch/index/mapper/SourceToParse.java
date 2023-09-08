@@ -27,7 +27,7 @@ public class SourceToParse {
     private final XContentType xContentType;
 
     private final Map<String, String> dynamicTemplates;
-    private boolean toBeReported;
+    private final boolean toBeReported;
 
     public SourceToParse(
         @Nullable String id,

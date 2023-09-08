@@ -117,10 +117,7 @@ public class TextFieldMapper extends FieldMapper {
         public static final int POSITION_INCREMENT_GAP = 100;
     }
 
-    private static final class PrefixConfig implements ToXContent {
-        final int minChars;
-        final int maxChars;
-
+    private record PrefixConfig(int minChars, int maxChars) implements ToXContent {
         private PrefixConfig(int minChars, int maxChars) {
             this.minChars = minChars;
             this.maxChars = maxChars;
@@ -133,24 +130,6 @@ public class TextFieldMapper extends FieldMapper {
             if (maxChars >= 20) {
                 throw new IllegalArgumentException("max_chars [" + maxChars + "] must be less than 20");
             }
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            PrefixConfig that = (PrefixConfig) o;
-            return minChars == that.minChars && maxChars == that.maxChars;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(minChars, maxChars);
-        }
-
-        @Override
-        public String toString() {
-            return "{ min_chars=" + minChars + ", max_chars=" + maxChars + " }";
         }
 
         @Override
@@ -174,32 +153,7 @@ public class TextFieldMapper extends FieldMapper {
         return new PrefixConfig(minChars, maxChars);
     }
 
-    private static final class FielddataFrequencyFilter implements ToXContent {
-        final double minFreq;
-        final double maxFreq;
-        final int minSegmentSize;
-
-        private FielddataFrequencyFilter(double minFreq, double maxFreq, int minSegmentSize) {
-            this.minFreq = minFreq;
-            this.maxFreq = maxFreq;
-            this.minSegmentSize = minSegmentSize;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            FielddataFrequencyFilter that = (FielddataFrequencyFilter) o;
-            return Double.compare(that.minFreq, minFreq) == 0
-                && Double.compare(that.maxFreq, maxFreq) == 0
-                && minSegmentSize == that.minSegmentSize;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(minFreq, maxFreq, minSegmentSize);
-        }
-
+    private record FielddataFrequencyFilter(double minFreq, double maxFreq, int minSegmentSize) implements ToXContent {
         @Override
         public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
             builder.startObject();
@@ -208,11 +162,6 @@ public class TextFieldMapper extends FieldMapper {
             builder.field("min_segment_size", minSegmentSize);
             builder.endObject();
             return builder;
-        }
-
-        @Override
-        public String toString() {
-            return "{ min=" + minFreq + ", max=" + maxFreq + ", min_segment_size=" + minSegmentSize + " }";
         }
     }
 
@@ -657,17 +606,7 @@ public class TextFieldMapper extends FieldMapper {
         }
     }
 
-    private static final class SubFieldInfo {
-
-        private final Analyzer analyzer;
-        private final FieldType fieldType;
-        private final String field;
-
-        SubFieldInfo(String field, FieldType fieldType, Analyzer analyzer) {
-            this.fieldType = fieldType;
-            this.analyzer = analyzer;
-            this.field = field;
-        }
+    private record SubFieldInfo(String field, FieldType fieldType, Analyzer analyzer) {
 
     }
 
