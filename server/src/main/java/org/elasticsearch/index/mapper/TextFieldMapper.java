@@ -232,6 +232,56 @@ public class TextFieldMapper extends FieldMapper {
         return new FielddataFrequencyFilter(minFrequency, maxFrequency, minSegmentSize);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TextFieldMapper mapper = (TextFieldMapper) o;
+        return doEquals(mapper)
+            && index == mapper.index
+            && store == mapper.store
+            && norms == mapper.norms
+            && positionIncrementGap == mapper.positionIncrementGap
+            && eagerGlobalOrdinals == mapper.eagerGlobalOrdinals
+            && fieldData == mapper.fieldData
+            && indexPhrases == mapper.indexPhrases
+            && Objects.equals(indexCreatedVersion, mapper.indexCreatedVersion)
+            && Objects.equals(indexOptions, mapper.indexOptions)
+            && Objects.equals(termVectors, mapper.termVectors)
+            && Objects.equals(similarity, mapper.similarity)
+            && Objects.equals(indexAnalyzer, mapper.indexAnalyzer)
+            && Objects.equals(indexAnalyzers, mapper.indexAnalyzers)
+            && Objects.equals(indexPrefixes, mapper.indexPrefixes)
+            && Objects.equals(freqFilter, mapper.freqFilter)
+            && Objects.equals(fieldType, mapper.fieldType)
+            && Objects.equals(prefixFieldInfo, mapper.prefixFieldInfo)
+            && Objects.equals(phraseFieldInfo, mapper.phraseFieldInfo);
+    }
+
+    @Override
+    public int hashCode() {
+        return 31 * doHashCode() + Objects.hash(
+            indexCreatedVersion,
+            index,
+            store,
+            indexOptions,
+            norms,
+            termVectors,
+            similarity,
+            indexAnalyzer,
+            indexAnalyzers,
+            positionIncrementGap,
+            eagerGlobalOrdinals,
+            indexPrefixes,
+            freqFilter,
+            fieldData,
+            indexPhrases,
+            fieldType,
+            prefixFieldInfo,
+            phraseFieldInfo
+        );
+    }
+
     public static class Builder extends FieldMapper.Builder {
 
         private final IndexVersion indexCreatedVersion;
@@ -629,13 +679,9 @@ public class TextFieldMapper extends FieldMapper {
         }
     }
 
-    private static final class SubFieldInfo {
+    private record SubFieldInfo(String field, FieldType fieldType, Analyzer analyzer) {
 
-        private final Analyzer analyzer;
-        private final FieldType fieldType;
-        private final String field;
-
-        SubFieldInfo(String field, FieldType fieldType, Analyzer analyzer) {
+        private SubFieldInfo(String field, FieldType fieldType, Analyzer analyzer) {
             this.fieldType = Mapper.freezeAndDeduplicateFieldType(fieldType);
             this.analyzer = analyzer;
             this.field = field;
@@ -999,6 +1045,34 @@ public class TextFieldMapper extends FieldMapper {
 
         public boolean isSyntheticSource() {
             return isSyntheticSource;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            TextFieldType that = (TextFieldType) o;
+            return doEquals(that)
+                && fielddata == that.fielddata
+                && indexPhrases == that.indexPhrases
+                && eagerGlobalOrdinals == that.eagerGlobalOrdinals
+                && isSyntheticSource == that.isSyntheticSource
+                && Objects.equals(filter, that.filter)
+                && Objects.equals(prefixFieldType, that.prefixFieldType)
+                && Objects.equals(syntheticSourceDelegate, that.syntheticSourceDelegate);
+        }
+
+        @Override
+        public int hashCode() {
+            return 31 * doHashCode() + Objects.hash(
+                fielddata,
+                filter,
+                prefixFieldType,
+                indexPhrases,
+                eagerGlobalOrdinals,
+                isSyntheticSource,
+                syntheticSourceDelegate
+            );
         }
     }
 

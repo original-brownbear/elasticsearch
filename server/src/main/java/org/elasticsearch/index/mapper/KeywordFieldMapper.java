@@ -802,6 +802,34 @@ public final class KeywordFieldMapper extends FieldMapper {
                 );
             }
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            KeywordFieldType that = (KeywordFieldType) o;
+            return doEquals(that)
+                && ignoreAbove == that.ignoreAbove
+                && eagerGlobalOrdinals == that.eagerGlobalOrdinals
+                && isDimension == that.isDimension
+                && isSyntheticSource == that.isSyntheticSource
+                && Objects.equals(nullValue, that.nullValue)
+                && Objects.equals(normalizer, that.normalizer)
+                && Objects.equals(scriptValues, that.scriptValues);
+        }
+
+        @Override
+        public int hashCode() {
+            return 31 * doHashCode() + Objects.hash(
+                ignoreAbove,
+                nullValue,
+                normalizer,
+                eagerGlobalOrdinals,
+                scriptValues,
+                isDimension,
+                isSyntheticSource
+            );
+        }
     }
 
     private final boolean indexed;
@@ -1045,4 +1073,41 @@ public final class KeywordFieldMapper extends FieldMapper {
         };
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        KeywordFieldMapper mappers = (KeywordFieldMapper) o;
+        return doEquals(mappers)
+            && indexed == mappers.indexed
+            && hasDocValues == mappers.hasDocValues
+            && splitQueriesOnWhitespace == mappers.splitQueriesOnWhitespace
+            && storeIgnored == mappers.storeIgnored
+            && Objects.equals(indexOptions, mappers.indexOptions)
+            && Objects.equals(fieldType, mappers.fieldType)
+            && Objects.equals(similarity, mappers.similarity)
+            && Objects.equals(normalizerName, mappers.normalizerName)
+            && Objects.equals(script, mappers.script)
+            && Objects.equals(scriptCompiler, mappers.scriptCompiler)
+            && Objects.equals(indexCreatedVersion, mappers.indexCreatedVersion)
+            && Objects.equals(indexAnalyzers, mappers.indexAnalyzers);
+    }
+
+    @Override
+    public int hashCode() {
+        return 31 * doHashCode() + Objects.hash(
+            indexed,
+            hasDocValues,
+            indexOptions,
+            fieldType,
+            similarity,
+            normalizerName,
+            splitQueriesOnWhitespace,
+            script,
+            scriptCompiler,
+            indexCreatedVersion,
+            storeIgnored,
+            indexAnalyzers
+        );
+    }
 }

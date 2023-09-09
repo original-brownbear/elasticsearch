@@ -627,4 +627,19 @@ public abstract class MappedFieldType {
                 + "]."
         );
     }
+
+    protected final boolean doEquals(MappedFieldType that) {
+        if (this == that) return true;
+        if (that == null || getClass() != that.getClass()) return false;
+        return docValues == that.docValues
+            && isIndexed == that.isIndexed
+            && isStored == that.isStored
+            && Objects.equals(name, that.name)
+            && Objects.equals(textSearchInfo, that.textSearchInfo)
+            && Objects.equals(meta, that.meta);
+    }
+
+    protected final int doHashCode() {
+        return Objects.hash(name, docValues, isIndexed, isStored, textSearchInfo, meta);
+    }
 }

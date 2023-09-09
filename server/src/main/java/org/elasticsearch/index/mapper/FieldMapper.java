@@ -203,6 +203,21 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
         throw new IllegalArgumentException("Cannot index data directly into a field with a [script] parameter");
     }
 
+    protected final boolean doEquals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        FieldMapper mapper = (FieldMapper) o;
+        return hasScript == mapper.hasScript
+            && Objects.equals(mappedFieldType, mapper.mappedFieldType)
+            && Objects.equals(multiFields, mapper.multiFields)
+            && Objects.equals(copyTo, mapper.copyTo)
+            && onScriptError == mapper.onScriptError;
+    }
+
+    protected final int doHashCode() {
+        return Objects.hash(mappedFieldType, multiFields, copyTo, hasScript, onScriptError);
+    }
+
     private void rethrowAsDocumentParsingException(DocumentParserContext context, Exception e) {
         String valuePreview;
         try {
@@ -373,7 +388,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
 
     @Override
     public final FieldMapper merge(Mapper mergeWith, MapperBuilderContext mapperBuilderContext) {
-        if (mergeWith == this) {
+        if (equals(mergeWith)) {
             return this;
         }
         if (mergeWith instanceof FieldMapper == false) {
@@ -440,6 +455,58 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             return EMPTY;
         }
 
+        private final FieldMapper[] mappers;
+
+        private MultiFields(FieldMapper[] mappers) {
+            this.mappers = mappers;
+            // sort for consistent iteration order + serialization
+            Arrays.sort(this.mappers, Comparator.comparing(FieldMapper::name));
+        }
+
+        public void parse(FieldMapper mainField, DocumentParserContext context, Supplier<DocumentParserContext> multiFieldContextSupplier)
+            throws IOException {
+            // TODO: multi fields are really just copy fields, we just need to expose "sub fields" or something that can be part
+            // of the mappings
+            if (mappers.length == 0) {
+                return;
+            }
+            context.path().add(mainField.simpleName());
+            for (FieldMapper mapper : mappers) {
+                mapper.parse(multiFieldContextSupplier.get());
+            }
+            context.path().remove();
+        }
+
+        @Override
+        public Iterator<FieldMapper> iterator() {
+            return Iterators.forArray(mappers);
+        }
+
+        @Override
+        public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
+            if (mappers.length != 0) {
+                builder.startObject("fields");
+                for (Mapper mapper : mappers) {
+                    mapper.toXContent(builder, params);
+                }
+                builder.endObject();
+            }
+            return builder;
+        }
+
+        @Override
+        public int hashCode() {
+            return Arrays.hashCode(mappers);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            MultiFields that = (MultiFields) o;
+            return Arrays.equals(mappers, that.mappers);
+        }
+
         public static class Builder {
 
             private final Map<String, Function<MapperBuilderContext, FieldMapper>> mapperBuilders = new HashMap<>();
@@ -482,51 +549,12 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
                 }
             }
         }
-
-        private final FieldMapper[] mappers;
-
-        private MultiFields(FieldMapper[] mappers) {
-            this.mappers = mappers;
-            // sort for consistent iteration order + serialization
-            Arrays.sort(this.mappers, Comparator.comparing(FieldMapper::name));
-        }
-
-        public void parse(FieldMapper mainField, DocumentParserContext context, Supplier<DocumentParserContext> multiFieldContextSupplier)
-            throws IOException {
-            // TODO: multi fields are really just copy fields, we just need to expose "sub fields" or something that can be part
-            // of the mappings
-            if (mappers.length == 0) {
-                return;
-            }
-            context.path().add(mainField.simpleName());
-            for (FieldMapper mapper : mappers) {
-                mapper.parse(multiFieldContextSupplier.get());
-            }
-            context.path().remove();
-        }
-
-        @Override
-        public Iterator<FieldMapper> iterator() {
-            return Iterators.forArray(mappers);
-        }
-
-        @Override
-        public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
-            if (mappers.length != 0) {
-                builder.startObject("fields");
-                for (Mapper mapper : mappers) {
-                    mapper.toXContent(builder, params);
-                }
-                builder.endObject();
-            }
-            return builder;
-        }
     }
 
     /**
      * Represents a list of fields with optional boost factor where the current field should be copied to
      */
-    public static class CopyTo {
+    public static final class CopyTo {
 
         private static final CopyTo EMPTY = new CopyTo(List.of());
 
@@ -560,6 +588,19 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
 
         public List<String> copyToFields() {
             return copyToFields;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            CopyTo copyTo = (CopyTo) o;
+            return copyToFields.equals(copyTo.copyToFields);
+        }
+
+        @Override
+        public int hashCode() {
+            return copyToFields.hashCode();
         }
     }
 
