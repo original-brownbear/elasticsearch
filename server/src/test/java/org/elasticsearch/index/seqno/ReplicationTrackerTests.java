@@ -127,11 +127,7 @@ public class ReplicationTrackerTests extends ReplicationTrackerTestCase {
         initializing.forEach(aId -> allocations.put(aId, allocations.get(aId) + 1 + randomInt(4)));
         allocations.keySet().forEach(aId -> updateLocalCheckpoint(tracker, aId.getId(), allocations.get(aId)));
 
-        final long minLocalCheckpointAfterUpdates = allocations.entrySet()
-            .stream()
-            .map(Map.Entry::getValue)
-            .min(Long::compareTo)
-            .orElse(UNASSIGNED_SEQ_NO);
+        final long minLocalCheckpointAfterUpdates = allocations.values().stream().min(Long::compareTo).orElse(UNASSIGNED_SEQ_NO);
 
         // now insert an unknown active/insync id , the checkpoint shouldn't change but a refresh should be requested.
         final AllocationId extraId = AllocationId.newInitializing();

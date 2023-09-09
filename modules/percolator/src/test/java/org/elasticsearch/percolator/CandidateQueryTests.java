@@ -100,7 +100,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import static org.elasticsearch.common.network.InetAddresses.forString;
 import static org.hamcrest.Matchers.equalTo;
@@ -294,7 +293,7 @@ public class CandidateQueryTests extends ESSingleNodeTestCase {
 
         LuceneDocument document = new LuceneDocument();
         for (Map.Entry<String, List<String>> entry : stringContent.entrySet()) {
-            String value = entry.getValue().stream().collect(Collectors.joining(" "));
+            String value = String.join(" ", entry.getValue());
             document.add(new TextField(entry.getKey(), value, Field.Store.NO));
         }
         for (Integer intValue : intValues) {

@@ -94,9 +94,9 @@ public class StoreRecoveryTests extends ESTestCase {
             && f.equals("write.lock") == false
             && f.startsWith("extra") == false;
         for (Directory d : dirs) {
-            numFiles += Arrays.asList(d.listAll()).stream().filter(filesFilter).count();
+            numFiles += Arrays.stream(d.listAll()).filter(filesFilter).count();
         }
-        final long targetNumFiles = Arrays.asList(target.listAll()).stream().filter(filesFilter).count();
+        final long targetNumFiles = Arrays.stream(target.listAll()).filter(filesFilter).count();
         assertEquals(numFiles, targetNumFiles);
         assertEquals(indexStats.totalFileCount(), targetNumFiles);
         if (hardLinksSupported(createTempDir())) {

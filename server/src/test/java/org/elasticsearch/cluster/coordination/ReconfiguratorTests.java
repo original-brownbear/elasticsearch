@@ -199,7 +199,7 @@ public class ReconfiguratorTests extends ESTestCase {
         boolean autoShrinkVotingConfiguration,
         VotingConfiguration expectedConfig
     ) {
-        final DiscoveryNode master = liveNodes.stream().sorted(Comparator.comparing(DiscoveryNode::getId)).findFirst().get();
+        final DiscoveryNode master = liveNodes.stream().min(Comparator.comparing(DiscoveryNode::getId)).get();
         check(liveNodes, retired, master.getId(), config, autoShrinkVotingConfiguration, expectedConfig);
     }
 

@@ -535,7 +535,7 @@ public abstract class AbstractLocalClusterFactory<S extends LocalClusterSpec, H 
                             "Operator users file ["
                                 + destination.toAbsolutePath().toString()
                                 + "] already exists, but user(s) ["
-                                + operators.stream().collect(Collectors.joining(","))
+                                + String.join(",", operators)
                                 + "] have been configured as operators. If you need to manage "
                                 + operatorUsersFileName
                                 + " yourself then you cannot not request that the cluster factory mark users as operators"

@@ -79,8 +79,7 @@ public class IndexingIT extends ESRestTestCase {
         Nodes nodes = buildNodeAndVersions();
         assumeFalse("new nodes is empty", nodes.getNewNodes().isEmpty());
         logger.info("cluster discovered: {}", nodes.toString());
-        final List<String> bwcNamesList = nodes.getBWCNodes().stream().map(Node::nodeName).collect(Collectors.toList());
-        final String bwcNames = bwcNamesList.stream().collect(Collectors.joining(","));
+        final String bwcNames = nodes.getBWCNodes().stream().map(Node::nodeName).collect(Collectors.joining(","));
         Settings.Builder settings = Settings.builder()
             .put(IndexMetadata.INDEX_NUMBER_OF_SHARDS_SETTING.getKey(), 1)
             .put(IndexMetadata.INDEX_NUMBER_OF_REPLICAS_SETTING.getKey(), 2)
@@ -169,8 +168,8 @@ public class IndexingIT extends ESRestTestCase {
         Nodes nodes = buildNodeAndVersions();
         assumeFalse("new nodes is empty", nodes.getNewNodes().isEmpty());
         logger.info("cluster discovered: {}", nodes.toString());
-        final List<String> bwcNamesList = nodes.getBWCNodes().stream().map(Node::nodeName).collect(Collectors.toList());
-        final String bwcNames = bwcNamesList.stream().collect(Collectors.joining(","));
+        final List<String> bwcNamesList = nodes.getBWCNodes().stream().map(Node::nodeName).toList();
+        final String bwcNames = String.join(",", bwcNamesList);
         Settings.Builder settings = Settings.builder()
             .put(IndexMetadata.INDEX_NUMBER_OF_SHARDS_SETTING.getKey(), 1)
             .put(IndexMetadata.INDEX_NUMBER_OF_REPLICAS_SETTING.getKey(), 2)

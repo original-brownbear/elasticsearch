@@ -140,7 +140,7 @@ public class StringTermsTests extends InternalTermsTestCase {
         for (int i = 0; i < numTerms; i++) {
             terms.add(new BytesRef(randomAlphaOfLength(10)));
         }
-        return terms.stream().toArray(BytesRef[]::new);
+        return terms.toArray(BytesRef[]::new);
     }
 
     private InternalTerms<?, ?> createTestInstance(BytesRef[] dict, String name) {

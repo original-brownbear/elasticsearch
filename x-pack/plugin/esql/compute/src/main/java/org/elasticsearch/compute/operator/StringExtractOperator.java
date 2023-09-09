@@ -14,11 +14,9 @@ import org.elasticsearch.compute.data.BytesRefBlock;
 import org.elasticsearch.compute.data.ElementType;
 import org.elasticsearch.compute.data.Page;
 
-import java.util.Arrays;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 public class StringExtractOperator extends AbstractPageMappingOperator {
 
@@ -35,7 +33,7 @@ public class StringExtractOperator extends AbstractPageMappingOperator {
 
         @Override
         public String describe() {
-            return "StringExtractOperator[fields=[" + Arrays.stream(fieldNames).collect(Collectors.joining(", ")) + "]]";
+            return "StringExtractOperator[fields=[" + String.join(", ", fieldNames) + "]]";
         }
     }
 
@@ -133,7 +131,7 @@ public class StringExtractOperator extends AbstractPageMappingOperator {
 
     @Override
     public String toString() {
-        return "StringExtractOperator[fields=[" + Arrays.stream(fieldNames).collect(Collectors.joining(", ")) + "]]";
+        return "StringExtractOperator[fields=[" + String.join(", ", fieldNames) + "]]";
     }
 
     public interface ExtractEvaluator {

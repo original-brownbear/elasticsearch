@@ -16,7 +16,6 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static java.util.Collections.singleton;
 import static org.hamcrest.Matchers.arrayWithSize;
@@ -299,7 +298,7 @@ public class FilterPathTests extends ESTestCase {
     public void testHasNoDoubleWildcard() {
         Set<String> filters = new HashSet<>();
         for (int i = 0; i < randomIntBetween(5, 10); i++) {
-            String item = randomList(1, 5, () -> randomAlphaOfLength(5)).stream().collect(Collectors.joining("."));
+            String item = String.join(".", randomList(1, 5, () -> randomAlphaOfLength(5)));
             filters.add(item);
         }
 
@@ -311,11 +310,11 @@ public class FilterPathTests extends ESTestCase {
     public void testHasDoubleWildcard() {
         Set<String> filters = new HashSet<>();
         for (int i = 0; i < randomIntBetween(5, 10); i++) {
-            String item = randomList(1, 5, () -> randomAlphaOfLength(5)).stream().collect(Collectors.joining("."));
+            String item = String.join(".", randomList(1, 5, () -> randomAlphaOfLength(5)));
             filters.add(item);
         }
 
-        String item = randomList(1, 5, () -> randomAlphaOfLength(5)).stream().collect(Collectors.joining("."));
+        String item = String.join(".", randomList(1, 5, () -> randomAlphaOfLength(5)));
         filters.add(item + ".test**doubleWildcard");
 
         FilterPath[] filterPaths = FilterPath.compile(filters);
@@ -326,7 +325,7 @@ public class FilterPathTests extends ESTestCase {
     public void testNoMatchesFilter() {
         Set<String> filters = new HashSet<>();
         for (int i = 0; i < randomIntBetween(5, 10); i++) {
-            String item = randomList(1, 5, () -> randomAlphaOfLength(5)).stream().collect(Collectors.joining("."));
+            String item = String.join(".", randomList(1, 5, () -> randomAlphaOfLength(5)));
             filters.add(item);
         }
 

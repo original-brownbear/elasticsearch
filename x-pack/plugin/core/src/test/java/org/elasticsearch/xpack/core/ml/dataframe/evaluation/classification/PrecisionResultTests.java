@@ -14,14 +14,13 @@ import org.elasticsearch.xpack.core.ml.dataframe.evaluation.classification.Preci
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class PrecisionResultTests extends AbstractWireSerializingTestCase<Result> {
 
     public static Result createRandom() {
         int numClasses = randomIntBetween(2, 100);
-        List<String> classNames = Stream.generate(() -> randomAlphaOfLength(10)).limit(numClasses).collect(Collectors.toList());
+        List<String> classNames = Stream.generate(() -> randomAlphaOfLength(10)).limit(numClasses).toList();
         List<PerClassSingleValue> classes = new ArrayList<>(numClasses);
         for (int i = 0; i < numClasses; i++) {
             double precision = randomDoubleBetween(0.0, 1.0, true);

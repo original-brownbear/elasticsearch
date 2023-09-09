@@ -98,7 +98,7 @@ public class AggregatorFunctionSupplierImplementer {
         builder.addModifiers(Modifier.PUBLIC, Modifier.FINAL);
         builder.addSuperinterface(AGGREGATOR_FUNCTION_SUPPLIER);
 
-        createParameters.stream().forEach(p -> p.declareField(builder));
+        createParameters.forEach(p -> p.declareField(builder));
         builder.addMethod(ctor());
         builder.addMethod(aggregator());
         builder.addMethod(groupingAggregator());
@@ -108,7 +108,7 @@ public class AggregatorFunctionSupplierImplementer {
 
     private MethodSpec ctor() {
         MethodSpec.Builder builder = MethodSpec.constructorBuilder().addModifiers(Modifier.PUBLIC);
-        createParameters.stream().forEach(p -> p.buildCtor(builder));
+        createParameters.forEach(p -> p.buildCtor(builder));
         return builder.build();
     }
 

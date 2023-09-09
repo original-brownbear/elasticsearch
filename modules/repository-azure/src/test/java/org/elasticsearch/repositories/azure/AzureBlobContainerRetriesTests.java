@@ -39,7 +39,6 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.elasticsearch.repositories.blobstore.ESBlobStoreRepositoryIntegTestCase.randomBytes;
@@ -243,7 +242,7 @@ public class AzureBlobContainerRetriesTests extends AbstractAzureServerTestCase 
                     final List<String> blockUids = Arrays.stream(blockList.split("<Latest>"))
                         .filter(line -> line.contains("</Latest>"))
                         .map(line -> line.substring(0, line.indexOf("</Latest>")))
-                        .collect(Collectors.toList());
+                        .toList();
 
                     final ByteArrayOutputStream blob = new ByteArrayOutputStream();
                     for (String blockUid : blockUids) {
@@ -316,7 +315,7 @@ public class AzureBlobContainerRetriesTests extends AbstractAzureServerTestCase 
                     final List<String> blockUids = Arrays.stream(blockList.split("<Latest>"))
                         .filter(line -> line.contains("</Latest>"))
                         .map(line -> line.substring(0, line.indexOf("</Latest>")))
-                        .collect(Collectors.toList());
+                        .toList();
 
                     final ByteArrayOutputStream blob = new ByteArrayOutputStream();
                     for (String blockUid : blockUids) {

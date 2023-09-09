@@ -123,9 +123,7 @@ public class ClientYamlTestClient implements Closeable {
             .collect(Collectors.toSet());
 
         List<ClientYamlSuiteRestApi.Path> bestPaths = restApi.getBestMatchingPaths(params.keySet());
-        List<ClientYamlSuiteRestApi.Path> filteredPaths = bestPaths.stream()
-            .filter(path -> pathPredicate.test(restApi, path))
-            .collect(Collectors.toUnmodifiableList());
+        List<ClientYamlSuiteRestApi.Path> filteredPaths = bestPaths.stream().filter(path -> pathPredicate.test(restApi, path)).toList();
         if (filteredPaths.isEmpty()) {
             throw new IllegalStateException(
                 Strings.format(

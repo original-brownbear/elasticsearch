@@ -51,7 +51,6 @@ import java.security.InvalidParameterException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
@@ -393,16 +392,16 @@ public class SynonymsManagementAPIService {
         reloadAnalyzers(synonymSetId, true, listener.delegateFailure((reloadListener, reloadResult) -> {
             Map<String, ReloadAnalyzersResponse.ReloadDetails> reloadDetails = reloadResult.reloadAnalyzersResponse.getReloadDetails();
             if (reloadDetails.isEmpty() == false) {
-                Set<String> indices = reloadDetails.entrySet()
-                    .stream()
-                    .map(entry -> entry.getValue().getIndexName())
-                    .collect(Collectors.toSet());
                 reloadListener.onFailure(
                     new IllegalArgumentException(
                         "synonyms set ["
                             + synonymSetId
                             + "] cannot be deleted as it is used in the following indices: "
-                            + String.join(", ", indices)
+                            + reloadDetails.values()
+                                .stream()
+                                .map(ReloadAnalyzersResponse.ReloadDetails::getIndexName)
+                                .distinct()
+                                .collect(Collectors.joining(", "))
                     )
                 );
                 return;

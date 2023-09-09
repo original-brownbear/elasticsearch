@@ -215,7 +215,7 @@ public class ReverseNestedAggregatorTests extends AggregatorTestCase {
             LongTerms resellers = nested.getAggregations().get("resellers");
             assertThat(
                 resellers.getBuckets().stream().map(LongTerms.Bucket::getKeyAsNumber).collect(toList()),
-                equalTo(LongStream.range(0, numResellers).mapToObj(Long::valueOf).collect(toList()))
+                equalTo(LongStream.range(0, numResellers).boxed().collect(toList()))
             );
             for (int r = 0; r < numResellers; r++) {
                 LongTerms.Bucket bucket = resellers.getBucketByKey(Integer.toString(r));
@@ -225,7 +225,7 @@ public class ReverseNestedAggregatorTests extends AggregatorTestCase {
                 LongTerms products = reverseNested.getAggregations().get("products");
                 assertThat(
                     products.getBuckets().stream().map(LongTerms.Bucket::getKeyAsNumber).collect(toList()),
-                    equalTo(LongStream.range(0, numProducts).mapToObj(Long::valueOf).collect(toList()))
+                    equalTo(LongStream.range(0, numProducts).boxed().collect(toList()))
                 );
             }
         }, new AggTestConfig(b, NestedAggregatorTests.resellersMappedFields()));

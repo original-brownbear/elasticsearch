@@ -34,12 +34,12 @@ public class EnrollmentTokenTests extends ESTestCase {
         try (XContentParser parser = createParser(JsonXContent.jsonXContent, jsonString)) {
             final Map<String, Object> info = parser.map();
             assertNotEquals(info, null);
-            enrollmentMap = info.entrySet().stream().collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().toString()));
+            enrollmentMap = info.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().toString()));
         }
         assertEquals(enrollmentMap.get("key"), apiKey);
         assertEquals(enrollmentMap.get("fgr"), fingerprint);
         assertEquals(enrollmentMap.get("ver"), version);
-        assertEquals(enrollmentMap.get("adr"), "[" + boundAddresses.stream().collect(Collectors.joining(", ")) + "]");
+        assertEquals(enrollmentMap.get("adr"), "[" + String.join(", ", boundAddresses) + "]");
         assertEquals(new String(Base64.getDecoder().decode(encoded), StandardCharsets.UTF_8), jsonString);
     }
 

@@ -36,7 +36,7 @@ public class OutputOperator extends SinkOperator {
 
         @Override
         public String describe() {
-            return "OutputOperator[columns = " + columns.stream().collect(joining(", ")) + "]";
+            return "OutputOperator[columns = " + String.join(", ", columns) + "]";
         }
     }
 

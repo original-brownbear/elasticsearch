@@ -11,7 +11,6 @@ package org.elasticsearch.packaging.util;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Encapsulates the fetching of information about a running process.
@@ -29,7 +28,7 @@ public record ProcessInfo(int pid, int uid, int gid, String username, String gro
      * @return a populated list of <code>ProcessInfo</code> objects
      */
     public static List<ProcessInfo> getProcessInfo(Shell sh, String command) {
-        final List<String> processes = sh.run("pgrep " + command).stdout().lines().collect(Collectors.toList());
+        final List<String> processes = sh.run("pgrep " + command).stdout().lines().toList();
 
         List<ProcessInfo> infos = new ArrayList<>();
         for (String pidStr : processes) {

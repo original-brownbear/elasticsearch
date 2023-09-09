@@ -22,7 +22,6 @@ import java.math.BigInteger;
 import java.nio.file.FileStore;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -245,29 +244,37 @@ public final class ShardPath {
                     pathsToSpace.put(nodeDataPath, usableBytes);
                 }
 
-                bestPath = Arrays.stream(paths)
-                    // Filter out paths that have enough space
-                    .filter((path) -> pathsToSpace.get(path).subtract(estShardSizeInBytes).compareTo(BigInteger.ZERO) > 0)
-                    // Sort by the number of shards for this index
-                    .sorted((p1, p2) -> {
-                        int cmp = Long.compare(pathToShardCount.getOrDefault(p1, 0L), pathToShardCount.getOrDefault(p2, 0L));
+                // Filter out paths that have enough space
+                // Sort by the number of shards for this index
+                // if the number of shards is equal, tie-break with the number of total shards
+                // if the number of shards is equal, tie-break with the usable bytes
+                // Return the first result
+                // Filter out paths that have enough space
+                // if the number of shards is equal, tie-break with the number of total shards
+                // if the number of shards is equal, tie-break with the usable bytes
+                // Or the existing best path if there aren't any that fit the criteria
+                for (NodeEnvironment.DataPath path : paths) {
+                    if (path == bestPath) {
+                        continue;
+                    }
+                    if (pathsToSpace.get(path).subtract(estShardSizeInBytes).compareTo(BigInteger.ZERO) > 0) {
+                        int cmp = Long.compare(pathToShardCount.getOrDefault(path, 0L), pathToShardCount.getOrDefault(bestPath, 0L));
                         if (cmp == 0) {
                             // if the number of shards is equal, tie-break with the number of total shards
                             cmp = Integer.compare(
-                                dataPathToShardCount.getOrDefault(p1.path, 0),
-                                dataPathToShardCount.getOrDefault(p2.path, 0)
+                                dataPathToShardCount.getOrDefault(path.path, 0),
+                                dataPathToShardCount.getOrDefault(bestPath.path, 0)
                             );
                             if (cmp == 0) {
                                 // if the number of shards is equal, tie-break with the usable bytes
-                                cmp = pathsToSpace.get(p2).compareTo(pathsToSpace.get(p1));
+                                cmp = pathsToSpace.get(bestPath).compareTo(pathsToSpace.get(path));
                             }
                         }
-                        return cmp;
-                    })
-                    // Return the first result
-                    .findFirst()
-                    // Or the existing best path if there aren't any that fit the criteria
-                    .orElse(bestPath);
+                        if (cmp < 0) {
+                            bestPath = path;
+                        }
+                    }
+                }
             }
 
             statePath = bestPath.resolve(shardId);

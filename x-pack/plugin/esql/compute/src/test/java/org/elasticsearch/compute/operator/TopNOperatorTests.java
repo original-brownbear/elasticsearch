@@ -653,10 +653,8 @@ public class TopNOperatorTests extends OperatorTestCase {
             ),
             randomPageSize()
         );
-        String sorts = List.of(
-            "SortOrder[channel=1, asc=false, nullsFirst=false, encoder=UTF8TopNEncoder]",
-            "SortOrder[channel=3, asc=false, nullsFirst=true, encoder=FixedLengthTopNEncoder]"
-        ).stream().collect(Collectors.joining(", "));
+        String sorts = "SortOrder[channel=1, asc=false, nullsFirst=false, encoder=UTF8TopNEncoder], "
+            + "SortOrder[channel=3, asc=false, nullsFirst=true, encoder=FixedLengthTopNEncoder]";
         assertThat(factory.describe(), equalTo("TopNOperator[count = 10, sortOrders = [" + sorts + "]]"));
         try (Operator operator = factory.get(new DriverContext())) {
             assertThat(operator.toString(), equalTo("TopNOperator[count = 0/10, sortOrders = [" + sorts + "]]"));

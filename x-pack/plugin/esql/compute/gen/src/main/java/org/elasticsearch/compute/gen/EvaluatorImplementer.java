@@ -19,6 +19,7 @@ import org.elasticsearch.compute.ann.Fixed;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import javax.lang.model.element.ExecutableElement;
@@ -76,7 +77,7 @@ public class EvaluatorImplementer {
         if (processFunction.warnExceptions.isEmpty() == false) {
             builder.addField(WARNINGS, "warnings", Modifier.PRIVATE, Modifier.FINAL);
         }
-        processFunction.args.stream().forEach(a -> a.declareField(builder));
+        processFunction.args.forEach(a -> a.declareField(builder));
 
         builder.addMethod(ctor());
         builder.addMethod(eval());
@@ -94,7 +95,7 @@ public class EvaluatorImplementer {
             builder.addParameter(SOURCE, "source");
             builder.addStatement("this.warnings = new Warnings(source)");
         }
-        processFunction.args.stream().forEach(a -> a.implementCtor(builder));
+        processFunction.args.forEach(a -> a.implementCtor(builder));
         return builder.build();
     }
 
@@ -102,9 +103,9 @@ public class EvaluatorImplementer {
         MethodSpec.Builder builder = MethodSpec.methodBuilder("eval").addAnnotation(Override.class);
         builder.addModifiers(Modifier.PUBLIC).returns(BLOCK).addParameter(PAGE, "page");
 
-        processFunction.args.stream().forEach(a -> a.evalToBlock(builder));
+        processFunction.args.forEach(a -> a.evalToBlock(builder));
         String invokeBlockEval = invokeRealEval(true);
-        processFunction.args.stream().forEach(a -> a.resolveVectors(builder, invokeBlockEval));
+        processFunction.args.forEach(a -> a.resolveVectors(builder, invokeBlockEval));
         builder.addStatement(invokeRealEval(false));
         return builder.build();
     }
@@ -113,7 +114,7 @@ public class EvaluatorImplementer {
         StringBuilder builder = new StringBuilder("return eval(page.getPositionCount()");
         String params = processFunction.args.stream()
             .map(a -> a.paramName(blockStyle))
-            .filter(a -> a != null)
+            .filter(Objects::nonNull)
             .collect(Collectors.joining(", "));
         if (params.length() > 0) {
             builder.append(", ");
@@ -132,7 +133,7 @@ public class EvaluatorImplementer {
         builder.addModifiers(Modifier.PUBLIC).returns(resultDataType);
         builder.addParameter(TypeName.INT, "positionCount");
 
-        processFunction.args.stream().forEach(a -> {
+        processFunction.args.forEach(a -> {
             if (a.paramName(blockStyle) != null) {
                 builder.addParameter(a.dataType(blockStyle), a.paramName(blockStyle));
             }
@@ -143,21 +144,21 @@ public class EvaluatorImplementer {
             resultDataType,
             resultDataType.simpleName().endsWith("Vector") ? "newVectorBuilder" : "newBlockBuilder"
         );
-        processFunction.args.stream().forEach(a -> a.createScratch(builder));
+        processFunction.args.forEach(a -> a.createScratch(builder));
 
         builder.beginControlFlow("position: for (int p = 0; p < positionCount; p++)");
         {
             if (blockStyle) {
-                processFunction.args.stream().forEach(a -> a.skipNull(builder));
+                processFunction.args.forEach(a -> a.skipNull(builder));
             }
-            processFunction.args.stream().forEach(a -> a.unpackValues(builder, blockStyle));
+            processFunction.args.forEach(a -> a.unpackValues(builder, blockStyle));
 
             StringBuilder pattern = new StringBuilder();
             List<Object> args = new ArrayList<>();
             pattern.append("$T.$N(");
             args.add(declarationType);
             args.add(processFunction.function.getSimpleName());
-            processFunction.args.stream().forEach(a -> {
+            processFunction.args.forEach(a -> {
                 if (args.size() > 2) {
                     pattern.append(", ");
                 }
@@ -208,7 +209,7 @@ public class EvaluatorImplementer {
         List<Object> args = new ArrayList<>();
         pattern.append("return $S");
         args.add(implementation.simpleName() + "[");
-        processFunction.args.stream().forEach(a -> a.buildToStringInvocation(pattern, args, args.size() > 2 ? ", " : ""));
+        processFunction.args.forEach(a -> a.buildToStringInvocation(pattern, args, args.size() > 2 ? ", " : ""));
         pattern.append(" + $S");
         args.add("]");
         builder.addStatement(pattern.toString(), args.toArray());

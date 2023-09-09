@@ -131,7 +131,7 @@ public class BlockMultiValuedTests extends ESTestCase {
         if (all) {
             return positions;
         }
-        return IntStream.range(0, between(1, orig.getPositionCount())).map(i -> positions[i]).toArray();
+        return Arrays.stream(positions, 0, between(1, orig.getPositionCount())).toArray();
     }
 
     private void assertExpanded(Block orig) {

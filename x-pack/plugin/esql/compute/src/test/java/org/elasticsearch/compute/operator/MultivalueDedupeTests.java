@@ -27,15 +27,14 @@ import org.elasticsearch.test.ESTestCase;
 import org.hamcrest.Matcher;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.NavigableSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.LongFunction;
-import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
@@ -128,9 +127,7 @@ public class MultivalueDedupeTests extends ESTestCase {
     private void assertDeduped(BasicBlockTests.RandomBlock b, Block deduped) {
         for (int p = 0; p < b.block().getPositionCount(); p++) {
             List<Object> v = b.values().get(p);
-            Matcher<? extends Object> matcher = v == null
-                ? nullValue()
-                : containsInAnyOrder(v.stream().collect(Collectors.toSet()).stream().sorted().toArray());
+            Matcher<? extends Object> matcher = v == null ? nullValue() : containsInAnyOrder(new HashSet<>(v).toArray());
             BlockTestUtils.assertPositionValues(deduped, p, matcher);
         }
     }
@@ -265,33 +262,33 @@ public class MultivalueDedupeTests extends ESTestCase {
 
     private void assertBytesRefHash(Set<BytesRef> previousValues, BasicBlockTests.RandomBlock b) {
         BytesRefHash hash = new BytesRefHash(1, BigArrays.NON_RECYCLING_INSTANCE);
-        previousValues.stream().forEach(hash::add);
+        previousValues.forEach(hash::add);
         MultivalueDedupe.HashResult hashes = new MultivalueDedupeBytesRef((BytesRefBlock) b.block()).hash(hash);
-        assertThat(hashes.sawNull(), equalTo(b.values().stream().anyMatch(v -> v == null)));
+        assertThat(hashes.sawNull(), equalTo(b.values().stream().anyMatch(Objects::isNull)));
         assertHash(b, hashes.ords(), hash.size(), previousValues, i -> hash.get(i, new BytesRef()));
     }
 
     private void assertIntHash(Set<Integer> previousValues, BasicBlockTests.RandomBlock b) {
         LongHash hash = new LongHash(1, BigArrays.NON_RECYCLING_INSTANCE);
-        previousValues.stream().forEach(hash::add);
+        previousValues.forEach(hash::add);
         MultivalueDedupe.HashResult hashes = new MultivalueDedupeInt((IntBlock) b.block()).hash(hash);
-        assertThat(hashes.sawNull(), equalTo(b.values().stream().anyMatch(v -> v == null)));
+        assertThat(hashes.sawNull(), equalTo(b.values().stream().anyMatch(Objects::isNull)));
         assertHash(b, hashes.ords(), hash.size(), previousValues, i -> (int) hash.get(i));
     }
 
     private void assertLongHash(Set<Long> previousValues, BasicBlockTests.RandomBlock b) {
         LongHash hash = new LongHash(1, BigArrays.NON_RECYCLING_INSTANCE);
-        previousValues.stream().forEach(hash::add);
+        previousValues.forEach(hash::add);
         MultivalueDedupe.HashResult hashes = new MultivalueDedupeLong((LongBlock) b.block()).hash(hash);
-        assertThat(hashes.sawNull(), equalTo(b.values().stream().anyMatch(v -> v == null)));
-        assertHash(b, hashes.ords(), hash.size(), previousValues, i -> hash.get(i));
+        assertThat(hashes.sawNull(), equalTo(b.values().stream().anyMatch(Objects::isNull)));
+        assertHash(b, hashes.ords(), hash.size(), previousValues, hash::get);
     }
 
     private void assertDoubleHash(Set<Double> previousValues, BasicBlockTests.RandomBlock b) {
         LongHash hash = new LongHash(1, BigArrays.NON_RECYCLING_INSTANCE);
-        previousValues.stream().forEach(d -> hash.add(Double.doubleToLongBits(d)));
+        previousValues.forEach(d -> hash.add(Double.doubleToLongBits(d)));
         MultivalueDedupe.HashResult hashes = new MultivalueDedupeDouble((DoubleBlock) b.block()).hash(hash);
-        assertThat(hashes.sawNull(), equalTo(b.values().stream().anyMatch(v -> v == null)));
+        assertThat(hashes.sawNull(), equalTo(b.values().stream().anyMatch(Objects::isNull)));
         assertHash(b, hashes.ords(), hash.size(), previousValues, i -> Double.longBitsToDouble(hash.get(i)));
     }
 
@@ -319,7 +316,7 @@ public class MultivalueDedupeTests extends ESTestCase {
             for (int i = start; i < end; i++) {
                 actualValues.add(lookup.apply(hashes.getInt(i) - 1));
             }
-            assertThat(actualValues, containsInAnyOrder(v.stream().collect(Collectors.toSet()).stream().sorted().toArray()));
+            assertThat(actualValues, containsInAnyOrder(new HashSet<>(v).toArray()));
             allValues.addAll(v);
         }
 
@@ -374,10 +371,8 @@ public class MultivalueDedupeTests extends ESTestCase {
         Block decoded = builder.build();
         assertThat(decoded.getPositionCount(), equalTo(toDecode.length));
         List<Object> actual = new ArrayList<>();
-        BasicBlockTests.valuesAtPositions(decoded, 0, decoded.getPositionCount())
-            .stream()
-            .forEach(l -> actual.add(l == null ? null : l.get(0)));
-        Collections.sort(actual, Comparator.comparing(o -> {
+        BasicBlockTests.valuesAtPositions(decoded, 0, decoded.getPositionCount()).forEach(l -> actual.add(l == null ? null : l.get(0)));
+        actual.sort(Comparator.comparing(o -> {
             @SuppressWarnings("unchecked") // This is totally comparable, believe me
             var c = (Comparable<Object>) o;
             return c;

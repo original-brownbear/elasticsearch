@@ -70,12 +70,10 @@ public class MetadataDataStreamsServiceTests extends MapperServiceTestCase {
         assertThat(ds, notNullValue());
         assertThat(ds.getType(), equalTo(IndexAbstraction.Type.DATA_STREAM));
         assertThat(ds.getIndices().size(), equalTo(numBackingIndices + 1));
-        List<String> backingIndexNames = ds.getIndices().stream().filter(x -> x.getName().startsWith(".ds-")).map(Index::getName).toList();
+        List<String> backingIndexNames = ds.getIndices().stream().map(Index::getName).filter(name -> name.startsWith(".ds-")).toList();
         assertThat(
             backingIndexNames,
-            containsInAnyOrder(
-                Arrays.stream(backingIndices).map(IndexMetadata::getIndex).map(Index::getName).toList().toArray(Strings.EMPTY_ARRAY)
-            )
+            containsInAnyOrder(Arrays.stream(backingIndices).map(IndexMetadata::getIndex).map(Index::getName).toArray())
         );
         IndexMetadata zeroIndex = newState.metadata().index(ds.getIndices().get(0));
         assertThat(zeroIndex.getIndex(), equalTo(indexToAdd.getIndex()));

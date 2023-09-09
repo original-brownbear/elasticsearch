@@ -55,7 +55,7 @@ public class TermVectorsServiceTests extends ESSingleNodeTestCase {
         IndexShard shard = test.getShardOrNull(0);
         assertThat(shard, notNullValue());
 
-        List<Long> longs = Stream.of(abs(randomLong()), abs(randomLong())).sorted().collect(toList());
+        List<Long> longs = Stream.of(abs(randomLong()), abs(randomLong())).sorted().toList();
 
         TermVectorsRequest request = new TermVectorsRequest("test", "0");
         TermVectorsResponse response = TermVectorsService.getTermVectors(shard, request, longs.iterator()::next);

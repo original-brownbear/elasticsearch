@@ -762,8 +762,8 @@ public class RecyclerBytesStreamOutputTests extends ESTestCase {
         Map<String, Object> reverseMap = new TreeMap<>(Collections.reverseOrder());
         reverseMap.putAll(map);
 
-        List<String> mapKeys = map.entrySet().stream().map(Map.Entry::getKey).toList();
-        List<String> reverseMapKeys = reverseMap.entrySet().stream().map(Map.Entry::getKey).toList();
+        List<String> mapKeys = List.copyOf(map.keySet());
+        List<String> reverseMapKeys = List.copyOf(reverseMap.keySet());
 
         assertNotEquals(mapKeys, reverseMapKeys);
 

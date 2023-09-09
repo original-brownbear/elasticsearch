@@ -26,7 +26,6 @@ import org.elasticsearch.cluster.metadata.ComposableIndexTemplate;
 import org.elasticsearch.cluster.metadata.ComposableIndexTemplate.DataStreamTemplate;
 import org.elasticsearch.cluster.metadata.Template;
 import org.elasticsearch.cluster.service.ClusterService;
-import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.network.NetworkModule;
 import org.elasticsearch.common.settings.Settings;
@@ -350,10 +349,7 @@ public class SystemDataStreamIT extends ESIntegTestCase {
         public void cleanUpFeature(ClusterService clusterService, Client client, ActionListener<ResetFeatureStateStatus> listener) {
             Collection<SystemDataStreamDescriptor> dataStreamDescriptors = getSystemDataStreamDescriptors();
             final DeleteDataStreamAction.Request request = new DeleteDataStreamAction.Request(
-                dataStreamDescriptors.stream()
-                    .map(SystemDataStreamDescriptor::getDataStreamName)
-                    .collect(Collectors.toList())
-                    .toArray(Strings.EMPTY_ARRAY)
+                dataStreamDescriptors.stream().map(SystemDataStreamDescriptor::getDataStreamName).toArray(String[]::new)
             );
             EnumSet<Option> options = request.indicesOptions().options();
             options.add(Option.IGNORE_UNAVAILABLE);

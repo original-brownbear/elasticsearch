@@ -81,6 +81,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.channels.spi.AbstractInterruptibleChannel;
 import java.nio.file.CopyOption;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
@@ -2214,10 +2215,10 @@ public class TranslogTests extends ESTestCase {
         assertThat(expectedException, is(not(nullValue())));
         assertThat(failableTLog.getTragicException(), equalTo(expectedException));
         assertThat(fileChannels, is(not(empty())));
-        assertThat("all file channels have to be closed", fileChannels.stream().filter(f -> f.isOpen()).findFirst().isPresent(), is(false));
+        assertThat("all file channels have to be closed", fileChannels.stream().anyMatch(AbstractInterruptibleChannel::isOpen), is(false));
 
         assertThat(failableTLog.isOpen(), is(false));
-        final AlreadyClosedException alreadyClosedException = expectThrows(AlreadyClosedException.class, () -> failableTLog.newSnapshot());
+        final AlreadyClosedException alreadyClosedException = expectThrows(AlreadyClosedException.class, failableTLog::newSnapshot);
         assertThat(alreadyClosedException.getMessage(), is("translog is already closed"));
 
         fail.failNever();

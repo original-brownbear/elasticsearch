@@ -532,7 +532,7 @@ public class BalancedShardsAllocatorTests extends ESAllocationTestCase {
         String name,
         Map<String, Integer> assignments
     ) {
-        var numberOfShards = assignments.entrySet().stream().mapToInt(Map.Entry::getValue).sum();
+        var numberOfShards = assignments.values().stream().mapToInt(i -> i).sum();
         var inSyncIds = randomList(numberOfShards, numberOfShards, () -> UUIDs.randomBase64UUID(random()));
         var indexMetadataBuilder = IndexMetadata.builder(name)
             .settings(settings(IndexVersion.current()))
