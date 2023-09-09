@@ -115,7 +115,7 @@ public final class TextParams {
         }
 
         private NamedAnalyzer wrapAnalyzer(NamedAnalyzer a) {
-            if (positionIncrementGap.isConfigured() == false) {
+            if (positionIncrementGap.isConfigured() == false || a.getPositionIncrementGap(a.name()) == positionIncrementGap.get()) {
                 return a;
             }
             return new NamedAnalyzer(a, positionIncrementGap.get());

@@ -30,10 +30,12 @@ public class NamedAnalyzer extends DelegatingAnalyzerWrapper {
 
     public NamedAnalyzer(NamedAnalyzer analyzer, int positionIncrementGap) {
         this(analyzer.name(), analyzer.scope(), analyzer.analyzer(), positionIncrementGap);
+        assert positionIncrementGap != analyzer.positionIncrementGap;
     }
 
     public NamedAnalyzer(String name, AnalyzerScope scope, Analyzer analyzer) {
         this(name, scope, analyzer, Integer.MIN_VALUE);
+        assert analyzer instanceof NamedAnalyzer == false;
     }
 
     public NamedAnalyzer(String name, AnalyzerScope scope, Analyzer analyzer, int positionIncrementGap) {

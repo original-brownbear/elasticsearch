@@ -38,8 +38,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-import static java.util.Collections.unmodifiableMap;
-
 /**
  * An internal registry for tokenizer, token filter, char filter and analyzer.
  * This class exists per node and allows to create per-index {@link IndexAnalyzers} via {@link #build}
@@ -77,11 +75,11 @@ public final class AnalysisRegistry implements Closeable {
         Map<String, PreBuiltAnalyzerProviderFactory> preConfiguredAnalyzers
     ) {
         this.environment = environment;
-        this.charFilters = unmodifiableMap(charFilters);
-        this.tokenFilters = unmodifiableMap(tokenFilters);
-        this.tokenizers = unmodifiableMap(tokenizers);
-        this.analyzers = unmodifiableMap(analyzers);
-        this.normalizers = unmodifiableMap(normalizers);
+        this.charFilters = Map.copyOf(charFilters);
+        this.tokenFilters = Map.copyOf(tokenFilters);
+        this.tokenizers = Map.copyOf(tokenizers);
+        this.analyzers = Map.copyOf(analyzers);
+        this.normalizers = Map.copyOf(normalizers);
         prebuiltAnalysis = new PrebuiltAnalysis(
             preConfiguredCharFilters,
             preConfiguredTokenFilters,
@@ -452,7 +450,7 @@ public final class AnalysisRegistry implements Closeable {
             public String toString() {
                 return "filter";
             }
-        };
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -488,15 +486,12 @@ public final class AnalysisRegistry implements Closeable {
                 }
             } else if (component == Component.NORMALIZER) {
                 if (typeName == null || typeName.equals("custom")) {
-                    T factory = (T) new CustomNormalizerProvider(settings, name, currentSettings);
+                    T factory = (T) new CustomNormalizerProvider(name, currentSettings);
                     factories.put(name, factory);
                     continue;
                 }
             }
             AnalysisProvider<T> type = getAnalysisProvider(component, providerMap, name, typeName);
-            if (type == null) {
-                throw new IllegalArgumentException("Unknown " + component + " type [" + typeName + "] for [" + name + "]");
-            }
             final T factory = type.get(settings, environment, name, currentSettings);
             factories.put(name, factory);
 
@@ -561,18 +556,17 @@ public final class AnalysisRegistry implements Closeable {
             Map<String, PreBuiltAnalyzerProviderFactory> preConfiguredAnalyzers
         ) {
 
-            Map<String, PreBuiltAnalyzerProviderFactory> analyzerProviderFactories = new HashMap<>();
-            analyzerProviderFactories.putAll(preConfiguredAnalyzers);
+            Map<String, PreBuiltAnalyzerProviderFactory> analyzerProviderFactories = new HashMap<>(preConfiguredAnalyzers);
             // Pre-build analyzers
             for (PreBuiltAnalyzers preBuiltAnalyzerEnum : PreBuiltAnalyzers.values()) {
                 String name = preBuiltAnalyzerEnum.name().toLowerCase(Locale.ROOT);
                 analyzerProviderFactories.put(name, new PreBuiltAnalyzerProviderFactory(name, preBuiltAnalyzerEnum));
             }
 
-            this.analyzerProviderFactories = Collections.unmodifiableMap(analyzerProviderFactories);
-            this.preConfiguredCharFilterFactories = preConfiguredCharFilters;
-            this.preConfiguredTokenFilters = preConfiguredTokenFilters;
-            this.preConfiguredTokenizers = preConfiguredTokenizers;
+            this.analyzerProviderFactories = Map.copyOf(analyzerProviderFactories);
+            this.preConfiguredCharFilterFactories = Map.copyOf(preConfiguredCharFilters);
+            this.preConfiguredTokenFilters = Map.copyOf(preConfiguredTokenFilters);
+            this.preConfiguredTokenizers = Map.copyOf(preConfiguredTokenizers);
         }
 
         AnalysisProvider<CharFilterFactory> getCharFilterFactory(String name) {

@@ -128,8 +128,8 @@ public interface IndexAnalyzers extends Closeable {
             @Override
             public void close() throws IOException {
                 IOUtils.close(
-                    Stream.of(analyzers.values().stream(), normalizers.values().stream(), whitespaceNormalizers.values().stream())
-                        .flatMap(s -> s)
+                    Stream.of(analyzers, normalizers, whitespaceNormalizers)
+                        .flatMap(s -> s.values().stream())
                         .filter(a -> a.scope() == AnalyzerScope.INDEX)
                         .toList()
                 );
