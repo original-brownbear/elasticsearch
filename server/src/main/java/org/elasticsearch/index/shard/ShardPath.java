@@ -10,22 +10,24 @@ package org.elasticsearch.index.shard;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.util.Strings;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
-import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.env.NodeEnvironment;
 import org.elasticsearch.env.ShardLock;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.xcontent.NamedXContentRegistry;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.math.BigInteger;
 import java.nio.file.FileStore;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public final class ShardPath {
     public static final String INDEX_FOLDER_NAME = "index";
@@ -235,45 +237,57 @@ public final class ShardPath {
             NodeEnvironment.DataPath bestPath = getPathWithMostFreeSpace(env);
 
             if (paths.length != 1) {
-                Map<NodeEnvironment.DataPath, Long> pathToShardCount = env.shardCountPerPath(shardId.getIndex());
-
-                // Compute how much space there is on each path
-                final Map<NodeEnvironment.DataPath, BigInteger> pathsToSpace = Maps.newMapWithExpectedSize(paths.length);
-                for (NodeEnvironment.DataPath nodeDataPath : paths) {
-                    FileStore fileStore = nodeDataPath.fileStore;
-                    BigInteger usableBytes = BigInteger.valueOf(fileStore.getUsableSpace());
-                    pathsToSpace.put(nodeDataPath, usableBytes);
+                NodeEnvironment.DataPath best = findBestPath(dataPathToShardCount, paths, estShardSizeInBytes, env, shardId.getIndex());
+                if (best != null) {
+                    bestPath = best;
                 }
-
-                bestPath = Arrays.stream(paths)
-                    // Filter out paths that have enough space
-                    .filter((path) -> pathsToSpace.get(path).subtract(estShardSizeInBytes).compareTo(BigInteger.ZERO) > 0)
-                    // Sort by the number of shards for this index
-                    .sorted((p1, p2) -> {
-                        int cmp = Long.compare(pathToShardCount.getOrDefault(p1, 0L), pathToShardCount.getOrDefault(p2, 0L));
-                        if (cmp == 0) {
-                            // if the number of shards is equal, tie-break with the number of total shards
-                            cmp = Integer.compare(
-                                dataPathToShardCount.getOrDefault(p1.path, 0),
-                                dataPathToShardCount.getOrDefault(p2.path, 0)
-                            );
-                            if (cmp == 0) {
-                                // if the number of shards is equal, tie-break with the usable bytes
-                                cmp = pathsToSpace.get(p2).compareTo(pathsToSpace.get(p1));
-                            }
-                        }
-                        return cmp;
-                    })
-                    // Return the first result
-                    .findFirst()
-                    // Or the existing best path if there aren't any that fit the criteria
-                    .orElse(bestPath);
             }
 
             statePath = bestPath.resolve(shardId);
             dataPath = statePath;
         }
         return new ShardPath(indexSettings.hasCustomDataPath(), dataPath, statePath, shardId);
+
+    }
+
+    private static NodeEnvironment.DataPath findBestPath(
+        Map<Path, Integer> dataPathToShardCount,
+        NodeEnvironment.DataPath[] paths,
+        BigInteger estShardSizeInBytes,
+        NodeEnvironment env,
+        Index index
+    ) throws IOException {
+        NodeEnvironment.DataPath best = paths[0];
+        BigInteger bestUsableSpace = BigInteger.valueOf(best.fileStore.getUsableSpace());
+        final Map<NodeEnvironment.DataPath, Integer> pathToShardCount = new HashMap<>();
+        final Function<NodeEnvironment.DataPath, Integer> shardCountFn = p -> pathToShardCount.computeIfAbsent(p, pp -> {
+            try {
+                return env.shardCountPerPath(pp, index.getUUID());
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        });
+        for (int i = 1; i < paths.length; i++) {
+            NodeEnvironment.DataPath path = paths[i];
+            final BigInteger pSpace = BigInteger.valueOf(path.fileStore.getUsableSpace());
+            // Filter out paths that don't have enough space
+            if (pSpace.compareTo(estShardSizeInBytes) <= 0) {
+                continue;
+            }
+            // Sort by the number of shards for this index
+            int cmp = shardCountFn.apply(path).compareTo(shardCountFn.apply(best));
+            if (cmp == 0) {
+                // if the number of shards is equal, tie-break with the number of total shards
+                cmp = dataPathToShardCount.getOrDefault(path.path, 0).compareTo(dataPathToShardCount.getOrDefault(best.path, 0));
+                // if the number of shards is equal, tie-break with the usable bytes
+                cmp = cmp == 0 ? bestUsableSpace.compareTo(pSpace) : cmp;
+            }
+            if (cmp < 0) {
+                best = path;
+                bestUsableSpace = pSpace;
+            }
+        }
+        return best;
     }
 
     static NodeEnvironment.DataPath getPathWithMostFreeSpace(NodeEnvironment env) throws IOException {

@@ -49,7 +49,6 @@ import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.env.NodeEnvironment;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.shard.ShardId;
-import org.elasticsearch.index.shard.ShardPath;
 import org.elasticsearch.repositories.IndexId;
 import org.elasticsearch.snapshots.SnapshotId;
 import org.elasticsearch.xpack.searchablesnapshots.cache.common.CacheFile;
@@ -80,7 +79,6 @@ import java.util.function.Predicate;
 import static java.util.Collections.synchronizedMap;
 import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableSortedSet;
-import static org.elasticsearch.xpack.searchablesnapshots.cache.full.CacheService.getShardCachePath;
 import static org.elasticsearch.xpack.searchablesnapshots.cache.full.CacheService.resolveSnapshotCache;
 
 public class PersistentCache implements Closeable {
@@ -221,10 +219,8 @@ public class PersistentCache implements Closeable {
                     logger.debug("loading persistent cache on data path [{}]", dataPath);
 
                     for (String indexUUID : nodeEnvironment.availableIndexFoldersForPath(dataPath)) {
-                        for (ShardId shardId : nodeEnvironment.findAllShardIds(new Index("_unknown_", indexUUID))) {
-                            final Path shardDataPath = writer.dataPath().resolve(shardId);
-                            final Path shardCachePath = getShardCachePath(new ShardPath(false, shardDataPath, shardDataPath, shardId));
-
+                        for (int shardId : nodeEnvironment.findAllShardIds(indexUUID)) {
+                            final Path shardCachePath = resolveSnapshotCache(writer.dataPath().resolve(indexUUID, shardId));
                             if (Files.isDirectory(shardCachePath)) {
                                 logger.trace("found snapshot cache dir at [{}], loading cache files from disk and index", shardCachePath);
                                 Files.walkFileTree(shardCachePath, new SimpleFileVisitor<>() {
@@ -453,10 +449,8 @@ public class PersistentCache implements Closeable {
         try {
             for (NodeEnvironment.DataPath dataPath : nodeEnvironment.dataPaths()) {
                 for (String indexUUID : nodeEnvironment.availableIndexFoldersForPath(dataPath)) {
-                    for (ShardId shardId : nodeEnvironment.findAllShardIds(new Index("_unknown_", indexUUID))) {
-                        final Path shardDataPath = dataPath.resolve(shardId);
-                        final ShardPath shardPath = new ShardPath(false, shardDataPath, shardDataPath, shardId);
-                        final Path cacheDir = getShardCachePath(shardPath);
+                    for (int shardId : nodeEnvironment.findAllShardIds(indexUUID)) {
+                        final Path cacheDir = resolveSnapshotCache(dataPath.resolve(indexUUID, shardId));
                         if (Files.isDirectory(cacheDir)) {
                             logger.debug("deleting searchable snapshot shard cache directory [{}]", cacheDir);
                             IOUtils.rm(cacheDir);

@@ -1137,7 +1137,7 @@ public class IndicesService extends AbstractLifecycleComponent
         logger.debug("{} deleted shard reason [{}]", shardId, reason);
 
         if (canDeleteIndexContents(shardId.getIndex())) {
-            if (nodeEnv.findAllShardIds(shardId.getIndex()).isEmpty()) {
+            if (nodeEnv.findAllShardIds(shardId.getIndex().getUUID()).isEmpty()) {
                 try {
                     // note that deleteIndexStore have more safety checks and may throw an exception if index was concurrently created.
                     deleteIndexStore("no longer used", metadata);

@@ -479,12 +479,7 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
                 // Count up how many shards are currently on each data path:
                 Map<Path, Integer> dataPathToShardCount = new HashMap<>();
                 for (IndexShard shard : this) {
-                    Path dataPath = shard.shardPath().getRootStatePath();
-                    Integer curCount = dataPathToShardCount.get(dataPath);
-                    if (curCount == null) {
-                        curCount = 0;
-                    }
-                    dataPathToShardCount.put(dataPath, curCount + 1);
+                    dataPathToShardCount.merge(shard.shardPath().getRootStatePath(), 1, (k, v) -> v + 1);
                 }
                 path = ShardPath.selectNewPathForShard(
                     nodeEnv,

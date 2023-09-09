@@ -25,6 +25,7 @@ import org.elasticsearch.Version;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.node.DiscoveryNodeRole;
+import org.elasticsearch.common.Numbers;
 import org.elasticsearch.common.Randomness;
 import org.elasticsearch.common.ReferenceDocs;
 import org.elasticsearch.common.UUIDs;
@@ -124,19 +125,19 @@ public final class NodeEnvironment implements Closeable {
          * ${data.paths}/indices/{index.uuid}/{shard.id}
          */
         public Path resolve(ShardId shardId) {
-            return resolve(shardId.getIndex()).resolve(Integer.toString(shardId.id()));
+            return resolve(shardId.getIndex().getUUID(), shardId.id());
         }
 
         /**
          * Resolves index directory against this DataPath
-         * ${data.paths}/indices/{index.uuid}
+         * ${data.paths}/indices/{indexUUID}
          */
-        public Path resolve(Index index) {
-            return resolve(index.getUUID());
+        Path resolve(String indexUUID) {
+            return indicesPath.resolve(indexUUID);
         }
 
-        Path resolve(String uuid) {
-            return indicesPath.resolve(uuid);
+        public Path resolve(String indexUUID, int shardId) {
+            return resolve(indexUUID).resolve(Integer.toString(shardId));
         }
 
         @Override
@@ -1095,7 +1096,7 @@ public final class NodeEnvironment implements Closeable {
         assertEnvIsLocked();
         Path[] indexPaths = new Path[dataPaths.length];
         for (int i = 0; i < dataPaths.length; i++) {
-            indexPaths[i] = dataPaths[i].resolve(index);
+            indexPaths[i] = dataPaths[i].resolve(index.getUUID());
         }
         return indexPaths;
     }
@@ -1204,59 +1205,50 @@ public final class NodeEnvironment implements Closeable {
      * Tries to find all allocated shards for the given index
      * on the current node. NOTE: This methods is prone to race-conditions on the filesystem layer since it might not
      * see directories created concurrently or while it's traversing.
-     * @param index the index to filter shards
+     * @param indexUUID the indexUUID to filter shards by
      * @return a set of shard IDs
      * @throws IOException if an IOException occurs
      */
-    public Set<ShardId> findAllShardIds(final Index index) throws IOException {
-        assert index != null;
+    public Set<Integer> findAllShardIds(final String indexUUID) throws IOException {
+        assert indexUUID != null;
         if (dataPaths == null || locks == null) {
             throw new IllegalStateException("node is not configured to store local location");
         }
         assertEnvIsLocked();
-        final Set<ShardId> shardIds = new HashSet<>();
-        final String indexUniquePathId = index.getUUID();
+        final Set<Integer> shardIds = new HashSet<>();
         for (final DataPath dataPath : dataPaths) {
-            shardIds.addAll(findAllShardsForIndex(dataPath.indicesPath.resolve(indexUniquePathId), index));
+            shardIds.addAll(findAllShardsForIndex(dataPath.indicesPath, indexUUID));
         }
         return shardIds;
     }
 
     /**
-     * Find all the shards for this index, returning a map of the {@code DataPath} to the number of shards on that path
-     * @param index the index by which to filter shards
-     * @return a map of DataPath to count of the shards for the index on that path
+     * Find the number of shards in the given {@code dataPath} for the given {@code indexUUID}.
+     * @param dataPath data path to count number of shards in
+     * @param indexUUID the index by which to filter shards
+     * @return shard count for the index and path combination
      * @throws IOException if an IOException occurs
      */
-    public Map<DataPath, Long> shardCountPerPath(final Index index) throws IOException {
-        assert index != null;
+    public Integer shardCountPerPath(DataPath dataPath, final String indexUUID) throws IOException {
+        assert indexUUID != null;
         if (dataPaths == null || locks == null) {
             throw new IllegalStateException("node is not configured to store local location");
         }
         assertEnvIsLocked();
-        final Map<DataPath, Long> shardCountPerPath = new HashMap<>();
-        final String indexUniquePathId = index.getUUID();
-        for (final DataPath dataPath : dataPaths) {
-            Path indexLocation = dataPath.indicesPath.resolve(indexUniquePathId);
-            if (Files.isDirectory(indexLocation)) {
-                shardCountPerPath.put(dataPath, (long) findAllShardsForIndex(indexLocation, index).size());
-            }
-        }
-        return shardCountPerPath;
+        return findAllShardsForIndex(dataPath.indicesPath, indexUUID).size();
     }
 
-    private static Set<ShardId> findAllShardsForIndex(Path indexPath, Index index) throws IOException {
-        assert indexPath.getFileName().toString().equals(index.getUUID());
-        Set<ShardId> shardIds = new HashSet<>();
-        if (Files.isDirectory(indexPath)) {
-            try (DirectoryStream<Path> stream = Files.newDirectoryStream(indexPath)) {
-                for (Path shardPath : stream) {
-                    String fileName = shardPath.getFileName().toString();
-                    if (Files.isDirectory(shardPath) && fileName.chars().allMatch(Character::isDigit)) {
-                        int shardId = Integer.parseInt(fileName);
-                        ShardId id = new ShardId(index, shardId);
-                        shardIds.add(id);
-                    }
+    private static List<Integer> findAllShardsForIndex(Path indicesPath, String indexUUID) throws IOException {
+        Path indexPath = indicesPath.resolve(indexUUID);
+        if (Files.isDirectory(indexPath) == false) {
+            return List.of();
+        }
+        List<Integer> shardIds = new ArrayList<>();
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(indexPath)) {
+            for (Path shardPath : stream) {
+                String fileName = shardPath.getFileName().toString();
+                if (Numbers.isPositiveNumeric(fileName) && Files.isDirectory(shardPath)) {
+                    shardIds.add(Integer.parseInt(fileName));
                 }
             }
         }

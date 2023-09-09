@@ -270,7 +270,7 @@ public class NodeEnvironmentTests extends ESTestCase {
             env.deleteShardDirectorySafe(new ShardId(index, 1), idxSettings, listener::set);
             Path[] deletedPaths = listener.get();
             for (int i = 0; i < env.dataPaths().length; i++) {
-                assertThat(deletedPaths[i], equalTo(env.dataPaths()[i].resolve(index).resolve("1")));
+                assertThat(deletedPaths[i], equalTo(env.dataPaths()[i].resolve(index.getUUID(), 1)));
             }
         }
 
