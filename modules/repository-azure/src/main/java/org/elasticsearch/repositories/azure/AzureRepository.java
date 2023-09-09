@@ -28,7 +28,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 
-import static org.elasticsearch.core.Strings.format;
 import static org.elasticsearch.repositories.azure.AzureStorageService.MAX_CHUNK_SIZE;
 import static org.elasticsearch.repositories.azure.AzureStorageService.MIN_CHUNK_SIZE;
 
@@ -155,13 +154,11 @@ public class AzureRepository extends MeteredBlobStoreRepository {
         final AzureBlobStore blobStore = new AzureBlobStore(metadata, storageService, bigArrays);
 
         logger.debug(
-            () -> format(
-                "using container [%s], chunk_size [%s], compress [%s], base_path [%s]",
-                blobStore,
-                chunkSize,
-                isCompress(),
-                basePath()
-            )
+            "using container [{}], chunk_size [{}], compress [{}], base_path [{}]",
+            blobStore,
+            chunkSize,
+            isCompress(),
+            basePath()
         );
         return blobStore;
     }

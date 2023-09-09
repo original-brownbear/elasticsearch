@@ -14,8 +14,6 @@ import org.elasticsearch.plugin.Extensible;
 
 import java.util.Map;
 
-import static org.elasticsearch.core.Strings.format;
-
 /**
  * A registry of Extensible interfaces/classes read from extensibles.json file.
  * The file is generated during Elasticsearch built time (or commited)
@@ -76,7 +74,7 @@ public class ExtensiblesRegistry {
 
         this.loadedExtensible = extensibleFileReader.readFromFile();
         if (loadedExtensible.size() > 0) {
-            logger.debug(() -> format("Loaded extensible from cache file %s", loadedExtensible));
+            logger.debug("Loaded extensible from cache file {}", loadedExtensible);
         }
     }
 

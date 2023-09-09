@@ -487,7 +487,7 @@ public class TrainedModelAssignmentClusterService implements ClusterStateListene
         ActionListener<TrainedModelAssignmentMetadata> listener
     ) {
         threadPool.executor(MachineLearning.UTILITY_THREAD_POOL_NAME).execute(() -> {
-            logger.debug(() -> format("Rebalancing model allocations because [%s]", reason));
+            logger.debug("Rebalancing model allocations because [{}]", reason);
             TrainedModelAssignmentMetadata.Builder rebalancedMetadata;
             try {
                 rebalancedMetadata = rebalanceAssignments(clusterState, modelToAdd);
@@ -746,7 +746,7 @@ public class TrainedModelAssignmentClusterService implements ClusterStateListene
                         isUpdated = true;
                         return updatedState;
                     }
-                    logger.debug(() -> format("[%s] Retrying update as cluster state has been modified", deploymentId));
+                    logger.debug("[{}] Retrying update as cluster state has been modified", deploymentId);
                     updateNumberOfAllocations(currentState, deploymentId, numberOfAllocations, listener);
                     return currentState;
                 }
@@ -885,14 +885,7 @@ public class TrainedModelAssignmentClusterService implements ClusterStateListene
         }
         // If we are stopping, don't update anything
         if (existingAssignment.getAssignmentState().equals(AssignmentState.STOPPING)) {
-            logger.debug(
-                () -> format(
-                    "[%s] requested update from node [%s] while stopping; update was [%s]",
-                    deploymentId,
-                    nodeId,
-                    request.getUpdate()
-                )
-            );
+            logger.debug("[{}] requested update from node [{}] while stopping; update was [{}]", deploymentId, nodeId, request.getUpdate());
             return currentState;
         }
         if (existingAssignment.isRoutedToNode(nodeId) == false) {
@@ -911,7 +904,7 @@ public class TrainedModelAssignmentClusterService implements ClusterStateListene
         if (builder.hasModelDeployment(deploymentId) == false) {
             throw new ResourceNotFoundException("assignment for deployment with id [{}] not found", deploymentId);
         }
-        logger.debug(() -> format("[%s] removing assignment", deploymentId));
+        logger.debug("[{}] removing assignment", deploymentId);
         return update(currentState, builder.removeAssignment(deploymentId));
     }
 

@@ -703,24 +703,19 @@ public class RepositoriesService extends AbstractLifecycleComponent implements C
         });
         if (type.equals(repository.getMetadata().type()) == false) {
             logger.warn(
-                () -> format(
-                    "internal repository [%s][%s] already registered. this prevented the registration of "
-                        + "internal repository [%s][%s].",
-                    name,
-                    repository.getMetadata().type(),
-                    name,
-                    type
-                )
+                "internal repository [{}][{}] already registered. this prevented the registration of internal repository [{}][{}].",
+                name,
+                repository.getMetadata().type(),
+                name,
+                type
             );
         } else if (repositories.containsKey(name)) {
             logger.warn(
-                () -> format(
-                    "non-internal repository [%s] already registered. this repository will block the "
-                        + "usage of internal repository [%s][%s].",
-                    name,
-                    metadata.type(),
-                    name
-                )
+                "non-internal repository [{}] already registered. this repository will block the "
+                    + "usage of internal repository [{}][{}].",
+                name,
+                metadata.type(),
+                name
             );
         }
     }
@@ -729,7 +724,7 @@ public class RepositoriesService extends AbstractLifecycleComponent implements C
         Repository repository = internalRepositories.remove(name);
         if (repository != null) {
             RepositoryMetadata metadata = repository.getMetadata();
-            logger.debug(() -> format("delete internal repository [%s][%s].", metadata.type(), name));
+            logger.debug("delete internal repository [{}][{}].", metadata.type(), name);
             closeRepository(repository);
         }
     }

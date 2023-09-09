@@ -750,9 +750,9 @@ public abstract class TcpTransport extends AbstractLifecycleComponent implements
                     closeChannel = false;
                 }
             } else if (e instanceof StreamCorruptedException) {
-                logger.warn(() -> format("%s, [%s], closing connection", e.getMessage(), channel));
+                logger.warn("{}, [{}], closing connection", e.getMessage(), channel);
             } else if (e instanceof TransportNotReadyException) {
-                logger.debug(() -> format("%s on [%s], closing connection", e.getMessage(), channel));
+                logger.debug("{} on [{}], closing connection", e.getMessage(), channel);
             } else if (e instanceof HeaderValidationException headerValidationException) {
                 Header header = headerValidationException.header;
                 if (channel.isOpen()) {

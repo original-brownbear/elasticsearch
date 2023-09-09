@@ -10,7 +10,6 @@ package org.elasticsearch.plugins.scanners;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.elasticsearch.core.Strings;
 import org.elasticsearch.plugins.PluginBundle;
 import org.elasticsearch.xcontent.XContentParserConfiguration;
 
@@ -35,7 +34,7 @@ import static org.elasticsearch.xcontent.XContentType.JSON;
  */
 public class NamedComponentReader {
 
-    private Logger logger = LogManager.getLogger(NamedComponentReader.class);
+    private final Logger logger = LogManager.getLogger(NamedComponentReader.class);
     private static final String NAMED_COMPONENTS_FILE_NAME = "named_components.json";
     /**
      * a registry of known classes marked or indirectly marked (extending marked class) with @Extensible
@@ -61,11 +60,11 @@ public class NamedComponentReader {
             Path namedComponent = findNamedComponentCacheFile(pluginDir);
             if (namedComponent != null) {
                 Map<String, NameToPluginInfo> namedComponents = readFromFile(namedComponent, pluginClassLoader);
-                logger.debug(() -> Strings.format("Plugin in dir %s declared named components %s.", pluginDir, namedComponents));
+                logger.debug("Plugin in dir {} declared named components {}.", pluginDir, namedComponents);
 
                 return namedComponents;
             }
-            logger.debug(() -> Strings.format("No named component defined in plugin dir %s", pluginDir));
+            logger.debug("No named component defined in plugin dir {}", pluginDir);
         } catch (IOException e) {
             logger.error("unable to read named components", e);
         }

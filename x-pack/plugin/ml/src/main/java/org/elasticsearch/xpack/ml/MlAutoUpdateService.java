@@ -66,15 +66,15 @@ public class MlAutoUpdateService implements ClusterStateListener {
 
     private void runUpdate(UpdateAction action) {
         try {
-            logger.debug(() -> "[" + action.getName() + "] starting executing update action");
+            logger.debug("[{}] starting executing update action", action.getName());
             action.runUpdate();
             this.completedUpdates.add(action.getName());
-            logger.debug(() -> "[" + action.getName() + "] succeeded executing update action");
+            logger.debug("[{}] succeeded executing update action", action.getName());
         } catch (Exception ex) {
             logger.warn(() -> "[" + action.getName() + "] failure executing update action", ex);
         } finally {
             this.currentlyUpdating.remove(action.getName());
-            logger.debug(() -> "[" + action.getName() + "] no longer executing update action");
+            logger.debug("[{}] no longer executing update action", action.getName());
         }
     }
 

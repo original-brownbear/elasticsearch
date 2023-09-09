@@ -120,9 +120,9 @@ class LinearProgrammingPlanSolver {
         AssignmentPlan binPackingPlan = weightsAndBinPackingPlan.v2();
         if (binPackingPlan.compareTo(assignmentPlan) > 0) {
             assignmentPlan = binPackingPlan;
-            logger.debug(() -> "Best plan is from bin packing");
+            logger.debug("Best plan is from bin packing");
         } else {
-            logger.debug(() -> "Best plan is from LP solver");
+            logger.debug("Best plan is from LP solver");
         }
 
         return assignmentPlan;
@@ -138,7 +138,7 @@ class LinearProgrammingPlanSolver {
     }
 
     private Tuple<Map<Tuple<Deployment, Node>, Double>, AssignmentPlan> calculateWeightsAndBinPackingPlan() {
-        logger.debug(() -> "Calculating weights and bin packing plan");
+        logger.debug("Calculating weights and bin packing plan");
 
         double w = INITIAL_W;
         double dw = w / nodes.size() / deployments.size();

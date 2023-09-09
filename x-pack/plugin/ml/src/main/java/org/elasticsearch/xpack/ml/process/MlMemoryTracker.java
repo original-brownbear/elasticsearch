@@ -534,7 +534,7 @@ public class MlMemoryTracker implements LocalNodeMasterListener {
         if (stopPhaser.register() != phase.get()) {
             // Phases above not equal to `phase` mean we've been stopped, so don't do any operations that involve external interaction
             stopPhaser.arriveAndDeregister();
-            logger.info(() -> "[" + jobId + "] not refreshing anomaly detector memory as node is shutting down");
+            logger.info("[{}] not refreshing anomaly detector memory as node is shutting down", jobId);
             listener.onFailure(new EsRejectedExecutionException("Couldn't run ML memory update - node is shutting down"));
             return;
         }

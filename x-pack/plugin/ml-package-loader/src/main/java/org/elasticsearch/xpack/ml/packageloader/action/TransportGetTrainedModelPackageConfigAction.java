@@ -39,8 +39,6 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import static org.elasticsearch.core.Strings.format;
-
 public class TransportGetTrainedModelPackageConfigAction extends TransportMasterNodeAction<Request, Response> {
 
     private static final Logger logger = LogManager.getLogger(TransportGetTrainedModelPackageConfigAction.class);
@@ -74,7 +72,7 @@ public class TransportGetTrainedModelPackageConfigAction extends TransportMaster
         String repository = MachineLearningPackageLoader.MODEL_REPOSITORY.get(settings);
 
         String packagedModelId = request.getPackagedModelId();
-        logger.debug(() -> format("Fetch package manifest for [%s] from [%s]", packagedModelId, repository));
+        logger.debug("Fetch package manifest for [{}] from [{}]", packagedModelId, repository);
 
         threadPool.executor(MachineLearningPackageLoader.UTILITY_THREAD_POOL_NAME).execute(() -> {
             try {

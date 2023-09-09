@@ -241,9 +241,7 @@ class TrainedModelAssignmentRebalancer {
             );
         }
 
-        logger.debug(
-            () -> format("Computing plan for low priority deployments. CPU cores fixed to [%s].", MAX_LOW_PRIORITY_MODELS_PER_NODE)
-        );
+        logger.debug("Computing plan for low priority deployments. CPU cores fixed to [" + MAX_LOW_PRIORITY_MODELS_PER_NODE + "].");
 
         // No need to use the zone aware planner as there is only 1 allocation for low priority models.
         return new AssignmentPlanner(planNodes, planDeployments).computePlan();

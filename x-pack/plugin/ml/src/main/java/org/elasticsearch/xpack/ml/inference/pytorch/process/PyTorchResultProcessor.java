@@ -135,7 +135,7 @@ public class PyTorchResultProcessor {
             notifyAndClearPendingResults(new ErrorResult("inference canceled as process is stopping"));
             processorCompletionLatch.countDown();
         }
-        logger.debug(() -> "[" + modelId + "] Results processing finished");
+        logger.debug("[{}] Results processing finished", modelId);
     }
 
     private void notifyAndClearPendingResults(ErrorResult errorResult) {

@@ -490,14 +490,12 @@ public class AutodetectProcessManager implements ClusterStateListener {
                     @Override
                     protected void doRun() {
                         if (nodeDying) {
-                            logger.info(() -> format("Aborted upgrading snapshot [%s] for job [%s] as node is dying", snapshotId, jobId));
+                            logger.info("Aborted upgrading snapshot [{}] for job [{}] as node is dying", snapshotId, jobId);
                             closeHandler.accept(null);
                             return;
                         }
                         if (resetInProgress) {
-                            logger.trace(
-                                () -> format("Aborted upgrading snapshot [%s] for job [%s] as ML feature is being reset", snapshotId, jobId)
-                            );
+                            logger.trace("Aborted upgrading snapshot [{}] for job [{}] as ML feature is being reset", snapshotId, jobId);
                             closeHandler.accept(null);
                             return;
                         }

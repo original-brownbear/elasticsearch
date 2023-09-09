@@ -514,7 +514,7 @@ public class ResultsPersisterService {
             int uncappedBackoff = ((1 << Math.min(currentAttempt, MAX_RETRY_EXPONENT)) - 1) * (50);
             currentMax = Math.min(uncappedBackoff, MAX_RETRY_SLEEP_MILLIS);
             String msg = format("failed to %s after [%s] attempts. Will attempt again.", getName(), currentAttempt);
-            LOGGER.warn(() -> format("[%s] %s", jobId, msg));
+            LOGGER.warn("[{}] {}", jobId, msg);
             msgHandler.accept(msg);
             // RetryableAction randomizes in the interval [currentMax/2 ; currentMax].
             // Its good to have a random window along the exponentially increasing curve

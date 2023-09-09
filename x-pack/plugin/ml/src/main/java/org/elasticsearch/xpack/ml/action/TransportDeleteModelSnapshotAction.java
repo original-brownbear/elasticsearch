@@ -28,8 +28,6 @@ import org.elasticsearch.xpack.ml.notifications.AnomalyDetectionAuditor;
 import java.util.Collections;
 import java.util.List;
 
-import static org.elasticsearch.core.Strings.format;
-
 public class TransportDeleteModelSnapshotAction extends HandledTransportAction<DeleteModelSnapshotAction.Request, AcknowledgedResponse> {
 
     private static final Logger logger = LogManager.getLogger(TransportDeleteModelSnapshotAction.class);
@@ -102,7 +100,7 @@ public class TransportDeleteModelSnapshotAction extends HandledTransportAction<D
                     );
 
                     auditor.info(request.getJobId(), msg);
-                    logger.debug(() -> format("[%s] %s", request.getJobId(), msg));
+                    logger.debug("[{}] {}", request.getJobId(), msg);
                     // We don't care about the bulk response, just that it succeeded
                     return AcknowledgedResponse.TRUE;
                 }));

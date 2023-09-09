@@ -350,10 +350,8 @@ public class LocalExporter extends Exporter implements ClusterStateListener, Cle
         if (missingTemplates.isEmpty() == false) {
             // Check to see if the template installation is disabled. If it isn't, then we should say so in the log.
             logger.debug(
-                () -> format(
-                    "monitoring index templates [%s] do not exist, so service " + "cannot start (waiting on registered templates)",
-                    missingTemplates
-                )
+                "monitoring index templates [{}] do not exist, so service cannot start (waiting on registered templates)",
+                missingTemplates
             );
         } else {
             templatesInstalled = true;

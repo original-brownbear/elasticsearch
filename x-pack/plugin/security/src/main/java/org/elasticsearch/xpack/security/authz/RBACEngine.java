@@ -607,7 +607,7 @@ public class RBACEngine implements AuthorizationEngine {
             .map(RoleDescriptor.ApplicationResourcePrivileges::getApplication)
             .collect(Collectors.toSet());
         for (String applicationName : applicationNames) {
-            logger.debug(() -> format("Checking privileges for application [%s]", applicationName));
+            logger.debug("Checking privileges for application [{}]", applicationName);
             final ResourcePrivilegesMap.Builder resourcePrivilegesMapBuilder = privilegesToCheck.runDetailedCheck()
                 ? ResourcePrivilegesMap.builder()
                 : null;

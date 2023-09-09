@@ -435,7 +435,7 @@ public class PluginsService implements ReportingService<PluginsAndModules> {
         Map<String, List<ModuleQualifiedExportsService>> qualifiedExports
     ) {
         String name = bundle.plugin.getName();
-        logger.debug(() -> "Loading bundle: " + name);
+        logger.debug("Loading bundle: {}", name);
 
         PluginsUtils.verifyCompatibility(bundle.plugin);
 
@@ -531,7 +531,7 @@ public class PluginsService implements ReportingService<PluginsAndModules> {
     ) {
         final PluginDescriptor plugin = bundle.plugin;
         if (plugin.getModuleName().isPresent()) {
-            logger.debug(() -> "Loading bundle: " + plugin.getName() + ", creating spi, modular");
+            logger.debug("Loading bundle: {}, creating spi, modular", plugin.getName());
             return createSpiModuleLayer(
                 bundle.spiUrls,
                 parentLoader,
@@ -539,7 +539,7 @@ public class PluginsService implements ReportingService<PluginsAndModules> {
                 qualifiedExports
             );
         } else {
-            logger.debug(() -> "Loading bundle: " + plugin.getName() + ", creating spi, non-modular");
+            logger.debug("Loading bundle: {}, creating spi, non-modular", plugin.getName());
             return LayerAndLoader.ofLoader(URLClassLoader.newInstance(bundle.spiUrls.toArray(new URL[0]), parentLoader));
         }
     }
@@ -553,14 +553,14 @@ public class PluginsService implements ReportingService<PluginsAndModules> {
     ) {
         final PluginDescriptor plugin = bundle.plugin;
         if (plugin.getModuleName().isPresent()) {
-            logger.debug(() -> "Loading bundle: " + plugin.getName() + ", modular");
+            logger.debug("Loading bundle: {}, modular", plugin.getName());
             var parentLayers = Stream.concat(
                 Stream.ofNullable(spiLayerAndLoader != null ? spiLayerAndLoader.layer() : null),
                 extendedPlugins.stream().map(LoadedPlugin::layer)
             ).toList();
             return createPluginModuleLayer(bundle, pluginParentLoader, parentLayers, qualifiedExports);
         } else if (plugin.isStable()) {
-            logger.debug(() -> "Loading bundle: " + plugin.getName() + ", non-modular as synthetic module");
+            logger.debug("Loading bundle: {}, non-modular as synthetic module", plugin.getName());
             return LayerAndLoader.ofLoader(
                 UberModuleClassLoader.getInstance(
                     pluginParentLoader,
@@ -571,7 +571,7 @@ public class PluginsService implements ReportingService<PluginsAndModules> {
                 )
             );
         } else {
-            logger.debug(() -> "Loading bundle: " + plugin.getName() + ", non-modular");
+            logger.debug("Loading bundle: {}, non-modular", plugin.getName());
             return LayerAndLoader.ofLoader(URLClassLoader.newInstance(bundle.urls.toArray(URL[]::new), pluginParentLoader));
         }
     }
@@ -746,7 +746,7 @@ public class PluginsService implements ReportingService<PluginsAndModules> {
         List<ModuleLayer> parentLayers,
         Map<String, List<ModuleQualifiedExportsService>> qualifiedExports
     ) {
-        logger.debug(() -> "Loading bundle: creating module layer and loader for module " + moduleName);
+        logger.debug("Loading bundle: creating module layer and loader for module {}", moduleName);
         var finder = ModuleFinder.of(paths);
 
         var configuration = Configuration.resolveAndBind(
@@ -762,7 +762,7 @@ public class PluginsService implements ReportingService<PluginsAndModules> {
         exposeQualifiedExportsAndOpens(pluginModule, qualifiedExports);
         // configure qualified exports/opens to other modules/plugins
         addPluginExportsServices(qualifiedExports, controller);
-        logger.debug(() -> "Loading bundle: created module layer and loader for module " + moduleName);
+        logger.debug("Loading bundle: created module layer and loader for module {}", moduleName);
         return new LayerAndLoader(controller.layer(), privilegedFindLoader(controller.layer(), moduleName));
     }
 

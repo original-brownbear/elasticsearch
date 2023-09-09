@@ -360,11 +360,9 @@ public class RestoreService implements ClusterStateApplier {
                 return true;
             }
             logger.warn(
-                () -> format(
-                    "Restoring snapshot[%s] skipping feature [%s] because it is not available in this cluster",
-                    snapshotInfo.snapshotId(),
-                    featureName
-                )
+                "Restoring snapshot[{}] skipping feature [{}] because it is not available in this cluster",
+                snapshotInfo.snapshotId(),
+                featureName
             );
             return false;
         })
@@ -521,12 +519,12 @@ public class RestoreService implements ClusterStateApplier {
                     repository.getRepositoryData(ActionListener.releaseAfter(new ActionListener<>() {
                         @Override
                         public void onResponse(RepositoryData repositoryData) {
-                            logger.debug(() -> format("repository UUID [{}] refresh completed", repositoryName));
+                            logger.debug("repository UUID [{}] refresh completed", repositoryName);
                         }
 
                         @Override
                         public void onFailure(Exception e) {
-                            logger.debug(() -> format("repository UUID [{}] refresh failed", repositoryName), e);
+                            logger.debug(() -> format("repository UUID [%s] refresh failed", repositoryName), e);
                         }
                     }, refs.acquire()));
                 }

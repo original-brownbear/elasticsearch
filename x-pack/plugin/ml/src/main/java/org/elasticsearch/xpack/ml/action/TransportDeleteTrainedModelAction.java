@@ -56,7 +56,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-import static org.elasticsearch.core.Strings.format;
 import static org.elasticsearch.xpack.core.ClientHelper.ML_ORIGIN;
 import static org.elasticsearch.xpack.ml.utils.TaskRetriever.getDownloadTaskInfo;
 
@@ -107,7 +106,7 @@ public class TransportDeleteTrainedModelAction extends AcknowledgedTransportMast
         ClusterState state,
         ActionListener<AcknowledgedResponse> listener
     ) {
-        logger.debug(() -> format("[%s] Request to delete trained model%s", request.getId(), request.isForce() ? " (force)" : ""));
+        logger.debug("[{}] Request to delete trained model{}", request.getId(), request.isForce() ? " (force)" : "");
 
         ActionListener<CancelTasksResponse> performDeletion = ActionListener.wrap(
             ignored -> deleteModel(request, state, listener),
@@ -121,7 +120,7 @@ public class TransportDeleteTrainedModelAction extends AcknowledgedTransportMast
 
     // package-private for testing
     static void cancelDownloadTask(Client client, String modelId, ActionListener<CancelTasksResponse> listener, TimeValue timeout) {
-        logger.debug(() -> format("[%s] Checking if download task exists and cancelling it", modelId));
+        logger.debug("[{}] Checking if download task exists and cancelling it", modelId);
 
         OriginSettingClient mlClient = new OriginSettingClient(client, ML_ORIGIN);
 
@@ -248,7 +247,7 @@ public class TransportDeleteTrainedModelAction extends AcknowledgedTransportMast
         List<String> modelAliases,
         ActionListener<AcknowledgedResponse> listener
     ) {
-        logger.debug(() -> "[" + request.getId() + "] Deleting model");
+        logger.debug("[{}] Deleting model", request.getId());
 
         ActionListener<AcknowledgedResponse> nameDeletionListener = ActionListener.wrap(
             ack -> trainedModelProvider.deleteTrainedModel(request.getId(), ActionListener.wrap(r -> {
@@ -301,7 +300,7 @@ public class TransportDeleteTrainedModelAction extends AcknowledgedTransportMast
             ActionListener<CancelTasksResponse> cancelListener = ActionListener.wrap(listener::onResponse, e -> {
                 Throwable cause = ExceptionsHelper.unwrapCause(e);
                 if (cause instanceof ResourceNotFoundException) {
-                    logger.debug(() -> format("[%s] Task no longer exists when attempting to cancel it", modelId));
+                    logger.debug("[{}] Task no longer exists when attempting to cancel it", modelId);
                     listener.onResponse(null);
                 } else {
                     listener.onFailure(
@@ -315,7 +314,7 @@ public class TransportDeleteTrainedModelAction extends AcknowledgedTransportMast
                 }
             });
 
-            logger.debug(() -> format("[%s] Download task exists, cancelling it", modelId));
+            logger.debug("[{}] Download task exists, cancelling it", modelId);
 
             // setting waitForCompletion here to wait for the cancellation to complete before executing the listener
             client.admin()
@@ -326,7 +325,7 @@ public class TransportDeleteTrainedModelAction extends AcknowledgedTransportMast
                 .waitForCompletion(true)
                 .execute(cancelListener);
         } else {
-            logger.debug(() -> format("[%s] No download task exists, proceeding with deletion", modelId));
+            logger.debug("[{}] No download task exists, proceeding with deletion", modelId);
             listener.onResponse(null);
         }
     }

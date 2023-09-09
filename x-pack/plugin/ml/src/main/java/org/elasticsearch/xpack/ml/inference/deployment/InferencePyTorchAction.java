@@ -60,7 +60,7 @@ class InferencePyTorchAction extends AbstractPyTorchAction<InferenceResults> {
             try {
                 parentActionTask.ensureNotCancelled();
             } catch (TaskCancelledException ex) {
-                logger.warn(() -> format("[%s] %s", getDeploymentId(), ex.getMessage()));
+                logger.warn("[{}] {}", getDeploymentId(), ex.getMessage());
                 return true;
             }
         }

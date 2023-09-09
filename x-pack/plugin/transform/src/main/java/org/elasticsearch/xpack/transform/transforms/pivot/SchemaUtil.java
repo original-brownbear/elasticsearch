@@ -30,7 +30,6 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.elasticsearch.core.Strings.format;
 import static org.elasticsearch.xpack.transform.transforms.common.DocumentConversionUtils.extractFieldMappings;
 
 public final class SchemaUtil {
@@ -201,14 +200,10 @@ public final class SchemaUtil {
             String sourceMapping = sourceFieldName == null ? null : sourceMappings.get(sourceFieldName);
             String destinationMapping = TransformAggregations.resolveTargetMapping(aggregationName, sourceMapping);
 
-            logger.debug(
-                () -> format("Deduced mapping for: [%s], agg type [%s] to [%s]", targetFieldName, aggregationName, destinationMapping)
-            );
+            logger.debug("Deduced mapping for: [{}], agg type [{}] to [{}]", targetFieldName, aggregationName, destinationMapping);
 
             if (TransformAggregations.isDynamicMapping(destinationMapping)) {
-                logger.debug(
-                    () -> format("Dynamic target mapping set for field [%s] and aggregation [%s]", targetFieldName, aggregationName)
-                );
+                logger.debug("Dynamic target mapping set for field [{}] and aggregation [{}]", targetFieldName, aggregationName);
             } else if (destinationMapping != null) {
                 targetMapping.put(targetFieldName, destinationMapping);
             } else {
@@ -222,7 +217,7 @@ public final class SchemaUtil {
 
         fieldNamesForGrouping.forEach((targetFieldName, sourceFieldName) -> {
             String destinationMapping = fieldTypesForGrouping.computeIfAbsent(targetFieldName, (s) -> sourceMappings.get(sourceFieldName));
-            logger.debug(() -> format("Deduced mapping for: [%s] to [%s]", targetFieldName, destinationMapping));
+            logger.debug("Deduced mapping for: [{}] to [{}]", targetFieldName, destinationMapping);
             if (destinationMapping != null) {
                 targetMapping.put(targetFieldName, destinationMapping);
             } else {

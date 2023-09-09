@@ -687,7 +687,7 @@ public class TrainedModelAssignmentNodeService implements ClusterStateListener {
         trainedModelAssignmentService.updateModelAssignmentState(
             new UpdateTrainedModelAssignmentRoutingInfoAction.Request(nodeId, deploymentId, update),
             ActionListener.wrap(success -> {
-                logger.debug(() -> format("[%s] deployment routing info was updated with [%s] and master notified", deploymentId, update));
+                logger.debug("[{}] deployment routing info was updated with [{}] and master notified", deploymentId, update);
                 listener.onResponse(AcknowledgedResponse.TRUE);
             }, error -> {
                 logger.warn(() -> format("[%s] failed to update deployment routing info with [%s]", deploymentId, update), error);

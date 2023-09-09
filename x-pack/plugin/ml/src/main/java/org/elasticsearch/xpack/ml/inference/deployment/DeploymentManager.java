@@ -463,7 +463,7 @@ public class DeploymentManager {
         }
 
         synchronized void forcefullyStopProcess() {
-            logger.debug(() -> format("[%s] Forcefully stopping process", task.getDeploymentId()));
+            logger.debug("[{}] Forcefully stopping process", task.getDeploymentId());
             prepareInternalStateForShutdown();
 
             if (priorityProcessWorker.isShutdown()) {
@@ -485,7 +485,7 @@ public class DeploymentManager {
         }
 
         private void handleAlreadyShuttingDownWorker() {
-            logger.debug(() -> format("[%s] Process worker was already marked for shutdown", task.getDeploymentId()));
+            logger.debug("[{}] Process worker was already marked for shutdown", task.getDeploymentId());
 
             priorityProcessWorker.notifyQueueRunnables();
         }

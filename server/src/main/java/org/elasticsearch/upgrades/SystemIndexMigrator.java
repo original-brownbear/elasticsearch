@@ -193,11 +193,9 @@ public class SystemIndexMigrator extends AllocatedPersistentTask {
                         );
                     }
                     logger.warn(
-                        () -> format(
-                            "resuming system index migration with index [%s], which does not match index given in last task state [%s]",
-                            nextMigrationInfo.getCurrentIndexName(),
-                            stateIndexName
-                        )
+                        "resuming system index migration with index [{}], which does not match index given in last task state [{}]",
+                        nextMigrationInfo.getCurrentIndexName(),
+                        stateIndexName
                     );
                 }
             }

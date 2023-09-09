@@ -282,9 +282,7 @@ public final class KeywordFieldMapper extends FieldMapper {
                 normalizer = indexAnalyzers.getNormalizer(normalizerName);
                 if (normalizer == null) {
                     if (indexCreatedVersion.isLegacyIndexVersion()) {
-                        logger.warn(
-                            () -> format("Could not find normalizer [%s] of legacy index, falling back to default", normalizerName)
-                        );
+                        logger.warn("Could not find normalizer [{}] of legacy index, falling back to default", normalizerName);
                         normalizer = Lucene.KEYWORD_ANALYZER;
                     } else {
                         throw new MapperParsingException("normalizer [" + normalizerName + "] not found for field [" + name + "]");

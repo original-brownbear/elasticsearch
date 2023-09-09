@@ -69,7 +69,7 @@ class RandomizedAssignmentRounding {
         List<Tuple<AssignmentPlan.Deployment, Node>> softAssignmentQueue = assignmentHolder.createSoftAssignmentQueue();
 
         if (softAssignmentQueue.isEmpty() == false) {
-            logger.debug(() -> "Random assignment rounding across [" + rounds + "] rounds");
+            logger.debug("Random assignment rounding across [{}] rounds", rounds);
             for (int i = 0; i < rounds; i++) {
                 AssignmentHolder randomizedAssignments = new AssignmentHolder(assignmentHolder);
                 randomizedAssignments.doRandomizedRounding(softAssignmentQueue);

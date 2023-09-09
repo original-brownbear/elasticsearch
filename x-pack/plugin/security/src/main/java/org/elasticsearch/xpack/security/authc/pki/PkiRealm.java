@@ -52,8 +52,6 @@ import java.util.regex.Pattern;
 import javax.net.ssl.X509ExtendedTrustManager;
 import javax.net.ssl.X509TrustManager;
 
-import static org.elasticsearch.core.Strings.format;
-
 public class PkiRealm extends Realm implements CachingRealm {
 
     public static final String PKI_CERT_HEADER_NAME = "__SECURITY_CLIENT_CERTIFICATE";
@@ -150,7 +148,7 @@ public class PkiRealm extends Realm implements CachingRealm {
             final BytesKey fingerprint = computeTokenFingerprint(token);
             User user = cache.get(fingerprint);
             if (user != null) {
-                logger.debug(() -> format("Using cached authentication for DN [%s], as principal [%s]", token.dn(), user.principal()));
+                logger.debug("Using cached authentication for DN [{}], as principal [{}]", token.dn(), user.principal());
                 if (delegatedRealms.hasDelegation()) {
                     delegatedRealms.resolve(user.principal(), listener);
                 } else {
@@ -167,11 +165,9 @@ public class PkiRealm extends Realm implements CachingRealm {
                 final String principal = getPrincipalFromSubjectDN(principalPattern, token, logger);
                 if (principal == null) {
                     logger.debug(
-                        () -> format(
-                            "the extracted principal after cert chain validation, from DN [%s], using pattern [%s] is null",
-                            token.dn(),
-                            principalPattern.toString()
-                        )
+                        "the extracted principal after cert chain validation, from DN [{}], using pattern [{}] is null",
+                        token.dn(),
+                        principalPattern
                     );
                     listener.onResponse(AuthenticationResult.unsuccessful("Could not parse principal from Subject DN " + token.dn(), null));
                 } else {
@@ -185,12 +181,10 @@ public class PkiRealm extends Realm implements CachingRealm {
                     }, listener::onFailure);
                     if (false == principal.equals(token.principal())) {
                         logger.debug(
-                            () -> format(
-                                "the extracted principal before [%s] and after [%s] cert chain validation, for DN [%s], are different",
-                                token.principal(),
-                                principal,
-                                token.dn()
-                            )
+                            "the extracted principal before [{}] and after [{}] cert chain validation, for DN [{}], are different",
+                            token.principal(),
+                            principal,
+                            token.dn()
                         );
                     }
                     if (delegatedRealms.hasDelegation()) {
@@ -235,12 +229,12 @@ public class PkiRealm extends Realm implements CachingRealm {
         String dn = token.credentials()[0].getSubjectX500Principal().toString();
         Matcher matcher = principalPattern.matcher(dn);
         if (false == matcher.find()) {
-            logger.debug(() -> format("could not extract principal from DN [%s] using pattern [%s]", dn, principalPattern.toString()));
+            logger.debug("could not extract principal from DN [{}] using pattern [{}]", dn, principalPattern);
             return null;
         }
         String principal = matcher.group(1);
         if (Strings.isNullOrEmpty(principal)) {
-            logger.debug(() -> format("the extracted principal from DN [%s] using pattern [%s] is empty", dn, principalPattern.toString()));
+            logger.debug("the extracted principal from DN [{}] using pattern [{}] is empty", dn, principalPattern);
             return null;
         }
         return principal;

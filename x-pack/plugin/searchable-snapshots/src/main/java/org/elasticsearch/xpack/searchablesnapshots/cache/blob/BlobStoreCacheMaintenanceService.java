@@ -619,19 +619,13 @@ public class BlobStoreCacheMaintenanceService implements ClusterStateListener {
                     logger.warn(
                         () -> format(
                             "periodic maintenance task completed with failure (%s deleted documents out of a total of %s)",
-                            deletes.get(),
-                            total.get()
+                            deletes,
+                            total
                         ),
                         e
                     );
                 } else {
-                    logger.info(
-                        () -> format(
-                            "periodic maintenance task completed (%s deleted documents out of a total of %s)",
-                            deletes.get(),
-                            total.get()
-                        )
-                    );
+                    logger.info("periodic maintenance task completed ({} deleted documents out of a total of {})", deletes, total);
                 }
             }
         }

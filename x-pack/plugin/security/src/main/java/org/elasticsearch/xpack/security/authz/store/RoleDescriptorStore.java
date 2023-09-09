@@ -173,7 +173,7 @@ public class RoleDescriptorStore implements RoleReferenceResolver {
             logDeprecatedRoles(rolesRetrievalResult.getRoleDescriptors());
             final boolean missingRoles = rolesRetrievalResult.getMissingRoles().isEmpty() == false;
             if (missingRoles) {
-                logger.debug(() -> format("Could not find roles with names %s", rolesRetrievalResult.getMissingRoles()));
+                logger.debug("Could not find roles with names {}", rolesRetrievalResult.getMissingRoles());
             }
             final Set<RoleDescriptor> effectiveDescriptors = maybeSkipRolesUsingDocumentOrFieldLevelSecurity(
                 rolesRetrievalResult.getRoleDescriptors()

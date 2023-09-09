@@ -119,7 +119,7 @@ import java.util.stream.Stream;
 
 import static java.util.Collections.unmodifiableList;
 import static org.elasticsearch.cluster.SnapshotsInProgress.completed;
-import static org.elasticsearch.common.Strings.arrayToCommaDelimitedString;
+import static org.elasticsearch.common.Strings.arrayToDelimitedString;
 import static org.elasticsearch.core.Strings.format;
 
 /**
@@ -1881,9 +1881,11 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
     public void deleteSnapshots(final DeleteSnapshotRequest request, final ActionListener<Void> listener) {
         final String repositoryName = request.repository();
         final String[] snapshotNames = request.snapshots();
-        logger.info(
-            () -> format("deleting snapshots [%s] from repository [%s]", arrayToCommaDelimitedString(snapshotNames), repositoryName)
-        );
+        logger.info(() -> {
+            final StringBuilder sb = new StringBuilder("deleting snapshots [");
+            arrayToDelimitedString(request.snapshots(), ",", sb);
+            return sb.append("] from repository [").append(request.repository()).append("]");
+        });
 
         final Repository repository = repositoriesService.repository(repositoryName);
         executeConsistentStateUpdate(repository, repositoryData -> new ClusterStateUpdateTask(request.masterNodeTimeout()) {

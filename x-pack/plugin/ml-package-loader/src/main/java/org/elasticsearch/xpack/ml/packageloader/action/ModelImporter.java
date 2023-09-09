@@ -162,6 +162,6 @@ class ModelImporter {
             ActionListener.noop()
         );
 
-        logger.debug(() -> format("[%s] %s", modelId, message));
+        logger.debug("[{}] {}", modelId, message);
     }
 }

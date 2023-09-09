@@ -87,7 +87,6 @@ import java.util.SortedMap;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.joining;
 import static org.elasticsearch.core.Strings.format;
 
 /**
@@ -357,7 +356,18 @@ public class MetadataIndexStateService {
             blockedIndices.put(index, indexBlock);
         }
 
-        logger.info(() -> format("closing indices %s", blockedIndices.keySet().stream().map(Object::toString).collect(joining(","))));
+        logger.info(() -> {
+            final StringBuilder sb = new StringBuilder("closing indices [");
+            Strings.collectionToDelimitedStringWithLimit(
+                (Iterable<CharSequence>) () -> blockedIndices.keySet().stream().<CharSequence>map(Object::toString).iterator(),
+                ",",
+                "",
+                "",
+                512,
+                sb
+            );
+            return sb.append(']').toString();
+        });
         return ClusterState.builder(currentState).blocks(blocks).build();
     }
 
@@ -1105,16 +1115,16 @@ public class MetadataIndexStateService {
             }
 
             logger.info(() -> {
-                final StringBuilder indexNames = new StringBuilder();
+                final StringBuilder sb = new StringBuilder("opening indices [");
                 Strings.collectionToDelimitedStringWithLimit(
-                    indicesToOpen.stream().map(i -> (CharSequence) i.getIndex().toString()).toList(),
+                    (Iterable<CharSequence>) () -> indicesToOpen.stream().<CharSequence>map(i -> i.getIndex().toString()).iterator(),
                     ",",
                     "",
                     "",
                     512,
-                    indexNames
+                    sb
                 );
-                return "opening indices [" + indexNames + "]";
+                return sb.append(']');
             });
 
             final Metadata.Builder metadata = Metadata.builder(currentState.metadata());

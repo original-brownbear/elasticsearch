@@ -41,7 +41,6 @@ import java.util.stream.IntStream;
 import static org.apache.lucene.util.RamUsageEstimator.shallowSizeOfInstance;
 import static org.apache.lucene.util.RamUsageEstimator.sizeOf;
 import static org.apache.lucene.util.RamUsageEstimator.sizeOfCollection;
-import static org.elasticsearch.core.Strings.format;
 import static org.elasticsearch.xcontent.ConstructingObjectParser.constructorArg;
 import static org.elasticsearch.xcontent.ConstructingObjectParser.optionalConstructorArg;
 import static org.elasticsearch.xpack.core.ml.inference.trainedmodel.InferenceHelpers.classificationLabel;
@@ -333,7 +332,7 @@ public class TreeInferenceModel implements InferenceModel {
 
     @Override
     public void rewriteFeatureIndices(Map<String, Integer> newFeatureIndexMapping) {
-        LOGGER.debug(() -> format("rewriting features %s", newFeatureIndexMapping));
+        LOGGER.debug("rewriting features {}", newFeatureIndexMapping);
         if (preparedForInference) {
             return;
         }

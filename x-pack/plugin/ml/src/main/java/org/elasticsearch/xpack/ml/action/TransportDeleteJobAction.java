@@ -56,7 +56,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.elasticsearch.core.Strings.format;
 import static org.elasticsearch.xpack.core.ClientHelper.ML_ORIGIN;
 import static org.elasticsearch.xpack.core.ClientHelper.executeAsyncWithOrigin;
 
@@ -127,7 +126,7 @@ public class TransportDeleteJobAction extends AcknowledgedTransportMasterNodeAct
         ClusterState state,
         ActionListener<AcknowledgedResponse> listener
     ) {
-        logger.debug(() -> "[" + request.getJobId() + "] deleting job ");
+        logger.debug("[{}] deleting job ", request.getJobId());
 
         if (request.isForce() == false) {
             checkJobIsNotOpen(request.getJobId(), state);
@@ -139,13 +138,7 @@ public class TransportDeleteJobAction extends AcknowledgedTransportMasterNodeAct
         // Check if there is a deletion task for this job already and if yes wait for it to complete
         synchronized (listenersByJobId) {
             if (listenersByJobId.containsKey(request.getJobId())) {
-                logger.debug(
-                    () -> format(
-                        "[%s] Deletion task [%s] will wait for existing deletion task to complete",
-                        request.getJobId(),
-                        task.getId()
-                    )
-                );
+                logger.debug("[{}] Deletion task [{}] will wait for existing deletion task to complete", request.getJobId(), task.getId());
                 listenersByJobId.get(request.getJobId()).add(listener);
                 return;
             } else {
@@ -245,7 +238,7 @@ public class TransportDeleteJobAction extends AcknowledgedTransportMasterNodeAct
     ) {
 
         final String jobId = request.getJobId();
-        logger.debug(() -> "[" + jobId + "] force deleting job");
+        logger.debug("[{}] force deleting job", jobId);
 
         // 3. Delete the job
         ActionListener<Boolean> removeTaskListener = ActionListener.wrap(

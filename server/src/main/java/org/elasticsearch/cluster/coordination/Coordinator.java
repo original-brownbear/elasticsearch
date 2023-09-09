@@ -1507,11 +1507,9 @@ public class Coordinator extends AbstractLifecycleComponent implements ClusterSt
             synchronized (mutex) {
                 if (mode != Mode.LEADER || getCurrentTerm() != clusterStatePublicationEvent.getNewState().term()) {
                     logger.debug(
-                        () -> format(
-                            "[%s] failed publication as node is no longer master for term %s",
-                            clusterStatePublicationEvent.getSummary(),
-                            clusterStatePublicationEvent.getNewState().term()
-                        )
+                        "[{}] failed publication as node is no longer master for term {}",
+                        clusterStatePublicationEvent.getSummary(),
+                        clusterStatePublicationEvent.getNewState().term()
                     );
                     throw new FailedToCommitClusterStateException(
                         "node is no longer master for term "
@@ -1522,12 +1520,7 @@ public class Coordinator extends AbstractLifecycleComponent implements ClusterSt
 
                 if (currentPublication.isPresent()) {
                     assert false : "[" + currentPublication.get() + "] in progress, cannot start new publication";
-                    logger.error(
-                        () -> format(
-                            "[%s] failed publication as already publication in progress",
-                            clusterStatePublicationEvent.getSummary()
-                        )
-                    );
+                    logger.error("[{}] failed publication as already publication in progress", clusterStatePublicationEvent.getSummary());
                     throw new FailedToCommitClusterStateException("publication " + currentPublication.get() + " already in progress");
                 }
 

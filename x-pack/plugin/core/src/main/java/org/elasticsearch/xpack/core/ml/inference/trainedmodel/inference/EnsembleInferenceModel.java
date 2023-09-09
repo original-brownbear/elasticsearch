@@ -39,7 +39,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static org.elasticsearch.core.Strings.format;
 import static org.elasticsearch.xcontent.ConstructingObjectParser.constructorArg;
 import static org.elasticsearch.xcontent.ConstructingObjectParser.optionalConstructorArg;
 import static org.elasticsearch.xpack.core.ml.inference.trainedmodel.InferenceHelpers.classificationLabel;
@@ -259,7 +258,7 @@ public class EnsembleInferenceModel implements InferenceModel {
 
     @Override
     public void rewriteFeatureIndices(final Map<String, Integer> newFeatureIndexMapping) {
-        LOGGER.debug(() -> format("rewriting features %s", newFeatureIndexMapping));
+        LOGGER.debug("rewriting features {}", newFeatureIndexMapping);
         if (preparedForInference) {
             return;
         }
@@ -267,7 +266,7 @@ public class EnsembleInferenceModel implements InferenceModel {
         Map<String, Integer> featureIndexMapping = new HashMap<>();
         if (newFeatureIndexMapping == null || newFeatureIndexMapping.isEmpty()) {
             Set<String> referencedFeatures = subModelFeatures();
-            LOGGER.debug(() -> format("detected submodel feature names %s", referencedFeatures));
+            LOGGER.debug("detected submodel feature names {}", referencedFeatures);
             int newFeatureIndex = 0;
             featureIndexMapping = new HashMap<>();
             this.featureNames = new String[referencedFeatures.size()];

@@ -42,7 +42,6 @@ import java.util.Map;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyMap;
-import static org.elasticsearch.core.Strings.format;
 
 public class GoogleCloudStorageService {
 
@@ -108,7 +107,7 @@ public class GoogleCloudStorageService {
                 );
             }
 
-            logger.debug(() -> format("creating GCS client with client_name [%s], endpoint [%s]", clientName, settings.getHost()));
+            logger.debug("creating GCS client with client_name [{}], endpoint [{}]", clientName, settings.getHost());
             final Storage storage = createClient(settings, stats);
             clientCache = Maps.copyMapWithAddedEntry(clientCache, repositoryName, storage);
             return storage;

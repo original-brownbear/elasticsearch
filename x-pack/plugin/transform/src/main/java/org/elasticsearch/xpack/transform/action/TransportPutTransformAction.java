@@ -47,7 +47,6 @@ import org.elasticsearch.xpack.transform.transforms.FunctionFactory;
 import java.time.Instant;
 import java.util.List;
 
-import static org.elasticsearch.core.Strings.format;
 import static org.elasticsearch.xpack.transform.utils.SecondaryAuthorizationUtils.getSecurityHeadersPreferringSecondary;
 
 public class TransportPutTransformAction extends AcknowledgedTransportMasterNodeAction<Request> {
@@ -180,7 +179,7 @@ public class TransportPutTransformAction extends AcknowledgedTransportMasterNode
             auditor.info(config.getId(), "Created transform.");
             List<String> warnings = TransformConfigLinter.getWarnings(function, config.getSource(), config.getSyncConfig());
             for (String warning : warnings) {
-                logger.warn(() -> format("[%s] %s", config.getId(), warning));
+                logger.warn("[{}] {}", config.getId(), warning);
                 auditor.warning(config.getId(), warning);
             }
             listener.onResponse(AcknowledgedResponse.TRUE);

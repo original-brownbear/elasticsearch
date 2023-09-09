@@ -18,8 +18,6 @@ import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.cluster.metadata.ReservedStateErrorMetadata;
 import org.elasticsearch.cluster.metadata.ReservedStateMetadata;
 
-import static org.elasticsearch.core.Strings.format;
-
 /**
  * Cluster state update task that sets the error state of the reserved cluster state metadata.
  * <p>
@@ -59,11 +57,9 @@ public class ReservedStateErrorTask implements ClusterStateTaskListener {
         // check for noop here
         if (isNewError(existingMetadata, errorState.version()) == false) {
             logger.info(
-                () -> format(
-                    "Not updating error state because version [%s] is less or equal to the last state error version [%s]",
-                    errorState.version(),
-                    existingMetadata.errorMetadata().version()
-                )
+                "Not updating error state because version [{}] is less or equal to the last state error version [{}]",
+                errorState.version(),
+                existingMetadata.errorMetadata().version()
             );
             return false;
         }

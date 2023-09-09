@@ -230,7 +230,7 @@ public class TransportUpdateTransformAction extends TransportTasksAction<Transfo
         List<String> warnings = TransformConfigLinter.getWarnings(function, config.getSource(), config.getSyncConfig());
 
         for (String warning : warnings) {
-            logger.warn(() -> format("[%s] %s", config.getId(), warning));
+            logger.warn("[{}] {}", config.getId(), warning);
             auditor.warning(config.getId(), warning);
         }
     }
