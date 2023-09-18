@@ -34,7 +34,6 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.CheckedConsumer;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.mapper.FieldMapper;
-import org.elasticsearch.index.mapper.KeywordFieldMapper;
 import org.elasticsearch.index.mapper.Mapping;
 import org.elasticsearch.index.mapper.MappingLookup;
 import org.elasticsearch.index.mapper.MockFieldMapper;
@@ -66,6 +65,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
+import static org.elasticsearch.index.MapperTestUtils.keywordField;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -640,9 +640,9 @@ public class DocumentSubsetBitsetCacheTests extends ESTestCase {
         List<FieldMapper> types = new ArrayList<>();
         for (int i = 0; i < 11; i++) { // the tests use fields 1 to 10.
             // This field has a value.
-            types.add(new MockFieldMapper(new KeywordFieldMapper.KeywordFieldType("field-" + i)));
+            types.add(new MockFieldMapper(keywordField("field-" + i)));
             // This field never has a value
-            types.add(new MockFieldMapper(new KeywordFieldMapper.KeywordFieldType("dne-" + i)));
+            types.add(new MockFieldMapper(keywordField("dne-" + i)));
         }
 
         MappingLookup mappingLookup = MappingLookup.fromMappers(Mapping.EMPTY, types, emptyList(), emptyList());

@@ -66,6 +66,7 @@ import java.util.List;
 import java.util.stream.IntStream;
 
 import static org.elasticsearch.compute.lucene.LuceneSourceOperatorTests.mockSearchContext;
+import static org.elasticsearch.index.MapperTestUtils.keywordField;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 
@@ -241,12 +242,8 @@ public class ValuesSourceReaderOperatorTests extends OperatorTestCase {
                 ElementType.LONG,
                 new NumberFieldMapper.NumberFieldType("long", NumberFieldMapper.NumberType.LONG)
             ).get(driverContext),
-            factory(reader, CoreValuesSourceType.KEYWORD, ElementType.BYTES_REF, new KeywordFieldMapper.KeywordFieldType("kwd")).get(
-                driverContext
-            ),
-            factory(reader, CoreValuesSourceType.KEYWORD, ElementType.BYTES_REF, new KeywordFieldMapper.KeywordFieldType("mv_kwd")).get(
-                driverContext
-            ),
+            factory(reader, CoreValuesSourceType.KEYWORD, ElementType.BYTES_REF, keywordField("kwd")).get(driverContext),
+            factory(reader, CoreValuesSourceType.KEYWORD, ElementType.BYTES_REF, keywordField("mv_kwd")).get(driverContext),
             factory(reader, CoreValuesSourceType.BOOLEAN, ElementType.BOOLEAN, new BooleanFieldMapper.BooleanFieldType("bool")).get(
                 driverContext
             ),
@@ -365,7 +362,7 @@ public class ValuesSourceReaderOperatorTests extends OperatorTestCase {
         MappedFieldType intFt = new NumberFieldMapper.NumberFieldType("i", NumberFieldMapper.NumberType.INTEGER);
         MappedFieldType longFt = new NumberFieldMapper.NumberFieldType("j", NumberFieldMapper.NumberType.LONG);
         MappedFieldType doubleFt = new NumberFieldMapper.NumberFieldType("d", NumberFieldMapper.NumberType.DOUBLE);
-        MappedFieldType kwFt = new KeywordFieldMapper.KeywordFieldType("kw");
+        MappedFieldType kwFt = keywordField("kw");
 
         NumericDocValuesField intField = new NumericDocValuesField(intFt.name(), 0);
         NumericDocValuesField longField = new NumericDocValuesField(longFt.name(), 0);

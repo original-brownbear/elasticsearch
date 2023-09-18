@@ -33,7 +33,6 @@ import org.elasticsearch.core.Strings;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.mapper.IdFieldMapper;
-import org.elasticsearch.index.mapper.KeywordFieldMapper;
 import org.elasticsearch.index.mapper.LuceneDocument;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.mapper.MapperBuilderContext;
@@ -85,6 +84,7 @@ import java.util.stream.DoubleStream;
 import java.util.stream.LongStream;
 
 import static java.util.stream.Collectors.toList;
+import static org.elasticsearch.index.MapperTestUtils.keywordField;
 import static org.elasticsearch.search.aggregations.AggregationBuilders.max;
 import static org.elasticsearch.search.aggregations.AggregationBuilders.nested;
 import static org.hamcrest.Matchers.equalTo;
@@ -400,7 +400,7 @@ public class NestedAggregatorTests extends AggregatorTestCase {
             }
             try (DirectoryReader indexReader = wrapInMockESDirectoryReader(DirectoryReader.open(directory))) {
                 MappedFieldType fieldType1 = new NumberFieldMapper.NumberFieldType("num_pages", NumberFieldMapper.NumberType.LONG);
-                MappedFieldType fieldType2 = new KeywordFieldMapper.KeywordFieldType("author");
+                MappedFieldType fieldType2 = keywordField("author");
 
                 TermsAggregationBuilder termsBuilder = new TermsAggregationBuilder("authors").userValueTypeHint(ValueType.STRING)
                     .field("author")
@@ -534,7 +534,7 @@ public class NestedAggregatorTests extends AggregatorTestCase {
             });
             try (DirectoryReader indexReader = wrapInMockESDirectoryReader(DirectoryReader.open(directory))) {
                 MappedFieldType fieldType1 = new NumberFieldMapper.NumberFieldType("num_pages", NumberFieldMapper.NumberType.LONG);
-                MappedFieldType fieldType2 = new KeywordFieldMapper.KeywordFieldType("author");
+                MappedFieldType fieldType2 = keywordField("author");
 
                 TermsAggregationBuilder termsBuilder = new TermsAggregationBuilder("authors").userValueTypeHint(ValueType.STRING)
                     .size(books.size())
@@ -638,8 +638,8 @@ public class NestedAggregatorTests extends AggregatorTestCase {
                 FilterAggregationBuilder filterAggregationBuilder = new FilterAggregationBuilder("filterAgg", new MatchAllQueryBuilder());
                 filterAggregationBuilder.subAggregation(nestedBuilder);
 
-                MappedFieldType fieldType1 = new KeywordFieldMapper.KeywordFieldType("key");
-                MappedFieldType fieldType2 = new KeywordFieldMapper.KeywordFieldType("value");
+                MappedFieldType fieldType1 = keywordField("key");
+                MappedFieldType fieldType2 = keywordField("value");
 
                 Filter filter = searchAndReduce(
                     indexReader,

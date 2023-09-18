@@ -18,8 +18,8 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.tests.index.RandomIndexWriter;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.time.DateFormatters;
+import org.elasticsearch.index.MapperTestUtils;
 import org.elasticsearch.index.mapper.DateFieldMapper;
-import org.elasticsearch.index.mapper.KeywordFieldMapper;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.mapper.NumberFieldMapper;
 import org.elasticsearch.search.aggregations.AggregatorTestCase;
@@ -35,7 +35,6 @@ import org.elasticsearch.search.aggregations.support.ValuesSourceAggregationBuil
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -157,7 +156,7 @@ public class NormalizeAggregatorTests extends AggregatorTestCase {
             // setup mapping
             DateFieldMapper.DateFieldType dateFieldType = new DateFieldMapper.DateFieldType(DATE_FIELD);
             MappedFieldType valueFieldType = new NumberFieldMapper.NumberFieldType(VALUE_FIELD, NumberFieldMapper.NumberType.LONG);
-            MappedFieldType termFieldType = new KeywordFieldMapper.KeywordFieldType(TERM_FIELD, false, true, Collections.emptyMap());
+            MappedFieldType termFieldType = MapperTestUtils.keywordField(TERM_FIELD, false, true);
 
             try (DirectoryReader indexReader = DirectoryReader.open(directory)) {
                 InternalAggregation internalAggregation = searchAndReduce(

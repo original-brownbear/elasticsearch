@@ -8,14 +8,20 @@
 
 package org.elasticsearch.index;
 
+import org.apache.lucene.document.FieldType;
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
+import org.elasticsearch.common.lucene.Lucene;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.index.analysis.IndexAnalyzers;
+import org.elasticsearch.index.analysis.NamedAnalyzer;
+import org.elasticsearch.index.mapper.DateFieldMapper;
+import org.elasticsearch.index.mapper.KeywordFieldMapper;
 import org.elasticsearch.index.mapper.MapperRegistry;
 import org.elasticsearch.index.mapper.MapperService;
+import org.elasticsearch.index.mapper.TextSearchInfo;
 import org.elasticsearch.index.similarity.SimilarityService;
 import org.elasticsearch.indices.IndicesModule;
 import org.elasticsearch.plugins.internal.DocumentParsingObserver;
@@ -27,6 +33,7 @@ import org.elasticsearch.xcontent.XContentParserConfiguration;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.Map;
 
 import static org.elasticsearch.test.ESTestCase.createTestAnalysis;
 
@@ -69,6 +76,49 @@ public class MapperTestUtils {
             indexSettings.getMode().idFieldMapperWithoutFieldData(),
             ScriptCompiler.NONE,
             () -> DocumentParsingObserver.EMPTY_INSTANCE
+        );
+    }
+
+    /**
+     * Make a {@linkplain DateFieldMapper.DateFieldType} for a {@code date}.
+     */
+    public static KeywordFieldMapper.KeywordFieldType keywordField(String name) {
+        return keywordField(name, true, true);
+    }
+
+    public static KeywordFieldMapper.KeywordFieldType keywordField(String name, boolean isIndexed, boolean hasDocValues) {
+        return keywordField(
+            name,
+            isIndexed ? KeywordFieldMapper.Defaults.FIELD_TYPE : TextSearchInfo.SIMPLE_MATCH_ONLY.luceneFieldType(),
+            Lucene.KEYWORD_ANALYZER,
+            Lucene.KEYWORD_ANALYZER,
+            hasDocValues
+        );
+    }
+
+    public static KeywordFieldMapper.KeywordFieldType keywordField(
+        String name,
+        FieldType fieldType,
+        NamedAnalyzer searchAnalyzer,
+        NamedAnalyzer quoteAnalyzer,
+        boolean hasDocValues
+    ) {
+        return new KeywordFieldMapper.KeywordFieldType(
+            name,
+            fieldType,
+            Lucene.KEYWORD_ANALYZER,
+            searchAnalyzer,
+            quoteAnalyzer,
+            null,
+            Map.of(),
+            hasDocValues,
+            false,
+            null,
+            Integer.MAX_VALUE,
+            null,
+            false,
+            false,
+            false
         );
     }
 }

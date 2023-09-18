@@ -70,6 +70,7 @@ import java.util.TreeSet;
 import java.util.function.Consumer;
 
 import static java.util.stream.Collectors.toList;
+import static org.elasticsearch.index.MapperTestUtils.keywordField;
 import static org.elasticsearch.index.mapper.SeqNoFieldMapper.PRIMARY_TERM_NAME;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
@@ -236,7 +237,7 @@ public class RareTermsAggregatorTests extends AggregatorTestCase {
                 document.add(new SortedDocValuesField("string", new BytesRef("a")));
                 document.add(new NumericDocValuesField("long", 0L));
                 indexWriter.addDocument(document);
-                MappedFieldType fieldType1 = new KeywordFieldMapper.KeywordFieldType("another_string");
+                MappedFieldType fieldType1 = keywordField("another_string");
                 MappedFieldType fieldType2 = new NumberFieldMapper.NumberFieldType("another_long", NumberFieldMapper.NumberType.LONG);
 
                 try (DirectoryReader indexReader = maybeWrapReaderEs(indexWriter.getReader())) {
@@ -355,7 +356,7 @@ public class RareTermsAggregatorTests extends AggregatorTestCase {
                             )
                     );
 
-                    MappedFieldType fieldType = new KeywordFieldMapper.KeywordFieldType("keyword");
+                    MappedFieldType fieldType = keywordField("keyword");
 
                     InternalGlobal result = searchAndReduce(indexReader, new AggTestConfig(globalBuilder, fieldType));
                     InternalMultiBucketAggregation<?, ?> terms = result.getAggregations().get("terms");

@@ -26,6 +26,7 @@ import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.lucene.index.ElasticsearchDirectoryReader;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.index.Index;
+import org.elasticsearch.index.MapperTestUtils;
 import org.elasticsearch.index.mapper.IdFieldMapper;
 import org.elasticsearch.index.mapper.KeywordFieldMapper;
 import org.elasticsearch.index.mapper.MappedFieldType;
@@ -117,7 +118,7 @@ public class ParentToChildrenAggregatorTests extends AggregatorTestCase {
     }
 
     public void testParentChildAsSubAgg() throws IOException {
-        MappedFieldType kwd = new KeywordFieldMapper.KeywordFieldType("kwd", randomBoolean(), true, Collections.emptyMap());
+        MappedFieldType kwd = MapperTestUtils.keywordField("kwd", randomBoolean(), true);
         try (Directory directory = newDirectory()) {
             RandomIndexWriter indexWriter = new RandomIndexWriter(random(), directory);
 
@@ -191,7 +192,7 @@ public class ParentToChildrenAggregatorTests extends AggregatorTestCase {
                     aggregationBuilder.subAggregation(termsAggregationBuilder);
 
                     var fieldType = new NumberFieldMapper.NumberFieldType("number", NumberFieldMapper.NumberType.LONG);
-                    var fieldType2 = new KeywordFieldMapper.KeywordFieldType("string_field", false, true, Map.of());
+                    var fieldType2 = MapperTestUtils.keywordField("string_field", false, true);
                     var e = expectThrows(RuntimeException.class, () -> {
                         searchAndReduce(
                             indexReader,
@@ -222,7 +223,7 @@ public class ParentToChildrenAggregatorTests extends AggregatorTestCase {
                     aggregationBuilder.subAggregation(termsAggregationBuilder);
 
                     var fieldType = new NumberFieldMapper.NumberFieldType("number", NumberFieldMapper.NumberType.LONG);
-                    var fieldType2 = new KeywordFieldMapper.KeywordFieldType("string_field", false, true, Map.of());
+                    var fieldType2 = MapperTestUtils.keywordField("string_field", false, true);
                     InternalChildren result = searchAndReduce(
                         indexReader,
                         new AggTestConfig(aggregationBuilder, withJoinFields(fieldType, fieldType2)).withQuery(

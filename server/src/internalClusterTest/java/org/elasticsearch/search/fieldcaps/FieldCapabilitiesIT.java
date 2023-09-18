@@ -37,7 +37,6 @@ import org.elasticsearch.index.IndexMode;
 import org.elasticsearch.index.IndexService;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.mapper.DocumentParserContext;
-import org.elasticsearch.index.mapper.KeywordFieldMapper;
 import org.elasticsearch.index.mapper.MetadataFieldMapper;
 import org.elasticsearch.index.mapper.SourceLoader;
 import org.elasticsearch.index.mapper.StringStoredFieldFieldLoader;
@@ -85,6 +84,7 @@ import java.util.stream.IntStream;
 
 import static java.util.Collections.singletonList;
 import static org.elasticsearch.action.support.ActionTestUtils.wrapAsRestResponseListener;
+import static org.elasticsearch.index.MapperTestUtils.keywordField;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.array;
@@ -838,7 +838,7 @@ public class FieldCapabilitiesIT extends ESIntegTestCase {
         private static final String FIELD_NAME = "_test";
 
         protected TestMetadataMapper() {
-            super(new KeywordFieldMapper.KeywordFieldType(FIELD_NAME));
+            super(keywordField(FIELD_NAME));
         }
 
         @Override

@@ -17,7 +17,6 @@ import org.apache.lucene.tests.analysis.MockAnalyzer;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.index.mapper.KeywordFieldMapper;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.mapper.NumberFieldMapper;
 import org.elasticsearch.index.mapper.TextSearchInfo;
@@ -38,6 +37,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static java.util.Collections.emptyList;
+import static org.elasticsearch.index.MapperTestUtils.keywordField;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -181,18 +181,18 @@ public class CollapseBuilderTests extends AbstractXContentSerializingTestCase<Co
                 "cannot expand `inner_hits` for collapse field `field`, only indexed field can retrieve `inner_hits`"
             );
 
-            MappedFieldType keywordFieldType = new KeywordFieldMapper.KeywordFieldType("field");
+            MappedFieldType keywordFieldType = keywordField("field");
             when(searchExecutionContext.getFieldType("field")).thenReturn(keywordFieldType);
             CollapseBuilder kbuilder = new CollapseBuilder("field");
             collapseContext = kbuilder.build(searchExecutionContext);
             assertEquals(collapseContext.getFieldType(), keywordFieldType);
 
-            keywordFieldType = new KeywordFieldMapper.KeywordFieldType("field", true, false, Collections.emptyMap());
+            keywordFieldType = keywordField("field", true, false);
             when(searchExecutionContext.getFieldType("field")).thenReturn(keywordFieldType);
             exc = expectThrows(IllegalArgumentException.class, () -> kbuilder.build(searchExecutionContext));
             assertEquals(exc.getMessage(), "cannot collapse on field `field` without `doc_values`");
 
-            keywordFieldType = new KeywordFieldMapper.KeywordFieldType("field", false, true, Collections.emptyMap());
+            keywordFieldType = keywordField("field", false, true);
             when(searchExecutionContext.getFieldType("field")).thenReturn(keywordFieldType);
             kbuilder.setInnerHits(new InnerHitBuilder());
             exc = expectThrows(IllegalArgumentException.class, () -> builder.build(searchExecutionContext));

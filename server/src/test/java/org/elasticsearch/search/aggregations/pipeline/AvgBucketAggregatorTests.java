@@ -21,6 +21,7 @@ import org.apache.lucene.tests.index.RandomIndexWriter;
 import org.apache.lucene.tests.util.LuceneTestCase;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.time.DateFormatters;
+import org.elasticsearch.index.MapperTestUtils;
 import org.elasticsearch.index.mapper.DateFieldMapper;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.mapper.NumberFieldMapper;
@@ -164,7 +165,7 @@ public class AvgBucketAggregatorTests extends AggregatorTestCase {
             try (DirectoryReader indexReader = DirectoryReader.open(directory)) {
                 DateFieldMapper.DateFieldType fieldType = new DateFieldMapper.DateFieldType(DATE_FIELD);
                 MappedFieldType valueFieldType = new NumberFieldMapper.NumberFieldType(VALUE_FIELD, NumberFieldMapper.NumberType.LONG);
-                MappedFieldType keywordField = keywordField(textField);
+                MappedFieldType keywordField = MapperTestUtils.keywordField(textField);
 
                 filterResult = searchAndReduce(
                     indexReader,

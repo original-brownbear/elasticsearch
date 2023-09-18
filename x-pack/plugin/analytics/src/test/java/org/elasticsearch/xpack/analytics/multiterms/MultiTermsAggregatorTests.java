@@ -24,9 +24,9 @@ import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.time.DateFormatter;
 import org.elasticsearch.core.CheckedConsumer;
+import org.elasticsearch.index.MapperTestUtils;
 import org.elasticsearch.index.fielddata.ScriptDocValues;
 import org.elasticsearch.index.mapper.DateFieldMapper;
-import org.elasticsearch.index.mapper.KeywordFieldMapper;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.mapper.NumberFieldMapper;
 import org.elasticsearch.plugins.SearchPlugin;
@@ -651,7 +651,7 @@ public class MultiTermsAggregatorTests extends AggregatorTestCase {
         MappedFieldType dateType = dateFieldType(DATE_FIELD);
         MappedFieldType intType = new NumberFieldMapper.NumberFieldType(INT_FIELD, NumberFieldMapper.NumberType.INTEGER);
         MappedFieldType floatType = new NumberFieldMapper.NumberFieldType(FLOAT_FIELD, NumberFieldMapper.NumberType.FLOAT);
-        MappedFieldType keywordType = new KeywordFieldMapper.KeywordFieldType(KEYWORD_FIELD);
+        MappedFieldType keywordType = MapperTestUtils.keywordField(KEYWORD_FIELD);
         MultiTermsAggregationBuilder builder = new MultiTermsAggregationBuilder("my_terms");
         builder.terms(terms);
         if (builderSetup != null) {

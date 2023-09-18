@@ -49,6 +49,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.elasticsearch.index.MapperTestUtils.keywordField;
 import static org.elasticsearch.xcontent.XContentFactory.jsonBuilder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
@@ -795,7 +796,7 @@ public class CategoryContextMappingTests extends MapperServiceTestCase {
         CategoryContextMapping mapping = ContextBuilder.category("cat").field("category").build();
         LuceneDocument document = new LuceneDocument();
 
-        KeywordFieldMapper.KeywordFieldType keyword = new KeywordFieldMapper.KeywordFieldType("category");
+        KeywordFieldMapper.KeywordFieldType keyword = keywordField("category");
         document.add(new KeywordFieldMapper.KeywordField(keyword.name(), new BytesRef("category1"), new FieldType()));
         // Ignore doc values
         document.add(new SortedSetDocValuesField(keyword.name(), new BytesRef("category1")));

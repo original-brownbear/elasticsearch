@@ -14,6 +14,7 @@ import org.apache.lucene.tests.index.RandomIndexWriter;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.CheckedBiConsumer;
 import org.elasticsearch.common.time.DateFormatter;
+import org.elasticsearch.index.MapperTestUtils;
 import org.elasticsearch.index.mapper.DateFieldMapper;
 import org.elasticsearch.index.mapper.KeywordFieldMapper;
 import org.elasticsearch.index.mapper.NumberFieldMapper;
@@ -88,8 +89,8 @@ public abstract class DateHistogramAggregatorTestCase extends AggregatorTestCase
         CheckedBiConsumer<RandomIndexWriter, DateFieldMapper.DateFieldType, IOException> buildIndex,
         Consumer<R> verify
     ) throws IOException {
-        KeywordFieldMapper.KeywordFieldType k1ft = new KeywordFieldMapper.KeywordFieldType("k1");
-        KeywordFieldMapper.KeywordFieldType k2ft = new KeywordFieldMapper.KeywordFieldType("k2");
+        KeywordFieldMapper.KeywordFieldType k1ft = MapperTestUtils.keywordField("k1");
+        KeywordFieldMapper.KeywordFieldType k2ft = MapperTestUtils.keywordField("k2");
         NumberFieldMapper.NumberFieldType nft = new NumberFieldMapper.NumberFieldType("n", NumberType.LONG);
         DateFieldMapper.DateFieldType dft = aggregableDateFieldType(false, randomBoolean());
         testCase(iw -> buildIndex.accept(iw, dft), verify, new AggTestConfig(builder, k1ft, k2ft, nft, dft));

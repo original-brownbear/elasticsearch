@@ -25,7 +25,6 @@ import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.fielddata.plain.BytesBinaryIndexFieldData;
 import org.elasticsearch.index.mapper.BinaryFieldMapper;
 import org.elasticsearch.index.mapper.DocumentParserContext;
-import org.elasticsearch.index.mapper.KeywordFieldMapper;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.mapper.MapperBuilderContext;
 import org.elasticsearch.index.mapper.TestDocumentParserContext;
@@ -40,6 +39,7 @@ import org.mockito.Mockito;
 import java.io.IOException;
 import java.util.Collections;
 
+import static org.elasticsearch.index.MapperTestUtils.keywordField;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -89,7 +89,7 @@ public class QueryBuilderStoreTests extends ESTestCase {
             );
             when(searchExecutionContext.getFieldType(Mockito.anyString())).thenAnswer(invocation -> {
                 final String fieldName = (String) invocation.getArguments()[0];
-                return new KeywordFieldMapper.KeywordFieldType(fieldName);
+                return keywordField(fieldName);
             });
             PercolateQuery.QueryStore queryStore = PercolateQueryBuilder.createStore(fieldMapper.fieldType(), searchExecutionContext);
 

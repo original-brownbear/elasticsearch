@@ -19,7 +19,6 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.tests.index.RandomIndexWriter;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.core.CheckedConsumer;
-import org.elasticsearch.index.mapper.KeywordFieldMapper;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.mapper.NumberFieldMapper;
 import org.elasticsearch.index.mapper.RangeFieldMapper;
@@ -37,6 +36,7 @@ import java.util.function.Consumer;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
+import static org.elasticsearch.index.MapperTestUtils.keywordField;
 import static org.elasticsearch.search.aggregations.AggregationBuilders.percentiles;
 import static org.hamcrest.Matchers.equalTo;
 
@@ -66,7 +66,7 @@ public class HDRPercentilesAggregatorTests extends AggregatorTestCase {
      */
     public void testStringField() throws IOException {
         final String fieldName = "string";
-        MappedFieldType fieldType = new KeywordFieldMapper.KeywordFieldType(fieldName);
+        MappedFieldType fieldType = keywordField(fieldName);
         expectThrows(IllegalArgumentException.class, () -> testCase(new FieldExistsQuery(fieldName), iw -> {
             iw.addDocument(singleton(new SortedSetDocValuesField("string", new BytesRef("bogus"))));
             iw.addDocument(singleton(new SortedSetDocValuesField("string", new BytesRef("zwomp"))));

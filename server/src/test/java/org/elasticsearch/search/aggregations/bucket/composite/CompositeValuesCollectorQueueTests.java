@@ -33,8 +33,8 @@ import org.apache.lucene.util.Bits;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.NumericUtils;
 import org.elasticsearch.common.util.BigArrays;
+import org.elasticsearch.index.MapperTestUtils;
 import org.elasticsearch.index.fielddata.FieldData;
-import org.elasticsearch.index.mapper.KeywordFieldMapper;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.mapper.NumberFieldMapper;
 import org.elasticsearch.search.DocValueFormat;
@@ -95,18 +95,18 @@ public class CompositeValuesCollectorQueueTests extends AggregatorTestCase {
     public void testRandomDoubleAndKeyword() throws IOException {
         testRandomCase(
             new ClassAndName(createNumber("double", DOUBLE), Double.class),
-            new ClassAndName(createKeyword("keyword"), BytesRef.class)
+            new ClassAndName(MapperTestUtils.keywordField("keyword"), BytesRef.class)
         );
     }
 
     public void testRandomKeyword() throws IOException {
-        testRandomCase(new ClassAndName(createKeyword("keyword"), BytesRef.class));
+        testRandomCase(new ClassAndName(MapperTestUtils.keywordField("keyword"), BytesRef.class));
     }
 
     public void testRandomLongAndKeyword() throws IOException {
         testRandomCase(
             new ClassAndName(createNumber("long", LONG), Long.class),
-            new ClassAndName(createKeyword("keyword"), BytesRef.class)
+            new ClassAndName(MapperTestUtils.keywordField("keyword"), BytesRef.class)
         );
     }
 
@@ -119,14 +119,14 @@ public class CompositeValuesCollectorQueueTests extends AggregatorTestCase {
 
     public void testRandomKeywordAndLong() throws IOException {
         testRandomCase(
-            new ClassAndName(createKeyword("keyword"), BytesRef.class),
+            new ClassAndName(MapperTestUtils.keywordField("keyword"), BytesRef.class),
             new ClassAndName(createNumber("long", LONG), Long.class)
         );
     }
 
     public void testRandomKeywordAndDouble() throws IOException {
         testRandomCase(
-            new ClassAndName(createKeyword("keyword"), BytesRef.class),
+            new ClassAndName(MapperTestUtils.keywordField("keyword"), BytesRef.class),
             new ClassAndName(createNumber("double", DOUBLE), Double.class)
         );
     }
@@ -144,7 +144,7 @@ public class CompositeValuesCollectorQueueTests extends AggregatorTestCase {
                     types[i] = new ClassAndName(createNumber(Integer.toString(i), DOUBLE), Double.class);
                     break;
                 case 2:
-                    types[i] = new ClassAndName(createKeyword(Integer.toString(i)), BytesRef.class);
+                    types[i] = new ClassAndName(MapperTestUtils.keywordField(Integer.toString(i)), BytesRef.class);
                     break;
                 default:
                     assert (false);
@@ -375,10 +375,6 @@ public class CompositeValuesCollectorQueueTests extends AggregatorTestCase {
 
     private static MappedFieldType createNumber(String name, NumberFieldMapper.NumberType type) {
         return new NumberFieldMapper.NumberFieldType(name, type);
-    }
-
-    private static MappedFieldType createKeyword(String name) {
-        return new KeywordFieldMapper.KeywordFieldType(name);
     }
 
     private static int compareKey(CompositeKey key1, CompositeKey key2) {

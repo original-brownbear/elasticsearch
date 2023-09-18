@@ -13,6 +13,7 @@ import org.apache.lucene.document.SortedNumericDocValuesField;
 import org.apache.lucene.tests.index.RandomIndexWriter;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.index.MapperTestUtils;
 import org.elasticsearch.index.mapper.KeywordFieldMapper;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
@@ -107,7 +108,7 @@ public class RandomSamplerAggregatorTests extends AggregatorTestCase {
                         )
                 ).setProbability(0.25),
                 longField(NUMERIC_FIELD_NAME),
-                keywordField(KEYWORD_FIELD_NAME)
+                MapperTestUtils.keywordField(KEYWORD_FIELD_NAME)
             )
         );
     }

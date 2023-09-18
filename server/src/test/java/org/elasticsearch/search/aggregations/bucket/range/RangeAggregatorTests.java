@@ -21,7 +21,6 @@ import org.apache.lucene.util.NumericUtils;
 import org.elasticsearch.core.CheckedConsumer;
 import org.elasticsearch.index.mapper.DateFieldMapper;
 import org.elasticsearch.index.mapper.DateFieldMapper.Resolution;
-import org.elasticsearch.index.mapper.KeywordFieldMapper;
 import org.elasticsearch.index.mapper.LongScriptFieldType;
 import org.elasticsearch.index.mapper.LuceneDocument;
 import org.elasticsearch.index.mapper.MappedFieldType;
@@ -49,6 +48,7 @@ import java.util.function.Consumer;
 
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toList;
+import static org.elasticsearch.index.MapperTestUtils.keywordField;
 import static org.elasticsearch.test.MapMatcher.assertMap;
 import static org.elasticsearch.test.MapMatcher.matchesMap;
 import static org.hamcrest.Matchers.closeTo;
@@ -496,7 +496,7 @@ public class RangeAggregatorTests extends AggregatorTestCase {
     public void testUnsupportedType() {
         RangeAggregationBuilder aggregationBuilder = new RangeAggregationBuilder("range").field("not_a_number").addRange(-2d, 5d);
 
-        MappedFieldType fieldType = new KeywordFieldMapper.KeywordFieldType("not_a_number");
+        MappedFieldType fieldType = keywordField("not_a_number");
 
         IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> testCase(iw -> {
             iw.addDocument(singleton(new SortedSetDocValuesField("string", new BytesRef("foo"))));

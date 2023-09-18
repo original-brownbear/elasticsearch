@@ -18,6 +18,7 @@ import org.apache.lucene.tests.index.RandomIndexWriter;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.NumericUtils;
 import org.elasticsearch.core.CheckedConsumer;
+import org.elasticsearch.index.MapperTestUtils;
 import org.elasticsearch.index.mapper.DateFieldMapper;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.mapper.NumberFieldMapper;
@@ -266,10 +267,9 @@ public class NumericHistogramAggregatorTests extends AggregatorTestCase {
             HistogramAggregationBuilder aggBuilder = new HistogramAggregationBuilder("my_agg").field("field").interval(5);
             try (IndexReader reader = w.getReader()) {
 
-                expectThrows(
-                    IllegalArgumentException.class,
-                    () -> { searchAndReduce(reader, new AggTestConfig(aggBuilder, keywordField("field"))); }
-                );
+                expectThrows(IllegalArgumentException.class, () -> {
+                    searchAndReduce(reader, new AggTestConfig(aggBuilder, MapperTestUtils.keywordField("field")));
+                });
             }
         }
 

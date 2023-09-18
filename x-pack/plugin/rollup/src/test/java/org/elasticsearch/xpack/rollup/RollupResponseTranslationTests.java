@@ -83,6 +83,7 @@ import java.util.List;
 import java.util.Map;
 
 import static java.util.Collections.singleton;
+import static org.elasticsearch.index.MapperTestUtils.keywordField;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -451,7 +452,7 @@ public class RollupResponseTranslationTests extends AggregatorTestCase {
 
     public void testUnsupportedMultiBucket() throws IOException {
 
-        MappedFieldType fieldType = new KeywordFieldMapper.KeywordFieldType("foo");
+        MappedFieldType fieldType = keywordField("foo");
         QueryBuilder filter = QueryBuilders.boolQuery()
             .must(QueryBuilders.termQuery("field", "foo"))
             .should(QueryBuilders.termQuery("field", "bar"));
@@ -687,8 +688,8 @@ public class RollupResponseTranslationTests extends AggregatorTestCase {
             NumberFieldMapper.NumberType.LONG
         );
 
-        KeywordFieldMapper.KeywordFieldType nrKeywordFT = new KeywordFieldMapper.KeywordFieldType("partition");
-        KeywordFieldMapper.KeywordFieldType rKeywordFT = new KeywordFieldMapper.KeywordFieldType("partition");
+        KeywordFieldMapper.KeywordFieldType nrKeywordFT = keywordField("partition");
+        KeywordFieldMapper.KeywordFieldType rKeywordFT = keywordField("partition");
 
         // Note: term query for "a"
         List<InternalAggregation> results = new ArrayList<>(2);
@@ -1052,9 +1053,9 @@ public class RollupResponseTranslationTests extends AggregatorTestCase {
                 new SumAggregationBuilder("terms." + RollupField.COUNT_FIELD).field("stringfield.terms." + RollupField.COUNT_FIELD)
             );
 
-        KeywordFieldMapper.KeywordFieldType nrFTterm = new KeywordFieldMapper.KeywordFieldType(nonRollupTerms.field());
+        KeywordFieldMapper.KeywordFieldType nrFTterm = keywordField(nonRollupTerms.field());
 
-        KeywordFieldMapper.KeywordFieldType rFTterm = new KeywordFieldMapper.KeywordFieldType(rollupTerms.field());
+        KeywordFieldMapper.KeywordFieldType rFTterm = keywordField(rollupTerms.field());
 
         MappedFieldType rFTvalue = new NumberFieldMapper.NumberFieldType(
             "stringfield.terms." + RollupField.COUNT_FIELD,
@@ -1088,8 +1089,8 @@ public class RollupResponseTranslationTests extends AggregatorTestCase {
                 new SumAggregationBuilder("terms." + RollupField.COUNT_FIELD).field("stringfield.terms." + RollupField.COUNT_FIELD)
             );
 
-        KeywordFieldMapper.KeywordFieldType nrFTterm = new KeywordFieldMapper.KeywordFieldType(nonRollupTerms.field());
-        KeywordFieldMapper.KeywordFieldType rFTterm = new KeywordFieldMapper.KeywordFieldType(rollupTerms.field());
+        KeywordFieldMapper.KeywordFieldType nrFTterm = keywordField(nonRollupTerms.field());
+        KeywordFieldMapper.KeywordFieldType rFTterm = keywordField(rollupTerms.field());
 
         MappedFieldType rFTvalue = new NumberFieldMapper.NumberFieldType(
             "stringfield.terms." + RollupField.COUNT_FIELD,

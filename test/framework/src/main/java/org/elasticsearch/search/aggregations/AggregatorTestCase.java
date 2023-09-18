@@ -85,7 +85,6 @@ import org.elasticsearch.index.mapper.FieldMapper;
 import org.elasticsearch.index.mapper.GeoPointFieldMapper;
 import org.elasticsearch.index.mapper.GeoShapeFieldMapper;
 import org.elasticsearch.index.mapper.IdLoader;
-import org.elasticsearch.index.mapper.KeywordFieldMapper;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.mapper.Mapper;
 import org.elasticsearch.index.mapper.MapperBuilderContext;
@@ -1302,13 +1301,6 @@ public abstract class AggregatorTestCase extends ESTestCase {
      */
     protected GeoPointFieldMapper.GeoPointFieldType geoPointField(String name) {
         return new GeoPointFieldMapper.GeoPointFieldType(name);
-    }
-
-    /**
-     * Make a {@linkplain DateFieldMapper.DateFieldType} for a {@code date}.
-     */
-    protected KeywordFieldMapper.KeywordFieldType keywordField(String name) {
-        return new KeywordFieldMapper.KeywordFieldType(name);
     }
 
     /**

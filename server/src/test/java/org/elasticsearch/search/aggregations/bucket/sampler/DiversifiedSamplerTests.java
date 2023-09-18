@@ -22,11 +22,11 @@ import org.apache.lucene.tests.index.RandomIndexWriter;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.lucene.search.function.FieldValueFactorFunction;
 import org.elasticsearch.common.lucene.search.function.FunctionScoreQuery;
+import org.elasticsearch.index.MapperTestUtils;
 import org.elasticsearch.index.fielddata.IndexNumericFieldData;
 import org.elasticsearch.index.fielddata.ScriptDocValues.Doubles;
 import org.elasticsearch.index.fielddata.ScriptDocValues.DoublesSupplier;
 import org.elasticsearch.index.fielddata.plain.SortedDoublesIndexFieldData;
-import org.elasticsearch.index.mapper.KeywordFieldMapper;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.mapper.NumberFieldMapper;
 import org.elasticsearch.script.field.DelegateDocValuesField;
@@ -86,7 +86,7 @@ public class DiversifiedSamplerTests extends AggregatorTestCase {
     public void testDiversifiedSampler() throws Exception {
         Directory directory = newDirectory();
         RandomIndexWriter indexWriter = new RandomIndexWriter(random(), directory);
-        MappedFieldType genreFieldType = new KeywordFieldMapper.KeywordFieldType("genre");
+        MappedFieldType genreFieldType = MapperTestUtils.keywordField("genre");
         writeBooks(indexWriter);
         indexWriter.close();
         DirectoryReader indexReader = DirectoryReader.open(directory);
@@ -104,7 +104,7 @@ public class DiversifiedSamplerTests extends AggregatorTestCase {
         testCase(indexReader, genreFieldType, null, verify);
 
         // wrong field:
-        genreFieldType = new KeywordFieldMapper.KeywordFieldType("wrong_field");
+        genreFieldType = MapperTestUtils.keywordField("wrong_field");
         testCase(indexReader, genreFieldType, null, result -> {
             Terms terms = result.getAggregations().get("terms");
             assertEquals(1, terms.getBuckets().size());
@@ -122,7 +122,7 @@ public class DiversifiedSamplerTests extends AggregatorTestCase {
         indexWriter.close();
         DirectoryReader indexReader = DirectoryReader.open(directory);
 
-        MappedFieldType genreFieldType = new KeywordFieldMapper.KeywordFieldType("genre");
+        MappedFieldType genreFieldType = MapperTestUtils.keywordField("genre");
         Consumer<InternalSampler> verify = result -> {
             Terms terms = result.getAggregations().get("terms");
             assertThat(terms.getBuckets().size(), greaterThan(0));
@@ -157,7 +157,7 @@ public class DiversifiedSamplerTests extends AggregatorTestCase {
         int shardSize,
         int maxDocsPerValue
     ) throws IOException {
-        MappedFieldType idFieldType = new KeywordFieldMapper.KeywordFieldType("id");
+        MappedFieldType idFieldType = MapperTestUtils.keywordField("id");
 
         SortedDoublesIndexFieldData fieldData = new SortedDoublesIndexFieldData(
             "price",
@@ -186,9 +186,9 @@ public class DiversifiedSamplerTests extends AggregatorTestCase {
         indexWriter.close();
         IndexReader indexReader = DirectoryReader.open(directory);
 
-        MappedFieldType idFieldType = new KeywordFieldMapper.KeywordFieldType("id");
+        MappedFieldType idFieldType = MapperTestUtils.keywordField("id");
 
-        MappedFieldType genreFieldType = new KeywordFieldMapper.KeywordFieldType("genre");
+        MappedFieldType genreFieldType = MapperTestUtils.keywordField("genre");
 
         DiversifiedAggregationBuilder builder = new DiversifiedAggregationBuilder("_name").field(genreFieldType.name())
             .subAggregation(new TermsAggregationBuilder("terms").field("id"));

@@ -27,7 +27,6 @@ import org.elasticsearch.compute.data.IntBlock;
 import org.elasticsearch.compute.data.IntVector;
 import org.elasticsearch.compute.data.Page;
 import org.elasticsearch.core.IOUtils;
-import org.elasticsearch.index.mapper.KeywordFieldMapper;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.query.SearchExecutionContext;
 import org.elasticsearch.test.ESTestCase;
@@ -38,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.elasticsearch.index.MapperTestUtils.keywordField;
 import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.Mockito.mock;
 
@@ -78,7 +78,7 @@ public class EnrichQuerySourceOperatorTests extends ESTestCase {
             .appendNull()
             .build();
 
-        MappedFieldType uidField = new KeywordFieldMapper.KeywordFieldType("uid");
+        MappedFieldType uidField = keywordField("uid");
         QueryList queryList = QueryList.termQueryList(uidField, mock(SearchExecutionContext.class), inputTerms);
         assertThat(queryList.getPositionCount(), equalTo(6));
         assertThat(queryList.getQuery(0), equalTo(new TermQuery(new Term("uid", new BytesRef("b2")))));
@@ -187,7 +187,7 @@ public class EnrichQuerySourceOperatorTests extends ESTestCase {
                 }
             }
         }
-        MappedFieldType uidField = new KeywordFieldMapper.KeywordFieldType("uid");
+        MappedFieldType uidField = keywordField("uid");
         QueryList queryList = QueryList.termQueryList(uidField, mock(SearchExecutionContext.class), inputTerms.build());
         EnrichQuerySourceOperator queryOperator = new EnrichQuerySourceOperator(queryList, reader);
         Map<Integer, Set<Integer>> actualPositions = new HashMap<>();

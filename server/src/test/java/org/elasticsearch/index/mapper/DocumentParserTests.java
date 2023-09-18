@@ -43,6 +43,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static org.elasticsearch.index.MapperTestUtils.keywordField;
 import static org.elasticsearch.test.StreamsUtils.copyToBytesFromClasspath;
 import static org.elasticsearch.test.StreamsUtils.copyToStringFromClasspath;
 import static org.hamcrest.Matchers.containsString;
@@ -3187,7 +3188,7 @@ public class DocumentParserTests extends MapperServiceTestCase {
             private static final String FIELD_NAME = "_mock_metadata";
 
             protected MockMetadataMapper() {
-                super(new KeywordFieldMapper.KeywordFieldType(FIELD_NAME));
+                super(keywordField(FIELD_NAME));
             }
 
             @Override

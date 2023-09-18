@@ -19,7 +19,6 @@ import org.elasticsearch.core.CheckedConsumer;
 import org.elasticsearch.index.fielddata.ScriptDocValues;
 import org.elasticsearch.index.mapper.BooleanFieldMapper;
 import org.elasticsearch.index.mapper.DateFieldMapper;
-import org.elasticsearch.index.mapper.KeywordFieldMapper;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.mapper.NumberFieldMapper;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -54,6 +53,7 @@ import java.util.function.Function;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
+import static org.elasticsearch.index.MapperTestUtils.keywordField;
 
 public class TTestAggregatorTests extends AggregatorTestCase {
 
@@ -298,13 +298,13 @@ public class TTestAggregatorTests extends AggregatorTestCase {
         boolean wrongB = wrongA == false || randomBoolean(); // at least one of the fields should have unsupported type
         MappedFieldType fieldType1;
         if (wrongA) {
-            fieldType1 = new KeywordFieldMapper.KeywordFieldType("a");
+            fieldType1 = keywordField("a");
         } else {
             fieldType1 = new NumberFieldMapper.NumberFieldType("a", NumberFieldMapper.NumberType.INTEGER);
         }
         MappedFieldType fieldType2;
         if (wrongB) {
-            fieldType2 = new KeywordFieldMapper.KeywordFieldType("b");
+            fieldType2 = keywordField("b");
         } else {
             fieldType2 = new NumberFieldMapper.NumberFieldType("b", NumberFieldMapper.NumberType.INTEGER);
         }

@@ -17,7 +17,6 @@ import org.elasticsearch.index.fielddata.FieldDataContext;
 import org.elasticsearch.index.fielddata.IndexFieldData;
 import org.elasticsearch.index.fielddata.IndexFieldDataService;
 import org.elasticsearch.index.mapper.DateFieldMapper;
-import org.elasticsearch.index.mapper.KeywordFieldMapper;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.mapper.TextSearchInfo;
 import org.elasticsearch.index.mapper.TimeSeriesIdFieldMapper;
@@ -34,6 +33,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.elasticsearch.index.IndexSettingsTests.newIndexMeta;
+import static org.elasticsearch.index.MapperTestUtils.keywordField;
 import static org.hamcrest.Matchers.arrayWithSize;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
@@ -154,7 +154,7 @@ public class IndexSortSettingsTests extends ESTestCase {
 
     public void testSortingAgainstAliases() {
         IndexSettings indexSettings = indexSettings(Settings.builder().put("index.sort.field", "field").build());
-        MappedFieldType aliased = new KeywordFieldMapper.KeywordFieldType("aliased");
+        MappedFieldType aliased = keywordField("aliased");
         Exception e = expectThrows(IllegalArgumentException.class, () -> buildIndexSort(indexSettings, Map.of("field", aliased)));
         assertEquals("Cannot use alias [field] as an index sort field", e.getMessage());
     }
@@ -163,7 +163,7 @@ public class IndexSortSettingsTests extends ESTestCase {
         IndexSettings indexSettings = indexSettings(
             Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.V_7_12_0).put("index.sort.field", "field").build()
         );
-        MappedFieldType aliased = new KeywordFieldMapper.KeywordFieldType("aliased");
+        MappedFieldType aliased = keywordField("aliased");
         Sort sort = buildIndexSort(indexSettings, Map.of("field", aliased));
         assertThat(sort.getSort(), arrayWithSize(1));
         assertThat(sort.getSort()[0].getField(), equalTo("aliased"));

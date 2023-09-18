@@ -41,7 +41,6 @@ import org.elasticsearch.geometry.utils.WellKnownText;
 import org.elasticsearch.index.mapper.DataStreamTimestampFieldMapper;
 import org.elasticsearch.index.mapper.DateFieldMapper;
 import org.elasticsearch.index.mapper.GeoPointFieldMapper;
-import org.elasticsearch.index.mapper.KeywordFieldMapper;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.mapper.NumberFieldMapper;
 import org.elasticsearch.index.mapper.TimeSeriesIdFieldMapper;
@@ -63,7 +62,6 @@ import org.hamcrest.Matchers;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,6 +70,7 @@ import java.util.function.Function;
 
 import static java.lang.Math.min;
 import static org.elasticsearch.index.IndexMode.TIME_SERIES;
+import static org.elasticsearch.index.MapperTestUtils.keywordField;
 import static org.elasticsearch.index.mapper.TimeSeriesParams.MetricType.POSITION;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -950,7 +949,7 @@ public class GeoLineAggregatorTests extends AggregatorTestCase {
                 fieldTypes.add(new GeoPointFieldMapper.GeoPointFieldType("value_field"));
             }
             fieldTypes.add(new DateFieldMapper.DateFieldType("time_field"));
-            fieldTypes.add(new KeywordFieldMapper.KeywordFieldType("group_id", false, true, Collections.emptyMap()));
+            fieldTypes.add(keywordField("group_id", false, true));
             fieldTypes.add(new NumberFieldMapper.NumberFieldType("sort_field", NumberFieldMapper.NumberType.LONG));
             AggTestConfig aggTestConfig = new AggTestConfig(aggregationBuilder, fieldTypes.toArray(new MappedFieldType[0]));
 

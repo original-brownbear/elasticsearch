@@ -20,6 +20,7 @@ import org.elasticsearch.common.geo.GeoBoundingBox;
 import org.elasticsearch.core.CheckedConsumer;
 import org.elasticsearch.geometry.Point;
 import org.elasticsearch.geometry.Rectangle;
+import org.elasticsearch.index.MapperTestUtils;
 import org.elasticsearch.index.mapper.GeoPointFieldMapper;
 import org.elasticsearch.index.mapper.KeywordFieldMapper;
 import org.elasticsearch.index.mapper.MappedFieldType;
@@ -248,7 +249,7 @@ public abstract class GeoGridAggregatorTestCase<T extends InternalGeoGridBucket>
                 actual.put(tb.getKeyAsString(), sub);
             }
             assertThat(actual, equalTo(expectedCountPerTPerGeoHash));
-        }, new AggTestConfig(aggregationBuilder, keywordField("t"), geoPointField(FIELD_NAME)));
+        }, new AggTestConfig(aggregationBuilder, MapperTestUtils.keywordField("t"), geoPointField(FIELD_NAME)));
     }
 
     private double[] randomLatLng() {

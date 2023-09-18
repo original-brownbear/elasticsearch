@@ -22,7 +22,6 @@ import org.elasticsearch.common.time.DateFormatter;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.index.mapper.DateFieldMapper;
 import org.elasticsearch.index.mapper.IpFieldMapper;
-import org.elasticsearch.index.mapper.KeywordFieldMapper;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.mapper.NumberFieldMapper;
 import org.elasticsearch.plugins.SearchPlugin;
@@ -51,6 +50,7 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import static org.elasticsearch.core.Tuple.tuple;
+import static org.elasticsearch.index.MapperTestUtils.keywordField;
 import static org.elasticsearch.xpack.ml.aggs.frequentitemsets.FrequentItemSetsAggregationBuilder.EXECUTION_HINT_ALLOWED_MODES;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 
@@ -109,7 +109,7 @@ public class FrequentItemSetsAggregatorTests extends AggregatorTestCase {
         int minimumSetSize = randomIntBetween(2, 5);
         int size = randomIntBetween(1, 100);
         Query query = new MatchAllDocsQuery();
-        MappedFieldType keywordType = new KeywordFieldMapper.KeywordFieldType(KEYWORD_FIELD1);
+        MappedFieldType keywordType = keywordField(KEYWORD_FIELD1);
 
         List<FrequentItemSet> expectedResults = List.of(
             new FrequentItemSet(Map.of(KEYWORD_FIELD1, List.of("item-1", "item-3")), 7, 0.7),
@@ -288,9 +288,9 @@ public class FrequentItemSetsAggregatorTests extends AggregatorTestCase {
         int size = randomIntBetween(1, 100);
 
         Query query = new MatchAllDocsQuery();
-        MappedFieldType keywordType1 = new KeywordFieldMapper.KeywordFieldType(KEYWORD_FIELD1);
-        MappedFieldType keywordType2 = new KeywordFieldMapper.KeywordFieldType(KEYWORD_FIELD2);
-        MappedFieldType keywordType3 = new KeywordFieldMapper.KeywordFieldType(KEYWORD_FIELD3);
+        MappedFieldType keywordType1 = keywordField(KEYWORD_FIELD1);
+        MappedFieldType keywordType2 = keywordField(KEYWORD_FIELD2);
+        MappedFieldType keywordType3 = keywordField(KEYWORD_FIELD3);
         MappedFieldType intType = new NumberFieldMapper.NumberFieldType(INT_FIELD, NumberFieldMapper.NumberType.INTEGER);
         MappedFieldType floatType = new NumberFieldMapper.NumberFieldType(FLOAT_FIELD, NumberFieldMapper.NumberType.FLOAT);
         MappedFieldType ipType = new IpFieldMapper.IpFieldType(IP_FIELD);
@@ -481,9 +481,9 @@ public class FrequentItemSetsAggregatorTests extends AggregatorTestCase {
         int size = randomIntBetween(1, 100);
 
         Query query = new MatchAllDocsQuery();
-        MappedFieldType keywordType1 = new KeywordFieldMapper.KeywordFieldType(KEYWORD_FIELD1);
-        MappedFieldType keywordType2 = new KeywordFieldMapper.KeywordFieldType(KEYWORD_FIELD2);
-        MappedFieldType keywordType3 = new KeywordFieldMapper.KeywordFieldType(KEYWORD_FIELD3);
+        MappedFieldType keywordType1 = keywordField(KEYWORD_FIELD1);
+        MappedFieldType keywordType2 = keywordField(KEYWORD_FIELD2);
+        MappedFieldType keywordType3 = keywordField(KEYWORD_FIELD3);
         MappedFieldType dateType = dateFieldType(DATE_FIELD);
 
         // mix in an ip field, which we do not analyze

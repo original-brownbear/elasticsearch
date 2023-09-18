@@ -161,7 +161,9 @@ public final class KeywordFieldMapper extends FieldMapper {
 
         private final Parameter<String> indexOptions = TextParams.keywordIndexOptions(m -> toType(m).indexOptions);
         private final Parameter<Boolean> hasNorms = TextParams.norms(false, m -> toType(m).fieldType.omitNorms() == false);
-        private final Parameter<SimilarityProvider> similarity = TextParams.similarity(m -> toType(m).similarity);
+        private final Parameter<SimilarityProvider> similarity = TextParams.similarity(
+            m -> toType(m).fieldType().getTextSearchInfo().similarity()
+        );
 
         private final Parameter<String> normalizer;
 
@@ -303,7 +305,15 @@ public final class KeywordFieldMapper extends FieldMapper {
                 normalizer,
                 searchAnalyzer,
                 quoteAnalyzer,
-                this,
+                similarity.getValue(),
+                meta.getValue(),
+                hasDocValues.getValue(),
+                eagerGlobalOrdinals.getValue(),
+                nullValue.getValue(),
+                ignoreAbove.getValue(),
+                scriptValues(),
+                dimension.getValue(),
+                indexCreatedVersion.isLegacyIndexVersion(),
                 context.isSourceSynthetic()
             );
         }
@@ -354,68 +364,32 @@ public final class KeywordFieldMapper extends FieldMapper {
             NamedAnalyzer normalizer,
             NamedAnalyzer searchAnalyzer,
             NamedAnalyzer quoteAnalyzer,
-            Builder builder,
+            @Nullable SimilarityProvider similarityProvider,
+            Map<String, String> meta,
+            boolean hasDocValues,
+            boolean eagerGlobalOrdinals,
+            String nullValue,
+            int ignoreAbove,
+            FieldValues<String> scriptValues,
+            boolean isDimension,
+            boolean isLegacyIndexVersion,
             boolean isSyntheticSource
         ) {
             super(
                 name,
-                fieldType.indexOptions() != IndexOptions.NONE && builder.indexCreatedVersion.isLegacyIndexVersion() == false,
+                fieldType.indexOptions() != IndexOptions.NONE && isLegacyIndexVersion == false,
                 fieldType.stored(),
-                builder.hasDocValues.getValue(),
-                textSearchInfo(fieldType, builder.similarity.getValue(), searchAnalyzer, quoteAnalyzer),
-                builder.meta.getValue()
+                hasDocValues,
+                textSearchInfo(fieldType, similarityProvider, searchAnalyzer, quoteAnalyzer),
+                meta
             );
-            this.eagerGlobalOrdinals = builder.eagerGlobalOrdinals.getValue();
+            this.eagerGlobalOrdinals = eagerGlobalOrdinals;
             this.normalizer = normalizer;
-            this.ignoreAbove = builder.ignoreAbove.getValue();
-            this.nullValue = builder.nullValue.getValue();
-            this.scriptValues = builder.scriptValues();
-            this.isDimension = builder.dimension.getValue();
+            this.ignoreAbove = ignoreAbove;
+            this.nullValue = nullValue;
+            this.scriptValues = scriptValues;
+            this.isDimension = isDimension;
             this.isSyntheticSource = isSyntheticSource;
-        }
-
-        public KeywordFieldType(String name, boolean isIndexed, boolean hasDocValues, Map<String, String> meta) {
-            super(name, isIndexed, false, hasDocValues, TextSearchInfo.SIMPLE_MATCH_ONLY, meta);
-            this.normalizer = Lucene.KEYWORD_ANALYZER;
-            this.ignoreAbove = Integer.MAX_VALUE;
-            this.nullValue = null;
-            this.eagerGlobalOrdinals = false;
-            this.scriptValues = null;
-            this.isDimension = false;
-            this.isSyntheticSource = false;
-        }
-
-        public KeywordFieldType(String name) {
-            this(name, true, true, Collections.emptyMap());
-        }
-
-        public KeywordFieldType(String name, FieldType fieldType) {
-            super(
-                name,
-                fieldType.indexOptions() != IndexOptions.NONE,
-                false,
-                false,
-                textSearchInfo(fieldType, null, Lucene.KEYWORD_ANALYZER, Lucene.KEYWORD_ANALYZER),
-                Collections.emptyMap()
-            );
-            this.normalizer = Lucene.KEYWORD_ANALYZER;
-            this.ignoreAbove = Integer.MAX_VALUE;
-            this.nullValue = null;
-            this.eagerGlobalOrdinals = false;
-            this.scriptValues = null;
-            this.isDimension = false;
-            this.isSyntheticSource = false;
-        }
-
-        public KeywordFieldType(String name, NamedAnalyzer analyzer) {
-            super(name, true, false, true, textSearchInfo(Defaults.FIELD_TYPE, null, analyzer, analyzer), Collections.emptyMap());
-            this.normalizer = Lucene.KEYWORD_ANALYZER;
-            this.ignoreAbove = Integer.MAX_VALUE;
-            this.nullValue = null;
-            this.eagerGlobalOrdinals = false;
-            this.scriptValues = null;
-            this.isDimension = false;
-            this.isSyntheticSource = false;
         }
 
         @Override
@@ -808,7 +782,6 @@ public final class KeywordFieldMapper extends FieldMapper {
     private final boolean hasDocValues;
     private final String indexOptions;
     private final FieldType fieldType;
-    private final SimilarityProvider similarity;
     private final String normalizerName;
     private final boolean splitQueriesOnWhitespace;
     private final Script script;
@@ -833,7 +806,6 @@ public final class KeywordFieldMapper extends FieldMapper {
         this.hasDocValues = builder.hasDocValues.getValue();
         this.indexOptions = builder.indexOptions.getValue();
         this.fieldType = freezeAndDeduplicateFieldType(fieldType);
-        this.similarity = builder.similarity.getValue();
         this.normalizerName = builder.normalizer.getValue();
         this.splitQueriesOnWhitespace = builder.splitQueriesOnWhitespace.getValue();
         this.script = builder.script.get();

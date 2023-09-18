@@ -19,7 +19,7 @@ import org.apache.lucene.tests.index.RandomIndexWriter;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.CheckedConsumer;
-import org.elasticsearch.index.mapper.KeywordFieldMapper;
+import org.elasticsearch.index.MapperTestUtils;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.mapper.NumberFieldMapper;
 import org.elasticsearch.index.query.MatchAllQueryBuilder;
@@ -60,7 +60,7 @@ public class BucketScriptAggregatorTests extends AggregatorTestCase {
 
     public void testScript() throws IOException {
         MappedFieldType fieldType = new NumberFieldMapper.NumberFieldType("number_field", NumberFieldMapper.NumberType.INTEGER);
-        MappedFieldType fieldType1 = new KeywordFieldMapper.KeywordFieldType("the_field");
+        MappedFieldType fieldType1 = MapperTestUtils.keywordField("the_field");
 
         FiltersAggregationBuilder filters = new FiltersAggregationBuilder("placeholder", new MatchAllQueryBuilder()).subAggregation(
             new TermsAggregationBuilder("the_terms").userValueTypeHint(ValueType.STRING)

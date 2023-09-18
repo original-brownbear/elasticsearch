@@ -22,12 +22,13 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static java.util.Collections.emptyList;
+import static org.elasticsearch.index.MapperTestUtils.keywordField;
 
 public class FieldNamesFieldTypeTests extends ESTestCase {
 
     public void testTermQuery() {
         FieldNamesFieldMapper.FieldNamesFieldType fieldNamesFieldType = FieldNamesFieldMapper.FieldNamesFieldType.get(true);
-        KeywordFieldMapper.KeywordFieldType fieldType = new KeywordFieldMapper.KeywordFieldType("field_name");
+        KeywordFieldMapper.KeywordFieldType fieldType = keywordField("field_name");
 
         Settings settings = settings(IndexVersion.current()).build();
         IndexSettings indexSettings = new IndexSettings(

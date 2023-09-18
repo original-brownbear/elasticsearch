@@ -29,7 +29,6 @@ import org.elasticsearch.index.mapper.BooleanFieldMapper;
 import org.elasticsearch.index.mapper.DateFieldMapper;
 import org.elasticsearch.index.mapper.GeoPointFieldMapper;
 import org.elasticsearch.index.mapper.IpFieldMapper;
-import org.elasticsearch.index.mapper.KeywordFieldMapper;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.mapper.NumberFieldMapper;
 import org.elasticsearch.index.mapper.RangeFieldMapper;
@@ -58,6 +57,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static java.util.Collections.singleton;
+import static org.elasticsearch.index.MapperTestUtils.keywordField;
 
 public class ValueCountAggregatorTests extends AggregatorTestCase {
 
@@ -388,7 +388,7 @@ public class ValueCountAggregatorTests extends AggregatorTestCase {
     private static MappedFieldType createMappedFieldType(String name, ValueType valueType) {
         return switch (valueType) {
             case BOOLEAN -> new BooleanFieldMapper.BooleanFieldType(name);
-            case STRING -> new KeywordFieldMapper.KeywordFieldType(name);
+            case STRING -> keywordField(name);
             case DOUBLE -> new NumberFieldMapper.NumberFieldType(name, NumberFieldMapper.NumberType.DOUBLE);
             case NUMBER, NUMERIC, LONG -> new NumberFieldMapper.NumberFieldType(name, NumberFieldMapper.NumberType.LONG);
             case DATE -> new DateFieldMapper.DateFieldType(name);

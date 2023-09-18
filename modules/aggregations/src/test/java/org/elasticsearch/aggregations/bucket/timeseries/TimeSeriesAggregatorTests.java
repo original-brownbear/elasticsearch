@@ -22,7 +22,6 @@ import org.elasticsearch.aggregations.bucket.AggregationTestCase;
 import org.elasticsearch.core.CheckedConsumer;
 import org.elasticsearch.index.mapper.DataStreamTimestampFieldMapper;
 import org.elasticsearch.index.mapper.DateFieldMapper;
-import org.elasticsearch.index.mapper.KeywordFieldMapper;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.mapper.NumberFieldMapper;
 import org.elasticsearch.index.mapper.TimeSeriesIdFieldMapper;
@@ -39,6 +38,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static org.elasticsearch.index.MapperTestUtils.keywordField;
 import static org.elasticsearch.search.aggregations.AggregationBuilders.sum;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
@@ -73,11 +73,7 @@ public class TimeSeriesAggregatorTests extends AggregationTestCase {
             assertThat(ts.getBucketByKey("{dim1=bbb, dim2=zzz}").docCount, equalTo(4L));
             assertThat(((Sum) ts.getBucketByKey("{dim1=bbb, dim2=zzz}").getAggregations().get("sum")).value(), equalTo(22.0));
 
-        },
-            new KeywordFieldMapper.KeywordFieldType("dim1"),
-            new KeywordFieldMapper.KeywordFieldType("dim2"),
-            new NumberFieldMapper.NumberFieldType("val1", NumberFieldMapper.NumberType.INTEGER)
-        );
+        }, keywordField("dim1"), keywordField("dim2"), new NumberFieldMapper.NumberFieldType("val1", NumberFieldMapper.NumberType.INTEGER));
     }
 
     public static void writeTS(RandomIndexWriter iw, long timestamp, Object[] dimensions, Object[] metrics) throws IOException {
@@ -131,7 +127,7 @@ public class TimeSeriesAggregatorTests extends AggregationTestCase {
                 aggregationBuilder,
                 TimeSeriesIdFieldMapper.FIELD_TYPE,
                 new DateFieldMapper.DateFieldType("@timestamp"),
-                new KeywordFieldMapper.KeywordFieldType("dim1"),
+                keywordField("dim1"),
                 new NumberFieldMapper.NumberFieldType("val1", NumberFieldMapper.NumberType.INTEGER)
             ).withQuery(new MatchAllDocsQuery())
         );

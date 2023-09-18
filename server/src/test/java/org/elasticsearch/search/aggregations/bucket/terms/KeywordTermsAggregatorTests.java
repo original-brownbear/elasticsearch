@@ -18,6 +18,7 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.tests.index.RandomIndexWriter;
 import org.apache.lucene.util.BytesRef;
+import org.elasticsearch.index.MapperTestUtils;
 import org.elasticsearch.index.mapper.KeywordFieldMapper;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.search.aggregations.AggregatorTestCase;
@@ -25,7 +26,6 @@ import org.elasticsearch.search.aggregations.support.ValueType;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -96,12 +96,7 @@ public class KeywordTermsAggregatorTests extends AggregatorTestCase {
         Consumer<InternalMappedTerms<?, ?>> verify,
         ValueType valueType
     ) throws IOException {
-        MappedFieldType keywordFieldType = new KeywordFieldMapper.KeywordFieldType(
-            KEYWORD_FIELD,
-            randomBoolean(),
-            true,
-            Collections.emptyMap()
-        );
+        MappedFieldType keywordFieldType = MapperTestUtils.keywordField(KEYWORD_FIELD, randomBoolean(), true);
         FieldType luceneFieldType = new FieldType(KeywordFieldMapper.Defaults.FIELD_TYPE);
         if (keywordFieldType.isIndexed() == false) {
             luceneFieldType.setIndexOptions(IndexOptions.NONE);
