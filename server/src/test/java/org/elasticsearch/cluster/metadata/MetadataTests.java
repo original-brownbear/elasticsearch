@@ -37,7 +37,6 @@ import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.alias.RandomAliasActionsGenerator;
-import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.ingest.IngestMetadata;
 import org.elasticsearch.persistent.PersistentTasksCustomMetadata;
 import org.elasticsearch.plugins.MapperPlugin;

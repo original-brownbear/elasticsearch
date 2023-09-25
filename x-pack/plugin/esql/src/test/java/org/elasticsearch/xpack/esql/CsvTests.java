@@ -67,7 +67,6 @@ import org.elasticsearch.xpack.esql.planner.LocalExecutionPlanner.LocalExecution
 import org.elasticsearch.xpack.esql.planner.Mapper;
 import org.elasticsearch.xpack.esql.planner.PlannerUtils;
 import org.elasticsearch.xpack.esql.planner.TestPhysicalOperationProviders;
-import org.elasticsearch.xpack.esql.plugin.EsqlPlugin;
 import org.elasticsearch.xpack.esql.plugin.QueryPragmas;
 import org.elasticsearch.xpack.esql.session.EsqlConfiguration;
 import org.elasticsearch.xpack.esql.stats.DisabledSearchStats;
@@ -87,12 +86,10 @@ import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.net.URL;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -151,13 +148,8 @@ public class CsvTests extends ESTestCase {
     private final Integer lineNumber;
     private final CsvSpecReader.CsvTestCase testCase;
 
-    private final EsqlConfiguration configuration = new EsqlConfiguration(
-        ZoneOffset.UTC,
-        Locale.US,
-        null,
-        null,
-        new QueryPragmas(Settings.builder().put("page_size", randomPageSize()).build()),
-        EsqlPlugin.QUERY_RESULT_TRUNCATION_MAX_SIZE.getDefault(Settings.EMPTY)
+    private final EsqlConfiguration configuration = EsqlTestUtils.configuration(
+        new QueryPragmas(Settings.builder().put("page_size", randomPageSize()).build())
     );
     private final FunctionRegistry functionRegistry = new EsqlFunctionRegistry();
     private final EsqlParser parser = new EsqlParser();
@@ -393,7 +385,7 @@ public class CsvTests extends ESTestCase {
                 }
             };
             PlainActionFuture<Void> future = new PlainActionFuture<>();
-            runner.runToCompletion(drivers, future);
+            runner.runToCompletion(drivers, ActionListener.releaseAfter(future, () -> Releasables.close(drivers)));
             future.actionGet(TimeValue.timeValueSeconds(30));
             var responseHeaders = threadPool.getThreadContext().getResponseHeaders();
             return new ActualResults(columnNames, columnTypes, dataTypes, collectedPages, responseHeaders);

@@ -12,7 +12,6 @@ import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsRequest;
 import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsResponse;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.cluster.metadata.MappingMetadata;
-import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.xpack.core.ClientHelper;
 import org.elasticsearch.xpack.core.ml.dataframe.DataFrameAnalyticsSource;
 import org.elasticsearch.xpack.core.ml.utils.ExceptionsHelper;
