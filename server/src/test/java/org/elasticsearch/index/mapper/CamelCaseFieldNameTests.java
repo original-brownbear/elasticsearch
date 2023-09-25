@@ -24,7 +24,7 @@ public class CamelCaseFieldNameTests extends MapperServiceTestCase {
         assertNotNull(documentMapper.mappers().getMapper("thisIsCamelCase"));
         assertNull(documentMapper.mappers().getMapper("this_is_camel_case"));
 
-        documentMapper = mapperService.merge("_doc", documentMapper.mappingSource(), MapperService.MergeReason.MAPPING_UPDATE);
+        documentMapper = mapperService.merge(documentMapper.mappingSource(), MapperService.MergeReason.MAPPING_UPDATE);
 
         assertNotNull(documentMapper.mappers().getMapper("thisIsCamelCase"));
         assertNull(documentMapper.mappers().getMapper("this_is_camel_case"));

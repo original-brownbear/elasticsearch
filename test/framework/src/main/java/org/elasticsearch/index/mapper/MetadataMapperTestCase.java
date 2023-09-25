@@ -119,7 +119,7 @@ public abstract class MetadataMapperTestCase extends MapperServiceTestCase {
             + "}";
         MapperParsingException exception = expectThrows(
             MapperParsingException.class,
-            () -> mapperService.parseMapping("_doc", new CompressedXContent(mappingAsString))
+            () -> mapperService.parseMapping(new CompressedXContent(mappingAsString))
         );
         assertEquals(
             "Failed to parse mapping: unknown parameter [anything] on metadata field [" + fieldName() + "]",
@@ -135,7 +135,7 @@ public abstract class MetadataMapperTestCase extends MapperServiceTestCase {
         String mappingAsString = "{\n" + "    \"_doc\" : {\n" + "      \"" + fieldName() + "\" : {\n" + "      }\n" + "    }\n" + "}";
         MapperParsingException exception = expectThrows(
             MapperParsingException.class,
-            () -> mapperService.parseMapping("_doc", new CompressedXContent(mappingAsString))
+            () -> mapperService.parseMapping(new CompressedXContent(mappingAsString))
         );
         assertEquals("Failed to parse mapping: " + fieldName() + " is not configurable", exception.getMessage());
     }
@@ -160,7 +160,7 @@ public abstract class MetadataMapperTestCase extends MapperServiceTestCase {
                 + "      }\n"
                 + "    }\n"
                 + "}";
-            assertNotNull(mapperService.parseMapping("_doc", new CompressedXContent(mappingAsString)));
+            assertNotNull(mapperService.parseMapping(new CompressedXContent(mappingAsString)));
         }
     }
 
@@ -183,7 +183,7 @@ public abstract class MetadataMapperTestCase extends MapperServiceTestCase {
                 + "      }\n"
                 + "    }\n"
                 + "}";
-            assertNotNull(mapperService.parseMapping("_doc", new CompressedXContent(mappingAsString)));
+            assertNotNull(mapperService.parseMapping(new CompressedXContent(mappingAsString)));
             assertWarnings("Parameter [" + param + "] has no effect on metadata field [" + fieldName() + "] and will be removed in future");
         }
     }

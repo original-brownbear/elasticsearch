@@ -258,7 +258,7 @@ public class MapperServiceTests extends MapperServiceTestCase {
             )
         );
 
-        DocumentMapper documentMapper = mapperService.merge("_doc", mapping, MergeReason.MAPPING_RECOVERY);
+        DocumentMapper documentMapper = mapperService.merge(mapping, MergeReason.MAPPING_RECOVERY);
 
         assertEquals(testString, documentMapper.mappers().getMapper(testString).simpleName());
     }
@@ -422,9 +422,9 @@ public class MapperServiceTests extends MapperServiceTestCase {
         final MapperService mapperService = createMapperService(mapping(b -> {}));
         CompressedXContent mapping1 = createTestMapping1();
         CompressedXContent mapping2 = createTestMapping2();
-        mapperService.merge("_doc", mapping1, MergeReason.INDEX_TEMPLATE);
-        DocumentMapper sequentiallyMergedMapper = mapperService.merge("_doc", mapping2, MergeReason.INDEX_TEMPLATE);
-        DocumentMapper bulkMergedMapper = mapperService.merge("_doc", List.of(mapping1, mapping2), MergeReason.INDEX_TEMPLATE);
+        mapperService.merge(mapping1, MergeReason.INDEX_TEMPLATE);
+        DocumentMapper sequentiallyMergedMapper = mapperService.merge(mapping2, MergeReason.INDEX_TEMPLATE);
+        DocumentMapper bulkMergedMapper = mapperService.merge(List.of(mapping1, mapping2), MergeReason.INDEX_TEMPLATE);
         assertEquals(sequentiallyMergedMapper.mappingSource(), bulkMergedMapper.mappingSource());
     }
 
@@ -432,8 +432,8 @@ public class MapperServiceTests extends MapperServiceTestCase {
         final MapperService mapperService = createMapperService(mapping(b -> {}));
         CompressedXContent mapping1 = createTestMapping1();
         CompressedXContent mapping2 = createTestMapping2();
-        DocumentMapper subobjectsFirst = mapperService.merge("_doc", List.of(mapping1, mapping2), MergeReason.INDEX_TEMPLATE);
-        DocumentMapper subobjectsLast = mapperService.merge("_doc", List.of(mapping2, mapping1), MergeReason.INDEX_TEMPLATE);
+        DocumentMapper subobjectsFirst = mapperService.merge(List.of(mapping1, mapping2), MergeReason.INDEX_TEMPLATE);
+        DocumentMapper subobjectsLast = mapperService.merge(List.of(mapping2, mapping1), MergeReason.INDEX_TEMPLATE);
         assertEquals(subobjectsFirst.mappingSource(), subobjectsLast.mappingSource());
     }
 
@@ -519,8 +519,8 @@ public class MapperServiceTests extends MapperServiceTestCase {
             );
         }
 
-        DocumentMapper subobjectsFirst = mapperService.merge("_doc", List.of(mapping1, mapping2), MergeReason.INDEX_TEMPLATE);
-        DocumentMapper subobjectsLast = mapperService.merge("_doc", List.of(mapping2, mapping1), MergeReason.INDEX_TEMPLATE);
+        DocumentMapper subobjectsFirst = mapperService.merge(List.of(mapping1, mapping2), MergeReason.INDEX_TEMPLATE);
+        DocumentMapper subobjectsLast = mapperService.merge(List.of(mapping2, mapping1), MergeReason.INDEX_TEMPLATE);
         assertEquals(subobjectsFirst.mappingSource(), subobjectsLast.mappingSource());
     }
 
@@ -555,7 +555,7 @@ public class MapperServiceTests extends MapperServiceTestCase {
             }""");
 
         final MapperService mapperService = createMapperService(mapping(b -> {}));
-        mapperService.merge("_doc", List.of(mapping1, mapping2), MergeReason.INDEX_TEMPLATE);
+        mapperService.merge(List.of(mapping1, mapping2), MergeReason.INDEX_TEMPLATE);
 
         assertEquals("""
             {
@@ -605,7 +605,7 @@ public class MapperServiceTests extends MapperServiceTestCase {
         final MapperService mapperService = createMapperService(mapping(b -> {}));
         MapperParsingException e = expectThrows(
             MapperParsingException.class,
-            () -> mapperService.merge("_doc", List.of(mapping1, mapping2), MergeReason.INDEX_TEMPLATE)
+            () -> mapperService.merge(List.of(mapping1, mapping2), MergeReason.INDEX_TEMPLATE)
         );
         assertThat(e.getMessage(), containsString("cannot merge a map with multiple roots, one of which is [_doc]"));
     }
@@ -629,7 +629,7 @@ public class MapperServiceTests extends MapperServiceTestCase {
             }""");
 
         final MapperService mapperService = createMapperService(mapping(b -> {}));
-        mapperService.merge("_doc", List.of(mapping1, mapping2), MergeReason.INDEX_TEMPLATE);
+        mapperService.merge(List.of(mapping1, mapping2), MergeReason.INDEX_TEMPLATE);
 
         assertEquals("""
             {
@@ -668,7 +668,7 @@ public class MapperServiceTests extends MapperServiceTestCase {
             }""");
 
         final MapperService mapperService = createMapperService(mapping(b -> {}));
-        mapperService.merge("_doc", List.of(mapping1, mapping2), MergeReason.INDEX_TEMPLATE);
+        mapperService.merge(List.of(mapping1, mapping2), MergeReason.INDEX_TEMPLATE);
 
         assertEquals("""
             {
@@ -710,7 +710,7 @@ public class MapperServiceTests extends MapperServiceTestCase {
             }""");
 
         final MapperService mapperService = createMapperService(mapping(b -> {}));
-        mapperService.merge("_doc", List.of(mapping1, mapping2), MergeReason.INDEX_TEMPLATE);
+        mapperService.merge(List.of(mapping1, mapping2), MergeReason.INDEX_TEMPLATE);
 
         assertEquals("""
             {
@@ -758,7 +758,7 @@ public class MapperServiceTests extends MapperServiceTestCase {
             }""");
 
         final MapperService mapperService = createMapperService(mapping(b -> {}));
-        mapperService.merge("_doc", List.of(mapping1, mapping2), MergeReason.INDEX_TEMPLATE);
+        mapperService.merge(List.of(mapping1, mapping2), MergeReason.INDEX_TEMPLATE);
 
         assertEquals("""
             {
@@ -809,7 +809,7 @@ public class MapperServiceTests extends MapperServiceTestCase {
             }""");
 
         final MapperService mapperService = createMapperService(mapping(b -> {}));
-        mapperService.merge("_doc", List.of(mapping1, mapping2), MergeReason.INDEX_TEMPLATE);
+        mapperService.merge(List.of(mapping1, mapping2), MergeReason.INDEX_TEMPLATE);
 
         assertEquals("""
             {
@@ -862,7 +862,7 @@ public class MapperServiceTests extends MapperServiceTestCase {
             }""");
 
         final MapperService mapperService = createMapperService(mapping(b -> {}));
-        mapperService.merge("_doc", List.of(mapping1, mapping2), MergeReason.INDEX_TEMPLATE);
+        mapperService.merge(List.of(mapping1, mapping2), MergeReason.INDEX_TEMPLATE);
 
         assertEquals("""
             {
@@ -900,7 +900,7 @@ public class MapperServiceTests extends MapperServiceTestCase {
             }""");
 
         final MapperService mapperService = createMapperService(mapping(b -> {}));
-        DocumentMapper bulkMerge = mapperService.merge("_doc", List.of(mapping1), MergeReason.INDEX_TEMPLATE);
+        DocumentMapper bulkMerge = mapperService.merge(List.of(mapping1), MergeReason.INDEX_TEMPLATE);
 
         assertEquals("""
             {
@@ -921,7 +921,7 @@ public class MapperServiceTests extends MapperServiceTestCase {
               }
             }""", Strings.toString(mapperService.documentMapper().mapping(), true, true));
 
-        DocumentMapper sequentialMerge = mapperService.merge("_doc", mapping1, MergeReason.INDEX_TEMPLATE);
+        DocumentMapper sequentialMerge = mapperService.merge(mapping1, MergeReason.INDEX_TEMPLATE);
         assertEquals(bulkMerge.mappingSource(), sequentialMerge.mappingSource());
     }
 
@@ -950,7 +950,7 @@ public class MapperServiceTests extends MapperServiceTestCase {
             }""");
 
         final MapperService mapperService = createMapperService(mapping(b -> {}));
-        mapperService.merge("_doc", List.of(mapping1, mapping2), MergeReason.INDEX_TEMPLATE);
+        mapperService.merge(List.of(mapping1, mapping2), MergeReason.INDEX_TEMPLATE);
 
         assertEquals("""
             {
@@ -1001,7 +1001,7 @@ public class MapperServiceTests extends MapperServiceTestCase {
             }""");
 
         MapperService mapperService = createMapperService(mapping(b -> {}));
-        mapperService.merge("_doc", List.of(mapping1, mapping2), MergeReason.INDEX_TEMPLATE);
+        mapperService.merge(List.of(mapping1, mapping2), MergeReason.INDEX_TEMPLATE);
 
         assertEquals("""
             {
@@ -1024,7 +1024,7 @@ public class MapperServiceTests extends MapperServiceTestCase {
             }""", Strings.toString(mapperService.documentMapper().mapping(), true, true));
 
         mapperService = createMapperService(mapping(b -> {}));
-        mapperService.merge("_doc", List.of(mapping2, mapping1), MergeReason.INDEX_TEMPLATE);
+        mapperService.merge(List.of(mapping2, mapping1), MergeReason.INDEX_TEMPLATE);
 
         assertEquals("""
             {
@@ -1066,7 +1066,7 @@ public class MapperServiceTests extends MapperServiceTestCase {
         final MapperService mapperService = createMapperService(mapping(b -> {}));
         MapperParsingException e = expectThrows(
             MapperParsingException.class,
-            () -> mapperService.merge("_doc", List.of(mapping1, mapping2), MergeReason.INDEX_TEMPLATE)
+            () -> mapperService.merge(List.of(mapping1, mapping2), MergeReason.INDEX_TEMPLATE)
         );
         assertThat(e.getMessage(), containsString("Tried to add subobject [child] to object [parent] which does not support subobjects"));
     }
@@ -1117,7 +1117,7 @@ public class MapperServiceTests extends MapperServiceTestCase {
             }""");
 
         final MapperService mapperService = createMapperService(mapping(b -> {}));
-        mapperService.merge("_doc", List.of(mapping1, mapping2), MergeReason.INDEX_TEMPLATE);
+        mapperService.merge(List.of(mapping1, mapping2), MergeReason.INDEX_TEMPLATE);
 
         assertEquals("""
             {
@@ -1182,7 +1182,7 @@ public class MapperServiceTests extends MapperServiceTestCase {
             }""");
 
         MapperService mapperService = createMapperService(mapping(b -> {}));
-        mapperService.merge("_doc", List.of(mapping1, mapping2), MergeReason.INDEX_TEMPLATE);
+        mapperService.merge(List.of(mapping1, mapping2), MergeReason.INDEX_TEMPLATE);
         assertEquals("""
             {
               "_doc" : {
@@ -1207,7 +1207,7 @@ public class MapperServiceTests extends MapperServiceTestCase {
 
         // Now checking the opposite merge
         mapperService = createMapperService(mapping(b -> {}));
-        mapperService.merge("_doc", List.of(mapping2, mapping1), MergeReason.INDEX_TEMPLATE);
+        mapperService.merge(List.of(mapping2, mapping1), MergeReason.INDEX_TEMPLATE);
         assertEquals("""
             {
               "_doc" : {

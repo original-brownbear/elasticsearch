@@ -491,7 +491,6 @@ public abstract class AbstractBuilderTestCase extends ESTestCase {
 
             if (registerType) {
                 mapperService.merge(
-                    "_doc",
                     new CompressedXContent(
                         Strings.toString(
                             PutMappingRequest.simpleMapping(
@@ -533,7 +532,7 @@ public abstract class AbstractBuilderTestCase extends ESTestCase {
                     MapperService.MergeReason.MAPPING_UPDATE
                 );
                 // also add mappings for two inner field in the object field
-                mapperService.merge("_doc", new CompressedXContent(Strings.format("""
+                mapperService.merge(new CompressedXContent(Strings.format("""
                     {
                       "properties": {
                         "%s": {

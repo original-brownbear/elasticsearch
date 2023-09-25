@@ -26,10 +26,10 @@ public class MappingsMergerTests extends ESTestCase {
 
     public void testMergeMappings_GivenIndicesWithIdenticalProperties() {
         Map<String, Object> index1Mappings = Map.of("properties", Map.of("field_1", "field_1_mappings", "field_2", "field_2_mappings"));
-        MappingMetadata index1MappingMetadata = new MappingMetadata("_doc", index1Mappings);
+        MappingMetadata index1MappingMetadata = new MappingMetadata(index1Mappings);
 
         Map<String, Object> index2Mappings = Map.of("properties", Map.of("field_1", "field_1_mappings", "field_2", "field_2_mappings"));
-        MappingMetadata index2MappingMetadata = new MappingMetadata("_doc", index2Mappings);
+        MappingMetadata index2MappingMetadata = new MappingMetadata(index2Mappings);
 
         Map<String, MappingMetadata> mappings = Map.of("index_1", index1MappingMetadata, "index_2", index2MappingMetadata);
 
@@ -45,10 +45,10 @@ public class MappingsMergerTests extends ESTestCase {
 
     public void testMergeMappings_GivenPropertyFieldWithDifferentMapping() {
         Map<String, Object> index1Mappings = Map.of("properties", Map.of("field_1", "field_1_mappings"));
-        MappingMetadata index1MappingMetadata = new MappingMetadata("_doc", index1Mappings);
+        MappingMetadata index1MappingMetadata = new MappingMetadata(index1Mappings);
 
         Map<String, Object> index2Mappings = Map.of("properties", Map.of("field_1", "different_field_1_mappings"));
-        MappingMetadata index2MappingMetadata = new MappingMetadata("_doc", index2Mappings);
+        MappingMetadata index2MappingMetadata = new MappingMetadata(index2Mappings);
 
         Map<String, MappingMetadata> mappings = Map.of("index_1", index1MappingMetadata, "index_2", index2MappingMetadata);
         GetMappingsResponse getMappingsResponse = new GetMappingsResponse(mappings);
@@ -65,10 +65,10 @@ public class MappingsMergerTests extends ESTestCase {
 
     public void testMergeMappings_GivenIndicesWithDifferentPropertiesButNoConflicts() {
         Map<String, Object> index1Mappings = Map.of("properties", Map.of("field_1", "field_1_mappings", "field_2", "field_2_mappings"));
-        MappingMetadata index1MappingMetadata = new MappingMetadata("_doc", index1Mappings);
+        MappingMetadata index1MappingMetadata = new MappingMetadata(index1Mappings);
 
         Map<String, Object> index2Mappings = Map.of("properties", Map.of("field_1", "field_1_mappings", "field_3", "field_3_mappings"));
-        MappingMetadata index2MappingMetadata = new MappingMetadata("_doc", index2Mappings);
+        MappingMetadata index2MappingMetadata = new MappingMetadata(index2Mappings);
 
         Map<String, MappingMetadata> mappings = Map.of("index_1", index1MappingMetadata, "index_2", index2MappingMetadata);
         GetMappingsResponse getMappingsResponse = new GetMappingsResponse(mappings);
@@ -90,10 +90,10 @@ public class MappingsMergerTests extends ESTestCase {
 
     public void testMergeMappings_GivenIndicesWithIdenticalRuntimeFields() {
         Map<String, Object> index1Mappings = Map.of("runtime", Map.of("field_1", "field_1_mappings", "field_2", "field_2_mappings"));
-        MappingMetadata index1MappingMetadata = new MappingMetadata("_doc", index1Mappings);
+        MappingMetadata index1MappingMetadata = new MappingMetadata(index1Mappings);
 
         Map<String, Object> index2Mappings = Map.of("runtime", Map.of("field_1", "field_1_mappings", "field_2", "field_2_mappings"));
-        MappingMetadata index2MappingMetadata = new MappingMetadata("_doc", index2Mappings);
+        MappingMetadata index2MappingMetadata = new MappingMetadata(index2Mappings);
 
         Map<String, MappingMetadata> mappings = Map.of("index_1", index1MappingMetadata, "index_2", index2MappingMetadata);
         GetMappingsResponse getMappingsResponse = new GetMappingsResponse(mappings);
@@ -108,10 +108,10 @@ public class MappingsMergerTests extends ESTestCase {
 
     public void testMergeMappings_GivenRuntimeFieldWithDifferentMapping() {
         Map<String, Object> index1Mappings = Map.of("runtime", Map.of("field_1", "field_1_mappings"));
-        MappingMetadata index1MappingMetadata = new MappingMetadata("_doc", index1Mappings);
+        MappingMetadata index1MappingMetadata = new MappingMetadata(index1Mappings);
 
         Map<String, Object> index2Mappings = Map.of("runtime", Map.of("field_1", "different_field_1_mappings"));
-        MappingMetadata index2MappingMetadata = new MappingMetadata("_doc", index2Mappings);
+        MappingMetadata index2MappingMetadata = new MappingMetadata(index2Mappings);
 
         Map<String, MappingMetadata> mappings = Map.of("index_1", index1MappingMetadata, "index_2", index2MappingMetadata);
         GetMappingsResponse getMappingsResponse = new GetMappingsResponse(mappings);
@@ -128,10 +128,10 @@ public class MappingsMergerTests extends ESTestCase {
 
     public void testMergeMappings_GivenIndicesWithDifferentRuntimeFieldsButNoConflicts() {
         Map<String, Object> index1Mappings = Map.of("runtime", Map.of("field_1", "field_1_mappings", "field_2", "field_2_mappings"));
-        MappingMetadata index1MappingMetadata = new MappingMetadata("_doc", index1Mappings);
+        MappingMetadata index1MappingMetadata = new MappingMetadata(index1Mappings);
 
         Map<String, Object> index2Mappings = Map.of("runtime", Map.of("field_1", "field_1_mappings", "field_3", "field_3_mappings"));
-        MappingMetadata index2MappingMetadata = new MappingMetadata("_doc", index2Mappings);
+        MappingMetadata index2MappingMetadata = new MappingMetadata(index2Mappings);
 
         Map<String, MappingMetadata> mappings = Map.of("index_1", index1MappingMetadata, "index_2", index2MappingMetadata);
         GetMappingsResponse getMappingsResponse = new GetMappingsResponse(mappings);
@@ -162,7 +162,7 @@ public class MappingsMergerTests extends ESTestCase {
             index1Mappings.put("properties", index1Properties);
             index1Mappings.put("runtime", index1Runtime);
         }
-        MappingMetadata index1MappingMetadata = new MappingMetadata("_doc", index1Mappings);
+        MappingMetadata index1MappingMetadata = new MappingMetadata(index1Mappings);
 
         Map<String, Object> index2Mappings = new HashMap<>();
         {
@@ -174,7 +174,7 @@ public class MappingsMergerTests extends ESTestCase {
             index2Mappings.put("properties", index2Properties);
             index2Mappings.put("runtime", index2Runtime);
         }
-        MappingMetadata index2MappingMetadata = new MappingMetadata("_doc", index2Mappings);
+        MappingMetadata index2MappingMetadata = new MappingMetadata(index2Mappings);
 
         Map<String, MappingMetadata> mappings = Map.of("index_1", index1MappingMetadata, "index_2", index2MappingMetadata);
         GetMappingsResponse getMappingsResponse = new GetMappingsResponse(mappings);
@@ -206,7 +206,7 @@ public class MappingsMergerTests extends ESTestCase {
         Map<String, Object> indexMappings = new HashMap<>();
         indexMappings.put("properties", properties);
         indexMappings.put("runtime", runtime);
-        MappingMetadata indexMappingMetadata = new MappingMetadata("_doc", indexMappings);
+        MappingMetadata indexMappingMetadata = new MappingMetadata(indexMappings);
 
         Map<String, MappingMetadata> mappings = Map.of("index", indexMappingMetadata);
         GetMappingsResponse getMappingsResponse = new GetMappingsResponse(mappings);

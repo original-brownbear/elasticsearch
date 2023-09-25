@@ -22,7 +22,6 @@ public class ShapeQueryBuilderOverPointTests extends ShapeQueryBuilderTests {
     @Override
     protected void initializeAdditionalMappings(MapperService mapperService) throws IOException {
         mapperService.merge(
-            docType,
             new CompressedXContent(Strings.toString(PutMappingRequest.simpleMapping(fieldName(), "type=point"))),
             MapperService.MergeReason.MAPPING_UPDATE
         );

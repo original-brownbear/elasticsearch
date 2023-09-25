@@ -291,7 +291,7 @@ public class ElasticsearchMappingsTests extends ESTestCase {
             }
             mapping.put("_meta", meta);
 
-            indexMetadata.putMapping(new MappingMetadata("_doc", mapping));
+            indexMetadata.putMapping(new MappingMetadata(mapping));
 
             metadataBuilder.put(indexMetadata);
         }

@@ -31,10 +31,7 @@ import static org.elasticsearch.common.xcontent.support.XContentMapValues.nodeBo
  */
 public class MappingMetadata implements SimpleDiffable<MappingMetadata> {
 
-    public static final MappingMetadata EMPTY_MAPPINGS = new MappingMetadata(
-        MapperService.SINGLE_MAPPING_NAME,
-        Map.of(MapperService.SINGLE_MAPPING_NAME, Map.of())
-    );
+    public static final MappingMetadata EMPTY_MAPPINGS = new MappingMetadata(Map.of(MapperService.SINGLE_MAPPING_NAME, Map.of()));
 
     private final String type;
 
@@ -57,6 +54,10 @@ public class MappingMetadata implements SimpleDiffable<MappingMetadata> {
         }
         this.type = mappingMap.keySet().iterator().next();
         this.routingRequired = routingRequired((Map<String, Object>) mappingMap.get(this.type));
+    }
+
+    public MappingMetadata(Map<String, Object> mapping) {
+        this(MapperService.SINGLE_MAPPING_NAME, mapping);
     }
 
     @SuppressWarnings("unchecked")

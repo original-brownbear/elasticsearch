@@ -39,7 +39,7 @@ public class MappingLookupTests extends ESTestCase {
         List<ObjectMapper> objectMappers,
         List<RuntimeField> runtimeFields
     ) {
-        RootObjectMapper.Builder builder = new RootObjectMapper.Builder("_doc", ObjectMapper.Defaults.SUBOBJECTS);
+        RootObjectMapper.Builder builder = new RootObjectMapper.Builder(ObjectMapper.Defaults.SUBOBJECTS);
         Map<String, RuntimeField> runtimeFieldTypes = runtimeFields.stream().collect(Collectors.toMap(RuntimeField::name, r -> r));
         builder.addRuntimeFields(runtimeFieldTypes);
         Mapping mapping = new Mapping(

@@ -273,8 +273,8 @@ public class DestinationIndexTests extends ESTestCase {
                 Map.of("type", "alias", "path", "outer-field.inner-field")
             )
         );
-        MappingMetadata index1MappingMetadata = new MappingMetadata("_doc", indexMappings);
-        MappingMetadata index2MappingMetadata = new MappingMetadata("_doc", indexMappings);
+        MappingMetadata index1MappingMetadata = new MappingMetadata(indexMappings);
+        MappingMetadata index2MappingMetadata = new MappingMetadata(indexMappings);
 
         Map<String, MappingMetadata> mappings = Map.of("index_1", index1MappingMetadata, "index_2", index2MappingMetadata);
 
@@ -567,7 +567,7 @@ public class DestinationIndexTests extends ESTestCase {
 
         GetSettingsResponse getSettingsResponse = new GetSettingsResponse(Map.of(), Map.of());
 
-        Map<String, MappingMetadata> mappings = Map.of("", new MappingMetadata("_doc", Map.of("properties", Map.of("ml", "some-mapping"))));
+        Map<String, MappingMetadata> mappings = Map.of("", new MappingMetadata(Map.of("properties", Map.of("ml", "some-mapping"))));
         GetMappingsResponse getMappingsResponse = new GetMappingsResponse(mappings);
 
         doAnswer(callListenerOnResponse(getSettingsResponse)).when(client).execute(eq(GetSettingsAction.INSTANCE), any(), any());
@@ -601,7 +601,7 @@ public class DestinationIndexTests extends ESTestCase {
             ALIAS_TO_NESTED_FIELD,
             Map.of("type", "alias", "path", OUTER_FIELD + "." + INNER_FIELD)
         );
-        Map<String, MappingMetadata> mappings = Map.of("", new MappingMetadata("_doc", Map.of("properties", properties)));
+        Map<String, MappingMetadata> mappings = Map.of("", new MappingMetadata(Map.of("properties", properties)));
         GetIndexResponse getIndexResponse = new GetIndexResponse(
             new String[] { DEST_INDEX },
             mappings,
@@ -686,7 +686,7 @@ public class DestinationIndexTests extends ESTestCase {
     public void testUpdateMappingsToDestIndex_ResultsFieldsExistsInSourceIndex() {
         DataFrameAnalyticsConfig config = createConfig(new OutlierDetection.Builder().build());
 
-        Map<String, MappingMetadata> mappings = Map.of("", new MappingMetadata("_doc", Map.of("properties", Map.of("ml", "some-mapping"))));
+        Map<String, MappingMetadata> mappings = Map.of("", new MappingMetadata(Map.of("properties", Map.of("ml", "some-mapping"))));
         GetIndexResponse getIndexResponse = new GetIndexResponse(
             new String[] { DEST_INDEX },
             mappings,

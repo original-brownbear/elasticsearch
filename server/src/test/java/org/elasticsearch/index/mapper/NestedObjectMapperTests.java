@@ -514,7 +514,7 @@ public class NestedObjectMapperTests extends MapperServiceTestCase {
         );
         MergeReason mergeReason = randomFrom(MergeReason.MAPPING_UPDATE, MergeReason.INDEX_TEMPLATE);
 
-        mapperService.merge(MapperService.SINGLE_MAPPING_NAME, new CompressedXContent(mapping), mergeReason);
+        mapperService.merge(new CompressedXContent(mapping), mergeReason);
         DocumentMapper docMapper = mapperService.documentMapper();
 
         ParsedDocument doc = docMapper.parse(
@@ -620,7 +620,7 @@ public class NestedObjectMapperTests extends MapperServiceTestCase {
         );
         MergeReason mergeReason = randomFrom(MergeReason.MAPPING_UPDATE, MergeReason.INDEX_TEMPLATE);
 
-        mapperService.merge(MapperService.SINGLE_MAPPING_NAME, new CompressedXContent(mapping), mergeReason);
+        mapperService.merge(new CompressedXContent(mapping), mergeReason);
         DocumentMapper docMapper = mapperService.documentMapper();
 
         ParsedDocument doc = docMapper.parse(
@@ -680,7 +680,7 @@ public class NestedObjectMapperTests extends MapperServiceTestCase {
                 .endObject()
                 .endObject()
         );
-        mapperService.merge(MapperService.SINGLE_MAPPING_NAME, new CompressedXContent(firstMapping), MergeReason.INDEX_TEMPLATE);
+        mapperService.merge(new CompressedXContent(firstMapping), MergeReason.INDEX_TEMPLATE);
 
         String secondMapping = Strings.toString(
             XContentFactory.jsonBuilder()
@@ -703,7 +703,7 @@ public class NestedObjectMapperTests extends MapperServiceTestCase {
                 .endObject()
         );
 
-        mapperService.merge(MapperService.SINGLE_MAPPING_NAME, new CompressedXContent(secondMapping), MergeReason.INDEX_TEMPLATE);
+        mapperService.merge(new CompressedXContent(secondMapping), MergeReason.INDEX_TEMPLATE);
         DocumentMapper docMapper = mapperService.documentMapper();
 
         ParsedDocument doc = docMapper.parse(

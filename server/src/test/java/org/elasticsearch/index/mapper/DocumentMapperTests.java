@@ -178,7 +178,7 @@ public class DocumentMapperTests extends MapperServiceTestCase {
                     Mapping update = doc.dynamicMappingsUpdate();
                     assert update != null;
                     lastIntroducedFieldName.set(fieldName);
-                    mapperService.merge("_doc", new CompressedXContent(update.toString()), MergeReason.MAPPING_UPDATE);
+                    mapperService.merge(new CompressedXContent(update.toString()), MergeReason.MAPPING_UPDATE);
                 }
             } catch (Exception e) {
                 error.set(e);
@@ -437,7 +437,7 @@ public class DocumentMapperTests extends MapperServiceTestCase {
                 threads[threadId] = new Thread(() -> {
                     try {
                         latch.await();
-                        mapperService.parseMapping("_doc", new CompressedXContent(Strings.toString(builders[threadId])));
+                        mapperService.parseMapping(new CompressedXContent(Strings.toString(builders[threadId])));
                     } catch (Exception e) {
                         throw new AssertionError(e);
                     }

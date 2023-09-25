@@ -40,7 +40,6 @@ import static org.mockito.Mockito.when;
 
 public class ParentIdQueryBuilderTests extends AbstractQueryTestCase<ParentIdQueryBuilder> {
 
-    private static final String TYPE = "_doc";
     private static final String JOIN_FIELD_NAME = "join_field";
     private static final String PARENT_NAME = "parent";
     private static final String CHILD_NAME = "child";
@@ -86,7 +85,7 @@ public class ParentIdQueryBuilderTests extends AbstractQueryTestCase<ParentIdQue
             .endObject()
             .endObject();
 
-        mapperService.merge(TYPE, new CompressedXContent(Strings.toString(mapping)), MapperService.MergeReason.MAPPING_UPDATE);
+        mapperService.merge(new CompressedXContent(Strings.toString(mapping)), MapperService.MergeReason.MAPPING_UPDATE);
     }
 
     @Override

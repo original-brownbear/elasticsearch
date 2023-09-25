@@ -98,7 +98,6 @@ public class TextExpansionQueryBuilderTests extends AbstractQueryTestCase<TextEx
     @Override
     protected void initializeAdditionalMappings(MapperService mapperService) throws IOException {
         mapperService.merge(
-            "_doc",
             new CompressedXContent(Strings.toString(PutMappingRequest.simpleMapping(RANK_FEATURES_FIELD, "type=rank_features"))),
             MapperService.MergeReason.MAPPING_UPDATE
         );

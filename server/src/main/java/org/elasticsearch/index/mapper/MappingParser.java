@@ -78,6 +78,10 @@ public final class MappingParser {
         return XContentHelper.convertToMap(source.compressedReference(), true, XContentType.JSON).v2();
     }
 
+    Mapping parse(CompressedXContent source) throws MapperParsingException {
+        return parse(MapperService.SINGLE_MAPPING_NAME, source);
+    }
+
     Mapping parse(@Nullable String type, CompressedXContent source) throws MapperParsingException {
         Map<String, Object> mapping = convertToMap(source);
         return parse(type, mapping);

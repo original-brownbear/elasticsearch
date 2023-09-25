@@ -42,13 +42,11 @@ public class GeoShapeWithDocValuesQueryBuilderTests extends AbstractQueryTestCas
     protected void initializeAdditionalMappings(MapperService mapperService) throws IOException {
         if (randomBoolean()) {
             mapperService.merge(
-                "_doc",
                 new CompressedXContent(Strings.toString(PutMappingRequest.simpleMapping("test", "type=geo_shape"))),
                 MapperService.MergeReason.MAPPING_UPDATE
             );
         } else {
             mapperService.merge(
-                "_doc",
                 new CompressedXContent(Strings.toString(PutMappingRequest.simpleMapping("test", "type=geo_shape,doc_values=false"))),
                 MapperService.MergeReason.MAPPING_UPDATE
             );

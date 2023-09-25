@@ -100,7 +100,7 @@ public class ConstantKeywordFieldMapperTests extends MapperTestCase {
         assertNotNull(doc.dynamicMappingsUpdate());
 
         CompressedXContent mappingUpdate = new CompressedXContent(Strings.toString(doc.dynamicMappingsUpdate()));
-        DocumentMapper updatedMapper = mapperService.merge("_doc", mappingUpdate, MergeReason.MAPPING_UPDATE);
+        DocumentMapper updatedMapper = mapperService.merge(mappingUpdate, MergeReason.MAPPING_UPDATE);
         String expectedMapping = Strings.toString(fieldMapping(b -> b.field("type", "constant_keyword").field("value", "foo")));
         assertEquals(expectedMapping, updatedMapper.mappingSource().toString());
 
@@ -120,7 +120,7 @@ public class ConstantKeywordFieldMapperTests extends MapperTestCase {
         assertNotNull(doc.dynamicMappingsUpdate());
 
         CompressedXContent mappingUpdate = new CompressedXContent(Strings.toString(doc.dynamicMappingsUpdate()));
-        DocumentMapper updatedMapper = mapperService.merge("_doc", mappingUpdate, MergeReason.MAPPING_UPDATE);
+        DocumentMapper updatedMapper = mapperService.merge(mappingUpdate, MergeReason.MAPPING_UPDATE);
         String expectedMapping = Strings.toString(fieldMapping(b -> b.field("type", "constant_keyword").field("value", "foo")));
         assertEquals(expectedMapping, updatedMapper.mappingSource().toString());
 

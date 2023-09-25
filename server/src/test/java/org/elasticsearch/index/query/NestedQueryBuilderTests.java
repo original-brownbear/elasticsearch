@@ -51,7 +51,6 @@ public class NestedQueryBuilderTests extends AbstractQueryTestCase<NestedQueryBu
     @Override
     protected void initializeAdditionalMappings(MapperService mapperService) throws IOException {
         mapperService.merge(
-            "_doc",
             new CompressedXContent(
                 Strings.toString(
                     PutMappingRequest.simpleMapping(

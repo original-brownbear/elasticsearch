@@ -348,7 +348,6 @@ public class DynamicTemplatesTests extends MapperServiceTestCase {
 
         MapperService mapperService = createMapperService(IndexVersion.current(), Settings.EMPTY, () -> true);
         DocumentMapper mapper = mapperService.merge(
-            MapperService.SINGLE_MAPPING_NAME,
             List.of(new CompressedXContent(mapping1), new CompressedXContent(mapping2)),
             MapperService.MergeReason.INDEX_TEMPLATE
         );

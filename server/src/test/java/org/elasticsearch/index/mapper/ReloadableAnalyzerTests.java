@@ -68,7 +68,7 @@ public class ReloadableAnalyzerTests extends ESSingleNodeTestCase {
             )
         );
 
-        mapperService.merge("_doc", mapping, MapperService.MergeReason.MAPPING_UPDATE);
+        mapperService.merge(mapping, MapperService.MergeReason.MAPPING_UPDATE);
         IndexAnalyzers current = mapperService.getIndexAnalyzers();
 
         ReloadableCustomAnalyzer originalReloadableAnalyzer = (ReloadableCustomAnalyzer) current.get("reloadableAnalyzer").analyzer();

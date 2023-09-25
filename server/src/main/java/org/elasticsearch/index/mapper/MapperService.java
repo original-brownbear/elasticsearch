@@ -372,7 +372,7 @@ public class MapperService extends AbstractIndexComponent implements Closeable {
      * Merging the provided mappings. Actual merging is done in the raw, non-parsed, form of the mappings. This allows to do a proper bulk
      * merge, where parsing is done only when all raw mapping settings are already merged.
      */
-    public DocumentMapper merge(String type, List<CompressedXContent> mappingSources, MergeReason reason) {
+    public DocumentMapper merge(List<CompressedXContent> mappingSources, MergeReason reason) {
         final DocumentMapper currentMapper = this.mapper;
         if (currentMapper != null && mappingSources.size() == 1 && currentMapper.mappingSource().equals(mappingSources.get(0))) {
             return currentMapper;
@@ -383,24 +383,26 @@ public class MapperService extends AbstractIndexComponent implements Closeable {
             Map<String, Object> rawMapping = MappingParser.convertToMap(mappingSource);
 
             // normalize mappings, making sure that all have the provided type as a single root
-            if (rawMapping.containsKey(type)) {
+            if (rawMapping.containsKey(SINGLE_MAPPING_NAME)) {
                 if (rawMapping.size() > 1) {
-                    throw new MapperParsingException("cannot merge a map with multiple roots, one of which is [" + type + "]");
+                    throw new MapperParsingException(
+                        "cannot merge a map with multiple roots, one of which is [" + SINGLE_MAPPING_NAME + "]"
+                    );
                 }
             } else {
-                rawMapping = Map.of(type, rawMapping);
+                rawMapping = Map.of(SINGLE_MAPPING_NAME, rawMapping);
             }
 
             if (mergedRawMapping == null) {
                 mergedRawMapping = rawMapping;
             } else {
-                XContentHelper.merge(type, mergedRawMapping, rawMapping, RawFieldMappingMerge.INSTANCE);
+                XContentHelper.merge(SINGLE_MAPPING_NAME, mergedRawMapping, rawMapping, RawFieldMappingMerge.INSTANCE);
             }
         }
         if (mergedRawMapping != null && mergedRawMapping.size() > 1) {
             throw new MapperParsingException("cannot merge mapping sources with different roots");
         }
-        return (mergedRawMapping != null) ? doMerge(type, reason, mergedRawMapping) : null;
+        return (mergedRawMapping != null) ? doMerge(SINGLE_MAPPING_NAME, reason, mergedRawMapping) : null;
     }
 
     /**
@@ -503,6 +505,10 @@ public class MapperService extends AbstractIndexComponent implements Closeable {
         }
     }
 
+    public DocumentMapper merge(CompressedXContent mappingSource, MergeReason reason) {
+        return merge(SINGLE_MAPPING_NAME, mappingSource, reason);
+    }
+
     public DocumentMapper merge(String type, CompressedXContent mappingSource, MergeReason reason) {
         final DocumentMapper currentMapper = this.mapper;
         if (currentMapper != null && currentMapper.mappingSource().equals(mappingSource)) {
@@ -530,6 +536,10 @@ public class MapperService extends AbstractIndexComponent implements Closeable {
         DocumentMapper newMapper = new DocumentMapper(documentParser, mapping, mappingSource, indexVersionCreated);
         newMapper.validate(indexSettings, reason != MergeReason.MAPPING_RECOVERY);
         return newMapper;
+    }
+
+    public Mapping parseMapping(CompressedXContent mappingSource) {
+        return parseMapping(SINGLE_MAPPING_NAME, mappingSource);
     }
 
     public Mapping parseMapping(String mappingType, CompressedXContent mappingSource) {

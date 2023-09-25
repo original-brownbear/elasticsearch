@@ -79,7 +79,7 @@ public class MappingParserTests extends MapperServiceTestCase {
             b.startObject("foo.bar").field("type", "text").endObject();
             b.startObject("foo.baz").field("type", "keyword").endObject();
         });
-        Mapping mapping = createMappingParser(Settings.EMPTY).parse("_doc", new CompressedXContent(BytesReference.bytes(builder)));
+        Mapping mapping = createMappingParser(Settings.EMPTY).parse(new CompressedXContent(BytesReference.bytes(builder)));
 
         Mapper object = mapping.getRoot().getMapper("foo");
         assertThat(object, CoreMatchers.instanceOf(ObjectMapper.class));
@@ -101,7 +101,7 @@ public class MappingParserTests extends MapperServiceTestCase {
             }
             b.endObject();
         });
-        Mapping mapping = createMappingParser(Settings.EMPTY).parse("_doc", new CompressedXContent(BytesReference.bytes(builder)));
+        Mapping mapping = createMappingParser(Settings.EMPTY).parse(new CompressedXContent(BytesReference.bytes(builder)));
         MappingLookup mappingLookup = MappingLookup.fromMapping(mapping);
         assertNotNull(mappingLookup.getMapper("foo.bar"));
         assertNotNull(mappingLookup.getMapper("foo.baz.deep.field"));
@@ -115,7 +115,7 @@ public class MappingParserTests extends MapperServiceTestCase {
         });
         IllegalArgumentException e = expectThrows(
             IllegalArgumentException.class,
-            () -> createMappingParser(Settings.EMPTY).parse("_doc", new CompressedXContent(BytesReference.bytes(builder)))
+            () -> createMappingParser(Settings.EMPTY).parse(new CompressedXContent(BytesReference.bytes(builder)))
         );
         assertTrue(e.getMessage(), e.getMessage().contains("mapper [foo] cannot be changed from type [text] to [ObjectMapper]"));
     }
@@ -141,7 +141,7 @@ public class MappingParserTests extends MapperServiceTestCase {
         });
         MapperParsingException e = expectThrows(
             MapperParsingException.class,
-            () -> createMappingParser(Settings.EMPTY).parse("_doc", new CompressedXContent(BytesReference.bytes(builder)))
+            () -> createMappingParser(Settings.EMPTY).parse(new CompressedXContent(BytesReference.bytes(builder)))
         );
         assertEquals("Type [alias] cannot be used in multi field", e.getMessage());
     }
@@ -150,7 +150,7 @@ public class MappingParserTests extends MapperServiceTestCase {
         XContentBuilder builder = topMapping(b -> { b.field(RoutingFieldMapper.NAME, "required"); });
         IllegalArgumentException e = expectThrows(
             IllegalArgumentException.class,
-            () -> createMappingParser(Settings.EMPTY).parse("_doc", new CompressedXContent(BytesReference.bytes(builder)))
+            () -> createMappingParser(Settings.EMPTY).parse(new CompressedXContent(BytesReference.bytes(builder)))
         );
         assertEquals("[_routing] config must be an object", e.getMessage());
     }
@@ -190,7 +190,7 @@ public class MappingParserTests extends MapperServiceTestCase {
                }
             }
             """;
-        Mapping mapping = createMappingParser(Settings.EMPTY).parse("_doc", new CompressedXContent(mappingAsString));
+        Mapping mapping = createMappingParser(Settings.EMPTY).parse(new CompressedXContent(mappingAsString));
         assertEquals(1, mapping.getRoot().mappers.size());
         Mapper object = mapping.getRoot().getMapper("obj");
         assertThat(object, CoreMatchers.instanceOf(ObjectMapper.class));
@@ -226,7 +226,7 @@ public class MappingParserTests extends MapperServiceTestCase {
         XContentBuilder builder = mapping(b -> b.startObject(".foo").field("type", randomFieldType()).endObject());
         IllegalArgumentException iae = expectThrows(
             IllegalArgumentException.class,
-            () -> createMappingParser(Settings.EMPTY).parse("_doc", new CompressedXContent(BytesReference.bytes(builder)))
+            () -> createMappingParser(Settings.EMPTY).parse(new CompressedXContent(BytesReference.bytes(builder)))
         );
         // TODO isn't this error misleading?
         assertEquals("field name cannot be an empty string", iae.getMessage());
@@ -234,7 +234,7 @@ public class MappingParserTests extends MapperServiceTestCase {
 
     public void testFieldEndingWithDot() throws Exception {
         XContentBuilder builder = mapping(b -> b.startObject("foo.").field("type", randomFieldType()).endObject());
-        Mapping mapping = createMappingParser(Settings.EMPTY).parse("_doc", new CompressedXContent(BytesReference.bytes(builder)));
+        Mapping mapping = createMappingParser(Settings.EMPTY).parse(new CompressedXContent(BytesReference.bytes(builder)));
         // TODO this needs fixing as part of addressing https://github.com/elastic/elasticsearch/issues/28948
         assertNotNull(mapping.getRoot().mappers.get("foo"));
         assertNull(mapping.getRoot().mappers.get("foo."));
@@ -244,7 +244,7 @@ public class MappingParserTests extends MapperServiceTestCase {
         XContentBuilder builder = mapping(b -> b.startObject("top..foo").field("type", randomFieldType()).endObject());
         IllegalArgumentException iae = expectThrows(
             IllegalArgumentException.class,
-            () -> createMappingParser(Settings.EMPTY).parse("_doc", new CompressedXContent(BytesReference.bytes(builder)))
+            () -> createMappingParser(Settings.EMPTY).parse(new CompressedXContent(BytesReference.bytes(builder)))
         );
         // TODO isn't this error misleading?
         assertEquals("field name cannot be an empty string", iae.getMessage());
@@ -252,7 +252,7 @@ public class MappingParserTests extends MapperServiceTestCase {
 
     public void testDottedFieldEndingWithDot() throws Exception {
         XContentBuilder builder = mapping(b -> b.startObject("foo.bar.").field("type", randomFieldType()).endObject());
-        Mapping mapping = createMappingParser(Settings.EMPTY).parse("_doc", new CompressedXContent(BytesReference.bytes(builder)));
+        Mapping mapping = createMappingParser(Settings.EMPTY).parse(new CompressedXContent(BytesReference.bytes(builder)));
         // TODO this needs fixing as part of addressing https://github.com/elastic/elasticsearch/issues/28948
         assertNotNull(((ObjectMapper) mapping.getRoot().mappers.get("foo")).mappers.get("bar"));
         assertNull(((ObjectMapper) mapping.getRoot().mappers.get("foo")).mappers.get("bar."));
@@ -262,7 +262,7 @@ public class MappingParserTests extends MapperServiceTestCase {
         XContentBuilder builder = mapping(b -> b.startObject("foo..bar.").field("type", randomFieldType()).endObject());
         IllegalArgumentException iae = expectThrows(
             IllegalArgumentException.class,
-            () -> createMappingParser(Settings.EMPTY).parse("_doc", new CompressedXContent(BytesReference.bytes(builder)))
+            () -> createMappingParser(Settings.EMPTY).parse(new CompressedXContent(BytesReference.bytes(builder)))
         );
         // TODO isn't this error misleading?
         assertEquals("field name cannot be an empty string", iae.getMessage());
@@ -272,7 +272,7 @@ public class MappingParserTests extends MapperServiceTestCase {
         XContentBuilder builder = mapping(b -> b.startObject("top. .foo").field("type", randomFieldType()).endObject());
         IllegalArgumentException iae = expectThrows(
             IllegalArgumentException.class,
-            () -> createMappingParser(Settings.EMPTY).parse("_doc", new CompressedXContent(BytesReference.bytes(builder)))
+            () -> createMappingParser(Settings.EMPTY).parse(new CompressedXContent(BytesReference.bytes(builder)))
         );
         // TODO isn't this error misleading?
         assertEquals("field name cannot contain only whitespaces", iae.getMessage());
@@ -283,7 +283,7 @@ public class MappingParserTests extends MapperServiceTestCase {
             XContentBuilder builder = mapping(b -> b.startObject("").field("type", randomFieldType()).endObject());
             IllegalArgumentException iae = expectThrows(
                 IllegalArgumentException.class,
-                () -> createMappingParser(Settings.EMPTY).parse("_doc", new CompressedXContent(BytesReference.bytes(builder)))
+                () -> createMappingParser(Settings.EMPTY).parse(new CompressedXContent(BytesReference.bytes(builder)))
             );
             assertEquals("field name cannot be an empty string", iae.getMessage());
         }
@@ -291,7 +291,7 @@ public class MappingParserTests extends MapperServiceTestCase {
             XContentBuilder builder = mappingNoSubobjects(b -> b.startObject("").field("type", randomFieldType()).endObject());
             IllegalArgumentException iae = expectThrows(
                 IllegalArgumentException.class,
-                () -> createMappingParser(Settings.EMPTY).parse("_doc", new CompressedXContent(BytesReference.bytes(builder)))
+                () -> createMappingParser(Settings.EMPTY).parse(new CompressedXContent(BytesReference.bytes(builder)))
             );
             assertEquals("field name cannot be an empty string", iae.getMessage());
         }
@@ -302,7 +302,7 @@ public class MappingParserTests extends MapperServiceTestCase {
             XContentBuilder builder = mapping(b -> b.startObject(" ").field("type", randomFieldType()).endObject());
             IllegalArgumentException iae = expectThrows(
                 IllegalArgumentException.class,
-                () -> createMappingParser(Settings.EMPTY).parse("_doc", new CompressedXContent(BytesReference.bytes(builder)))
+                () -> createMappingParser(Settings.EMPTY).parse(new CompressedXContent(BytesReference.bytes(builder)))
             );
             assertEquals("field name cannot contain only whitespaces", iae.getMessage());
         }
@@ -310,7 +310,7 @@ public class MappingParserTests extends MapperServiceTestCase {
             XContentBuilder builder = mappingNoSubobjects(b -> b.startObject(" ").field("type", "keyword").endObject());
             IllegalArgumentException iae = expectThrows(
                 IllegalArgumentException.class,
-                () -> createMappingParser(Settings.EMPTY).parse("_doc", new CompressedXContent(BytesReference.bytes(builder)))
+                () -> createMappingParser(Settings.EMPTY).parse(new CompressedXContent(BytesReference.bytes(builder)))
             );
             assertEquals("field name cannot contain only whitespaces", iae.getMessage());
         }
@@ -326,19 +326,19 @@ public class MappingParserTests extends MapperServiceTestCase {
         {
             XContentBuilder builder = mapping(b -> b.startObject(" ").field("type", randomFieldType()).endObject());
             MappingParser mappingParser = createMappingParser(Settings.EMPTY, version, transportVersion);
-            Mapping mapping = mappingParser.parse("_doc", new CompressedXContent(BytesReference.bytes(builder)));
+            Mapping mapping = mappingParser.parse(new CompressedXContent(BytesReference.bytes(builder)));
             assertNotNull(mapping.getRoot().getMapper(" "));
         }
         {
             XContentBuilder builder = mapping(b -> b.startObject("top. .foo").field("type", randomFieldType()).endObject());
             MappingParser mappingParser = createMappingParser(Settings.EMPTY, version, transportVersion);
-            Mapping mapping = mappingParser.parse("_doc", new CompressedXContent(BytesReference.bytes(builder)));
+            Mapping mapping = mappingParser.parse(new CompressedXContent(BytesReference.bytes(builder)));
             assertNotNull(((ObjectMapper) mapping.getRoot().getMapper("top")).getMapper(" "));
         }
         {
             XContentBuilder builder = mappingNoSubobjects(b -> b.startObject(" ").field("type", "keyword").endObject());
             MappingParser mappingParser = createMappingParser(Settings.EMPTY, version, transportVersion);
-            Mapping mapping = mappingParser.parse("_doc", new CompressedXContent(BytesReference.bytes(builder)));
+            Mapping mapping = mappingParser.parse(new CompressedXContent(BytesReference.bytes(builder)));
             assertNotNull(mapping.getRoot().getMapper(" "));
         }
     }
@@ -349,7 +349,7 @@ public class MappingParserTests extends MapperServiceTestCase {
             XContentBuilder builder = mapping(b -> b.startObject(fieldName).field("type", randomFieldType()).endObject());
             IllegalArgumentException iae = expectThrows(
                 IllegalArgumentException.class,
-                () -> createMappingParser(Settings.EMPTY).parse("_doc", new CompressedXContent(BytesReference.bytes(builder)))
+                () -> createMappingParser(Settings.EMPTY).parse(new CompressedXContent(BytesReference.bytes(builder)))
             );
             assertEquals("field name cannot contain only dots", iae.getMessage());
         }
@@ -359,7 +359,7 @@ public class MappingParserTests extends MapperServiceTestCase {
         MappingParser mappingParser = createMappingParser(Settings.EMPTY);
         for (String fieldName : DocumentParserTests.VALID_FIELD_NAMES_NO_SUBOBJECTS) {
             XContentBuilder builder = mappingNoSubobjects(b -> b.startObject(fieldName).field("type", "keyword").endObject());
-            assertNotNull(mappingParser.parse("_doc", new CompressedXContent(BytesReference.bytes(builder))));
+            assertNotNull(mappingParser.parse(new CompressedXContent(BytesReference.bytes(builder))));
         }
     }
 
@@ -369,7 +369,7 @@ public class MappingParserTests extends MapperServiceTestCase {
         MappingParser mappingParser = createMappingParser(Settings.EMPTY);
         for (String fieldName : DocumentParserTests.VALID_FIELD_NAMES_NO_SUBOBJECTS) {
             XContentBuilder builder = runtimeMapping(b -> b.startObject(fieldName).field("type", "keyword").endObject());
-            mappingParser.parse("_doc", new CompressedXContent(BytesReference.bytes(builder)));
+            mappingParser.parse(new CompressedXContent(BytesReference.bytes(builder)));
         }
     }
 }

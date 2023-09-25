@@ -66,11 +66,7 @@ abstract class AbstractKnnVectorQueryBuilderTestCase extends AbstractQueryTestCa
             .endObject()
             .endObject()
             .endObject();
-        mapperService.merge(
-            MapperService.SINGLE_MAPPING_NAME,
-            new CompressedXContent(Strings.toString(builder)),
-            MapperService.MergeReason.MAPPING_UPDATE
-        );
+        mapperService.merge(new CompressedXContent(Strings.toString(builder)), MapperService.MergeReason.MAPPING_UPDATE);
     }
 
     @Override

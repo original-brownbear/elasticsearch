@@ -79,7 +79,7 @@ public class IntervalQueryBuilderTests extends AbstractQueryTestCase<IntervalQue
             .endObject()
             .endObject();
 
-        mapperService.merge("_doc", new CompressedXContent(Strings.toString(mapping)), MapperService.MergeReason.MAPPING_UPDATE);
+        mapperService.merge(new CompressedXContent(Strings.toString(mapping)), MapperService.MergeReason.MAPPING_UPDATE);
     }
 
     private static IntervalsSourceProvider createRandomSource(int depth, boolean useScripts) {

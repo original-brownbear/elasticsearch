@@ -51,8 +51,6 @@ public abstract class ShapeQueryBuilderTests extends AbstractQueryTestCase<Shape
 
     protected static final String SHAPE_FIELD_NAME = "mapped_shape";
 
-    protected static String docType = "_doc";
-
     protected static String indexedShapeId;
     protected static String indexedShapePath;
     protected static String indexedShapeIndex;

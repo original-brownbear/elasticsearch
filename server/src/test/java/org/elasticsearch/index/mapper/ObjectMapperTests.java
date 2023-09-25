@@ -117,7 +117,6 @@ public class ObjectMapperTests extends MapperServiceTestCase {
         DocumentMapper mapper = mapperService.documentMapper();
         assertNull(mapper.mapping().getRoot().dynamic());
         Mapping mergeWith = mapperService.parseMapping(
-            "_doc",
             new CompressedXContent(BytesReference.bytes(topMapping(b -> b.field("dynamic", "strict"))))
         );
         Mapping merged = mapper.mapping().merge(mergeWith, reason);
@@ -216,7 +215,6 @@ public class ObjectMapperTests extends MapperServiceTestCase {
                 .endObject()
         );
         DocumentMapper mapper = mapperService.merge(
-            MapperService.SINGLE_MAPPING_NAME,
             List.of(new CompressedXContent(mapping), new CompressedXContent(update)),
             MergeReason.INDEX_TEMPLATE
         );
@@ -284,11 +282,11 @@ public class ObjectMapperTests extends MapperServiceTestCase {
 
         // We can only check such assertion in sequential merges. Bulk merges allow such type substitution as it replaces entire field
         // mapping subtrees
-        mapperService.merge(MapperService.SINGLE_MAPPING_NAME, new CompressedXContent(mapping), MergeReason.INDEX_TEMPLATE);
+        mapperService.merge(new CompressedXContent(mapping), MergeReason.INDEX_TEMPLATE);
 
         IllegalArgumentException e = expectThrows(
             IllegalArgumentException.class,
-            () -> mapperService.merge(MapperService.SINGLE_MAPPING_NAME, new CompressedXContent(firstUpdate), MergeReason.INDEX_TEMPLATE)
+            () -> mapperService.merge(new CompressedXContent(firstUpdate), MergeReason.INDEX_TEMPLATE)
         );
         assertThat(e.getMessage(), containsString("can't merge a non-nested mapping [object.field2] with a nested mapping"));
 
@@ -459,7 +457,7 @@ public class ObjectMapperTests extends MapperServiceTestCase {
         MapperService mapperService = createMapperService(fieldMapping(b -> b.field("type", "object")));
         DocumentMapper mapper = mapperService.documentMapper();
         assertNull(mapper.mapping().getRoot().dynamic());
-        Mapping mergeWith = mapperService.parseMapping("_doc", new CompressedXContent(BytesReference.bytes(fieldMapping(b -> {
+        Mapping mergeWith = mapperService.parseMapping(new CompressedXContent(BytesReference.bytes(fieldMapping(b -> {
             b.field("type", "object");
             b.field("subobjects", "false");
         }))));
@@ -474,9 +472,9 @@ public class ObjectMapperTests extends MapperServiceTestCase {
         MapperService mapperService = createMapperService(topMapping(b -> b.field("subobjects", false)));
         DocumentMapper mapper = mapperService.documentMapper();
         assertNull(mapper.mapping().getRoot().dynamic());
-        Mapping mergeWith = mapperService.parseMapping("_doc", new CompressedXContent(BytesReference.bytes(topMapping(b -> {
-            b.field("subobjects", true);
-        }))));
+        Mapping mergeWith = mapperService.parseMapping(
+            new CompressedXContent(BytesReference.bytes(topMapping(b -> b.field("subobjects", true))))
+        );
         MapperException exception = expectThrows(
             MapperException.class,
             () -> mapper.mapping().merge(mergeWith, MergeReason.MAPPING_UPDATE)

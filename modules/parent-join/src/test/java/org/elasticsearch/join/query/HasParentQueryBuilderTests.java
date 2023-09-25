@@ -98,7 +98,7 @@ public class HasParentQueryBuilderTests extends AbstractQueryTestCase<HasParentQ
             .endObject()
             .endObject();
 
-        mapperService.merge(TYPE, new CompressedXContent(Strings.toString(mapping)), MapperService.MergeReason.MAPPING_UPDATE);
+        mapperService.merge(new CompressedXContent(Strings.toString(mapping)), MapperService.MergeReason.MAPPING_UPDATE);
     }
 
     /**

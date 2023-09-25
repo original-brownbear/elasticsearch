@@ -10,7 +10,6 @@ package org.elasticsearch.action.admin.indices.mapping.get;
 
 import org.elasticsearch.cluster.metadata.MappingMetadata;
 import org.elasticsearch.common.io.stream.Writeable;
-import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.test.AbstractChunkedSerializingTestCase;
 import org.elasticsearch.test.AbstractWireSerializingTestCase;
 import org.elasticsearch.test.EqualsHashCodeTestUtils;
@@ -53,10 +52,9 @@ public class GetMappingsResponseTests extends AbstractWireSerializingTestCase<Ge
             if (randomBoolean()) {
                 mappings.put("field2", randomFieldMapping());
             }
-            String typeName = MapperService.SINGLE_MAPPING_NAME;
-            return new MappingMetadata(typeName, mappings);
+            return new MappingMetadata(mappings);
         }
-        return new MappingMetadata(MapperService.SINGLE_MAPPING_NAME, mappings);
+        return new MappingMetadata(mappings);
     }
 
     @Override

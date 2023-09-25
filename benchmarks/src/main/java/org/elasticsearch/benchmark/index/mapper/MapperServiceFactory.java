@@ -77,7 +77,7 @@ public class MapperServiceFactory {
         );
 
         try {
-            mapperService.merge("_doc", new CompressedXContent(mappings), MapperService.MergeReason.MAPPING_UPDATE);
+            mapperService.merge(new CompressedXContent(mappings), MapperService.MergeReason.MAPPING_UPDATE);
             return mapperService;
         } catch (IOException e) {
             throw new UncheckedIOException(e);

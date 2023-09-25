@@ -73,6 +73,10 @@ public class RootObjectMapper extends ObjectMapper {
         protected Explicit<Boolean> dateDetection = Defaults.DATE_DETECTION;
         protected Explicit<Boolean> numericDetection = Defaults.NUMERIC_DETECTION;
 
+        public Builder(Explicit<Boolean> subobjects) {
+            super(MapperService.SINGLE_MAPPING_NAME, subobjects);
+        }
+
         public Builder(String name, Explicit<Boolean> subobjects) {
             super(name, subobjects);
         }

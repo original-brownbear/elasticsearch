@@ -63,7 +63,7 @@ public final class MappingsMerger {
             }
         }
 
-        return new MappingMetadata(MapperService.SINGLE_MAPPING_NAME, mappings);
+        return new MappingMetadata(mappings);
     }
 
     private static Map<String, IndexAndMapping> mergeAcrossIndices(

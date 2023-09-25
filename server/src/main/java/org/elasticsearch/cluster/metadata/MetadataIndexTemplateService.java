@@ -1605,7 +1605,7 @@ public class MetadataIndexTemplateService {
             List<CompressedXContent> mappings = collectMappings(stateWithIndex, templateName, indexName);
             try {
                 MapperService mapperService = tempIndexService.mapperService();
-                mapperService.merge(MapperService.SINGLE_MAPPING_NAME, mappings, MapperService.MergeReason.INDEX_TEMPLATE);
+                mapperService.merge(mappings, MapperService.MergeReason.INDEX_TEMPLATE);
 
                 if (template.getDataStreamTemplate() != null) {
                     validateTimestampFieldMapping(mapperService.mappingLookup());
@@ -1650,7 +1650,7 @@ public class MetadataIndexTemplateService {
             createdIndex = dummyIndexService.index();
 
             if (mappings != null) {
-                dummyIndexService.mapperService().merge(MapperService.SINGLE_MAPPING_NAME, mappings, MergeReason.MAPPING_UPDATE);
+                dummyIndexService.mapperService().merge(mappings, MergeReason.MAPPING_UPDATE);
             }
 
         } finally {

@@ -1916,7 +1916,7 @@ public class PersistedClusterStateServiceTests extends ESTestCase {
 
     private static MappingMetadata randomMappingMetadata() {
         int i = randomIntBetween(1, 4);
-        return new MappingMetadata(MapperService.SINGLE_MAPPING_NAME, Map.of("_doc", Map.of("properties", Map.of("field" + i, "text"))));
+        return new MappingMetadata(Map.of(MapperService.SINGLE_MAPPING_NAME, Map.of("properties", Map.of("field" + i, "text"))));
     }
 
     private static MappingMetadata randomMappingMetadataOrNull() {

@@ -638,7 +638,6 @@ public class MetadataTests extends ESTestCase {
 
     public void testFindMappingsNoOpFilters() throws IOException {
         MappingMetadata originalMappingMetadata = new MappingMetadata(
-            "_doc",
             XContentHelper.convertToMap(JsonXContent.jsonXContent, FIND_MAPPINGS_TEST_ITEM, true)
         );
 
@@ -2062,7 +2061,7 @@ public class MetadataTests extends ESTestCase {
         // Update a mapping of an index:
         IndexMetadata luckyIndex = metadata.index("index-" + randomInt(numIndices - 1));
         entry = metadata.getMappingsByHash().get(luckyIndex.mapping().getSha256());
-        MappingMetadata updatedMapping = new MappingMetadata(MapperService.SINGLE_MAPPING_NAME, Map.of("mapping", "updated"));
+        MappingMetadata updatedMapping = new MappingMetadata(Map.of("mapping", "updated"));
         {
             Metadata.Builder mb = new Metadata.Builder(metadata);
             mb.put(IndexMetadata.builder(luckyIndex).putMapping(updatedMapping));
@@ -2082,7 +2081,7 @@ public class MetadataTests extends ESTestCase {
         assertThat(metadata.getMappingsByHash().get(updatedMapping.getSha256()), nullValue());
 
         // Add an index with new mapping and then later remove it:
-        MappingMetadata newMapping = new MappingMetadata(MapperService.SINGLE_MAPPING_NAME, Map.of("new", "mapping"));
+        MappingMetadata newMapping = new MappingMetadata(Map.of("new", "mapping"));
         {
             Metadata.Builder mb = new Metadata.Builder(metadata);
             mb.put(

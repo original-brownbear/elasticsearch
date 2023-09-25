@@ -79,7 +79,7 @@ public class QueryStringQueryBuilderTests extends AbstractQueryTestCase<QueryStr
     @Override
     protected void initializeAdditionalMappings(MapperService mapperService) throws IOException {
         XContentBuilder mapping = jsonBuilder().startObject()
-            .startObject("_doc")
+            .startObject(MapperService.SINGLE_MAPPING_NAME)
             .startObject("properties")
             .startObject("prefix_field")
             .field("type", "text")
@@ -94,7 +94,7 @@ public class QueryStringQueryBuilderTests extends AbstractQueryTestCase<QueryStr
             .endObject()
             .endObject();
 
-        mapperService.merge("_doc", new CompressedXContent(Strings.toString(mapping)), MapperService.MergeReason.MAPPING_UPDATE);
+        mapperService.merge(new CompressedXContent(Strings.toString(mapping)), MapperService.MergeReason.MAPPING_UPDATE);
     }
 
     @Override

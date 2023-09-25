@@ -294,7 +294,7 @@ public class TransportSimulateIndexTemplateAction extends TransportMasterNodeRea
             indexMetadata,
             tempIndexService -> {
                 MapperService mapperService = tempIndexService.mapperService();
-                mapperService.merge(MapperService.SINGLE_MAPPING_NAME, mappings, MapperService.MergeReason.INDEX_TEMPLATE);
+                mapperService.merge(mappings, MapperService.MergeReason.INDEX_TEMPLATE);
 
                 DocumentMapper documentMapper = mapperService.documentMapper();
                 return documentMapper != null ? documentMapper.mappingSource() : null;

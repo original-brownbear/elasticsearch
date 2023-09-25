@@ -195,7 +195,7 @@ public class MetadataMigrateToDataStreamService {
 
         MapperService mapperService = mapperSupplier.apply(im);
         mapperService.merge(im, MapperService.MergeReason.MAPPING_RECOVERY);
-        mapperService.merge(MapperService.SINGLE_MAPPING_NAME, TIMESTAMP_MAPPING, MapperService.MergeReason.MAPPING_UPDATE);
+        mapperService.merge(TIMESTAMP_MAPPING, MapperService.MergeReason.MAPPING_UPDATE);
         DocumentMapper mapper = mapperService.documentMapper();
 
         var imb = IndexMetadata.builder(im);

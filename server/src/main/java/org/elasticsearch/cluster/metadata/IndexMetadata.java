@@ -1897,12 +1897,7 @@ public class IndexMetadata implements Diffable<IndexMetadata>, ToXContentFragmen
         }
 
         public Builder putMapping(String source) {
-            putMapping(
-                new MappingMetadata(
-                    MapperService.SINGLE_MAPPING_NAME,
-                    XContentHelper.convertToMap(XContentFactory.xContent(source), source, true)
-                )
-            );
+            putMapping(new MappingMetadata(XContentHelper.convertToMap(XContentFactory.xContent(source), source, true)));
             return this;
         }
 
@@ -2644,7 +2639,7 @@ public class IndexMetadata implements Diffable<IndexMetadata>, ToXContentFragmen
                 String mappingType = mapping.keySet().iterator().next();
                 builder.putMapping(new MappingMetadata(mappingType, mapping));
             } else if (mapping.size() > 1) {
-                builder.putMapping(new MappingMetadata(MapperService.SINGLE_MAPPING_NAME, mapping));
+                builder.putMapping(new MappingMetadata(mapping));
             }
         }
     }

@@ -58,7 +58,6 @@ public class RankFeatureMetaFieldMapperTests extends MapperServiceTestCase {
     public void testDocumentParsingFailsOnMetaField() throws Exception {
         String mapping = Strings.toString(XContentFactory.jsonBuilder().startObject().startObject("_doc").endObject().endObject());
         DocumentMapper mapper = createMapperService(mapping).merge(
-            "_doc",
             new CompressedXContent(mapping),
             MapperService.MergeReason.MAPPING_UPDATE
         );

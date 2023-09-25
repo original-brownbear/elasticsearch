@@ -487,7 +487,7 @@ public final class DataStreamTestHelper {
         when(allocationService.getShardRoutingRoleStrategy()).thenReturn(TestShardRoutingRoleStrategies.DEFAULT_ROLE_ONLY);
         MappingLookup mappingLookup = null;
         if (dataStream != null) {
-            RootObjectMapper.Builder root = new RootObjectMapper.Builder("_doc", ObjectMapper.Defaults.SUBOBJECTS);
+            RootObjectMapper.Builder root = new RootObjectMapper.Builder(ObjectMapper.Defaults.SUBOBJECTS);
             root.add(
                 new DateFieldMapper.Builder(
                     DataStream.TIMESTAMP_FIELD_NAME,
@@ -555,7 +555,7 @@ public final class DataStreamTestHelper {
             when(indexService.index()).thenReturn(indexMetadata.getIndex());
             MapperService mapperService = mock(MapperService.class);
 
-            RootObjectMapper root = new RootObjectMapper.Builder(MapperService.SINGLE_MAPPING_NAME, ObjectMapper.Defaults.SUBOBJECTS).build(
+            RootObjectMapper root = new RootObjectMapper.Builder(ObjectMapper.Defaults.SUBOBJECTS).build(
                 MapperBuilderContext.root(false, false)
             );
             Mapping mapping = new Mapping(root, new MetadataFieldMapper[0], null);

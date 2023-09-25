@@ -279,7 +279,7 @@ public class TransportDownsampleAction extends AcknowledgedTransportMasterNodeAc
             // 2. Extract downsample config from index mappings
             final MapperService mapperService = indicesService.createIndexMapperServiceForValidation(sourceIndexMetadata);
             final CompressedXContent sourceIndexCompressedXContent = new CompressedXContent(sourceIndexMappings);
-            mapperService.merge(MapperService.SINGLE_MAPPING_NAME, sourceIndexCompressedXContent, MapperService.MergeReason.INDEX_TEMPLATE);
+            mapperService.merge(sourceIndexCompressedXContent, MapperService.MergeReason.INDEX_TEMPLATE);
 
             // Validate downsampling interval
             validateDownsamplingInterval(mapperService, request.getDownsampleConfig());
@@ -531,7 +531,7 @@ public class TransportDownsampleAction extends AcknowledgedTransportMasterNodeAc
         final CompressedXContent mappingDiffXContent = CompressedXContent.fromJSON(
             XContentHelper.convertToJson(BytesReference.bytes(builder), false, XContentType.JSON)
         );
-        return mapperService.merge(MapperService.SINGLE_MAPPING_NAME, mappingDiffXContent, MapperService.MergeReason.INDEX_TEMPLATE)
+        return mapperService.merge(mappingDiffXContent, MapperService.MergeReason.INDEX_TEMPLATE)
             .mappingSource()
             .uncompressed()
             .utf8ToString();

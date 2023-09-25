@@ -42,7 +42,7 @@ public class GeoShapeQueryBuilderGeoShapeTests extends GeoShapeQueryBuilderTestC
             GEO_SHAPE_ALIAS_FIELD_NAME,
             "type=alias,path=" + GEO_SHAPE_FIELD_NAME
         );
-        mapperService.merge("_doc", new CompressedXContent(Strings.toString(builder)), MapperService.MergeReason.MAPPING_UPDATE);
+        mapperService.merge(new CompressedXContent(Strings.toString(builder)), MapperService.MergeReason.MAPPING_UPDATE);
     }
 
     @Override

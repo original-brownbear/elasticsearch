@@ -120,23 +120,17 @@ public class TransformIndexTests extends ESTestCase {
     }
 
     public void testIsDestinationIndexCreatedByTransform_NoCreatedBy() throws Exception {
-        Map<String, MappingMetadata> mappings = Map.of(DEST_INDEX, new MappingMetadata("_doc", Map.of("_meta", Map.of())));
+        Map<String, MappingMetadata> mappings = Map.of(DEST_INDEX, new MappingMetadata(Map.of("_meta", Map.of())));
         testIsDestinationIndexCreatedByTransform(mappings, false);
     }
 
     public void testIsDestinationIndexCreatedByTransform_CreatedByDoesNotMatch() throws Exception {
-        Map<String, MappingMetadata> mappings = Map.of(
-            DEST_INDEX,
-            new MappingMetadata("_doc", Map.of("_meta", Map.of("created_by", "some-user")))
-        );
+        Map<String, MappingMetadata> mappings = Map.of(DEST_INDEX, new MappingMetadata(Map.of("_meta", Map.of("created_by", "some-user"))));
         testIsDestinationIndexCreatedByTransform(mappings, false);
     }
 
     public void testIsDestinationIndexCreatedByTransform_Ok() throws Exception {
-        Map<String, MappingMetadata> mappings = Map.of(
-            DEST_INDEX,
-            new MappingMetadata("_doc", Map.of("_meta", Map.of("created_by", CREATED_BY)))
-        );
+        Map<String, MappingMetadata> mappings = Map.of(DEST_INDEX, new MappingMetadata(Map.of("_meta", Map.of("created_by", CREATED_BY))));
         testIsDestinationIndexCreatedByTransform(mappings, true);
     }
 

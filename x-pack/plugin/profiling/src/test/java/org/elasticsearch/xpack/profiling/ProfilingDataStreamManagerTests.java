@@ -495,7 +495,6 @@ public class ProfilingDataStreamManagerTests extends ESTestCase {
             builder.settings(indexSettings(indexVersion, 1, 1).put(IndexMetadata.SETTING_INDEX_UUID, writeIndex.getUUID()));
             builder.putMapping(
                 new MappingMetadata(
-                    MapperService.SINGLE_MAPPING_NAME,
                     Map.of(
                         "_meta",
                         Map.of(

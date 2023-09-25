@@ -222,7 +222,7 @@ public class DataStreamGetWriteIndexTests extends ESTestCase {
                 false,
                 IndexVersion.current()
             ).build(MapperBuilderContext.root(false, false));
-            RootObjectMapper.Builder root = new RootObjectMapper.Builder("_doc", ObjectMapper.Defaults.SUBOBJECTS);
+            RootObjectMapper.Builder root = new RootObjectMapper.Builder(ObjectMapper.Defaults.SUBOBJECTS);
             root.add(
                 new DateFieldMapper.Builder(
                     "@timestamp",

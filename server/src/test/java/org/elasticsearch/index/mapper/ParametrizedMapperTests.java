@@ -469,7 +469,7 @@ public class ParametrizedMapperTests extends MapperServiceTestCase {
         MapperService mapperService = createMapperService(mapping);
         assertEquals(mapping, Strings.toString(mapperService.documentMapper().mapping()));
 
-        mapperService.merge("_doc", new CompressedXContent(mapping), MapperService.MergeReason.MAPPING_UPDATE);
+        mapperService.merge(new CompressedXContent(mapping), MapperService.MergeReason.MAPPING_UPDATE);
         assertEquals(mapping, Strings.toString(mapperService.documentMapper().mapping()));
     }
 
