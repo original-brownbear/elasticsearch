@@ -253,7 +253,7 @@ public class PutIndexTemplateRequest extends MasterNodeRequest<PutIndexTemplateR
      * @param source The mapping source
      */
     public PutIndexTemplateRequest mapping(Map<String, Object> source) {
-        if (source.size() != 1 || source.containsKey(MapperService.SINGLE_MAPPING_NAME) == false) {
+        if (MapperService.isMappingSourceTyped(source)) {
             source = Map.of(MapperService.SINGLE_MAPPING_NAME, source);
         }
         try {

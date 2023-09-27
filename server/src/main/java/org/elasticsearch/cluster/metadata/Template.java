@@ -258,7 +258,7 @@ public class Template implements SimpleDiffable<Template>, ToXContentObject {
 
     @SuppressWarnings("unchecked")
     static Map<String, Object> reduceMapping(Map<String, Object> mapping) {
-        if (mapping.size() == 1 && MapperService.SINGLE_MAPPING_NAME.equals(mapping.keySet().iterator().next())) {
+        if (MapperService.isMappingSourceTyped(mapping)) {
             return (Map<String, Object>) mapping.values().iterator().next();
         } else {
             return mapping;

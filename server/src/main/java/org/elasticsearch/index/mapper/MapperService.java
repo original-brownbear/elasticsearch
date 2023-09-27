@@ -601,11 +601,11 @@ public class MapperService extends AbstractIndexComponent implements Closeable {
     }
 
     /**
-     * Returns {@code true} if the given {@code mappingSource} includes a type
+     * Returns {@code true} if the given {@code mappingSource} includes type {@link MapperService#SINGLE_MAPPING_NAME}
      * as a top-level object.
      */
-    public static boolean isMappingSourceTyped(String type, Map<String, Object> mapping) {
-        return mapping.size() == 1 && mapping.keySet().iterator().next().equals(type);
+    public static boolean isMappingSourceTyped(Map<String, Object> mapping) {
+        return mapping.size() == 1 && mapping.containsKey(SINGLE_MAPPING_NAME);
     }
 
     /**

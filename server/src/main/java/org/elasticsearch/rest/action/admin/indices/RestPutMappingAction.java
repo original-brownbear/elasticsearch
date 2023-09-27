@@ -75,7 +75,7 @@ public class RestPutMappingAction extends BaseRestHandler {
                 deprecationLogger.compatibleCritical("put_mapping_with_types", TYPES_DEPRECATION_MESSAGE);
             }
             final String type = request.param("type");
-            if (includeTypeName == false && (type != null || isMappingSourceTyped(MapperService.SINGLE_MAPPING_NAME, sourceAsMap))) {
+            if (includeTypeName == false && (type != null || isMappingSourceTyped(sourceAsMap))) {
                 throw new IllegalArgumentException(
                     "Types cannot be provided in put mapping requests, unless the include_type_name parameter is set to true."
                 );
@@ -84,7 +84,7 @@ public class RestPutMappingAction extends BaseRestHandler {
             Map<String, Object> mappingSource = prepareV7Mappings(includeTypeName, sourceAsMap);
             putMappingRequest.source(mappingSource);
         } else {
-            if (MapperService.isMappingSourceTyped(MapperService.SINGLE_MAPPING_NAME, sourceAsMap)) {
+            if (MapperService.isMappingSourceTyped(sourceAsMap)) {
                 throw new IllegalArgumentException("Types cannot be provided in put mapping requests");
             }
             putMappingRequest.source(sourceAsMap);
