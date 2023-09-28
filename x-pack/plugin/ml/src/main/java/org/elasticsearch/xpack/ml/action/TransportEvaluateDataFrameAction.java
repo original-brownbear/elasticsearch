@@ -16,6 +16,7 @@ import org.elasticsearch.client.internal.ParentTaskAssigningClient;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.core.Predicates;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.tasks.TaskId;
@@ -123,7 +124,7 @@ public class TransportEvaluateDataFrameAction extends HandledTransportAction<
             EvaluateDataFrameAction.Request request,
             SecurityContext securityContext
         ) {
-            super(threadPool.generic(), unused -> true, unused -> true);
+            super(threadPool.generic(), Predicates.alwaysTrue(), Predicates.alwaysTrue());
             this.client = client;
             this.parameters = parameters;
             this.request = request;

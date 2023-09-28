@@ -12,6 +12,7 @@ import org.elasticsearch.cluster.metadata.AliasMetadata;
 import org.elasticsearch.cluster.metadata.AliasMetadata.Builder;
 import org.elasticsearch.cluster.metadata.DataStreamTestHelper;
 import org.elasticsearch.common.io.stream.Writeable;
+import org.elasticsearch.core.Predicates;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.test.AbstractWireSerializingTestCase;
 
@@ -95,7 +96,7 @@ public class GetAliasesResponseTests extends AbstractWireSerializingTestCase<Get
     }
 
     public static AliasMetadata createAliasMetadata() {
-        return createAliasMetadata(s -> false);
+        return createAliasMetadata(Predicates.alwaysFalse());
     }
 
     public static AliasMetadata createAliasMetadata(Predicate<String> t) {

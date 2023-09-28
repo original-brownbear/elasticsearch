@@ -9,6 +9,7 @@
 package org.elasticsearch.action.fieldcaps;
 
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.core.Predicates;
 import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.index.mapper.MapperServiceTestCase;
 import org.elasticsearch.index.query.SearchExecutionContext;
@@ -41,7 +42,7 @@ public class FieldCapabilitiesFilterTests extends MapperServiceTestCase {
             new String[] { "*" },
             new String[] { "-nested" },
             Strings.EMPTY_ARRAY,
-            f -> true
+            Predicates.alwaysTrue()
         );
 
         assertNotNull(response.get("field1"));
@@ -67,7 +68,7 @@ public class FieldCapabilitiesFilterTests extends MapperServiceTestCase {
                 new String[] { "*" },
                 new String[] { "+metadata" },
                 Strings.EMPTY_ARRAY,
-                f -> true
+                Predicates.alwaysTrue()
             );
             assertNotNull(response.get("_index"));
             assertNull(response.get("field1"));
@@ -78,7 +79,7 @@ public class FieldCapabilitiesFilterTests extends MapperServiceTestCase {
                 new String[] { "*" },
                 new String[] { "-metadata" },
                 Strings.EMPTY_ARRAY,
-                f -> true
+                Predicates.alwaysTrue()
             );
             assertNull(response.get("_index"));
             assertNotNull(response.get("field1"));
@@ -109,7 +110,7 @@ public class FieldCapabilitiesFilterTests extends MapperServiceTestCase {
             new String[] { "*" },
             new String[] { "-multifield" },
             Strings.EMPTY_ARRAY,
-            f -> true
+            Predicates.alwaysTrue()
         );
         assertNotNull(response.get("field1"));
         assertNull(response.get("field1.keyword"));
@@ -138,7 +139,7 @@ public class FieldCapabilitiesFilterTests extends MapperServiceTestCase {
             new String[] { "*" },
             new String[] { "-parent" },
             Strings.EMPTY_ARRAY,
-            f -> true
+            Predicates.alwaysTrue()
         );
         assertNotNull(response.get("parent.field1"));
         assertNotNull(response.get("parent.field2"));
@@ -204,7 +205,7 @@ public class FieldCapabilitiesFilterTests extends MapperServiceTestCase {
             new String[] { "*" },
             Strings.EMPTY_ARRAY,
             new String[] { "text", "keyword" },
-            f -> true
+            Predicates.alwaysTrue()
         );
         assertNotNull(response.get("field1"));
         assertNull(response.get("field2"));

@@ -14,6 +14,7 @@ import org.elasticsearch.cluster.service.ClusterApplierService;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.core.Nullable;
+import org.elasticsearch.core.Predicates;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.threadpool.ThreadPool;
 
@@ -32,7 +33,7 @@ public class ClusterStateObserver {
 
     public static final Predicate<ClusterState> NON_NULL_MASTER_PREDICATE = state -> state.nodes().getMasterNode() != null;
 
-    private static final Predicate<ClusterState> MATCH_ALL_CHANGES_PREDICATE = state -> true;
+    private static final Predicate<ClusterState> MATCH_ALL_CHANGES_PREDICATE = Predicates.alwaysTrue();
 
     private final ClusterApplierService clusterApplierService;
     private final ThreadPool threadPool;

@@ -11,6 +11,7 @@ import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.HandledTransportAction;
 import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.core.Predicates;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.transport.TransportService;
 import org.elasticsearch.xpack.core.security.action.service.GetServiceAccountAction;
@@ -31,7 +32,7 @@ public class TransportGetServiceAccountAction extends HandledTransportAction<Get
 
     @Override
     protected void doExecute(Task task, GetServiceAccountRequest request, ActionListener<GetServiceAccountResponse> listener) {
-        Predicate<ServiceAccount> filter = v -> true;
+        Predicate<ServiceAccount> filter = Predicates.alwaysTrue();
         if (request.getNamespace() != null) {
             filter = filter.and(v -> v.id().namespace().equals(request.getNamespace()));
         }

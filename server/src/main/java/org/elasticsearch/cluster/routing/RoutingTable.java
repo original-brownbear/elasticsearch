@@ -18,6 +18,7 @@ import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.core.Nullable;
+import org.elasticsearch.core.Predicates;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.shard.ShardId;
@@ -276,7 +277,7 @@ public class RoutingTable implements Iterable<IndexRoutingTable>, Diffable<Routi
     }
 
     public ShardsIterator allShards(String[] indices) {
-        return allShardsSatisfyingPredicate(indices, shardRouting -> true, false);
+        return allShardsSatisfyingPredicate(indices, Predicates.alwaysTrue(), false);
     }
 
     public ShardsIterator allActiveShards(String[] indices) {
@@ -284,7 +285,7 @@ public class RoutingTable implements Iterable<IndexRoutingTable>, Diffable<Routi
     }
 
     public ShardsIterator allShardsIncludingRelocationTargets(String[] indices) {
-        return allShardsSatisfyingPredicate(indices, shardRouting -> true, true);
+        return allShardsSatisfyingPredicate(indices, Predicates.alwaysTrue(), true);
     }
 
     private ShardsIterator allShardsSatisfyingPredicate(

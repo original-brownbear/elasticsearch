@@ -14,6 +14,7 @@ import org.apache.lucene.util.automaton.Automaton;
 import org.apache.lucene.util.automaton.CharacterRunAutomaton;
 import org.apache.lucene.util.automaton.Operations;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.core.Predicates;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -107,7 +108,7 @@ public class Regex {
         boolean hasWildcard = false;
         for (String pattern : patterns) {
             if (isMatchAllPattern(pattern)) {
-                return str -> true;
+                return Predicates.alwaysTrue();
             }
             if (isSimpleMatchPattern(pattern)) {
                 hasWildcard = true;

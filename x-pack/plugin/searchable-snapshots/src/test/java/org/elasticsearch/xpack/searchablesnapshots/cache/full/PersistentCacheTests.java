@@ -20,6 +20,7 @@ import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.core.PathUtils;
 import org.elasticsearch.core.PathUtilsForTesting;
+import org.elasticsearch.core.Predicates;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.env.NodeEnvironment;
@@ -306,7 +307,11 @@ public class PersistentCacheTests extends AbstractSearchableSnapshotsTestCase {
 
                 assertThat(
                     "Persistent cache should not report any cached data for the evicted shard (ignoring deleted files)",
-                    persistentCache.getCacheSize(cacheKey.shardId(), new SnapshotId("_ignored_", cacheKey.snapshotUUID()), path -> true),
+                    persistentCache.getCacheSize(
+                        cacheKey.shardId(),
+                        new SnapshotId("_ignored_", cacheKey.snapshotUUID()),
+                        Predicates.alwaysTrue()
+                    ),
                     equalTo(0L)
                 );
 

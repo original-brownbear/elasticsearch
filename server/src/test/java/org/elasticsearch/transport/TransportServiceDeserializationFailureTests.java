@@ -18,6 +18,7 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.DeterministicTaskQueue;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
+import org.elasticsearch.core.Predicates;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.tasks.CancellableTask;
 import org.elasticsearch.tasks.Task;
@@ -118,7 +119,7 @@ public class TransportServiceDeserializationFailureTests extends ESTestCase {
             );
 
             final List<Transport.ResponseContext<? extends TransportResponse>> responseContexts = transport.getResponseHandlers()
-                .prune(ignored -> true);
+                .prune(Predicates.alwaysTrue());
             assertThat(responseContexts, hasSize(1));
             final TransportResponseHandler<? extends TransportResponse> handler = responseContexts.get(0).handler();
             assertThat(handler, hasToString(containsString("test handler without parent")));
@@ -184,7 +185,7 @@ public class TransportServiceDeserializationFailureTests extends ESTestCase {
             );
 
             final List<Transport.ResponseContext<? extends TransportResponse>> responseContexts = transport.getResponseHandlers()
-                .prune(ignored -> true);
+                .prune(Predicates.alwaysTrue());
             assertThat(responseContexts, hasSize(1));
             final TransportResponseHandler<? extends TransportResponse> handler = responseContexts.get(0).handler();
             assertThat(handler, hasToString(allOf(containsString("test handler with parent"), containsString(testActionName))));

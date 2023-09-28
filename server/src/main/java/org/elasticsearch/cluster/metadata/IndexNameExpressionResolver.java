@@ -27,6 +27,7 @@ import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.core.Nullable;
+import org.elasticsearch.core.Predicates;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.IndexVersion;
@@ -100,7 +101,7 @@ public class IndexNameExpressionResolver {
             false,
             request.includeDataStreams(),
             SystemIndexAccessLevel.BACKWARDS_COMPATIBLE_ONLY,
-            name -> true,
+            Predicates.alwaysTrue(),
             this.getNetNewSystemIndexPredicate()
         );
         return concreteIndexNames(context, request.indices());
@@ -934,11 +935,11 @@ public class IndexNameExpressionResolver {
         final SystemIndexAccessLevel systemIndexAccessLevel = getSystemIndexAccessLevel();
         final Predicate<String> systemIndexAccessLevelPredicate;
         if (systemIndexAccessLevel == SystemIndexAccessLevel.NONE) {
-            systemIndexAccessLevelPredicate = s -> false;
+            systemIndexAccessLevelPredicate = Predicates.alwaysFalse();
         } else if (systemIndexAccessLevel == SystemIndexAccessLevel.BACKWARDS_COMPATIBLE_ONLY) {
             systemIndexAccessLevelPredicate = getNetNewSystemIndexPredicate();
         } else if (systemIndexAccessLevel == SystemIndexAccessLevel.ALL) {
-            systemIndexAccessLevelPredicate = s -> true;
+            systemIndexAccessLevelPredicate = Predicates.alwaysTrue();
         } else {
             // everything other than allowed should be included in the deprecation message
             systemIndexAccessLevelPredicate = systemIndices.getProductSystemIndexNamePredicate(threadContext);
@@ -968,7 +969,7 @@ public class IndexNameExpressionResolver {
         private final Predicate<String> netNewSystemIndexPredicate;
 
         Context(ClusterState state, IndicesOptions options, SystemIndexAccessLevel systemIndexAccessLevel) {
-            this(state, options, systemIndexAccessLevel, s -> true, s -> false);
+            this(state, options, systemIndexAccessLevel, Predicates.alwaysTrue(), Predicates.alwaysFalse());
         }
 
         Context(

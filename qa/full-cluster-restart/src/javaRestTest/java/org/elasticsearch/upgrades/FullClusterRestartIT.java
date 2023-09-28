@@ -25,6 +25,7 @@ import org.elasticsearch.common.time.DateUtils;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
 import org.elasticsearch.core.Booleans;
 import org.elasticsearch.core.CheckedFunction;
+import org.elasticsearch.core.Predicates;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.mapper.DateFieldMapper;
@@ -1537,7 +1538,7 @@ public class FullClusterRestartIT extends ParameterizedFullClusterRestartTestCas
             }
         } else {
             ensureGreen(index);
-            assertNoFileBasedRecovery(index, n -> true);
+            assertNoFileBasedRecovery(index, Predicates.alwaysTrue());
             ensurePeerRecoveryRetentionLeasesRenewedAndSynced(index);
         }
     }

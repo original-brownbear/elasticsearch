@@ -47,6 +47,7 @@ import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.util.set.Sets;
+import org.elasticsearch.core.Predicates;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.index.Index;
@@ -930,7 +931,7 @@ public class TransportSearchActionTests extends ESTestCase {
             {
                 final CountDownLatch latch = new CountDownLatch(1);
                 AtomicReference<Exception> failure = new AtomicReference<>();
-                var clusters = new SearchResponse.Clusters(null, remoteIndicesByCluster, false, clusterAlias -> false);
+                var clusters = new SearchResponse.Clusters(null, remoteIndicesByCluster, false, Predicates.alwaysFalse());
                 TransportSearchAction.collectSearchShards(
                     IndicesOptions.lenientExpandOpen(),
                     null,

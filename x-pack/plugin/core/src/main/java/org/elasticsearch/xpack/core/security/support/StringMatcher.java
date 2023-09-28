@@ -12,6 +12,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.lucene.util.automaton.TooComplexToDeterminizeException;
 import org.elasticsearch.ElasticsearchSecurityException;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.core.Predicates;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -34,9 +35,9 @@ import java.util.stream.Collectors;
  */
 public class StringMatcher implements Predicate<String> {
 
-    private static final StringMatcher MATCH_NOTHING = new StringMatcher("(empty)", s -> false);
+    private static final StringMatcher MATCH_NOTHING = new StringMatcher("(empty)", Predicates.alwaysFalse());
 
-    protected static final Predicate<String> ALWAYS_TRUE_PREDICATE = s -> true;
+    protected static final Predicate<String> ALWAYS_TRUE_PREDICATE = Predicates.alwaysTrue();
 
     private final String description;
     private final Predicate<String> predicate;

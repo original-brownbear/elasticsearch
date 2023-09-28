@@ -24,6 +24,7 @@ import org.elasticsearch.cluster.metadata.IndexMetadata.State;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
+import org.elasticsearch.core.Predicates;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexNotFoundException;
@@ -1634,7 +1635,14 @@ public class IndexNameExpressionResolverTests extends ESTestCase {
         ClusterState state = ClusterState.builder(new ClusterName("_name")).metadata(mdBuilder).build();
         Set<String> resolvedExpressions = indexNameExpressionResolver.resolveExpressions(state, "test-*");
 
-        String[] strings = indexNameExpressionResolver.indexAliases(state, "test-0", x -> true, x -> true, true, resolvedExpressions);
+        String[] strings = indexNameExpressionResolver.indexAliases(
+            state,
+            "test-0",
+            Predicates.alwaysTrue(),
+            Predicates.alwaysTrue(),
+            true,
+            resolvedExpressions
+        );
         Arrays.sort(strings);
         assertArrayEquals(new String[] { "test-alias-0", "test-alias-1", "test-alias-non-filtering" }, strings);
 
@@ -1642,7 +1650,7 @@ public class IndexNameExpressionResolverTests extends ESTestCase {
             state,
             "test-0",
             x -> x.alias().equals("test-alias-1"),
-            x -> false,
+            Predicates.alwaysFalse(),
             true,
             resolvedExpressions
         );
@@ -1669,14 +1677,28 @@ public class IndexNameExpressionResolverTests extends ESTestCase {
             // Only resolve aliases with with that refer to dataStreamName1
             Set<String> resolvedExpressions = indexNameExpressionResolver.resolveExpressions(state, "l*");
             String index = backingIndex1.getIndex().getName();
-            String[] result = indexNameExpressionResolver.indexAliases(state, index, x -> true, x -> true, true, resolvedExpressions);
+            String[] result = indexNameExpressionResolver.indexAliases(
+                state,
+                index,
+                Predicates.alwaysTrue(),
+                Predicates.alwaysTrue(),
+                true,
+                resolvedExpressions
+            );
             assertThat(result, arrayContainingInAnyOrder("logs_foo", "logs", "logs_bar"));
         }
         {
             // Only resolve aliases with with that refer to dataStreamName2
             Set<String> resolvedExpressions = indexNameExpressionResolver.resolveExpressions(state, "l*");
             String index = backingIndex2.getIndex().getName();
-            String[] result = indexNameExpressionResolver.indexAliases(state, index, x -> true, x -> true, true, resolvedExpressions);
+            String[] result = indexNameExpressionResolver.indexAliases(
+                state,
+                index,
+                Predicates.alwaysTrue(),
+                Predicates.alwaysTrue(),
+                true,
+                resolvedExpressions
+            );
             assertThat(result, arrayContainingInAnyOrder("logs_baz", "logs_baz2"));
         }
         {
@@ -1693,7 +1715,7 @@ public class IndexNameExpressionResolverTests extends ESTestCase {
             String[] result = indexNameExpressionResolver.indexAliases(
                 state,
                 index,
-                x -> true,
+                Predicates.alwaysTrue(),
                 DataStreamAlias::filteringRequired,
                 true,
                 resolvedExpressions
@@ -1707,7 +1729,7 @@ public class IndexNameExpressionResolverTests extends ESTestCase {
             String[] result = indexNameExpressionResolver.indexAliases(
                 state,
                 index,
-                x -> true,
+                Predicates.alwaysTrue(),
                 DataStreamAlias::filteringRequired,
                 true,
                 resolvedExpressions
@@ -1721,7 +1743,7 @@ public class IndexNameExpressionResolverTests extends ESTestCase {
             String[] result = indexNameExpressionResolver.indexAliases(
                 state,
                 index,
-                x -> true,
+                Predicates.alwaysTrue(),
                 DataStreamAlias::filteringRequired,
                 true,
                 resolvedExpressions
@@ -1735,7 +1757,7 @@ public class IndexNameExpressionResolverTests extends ESTestCase {
             String[] result = indexNameExpressionResolver.indexAliases(
                 state,
                 index,
-                x -> true,
+                Predicates.alwaysTrue(),
                 DataStreamAlias::filteringRequired,
                 false,
                 resolvedExpressions
@@ -1760,9 +1782,23 @@ public class IndexNameExpressionResolverTests extends ESTestCase {
         assertArrayEquals(new String[] { "test-alias" }, aliases);
 
         resolvedExpressions = Collections.singleton("other-alias");
-        aliases = indexNameExpressionResolver.indexAliases(state, "test-0", x -> true, x -> true, false, resolvedExpressions);
+        aliases = indexNameExpressionResolver.indexAliases(
+            state,
+            "test-0",
+            Predicates.alwaysTrue(),
+            Predicates.alwaysTrue(),
+            false,
+            resolvedExpressions
+        );
         assertArrayEquals(new String[] { "other-alias" }, aliases);
-        aliases = indexNameExpressionResolver.indexAliases(state, "test-0", x -> true, x -> true, true, resolvedExpressions);
+        aliases = indexNameExpressionResolver.indexAliases(
+            state,
+            "test-0",
+            Predicates.alwaysTrue(),
+            Predicates.alwaysTrue(),
+            true,
+            resolvedExpressions
+        );
         assertArrayEquals(new String[] { "other-alias" }, aliases);
     }
 
@@ -1777,8 +1813,8 @@ public class IndexNameExpressionResolverTests extends ESTestCase {
         String[] strings = indexNameExpressionResolver.indexAliases(
             state,
             "test-0",
-            x -> true,
-            x -> true,
+            Predicates.alwaysTrue(),
+            Predicates.alwaysTrue(),
             true,
             new HashSet<>(Arrays.asList("test-0", "test-alias"))
         );
@@ -1859,8 +1895,8 @@ public class IndexNameExpressionResolverTests extends ESTestCase {
         String[] strings = indexNameExpressionResolver.indexAliases(
             state,
             "test-0",
-            x -> true,
-            x -> true,
+            Predicates.alwaysTrue(),
+            Predicates.alwaysTrue(),
             true,
             new HashSet<>(Arrays.asList("test-0", "test-1", "test-alias"))
         );
@@ -1897,8 +1933,8 @@ public class IndexNameExpressionResolverTests extends ESTestCase {
         String[] strings = indexNameExpressionResolver.indexAliases(
             state,
             "test-0",
-            x -> true,
-            x -> true,
+            Predicates.alwaysTrue(),
+            Predicates.alwaysTrue(),
             true,
             new HashSet<>(Arrays.asList("test-0", "test-alias"))
         );
@@ -1933,8 +1969,8 @@ public class IndexNameExpressionResolverTests extends ESTestCase {
         String[] strings = indexNameExpressionResolver.indexAliases(
             state,
             "test-0",
-            x -> true,
-            x -> true,
+            Predicates.alwaysTrue(),
+            Predicates.alwaysTrue(),
             true,
             new HashSet<>(Arrays.asList("test-0", "test-1", "test-alias"))
         );
