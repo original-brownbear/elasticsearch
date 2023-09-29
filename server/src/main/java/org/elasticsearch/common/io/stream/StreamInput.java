@@ -438,7 +438,7 @@ public abstract class StreamInput extends InputStream {
     }
 
     protected String doReadString(byte[] byteBuffer) throws IOException {
-        final int charCount = readArraySize();
+        final int charCount = readVInt();
         final char[] charBuffer = charCount > SMALL_STRING_LIMIT ? ensureLargeSpare(charCount) : smallSpare.get();
         int charsOffset = 0;
         int offsetByteArray = 0;
