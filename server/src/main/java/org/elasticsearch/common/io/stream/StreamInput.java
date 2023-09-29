@@ -433,15 +433,17 @@ public abstract class StreamInput extends InputStream {
     }
 
     public String readString() throws IOException {
+        final byte[] byteBuffer = stringReadBuffer.get();
+        return doReadString(byteBuffer);
+    }
+
+    protected String doReadString(byte[] byteBuffer) throws IOException {
         final int charCount = readArraySize();
-
         final char[] charBuffer = charCount > SMALL_STRING_LIMIT ? ensureLargeSpare(charCount) : smallSpare.get();
-
         int charsOffset = 0;
         int offsetByteArray = 0;
         int sizeByteArray = 0;
         int missingFromPartial = 0;
-        final byte[] byteBuffer = stringReadBuffer.get();
         for (; charsOffset < charCount;) {
             final int charsLeft = charCount - charsOffset;
             int bufferFree = byteBuffer.length - sizeByteArray;
@@ -593,8 +595,9 @@ public abstract class StreamInput extends InputStream {
             return Strings.EMPTY_ARRAY;
         }
         String[] ret = new String[size];
+        final byte[] byteBuffer = stringReadBuffer.get();
         for (int i = 0; i < size; i++) {
-            ret[i] = readString();
+            ret[i] = doReadString(byteBuffer);
         }
         return ret;
     }

@@ -113,7 +113,7 @@ final class FieldCapabilitiesIndexResponse implements Writeable {
     private static void collectResponsesLegacyFormat(StreamInput input, int groups, ArrayList<FieldCapabilitiesIndexResponse> responses)
         throws IOException {
         for (int i = 0; i < groups; i++) {
-            final List<String> indices = input.readStringCollectionAsList();
+            final String[] indices = input.readStringArray();
             final String mappingHash = input.readString();
             final Map<String, IndexFieldCapabilities> ifc = input.readMap(IndexFieldCapabilities::readFrom);
             for (String index : indices) {
