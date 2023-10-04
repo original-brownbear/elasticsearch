@@ -455,35 +455,30 @@ public abstract class Engine implements Closeable {
         private long took;
 
         protected Result(Operation.TYPE operationType, Exception failure, long version, long term, long seqNo, String id) {
-            this.operationType = operationType;
-            this.failure = Objects.requireNonNull(failure);
-            this.version = version;
-            this.term = term;
-            this.seqNo = seqNo;
-            this.requiredMappingUpdate = null;
-            this.resultType = Type.FAILURE;
-            this.id = id;
+            this(operationType, Type.FAILURE, version, term, seqNo, Objects.requireNonNull(failure), null, id);
         }
 
         protected Result(Operation.TYPE operationType, long version, long term, long seqNo, String id) {
-            this.operationType = operationType;
-            this.version = version;
-            this.seqNo = seqNo;
-            this.term = term;
-            this.failure = null;
-            this.requiredMappingUpdate = null;
-            this.resultType = Type.SUCCESS;
-            this.id = id;
+            this(operationType, Type.SUCCESS, version, term, seqNo, null, null, id);
         }
 
-        protected Result(Operation.TYPE operationType, Mapping requiredMappingUpdate, String id) {
+        protected Result(
+            Operation.TYPE operationType,
+            Type resultType,
+            long version,
+            long term,
+            long seqNo,
+            Exception failure,
+            Mapping requiredMappingUpdate,
+            String id
+        ) {
             this.operationType = operationType;
-            this.version = Versions.NOT_FOUND;
-            this.seqNo = UNASSIGNED_SEQ_NO;
-            this.term = UNASSIGNED_PRIMARY_TERM;
-            this.failure = null;
+            this.resultType = resultType;
+            this.version = version;
+            this.term = term;
+            this.seqNo = seqNo;
+            this.failure = failure;
             this.requiredMappingUpdate = requiredMappingUpdate;
-            this.resultType = Type.MAPPING_UPDATE_REQUIRED;
             this.id = id;
         }
 
@@ -590,7 +585,16 @@ public abstract class Engine implements Closeable {
         }
 
         public IndexResult(Mapping requiredMappingUpdate, String id) {
-            super(Operation.TYPE.INDEX, requiredMappingUpdate, id);
+            super(
+                Operation.TYPE.INDEX,
+                Type.MAPPING_UPDATE_REQUIRED,
+                Versions.NOT_FOUND,
+                UNASSIGNED_PRIMARY_TERM,
+                UNASSIGNED_SEQ_NO,
+                null,
+                requiredMappingUpdate,
+                id
+            );
             this.created = false;
         }
 
@@ -618,11 +622,6 @@ public abstract class Engine implements Closeable {
         public DeleteResult(Exception failure, long version, long term, long seqNo, boolean found, String id) {
             super(Operation.TYPE.DELETE, failure, version, term, seqNo, id);
             this.found = found;
-        }
-
-        public DeleteResult(Mapping requiredMappingUpdate, String id) {
-            super(Operation.TYPE.DELETE, requiredMappingUpdate, id);
-            this.found = false;
         }
 
         public boolean isFound() {
