@@ -43,15 +43,15 @@ import org.elasticsearch.transport.TransportRequestHandler;
 import org.elasticsearch.transport.TransportService;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
@@ -140,7 +140,7 @@ public class TransportFieldCapabilitiesAction extends HandledTransportAction<Fie
 
         checkIndexBlocks(clusterState, concreteIndices);
         final FailureCollector indexFailures = new FailureCollector();
-        final Map<String, FieldCapabilitiesIndexResponse> indexResponses = Collections.synchronizedMap(new HashMap<>());
+        final SortedMap<String, FieldCapabilitiesIndexResponse> indexResponses = Collections.synchronizedSortedMap(new TreeMap<>());
         // This map is used to share the index response for indices which have the same index mapping hash to reduce the memory usage.
         final Map<String, FieldCapabilitiesIndexResponse> indexMappingHashToResponses = Collections.synchronizedMap(new HashMap<>());
         final Runnable releaseResourcesOnCancel = () -> {
@@ -246,12 +246,12 @@ public class TransportFieldCapabilitiesAction extends HandledTransportAction<Fie
     private void mergeIndexResponses(
         FieldCapabilitiesRequest request,
         CancellableTask task,
-        Map<String, FieldCapabilitiesIndexResponse> indexResponses,
+        SortedMap<String, FieldCapabilitiesIndexResponse> indexResponses,
         FailureCollector indexFailures,
         ActionListener<FieldCapabilitiesResponse> listener
     ) {
         List<FieldCapabilitiesFailure> failures = indexFailures.build(indexResponses.keySet());
-        if (indexResponses.size() > 0) {
+        if (indexResponses.isEmpty() == false) {
             if (request.isMergeResults()) {
                 ActionListener.completeWith(listener, () -> merge(indexResponses, task, request, failures));
             } else {
@@ -293,16 +293,17 @@ public class TransportFieldCapabilitiesAction extends HandledTransportAction<Fie
     }
 
     private static FieldCapabilitiesResponse merge(
-        Map<String, FieldCapabilitiesIndexResponse> indexResponsesMap,
+        SortedMap<String, FieldCapabilitiesIndexResponse> indexResponsesMap,
         CancellableTask task,
         FieldCapabilitiesRequest request,
         List<FieldCapabilitiesFailure> failures
     ) {
         assert ThreadPool.assertCurrentThreadPool(ThreadPool.Names.SEARCH_COORDINATION); // too expensive to run this on a transport worker
         task.ensureNotCancelled();
-        final FieldCapabilitiesIndexResponse[] indexResponses = indexResponsesMap.values().toArray(new FieldCapabilitiesIndexResponse[0]);
-        Arrays.sort(indexResponses, Comparator.comparing(FieldCapabilitiesIndexResponse::getIndexName));
-        final String[] indices = Arrays.stream(indexResponses).map(FieldCapabilitiesIndexResponse::getIndexName).toArray(String[]::new);
+        final int responseCount = indexResponsesMap.size();
+        final FieldCapabilitiesIndexResponse[] indexResponses = new FieldCapabilitiesIndexResponse[responseCount];
+        final String[] indices = new String[responseCount];
+        collectResponses(indexResponsesMap, indexResponses, indices);
         final Map<String, Map<String, FieldCapabilities.Builder>> responseMapBuilder = new HashMap<>();
         int lastPendingIndex = 0;
         for (int i = 1; i <= indexResponses.length; i++) {
@@ -326,6 +327,19 @@ public class TransportFieldCapabilitiesAction extends HandledTransportAction<Fie
             collectResponseMap(responseMapBuilder, responseMap);
         }
         return new FieldCapabilitiesResponse(indices, Collections.unmodifiableMap(responseMap), failures);
+    }
+
+    private static void collectResponses(
+        SortedMap<String, FieldCapabilitiesIndexResponse> indexResponsesMap,
+        FieldCapabilitiesIndexResponse[] indexResponses,
+        String[] indices
+    ) {
+        int p = 0;
+        for (Map.Entry<String, FieldCapabilitiesIndexResponse> entry : indexResponsesMap.entrySet()) {
+            indexResponses[p] = entry.getValue();
+            indices[p] = entry.getKey();
+            p++;
+        }
     }
 
     private static void collectResponseMapIncludingUnmapped(
