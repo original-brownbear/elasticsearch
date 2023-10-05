@@ -287,9 +287,7 @@ public class TransportFieldCapabilitiesAction extends HandledTransportAction<Fie
     }
 
     private static boolean hasSameMappingHash(FieldCapabilitiesIndexResponse r1, FieldCapabilitiesIndexResponse r2) {
-        return r1.getIndexMappingHash() != null
-            && r2.getIndexMappingHash() != null
-            && r1.getIndexMappingHash().equals(r2.getIndexMappingHash());
+        return r1.getIndexMappingHash() != null && r1.getIndexMappingHash().equals(r2.getIndexMappingHash());
     }
 
     private static FieldCapabilitiesResponse merge(
