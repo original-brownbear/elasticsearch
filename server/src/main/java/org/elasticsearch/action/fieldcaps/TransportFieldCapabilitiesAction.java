@@ -27,6 +27,7 @@ import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.regex.Regex;
 import org.elasticsearch.common.util.Maps;
+import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.index.shard.ShardId;
@@ -140,9 +141,9 @@ public class TransportFieldCapabilitiesAction extends HandledTransportAction<Fie
 
         checkIndexBlocks(clusterState, concreteIndices);
         final FailureCollector indexFailures = new FailureCollector();
-        final Map<String, FieldCapabilitiesIndexResponse> indexResponses = Collections.synchronizedMap(new HashMap<>());
+        final Map<String, FieldCapabilitiesIndexResponse> indexResponses = ConcurrentCollections.newConcurrentMap();
         // This map is used to share the index response for indices which have the same index mapping hash to reduce the memory usage.
-        final Map<String, FieldCapabilitiesIndexResponse> indexMappingHashToResponses = Collections.synchronizedMap(new HashMap<>());
+        final Map<String, Map<String, IndexFieldCapabilities>> indexMappingHashToResponses = ConcurrentCollections.newConcurrentMap();
         final Runnable releaseResourcesOnCancel = () -> {
             LOGGER.trace("clear index responses on cancellation");
             indexFailures.clear();
@@ -155,9 +156,9 @@ public class TransportFieldCapabilitiesAction extends HandledTransportAction<Fie
                 return;
             }
             if (resp.canMatch() && resp.getIndexMappingHash() != null) {
-                FieldCapabilitiesIndexResponse curr = indexMappingHashToResponses.putIfAbsent(resp.getIndexMappingHash(), resp);
+                var curr = indexMappingHashToResponses.putIfAbsent(resp.getIndexMappingHash(), resp.get());
                 if (curr != null) {
-                    resp = new FieldCapabilitiesIndexResponse(resp.getIndexName(), curr.getIndexMappingHash(), curr.get(), true);
+                    resp = new FieldCapabilitiesIndexResponse(resp.getIndexName(), resp.getIndexMappingHash(), curr, true);
                 }
             }
             indexResponses.putIfAbsent(resp.getIndexName(), resp);
