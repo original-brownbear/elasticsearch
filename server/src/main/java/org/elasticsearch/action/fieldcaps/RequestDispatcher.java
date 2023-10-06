@@ -24,6 +24,7 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
 import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
 import org.elasticsearch.common.util.concurrent.RunOnce;
+import org.elasticsearch.common.util.concurrent.ThrottledTaskRunner;
 import org.elasticsearch.index.query.MatchAllQueryBuilder;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.tasks.Task;
@@ -66,6 +67,8 @@ final class RequestDispatcher {
     private final AtomicInteger executionRound = new AtomicInteger();
     private final Map<String, IndexSelector> indexSelectors;
 
+    private final ThrottledTaskRunner taskRunner;
+
     RequestDispatcher(
         ClusterService clusterService,
         TransportService transportService,
@@ -87,6 +90,7 @@ final class RequestDispatcher {
         this.clusterState = clusterService.state();
         this.hasFilter = fieldCapsRequest.indexFilter() != null && fieldCapsRequest.indexFilter() instanceof MatchAllQueryBuilder == false;
         this.executor = executor;
+        this.taskRunner = new ThrottledTaskRunner("filed-caps-request-dispatcher", 1, executor);
         this.onIndexResponse = onIndexResponse;
         this.onIndexFailure = onIndexFailure;
         this.onComplete = new RunOnce(onComplete);
@@ -168,7 +172,11 @@ final class RequestDispatcher {
         assert node != null;
         LOGGER.debug("round {} sends field caps node request to node {} for shardIds {}", executionRound, node, shardIds);
         final ActionListener<FieldCapabilitiesNodeResponse> listener = ActionListener.wrap(
-            r -> onRequestResponse(shardIds, r),
+            r -> taskRunner.enqueueTask(ActionListener.wrap(releasable -> {
+                try (releasable) {
+                    onRequestResponse(shardIds, r);
+                }
+            }, f -> onRequestFailure(shardIds, f))),
             failure -> onRequestFailure(shardIds, failure)
         );
         final FieldCapabilitiesNodeRequest nodeRequest = new FieldCapabilitiesNodeRequest(
