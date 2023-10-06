@@ -70,19 +70,18 @@ public class CollectionUtils {
      * Return a rotated view of the given list with the given distance.
      */
     public static <T> List<T> rotate(final List<T> list, int distance) {
-        if (list.isEmpty()) {
+        int size = list.size();
+        if (size <= 1) {
             return list;
         }
 
-        int d = distance % list.size();
-        if (d < 0) {
-            d += list.size();
-        }
-
+        int d = distance % size;
         if (d == 0) {
             return list;
         }
-
+        if (d < 0) {
+            d += size;
+        }
         return new RotatedList<>(list, d);
     }
 
@@ -157,10 +156,7 @@ public class CollectionUtils {
         private final int distance;
 
         RotatedList(List<T> list, int distance) {
-            if (distance < 0 || distance >= list.size()) {
-                throw new IllegalArgumentException();
-            }
-            if ((list instanceof RandomAccess) == false) {
+            if (list instanceof RandomAccess == false) {
                 throw new IllegalArgumentException();
             }
             this.in = list;
@@ -169,11 +165,7 @@ public class CollectionUtils {
 
         @Override
         public T get(int index) {
-            int idx = distance + index;
-            if (idx < 0 || idx >= in.size()) {
-                idx -= in.size();
-            }
-            return in.get(idx);
+            return in.get((distance + index) % size());
         }
 
         @Override
