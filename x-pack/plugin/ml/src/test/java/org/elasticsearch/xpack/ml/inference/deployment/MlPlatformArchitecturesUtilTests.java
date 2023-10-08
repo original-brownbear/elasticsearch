@@ -54,14 +54,10 @@ public class MlPlatformArchitecturesUtilTests extends ESTestCase {
             return Platforms.platformName(osInfo.getName(), osInfo.getArch());
         }).collect(Collectors.toUnmodifiableSet());
 
-        assertAsync(new Consumer<ActionListener<Set<String>>>() {
-            @Override
-            public void accept(ActionListener<Set<String>> setActionListener) {
-                final ActionListener<NodesInfoResponse> nodesInfoResponseActionListener = MlPlatformArchitecturesUtil
-                    .getArchitecturesSetFromNodesInfoResponseListener(threadPool, setActionListener);
-                nodesInfoResponseActionListener.onResponse(mockNodesInfoResponse);
-            }
-
+        assertAsync(setActionListener -> {
+            final ActionListener<NodesInfoResponse> nodesInfoResponseActionListener = MlPlatformArchitecturesUtil
+                .getArchitecturesSetFromNodesInfoResponseListener(threadPool, setActionListener);
+            nodesInfoResponseActionListener.onResponse(mockNodesInfoResponse);
         }, expected, null, null);
     }
 

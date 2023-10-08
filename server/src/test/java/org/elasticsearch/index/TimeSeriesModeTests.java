@@ -12,17 +12,13 @@ import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.time.DateUtils;
 import org.elasticsearch.index.mapper.MapperServiceTestCase;
-import org.elasticsearch.index.mapper.OnScriptError;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptContext;
 import org.elasticsearch.script.StringFieldScript;
-import org.elasticsearch.script.StringFieldScript.LeafFactory;
-import org.elasticsearch.search.lookup.SearchLookup;
 import org.hamcrest.CoreMatchers;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.util.Map;
 
 import static org.elasticsearch.index.IndexSettings.TIME_SERIES_END_TIME;
 import static org.elasticsearch.index.IndexSettings.TIME_SERIES_START_TIME;
@@ -268,16 +264,8 @@ public class TimeSeriesModeTests extends MapperServiceTestCase {
     @SuppressWarnings("unchecked")
     protected <T> T compileScript(Script script, ScriptContext<T> context) {
         if (context.equals(StringFieldScript.CONTEXT) && script.getLang().equals("mock")) {
-            return (T) new StringFieldScript.Factory() {
-                @Override
-                public LeafFactory newFactory(
-                    String fieldName,
-                    Map<String, Object> params,
-                    SearchLookup searchLookup,
-                    OnScriptError onScriptError
-                ) {
-                    throw new UnsupportedOperationException("error should be thrown before getting here");
-                }
+            return (T) (StringFieldScript.Factory) (fieldName, params, searchLookup, onScriptError) -> {
+                throw new UnsupportedOperationException("error should be thrown before getting here");
             };
         }
         return super.compileScript(script, context);

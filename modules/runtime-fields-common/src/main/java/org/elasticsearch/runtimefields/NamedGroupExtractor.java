@@ -49,12 +49,7 @@ public interface NamedGroupExtractor {
      */
     static NamedGroupExtractor dissect(String pattern, String appendSeparator) {
         DissectParser dissect = new DissectParser(pattern, appendSeparator);
-        return new NamedGroupExtractor() {
-            @Override
-            public Map<String, ?> extract(String in) {
-                return dissect.parse(in);
-            }
-        };
+        return dissect::parse;
     }
 
     /**
@@ -94,31 +89,23 @@ public interface NamedGroupExtractor {
              * Build the grok pattern in a PrivilegedAction so it can load
              * things from the classpath.
              */
-            Grok grok = AccessController.doPrivileged(new PrivilegedAction<Grok>() {
-                @Override
-                public Grok run() {
-                    try {
-                        // Try to collect warnings up front and refuse to compile the expression if there are any
-                        List<String> warnings = new ArrayList<>();
-                        new Grok(GrokBuiltinPatterns.legacyPatterns(), pattern, watchdog, warnings::add).match("__nomatch__");
-                        if (false == warnings.isEmpty()) {
-                            throw new IllegalArgumentException("emitted warnings: " + warnings);
-                        }
-
-                        return new Grok(GrokBuiltinPatterns.legacyPatterns(), pattern, watchdog, w -> {
-                            throw new IllegalArgumentException("grok [" + pattern + "] emitted a warning: " + w);
-                        });
-                    } catch (RuntimeException e) {
-                        throw new IllegalArgumentException("error compiling grok pattern [" + pattern + "]: " + e.getMessage(), e);
+            Grok grok = AccessController.doPrivileged((PrivilegedAction<Grok>) () -> {
+                try {
+                    // Try to collect warnings up front and refuse to compile the expression if there are any
+                    List<String> warnings = new ArrayList<>();
+                    new Grok(GrokBuiltinPatterns.legacyPatterns(), pattern, watchdog, warnings::add).match("__nomatch__");
+                    if (false == warnings.isEmpty()) {
+                        throw new IllegalArgumentException("emitted warnings: " + warnings);
                     }
+
+                    return new Grok(GrokBuiltinPatterns.legacyPatterns(), pattern, watchdog, w -> {
+                        throw new IllegalArgumentException("grok [" + pattern + "] emitted a warning: " + w);
+                    });
+                } catch (RuntimeException e) {
+                    throw new IllegalArgumentException("error compiling grok pattern [" + pattern + "]: " + e.getMessage(), e);
                 }
             });
-            return new NamedGroupExtractor() {
-                @Override
-                public Map<String, ?> extract(String in) {
-                    return grok.captures(in);
-                }
-            };
+            return grok::captures;
         }
     }
 }

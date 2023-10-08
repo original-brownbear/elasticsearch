@@ -434,22 +434,12 @@ public class SimpleVersioningIT extends ESIntegTestCase {
             case 0 -> {
                 // random simple
                 logger.info("--> use random simple ids");
-                yield new IDSource() {
-                    @Override
-                    public String next() {
-                        return TestUtil.randomSimpleString(random, 1, 10);
-                    }
-                };
+                yield () -> TestUtil.randomSimpleString(random, 1, 10);
             }
             case 1 -> {
                 // random realistic unicode
                 logger.info("--> use random realistic unicode ids");
-                yield new IDSource() {
-                    @Override
-                    public String next() {
-                        return TestUtil.randomRealisticUnicodeString(random, 1, 20);
-                    }
-                };
+                yield () -> TestUtil.randomRealisticUnicodeString(random, 1, 20);
             }
             case 2 -> {
                 // sequential

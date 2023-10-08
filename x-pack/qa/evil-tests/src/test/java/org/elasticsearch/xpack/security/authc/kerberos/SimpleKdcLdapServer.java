@@ -91,12 +91,9 @@ public class SimpleKdcLdapServer {
             }
         });
 
-        AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
-            @Override
-            public Void run() throws Exception {
-                assertBusy(() -> assertTrue("Failed to initialize SimpleKdcLdapServer", init()));
-                return null;
-            }
+        AccessController.doPrivileged((PrivilegedExceptionAction<Void>) () -> {
+            assertBusy(() -> assertTrue("Failed to initialize SimpleKdcLdapServer", init()));
+            return null;
         });
         logger.info("SimpleKdcLdapServer started.");
     }

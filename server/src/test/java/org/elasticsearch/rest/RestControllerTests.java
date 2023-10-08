@@ -880,10 +880,7 @@ public class RestControllerTests extends ESTestCase {
 
         final AssertingChannel channel = new AssertingChannel(fakeRestRequest, true, RestStatus.NOT_ACCEPTABLE);
 
-        restController.registerHandler(new Route(GET, "/foo"), new RestHandler() {
-            @Override
-            public void handleRequest(RestRequest request, RestChannel channel, NodeClient client) throws Exception {}
-        });
+        restController.registerHandler(new Route(GET, "/foo"), (request, chan, client) -> {});
 
         restController.dispatchRequest(fakeRestRequest, channel, client.threadPool().getThreadContext());
         assertTrue(channel.getSendResponseCalled());

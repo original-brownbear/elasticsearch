@@ -116,11 +116,8 @@ public class EsqlNodeSubclassTests<T extends B, B extends Node<B>> extends NodeS
             // pageConsumer just needs a BiConsumer. But the consumer has to have reasonable
             // `equals` for randomValueOtherThan, so we just ensure that a new instance is
             // created each time which uses Object::equals identity.
-            return new Consumer<Page>() {
-                @Override
-                public void accept(Page page) {
-                    // do nothing
-                }
+            return (Consumer<Page>) page -> {
+                // do nothing
             };
         }
         return null;

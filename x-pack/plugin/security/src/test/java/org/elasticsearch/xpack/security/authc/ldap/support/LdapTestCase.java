@@ -304,33 +304,27 @@ public abstract class LdapTestCase extends ESTestCase {
     }
 
     protected static void assertConnectionValid(LDAPInterface conn, SimpleBindRequest bindRequest) {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            @Override
-            public Void run() {
-                try {
-                    if (conn instanceof LDAPConnection) {
-                        assertTrue(((LDAPConnection) conn).isConnected());
-                        assertEquals(
-                            bindRequest.getBindDN(),
-                            ((SimpleBindRequest) ((LDAPConnection) conn).getLastBindRequest()).getBindDN()
-                        );
-                        ((LDAPConnection) conn).reconnect();
-                    } else if (conn instanceof LDAPConnectionPool) {
-                        try (LDAPConnection c = ((LDAPConnectionPool) conn).getConnection()) {
-                            assertTrue(c.isConnected());
-                            assertEquals(bindRequest.getBindDN(), ((SimpleBindRequest) c.getLastBindRequest()).getBindDN());
-                            c.reconnect();
-                        }
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            try {
+                if (conn instanceof LDAPConnection) {
+                    assertTrue(((LDAPConnection) conn).isConnected());
+                    assertEquals(bindRequest.getBindDN(), ((SimpleBindRequest) ((LDAPConnection) conn).getLastBindRequest()).getBindDN());
+                    ((LDAPConnection) conn).reconnect();
+                } else if (conn instanceof LDAPConnectionPool) {
+                    try (LDAPConnection c = ((LDAPConnectionPool) conn).getConnection()) {
+                        assertTrue(c.isConnected());
+                        assertEquals(bindRequest.getBindDN(), ((SimpleBindRequest) c.getLastBindRequest()).getBindDN());
+                        c.reconnect();
                     }
-                } catch (LDAPException e) {
-                    fail(
-                        "Connection is not valid. It will not work on follow referral flow."
-                            + System.lineSeparator()
-                            + ExceptionsHelper.stackTrace(e)
-                    );
                 }
-                return null;
+            } catch (LDAPException e) {
+                fail(
+                    "Connection is not valid. It will not work on follow referral flow."
+                        + System.lineSeparator()
+                        + ExceptionsHelper.stackTrace(e)
+                );
             }
+            return null;
         });
     }
 }

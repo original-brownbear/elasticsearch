@@ -187,18 +187,15 @@ public class WatcherScheduleEngineBenchmark {
 
                     final AtomicBoolean start = new AtomicBoolean(true);
                     final MeanMetric jvmUsedHeapSpace = new MeanMetric();
-                    Thread sampleThread = new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                while (start.get()) {
-                                    NodesStatsResponse response = client.admin().cluster().prepareNodesStats("_master").setJvm(true).get();
-                                    ByteSizeValue heapUsed = response.getNodes().get(0).getJvm().getMem().getHeapUsed();
-                                    jvmUsedHeapSpace.inc(heapUsed.getBytes());
-                                    Thread.sleep(1000);
-                                }
-                            } catch (InterruptedException ignored) {}
-                        }
+                    Thread sampleThread = new Thread(() -> {
+                        try {
+                            while (start.get()) {
+                                NodesStatsResponse response = client.admin().cluster().prepareNodesStats("_master").setJvm(true).get();
+                                ByteSizeValue heapUsed = response.getNodes().get(0).getJvm().getMem().getHeapUsed();
+                                jvmUsedHeapSpace.inc(heapUsed.getBytes());
+                                Thread.sleep(1000);
+                            }
+                        } catch (InterruptedException ignored) {}
                     });
                     sampleThread.start();
                     Thread.sleep(benchTime);

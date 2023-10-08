@@ -21,9 +21,7 @@ import org.elasticsearch.search.DocValueFormat;
 import org.elasticsearch.test.AbstractNamedWriteableTestCase;
 import org.elasticsearch.test.TransportVersionUtils;
 import org.elasticsearch.xcontent.ToXContentFragment;
-import org.elasticsearch.xcontent.XContentBuilder;
 
-import java.io.IOException;
 import java.time.ZoneId;
 import java.util.Comparator;
 import java.util.List;
@@ -237,12 +235,9 @@ public class SortValueTests extends AbstractNamedWriteableTestCase<SortValue> {
     }
 
     public String toXContent(SortValue sortValue, DocValueFormat format) {
-        return Strings.toString(new ToXContentFragment() {
-            @Override
-            public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
-                builder.field("test");
-                return sortValue.toXContent(builder, format);
-            }
+        return Strings.toString((ToXContentFragment) (builder, params) -> {
+            builder.field("test");
+            return sortValue.toXContent(builder, format);
         });
     }
 
