@@ -39,7 +39,6 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.breaker.CircuitBreaker;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
-import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.logging.DeprecationCategory;
 import org.elasticsearch.common.logging.DeprecationLogger;
 import org.elasticsearch.common.settings.Setting;
@@ -159,13 +158,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
         NamedWriteableRegistry namedWriteableRegistry,
         ExecutorSelector executorSelector
     ) {
-        super(
-            SearchAction.NAME,
-            transportService,
-            actionFilters,
-            (Writeable.Reader<SearchRequest>) SearchRequest::new,
-            EsExecutors.DIRECT_EXECUTOR_SERVICE
-        );
+        super(SearchAction.NAME, transportService, actionFilters, SearchRequest::new, EsExecutors.DIRECT_EXECUTOR_SERVICE);
         this.threadPool = threadPool;
         this.circuitBreaker = circuitBreakerService.getBreaker(CircuitBreaker.REQUEST);
         this.searchPhaseController = searchPhaseController;
@@ -1454,12 +1447,12 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
             SearchResponse.Cluster cluster = clusters.getCluster(clusterAlias);
             if (skipUnavailable) {
                 if (cluster != null) {
-                    ccsClusterInfoUpdate(f, clusters, clusterAlias, skipUnavailable);
+                    ccsClusterInfoUpdate(f, clusters, clusterAlias, true);
                 }
                 // skippedClusters.incrementAndGet();
             } else {
                 if (cluster != null) {
-                    ccsClusterInfoUpdate(f, clusters, clusterAlias, skipUnavailable);
+                    ccsClusterInfoUpdate(f, clusters, clusterAlias, false);
                 }
                 Exception exception = e;
                 if (RemoteClusterAware.LOCAL_CLUSTER_GROUP_KEY.equals(clusterAlias) == false) {

@@ -178,7 +178,7 @@ final class CanMatchPreFilterSearchPhase extends SearchPhase {
             if (canMatch) {
                 matchedShardLevelRequests.add(searchShardIterator);
             } else {
-                CanMatchShardResponse result = new CanMatchShardResponse(canMatch, null);
+                CanMatchShardResponse result = new CanMatchShardResponse(false, null);
                 result.setShardIndex(request.shardRequestIndex());
                 results.consumeResult(result, () -> {});
             }

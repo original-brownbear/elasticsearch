@@ -23,7 +23,6 @@ import org.elasticsearch.search.internal.ShardSearchContextId;
 import org.elasticsearch.transport.RemoteClusterService;
 import org.elasticsearch.transport.Transport;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -202,10 +201,7 @@ abstract class SearchScrollAsyncAction<T extends SearchPhaseResult> implements R
     }
 
     synchronized ShardSearchFailure[] buildShardFailures() { // pkg private for testing
-        if (shardFailures.isEmpty()) {
-            return ShardSearchFailure.EMPTY_ARRAY;
-        }
-        return shardFailures.toArray(new ShardSearchFailure[shardFailures.size()]);
+        return shardFailures.toArray(ShardSearchFailure.EMPTY_ARRAY);
     }
 
     // we do our best to return the shard failures, but its ok if its not fully concurrently safe
@@ -230,7 +226,7 @@ abstract class SearchScrollAsyncAction<T extends SearchPhaseResult> implements R
     ) {
         return new SearchPhase("fetch") {
             @Override
-            public void run() throws IOException {
+            public void run() {
                 sendResponse(queryPhase, fetchResults);
             }
         };

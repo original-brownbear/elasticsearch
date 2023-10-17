@@ -9,18 +9,14 @@ package org.elasticsearch.action.search;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.search.ScoreDoc;
-import org.elasticsearch.action.OriginalIndices;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
 import org.elasticsearch.common.util.concurrent.AtomicArray;
-import org.elasticsearch.search.RescoreDocIds;
 import org.elasticsearch.search.SearchPhaseResult;
 import org.elasticsearch.search.SearchShardTarget;
 import org.elasticsearch.search.dfs.AggregatedDfs;
 import org.elasticsearch.search.fetch.FetchSearchResult;
 import org.elasticsearch.search.fetch.ShardFetchSearchRequest;
 import org.elasticsearch.search.internal.InternalSearchResponse;
-import org.elasticsearch.search.internal.ShardSearchContextId;
-import org.elasticsearch.search.internal.ShardSearchRequest;
 import org.elasticsearch.search.query.QuerySearchResult;
 import org.elasticsearch.transport.Transport;
 
@@ -151,14 +147,14 @@ final class FetchSearchPhase extends SearchPhase {
                     } else {
                         SearchShardTarget shardTarget = queryResult.getSearchShardTarget();
                         Transport.Connection connection = context.getConnection(shardTarget.getClusterAlias(), shardTarget.getNodeId());
-                        ShardFetchSearchRequest fetchSearchRequest = createFetchRequest(
-                            queryResult.queryResult().getContextId(),
-                            i,
-                            entry,
-                            lastEmittedDocPerShard,
+                        ShardFetchSearchRequest fetchSearchRequest = new ShardFetchSearchRequest(
                             context.getOriginalIndices(queryResult.getShardIndex()),
+                            queryResult.queryResult().getContextId(),
                             queryResult.getShardSearchRequest(),
-                            queryResult.getRescoreDocIds()
+                            entry,
+                            (lastEmittedDocPerShard != null) ? lastEmittedDocPerShard[i] : null,
+                            queryResult.getRescoreDocIds(),
+                            aggregatedDfs
                         );
                         executeFetch(
                             queryResult.getShardIndex(),
@@ -174,27 +170,6 @@ final class FetchSearchPhase extends SearchPhase {
         }
     }
 
-    protected ShardFetchSearchRequest createFetchRequest(
-        ShardSearchContextId contextId,
-        int index,
-        List<Integer> entry,
-        ScoreDoc[] lastEmittedDocPerShard,
-        OriginalIndices originalIndices,
-        ShardSearchRequest shardSearchRequest,
-        RescoreDocIds rescoreDocIds
-    ) {
-        final ScoreDoc lastEmittedDoc = (lastEmittedDocPerShard != null) ? lastEmittedDocPerShard[index] : null;
-        return new ShardFetchSearchRequest(
-            originalIndices,
-            contextId,
-            shardSearchRequest,
-            entry,
-            lastEmittedDoc,
-            rescoreDocIds,
-            aggregatedDfs
-        );
-    }
-
     private void executeFetch(
         final int shardIndex,
         final SearchShardTarget shardTarget,
@@ -204,36 +179,31 @@ final class FetchSearchPhase extends SearchPhase {
         final Transport.Connection connection
     ) {
         context.getSearchTransport()
-            .sendExecuteFetch(
-                connection,
-                fetchSearchRequest,
-                context.getTask(),
-                new SearchActionListener<FetchSearchResult>(shardTarget, shardIndex) {
-                    @Override
-                    public void innerOnResponse(FetchSearchResult result) {
-                        try {
-                            progressListener.notifyFetchResult(shardIndex);
-                            counter.onResult(result);
-                        } catch (Exception e) {
-                            context.onPhaseFailure(FetchSearchPhase.this, "", e);
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(Exception e) {
-                        try {
-                            logger.debug(() -> "[" + fetchSearchRequest.contextId() + "] Failed to execute fetch phase", e);
-                            progressListener.notifyFetchFailure(shardIndex, shardTarget, e);
-                            counter.onFailure(shardIndex, shardTarget, e);
-                        } finally {
-                            // the search context might not be cleared on the node where the fetch was executed for example
-                            // because the action was rejected by the thread pool. in this case we need to send a dedicated
-                            // request to clear the search context.
-                            releaseIrrelevantSearchContext(querySearchResult);
-                        }
+            .sendExecuteFetch(connection, fetchSearchRequest, context.getTask(), new SearchActionListener<>(shardTarget, shardIndex) {
+                @Override
+                public void innerOnResponse(FetchSearchResult result) {
+                    try {
+                        progressListener.notifyFetchResult(shardIndex);
+                        counter.onResult(result);
+                    } catch (Exception e) {
+                        context.onPhaseFailure(FetchSearchPhase.this, "", e);
                     }
                 }
-            );
+
+                @Override
+                public void onFailure(Exception e) {
+                    try {
+                        logger.debug(() -> "[" + fetchSearchRequest.contextId() + "] Failed to execute fetch phase", e);
+                        progressListener.notifyFetchFailure(shardIndex, shardTarget, e);
+                        counter.onFailure(shardIndex, shardTarget, e);
+                    } finally {
+                        // the search context might not be cleared on the node where the fetch was executed for example
+                        // because the action was rejected by the thread pool. in this case we need to send a dedicated
+                        // request to clear the search context.
+                        releaseIrrelevantSearchContext(querySearchResult);
+                    }
+                }
+            });
     }
 
     /**
