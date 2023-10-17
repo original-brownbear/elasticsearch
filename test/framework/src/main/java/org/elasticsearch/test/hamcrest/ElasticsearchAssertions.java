@@ -223,8 +223,36 @@ public class ElasticsearchAssertions {
         return msg.toString();
     }
 
+    public static void assertNoSearchHits(SearchRequestBuilder searchRequestBuilder) {
+        var searchResponse = searchRequestBuilder.get();
+        try {
+            assertNoSearchHits(searchResponse);
+        } finally {
+            searchResponse.decRef();
+        }
+    }
+
     public static void assertNoSearchHits(SearchResponse searchResponse) {
         assertThat(searchResponse.getHits().getHits(), emptyArray());
+    }
+
+    public static void assertSearchHitsExactly(SearchRequestBuilder searchRequestBuilder, String... ids) {
+        var res = searchRequestBuilder.get();
+        try {
+            assertHitCount(res, ids.length);
+            assertSearchHits(res, ids);
+        } finally {
+            res.decRef();
+        }
+    }
+
+    public static void assertSearchHits(SearchRequestBuilder searchRequestBuilder, String... ids) {
+        var res = searchRequestBuilder.get();
+        try {
+            assertSearchHits(res, ids);
+        } finally {
+            res.decRef();
+        }
     }
 
     public static void assertSearchHits(SearchResponse searchResponse, String... ids) {
@@ -251,6 +279,15 @@ public class ElasticsearchAssertions {
             searchResponse.getHits().getHits(),
             transformedArrayItemsMatch(SearchHit::getId, arrayContaining(ids))
         );
+    }
+
+    public static void assertHitCount(SearchRequestBuilder searchRequestBuilder, long expectedHitCount) {
+        var res = searchRequestBuilder.get();
+        try {
+            assertHitCount(res, expectedHitCount);
+        } finally {
+            res.decRef();
+        }
     }
 
     public static void assertHitCount(SearchResponse countResponse, long expectedHitCount) {

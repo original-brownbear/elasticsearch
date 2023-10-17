@@ -13,6 +13,7 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
@@ -47,10 +48,7 @@ import static org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders.
 import static org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders.gaussDecayFunction;
 import static org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders.linearDecayFunction;
 import static org.elasticsearch.search.builder.SearchSourceBuilder.searchSource;
-import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
-import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNoFailures;
-import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertOrderedSearchHits;
-import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertSearchHits;
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.*;
 import static org.elasticsearch.xcontent.XContentFactory.jsonBuilder;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.closeTo;
@@ -178,12 +176,10 @@ public class DecayFunctionScoreIT extends ESIntegTestCase {
         assertThat(sh.getAt(1).getId(), equalTo("2"));
         // Test Lin
 
-        response = client().search(
-            new SearchRequest(new String[] {}).searchType(SearchType.QUERY_THEN_FETCH).source(searchSource().query(baseQuery))
+        assertHitCount(
+            client().prepareSearch().setSearchType(SearchType.QUERY_THEN_FETCH).setSource(searchSource().query(baseQuery)),
+            numDummyDocs + 2L
         );
-        sr = response.actionGet();
-        sh = sr.getHits();
-        assertThat(sh.getTotalHits().value, equalTo((long) (numDummyDocs + 2)));
 
         response = client().search(
             new SearchRequest(new String[] {}).searchType(SearchType.QUERY_THEN_FETCH)
@@ -1099,36 +1095,30 @@ public class DecayFunctionScoreIT extends ESIntegTestCase {
 
         indexRandom(true, doc1, doc2);
 
-        ActionFuture<SearchResponse> response = client().search(new SearchRequest(new String[] {}).source(searchSource().query(baseQuery)));
-        SearchResponse sr = response.actionGet();
-        assertSearchHits(sr, "1", "2");
-        SearchHits sh = sr.getHits();
-        assertThat(sh.getTotalHits().value, equalTo((long) (2)));
+        assertSearchHitsExactly(client().prepareSearch().setSource(searchSource().query(baseQuery)), "1", "2");
 
         List<Float> lonlat = new ArrayList<>();
         lonlat.add(20f);
         lonlat.add(10f);
-        response = client().search(
-            new SearchRequest(new String[] {}).source(
+        SearchRequestBuilder response = client().prepareSearch()
+            .setSource(
                 searchSource().query(
                     functionScoreQuery(baseQuery, gaussDecayFunction("loc", lonlat, "1000km").setMultiValueMode(MultiValueMode.MIN))
                 )
-            )
-        );
-        sr = response.actionGet();
+            );
+        SearchResponse sr = response.get();
         assertSearchHits(sr, "1", "2");
-        sh = sr.getHits();
+        SearchHits sh = sr.getHits();
 
         assertThat(sh.getAt(0).getId(), equalTo("1"));
         assertThat(sh.getAt(1).getId(), equalTo("2"));
-        response = client().search(
-            new SearchRequest(new String[] {}).source(
+        response = client().prepareSearch()
+            .setSource(
                 searchSource().query(
                     functionScoreQuery(baseQuery, gaussDecayFunction("loc", lonlat, "1000km").setMultiValueMode(MultiValueMode.MAX))
                 )
-            )
-        );
-        sr = response.actionGet();
+            );
+        sr = response.get();
         assertSearchHits(sr, "1", "2");
         sh = sr.getHits();
 
@@ -1149,28 +1139,26 @@ public class DecayFunctionScoreIT extends ESIntegTestCase {
             .setSource(jsonBuilder().startObject().field("test", "value").field("num", 1.0).endObject());
 
         indexRandom(true, doc1, doc2);
-        response = client().search(
-            new SearchRequest(new String[] {}).source(
+        response = client().prepareSearch()
+            .setSource(
                 searchSource().query(
                     functionScoreQuery(baseQuery, linearDecayFunction("num", "0", "10").setMultiValueMode(MultiValueMode.SUM))
                 )
-            )
-        );
-        sr = response.actionGet();
+            );
+        sr = response.get();
         assertSearchHits(sr, "1", "2");
         sh = sr.getHits();
 
         assertThat(sh.getAt(0).getId(), equalTo("2"));
         assertThat(sh.getAt(1).getId(), equalTo("1"));
         assertThat(1.0 - sh.getAt(0).getScore(), closeTo((1.0 - sh.getAt(1).getScore()) / 3.0, 1.e-6d));
-        response = client().search(
-            new SearchRequest(new String[] {}).source(
+        response = client().prepareSearch()
+            .setSource(
                 searchSource().query(
                     functionScoreQuery(baseQuery, linearDecayFunction("num", "0", "10").setMultiValueMode(MultiValueMode.AVG))
                 )
-            )
-        );
-        sr = response.actionGet();
+            );
+        sr = response.get();
         assertSearchHits(sr, "1", "2");
         sh = sr.getHits();
         assertThat((double) (sh.getAt(0).getScore()), closeTo((sh.getAt(1).getScore()), 1.e-6d));

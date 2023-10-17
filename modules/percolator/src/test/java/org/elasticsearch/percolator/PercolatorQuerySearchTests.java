@@ -47,7 +47,7 @@ import static org.elasticsearch.index.query.QueryBuilders.rangeQuery;
 import static org.elasticsearch.index.query.QueryBuilders.scriptQuery;
 import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHitCount;
-import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertSearchHits;
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertSearchHitsExactly;
 import static org.elasticsearch.xcontent.XContentFactory.jsonBuilder;
 import static org.hamcrest.Matchers.equalTo;
 
@@ -87,17 +87,17 @@ public class PercolatorQuerySearchTests extends ESSingleNodeTestCase {
             .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE)
             .execute()
             .actionGet();
-        SearchResponse response = client().prepareSearch("index")
-            .setQuery(
-                new PercolateQueryBuilder(
-                    "query",
-                    BytesReference.bytes(jsonBuilder().startObject().field("field1", "b").endObject()),
-                    XContentType.JSON
-                )
-            )
-            .get();
-        assertHitCount(response, 1);
-        assertSearchHits(response, "1");
+        assertSearchHitsExactly(
+            client().prepareSearch("index")
+                .setQuery(
+                    new PercolateQueryBuilder(
+                        "query",
+                        BytesReference.bytes(jsonBuilder().startObject().field("field1", "b").endObject()),
+                        XContentType.JSON
+                    )
+                ),
+            "1"
+        );
     }
 
     public void testPercolateQueryWithNestedDocuments_doNotLeakBitsetCacheEntries() throws Exception {
@@ -262,18 +262,17 @@ public class PercolatorQuerySearchTests extends ESSingleNodeTestCase {
             .setSource(jsonBuilder().startObject().field("query", matchQuery("field1", "value")).endObject())
             .get();
         indicesAdmin().prepareRefresh().get();
-
-        SearchResponse response = client().prepareSearch("test")
-            .setQuery(
-                new PercolateQueryBuilder(
-                    "query",
-                    BytesReference.bytes(jsonBuilder().startObject().field("field1", "value").endObject()),
-                    XContentType.JSON
-                )
-            )
-            .get();
-        assertHitCount(response, 1);
-        assertSearchHits(response, "1");
+        assertSearchHitsExactly(
+            client().prepareSearch("test")
+                .setQuery(
+                    new PercolateQueryBuilder(
+                        "query",
+                        BytesReference.bytes(jsonBuilder().startObject().field("field1", "value").endObject()),
+                        XContentType.JSON
+                    )
+                ),
+            "1"
+        );
     }
 
     public void testRangeQueriesWithNow() throws Exception {

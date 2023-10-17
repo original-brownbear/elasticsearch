@@ -1708,15 +1708,15 @@ public class ChildQuerySearchIT extends ParentChildTestCase {
         refresh();
 
         // make sure that when we explicitly set a type, the inner query is executed in the context of the child type instead
-        SearchResponse searchResponse = client().prepareSearch("test")
-            .setQuery(hasChildQuery("child-type", new IdsQueryBuilder().addIds("child-id"), ScoreMode.None))
-            .get();
-        assertSearchHits(searchResponse, "parent-id");
+        assertSearchHits(
+            client().prepareSearch("test").setQuery(hasChildQuery("child-type", new IdsQueryBuilder().addIds("child-id"), ScoreMode.None)),
+            "parent-id"
+        );
         // make sure that when we explicitly set a type, the inner query is executed in the context of the parent type instead
-        searchResponse = client().prepareSearch("test")
-            .setQuery(hasParentQuery("parent-type", new IdsQueryBuilder().addIds("parent-id"), false))
-            .get();
-        assertSearchHits(searchResponse, "child-id");
+        assertSearchHits(
+            client().prepareSearch("test").setQuery(hasParentQuery("parent-type", new IdsQueryBuilder().addIds("parent-id"), false)),
+            "child-id"
+        );
     }
 
     public void testHighlightersIgnoreParentChild() throws IOException {

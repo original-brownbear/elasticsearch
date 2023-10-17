@@ -51,6 +51,7 @@ import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertFirs
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHitCount;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNoFailures;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertSearchHits;
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertSearchHitsExactly;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.hasId;
 import static org.elasticsearch.xcontent.XContentFactory.jsonBuilder;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -84,13 +85,11 @@ public class SimpleQueryStringIT extends ESIntegTestCase {
             client().prepareIndex("test").setId("6").setSource("otherbody", "spaghetti")
         );
 
-        SearchResponse searchResponse = client().prepareSearch().setQuery(simpleQueryStringQuery("foo bar")).get();
-        assertHitCount(searchResponse, 3L);
-        assertSearchHits(searchResponse, "1", "2", "3");
+        assertSearchHitsExactly(client().prepareSearch().setQuery(simpleQueryStringQuery("foo bar")), "1", "2", "3");
 
         // Tests boost value setting. In this case doc 1 should always be ranked above the other
         // two matches.
-        searchResponse = client().prepareSearch()
+        var searchResponse = client().prepareSearch()
             .setQuery(boolQuery().should(simpleQueryStringQuery("\"foo bar\"").boost(10.0f)).should(termQuery("body", "eggplant")))
             .get();
         assertHitCount(searchResponse, 2L);
@@ -100,9 +99,11 @@ public class SimpleQueryStringIT extends ESIntegTestCase {
         assertHitCount(searchResponse, 1L);
         assertFirstHit(searchResponse, hasId("3"));
 
-        searchResponse = client().prepareSearch().setQuery(simpleQueryStringQuery("\"quux baz\" +(eggplant | spaghetti)")).get();
-        assertHitCount(searchResponse, 2L);
-        assertSearchHits(searchResponse, "4", "5");
+        assertSearchHitsExactly(
+            client().prepareSearch().setQuery(simpleQueryStringQuery("\"quux baz\" +(eggplant | spaghetti)")),
+            "4",
+            "5"
+        );
 
         searchResponse = client().prepareSearch().setQuery(simpleQueryStringQuery("eggplants").analyzer("mock_snowball")).get();
         assertHitCount(searchResponse, 1L);
@@ -116,9 +117,7 @@ public class SimpleQueryStringIT extends ESIntegTestCase {
         assertSearchHits(searchResponse, "5", "6");
         assertThat(searchResponse.getHits().getAt(0).getMatchedQueries()[0], equalTo("myquery"));
 
-        searchResponse = client().prepareSearch().setQuery(simpleQueryStringQuery("spaghetti").field("*body")).get();
-        assertHitCount(searchResponse, 2L);
-        assertSearchHits(searchResponse, "5", "6");
+        assertSearchHitsExactly(client().prepareSearch().setQuery(simpleQueryStringQuery("spaghetti").field("*body")), "5", "6");
     }
 
     public void testSimpleQueryStringMinimumShouldMatch() throws Exception {
@@ -134,31 +133,31 @@ public class SimpleQueryStringIT extends ESIntegTestCase {
         );
 
         logger.info("--> query 1");
-        SearchResponse searchResponse = client().prepareSearch().setQuery(simpleQueryStringQuery("foo bar").minimumShouldMatch("2")).get();
-        assertHitCount(searchResponse, 2L);
-        assertSearchHits(searchResponse, "3", "4");
+        assertSearchHitsExactly(client().prepareSearch().setQuery(simpleQueryStringQuery("foo bar").minimumShouldMatch("2")), "3", "4");
 
         logger.info("--> query 2");
-        searchResponse = client().prepareSearch()
-            .setQuery(simpleQueryStringQuery("foo bar").field("body").field("body2").minimumShouldMatch("2"))
-            .get();
-        assertHitCount(searchResponse, 2L);
-        assertSearchHits(searchResponse, "3", "4");
+        assertSearchHitsExactly(
+            client().prepareSearch().setQuery(simpleQueryStringQuery("foo bar").field("body").field("body2").minimumShouldMatch("2")),
+            "3",
+            "4"
+        );
 
         // test case from #13884
         logger.info("--> query 3");
-        searchResponse = client().prepareSearch()
-            .setQuery(simpleQueryStringQuery("foo").field("body").field("body2").field("body3").minimumShouldMatch("-50%"))
-            .get();
-        assertHitCount(searchResponse, 3L);
-        assertSearchHits(searchResponse, "1", "3", "4");
+        assertSearchHitsExactly(
+            client().prepareSearch()
+                .setQuery(simpleQueryStringQuery("foo").field("body").field("body2").field("body3").minimumShouldMatch("-50%")),
+            "1",
+            "3",
+            "4"
+        );
 
         logger.info("--> query 4");
-        searchResponse = client().prepareSearch()
-            .setQuery(simpleQueryStringQuery("foo bar baz").field("body").field("body2").minimumShouldMatch("70%"))
-            .get();
-        assertHitCount(searchResponse, 2L);
-        assertSearchHits(searchResponse, "3", "4");
+        assertSearchHitsExactly(
+            client().prepareSearch().setQuery(simpleQueryStringQuery("foo bar baz").field("body").field("body2").minimumShouldMatch("70%")),
+            "3",
+            "4"
+        );
 
         indexRandom(
             true,
@@ -170,23 +169,32 @@ public class SimpleQueryStringIT extends ESIntegTestCase {
         );
 
         logger.info("--> query 5");
-        searchResponse = client().prepareSearch()
-            .setQuery(simpleQueryStringQuery("foo bar").field("body").field("body2").minimumShouldMatch("2"))
-            .get();
-        assertHitCount(searchResponse, 4L);
-        assertSearchHits(searchResponse, "3", "4", "7", "8");
+        assertSearchHitsExactly(
+            client().prepareSearch().setQuery(simpleQueryStringQuery("foo bar").field("body").field("body2").minimumShouldMatch("2")),
+            "3",
+            "4",
+            "7",
+            "8"
+        );
 
         logger.info("--> query 6");
-        searchResponse = client().prepareSearch().setQuery(simpleQueryStringQuery("foo bar").minimumShouldMatch("2")).get();
-        assertHitCount(searchResponse, 5L);
-        assertSearchHits(searchResponse, "3", "4", "6", "7", "8");
+        assertSearchHitsExactly(
+            client().prepareSearch().setQuery(simpleQueryStringQuery("foo bar").minimumShouldMatch("2")),
+            "3",
+            "4",
+            "6",
+            "7",
+            "8"
+        );
 
         logger.info("--> query 7");
-        searchResponse = client().prepareSearch()
-            .setQuery(simpleQueryStringQuery("foo bar baz").field("body2").field("other").minimumShouldMatch("70%"))
-            .get();
-        assertHitCount(searchResponse, 3L);
-        assertSearchHits(searchResponse, "6", "7", "8");
+        assertSearchHitsExactly(
+            client().prepareSearch()
+                .setQuery(simpleQueryStringQuery("foo bar baz").field("body2").field("other").minimumShouldMatch("70%")),
+            "6",
+            "7",
+            "8"
+        );
     }
 
     public void testNestedFieldSimpleQueryString() throws IOException {
@@ -211,21 +219,10 @@ public class SimpleQueryStringIT extends ESIntegTestCase {
         client().prepareIndex("test").setId("1").setSource("body", "foo bar baz").get();
         refresh();
 
-        SearchResponse searchResponse = client().prepareSearch().setQuery(simpleQueryStringQuery("foo bar baz").field("body")).get();
-        assertHitCount(searchResponse, 1L);
-        assertSearchHits(searchResponse, "1");
-
-        searchResponse = client().prepareSearch().setQuery(simpleQueryStringQuery("foo bar baz").field("body")).get();
-        assertHitCount(searchResponse, 1L);
-        assertSearchHits(searchResponse, "1");
-
-        searchResponse = client().prepareSearch().setQuery(simpleQueryStringQuery("foo bar baz").field("body.sub")).get();
-        assertHitCount(searchResponse, 1L);
-        assertSearchHits(searchResponse, "1");
-
-        searchResponse = client().prepareSearch().setQuery(simpleQueryStringQuery("foo bar baz").field("body.sub")).get();
-        assertHitCount(searchResponse, 1L);
-        assertSearchHits(searchResponse, "1");
+        assertSearchHitsExactly(client().prepareSearch().setQuery(simpleQueryStringQuery("foo bar baz").field("body")), "1");
+        assertSearchHitsExactly(client().prepareSearch().setQuery(simpleQueryStringQuery("foo bar baz").field("body")), "1");
+        assertSearchHitsExactly(client().prepareSearch().setQuery(simpleQueryStringQuery("foo bar baz").field("body.sub")), "1");
+        assertSearchHitsExactly(client().prepareSearch().setQuery(simpleQueryStringQuery("foo bar baz").field("body.sub")), "1");
     }
 
     public void testSimpleQueryStringFlags() throws ExecutionException, InterruptedException {

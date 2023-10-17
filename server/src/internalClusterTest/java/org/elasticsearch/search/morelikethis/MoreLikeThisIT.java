@@ -534,14 +534,15 @@ public class MoreLikeThisIT extends ESIntegTestCase {
         assertOrderedSearchHits(response, "2", "1");
 
         logger.info("Running More Like This with include false");
-        response = client().prepareSearch()
-            .setQuery(
-                new MoreLikeThisQueryBuilder(null, new Item[] { new Item("test", "1") }).minTermFreq(1)
-                    .minDocFreq(1)
-                    .minimumShouldMatch("0%")
-            )
-            .get();
-        assertSearchHits(response, "2");
+        assertSearchHits(
+            client().prepareSearch()
+                .setQuery(
+                    new MoreLikeThisQueryBuilder(null, new Item[] { new Item("test", "1") }).minTermFreq(1)
+                        .minDocFreq(1)
+                        .minimumShouldMatch("0%")
+                ),
+            "2"
+        );
     }
 
     public void testSimpleMoreLikeThisIds() throws Exception {
