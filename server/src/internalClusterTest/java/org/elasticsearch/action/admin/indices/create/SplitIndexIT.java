@@ -24,6 +24,7 @@ import org.elasticsearch.action.admin.indices.stats.ShardStats;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexRequestBuilder;
+import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.cluster.ClusterState;
@@ -245,15 +246,9 @@ public class SplitIndexIT extends ESIntegTestCase {
             assertNested("first_split", numDocs);
             assertNested("second_split", numDocs);
         }
-        assertAllUniqueDocs(
-            client().prepareSearch("second_split").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")).get(),
-            numDocs
-        );
-        assertAllUniqueDocs(
-            client().prepareSearch("first_split").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")).get(),
-            numDocs
-        );
-        assertAllUniqueDocs(client().prepareSearch("source").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")).get(), numDocs);
+        assertAllUniqueDocs(client().prepareSearch("second_split").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")), numDocs);
+        assertAllUniqueDocs(client().prepareSearch("first_split").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")), numDocs);
+        assertAllUniqueDocs(client().prepareSearch("source").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")), numDocs);
     }
 
     public void assertNested(String index, int numDocs) {
@@ -265,13 +260,18 @@ public class SplitIndexIT extends ESIntegTestCase {
         assertThat(searchResponse.getHits().getTotalHits().value, equalTo((long) numDocs));
     }
 
-    public void assertAllUniqueDocs(SearchResponse response, int numDocs) {
-        Set<String> ids = new HashSet<>();
-        for (int i = 0; i < response.getHits().getHits().length; i++) {
-            String id = response.getHits().getHits()[i].getId();
-            assertTrue("found ID " + id + " more than once", ids.add(id));
+    public void assertAllUniqueDocs(SearchRequestBuilder requestBuilder, int numDocs) {
+        var response = requestBuilder.get();
+        try {
+            Set<String> ids = new HashSet<>();
+            for (int i = 0; i < response.getHits().getHits().length; i++) {
+                String id = response.getHits().getHits()[i].getId();
+                assertTrue("found ID " + id + " more than once", ids.add(id));
+            }
+            assertEquals(numDocs, ids.size());
+        } finally {
+            response.decRef();
         }
-        assertEquals(numDocs, ids.size());
     }
 
     public void testSplitIndexPrimaryTerm() throws Exception {

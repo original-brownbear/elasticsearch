@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Set;
 
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHitCount;
 import static org.hamcrest.Matchers.equalTo;
 
 @ClusterScope(scope = Scope.TEST, numDataNodes = 0)
@@ -51,16 +52,7 @@ public class FilteringAllocationIT extends ESIntegTestCase {
             client().prepareIndex("test").setId(Integer.toString(i)).setSource("field", "value" + i).execute().actionGet();
         }
         indicesAdmin().prepareRefresh().execute().actionGet();
-        assertThat(
-            client().prepareSearch()
-                .setSize(0)
-                .setQuery(QueryBuilders.matchAllQuery())
-                .execute()
-                .actionGet()
-                .getHits()
-                .getTotalHits().value,
-            equalTo(100L)
-        );
+        assertHitCount(client().prepareSearch().setSize(0).setQuery(QueryBuilders.matchAllQuery()), 100L);
 
         final boolean closed = randomBoolean();
         if (closed) {
@@ -88,16 +80,7 @@ public class FilteringAllocationIT extends ESIntegTestCase {
         }
 
         indicesAdmin().prepareRefresh().execute().actionGet();
-        assertThat(
-            client().prepareSearch()
-                .setSize(0)
-                .setQuery(QueryBuilders.matchAllQuery())
-                .execute()
-                .actionGet()
-                .getHits()
-                .getTotalHits().value,
-            equalTo(100L)
-        );
+        assertHitCount(client().prepareSearch().setSize(0).setQuery(QueryBuilders.matchAllQuery()), 100L);
     }
 
     public void testAutoExpandReplicasToFilteredNodes() {
@@ -150,16 +133,7 @@ public class FilteringAllocationIT extends ESIntegTestCase {
             client().prepareIndex("test").setId(Integer.toString(i)).setSource("field", "value" + i).execute().actionGet();
         }
         indicesAdmin().prepareRefresh().execute().actionGet();
-        assertThat(
-            client().prepareSearch()
-                .setSize(0)
-                .setQuery(QueryBuilders.matchAllQuery())
-                .execute()
-                .actionGet()
-                .getHits()
-                .getTotalHits().value,
-            equalTo(100L)
-        );
+        assertHitCount(client().prepareSearch().setSize(0).setQuery(QueryBuilders.matchAllQuery()), 100L);
 
         final boolean closed = randomBoolean();
         if (closed) {

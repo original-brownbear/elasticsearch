@@ -72,6 +72,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNoFailures;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 
@@ -310,7 +311,9 @@ public class TransportSearchIT extends ESIntegTestCase {
         Arrays.fill(validCheckpoints, SequenceNumbers.UNASSIGNED_SEQ_NO);
 
         // no exception
-        client().prepareSearch("testAlias").setWaitForCheckpoints(Collections.singletonMap("testAlias", validCheckpoints)).get();
+        assertNoFailures(
+            client().prepareSearch("testAlias").setWaitForCheckpoints(Collections.singletonMap("testAlias", validCheckpoints))
+        );
 
         IllegalArgumentException e = expectThrows(
             IllegalArgumentException.class,
@@ -375,7 +378,7 @@ public class TransportSearchIT extends ESIntegTestCase {
             assertAcked(prepareCreate("test2").setSettings(Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, numPrimaries2)));
 
             // no exception
-            client().prepareSearch("test1").get();
+            assertNoFailures(client().prepareSearch("test1"));
 
             updateClusterSettings(Settings.builder().put(TransportSearchAction.SHARD_COUNT_LIMIT_SETTING.getKey(), numPrimaries1 - 1));
 
@@ -388,7 +391,7 @@ public class TransportSearchIT extends ESIntegTestCase {
             updateClusterSettings(Settings.builder().put(TransportSearchAction.SHARD_COUNT_LIMIT_SETTING.getKey(), numPrimaries1));
 
             // no exception
-            client().prepareSearch("test1").get();
+            assertNoFailures(client().prepareSearch("test1"));
 
             e = expectThrows(IllegalArgumentException.class, () -> client().prepareSearch("test1", "test2").get());
             assertThat(

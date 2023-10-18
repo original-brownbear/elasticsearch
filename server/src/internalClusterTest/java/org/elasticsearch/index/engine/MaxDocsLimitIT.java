@@ -9,7 +9,6 @@
 package org.elasticsearch.index.engine;
 
 import org.elasticsearch.action.DocWriteResponse;
-import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.CollectionUtils;
@@ -108,26 +107,20 @@ public class MaxDocsLimitIT extends ESIntegTestCase {
         );
         assertThat(deleteError.getMessage(), containsString("Number of documents in the index can't exceed [" + maxDocs.get() + "]"));
         indicesAdmin().prepareRefresh("test").get();
-        SearchResponse searchResponse = client().prepareSearch("test")
-            .setQuery(new MatchAllQueryBuilder())
-            .setTrackTotalHitsUpTo(Integer.MAX_VALUE)
-            .setSize(0)
-            .get();
-        ElasticsearchAssertions.assertNoFailures(searchResponse);
-        assertThat(searchResponse.getHits().getTotalHits().value, equalTo((long) maxDocs.get()));
+        ElasticsearchAssertions.assertHitCountWithoutFailures(
+            client().prepareSearch("test").setQuery(new MatchAllQueryBuilder()).setTrackTotalHitsUpTo(Integer.MAX_VALUE).setSize(0),
+            maxDocs.get()
+        );
         if (randomBoolean()) {
             indicesAdmin().prepareFlush("test").get();
         }
         internalCluster().fullRestart();
         internalCluster().ensureAtLeastNumDataNodes(2);
         ensureGreen("test");
-        searchResponse = client().prepareSearch("test")
-            .setQuery(new MatchAllQueryBuilder())
-            .setTrackTotalHitsUpTo(Integer.MAX_VALUE)
-            .setSize(0)
-            .get();
-        ElasticsearchAssertions.assertNoFailures(searchResponse);
-        assertThat(searchResponse.getHits().getTotalHits().value, equalTo((long) maxDocs.get()));
+        ElasticsearchAssertions.assertHitCountWithoutFailures(
+            client().prepareSearch("test").setQuery(new MatchAllQueryBuilder()).setTrackTotalHitsUpTo(Integer.MAX_VALUE).setSize(0),
+            maxDocs.get()
+        );
     }
 
     public void testMaxDocsLimitConcurrently() throws Exception {
@@ -137,13 +130,10 @@ public class MaxDocsLimitIT extends ESIntegTestCase {
         assertThat(indexingResult.numFailures, greaterThan(0));
         assertThat(indexingResult.numSuccess, both(greaterThan(0)).and(lessThanOrEqualTo(maxDocs.get())));
         indicesAdmin().prepareRefresh("test").get();
-        SearchResponse searchResponse = client().prepareSearch("test")
-            .setQuery(new MatchAllQueryBuilder())
-            .setTrackTotalHitsUpTo(Integer.MAX_VALUE)
-            .setSize(0)
-            .get();
-        ElasticsearchAssertions.assertNoFailures(searchResponse);
-        assertThat(searchResponse.getHits().getTotalHits().value, equalTo((long) indexingResult.numSuccess));
+        ElasticsearchAssertions.assertHitCountWithoutFailures(
+            client().prepareSearch("test").setQuery(new MatchAllQueryBuilder()).setTrackTotalHitsUpTo(Integer.MAX_VALUE).setSize(0),
+            indexingResult.numSuccess
+        );
         int totalSuccess = indexingResult.numSuccess;
         while (totalSuccess < maxDocs.get()) {
             indexingResult = indexDocs(between(1, 10), between(1, 8));
@@ -155,13 +145,10 @@ public class MaxDocsLimitIT extends ESIntegTestCase {
             assertThat(indexingResult.numSuccess, equalTo(0));
         }
         indicesAdmin().prepareRefresh("test").get();
-        searchResponse = client().prepareSearch("test")
-            .setQuery(new MatchAllQueryBuilder())
-            .setTrackTotalHitsUpTo(Integer.MAX_VALUE)
-            .setSize(0)
-            .get();
-        ElasticsearchAssertions.assertNoFailures(searchResponse);
-        assertThat(searchResponse.getHits().getTotalHits().value, equalTo((long) totalSuccess));
+        ElasticsearchAssertions.assertHitCountWithoutFailures(
+            client().prepareSearch("test").setQuery(new MatchAllQueryBuilder()).setTrackTotalHitsUpTo(Integer.MAX_VALUE).setSize(0),
+            totalSuccess
+        );
     }
 
     record IndexingResult(int numSuccess, int numFailures) {}

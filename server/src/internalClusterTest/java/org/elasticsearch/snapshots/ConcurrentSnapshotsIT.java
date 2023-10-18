@@ -54,6 +54,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertFileExists;
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHitCount;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
@@ -941,7 +942,7 @@ public class ConcurrentSnapshotsIT extends AbstractSnapshotIntegTestCase {
             indexDoc(testIndex, Integer.toString(i), "foo", "bar" + i);
         }
         refresh();
-        assertThat(client().prepareSearch(testIndex).setSize(0).get().getHits().getTotalHits().value, equalTo(100L));
+        assertHitCount(client().prepareSearch(testIndex).setSize(0), 100L);
 
         logger.info("--> start relocations");
         allowNodes(testIndex, 1);

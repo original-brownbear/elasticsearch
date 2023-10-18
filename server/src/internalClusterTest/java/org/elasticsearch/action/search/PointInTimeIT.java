@@ -50,6 +50,7 @@ import java.util.stream.Collectors;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertFailures;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHitCount;
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHitCountWithoutFailures;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNoFailures;
 import static org.hamcrest.Matchers.arrayWithSize;
 import static org.hamcrest.Matchers.empty;
@@ -96,9 +97,10 @@ public class PointInTimeIT extends ESIntegTestCase {
         }
         refresh("test");
         if (randomBoolean()) {
-            SearchResponse resp2 = client().prepareSearch("test").setPreference(null).setQuery(new MatchAllQueryBuilder()).get();
-            assertNoFailures(resp2);
-            assertHitCount(resp2, numDocs - deletedDocs);
+            assertHitCountWithoutFailures(
+                client().prepareSearch("test").setPreference(null).setQuery(new MatchAllQueryBuilder()),
+                numDocs - deletedDocs
+            );
         }
         try {
             SearchResponse resp3 = client().prepareSearch()

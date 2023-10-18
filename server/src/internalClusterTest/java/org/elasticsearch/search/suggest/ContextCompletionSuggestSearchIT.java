@@ -671,10 +671,11 @@ public class ContextCompletionSuggestSearchIT extends ESIntegTestCase {
     }
 
     public void assertSuggestions(String suggestionName, SuggestionBuilder<?> suggestBuilder, String... suggestions) {
-        SearchResponse searchResponse = client().prepareSearch(INDEX)
-            .suggest(new SuggestBuilder().addSuggestion(suggestionName, suggestBuilder))
-            .get();
-        CompletionSuggestSearchIT.assertSuggestions(searchResponse, suggestionName, suggestions);
+        CompletionSuggestSearchIT.assertSuggestions(
+            client().prepareSearch(INDEX).suggest(new SuggestBuilder().addSuggestion(suggestionName, suggestBuilder)),
+            suggestionName,
+            suggestions
+        );
     }
 
     private void createIndexAndMapping(CompletionMappingBuilder completionMappingBuilder) throws IOException {
