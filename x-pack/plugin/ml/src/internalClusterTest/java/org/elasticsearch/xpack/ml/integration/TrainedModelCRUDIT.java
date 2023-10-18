@@ -103,8 +103,7 @@ public class TrainedModelCRUDIT extends MlSingleNodeTestCase {
         client().execute(DeleteTrainedModelAction.INSTANCE, new DeleteTrainedModelAction.Request(modelId)).actionGet();
 
         assertThat(
-            client().prepareSearch(InferenceIndexConstants.nativeDefinitionStore())
-                .setTrackTotalHitsUpTo(1)
+            prepareSearch(InferenceIndexConstants.nativeDefinitionStore()).setTrackTotalHitsUpTo(1)
                 .setSize(0)
                 .get()
                 .getHits()

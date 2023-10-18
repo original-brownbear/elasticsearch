@@ -124,8 +124,7 @@ public class RRFRankSingleShardIT extends ESSingleNodeTestCase {
     public void testTotalDocsSmallerThanSize() {
         float[] queryVector = { 0.0f };
         KnnSearchBuilder knnSearch = new KnnSearchBuilder("vector", queryVector, 3, 3, null);
-        SearchResponse response = client().prepareSearch("tiny_index")
-            .setRankBuilder(new RRFRankBuilder(100, 1))
+        SearchResponse response = prepareSearch("tiny_index").setRankBuilder(new RRFRankBuilder(100, 1))
             .setKnnSearch(List.of(knnSearch))
             .setQuery(QueryBuilders.termQuery("text", "term"))
             .addFetchField("vector")
@@ -155,8 +154,7 @@ public class RRFRankSingleShardIT extends ESSingleNodeTestCase {
     public void testBM25AndKnn() {
         float[] queryVector = { 500.0f };
         KnnSearchBuilder knnSearch = new KnnSearchBuilder("vector_asc", queryVector, 101, 1001, null);
-        SearchResponse response = client().prepareSearch("nrd_index")
-            .setRankBuilder(new RRFRankBuilder(101, 1))
+        SearchResponse response = prepareSearch("nrd_index").setRankBuilder(new RRFRankBuilder(101, 1))
             .setTrackTotalHits(false)
             .setKnnSearch(List.of(knnSearch))
             .setQuery(
@@ -196,8 +194,7 @@ public class RRFRankSingleShardIT extends ESSingleNodeTestCase {
         float[] queryVectorDesc = { 500.0f };
         KnnSearchBuilder knnSearchAsc = new KnnSearchBuilder("vector_asc", queryVectorAsc, 51, 1001, null);
         KnnSearchBuilder knnSearchDesc = new KnnSearchBuilder("vector_desc", queryVectorDesc, 51, 1001, null);
-        SearchResponse response = client().prepareSearch("nrd_index")
-            .setRankBuilder(new RRFRankBuilder(51, 1))
+        SearchResponse response = prepareSearch("nrd_index").setRankBuilder(new RRFRankBuilder(51, 1))
             .setTrackTotalHits(true)
             .setKnnSearch(List.of(knnSearchAsc, knnSearchDesc))
             .addFetchField("vector_asc")
@@ -247,8 +244,7 @@ public class RRFRankSingleShardIT extends ESSingleNodeTestCase {
         float[] queryVectorDesc = { 500.0f };
         KnnSearchBuilder knnSearchAsc = new KnnSearchBuilder("vector_asc", queryVectorAsc, 51, 1001, null);
         KnnSearchBuilder knnSearchDesc = new KnnSearchBuilder("vector_desc", queryVectorDesc, 51, 1001, null);
-        SearchResponse response = client().prepareSearch("nrd_index")
-            .setRankBuilder(new RRFRankBuilder(51, 1))
+        SearchResponse response = prepareSearch("nrd_index").setRankBuilder(new RRFRankBuilder(51, 1))
             .setTrackTotalHits(false)
             .setKnnSearch(List.of(knnSearchAsc, knnSearchDesc))
             .setQuery(
@@ -317,8 +313,7 @@ public class RRFRankSingleShardIT extends ESSingleNodeTestCase {
     public void testBM25AndKnnWithBucketAggregation() {
         float[] queryVector = { 500.0f };
         KnnSearchBuilder knnSearch = new KnnSearchBuilder("vector_asc", queryVector, 101, 1001, null);
-        SearchResponse response = client().prepareSearch("nrd_index")
-            .setRankBuilder(new RRFRankBuilder(101, 1))
+        SearchResponse response = prepareSearch("nrd_index").setRankBuilder(new RRFRankBuilder(101, 1))
             .setTrackTotalHits(true)
             .setKnnSearch(List.of(knnSearch))
             .setQuery(
@@ -374,8 +369,7 @@ public class RRFRankSingleShardIT extends ESSingleNodeTestCase {
         float[] queryVectorDesc = { 500.0f };
         KnnSearchBuilder knnSearchAsc = new KnnSearchBuilder("vector_asc", queryVectorAsc, 51, 1001, null);
         KnnSearchBuilder knnSearchDesc = new KnnSearchBuilder("vector_desc", queryVectorDesc, 51, 1001, null);
-        SearchResponse response = client().prepareSearch("nrd_index")
-            .setRankBuilder(new RRFRankBuilder(51, 1))
+        SearchResponse response = prepareSearch("nrd_index").setRankBuilder(new RRFRankBuilder(51, 1))
             .setTrackTotalHits(false)
             .setKnnSearch(List.of(knnSearchAsc, knnSearchDesc))
             .addFetchField("vector_asc")
@@ -441,8 +435,7 @@ public class RRFRankSingleShardIT extends ESSingleNodeTestCase {
         float[] queryVectorDesc = { 500.0f };
         KnnSearchBuilder knnSearchAsc = new KnnSearchBuilder("vector_asc", queryVectorAsc, 51, 1001, null);
         KnnSearchBuilder knnSearchDesc = new KnnSearchBuilder("vector_desc", queryVectorDesc, 51, 1001, null);
-        SearchResponse response = client().prepareSearch("nrd_index")
-            .setRankBuilder(new RRFRankBuilder(51, 1))
+        SearchResponse response = prepareSearch("nrd_index").setRankBuilder(new RRFRankBuilder(51, 1))
             .setTrackTotalHits(true)
             .setKnnSearch(List.of(knnSearchAsc, knnSearchDesc))
             .setQuery(
@@ -527,8 +520,7 @@ public class RRFRankSingleShardIT extends ESSingleNodeTestCase {
 
     public void testMultiBM25() {
         for (SearchType searchType : SearchType.CURRENTLY_SUPPORTED) {
-            SearchResponse response = client().prepareSearch("nrd_index")
-                .setSearchType(searchType)
+            SearchResponse response = prepareSearch("nrd_index").setSearchType(searchType)
                 .setRankBuilder(new RRFRankBuilder(8, 1))
                 .setTrackTotalHits(false)
                 .setSubSearches(
@@ -597,8 +589,7 @@ public class RRFRankSingleShardIT extends ESSingleNodeTestCase {
 
     public void testMultiBM25WithAggregation() {
         for (SearchType searchType : SearchType.CURRENTLY_SUPPORTED) {
-            SearchResponse response = client().prepareSearch("nrd_index")
-                .setSearchType(searchType)
+            SearchResponse response = prepareSearch("nrd_index").setSearchType(searchType)
                 .setRankBuilder(new RRFRankBuilder(8, 1))
                 .setTrackTotalHits(false)
                 .setSubSearches(
@@ -684,8 +675,7 @@ public class RRFRankSingleShardIT extends ESSingleNodeTestCase {
     public void testMultiBM25AndSingleKnn() {
         float[] queryVector = { 500.0f };
         KnnSearchBuilder knnSearch = new KnnSearchBuilder("vector_asc", queryVector, 101, 1001, null);
-        SearchResponse response = client().prepareSearch("nrd_index")
-            .setRankBuilder(new RRFRankBuilder(101, 1))
+        SearchResponse response = prepareSearch("nrd_index").setRankBuilder(new RRFRankBuilder(101, 1))
             .setTrackTotalHits(false)
             .setKnnSearch(List.of(knnSearch))
             .setSubSearches(
@@ -741,8 +731,7 @@ public class RRFRankSingleShardIT extends ESSingleNodeTestCase {
     public void testMultiBM25AndSingleKnnWithAggregation() {
         float[] queryVector = { 500.0f };
         KnnSearchBuilder knnSearch = new KnnSearchBuilder("vector_asc", queryVector, 101, 1001, null);
-        SearchResponse response = client().prepareSearch("nrd_index")
-            .setRankBuilder(new RRFRankBuilder(101, 1))
+        SearchResponse response = prepareSearch("nrd_index").setRankBuilder(new RRFRankBuilder(101, 1))
             .setTrackTotalHits(false)
             .setKnnSearch(List.of(knnSearch))
             .setSubSearches(
@@ -816,8 +805,7 @@ public class RRFRankSingleShardIT extends ESSingleNodeTestCase {
         float[] queryVectorDesc = { 500.0f };
         KnnSearchBuilder knnSearchAsc = new KnnSearchBuilder("vector_asc", queryVectorAsc, 101, 1001, null);
         KnnSearchBuilder knnSearchDesc = new KnnSearchBuilder("vector_desc", queryVectorDesc, 101, 1001, null);
-        SearchResponse response = client().prepareSearch("nrd_index")
-            .setRankBuilder(new RRFRankBuilder(101, 1))
+        SearchResponse response = prepareSearch("nrd_index").setRankBuilder(new RRFRankBuilder(101, 1))
             .setTrackTotalHits(false)
             .setKnnSearch(List.of(knnSearchAsc, knnSearchDesc))
             .setSubSearches(
@@ -877,8 +865,7 @@ public class RRFRankSingleShardIT extends ESSingleNodeTestCase {
         float[] queryVectorDesc = { 500.0f };
         KnnSearchBuilder knnSearchAsc = new KnnSearchBuilder("vector_asc", queryVectorAsc, 101, 1001, null);
         KnnSearchBuilder knnSearchDesc = new KnnSearchBuilder("vector_desc", queryVectorDesc, 101, 1001, null);
-        SearchResponse response = client().prepareSearch("nrd_index")
-            .setRankBuilder(new RRFRankBuilder(101, 1))
+        SearchResponse response = prepareSearch("nrd_index").setRankBuilder(new RRFRankBuilder(101, 1))
             .setTrackTotalHits(false)
             .setKnnSearch(List.of(knnSearchAsc, knnSearchDesc))
             .setSubSearches(

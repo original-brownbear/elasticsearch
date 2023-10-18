@@ -73,8 +73,7 @@ public class QueryRescorerIT extends ESIntegTestCase {
 
         int numShards = getNumShards("test").numPrimaries;
         for (int j = 0; j < iters; j++) {
-            SearchResponse searchResponse = client().prepareSearch()
-                .setQuery(QueryBuilders.matchAllQuery())
+            SearchResponse searchResponse = prepareSearch().setQuery(QueryBuilders.matchAllQuery())
                 .setRescorer(
                     new QueryRescorerBuilder(
                         functionScoreQuery(matchAllQuery(), ScoreFunctionBuilders.weightFactorFunction(100)).boostMode(
@@ -123,8 +122,9 @@ public class QueryRescorerIT extends ESIntegTestCase {
             .setSource("field1", "quick huge brown", "field2", "the quick lazy huge brown fox jumps over the tree")
             .get();
         refresh();
-        SearchResponse searchResponse = client().prepareSearch()
-            .setQuery(QueryBuilders.matchQuery("field1", "the quick brown").operator(Operator.OR))
+        SearchResponse searchResponse = prepareSearch().setQuery(
+            QueryBuilders.matchQuery("field1", "the quick brown").operator(Operator.OR)
+        )
             .setRescorer(
                 new QueryRescorerBuilder(matchPhraseQuery("field1", "quick brown").slop(2).boost(4.0f)).setRescoreQueryWeight(2),
                 5
@@ -137,8 +137,7 @@ public class QueryRescorerIT extends ESIntegTestCase {
         assertThat(searchResponse.getHits().getHits()[1].getId(), equalTo("3"));
         assertThat(searchResponse.getHits().getHits()[2].getId(), equalTo("2"));
 
-        searchResponse = client().prepareSearch()
-            .setQuery(QueryBuilders.matchQuery("field1", "the quick brown").operator(Operator.OR))
+        searchResponse = prepareSearch().setQuery(QueryBuilders.matchQuery("field1", "the quick brown").operator(Operator.OR))
             .setRescorer(new QueryRescorerBuilder(matchPhraseQuery("field1", "the quick brown").slop(3)), 5)
             .get();
 
@@ -147,8 +146,7 @@ public class QueryRescorerIT extends ESIntegTestCase {
         assertSecondHit(searchResponse, hasId("2"));
         assertThirdHit(searchResponse, hasId("3"));
 
-        searchResponse = client().prepareSearch()
-            .setQuery(QueryBuilders.matchQuery("field1", "the quick brown").operator(Operator.OR))
+        searchResponse = prepareSearch().setQuery(QueryBuilders.matchQuery("field1", "the quick brown").operator(Operator.OR))
             .setRescorer(new QueryRescorerBuilder(matchPhraseQuery("field1", "the quick brown")), 5)
             .get();
 
@@ -192,8 +190,9 @@ public class QueryRescorerIT extends ESIntegTestCase {
         client().prepareIndex("test").setId("11").setSource("field1", "2st street boston massachusetts").get();
         client().prepareIndex("test").setId("12").setSource("field1", "3st street boston massachusetts").get();
         indicesAdmin().prepareRefresh("test").get();
-        SearchResponse searchResponse = client().prepareSearch()
-            .setQuery(QueryBuilders.matchQuery("field1", "lexington avenue massachusetts").operator(Operator.OR))
+        SearchResponse searchResponse = prepareSearch().setQuery(
+            QueryBuilders.matchQuery("field1", "lexington avenue massachusetts").operator(Operator.OR)
+        )
             .setFrom(0)
             .setSize(5)
             .setRescorer(
@@ -209,8 +208,9 @@ public class QueryRescorerIT extends ESIntegTestCase {
         assertSecondHit(searchResponse, hasId("6"));
         assertThirdHit(searchResponse, hasId("3"));
 
-        searchResponse = client().prepareSearch()
-            .setQuery(QueryBuilders.matchQuery("field1", "lexington avenue massachusetts").operator(Operator.OR))
+        searchResponse = prepareSearch().setQuery(
+            QueryBuilders.matchQuery("field1", "lexington avenue massachusetts").operator(Operator.OR)
+        )
             .setFrom(0)
             .setSize(5)
             .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
@@ -229,8 +229,9 @@ public class QueryRescorerIT extends ESIntegTestCase {
         assertThirdHit(searchResponse, hasId("3"));
 
         // Make sure non-zero from works:
-        searchResponse = client().prepareSearch()
-            .setQuery(QueryBuilders.matchQuery("field1", "lexington avenue massachusetts").operator(Operator.OR))
+        searchResponse = prepareSearch().setQuery(
+            QueryBuilders.matchQuery("field1", "lexington avenue massachusetts").operator(Operator.OR)
+        )
             .setFrom(2)
             .setSize(5)
             .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
@@ -272,8 +273,7 @@ public class QueryRescorerIT extends ESIntegTestCase {
         client().prepareIndex("test").setId("2").setSource("field1", "lexington avenue boston massachusetts road").get();
         indicesAdmin().prepareRefresh("test").get();
 
-        SearchResponse searchResponse = client().prepareSearch()
-            .setQuery(QueryBuilders.matchQuery("field1", "massachusetts"))
+        SearchResponse searchResponse = prepareSearch().setQuery(QueryBuilders.matchQuery("field1", "massachusetts"))
             .setFrom(0)
             .setSize(5)
             .get();
@@ -286,8 +286,7 @@ public class QueryRescorerIT extends ESIntegTestCase {
         assertFourthHit(searchResponse, hasId("2"));
 
         // Now, rescore only top 2 hits w/ proximity:
-        searchResponse = client().prepareSearch()
-            .setQuery(QueryBuilders.matchQuery("field1", "massachusetts"))
+        searchResponse = prepareSearch().setQuery(QueryBuilders.matchQuery("field1", "massachusetts"))
             .setFrom(0)
             .setSize(5)
             .setRescorer(
@@ -306,8 +305,7 @@ public class QueryRescorerIT extends ESIntegTestCase {
         assertFourthHit(searchResponse, hasId("2"));
 
         // Now, rescore only top 3 hits w/ proximity:
-        searchResponse = client().prepareSearch()
-            .setQuery(QueryBuilders.matchQuery("field1", "massachusetts"))
+        searchResponse = prepareSearch().setQuery(QueryBuilders.matchQuery("field1", "massachusetts"))
             .setFrom(0)
             .setSize(5)
             .setRescorer(
@@ -352,8 +350,7 @@ public class QueryRescorerIT extends ESIntegTestCase {
         client().prepareIndex("test").setId("2").setSource("field1", "lexington avenue boston massachusetts road").get();
         indicesAdmin().prepareRefresh("test").get();
 
-        SearchResponse searchResponse = client().prepareSearch()
-            .setQuery(QueryBuilders.matchQuery("field1", "massachusetts").operator(Operator.OR))
+        SearchResponse searchResponse = prepareSearch().setQuery(QueryBuilders.matchQuery("field1", "massachusetts").operator(Operator.OR))
             .setFrom(0)
             .setSize(5)
             .get();
@@ -366,8 +363,7 @@ public class QueryRescorerIT extends ESIntegTestCase {
         assertFourthHit(searchResponse, hasId("2"));
 
         // Now, penalizing rescore (nothing matches the rescore query):
-        searchResponse = client().prepareSearch()
-            .setQuery(QueryBuilders.matchQuery("field1", "massachusetts").operator(Operator.OR))
+        searchResponse = prepareSearch().setQuery(QueryBuilders.matchQuery("field1", "massachusetts").operator(Operator.OR))
             .setFrom(0)
             .setSize(5)
             .setRescorer(
@@ -435,8 +431,7 @@ public class QueryRescorerIT extends ESIntegTestCase {
             int rescoreWindow = between(1, 3) * resultSize;
             String intToEnglish = English.intToEnglish(between(0, numDocs - 1));
             String query = intToEnglish.split(" ")[0];
-            SearchResponse rescored = client().prepareSearch()
-                .setSearchType(SearchType.QUERY_THEN_FETCH)
+            SearchResponse rescored = prepareSearch().setSearchType(SearchType.QUERY_THEN_FETCH)
                 .setPreference("test") // ensure we hit the same shards for tie-breaking
                 .setQuery(QueryBuilders.matchQuery("field1", query).operator(Operator.OR))
                 .setFrom(0)
@@ -449,8 +444,7 @@ public class QueryRescorerIT extends ESIntegTestCase {
                 )
                 .get();
 
-            SearchResponse plain = client().prepareSearch()
-                .setSearchType(SearchType.QUERY_THEN_FETCH)
+            SearchResponse plain = prepareSearch().setSearchType(SearchType.QUERY_THEN_FETCH)
                 .setPreference("test") // ensure we hit the same shards for tie-breaking
                 .setQuery(QueryBuilders.matchQuery("field1", query).operator(Operator.OR))
                 .setFrom(0)
@@ -460,8 +454,7 @@ public class QueryRescorerIT extends ESIntegTestCase {
             // check equivalence
             assertEquivalent(query, plain, rescored);
 
-            rescored = client().prepareSearch()
-                .setSearchType(SearchType.QUERY_THEN_FETCH)
+            rescored = prepareSearch().setSearchType(SearchType.QUERY_THEN_FETCH)
                 .setPreference("test") // ensure we hit the same shards for tie-breaking
                 .setQuery(QueryBuilders.matchQuery("field1", query).operator(Operator.OR))
                 .setFrom(0)
@@ -503,8 +496,7 @@ public class QueryRescorerIT extends ESIntegTestCase {
         refresh();
 
         {
-            SearchResponse searchResponse = client().prepareSearch()
-                .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
+            SearchResponse searchResponse = prepareSearch().setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
                 .setQuery(QueryBuilders.matchQuery("field1", "the quick brown").operator(Operator.OR))
                 .setRescorer(
                     new QueryRescorerBuilder(matchPhraseQuery("field1", "the quick brown").slop(2).boost(4.0f)).setQueryWeight(0.5f)
@@ -550,8 +542,7 @@ public class QueryRescorerIT extends ESIntegTestCase {
                 innerRescoreQuery.setScoreMode(QueryRescoreMode.fromString(scoreModes[innerMode]));
             }
 
-            SearchResponse searchResponse = client().prepareSearch()
-                .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
+            SearchResponse searchResponse = prepareSearch().setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
                 .setQuery(QueryBuilders.matchQuery("field1", "the quick brown").operator(Operator.OR))
                 .setRescorer(innerRescoreQuery, 5)
                 .setExplain(true)
@@ -574,8 +565,7 @@ public class QueryRescorerIT extends ESIntegTestCase {
                     outerRescoreQuery.setScoreMode(QueryRescoreMode.fromString(scoreModes[outerMode]));
                 }
 
-                searchResponse = client().prepareSearch()
-                    .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
+                searchResponse = prepareSearch().setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
                     .setQuery(QueryBuilders.matchQuery("field1", "the quick brown").operator(Operator.OR))
                     .addRescorer(innerRescoreQuery, 5)
                     .addRescorer(outerRescoreQuery.windowSize(10))
@@ -629,8 +619,7 @@ public class QueryRescorerIT extends ESIntegTestCase {
                     rescoreQuery.setScoreMode(QueryRescoreMode.fromString(scoreMode));
                 }
 
-                SearchResponse rescored = client().prepareSearch()
-                    .setPreference("test") // ensure we hit the same shards for tie-breaking
+                SearchResponse rescored = prepareSearch().setPreference("test") // ensure we hit the same shards for tie-breaking
                     .setFrom(0)
                     .setSize(10)
                     .setQuery(query)
@@ -698,7 +687,7 @@ public class QueryRescorerIT extends ESIntegTestCase {
         ).setScoreMode(QueryRescoreMode.Total);
 
         // First set the rescore window large enough that both rescores take effect
-        SearchRequestBuilder request = client().prepareSearch();
+        SearchRequestBuilder request = prepareSearch();
         request.addRescorer(eightIsGreat, numDocs).addRescorer(sevenIsBetter, numDocs);
         SearchResponse response = request.get();
         assertFirstHit(response, hasId("7"));
@@ -772,7 +761,7 @@ public class QueryRescorerIT extends ESIntegTestCase {
         }
         refresh();
 
-        SearchRequestBuilder request = client().prepareSearch();
+        SearchRequestBuilder request = prepareSearch();
         request.setQuery(QueryBuilders.termQuery("text", "hello"));
         request.setFrom(1);
         request.setSize(4);
@@ -790,8 +779,7 @@ public class QueryRescorerIT extends ESIntegTestCase {
 
         Exception exc = expectThrows(
             Exception.class,
-            () -> client().prepareSearch()
-                .addSort(SortBuilders.fieldSort("number"))
+            () -> prepareSearch().addSort(SortBuilders.fieldSort("number"))
                 .setTrackScores(true)
                 .addRescorer(new QueryRescorerBuilder(matchAllQuery()), 50)
                 .get()
@@ -801,8 +789,7 @@ public class QueryRescorerIT extends ESIntegTestCase {
 
         exc = expectThrows(
             Exception.class,
-            () -> client().prepareSearch()
-                .addSort(SortBuilders.fieldSort("number"))
+            () -> prepareSearch().addSort(SortBuilders.fieldSort("number"))
                 .addSort(SortBuilders.scoreSort())
                 .setTrackScores(true)
                 .addRescorer(new QueryRescorerBuilder(matchAllQuery()), 50)
@@ -811,8 +798,7 @@ public class QueryRescorerIT extends ESIntegTestCase {
         assertNotNull(exc.getCause());
         assertThat(exc.getCause().getMessage(), containsString("Cannot use [sort] option in conjunction with [rescore]."));
 
-        SearchResponse resp = client().prepareSearch()
-            .addSort(SortBuilders.scoreSort())
+        SearchResponse resp = prepareSearch().addSort(SortBuilders.scoreSort())
             .setTrackScores(true)
             .addRescorer(new QueryRescorerBuilder(matchAllQuery()).setRescoreQueryWeight(100.0f), 50)
             .get();

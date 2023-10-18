@@ -327,8 +327,7 @@ public class SearchIdleTests extends ESSingleNodeTestCase {
         assertIdleShard(activeIndexStatsBefore);
 
         // WHEN
-        final SearchResponse searchResponse = client().prepareSearch("test*")
-            .setQuery(new WildcardQueryBuilder("constant_keyword", "test2*"))
+        final SearchResponse searchResponse = prepareSearch("test*").setQuery(new WildcardQueryBuilder("constant_keyword", "test2*"))
             .setPreFilterShardSize(5)
             .get();
 
@@ -346,10 +345,7 @@ public class SearchIdleTests extends ESSingleNodeTestCase {
     }
 
     private SearchResponse search(final String index, final String field, final String value, int preFilterShardSize) {
-        return client().prepareSearch(index)
-            .setQuery(new MatchPhraseQueryBuilder(field, value))
-            .setPreFilterShardSize(preFilterShardSize)
-            .get();
+        return prepareSearch(index).setQuery(new MatchPhraseQueryBuilder(field, value)).setPreFilterShardSize(preFilterShardSize).get();
     }
 
     private static void assertIdleShard(final IndicesStatsResponse statsResponse) {

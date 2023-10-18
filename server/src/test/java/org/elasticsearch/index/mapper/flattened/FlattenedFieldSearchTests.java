@@ -88,11 +88,11 @@ public class FlattenedFieldSearchTests extends ESSingleNodeTestCase {
             )
             .get();
 
-        assertHitCount(client().prepareSearch().setQuery(matchQuery("headers", "application/json")), 1L);
+        assertHitCount(prepareSearch().setQuery(matchQuery("headers", "application/json")), 1L);
 
         // Check that queries are split on whitespace.
-        assertHitCount(client().prepareSearch().setQuery(matchQuery("headers.content-type", "application/json text/plain")), 1L);
-        assertHitCount(client().prepareSearch().setQuery(matchQuery("headers.origin", "application/json")), 0L);
+        assertHitCount(prepareSearch().setQuery(matchQuery("headers.content-type", "application/json text/plain")), 1L);
+        assertHitCount(prepareSearch().setQuery(matchQuery("headers.origin", "application/json")), 0L);
     }
 
     public void testMultiMatchQuery() throws Exception {
@@ -110,10 +110,10 @@ public class FlattenedFieldSearchTests extends ESSingleNodeTestCase {
             )
             .get();
 
-        assertHitCount(client().prepareSearch().setQuery(multiMatchQuery("application/json", "headers")), 1L);
-        assertHitCount(client().prepareSearch().setQuery(multiMatchQuery("application/json text/plain", "headers.content-type")), 1L);
-        assertHitCount(client().prepareSearch().setQuery(multiMatchQuery("application/json", "headers.origin")), 0L);
-        assertHitCount(client().prepareSearch().setQuery(multiMatchQuery("application/json", "headers.origin", "headers.contentType")), 0L);
+        assertHitCount(prepareSearch().setQuery(multiMatchQuery("application/json", "headers")), 1L);
+        assertHitCount(prepareSearch().setQuery(multiMatchQuery("application/json text/plain", "headers.content-type")), 1L);
+        assertHitCount(prepareSearch().setQuery(multiMatchQuery("application/json", "headers.origin")), 0L);
+        assertHitCount(prepareSearch().setQuery(multiMatchQuery("application/json", "headers.origin", "headers.contentType")), 0L);
     }
 
     public void testQueryStringQuery() throws Exception {
@@ -131,15 +131,15 @@ public class FlattenedFieldSearchTests extends ESSingleNodeTestCase {
             )
             .get();
 
-        SearchResponse response = client().prepareSearch("test").setQuery(queryStringQuery("flattened.field1:value")).get();
+        SearchResponse response = prepareSearch("test").setQuery(queryStringQuery("flattened.field1:value")).get();
         assertSearchResponse(response);
         assertHitCount(response, 1);
 
-        response = client().prepareSearch("test").setQuery(queryStringQuery("flattened.field1:value AND flattened:2.718")).get();
+        response = prepareSearch("test").setQuery(queryStringQuery("flattened.field1:value AND flattened:2.718")).get();
         assertSearchResponse(response);
         assertHitCount(response, 1);
 
-        response = client().prepareSearch("test").setQuery(queryStringQuery("2.718").field("flattened.field2")).get();
+        response = prepareSearch("test").setQuery(queryStringQuery("2.718").field("flattened.field2")).get();
         assertSearchResponse(response);
         assertHitCount(response, 1);
     }
@@ -159,15 +159,15 @@ public class FlattenedFieldSearchTests extends ESSingleNodeTestCase {
             )
             .get();
 
-        SearchResponse response = client().prepareSearch("test").setQuery(simpleQueryStringQuery("value").field("flattened.field1")).get();
+        SearchResponse response = prepareSearch("test").setQuery(simpleQueryStringQuery("value").field("flattened.field1")).get();
         assertSearchResponse(response);
         assertHitCount(response, 1);
 
-        response = client().prepareSearch("test").setQuery(simpleQueryStringQuery("+value +2.718").field("flattened")).get();
+        response = prepareSearch("test").setQuery(simpleQueryStringQuery("+value +2.718").field("flattened")).get();
         assertSearchResponse(response);
         assertHitCount(response, 1);
 
-        response = client().prepareSearch("test").setQuery(simpleQueryStringQuery("+value +3.141").field("flattened")).get();
+        response = prepareSearch("test").setQuery(simpleQueryStringQuery("+value +3.141").field("flattened")).get();
         assertSearchResponse(response);
         assertHitCount(response, 0);
     }
@@ -186,9 +186,9 @@ public class FlattenedFieldSearchTests extends ESSingleNodeTestCase {
             )
             .get();
 
-        assertHitCount(client().prepareSearch().setQuery(existsQuery("headers")), 1L);
-        assertHitCount(client().prepareSearch().setQuery(existsQuery("headers.content-type")), 1L);
-        assertHitCount(client().prepareSearch().setQuery(existsQuery("headers.nonexistent")), 0L);
+        assertHitCount(prepareSearch().setQuery(existsQuery("headers")), 1L);
+        assertHitCount(prepareSearch().setQuery(existsQuery("headers.content-type")), 1L);
+        assertHitCount(prepareSearch().setQuery(existsQuery("headers.nonexistent")), 0L);
     }
 
     public void testCardinalityAggregation() throws IOException {
@@ -222,26 +222,26 @@ public class FlattenedFieldSearchTests extends ESSingleNodeTestCase {
         assertNoFailures(bulkResponse);
 
         // Test the root flattened field.
-        SearchResponse response = client().prepareSearch("test")
-            .addAggregation(cardinality("cardinality").precisionThreshold(precisionThreshold).field("flattened"))
-            .get();
+        SearchResponse response = prepareSearch("test").addAggregation(
+            cardinality("cardinality").precisionThreshold(precisionThreshold).field("flattened")
+        ).get();
 
         assertSearchResponse(response);
         Cardinality count = response.getAggregations().get("cardinality");
         assertCardinality(count, numDocs, precisionThreshold);
 
         // Test two keyed flattened fields.
-        SearchResponse firstResponse = client().prepareSearch("test")
-            .addAggregation(cardinality("cardinality").precisionThreshold(precisionThreshold).field("flattened.first"))
-            .get();
+        SearchResponse firstResponse = prepareSearch("test").addAggregation(
+            cardinality("cardinality").precisionThreshold(precisionThreshold).field("flattened.first")
+        ).get();
         assertSearchResponse(firstResponse);
 
         Cardinality firstCount = firstResponse.getAggregations().get("cardinality");
         assertCardinality(firstCount, numDocs, precisionThreshold);
 
-        SearchResponse secondResponse = client().prepareSearch("test")
-            .addAggregation(cardinality("cardinality").precisionThreshold(precisionThreshold).field("flattened.second"))
-            .get();
+        SearchResponse secondResponse = prepareSearch("test").addAggregation(
+            cardinality("cardinality").precisionThreshold(precisionThreshold).field("flattened.second")
+        ).get();
         assertSearchResponse(secondResponse);
 
         Cardinality secondCount = secondResponse.getAggregations().get("cardinality");
@@ -280,7 +280,7 @@ public class FlattenedFieldSearchTests extends ESSingleNodeTestCase {
 
         // Aggregate on the root 'labels' field.
         TermsAggregationBuilder builder = createTermsAgg("labels");
-        SearchResponse response = client().prepareSearch("test").addAggregation(builder).get();
+        SearchResponse response = prepareSearch("test").addAggregation(builder).get();
         assertSearchResponse(response);
 
         Terms terms = response.getAggregations().get("terms");
@@ -298,7 +298,7 @@ public class FlattenedFieldSearchTests extends ESSingleNodeTestCase {
 
         // Aggregate on the 'priority' subfield.
         TermsAggregationBuilder priorityAgg = createTermsAgg("labels.priority");
-        SearchResponse priorityResponse = client().prepareSearch("test").addAggregation(priorityAgg).get();
+        SearchResponse priorityResponse = prepareSearch("test").addAggregation(priorityAgg).get();
         assertSearchResponse(priorityResponse);
 
         Terms priorityTerms = priorityResponse.getAggregations().get("terms");
@@ -312,7 +312,7 @@ public class FlattenedFieldSearchTests extends ESSingleNodeTestCase {
 
         // Aggregate on the 'release' subfield.
         TermsAggregationBuilder releaseAgg = createTermsAgg("labels.release");
-        SearchResponse releaseResponse = client().prepareSearch("test").addAggregation(releaseAgg).get();
+        SearchResponse releaseResponse = prepareSearch("test").addAggregation(releaseAgg).get();
         assertSearchResponse(releaseResponse);
 
         Terms releaseTerms = releaseResponse.getAggregations().get("terms");
@@ -327,7 +327,7 @@ public class FlattenedFieldSearchTests extends ESSingleNodeTestCase {
 
         // Aggregate on the 'priority' subfield with a min_doc_count of 0.
         TermsAggregationBuilder minDocCountAgg = createTermsAgg("labels.priority").minDocCount(0);
-        SearchResponse minDocCountResponse = client().prepareSearch("test").addAggregation(minDocCountAgg).get();
+        SearchResponse minDocCountResponse = prepareSearch("test").addAggregation(minDocCountAgg).get();
         assertSearchResponse(minDocCountResponse);
 
         Terms minDocCountTerms = minDocCountResponse.getAggregations().get("terms");
@@ -358,7 +358,7 @@ public class FlattenedFieldSearchTests extends ESSingleNodeTestCase {
             )
             .get();
 
-        SearchResponse response = client().prepareSearch("test").addDocValueField("flattened").addDocValueField("flattened.key").get();
+        SearchResponse response = prepareSearch("test").addDocValueField("flattened").addDocValueField("flattened.key").get();
         assertSearchResponse(response);
         assertHitCount(response, 1);
 
@@ -408,17 +408,17 @@ public class FlattenedFieldSearchTests extends ESSingleNodeTestCase {
             .setSource(XContentFactory.jsonBuilder().startObject().startObject("flattened").field("other_key", "E").endObject().endObject())
             .get();
 
-        SearchResponse response = client().prepareSearch("test").addSort("flattened", SortOrder.DESC).get();
+        SearchResponse response = prepareSearch("test").addSort("flattened", SortOrder.DESC).get();
         assertSearchResponse(response);
         assertHitCount(response, 3);
         assertOrderedSearchHits(response, "3", "1", "2");
 
-        response = client().prepareSearch("test").addSort("flattened.key", SortOrder.DESC).get();
+        response = prepareSearch("test").addSort("flattened.key", SortOrder.DESC).get();
         assertSearchResponse(response);
         assertHitCount(response, 3);
         assertOrderedSearchHits(response, "2", "1", "3");
 
-        response = client().prepareSearch("test").addSort(new FieldSortBuilder("flattened.key").order(SortOrder.DESC).missing("Z")).get();
+        response = prepareSearch("test").addSort(new FieldSortBuilder("flattened.key").order(SortOrder.DESC).missing("Z")).get();
         assertSearchResponse(response);
         assertHitCount(response, 3);
         assertOrderedSearchHits(response, "3", "2", "1");
@@ -432,14 +432,14 @@ public class FlattenedFieldSearchTests extends ESSingleNodeTestCase {
 
         client().prepareIndex("test").setId("1").setRefreshPolicy(RefreshPolicy.IMMEDIATE).setSource(source).get();
 
-        SearchResponse response = client().prepareSearch("test").setFetchSource(true).get();
+        SearchResponse response = prepareSearch("test").setFetchSource(true).get();
         assertThat(response.getHits().getAt(0).getSourceAsMap(), equalTo(source));
 
         // Check 'include' filtering.
-        response = client().prepareSearch("test").setFetchSource("headers", null).get();
+        response = prepareSearch("test").setFetchSource("headers", null).get();
         assertThat(response.getHits().getAt(0).getSourceAsMap(), equalTo(source));
 
-        response = client().prepareSearch("test").setFetchSource("headers.content-type", null).get();
+        response = prepareSearch("test").setFetchSource("headers.content-type", null).get();
         Map<String, Object> filteredSource = Collections.singletonMap(
             "headers",
             Collections.singletonMap("content-type", "application/json")
@@ -447,7 +447,7 @@ public class FlattenedFieldSearchTests extends ESSingleNodeTestCase {
         assertThat(response.getHits().getAt(0).getSourceAsMap(), equalTo(filteredSource));
 
         // Check 'exclude' filtering.
-        response = client().prepareSearch("test").setFetchSource(null, "headers.content-type").get();
+        response = prepareSearch("test").setFetchSource(null, "headers.content-type").get();
         filteredSource = Collections.singletonMap("headers", Collections.singletonMap("origin", "https://www.elastic.co"));
         assertThat(response.getHits().getAt(0).getSourceAsMap(), equalTo(filteredSource));
     }

@@ -143,7 +143,7 @@ public abstract class GeoShapeQueryTestCase extends BaseShapeQueryTestCase<GeoSh
             }
         );
 
-        SearchResponse response = client().prepareSearch(defaultIndexName).setQuery(querySupplier.get()).get();
+        SearchResponse response = prepareSearch(defaultIndexName).setQuery(querySupplier.get()).get();
         assertEquals(2, response.getHits().getTotalHits().value);
         assertNotEquals("1", response.getHits().getAt(0).getId());
         assertNotEquals("1", response.getHits().getAt(1).getId());
@@ -160,8 +160,7 @@ public abstract class GeoShapeQueryTestCase extends BaseShapeQueryTestCase<GeoSh
 
         Point filterShape = new Point(179, 0);
 
-        SearchResponse result = client().prepareSearch(defaultIndexName)
-            .setQuery(queryBuilder().intersectionQuery(defaultFieldName, filterShape))
+        SearchResponse result = prepareSearch(defaultIndexName).setQuery(queryBuilder().intersectionQuery(defaultFieldName, filterShape))
             .get();
         assertSearchResponse(result);
         assertHitCount(result, 1);

@@ -10,7 +10,6 @@ package org.elasticsearch.search.aggregations.bucket.terms;
 
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.settings.Settings;
@@ -56,9 +55,9 @@ public class RareTermsIT extends ESSingleNodeTestCase {
     }
 
     private void assertNumRareTerms(int maxDocs, int rareTerms) {
-        final SearchRequestBuilder requestBuilder = client().prepareSearch(index);
-        requestBuilder.addAggregation(new RareTermsAggregationBuilder("rareTerms").field("str_value.keyword").maxDocCount(maxDocs));
-        final SearchResponse response = requestBuilder.get();
+        final SearchResponse response = prepareSearch(index).addAggregation(
+            new RareTermsAggregationBuilder("rareTerms").field("str_value.keyword").maxDocCount(maxDocs)
+        ).get();
         assertNoFailures(response);
         final RareTerms terms = response.getAggregations().get("rareTerms");
         assertThat(terms.getBuckets().size(), Matchers.equalTo(rareTerms));

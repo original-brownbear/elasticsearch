@@ -259,8 +259,7 @@ public class GeoShapeScriptDocValuesIT extends ESSingleNodeTestCase {
 
         GeoShapeValues.GeoShapeValue value = GeoTestUtils.geoShapeValue(geometry);
 
-        SearchResponse searchResponse = client().prepareSearch()
-            .addStoredField("_source")
+        SearchResponse searchResponse = prepareSearch().addStoredField("_source")
             .addScriptField("lat", new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "lat", Collections.emptyMap()))
             .addScriptField("lon", new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "lon", Collections.emptyMap()))
             .addScriptField("height", new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "height", Collections.emptyMap()))
@@ -316,8 +315,7 @@ public class GeoShapeScriptDocValuesIT extends ESSingleNodeTestCase {
 
         indicesAdmin().prepareRefresh("test").get();
 
-        SearchResponse searchResponse = client().prepareSearch()
-            .addStoredField("_source")
+        SearchResponse searchResponse = prepareSearch().addStoredField("_source")
             .addScriptField("lat", new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "lat", Collections.emptyMap()))
             .addScriptField("lon", new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "lon", Collections.emptyMap()))
             .addScriptField("height", new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "height", Collections.emptyMap()))

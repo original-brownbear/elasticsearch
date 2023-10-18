@@ -43,8 +43,7 @@ public class FieldStatsProviderRefreshTests extends ESSingleNodeTestCase {
 
         // Search for a range and check that it missed the cache (since its the
         // first time it has run)
-        final SearchResponse r1 = client().prepareSearch("index")
-            .setSearchType(SearchType.QUERY_THEN_FETCH)
+        final SearchResponse r1 = prepareSearch("index").setSearchType(SearchType.QUERY_THEN_FETCH)
             .setSize(0)
             .setQuery(QueryBuilders.rangeQuery("s").gte("a").lte("g"))
             .get();
@@ -53,8 +52,7 @@ public class FieldStatsProviderRefreshTests extends ESSingleNodeTestCase {
         assertRequestCacheStats(0, 1);
 
         // Search again and check it hits the cache
-        final SearchResponse r2 = client().prepareSearch("index")
-            .setSearchType(SearchType.QUERY_THEN_FETCH)
+        final SearchResponse r2 = prepareSearch("index").setSearchType(SearchType.QUERY_THEN_FETCH)
             .setSize(0)
             .setQuery(QueryBuilders.rangeQuery("s").gte("a").lte("g"))
             .get();
@@ -68,8 +66,7 @@ public class FieldStatsProviderRefreshTests extends ESSingleNodeTestCase {
         refreshIndex();
 
         // Search again and check the request cache for another miss since request cache should be invalidated by refresh
-        final SearchResponse r3 = client().prepareSearch("index")
-            .setSearchType(SearchType.QUERY_THEN_FETCH)
+        final SearchResponse r3 = prepareSearch("index").setSearchType(SearchType.QUERY_THEN_FETCH)
             .setSize(0)
             .setQuery(QueryBuilders.rangeQuery("s").gte("a").lte("g"))
             .get();

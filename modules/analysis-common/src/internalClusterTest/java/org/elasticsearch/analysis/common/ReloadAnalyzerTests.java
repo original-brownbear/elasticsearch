@@ -55,8 +55,8 @@ public class ReloadAnalyzerTests extends ESSingleNodeTestCase {
 
         checkAnalyzerTokens(List.of("foo", "baz", "buzz"));
 
-        assertHitCount(client().prepareSearch(INDEX_NAME).setQuery(QueryBuilders.matchQuery("field", "baz")), 1L);
-        assertHitCount(client().prepareSearch(INDEX_NAME).setQuery(QueryBuilders.matchQuery("field", "buzz")), 1L);
+        assertHitCount(prepareSearch(INDEX_NAME).setQuery(QueryBuilders.matchQuery("field", "baz")), 1L);
+        assertHitCount(prepareSearch(INDEX_NAME).setQuery(QueryBuilders.matchQuery("field", "buzz")), 1L);
     }
 
     public void testSynonymsAreNotUpdatedOnPreview() throws IOException {
@@ -66,8 +66,8 @@ public class ReloadAnalyzerTests extends ESSingleNodeTestCase {
 
         checkAnalyzerTokens(List.of("foo", "baz"));
 
-        assertHitCount(client().prepareSearch(INDEX_NAME).setQuery(QueryBuilders.matchQuery("field", "baz")), 1L);
-        assertHitCount(client().prepareSearch(INDEX_NAME).setQuery(QueryBuilders.matchQuery("field", "buzz")), 0L);
+        assertHitCount(prepareSearch(INDEX_NAME).setQuery(QueryBuilders.matchQuery("field", "baz")), 1L);
+        assertHitCount(prepareSearch(INDEX_NAME).setQuery(QueryBuilders.matchQuery("field", "buzz")), 0L);
     }
 
     private Path setupSynonyms() throws IOException {
@@ -94,8 +94,8 @@ public class ReloadAnalyzerTests extends ESSingleNodeTestCase {
         client().prepareIndex(INDEX_NAME).setId("1").setSource("field", "Foo").get();
         assertNoFailures(indicesAdmin().prepareRefresh(INDEX_NAME).execute().actionGet());
 
-        assertHitCount(client().prepareSearch(INDEX_NAME).setQuery(QueryBuilders.matchQuery("field", "baz")), 1L);
-        assertHitCount(client().prepareSearch(INDEX_NAME).setQuery(QueryBuilders.matchQuery("field", "buzz")), 0L);
+        assertHitCount(prepareSearch(INDEX_NAME).setQuery(QueryBuilders.matchQuery("field", "baz")), 1L);
+        assertHitCount(prepareSearch(INDEX_NAME).setQuery(QueryBuilders.matchQuery("field", "buzz")), 0L);
 
         {
             for (String analyzerName : new String[] { SYNONYM_ANALYZER_NAME, SYNONYM_GRAPH_ANALYZER_NAME }) {
@@ -164,8 +164,8 @@ public class ReloadAnalyzerTests extends ESSingleNodeTestCase {
         client().prepareIndex(INDEX_NAME).setId("1").setSource("field", "foo").get();
         assertNoFailures(indicesAdmin().prepareRefresh(INDEX_NAME).execute().actionGet());
 
-        assertHitCount(client().prepareSearch(INDEX_NAME).setQuery(QueryBuilders.matchQuery("field", "baz")), 1L);
-        assertHitCount(client().prepareSearch(INDEX_NAME).setQuery(QueryBuilders.matchQuery("field", "buzz")), 0L);
+        assertHitCount(prepareSearch(INDEX_NAME).setQuery(QueryBuilders.matchQuery("field", "baz")), 1L);
+        assertHitCount(prepareSearch(INDEX_NAME).setQuery(QueryBuilders.matchQuery("field", "buzz")), 0L);
 
         Response analyzeResponse = indicesAdmin().prepareAnalyze(INDEX_NAME, "foo").setAnalyzer(SYNONYM_ANALYZER_NAME).get();
         assertEquals(2, analyzeResponse.getTokens().size());
@@ -199,8 +199,8 @@ public class ReloadAnalyzerTests extends ESSingleNodeTestCase {
         assertTrue(tokens.contains("baz"));
         assertTrue(tokens.contains("buzz"));
 
-        assertHitCount(client().prepareSearch(INDEX_NAME).setQuery(QueryBuilders.matchQuery("field", "baz")), 1L);
-        assertHitCount(client().prepareSearch(INDEX_NAME).setQuery(QueryBuilders.matchQuery("field", "buzz")), 1L);
+        assertHitCount(prepareSearch(INDEX_NAME).setQuery(QueryBuilders.matchQuery("field", "baz")), 1L);
+        assertHitCount(prepareSearch(INDEX_NAME).setQuery(QueryBuilders.matchQuery("field", "buzz")), 1L);
     }
 
     public void testUpdateableSynonymsRejectedAtIndexTime() throws FileNotFoundException, IOException {

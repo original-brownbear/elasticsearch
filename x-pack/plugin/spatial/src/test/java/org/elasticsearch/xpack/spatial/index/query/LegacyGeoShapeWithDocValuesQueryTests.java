@@ -130,7 +130,7 @@ public class LegacyGeoShapeWithDocValuesQueryTests extends GeoShapeQueryTestCase
             .get();
 
         // test that point was inserted
-        SearchResponse response = client().prepareSearch("geo_points_only").setQuery(matchAllQuery()).get();
+        SearchResponse response = prepareSearch("geo_points_only").setQuery(matchAllQuery()).get();
 
         assertEquals(2, response.getHits().getTotalHits().value);
     }
@@ -182,9 +182,7 @@ public class LegacyGeoShapeWithDocValuesQueryTests extends GeoShapeQueryTestCase
         }
 
         // test that point was inserted
-        SearchResponse response = client().prepareSearch("geo_points_only")
-            .setQuery(geoIntersectionQuery(defaultFieldName, geometry))
-            .get();
+        SearchResponse response = prepareSearch("geo_points_only").setQuery(geoIntersectionQuery(defaultFieldName, geometry)).get();
         assertEquals(1, response.getHits().getTotalHits().value);
     }
 
@@ -226,7 +224,7 @@ public class LegacyGeoShapeWithDocValuesQueryTests extends GeoShapeQueryTestCase
             .setRefreshPolicy(IMMEDIATE)
             .get();
 
-        SearchResponse response = client().prepareSearch(defaultIndexName).setQuery(geoShapeQuery("alias", multiPoint)).get();
+        SearchResponse response = prepareSearch(defaultIndexName).setQuery(geoShapeQuery("alias", multiPoint)).get();
         assertEquals(1, response.getHits().getTotalHits().value);
     }
 

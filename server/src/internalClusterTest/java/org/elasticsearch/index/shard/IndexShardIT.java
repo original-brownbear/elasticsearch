@@ -221,7 +221,7 @@ public class IndexShardIT extends ESSingleNodeTestCase {
         createIndex("test", idxSettings);
         ensureGreen("test");
         client().prepareIndex("test").setId("1").setSource("{}", XContentType.JSON).setRefreshPolicy(IMMEDIATE).get();
-        assertHitCount(client().prepareSearch("test"), 1L);
+        assertHitCount(prepareSearch("test"), 1L);
         indicesAdmin().prepareDelete("test").get();
         assertAllIndicesRemovedAndDeletionCompleted(Collections.singleton(getInstanceFromNode(IndicesService.class)));
         assertPathHasBeenCleared(idxPath);
@@ -256,7 +256,7 @@ public class IndexShardIT extends ESSingleNodeTestCase {
         client().prepareIndex(index).setId("1").setSource("foo", "bar").setRefreshPolicy(IMMEDIATE).get();
         ensureGreen(index);
 
-        assertHitCount(client().prepareSearch(index).setSize(0), 1L);
+        assertHitCount(prepareSearch(index).setSize(0), 1L);
 
         logger.info("--> closing the index [{}]", index);
         assertAcked(indicesAdmin().prepareClose(index));
@@ -265,7 +265,7 @@ public class IndexShardIT extends ESSingleNodeTestCase {
         logger.info("--> index re-opened");
         ensureGreen(index);
 
-        assertHitCount(client().prepareSearch(index).setSize(0), 1L);
+        assertHitCount(prepareSearch(index).setSize(0), 1L);
 
         // Now, try closing and changing the settings
         logger.info("--> closing the index [{}] before updating data_path", index);
@@ -301,7 +301,7 @@ public class IndexShardIT extends ESSingleNodeTestCase {
         logger.info("--> index re-opened");
         ensureGreen(index);
 
-        assertHitCount(client().prepareSearch(index).setSize(0), 1L);
+        assertHitCount(prepareSearch(index).setSize(0), 1L);
 
         assertAcked(indicesAdmin().prepareDelete(index));
         assertAllIndicesRemovedAndDeletionCompleted(Collections.singleton(getInstanceFromNode(IndicesService.class)));

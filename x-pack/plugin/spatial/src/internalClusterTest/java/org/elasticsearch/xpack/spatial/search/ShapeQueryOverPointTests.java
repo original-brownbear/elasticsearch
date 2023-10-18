@@ -50,9 +50,7 @@ public class ShapeQueryOverPointTests extends ShapeQueryTestCase {
             if (shapeRelation.equals(ShapeRelation.INTERSECTS) == false) {
                 SearchPhaseExecutionException e = expectThrows(
                     SearchPhaseExecutionException.class,
-                    () -> client().prepareSearch("test")
-                        .setQuery(new ShapeQueryBuilder(defaultFieldName, rectangle).relation(shapeRelation))
-                        .get()
+                    () -> prepareSearch("test").setQuery(new ShapeQueryBuilder(defaultFieldName, rectangle).relation(shapeRelation)).get()
                 );
                 assertThat(
                     e.getCause().getMessage(),
@@ -70,7 +68,7 @@ public class ShapeQueryOverPointTests extends ShapeQueryTestCase {
         Line line = new Line(new double[] { -25, -25 }, new double[] { -35, -35 });
 
         try {
-            client().prepareSearch("test").setQuery(new ShapeQueryBuilder(defaultFieldName, line)).get();
+            prepareSearch("test").setQuery(new ShapeQueryBuilder(defaultFieldName, line)).get();
         } catch (SearchPhaseExecutionException e) {
             assertThat(e.getCause().getMessage(), CoreMatchers.containsString("does not support " + ShapeType.LINESTRING + " queries"));
         }
@@ -106,7 +104,7 @@ public class ShapeQueryOverPointTests extends ShapeQueryTestCase {
 
         MultiLine multiline = new MultiLine(List.of(lsb1, lsb2));
         try {
-            client().prepareSearch("test").setQuery(new ShapeQueryBuilder(defaultFieldName, multiline)).get();
+            prepareSearch("test").setQuery(new ShapeQueryBuilder(defaultFieldName, multiline)).get();
         } catch (Exception e) {
             assertThat(
                 e.getCause().getMessage(),
@@ -123,7 +121,7 @@ public class ShapeQueryOverPointTests extends ShapeQueryTestCase {
         MultiPoint multiPoint = new MultiPoint(List.of(new Point(-35, -25), new Point(-15, -5)));
 
         try {
-            client().prepareSearch("test").setQuery(new ShapeQueryBuilder(defaultFieldName, multiPoint)).get();
+            prepareSearch("test").setQuery(new ShapeQueryBuilder(defaultFieldName, multiPoint)).get();
         } catch (Exception e) {
             assertThat(e.getCause().getMessage(), CoreMatchers.containsString("does not support " + ShapeType.MULTIPOINT + " queries"));
         }
@@ -137,7 +135,7 @@ public class ShapeQueryOverPointTests extends ShapeQueryTestCase {
         Point point = new Point(-35, -2);
 
         try {
-            client().prepareSearch("test").setQuery(new ShapeQueryBuilder(defaultFieldName, point)).get();
+            prepareSearch("test").setQuery(new ShapeQueryBuilder(defaultFieldName, point)).get();
         } catch (Exception e) {
             assertThat(e.getCause().getMessage(), CoreMatchers.containsString("does not support " + ShapeType.POINT + " queries"));
         }

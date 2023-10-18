@@ -71,11 +71,9 @@ public class BucketCorrelationAggregationIT extends MlSingleNodeTestCase {
 
         AtomicLong counter = new AtomicLong();
         double[] steps = Stream.generate(() -> counter.getAndAdd(2L)).limit(50).mapToDouble(l -> (double) l).toArray();
-        SearchResponse percentilesSearch = client().prepareSearch("data")
-            .addAggregation(AggregationBuilders.percentiles("percentiles").field("metric").percentiles(steps))
-            .setSize(0)
-            .setTrackTotalHits(true)
-            .get();
+        SearchResponse percentilesSearch = prepareSearch("data").addAggregation(
+            AggregationBuilders.percentiles("percentiles").field("metric").percentiles(steps)
+        ).setSize(0).setTrackTotalHits(true).get();
         long totalHits = percentilesSearch.getHits().getTotalHits().value;
         Percentiles percentiles = percentilesSearch.getAggregations().get("percentiles");
         Tuple<RangeAggregationBuilder, BucketCorrelationAggregationBuilder> aggs = buildRangeAggAndSetExpectations(
@@ -85,8 +83,7 @@ public class BucketCorrelationAggregationIT extends MlSingleNodeTestCase {
             "metric"
         );
 
-        SearchResponse countCorrelations = client().prepareSearch("data")
-            .setSize(0)
+        SearchResponse countCorrelations = prepareSearch("data").setSize(0)
             .setTrackTotalHits(false)
             .addAggregation(AggregationBuilders.terms("buckets").field("term").subAggregation(aggs.v1()).subAggregation(aggs.v2()))
             .get();

@@ -16,6 +16,7 @@ import org.elasticsearch.action.admin.indices.get.GetIndexResponse;
 import org.elasticsearch.action.admin.indices.template.delete.DeleteComponentTemplateAction;
 import org.elasticsearch.action.admin.indices.template.delete.DeleteComposableIndexTemplateAction;
 import org.elasticsearch.action.datastreams.DeleteDataStreamAction;
+import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.support.DestructiveOperations;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.client.internal.AdminClient;
@@ -372,6 +373,10 @@ public abstract class ESSingleNodeTestCase extends ESTestCase {
         assertThat("Cluster must be a single node cluster", health.getNumberOfDataNodes(), equalTo(1));
         IndicesService instanceFromNode = getInstanceFromNode(IndicesService.class);
         return instanceFromNode.indexServiceSafe(resolveIndex(index));
+    }
+
+    protected SearchRequestBuilder prepareSearch(String... indices) {
+        return client().prepareSearch(indices);
     }
 
     public Index resolveIndex(String index) {

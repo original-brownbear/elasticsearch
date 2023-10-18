@@ -247,7 +247,7 @@ public class SearchServiceTests extends ESSingleNodeTestCase {
     public void testClearOnClose() {
         createIndex("index");
         client().prepareIndex("index").setId("1").setSource("field", "value").setRefreshPolicy(IMMEDIATE).get();
-        SearchResponse searchResponse = client().prepareSearch("index").setSize(1).setScroll("1m").get();
+        SearchResponse searchResponse = prepareSearch("index").setSize(1).setScroll("1m").get();
         assertThat(searchResponse.getScrollId(), is(notNullValue()));
         SearchService service = getInstanceFromNode(SearchService.class);
 
@@ -259,7 +259,7 @@ public class SearchServiceTests extends ESSingleNodeTestCase {
     public void testClearOnStop() {
         createIndex("index");
         client().prepareIndex("index").setId("1").setSource("field", "value").setRefreshPolicy(IMMEDIATE).get();
-        SearchResponse searchResponse = client().prepareSearch("index").setSize(1).setScroll("1m").get();
+        SearchResponse searchResponse = prepareSearch("index").setSize(1).setScroll("1m").get();
         assertThat(searchResponse.getScrollId(), is(notNullValue()));
         SearchService service = getInstanceFromNode(SearchService.class);
 
@@ -271,7 +271,7 @@ public class SearchServiceTests extends ESSingleNodeTestCase {
     public void testClearIndexDelete() {
         createIndex("index");
         client().prepareIndex("index").setId("1").setSource("field", "value").setRefreshPolicy(IMMEDIATE).get();
-        SearchResponse searchResponse = client().prepareSearch("index").setSize(1).setScroll("1m").get();
+        SearchResponse searchResponse = prepareSearch("index").setSize(1).setScroll("1m").get();
         assertThat(searchResponse.getScrollId(), is(notNullValue()));
         SearchService service = getInstanceFromNode(SearchService.class);
 
@@ -292,10 +292,7 @@ public class SearchServiceTests extends ESSingleNodeTestCase {
 
         final int activeContexts = service.getActiveContexts();
         final int activeRefs = indexShard.store().refCount();
-        expectThrows(
-            SearchPhaseExecutionException.class,
-            () -> client().prepareSearch("index").setQuery(new FailOnRewriteQueryBuilder()).get()
-        );
+        expectThrows(SearchPhaseExecutionException.class, () -> prepareSearch("index").setQuery(new FailOnRewriteQueryBuilder()).get());
         assertEquals(activeContexts, service.getActiveContexts());
         assertEquals(activeRefs, indexShard.store().refCount());
     }
@@ -475,7 +472,7 @@ public class SearchServiceTests extends ESSingleNodeTestCase {
     public void testBeforeShardLockDuringShardCreate() {
         IndexService indexService = createIndex("index", Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1).build());
         client().prepareIndex("index").setId("1").setSource("field", "value").setRefreshPolicy(IMMEDIATE).get();
-        SearchResponse searchResponse = client().prepareSearch("index").setSize(1).setScroll("1m").get();
+        SearchResponse searchResponse = prepareSearch("index").setSize(1).setScroll("1m").get();
         assertThat(searchResponse.getScrollId(), is(notNullValue()));
         SearchService service = getInstanceFromNode(SearchService.class);
 
@@ -787,7 +784,7 @@ public class SearchServiceTests extends ESSingleNodeTestCase {
         LinkedList<String> clearScrollIds = new LinkedList<>();
 
         for (int i = 0; i < SearchService.MAX_OPEN_SCROLL_CONTEXT.get(Settings.EMPTY); i++) {
-            SearchResponse searchResponse = client().prepareSearch("index").setSize(1).setScroll("1m").get();
+            SearchResponse searchResponse = prepareSearch("index").setSize(1).setScroll("1m").get();
 
             if (randomInt(4) == 0) clearScrollIds.addLast(searchResponse.getScrollId());
         }
@@ -797,7 +794,7 @@ public class SearchServiceTests extends ESSingleNodeTestCase {
         client().clearScroll(clearScrollRequest);
 
         for (int i = 0; i < clearScrollIds.size(); i++) {
-            client().prepareSearch("index").setSize(1).setScroll("1m").get();
+            prepareSearch("index").setSize(1).setScroll("1m").get();
         }
 
         final ShardScrollRequestTest request = new ShardScrollRequestTest(indexShard.shardId());
@@ -1110,9 +1107,7 @@ public class SearchServiceTests extends ESSingleNodeTestCase {
         assertTrue(service.getIndicesService().indexServiceSafe(index).getIndexSettings().isSearchThrottled());
         client().prepareIndex("throttled_threadpool_index").setId("1").setSource("field", "value").setRefreshPolicy(IMMEDIATE).get();
         assertSearchHits(
-            client().prepareSearch("throttled_threadpool_index")
-                .setIndicesOptions(IndicesOptions.STRICT_EXPAND_OPEN_FORBID_CLOSED)
-                .setSize(1),
+            prepareSearch("throttled_threadpool_index").setIndicesOptions(IndicesOptions.STRICT_EXPAND_OPEN_FORBID_CLOSED).setSize(1),
             "1"
         );
         // we add a search action listener in a plugin above to assert that this is actually used
@@ -1213,8 +1208,8 @@ public class SearchServiceTests extends ESSingleNodeTestCase {
         ).actionGet();
 
         client().prepareIndex("throttled_threadpool_index").setId("1").setSource("field", "value").setRefreshPolicy(IMMEDIATE).get();
-        assertHitCount(client().prepareSearch(), 1L);
-        assertHitCount(client().prepareSearch().setIndicesOptions(IndicesOptions.STRICT_EXPAND_OPEN_FORBID_CLOSED), 1L);
+        assertHitCount(prepareSearch(), 1L);
+        assertHitCount(prepareSearch().setIndicesOptions(IndicesOptions.STRICT_EXPAND_OPEN_FORBID_CLOSED), 1L);
     }
 
     public void testExpandSearchFrozen() {
@@ -1226,8 +1221,8 @@ public class SearchServiceTests extends ESSingleNodeTestCase {
         ).actionGet();
 
         client().prepareIndex(indexName).setId("1").setSource("field", "value").setRefreshPolicy(IMMEDIATE).get();
-        assertHitCount(client().prepareSearch(), 0L);
-        assertHitCount(client().prepareSearch().setIndicesOptions(IndicesOptions.STRICT_EXPAND_OPEN_FORBID_CLOSED), 1L);
+        assertHitCount(prepareSearch(), 0L);
+        assertHitCount(prepareSearch().setIndicesOptions(IndicesOptions.STRICT_EXPAND_OPEN_FORBID_CLOSED), 1L);
         assertWarnings(TransportSearchAction.FROZEN_INDICES_DEPRECATION_MESSAGE.replace("{}", indexName));
     }
 
@@ -1448,7 +1443,7 @@ public class SearchServiceTests extends ESSingleNodeTestCase {
                 latch.countDown();
                 while (stopped.get() == false) {
                     try {
-                        client().prepareSearch("test").setRequestCache(false).get();
+                        prepareSearch("test").setRequestCache(false).get();
                     } catch (Exception ignored) {
                         return;
                     }
@@ -1853,10 +1848,9 @@ public class SearchServiceTests extends ESSingleNodeTestCase {
         searchService.setOnCreateSearchContext(ctx -> shardRequests.add(ctx.request()));
         try {
             assertHitCount(
-                client().prepareSearch()
-                    .setSource(
-                        new SearchSourceBuilder().size(between(numDocs, numDocs * 2)).pointInTimeBuilder(new PointInTimeBuilder(pitId))
-                    ),
+                prepareSearch().setSource(
+                    new SearchSourceBuilder().size(between(numDocs, numDocs * 2)).pointInTimeBuilder(new PointInTimeBuilder(pitId))
+                ),
                 numDocs
             );
         } finally {

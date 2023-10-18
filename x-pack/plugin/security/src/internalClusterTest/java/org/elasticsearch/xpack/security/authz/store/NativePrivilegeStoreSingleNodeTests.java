@@ -86,8 +86,7 @@ public class NativePrivilegeStoreSingleNodeTests extends SecuritySingleNodeTestC
 
         try {
             // Prove that expensive queries are indeed disabled
-            final ActionFuture<SearchResponse> future = client().prepareSearch(".security")
-                .setQuery(QueryBuilders.prefixQuery("application", "my"))
+            final ActionFuture<SearchResponse> future = prepareSearch(".security").setQuery(QueryBuilders.prefixQuery("application", "my"))
                 .execute();
             final ElasticsearchException e = expectThrows(ElasticsearchException.class, future::actionGet);
             assertThat(

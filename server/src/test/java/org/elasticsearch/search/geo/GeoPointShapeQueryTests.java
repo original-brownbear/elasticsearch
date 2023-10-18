@@ -79,7 +79,7 @@ public class GeoPointShapeQueryTests extends BasePointShapeQueryTestCase<GeoShap
             .setRefreshPolicy(IMMEDIATE)
             .get();
 
-        SearchResponse response = client().prepareSearch(defaultIndexName).setQuery(geoShapeQuery("alias", point)).get();
+        SearchResponse response = prepareSearch(defaultIndexName).setQuery(geoShapeQuery("alias", point)).get();
         assertEquals(1, response.getHits().getTotalHits().value);
     }
 

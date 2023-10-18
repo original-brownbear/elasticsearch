@@ -145,8 +145,7 @@ public class MonitoringIT extends ESSingleNodeTestCase {
                 ensureGreen(monitoringIndex);
                 assertThat(client().admin().indices().prepareRefresh(monitoringIndex).get().getStatus(), is(RestStatus.OK));
 
-                final SearchResponse response = client().prepareSearch(".monitoring-" + system.getSystem() + "-" + TEMPLATE_VERSION + "-*")
-                    .get();
+                final SearchResponse response = prepareSearch(".monitoring-" + system.getSystem() + "-" + TEMPLATE_VERSION + "-*").get();
 
                 // exactly 3 results are expected
                 assertThat("No monitoring documents yet", response.getHits().getTotalHits().value, equalTo(3L));
@@ -161,7 +160,7 @@ public class MonitoringIT extends ESSingleNodeTestCase {
                 assertThat(sources.stream().map(source -> source.get("source_node")).distinct().count(), is(1L));
             });
 
-            final SearchResponse response = client().prepareSearch(monitoringIndex).get();
+            final SearchResponse response = prepareSearch(monitoringIndex).get();
             final SearchHits hits = response.getHits();
 
             assertThat(response.getHits().getTotalHits().value, equalTo(3L));
@@ -209,8 +208,7 @@ public class MonitoringIT extends ESSingleNodeTestCase {
             final AtomicReference<SearchResponse> searchResponse = new AtomicReference<>();
 
             assertBusy(() -> {
-                final SearchResponse response = client().prepareSearch(".monitoring-es-*")
-                    .setCollapse(new CollapseBuilder("type"))
+                final SearchResponse response = prepareSearch(".monitoring-es-*").setCollapse(new CollapseBuilder("type"))
                     .addSort("timestamp", SortOrder.DESC)
                     .get();
 
@@ -383,7 +381,7 @@ public class MonitoringIT extends ESSingleNodeTestCase {
 
             assertThat(
                 "No monitoring documents yet",
-                client().prepareSearch(".monitoring-es-" + TEMPLATE_VERSION + "-*").setSize(0).get().getHits().getTotalHits().value,
+                prepareSearch(".monitoring-es-" + TEMPLATE_VERSION + "-*").setSize(0).get().getHits().getTotalHits().value,
                 greaterThan(0L)
             );
         }, 30L, TimeUnit.SECONDS);

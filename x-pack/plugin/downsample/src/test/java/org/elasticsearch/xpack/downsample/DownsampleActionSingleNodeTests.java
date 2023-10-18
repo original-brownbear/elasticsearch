@@ -952,8 +952,7 @@ public class DownsampleActionSingleNodeTests extends ESSingleNodeTestCase {
         );
 
         final DownsampleIndexerAction.ShardDownsampleResponse response2 = indexer.execute();
-        int dim2DocCount = client().prepareSearch(sourceIndex)
-            .setQuery(new TermQueryBuilder(FIELD_DIMENSION_1, "dim2"))
+        int dim2DocCount = prepareSearch(sourceIndex).setQuery(new TermQueryBuilder(FIELD_DIMENSION_1, "dim2"))
             .setSize(10_000)
             .get()
             .getHits()
@@ -1039,7 +1038,7 @@ public class DownsampleActionSingleNodeTests extends ESSingleNodeTestCase {
         }
         int docsIndexed = docCount - duplicates;
         logger.info("Indexed [{}] documents. Dropped [{}] duplicates.", docsIndexed, duplicates);
-        assertHitCount(client().prepareSearch(indexName).setSize(0), docsIndexed);
+        assertHitCount(prepareSearch(indexName).setSize(0), docsIndexed);
     }
 
     private void prepareSourceIndex(final String sourceIndex, boolean blockWrite) {
@@ -1065,7 +1064,7 @@ public class DownsampleActionSingleNodeTests extends ESSingleNodeTestCase {
     }
 
     private Aggregations aggregate(final String index, AggregationBuilder aggregationBuilder) {
-        return client().prepareSearch(index).addAggregation(aggregationBuilder).get().getAggregations();
+        return prepareSearch(index).addAggregation(aggregationBuilder).get().getAggregations();
     }
 
     @SuppressWarnings("unchecked")

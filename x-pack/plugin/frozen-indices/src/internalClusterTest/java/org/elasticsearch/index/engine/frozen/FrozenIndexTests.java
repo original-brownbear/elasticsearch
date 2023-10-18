@@ -109,8 +109,7 @@ public class FrozenIndexTests extends ESSingleNodeTestCase {
         assertEquals(0, shard.refreshStats().getTotal());
         boolean useDFS = randomBoolean();
         assertHitCount(
-            client().prepareSearch()
-                .setIndicesOptions(IndicesOptions.STRICT_EXPAND_OPEN_FORBID_CLOSED)
+            prepareSearch().setIndicesOptions(IndicesOptions.STRICT_EXPAND_OPEN_FORBID_CLOSED)
                 .setSearchType(useDFS ? SearchType.DFS_QUERY_THEN_FETCH : SearchType.QUERY_THEN_FETCH),
             3
         );
@@ -120,8 +119,7 @@ public class FrozenIndexTests extends ESSingleNodeTestCase {
         assertTrue(indexService.getIndexSettings().isSearchThrottled());
 
         // now scroll
-        SearchResponse searchResponse = client().prepareSearch()
-            .setIndicesOptions(IndicesOptions.STRICT_EXPAND_OPEN_FORBID_CLOSED)
+        SearchResponse searchResponse = prepareSearch().setIndicesOptions(IndicesOptions.STRICT_EXPAND_OPEN_FORBID_CLOSED)
             .setScroll(TimeValue.timeValueMinutes(1))
             .setSize(1)
             .get();
@@ -143,8 +141,7 @@ public class FrozenIndexTests extends ESSingleNodeTestCase {
         String pitId = openReaders(TimeValue.timeValueMinutes(1), indexName);
         try {
             for (int from = 0; from < 3; from++) {
-                searchResponse = client().prepareSearch()
-                    .setIndicesOptions(IndicesOptions.STRICT_EXPAND_OPEN_FORBID_CLOSED)
+                searchResponse = prepareSearch().setIndicesOptions(IndicesOptions.STRICT_EXPAND_OPEN_FORBID_CLOSED)
                     .setPointInTime(new PointInTimeBuilder(pitId))
                     .setSize(1)
                     .setFrom(from)
@@ -194,8 +191,7 @@ public class FrozenIndexTests extends ESSingleNodeTestCase {
                 case 0 -> client().prepareGet(indexName, "" + randomIntBetween(0, 9)).get();
                 case 1 -> {
                     numSearches++;
-                    client().prepareSearch(indexName)
-                        .setIndicesOptions(IndicesOptions.STRICT_EXPAND_OPEN_FORBID_CLOSED)
+                    prepareSearch(indexName).setIndicesOptions(IndicesOptions.STRICT_EXPAND_OPEN_FORBID_CLOSED)
                         .setSearchType(SearchType.QUERY_THEN_FETCH)
                         .get();
                     // in total 4 refreshes 1x query & 1x fetch per shard (we have 2)
@@ -292,7 +288,7 @@ public class FrozenIndexTests extends ESSingleNodeTestCase {
         ClusterStateResponse stateResponse = clusterAdmin().prepareState().get();
         assertEquals(IndexMetadata.State.CLOSE, stateResponse.getState().getMetadata().index("idx-closed").getState());
         assertEquals(IndexMetadata.State.OPEN, stateResponse.getState().getMetadata().index("idx").getState());
-        assertHitCount(client().prepareSearch(), 1L);
+        assertHitCount(prepareSearch(), 1L);
     }
 
     public void testFreezePattern() {
@@ -306,7 +302,7 @@ public class FrozenIndexTests extends ESSingleNodeTestCase {
 
         IndicesStatsResponse index = indicesAdmin().prepareStats(indexName).clear().setRefresh(true).get();
         assertEquals(0, index.getTotal().refresh.getTotal());
-        assertHitCount(client().prepareSearch(indexName).setIndicesOptions(IndicesOptions.STRICT_EXPAND_OPEN_FORBID_CLOSED), 1);
+        assertHitCount(prepareSearch(indexName).setIndicesOptions(IndicesOptions.STRICT_EXPAND_OPEN_FORBID_CLOSED), 1);
         index = indicesAdmin().prepareStats(indexName).clear().setRefresh(true).get();
         assertEquals(1, index.getTotal().refresh.getTotal());
 

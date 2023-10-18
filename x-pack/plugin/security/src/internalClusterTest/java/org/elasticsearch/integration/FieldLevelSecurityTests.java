@@ -935,8 +935,8 @@ public class FieldLevelSecurityTests extends SecurityIntegTestCase {
             Collections.singletonMap(BASIC_AUTH_HEADER, basicAuthHeaderValue("user1", USERS_PASSWD))
         )
             .prepareMultiSearch()
-            .add(client().prepareSearch("test1").setQuery(QueryBuilders.matchAllQuery()))
-            .add(client().prepareSearch("test2").setQuery(QueryBuilders.matchAllQuery()))
+            .add(prepareSearch("test1").setQuery(QueryBuilders.matchAllQuery()))
+            .add(prepareSearch("test2").setQuery(QueryBuilders.matchAllQuery()))
             .get();
         assertFalse(response.getResponses()[0].isFailure());
         assertThat(response.getResponses()[0].getResponse().getHits().getTotalHits().value, is(1L));
@@ -949,8 +949,8 @@ public class FieldLevelSecurityTests extends SecurityIntegTestCase {
         // user2 is granted access to field2 only
         response = client().filterWithHeader(Collections.singletonMap(BASIC_AUTH_HEADER, basicAuthHeaderValue("user2", USERS_PASSWD)))
             .prepareMultiSearch()
-            .add(client().prepareSearch("test1").setQuery(QueryBuilders.matchAllQuery()))
-            .add(client().prepareSearch("test2").setQuery(QueryBuilders.matchAllQuery()))
+            .add(prepareSearch("test1").setQuery(QueryBuilders.matchAllQuery()))
+            .add(prepareSearch("test2").setQuery(QueryBuilders.matchAllQuery()))
             .get();
         assertFalse(response.getResponses()[0].isFailure());
         assertThat(response.getResponses()[0].getResponse().getHits().getTotalHits().value, is(1L));
@@ -963,8 +963,8 @@ public class FieldLevelSecurityTests extends SecurityIntegTestCase {
         // user3 is granted access to field1 and field2
         response = client().filterWithHeader(Collections.singletonMap(BASIC_AUTH_HEADER, basicAuthHeaderValue("user3", USERS_PASSWD)))
             .prepareMultiSearch()
-            .add(client().prepareSearch("test1").setQuery(QueryBuilders.matchAllQuery()))
-            .add(client().prepareSearch("test2").setQuery(QueryBuilders.matchAllQuery()))
+            .add(prepareSearch("test1").setQuery(QueryBuilders.matchAllQuery()))
+            .add(prepareSearch("test2").setQuery(QueryBuilders.matchAllQuery()))
             .get();
         assertFalse(response.getResponses()[0].isFailure());
         assertThat(response.getResponses()[0].getResponse().getHits().getTotalHits().value, is(1L));
@@ -979,8 +979,8 @@ public class FieldLevelSecurityTests extends SecurityIntegTestCase {
         // user4 is granted access to no fields, so the search response does say the doc exist, but no fields are returned
         response = client().filterWithHeader(Collections.singletonMap(BASIC_AUTH_HEADER, basicAuthHeaderValue("user4", USERS_PASSWD)))
             .prepareMultiSearch()
-            .add(client().prepareSearch("test1").setQuery(QueryBuilders.matchAllQuery()))
-            .add(client().prepareSearch("test2").setQuery(QueryBuilders.matchAllQuery()))
+            .add(prepareSearch("test1").setQuery(QueryBuilders.matchAllQuery()))
+            .add(prepareSearch("test2").setQuery(QueryBuilders.matchAllQuery()))
             .get();
         assertFalse(response.getResponses()[0].isFailure());
         assertThat(response.getResponses()[0].getResponse().getHits().getTotalHits().value, is(1L));
@@ -991,8 +991,8 @@ public class FieldLevelSecurityTests extends SecurityIntegTestCase {
         // user5 has no field level security configured, so all fields are returned
         response = client().filterWithHeader(Collections.singletonMap(BASIC_AUTH_HEADER, basicAuthHeaderValue("user5", USERS_PASSWD)))
             .prepareMultiSearch()
-            .add(client().prepareSearch("test1").setQuery(QueryBuilders.matchAllQuery()))
-            .add(client().prepareSearch("test2").setQuery(QueryBuilders.matchAllQuery()))
+            .add(prepareSearch("test1").setQuery(QueryBuilders.matchAllQuery()))
+            .add(prepareSearch("test2").setQuery(QueryBuilders.matchAllQuery()))
             .get();
         assertFalse(response.getResponses()[0].isFailure());
         assertThat(response.getResponses()[0].getResponse().getHits().getTotalHits().value, is(1L));
@@ -1009,8 +1009,8 @@ public class FieldLevelSecurityTests extends SecurityIntegTestCase {
         // user6 has access to field*
         response = client().filterWithHeader(Collections.singletonMap(BASIC_AUTH_HEADER, basicAuthHeaderValue("user6", USERS_PASSWD)))
             .prepareMultiSearch()
-            .add(client().prepareSearch("test1").setQuery(QueryBuilders.matchAllQuery()))
-            .add(client().prepareSearch("test2").setQuery(QueryBuilders.matchAllQuery()))
+            .add(prepareSearch("test1").setQuery(QueryBuilders.matchAllQuery()))
+            .add(prepareSearch("test2").setQuery(QueryBuilders.matchAllQuery()))
             .get();
         assertFalse(response.getResponses()[0].isFailure());
         assertThat(response.getResponses()[0].getResponse().getHits().getTotalHits().value, is(1L));
@@ -1027,8 +1027,8 @@ public class FieldLevelSecurityTests extends SecurityIntegTestCase {
         // user7 has roles with field level security and without field level security
         response = client().filterWithHeader(Collections.singletonMap(BASIC_AUTH_HEADER, basicAuthHeaderValue("user7", USERS_PASSWD)))
             .prepareMultiSearch()
-            .add(client().prepareSearch("test1").setQuery(QueryBuilders.matchAllQuery()))
-            .add(client().prepareSearch("test2").setQuery(QueryBuilders.matchAllQuery()))
+            .add(prepareSearch("test1").setQuery(QueryBuilders.matchAllQuery()))
+            .add(prepareSearch("test2").setQuery(QueryBuilders.matchAllQuery()))
             .get();
         assertFalse(response.getResponses()[0].isFailure());
         assertThat(response.getResponses()[0].getResponse().getHits().getTotalHits().value, is(1L));
@@ -1045,8 +1045,8 @@ public class FieldLevelSecurityTests extends SecurityIntegTestCase {
         // user8 has roles with field level security with access to field1 and field2
         response = client().filterWithHeader(Collections.singletonMap(BASIC_AUTH_HEADER, basicAuthHeaderValue("user8", USERS_PASSWD)))
             .prepareMultiSearch()
-            .add(client().prepareSearch("test1").setQuery(QueryBuilders.matchAllQuery()))
-            .add(client().prepareSearch("test2").setQuery(QueryBuilders.matchAllQuery()))
+            .add(prepareSearch("test1").setQuery(QueryBuilders.matchAllQuery()))
+            .add(prepareSearch("test2").setQuery(QueryBuilders.matchAllQuery()))
             .get();
         assertFalse(response.getResponses()[0].isFailure());
         assertThat(response.getResponses()[0].getResponse().getHits().getTotalHits().value, is(1L));

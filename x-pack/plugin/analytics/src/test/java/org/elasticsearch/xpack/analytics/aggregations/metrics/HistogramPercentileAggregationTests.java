@@ -103,10 +103,10 @@ public class HistogramPercentileAggregationTests extends ESSingleNodeTestCase {
         }
         client().admin().indices().refresh(new RefreshRequest("raw", "pre_agg")).get();
 
-        SearchResponse response = client().prepareSearch("raw").setTrackTotalHits(true).get();
+        SearchResponse response = prepareSearch("raw").setTrackTotalHits(true).get();
         assertEquals(numDocs, response.getHits().getTotalHits().value);
 
-        response = client().prepareSearch("pre_agg").get();
+        response = prepareSearch("pre_agg").get();
         assertEquals(numDocs / frq, response.getHits().getTotalHits().value);
 
         PercentilesAggregationBuilder builder = AggregationBuilders.percentiles("agg")
@@ -115,9 +115,9 @@ public class HistogramPercentileAggregationTests extends ESSingleNodeTestCase {
             .numberOfSignificantValueDigits(numberOfSignificantValueDigits)
             .percentiles(10);
 
-        SearchResponse responseRaw = client().prepareSearch("raw").addAggregation(builder).get();
-        SearchResponse responsePreAgg = client().prepareSearch("pre_agg").addAggregation(builder).get();
-        SearchResponse responseBoth = client().prepareSearch("pre_agg", "raw").addAggregation(builder).get();
+        SearchResponse responseRaw = prepareSearch("raw").addAggregation(builder).get();
+        SearchResponse responsePreAgg = prepareSearch("pre_agg").addAggregation(builder).get();
+        SearchResponse responseBoth = prepareSearch("pre_agg", "raw").addAggregation(builder).get();
 
         InternalHDRPercentiles percentilesRaw = responseRaw.getAggregations().get("agg");
         InternalHDRPercentiles percentilesPreAgg = responsePreAgg.getAggregations().get("agg");
@@ -206,10 +206,10 @@ public class HistogramPercentileAggregationTests extends ESSingleNodeTestCase {
         }
         client().admin().indices().refresh(new RefreshRequest("raw", "pre_agg")).get();
 
-        SearchResponse response = client().prepareSearch("raw").setTrackTotalHits(true).get();
+        SearchResponse response = prepareSearch("raw").setTrackTotalHits(true).get();
         assertEquals(numDocs, response.getHits().getTotalHits().value);
 
-        response = client().prepareSearch("pre_agg").get();
+        response = prepareSearch("pre_agg").get();
         assertEquals(numDocs / frq, response.getHits().getTotalHits().value);
     }
 
@@ -223,9 +223,9 @@ public class HistogramPercentileAggregationTests extends ESSingleNodeTestCase {
             .compression(compression)
             .percentiles(10, 25, 50, 75);
 
-        SearchResponse responseRaw = client().prepareSearch("raw").addAggregation(builder).get();
-        SearchResponse responsePreAgg = client().prepareSearch("pre_agg").addAggregation(builder).get();
-        SearchResponse responseBoth = client().prepareSearch("raw", "pre_agg").addAggregation(builder).get();
+        SearchResponse responseRaw = prepareSearch("raw").addAggregation(builder).get();
+        SearchResponse responsePreAgg = prepareSearch("pre_agg").addAggregation(builder).get();
+        SearchResponse responseBoth = prepareSearch("raw", "pre_agg").addAggregation(builder).get();
 
         InternalTDigestPercentiles percentilesRaw = responseRaw.getAggregations().get("agg");
         InternalTDigestPercentiles percentilesPreAgg = responsePreAgg.getAggregations().get("agg");
@@ -241,9 +241,9 @@ public class HistogramPercentileAggregationTests extends ESSingleNodeTestCase {
         setupTDigestHistogram(compression);
         BoxplotAggregationBuilder bpBuilder = new BoxplotAggregationBuilder("agg").field("inner.data").compression(compression);
 
-        SearchResponse bpResponseRaw = client().prepareSearch("raw").addAggregation(bpBuilder).get();
-        SearchResponse bpResponsePreAgg = client().prepareSearch("pre_agg").addAggregation(bpBuilder).get();
-        SearchResponse bpResponseBoth = client().prepareSearch("raw", "pre_agg").addAggregation(bpBuilder).get();
+        SearchResponse bpResponseRaw = prepareSearch("raw").addAggregation(bpBuilder).get();
+        SearchResponse bpResponsePreAgg = prepareSearch("pre_agg").addAggregation(bpBuilder).get();
+        SearchResponse bpResponseBoth = prepareSearch("raw", "pre_agg").addAggregation(bpBuilder).get();
 
         Boxplot bpRaw = bpResponseRaw.getAggregations().get("agg");
         Boxplot bpPreAgg = bpResponsePreAgg.getAggregations().get("agg");

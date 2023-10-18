@@ -70,9 +70,7 @@ public class VersionFieldIT extends ESSingleNodeTestCase {
         indicesAdmin().prepareRefresh().get();
 
         // terms aggs
-        SearchResponse response = client().prepareSearch(indexName)
-            .addAggregation(AggregationBuilders.terms("myterms").field("version"))
-            .get();
+        SearchResponse response = prepareSearch(indexName).addAggregation(AggregationBuilders.terms("myterms").field("version")).get();
         Terms terms = response.getAggregations().get("myterms");
         List<? extends Bucket> buckets = terms.getBuckets();
 
