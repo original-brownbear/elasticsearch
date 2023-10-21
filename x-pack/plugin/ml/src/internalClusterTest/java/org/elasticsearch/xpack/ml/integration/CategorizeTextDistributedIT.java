@@ -51,7 +51,7 @@ public class CategorizeTextDistributedIT extends BaseMlIntegTestCase {
         CreateIndexRequest createIndexRequest = new CreateIndexRequest(indexName).settings(
             Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, "9").put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, "0")
         );
-        client().admin().indices().create(createIndexRequest).actionGet();
+        indicesAdmin().create(createIndexRequest).actionGet();
 
         // Spread 10000 documents in 4 categories across the shards
         for (int i = 0; i < 10; ++i) {
@@ -72,10 +72,10 @@ public class CategorizeTextDistributedIT extends BaseMlIntegTestCase {
             }
             bulkRequestBuilder.execute().actionGet();
         }
-        client().admin().indices().prepareRefresh(indexName).execute().actionGet();
+        indicesAdmin().prepareRefresh(indexName).execute().actionGet();
 
         // Confirm the theory that all 3 nodes will have a shard on
-        IndicesStatsResponse indicesStatsResponse = client().admin().indices().prepareStats(indexName).execute().actionGet();
+        IndicesStatsResponse indicesStatsResponse = indicesAdmin().prepareStats(indexName).execute().actionGet();
         Set<String> nodesWithShards = Arrays.stream(indicesStatsResponse.getShards())
             .map(ShardStats::getShardRouting)
             .map(ShardRouting::currentNodeId)

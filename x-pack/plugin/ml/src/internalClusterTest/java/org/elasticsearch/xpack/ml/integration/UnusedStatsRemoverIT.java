@@ -113,14 +113,14 @@ public class UnusedStatsRemoverIT extends BaseMlIntegTestCase {
             new InferenceStats(1, 1, 1, 1, "model-with-stats", "test", Instant.now()),
             InferenceStats.docId("model-with-stats", "test")
         );
-        client().admin().indices().prepareRefresh(MlStatsIndex.indexPattern()).get();
+        indicesAdmin().prepareRefresh(MlStatsIndex.indexPattern()).get();
 
         PlainActionFuture<Boolean> deletionListener = new PlainActionFuture<>();
         UnusedStatsRemover statsRemover = new UnusedStatsRemover(client, new TaskId("test", 0L));
         statsRemover.remove(10000.0f, deletionListener, () -> false);
         deletionListener.actionGet();
 
-        client().admin().indices().prepareRefresh(MlStatsIndex.indexPattern()).get();
+        indicesAdmin().prepareRefresh(MlStatsIndex.indexPattern()).get();
 
         final String initialStateIndex = MlStatsIndex.TEMPLATE_NAME + "-000001";
 

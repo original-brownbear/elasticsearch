@@ -112,9 +112,7 @@ public class EsqlActionTaskIT extends AbstractEsqlIntegTestCase {
             mapping.endObject();
         }
         mapping.endObject();
-        client().admin()
-            .indices()
-            .prepareCreate("test")
+        indicesAdmin().prepareCreate("test")
             .setSettings(Map.of("number_of_shards", 1, "number_of_replicas", 0))
             .setMapping(mapping.endObject())
             .get();
@@ -129,7 +127,7 @@ public class EsqlActionTaskIT extends AbstractEsqlIntegTestCase {
          * segments that finish super quickly and cause us to report strange
          * statuses when we expect "starting".
          */
-        client().admin().indices().prepareForceMerge("test").setMaxNumSegments(1).get();
+        indicesAdmin().prepareForceMerge("test").setMaxNumSegments(1).get();
         /*
          * Double super extra paranoid check that force merge worked. It's
          * failed to reduce the index to a single segment and caused this test
@@ -137,7 +135,7 @@ public class EsqlActionTaskIT extends AbstractEsqlIntegTestCase {
          * trip here. Or maybe it won't! And we'll learn something. Maybe
          * it's ghosts.
          */
-        SegmentsStats stats = client().admin().indices().prepareStats("test").get().getPrimaries().getSegments();
+        SegmentsStats stats = indicesAdmin().prepareStats("test").get().getPrimaries().getSegments();
         if (stats.getCount() != 1L) {
             fail(Strings.toString(stats));
         }
@@ -236,13 +234,7 @@ public class EsqlActionTaskIT extends AbstractEsqlIntegTestCase {
         ActionFuture<EsqlQueryResponse> response = startEsql();
         try {
             getTasksStarting();
-            List<TaskInfo> tasks = client().admin()
-                .cluster()
-                .prepareListTasks()
-                .setActions(EsqlQueryAction.NAME)
-                .setDetailed(true)
-                .get()
-                .getTasks();
+            List<TaskInfo> tasks = clusterAdmin().prepareListTasks().setActions(EsqlQueryAction.NAME).setDetailed(true).get().getTasks();
             cancelTask(tasks.get(0).taskId());
             assertCancelled(response);
         } finally {
@@ -272,12 +264,12 @@ public class EsqlActionTaskIT extends AbstractEsqlIntegTestCase {
         CancelTasksRequest request = new CancelTasksRequest().setTargetTaskId(taskId).setReason("test cancel");
         request.setWaitForCompletion(false);
         LOGGER.debug("--> cancelling task [{}] without waiting for completion", taskId);
-        client().admin().cluster().execute(CancelTasksAction.INSTANCE, request).actionGet();
+        clusterAdmin().execute(CancelTasksAction.INSTANCE, request).actionGet();
         scriptPermits.release(NUM_DOCS);
         request = new CancelTasksRequest().setTargetTaskId(taskId).setReason("test cancel");
         request.setWaitForCompletion(true);
         LOGGER.debug("--> cancelling task [{}] with waiting for completion", taskId);
-        client().admin().cluster().execute(CancelTasksAction.INSTANCE, request).actionGet();
+        clusterAdmin().execute(CancelTasksAction.INSTANCE, request).actionGet();
     }
 
     /**
@@ -288,9 +280,7 @@ public class EsqlActionTaskIT extends AbstractEsqlIntegTestCase {
     private List<TaskInfo> getTasksStarting() throws Exception {
         List<TaskInfo> foundTasks = new ArrayList<>();
         assertBusy(() -> {
-            List<TaskInfo> tasks = client().admin()
-                .cluster()
-                .prepareListTasks()
+            List<TaskInfo> tasks = clusterAdmin().prepareListTasks()
                 .setActions(DriverTaskRunner.ACTION_NAME)
                 .setDetailed(true)
                 .get()
@@ -320,9 +310,7 @@ public class EsqlActionTaskIT extends AbstractEsqlIntegTestCase {
     private List<TaskInfo> getTasksRunning() throws Exception {
         List<TaskInfo> foundTasks = new ArrayList<>();
         assertBusy(() -> {
-            List<TaskInfo> tasks = client().admin()
-                .cluster()
-                .prepareListTasks()
+            List<TaskInfo> tasks = clusterAdmin().prepareListTasks()
                 .setActions(DriverTaskRunner.ACTION_NAME)
                 .setDetailed(true)
                 .get()
@@ -355,9 +343,7 @@ public class EsqlActionTaskIT extends AbstractEsqlIntegTestCase {
         assertThat(cancelException.getMessage(), either(equalTo("test cancel")).or(equalTo("task cancelled")));
         assertBusy(
             () -> assertThat(
-                client().admin()
-                    .cluster()
-                    .prepareListTasks()
+                clusterAdmin().prepareListTasks()
                     .setActions(EsqlQueryAction.NAME, DriverTaskRunner.ACTION_NAME)
                     .setDetailed(true)
                     .get()

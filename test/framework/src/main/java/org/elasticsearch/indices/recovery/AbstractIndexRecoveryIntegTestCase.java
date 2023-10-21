@@ -443,7 +443,7 @@ public abstract class AbstractIndexRecoveryIntegTestCase extends ESIntegTestCase
             // shard is marked as started again (and ensureGreen returns), but while applying the cluster state the primary is failed and
             // will be reallocated. The cluster will thus become green, then red, then green again. Triggering a refresh here before
             // searching helps, as in contrast to search actions, refresh waits for the closed shard to be reallocated.
-            client().admin().indices().prepareRefresh(indexName).get();
+            indicesAdmin().prepareRefresh(indexName).get();
         } else {
             logger.info("--> starting replica recovery from blue to red");
             updateIndexSettings(
@@ -487,7 +487,7 @@ public abstract class AbstractIndexRecoveryIntegTestCase extends ESIntegTestCase
         }, 60, TimeUnit.SECONDS);
 
         // Force merge to make sure that the resulting snapshot would contain the same index files as the safe commit
-        ForceMergeResponse forceMergeResponse = client().admin().indices().prepareForceMerge(indexName).setFlush(randomBoolean()).get();
+        ForceMergeResponse forceMergeResponse = indicesAdmin().prepareForceMerge(indexName).setFlush(randomBoolean()).get();
         assertThat(forceMergeResponse.getTotalShards(), equalTo(forceMergeResponse.getSuccessfulShards()));
 
         // create repo

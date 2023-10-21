@@ -300,7 +300,7 @@ public abstract class BaseShapeIntegTestCase<T extends AbstractGeometryQueryBuil
         );
 
         client().prepareIndex("shapes").setId("1").setSource(data, XContentType.JSON).get();
-        client().admin().indices().prepareRefresh().get();
+        indicesAdmin().prepareRefresh().get();
 
         // Point in polygon
         SearchResponse result = prepareSearch().setQuery(matchAllQuery())
@@ -349,7 +349,7 @@ public abstract class BaseShapeIntegTestCase<T extends AbstractGeometryQueryBuil
 
         data = BytesReference.bytes(jsonBuilder().startObject().field("area", WellKnownText.toWKT(inverse)).endObject());
         client().prepareIndex("shapes").setId("2").setSource(data, XContentType.JSON).get();
-        client().admin().indices().prepareRefresh().get();
+        indicesAdmin().prepareRefresh().get();
 
         // re-check point on polygon hole
         result = prepareSearch().setQuery(matchAllQuery())
@@ -368,7 +368,7 @@ public abstract class BaseShapeIntegTestCase<T extends AbstractGeometryQueryBuil
 
         data = BytesReference.bytes(jsonBuilder().startObject().field("area", WellKnownText.toWKT(crossing)).endObject());
         client().prepareIndex("shapes").setId("1").setSource(data, XContentType.JSON).get();
-        client().admin().indices().prepareRefresh().get();
+        indicesAdmin().prepareRefresh().get();
 
         // Create a polygon crossing longitude 180 with hole.
         crossing = new Polygon(
@@ -378,7 +378,7 @@ public abstract class BaseShapeIntegTestCase<T extends AbstractGeometryQueryBuil
 
         data = BytesReference.bytes(jsonBuilder().startObject().field("area", WellKnownText.toWKT(crossing)).endObject());
         client().prepareIndex("shapes").setId("1").setSource(data, XContentType.JSON).get();
-        client().admin().indices().prepareRefresh().get();
+        indicesAdmin().prepareRefresh().get();
 
         assertHitCount(
             prepareSearch().setQuery(matchAllQuery()).setPostFilter(queryBuilder().intersectionQuery("area", new Point(174, -4))),
@@ -415,14 +415,14 @@ public abstract class BaseShapeIntegTestCase<T extends AbstractGeometryQueryBuil
         getGeoShapeMapping(xContentBuilder);
         xContentBuilder.field("ignore_malformed", true).endObject().endObject().endObject().endObject();
 
-        client().admin().indices().prepareCreate("countries").setSettings(settings).setMapping(xContentBuilder).get();
+        indicesAdmin().prepareCreate("countries").setSettings(settings).setMapping(xContentBuilder).get();
         BulkResponse bulk = client().prepareBulk().add(bulkAction, 0, bulkAction.length, null, xContentBuilder.contentType()).get();
 
         for (BulkItemResponse item : bulk.getItems()) {
             assertFalse("unable to index data: " + item.getFailureMessage(), item.isFailed());
         }
 
-        client().admin().indices().prepareRefresh().get();
+        indicesAdmin().prepareRefresh().get();
         String key = "DE";
 
         SearchResponse searchResponse = prepareSearch().setQuery(matchQuery("_id", key)).get();

@@ -439,9 +439,7 @@ public class PointInTimeIT extends ESIntegTestCase {
         int numShards = randomIntBetween(5, 10);
         int maxConcurrentRequests = randomIntBetween(2, 5);
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("test")
+            indicesAdmin().prepareCreate("test")
                 .setSettings(
                     Settings.builder()
                         .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, numShards)

@@ -123,7 +123,7 @@ public abstract class MonitoringIntegTestCase extends ESIntegTestCase {
     }
 
     protected void deleteMonitoringIndices() {
-        assertAcked(client().admin().indices().prepareDelete(ALL_MONITORING_INDICES));
+        assertAcked(indicesAdmin().prepareDelete(ALL_MONITORING_INDICES));
     }
 
     protected void ensureMonitoringIndicesYellow() {
@@ -140,7 +140,7 @@ public abstract class MonitoringIntegTestCase extends ESIntegTestCase {
 
     protected void assertTemplateInstalled(String name) {
         boolean found = false;
-        for (IndexTemplateMetadata template : client().admin().indices().prepareGetTemplates().get().getIndexTemplates()) {
+        for (IndexTemplateMetadata template : indicesAdmin().prepareGetTemplates().get().getIndexTemplates()) {
             if (Regex.simpleMatch(name, template.getName())) {
                 found = true;
             }

@@ -284,8 +284,8 @@ public class IngestRestartIT extends ESIntegTestCase {
               ]
             }""");
         final TimeValue timeout = TimeValue.timeValueSeconds(10);
-        client().admin().cluster().preparePutPipeline("test_pipeline", pipeline, XContentType.JSON).get(timeout);
-        client().admin().indices().preparePutTemplate("pipeline_template").setPatterns(Collections.singletonList("*")).setSettings("""
+        clusterAdmin().preparePutPipeline("test_pipeline", pipeline, XContentType.JSON).get(timeout);
+        indicesAdmin().preparePutTemplate("pipeline_template").setPatterns(Collections.singletonList("*")).setSettings("""
             {
               "index" : {
                  "default_pipeline" : "test_pipeline"

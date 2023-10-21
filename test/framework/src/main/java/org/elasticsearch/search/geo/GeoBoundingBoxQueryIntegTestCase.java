@@ -101,7 +101,7 @@ public abstract class GeoBoundingBoxQueryIntegTestCase extends ESIntegTestCase {
             .setSource(jsonBuilder().startObject().field("name", "Brooklyn").field("location", "POINT(-73.95 40.65)").endObject())
             .get();
 
-        client().admin().indices().prepareRefresh().get();
+        indicesAdmin().prepareRefresh().get();
 
         SearchResponse searchResponse = prepareSearch() // from NY
             .setQuery(geoBoundingBoxQuery("location").setCorners(40.73, -74.1, 40.717, -73.99))

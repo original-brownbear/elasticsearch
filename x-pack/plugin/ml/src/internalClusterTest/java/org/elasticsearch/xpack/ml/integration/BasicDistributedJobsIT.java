@@ -168,7 +168,7 @@ public class BasicDistributedJobsIT extends BaseMlIntegTestCase {
         internalCluster().startNode(removeRoles(Set.of(DiscoveryNodeRole.ML_ROLE)));
         internalCluster().startNode(addRoles(Set.of(DiscoveryNodeRole.ML_ROLE)));
 
-        client().admin().indices().prepareCreate("data").setMapping("time", "type=date").get();
+        indicesAdmin().prepareCreate("data").setMapping("time", "type=date").get();
 
         IndexRequest indexRequest = new IndexRequest("data");
         indexRequest.source("time", 1407081600L);
@@ -452,7 +452,7 @@ public class BasicDistributedJobsIT extends BaseMlIntegTestCase {
         PutJobAction.Request putJobRequest = new PutJobAction.Request(job);
         client().execute(PutJobAction.INSTANCE, putJobRequest).actionGet();
 
-        client().admin().indices().prepareCreate("data").setMapping("time", "type=date").get();
+        indicesAdmin().prepareCreate("data").setMapping("time", "type=date").get();
 
         DatafeedConfig config = createDatafeed(datafeedId, jobId, Collections.singletonList("data"));
         PutDatafeedAction.Request putDatafeedRequest = new PutDatafeedAction.Request(config);

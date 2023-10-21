@@ -110,7 +110,7 @@ public class SourceOnlySnapshotIT extends AbstractSnapshotIntegTestCase {
         boolean requireRouting = randomBoolean();
         boolean useNested = randomBoolean();
         IndexRequestBuilder[] builders = snapshotAndRestore(sourceIdx, requireRouting, useNested);
-        IndicesStatsResponse indicesStatsResponse = client().admin().indices().prepareStats(sourceIdx).clear().setDocs(true).get();
+        IndicesStatsResponse indicesStatsResponse = indicesAdmin().prepareStats(sourceIdx).clear().setDocs(true).get();
         long deleted = indicesStatsResponse.getTotal().docs.getDeleted();
         boolean sourceHadDeletions = deleted > 0; // we use indexRandom which might create holes ie. deleted docs
         assertHits(sourceIdx, builders.length, sourceHadDeletions);
@@ -135,7 +135,7 @@ public class SourceOnlySnapshotIT extends AbstractSnapshotIntegTestCase {
         final String sourceIdx = "test-idx";
         boolean requireRouting = randomBoolean();
         IndexRequestBuilder[] builders = snapshotAndRestore(sourceIdx, requireRouting, true);
-        IndicesStatsResponse indicesStatsResponse = client().admin().indices().prepareStats().clear().setDocs(true).get();
+        IndicesStatsResponse indicesStatsResponse = indicesAdmin().prepareStats().clear().setDocs(true).get();
         assertThat(indicesStatsResponse.getTotal().docs.getDeleted(), Matchers.greaterThan(0L));
         assertHits(sourceIdx, builders.length, true);
         assertMappings(sourceIdx, requireRouting, true);
@@ -194,7 +194,7 @@ public class SourceOnlySnapshotIT extends AbstractSnapshotIntegTestCase {
     }
 
     private static void assertMappings(String sourceIdx, boolean requireRouting, boolean useNested) throws IOException {
-        GetMappingsResponse getMappingsResponse = client().admin().indices().prepareGetMappings(sourceIdx).get();
+        GetMappingsResponse getMappingsResponse = indicesAdmin().prepareGetMappings(sourceIdx).get();
         MappingMetadata mapping = getMappingsResponse.getMappings().get(sourceIdx);
         String nested = useNested ? """
             ,"incorrect":{"type":"object"},"nested":{"type":"nested","properties":{"value":{"type":"long"}}}""" : "";
@@ -341,7 +341,7 @@ public class SourceOnlySnapshotIT extends AbstractSnapshotIntegTestCase {
         createSnapshot(repo, snapshot, Collections.singletonList(sourceIdx));
 
         logger.info("--> delete index and stop the data node");
-        assertAcked(client().admin().indices().prepareDelete(sourceIdx).get());
+        assertAcked(indicesAdmin().prepareDelete(sourceIdx).get());
         internalCluster().stopRandomDataNode();
         assertFalse(clusterAdmin().prepareHealth().setTimeout("30s").setWaitForNodes("1").get().isTimedOut());
 

@@ -36,12 +36,12 @@ public class DeleteJobIT extends MlNativeAutodetectIntegTestCase {
 
     @Before
     public void setUpData() {
-        client().admin().indices().prepareCreate(DATA_INDEX).setMapping(TIME_FIELD, "type=date,format=epoch_millis").get();
+        indicesAdmin().prepareCreate(DATA_INDEX).setMapping(TIME_FIELD, "type=date,format=epoch_millis").get();
     }
 
     @After
     public void tearDownData() {
-        client().admin().indices().prepareDelete(DATA_INDEX).get();
+        indicesAdmin().prepareDelete(DATA_INDEX).get();
         cleanUp();
     }
 

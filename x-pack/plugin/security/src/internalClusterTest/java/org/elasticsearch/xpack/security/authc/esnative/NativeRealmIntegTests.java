@@ -694,7 +694,7 @@ public class NativeRealmIntegTests extends NativeRealmIntegTestCase {
                 .get();
         }
 
-        IndicesStatsResponse response = client().admin().indices().prepareStats("foo", SECURITY_MAIN_ALIAS).get();
+        IndicesStatsResponse response = indicesAdmin().prepareStats("foo", SECURITY_MAIN_ALIAS).get();
         assertThat(response.getFailedShards(), is(0));
         assertThat(response.getIndices().size(), is(2));
         assertThat(response.getIndices().get(TestRestrictedIndices.INTERNAL_SECURITY_MAIN_INDEX_7), notNullValue());

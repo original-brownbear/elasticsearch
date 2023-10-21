@@ -241,7 +241,7 @@ public class ExplainDataFrameAnalyticsIT extends MlNativeDataFrameAnalyticsInteg
                     }
                   }
                 }""";
-        client().admin().indices().prepareCreate(sourceIndex).setMapping(mapping).get();
+        indicesAdmin().prepareCreate(sourceIndex).setMapping(mapping).get();
         BulkRequestBuilder bulkRequestBuilder = client().prepareBulk().setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
         for (int i = 0; i < 10; i++) {
             Object[] source = new Object[] { "mapped_field", i };

@@ -260,14 +260,14 @@ public class RunDataFrameAnalyticsIT extends MlNativeDataFrameAnalyticsIntegTest
     public void testOutlierDetectionWithMoreFieldsThanDocValueFieldLimit() throws Exception {
         String sourceIndex = "test-outlier-detection-with-more-fields-than-docvalue-limit";
 
-        client().admin().indices().prepareCreate(sourceIndex).get();
+        indicesAdmin().prepareCreate(sourceIndex).get();
 
         GetSettingsRequest getSettingsRequest = new GetSettingsRequest();
         getSettingsRequest.indices(sourceIndex);
         getSettingsRequest.names(IndexSettings.MAX_DOCVALUE_FIELDS_SEARCH_SETTING.getKey());
         getSettingsRequest.includeDefaults(true);
 
-        GetSettingsResponse docValueLimitSetting = client().admin().indices().getSettings(getSettingsRequest).actionGet();
+        GetSettingsResponse docValueLimitSetting = indicesAdmin().getSettings(getSettingsRequest).actionGet();
         int docValueLimit = IndexSettings.MAX_DOCVALUE_FIELDS_SEARCH_SETTING.get(
             docValueLimitSetting.getIndexToSettings().values().iterator().next()
         );
@@ -814,7 +814,7 @@ public class RunDataFrameAnalyticsIT extends MlNativeDataFrameAnalyticsIntegTest
               }
             }""";
 
-        client().admin().indices().prepareCreate(sourceIndex).setMapping(mappings).get();
+        indicesAdmin().prepareCreate(sourceIndex).setMapping(mappings).get();
 
         BulkRequestBuilder bulkRequestBuilder = client().prepareBulk();
         bulkRequestBuilder.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
@@ -914,7 +914,7 @@ public class RunDataFrameAnalyticsIT extends MlNativeDataFrameAnalyticsIntegTest
 
         String mappings = "{\"enabled\": false}";
 
-        client().admin().indices().prepareCreate(sourceIndex).setMapping(mappings).get();
+        indicesAdmin().prepareCreate(sourceIndex).setMapping(mappings).get();
 
         BulkRequestBuilder bulkRequestBuilder = client().prepareBulk();
         bulkRequestBuilder.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
@@ -1017,7 +1017,7 @@ public class RunDataFrameAnalyticsIT extends MlNativeDataFrameAnalyticsIntegTest
     public void testStart_GivenTimeout_Returns408() throws Exception {
         String sourceIndex = "test-timeout-returns-408-data";
 
-        client().admin().indices().prepareCreate(sourceIndex).setMapping("numeric_1", "type=integer", "numeric_2", "type=integer").get();
+        indicesAdmin().prepareCreate(sourceIndex).setMapping("numeric_1", "type=integer", "numeric_2", "type=integer").get();
 
         BulkRequestBuilder bulkRequestBuilder = client().prepareBulk();
         bulkRequestBuilder.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);

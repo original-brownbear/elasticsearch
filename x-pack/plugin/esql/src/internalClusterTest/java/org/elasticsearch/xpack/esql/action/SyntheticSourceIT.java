@@ -49,7 +49,7 @@ public class SyntheticSourceIT extends AbstractEsqlIntegTestCase {
         }
         mapping.endObject();
 
-        assertAcked(client().admin().indices().prepareCreate("test").setMapping(mapping));
+        assertAcked(indicesAdmin().prepareCreate("test").setMapping(mapping));
 
         int numDocs = between(10, 1000);
         for (int i = 0; i < numDocs; i++) {
@@ -59,7 +59,7 @@ public class SyntheticSourceIT extends AbstractEsqlIntegTestCase {
             }
             indexRequest.get();
         }
-        client().admin().indices().prepareRefresh("test").get();
+        indicesAdmin().prepareRefresh("test").get();
         try (EsqlQueryResponse resp = run("from test | keep uid, name | sort uid asc | limit 1")) {
             Iterator<Object> row = resp.values().next();
             assertThat(row.next(), equalTo("u0"));

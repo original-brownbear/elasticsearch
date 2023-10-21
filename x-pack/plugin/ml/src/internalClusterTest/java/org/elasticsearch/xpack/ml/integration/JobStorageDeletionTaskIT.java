@@ -86,7 +86,7 @@ public class JobStorageDeletionTaskIT extends BaseMlIntegTestCase {
         internalCluster().ensureAtLeastNumDataNodes(1);
         ensureStableCluster(1);
 
-        client().admin().indices().prepareCreate(UNRELATED_INDEX).get();
+        indicesAdmin().prepareCreate(UNRELATED_INDEX).get();
 
         enableIndexBlock(UNRELATED_INDEX, IndexMetadata.SETTING_READ_ONLY);
 
@@ -149,10 +149,10 @@ public class JobStorageDeletionTaskIT extends BaseMlIntegTestCase {
                     .index(dedicatedIndex)
             );
 
-        client().admin().indices().aliases(aliasesRequest).actionGet();
+        indicesAdmin().aliases(aliasesRequest).actionGet();
 
         createBuckets(jobIdDedicated, 11, 10);
-        client().admin().indices().prepareRefresh(AnomalyDetectorsIndex.jobResultsIndexPrefix() + "*").get();
+        indicesAdmin().prepareRefresh(AnomalyDetectorsIndex.jobResultsIndexPrefix() + "*").get();
         AtomicReference<QueryPage<Bucket>> bucketHandler = new AtomicReference<>();
         AtomicReference<Exception> failureHandler = new AtomicReference<>();
         blockingCall(
@@ -173,7 +173,7 @@ public class JobStorageDeletionTaskIT extends BaseMlIntegTestCase {
         deleteJobRequest.setForce(true);
         client().execute(DeleteJobAction.INSTANCE, deleteJobRequest).get();
 
-        client().admin().indices().prepareRefresh(AnomalyDetectorsIndex.jobResultsIndexPrefix() + "*").get();
+        indicesAdmin().prepareRefresh(AnomalyDetectorsIndex.jobResultsIndexPrefix() + "*").get();
         // Make sure our shared index job is OK
         bucketHandler = new AtomicReference<>();
         failureHandler = new AtomicReference<>();

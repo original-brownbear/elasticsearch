@@ -1945,7 +1945,7 @@ public class IndexRecoveryIT extends AbstractIndexRecoveryIntegTestCase {
 
                                 // Wait a short while for finalization to block on advancing the replica's GCP and then delete the index
                                 threadPool.schedule(
-                                    () -> client().admin().indices().prepareDelete(indexName).execute(deleteListener),
+                                    () -> indicesAdmin().prepareDelete(indexName).execute(deleteListener),
                                     TimeValue.timeValueMillis(100),
                                     EsExecutors.DIRECT_EXECUTOR_SERVICE
                                 );
@@ -1968,10 +1968,7 @@ public class IndexRecoveryIT extends AbstractIndexRecoveryIntegTestCase {
 
         // Create the replica to trigger the whole process
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareUpdateSettings(indexName)
-                .setSettings(Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 1))
+            indicesAdmin().prepareUpdateSettings(indexName).setSettings(Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 1))
         );
 
         // Wait for the index to be deleted

@@ -78,7 +78,7 @@ public class FunctionScorePluginIT extends ESIntegTestCase {
                 .source(jsonBuilder().startObject().field("test", "value").field("num1", "2013-05-27").endObject())
         ).actionGet();
 
-        client().admin().indices().prepareRefresh().get();
+        indicesAdmin().prepareRefresh().get();
         DecayFunctionBuilder<?> gfb = new CustomDistanceScoreBuilder("num1", "2013-05-28", "+1d");
 
         ActionFuture<SearchResponse> response = client().search(

@@ -188,7 +188,7 @@ public class LocalExporterResourceIntegTests extends LocalExporterIntegTestCase 
         final String templateName = MonitoringTemplateRegistry.getTemplateConfigForMonitoredSystem(system).getTemplateName();
         final BytesReference source = generateTemplateSource(templateName, version);
 
-        assertAcked(client().admin().indices().preparePutTemplate(templateName).setSource(source, XContentType.JSON).get());
+        assertAcked(indicesAdmin().preparePutTemplate(templateName).setSource(source, XContentType.JSON).get());
     }
 
     /**
@@ -257,7 +257,7 @@ public class LocalExporterResourceIntegTests extends LocalExporterIntegTestCase 
 
     private void assertWatchesExist() {
         // Check if watches index exists
-        if (client().admin().indices().prepareGetIndex().addIndices(".watches").get().getIndices().length == 0) {
+        if (indicesAdmin().prepareGetIndex().addIndices(".watches").get().getIndices().length == 0) {
             fail("Expected [.watches] index with cluster alerts present, but no [.watches] index was found");
         }
 
@@ -282,7 +282,7 @@ public class LocalExporterResourceIntegTests extends LocalExporterIntegTestCase 
 
     private void assertNoWatchesExist() {
         // Check if watches index exists
-        if (client().admin().indices().prepareGetIndex().addIndices(".watches").get().getIndices().length == 0) {
+        if (indicesAdmin().prepareGetIndex().addIndices(".watches").get().getIndices().length == 0) {
             fail("Expected [.watches] index with cluster alerts present, but no [.watches] index was found");
         }
 
@@ -315,7 +315,7 @@ public class LocalExporterResourceIntegTests extends LocalExporterIntegTestCase 
     private void assertTemplateNotUpdated() {
         final String name = MonitoringTemplateRegistry.getTemplateConfigForMonitoredSystem(system).getTemplateName();
 
-        for (IndexTemplateMetadata template : client().admin().indices().prepareGetTemplates(name).get().getIndexTemplates()) {
+        for (IndexTemplateMetadata template : indicesAdmin().prepareGetTemplates(name).get().getIndexTemplates()) {
             final String docMapping = template.getMappings().toString();
 
             assertThat(docMapping, notNullValue());

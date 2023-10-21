@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 
 import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
-import static org.elasticsearch.test.ESIntegTestCase.client;
+import static org.elasticsearch.test.ESIntegTestCase.clusterAdmin;
 import static org.elasticsearch.test.ESIntegTestCase.internalCluster;
 import static org.elasticsearch.test.ESTestCase.assertBusy;
 
@@ -86,7 +86,7 @@ public class TaskAssertions {
     public static void assertAllTasksHaveFinished(String actionPrefix) throws Exception {
         logger.info("--> checking that all tasks with prefix {} have finished", actionPrefix);
         assertBusy(() -> {
-            final List<TaskInfo> tasks = client().admin().cluster().prepareListTasks().get().getTasks();
+            final List<TaskInfo> tasks = clusterAdmin().prepareListTasks().get().getTasks();
             assertTrue(tasks.toString(), tasks.stream().noneMatch(t -> t.action().startsWith(actionPrefix)));
         });
     }

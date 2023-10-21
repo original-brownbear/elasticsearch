@@ -114,7 +114,7 @@ public abstract class AbstractArchiveTestCase extends AbstractSnapshotIntegTestC
         createIndex(indexName);
         createFullSnapshot(repoName, snapshotName);
 
-        assertAcked(client().admin().indices().prepareDelete(indexName));
+        assertAcked(indicesAdmin().prepareDelete(indexName));
 
         PostStartTrialRequest request = new PostStartTrialRequest().setType(License.LicenseType.TRIAL.getTypeName()).acknowledge(true);
         client().execute(PostStartTrialAction.INSTANCE, request).get();

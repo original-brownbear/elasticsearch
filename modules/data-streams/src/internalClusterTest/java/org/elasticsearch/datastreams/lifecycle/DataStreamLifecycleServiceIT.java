@@ -236,8 +236,8 @@ public class DataStreamLifecycleServiceIT extends ESIntegTestCase {
         String dataStreamName = "metrics-foo";
         CreateDataStreamAction.Request createDataStreamRequest = new CreateDataStreamAction.Request(dataStreamName);
         client().execute(CreateDataStreamAction.INSTANCE, createDataStreamRequest).get();
-        client().admin().indices().rolloverIndex(new RolloverRequest(dataStreamName, null)).actionGet();
-        client().admin().indices().rolloverIndex(new RolloverRequest(dataStreamName, null)).actionGet();
+        indicesAdmin().rolloverIndex(new RolloverRequest(dataStreamName, null)).actionGet();
+        indicesAdmin().rolloverIndex(new RolloverRequest(dataStreamName, null)).actionGet();
         int finalGeneration = 3;
 
         // Update the lifecycle of the data stream

@@ -307,7 +307,7 @@ public abstract class ESBlobStoreRepositoryIntegTestCase extends ESIntegTestCase
         List<String> deleteIndices = randomSubsetOf(randomIntBetween(0, indexCount), indexNames);
         if (deleteIndices.size() > 0) {
             logger.info("-->  delete indices {}", deleteIndices);
-            assertAcked(client().admin().indices().prepareDelete(deleteIndices.toArray(new String[deleteIndices.size()])));
+            assertAcked(indicesAdmin().prepareDelete(deleteIndices.toArray(new String[deleteIndices.size()])));
         }
 
         Set<String> closeIndices = new HashSet<>(Arrays.asList(indexNames));
@@ -326,14 +326,14 @@ public abstract class ESBlobStoreRepositoryIntegTestCase extends ESIntegTestCase
                         int doc = randomIntBetween(0, docCount - 1);
                         client().prepareDelete(index, Integer.toString(doc)).get();
                     }
-                    client().admin().indices().prepareRefresh(index).get();
+                    indicesAdmin().prepareRefresh(index).get();
                 }
             }
 
             // Wait for green so the close does not fail in the edge case of coinciding with a shard recovery that hasn't fully synced yet
             ensureGreen();
             logger.info("-->  close indices {}", closeIndices);
-            assertAcked(client().admin().indices().prepareClose(closeIndices.toArray(new String[closeIndices.size()])));
+            assertAcked(indicesAdmin().prepareClose(closeIndices.toArray(new String[closeIndices.size()])));
         }
 
         if (recreateRepositoryBeforeRestore) {
@@ -373,7 +373,7 @@ public abstract class ESBlobStoreRepositoryIntegTestCase extends ESIntegTestCase
         int[] docCounts = new int[iterationCount];
         String indexName = randomName();
         String snapshotName = randomName();
-        assertAcked(client().admin().indices().prepareCreate(indexName).get());
+        assertAcked(indicesAdmin().prepareCreate(indexName).get());
         for (int i = 0; i < iterationCount; i++) {
             if (randomBoolean() && i > 0) { // don't delete on the first iteration
                 int docCount = docCounts[i - 1];
@@ -384,7 +384,7 @@ public abstract class ESBlobStoreRepositoryIntegTestCase extends ESIntegTestCase
                         int doc = randomIntBetween(0, docCount - 1);
                         client().prepareDelete(indexName, Integer.toString(doc)).get();
                     }
-                    client().admin().indices().prepareRefresh(indexName).get();
+                    indicesAdmin().prepareRefresh(indexName).get();
                 }
             } else {
                 int docCount = randomIntBetween(10, 1000);
@@ -407,7 +407,7 @@ public abstract class ESBlobStoreRepositoryIntegTestCase extends ESIntegTestCase
             // Wait for green so the close does not fail in the edge case of coinciding with a shard recovery that hasn't fully synced yet
             ensureGreen();
             logger.info("-->  close index");
-            assertAcked(client().admin().indices().prepareClose(indexName));
+            assertAcked(indicesAdmin().prepareClose(indexName));
 
             logger.info("--> restore index from the snapshot");
             assertSuccessfulRestore(

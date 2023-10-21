@@ -1565,7 +1565,7 @@ public class ClassificationHousePricingIT extends MlNativeDataFrameAnalyticsInte
         startAnalytics(jobId);
         waitUntilAnalyticsIsStopped(jobId);
 
-        client().admin().indices().refresh(new RefreshRequest(destIndex));
+        indicesAdmin().refresh(new RefreshRequest(destIndex));
         SearchResponse sourceData = prepareSearch(sourceIndex).setTrackTotalHits(true).setSize(1000).get();
 
         // obtain addition information for investigation of #90599
@@ -1668,7 +1668,7 @@ public class ClassificationHousePricingIT extends MlNativeDataFrameAnalyticsInte
              }
             }""";
 
-        client().admin().indices().prepareCreate(index).setMapping(mapping).get();
+        indicesAdmin().prepareCreate(index).setMapping(mapping).get();
     }
 
     @Override

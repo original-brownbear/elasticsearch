@@ -101,7 +101,7 @@ public class SecurityIndexManagerIntegTests extends SecurityIntegTestCase {
         GetIndexRequest getIndexRequest = new GetIndexRequest();
         getIndexRequest.indices(SECURITY_MAIN_ALIAS);
         getIndexRequest.indicesOptions(IndicesOptions.lenientExpandOpen());
-        GetIndexResponse getIndexResponse = client().admin().indices().getIndex(getIndexRequest).actionGet();
+        GetIndexResponse getIndexResponse = indicesAdmin().getIndex(getIndexRequest).actionGet();
         assertThat(getIndexResponse.getIndices().length, is(0));
         // use a variety of expressions that should match the main security index
         List<String> securityIndexNames = List.of(
@@ -154,7 +154,7 @@ public class SecurityIndexManagerIntegTests extends SecurityIntegTestCase {
             .roles(randomAlphaOfLengthBetween(1, 16))
             .get();
         assertTrue(putUserResponse.created());
-        getIndexResponse = client().admin().indices().getIndex(getIndexRequest).actionGet();
+        getIndexResponse = indicesAdmin().getIndex(getIndexRequest).actionGet();
         assertThat(getIndexResponse.getIndices().length, is(1));
         assertThat(getIndexResponse.getIndices(), arrayContaining(".security-7"));
         // assert the settings from the templates don't show up in the newly created security index
@@ -172,10 +172,10 @@ public class SecurityIndexManagerIntegTests extends SecurityIntegTestCase {
             .build();
         UpdateSettingsRequest updateSettingsRequest = new UpdateSettingsRequest(SECURITY_MAIN_ALIAS);
         updateSettingsRequest.settings(someSettings);
-        expectThrows(IllegalStateException.class, () -> client().admin().indices().updateSettings(updateSettingsRequest).actionGet());
+        expectThrows(IllegalStateException.class, () -> indicesAdmin().updateSettings(updateSettingsRequest).actionGet());
         UpdateSettingsRequest updateSettingsRequest2 = new UpdateSettingsRequest(".security-7");
         updateSettingsRequest2.settings(someSettings);
-        expectThrows(IllegalStateException.class, () -> client().admin().indices().updateSettings(updateSettingsRequest2).actionGet());
+        expectThrows(IllegalStateException.class, () -> indicesAdmin().updateSettings(updateSettingsRequest2).actionGet());
     }
 
     @Before

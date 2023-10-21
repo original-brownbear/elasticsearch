@@ -109,9 +109,7 @@ public class EsqlActionBreakerIT extends EsqlActionIT {
      * unreasonably small breaker and tripping it.
      */
     public void testBreaker() {
-        client().admin()
-            .indices()
-            .prepareCreate("test_breaker")
+        indicesAdmin().prepareCreate("test_breaker")
             .setMapping("foo", "type=keyword", "bar", "type=keyword")
             .setSettings(Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0).put("index.routing.rebalance.enable", "none"))
             .get();
@@ -123,7 +121,7 @@ public class EsqlActionBreakerIT extends EsqlActionIT {
                 .get();
             assertThat(Strings.toString(response), response.getResult(), equalTo(DocWriteResponse.Result.CREATED));
         }
-        client().admin().indices().prepareRefresh("test_breaker").get();
+        indicesAdmin().prepareRefresh("test_breaker").get();
         ensureYellow("test_breaker");
         setRequestCircuitBreakerLimit(ByteSizeValue.ofBytes(between(256, 512)));
         try {

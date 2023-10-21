@@ -133,7 +133,7 @@ public class DataFrameAnalysisCustomFeatureIT extends MlNativeDataFrameAnalytics
         startAnalytics(jobId);
         waitUntilAnalyticsIsStopped(jobId);
 
-        client().admin().indices().refresh(new RefreshRequest(destIndex));
+        indicesAdmin().refresh(new RefreshRequest(destIndex));
         SearchResponse sourceData = prepareSearch(sourceIndex).setTrackTotalHits(true).setSize(1000).get();
         for (SearchHit hit : sourceData.getHits()) {
             Map<String, Object> destDoc = getDestDoc(config, hit);
@@ -221,7 +221,7 @@ public class DataFrameAnalysisCustomFeatureIT extends MlNativeDataFrameAnalytics
                 throw new ElasticsearchException(ex);
             }
         } else {
-            client().admin().indices().prepareCreate(index).setMapping(mapping).get();
+            indicesAdmin().prepareCreate(index).setMapping(mapping).get();
         }
     }
 

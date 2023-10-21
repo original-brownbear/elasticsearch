@@ -159,7 +159,7 @@ public class MlInitializationServiceIT extends MlNativeAutodetectIntegTestCase {
                     .indexRouting("some-index-routing")
                     .searchRouting("some-search-routing")
             );
-        assertAcked(client().admin().indices().aliases(indicesAliasesRequest).get());
+        assertAcked(indicesAdmin().aliases(indicesAliasesRequest).get());
 
         assertFalse(mlInitializationService.areMlInternalIndicesHidden());
         mlInitializationService.onMaster();

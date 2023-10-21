@@ -164,14 +164,14 @@ public abstract class ESMockAPIBasedRepositoryIntegTestCase extends ESBlobStoreR
         }
 
         flushAndRefresh(index);
-        ForceMergeResponse forceMerge = client().admin().indices().prepareForceMerge(index).setFlush(true).setMaxNumSegments(1).get();
+        ForceMergeResponse forceMerge = indicesAdmin().prepareForceMerge(index).setFlush(true).setMaxNumSegments(1).get();
         assertThat(forceMerge.getSuccessfulShards(), equalTo(1));
         assertHitCount(prepareSearch(index).setSize(0).setTrackTotalHits(true), nbDocs);
 
         final String snapshot = "snapshot";
         assertSuccessfulSnapshot(clusterAdmin().prepareCreateSnapshot(repository, snapshot).setWaitForCompletion(true).setIndices(index));
 
-        assertAcked(client().admin().indices().prepareDelete(index));
+        assertAcked(indicesAdmin().prepareDelete(index));
 
         assertSuccessfulRestore(clusterAdmin().prepareRestoreSnapshot(repository, snapshot).setWaitForCompletion(true));
         ensureGreen(index);
@@ -191,14 +191,14 @@ public abstract class ESMockAPIBasedRepositoryIntegTestCase extends ESBlobStoreR
         }
 
         flushAndRefresh(index);
-        ForceMergeResponse forceMerge = client().admin().indices().prepareForceMerge(index).setFlush(true).setMaxNumSegments(1).get();
+        ForceMergeResponse forceMerge = indicesAdmin().prepareForceMerge(index).setFlush(true).setMaxNumSegments(1).get();
         assertThat(forceMerge.getSuccessfulShards(), equalTo(1));
         assertHitCount(prepareSearch(index).setSize(0).setTrackTotalHits(true), nbDocs);
 
         final String snapshot = "snapshot";
         assertSuccessfulSnapshot(clusterAdmin().prepareCreateSnapshot(repository, snapshot).setWaitForCompletion(true).setIndices(index));
 
-        assertAcked(client().admin().indices().prepareDelete(index));
+        assertAcked(indicesAdmin().prepareDelete(index));
 
         assertSuccessfulRestore(clusterAdmin().prepareRestoreSnapshot(repository, snapshot).setWaitForCompletion(true));
         ensureGreen(index);

@@ -241,7 +241,7 @@ public class MachineLearningLicensingIT extends BaseMlIntegTestCase {
         }
         assertMLAllowed(false);
 
-        client().admin().indices().prepareRefresh(MlConfigIndex.indexName()).get();
+        indicesAdmin().prepareRefresh(MlConfigIndex.indexName()).get();
 
         // now that the license is invalid, the job should be closed and datafeed stopped:
         assertBusy(() -> {
@@ -740,7 +740,7 @@ public class MachineLearningLicensingIT extends BaseMlIntegTestCase {
 
         // index some data
         String index = "inference-agg-licence-test";
-        client().admin().indices().prepareCreate(index).setMapping("feature1", "type=double", "feature2", "type=keyword").get();
+        indicesAdmin().prepareCreate(index).setMapping("feature1", "type=double", "feature2", "type=keyword").get();
         client().prepareBulk(index)
             .add(new IndexRequest().source("feature1", "10.0", "feature2", "foo"))
             .add(new IndexRequest().source("feature1", "20.0", "feature2", "foo"))

@@ -120,9 +120,9 @@ public class RRFRankCoordinatorCanMatchIT extends ESIntegTestCase {
             client().prepareIndex("time_index").setSource("@timestamp", i).setRouting("b").get();
         }
 
-        client().admin().indices().prepareRefresh("time_index").get();
-        client().admin().indices().prepareClose("time_index").get();
-        client().admin().indices().prepareOpen("time_index").get();
+        indicesAdmin().prepareRefresh("time_index").get();
+        indicesAdmin().prepareClose("time_index").get();
+        indicesAdmin().prepareOpen("time_index").get();
 
         assertBusy(() -> {
             IndexLongFieldRange timestampRange = clusterService().state().metadata().index("time_index").getTimestampRange();

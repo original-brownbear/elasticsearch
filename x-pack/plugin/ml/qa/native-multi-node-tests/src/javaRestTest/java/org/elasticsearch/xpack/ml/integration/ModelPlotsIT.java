@@ -63,7 +63,7 @@ public class ModelPlotsIT extends MlNativeAutodetectIntegTestCase {
 
     @After
     public void tearDownData() {
-        client().admin().indices().prepareDelete(DATA_INDEX).get();
+        indicesAdmin().prepareDelete(DATA_INDEX).get();
         cleanUp();
     }
 

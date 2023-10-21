@@ -56,9 +56,7 @@ public class EnrichLookupIT extends AbstractEsqlIntegTestCase {
 
     public void testSimple() {
         ElasticsearchAssertions.assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("users")
+            indicesAdmin().prepareCreate("users")
                 .setSettings(Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1))
                 .setMapping(
                     "uid",
@@ -79,13 +77,13 @@ public class EnrichLookupIT extends AbstractEsqlIntegTestCase {
         for (Map<String, String> user : users) {
             client().prepareIndex("users").setSource(user).get();
             if (randomBoolean()) {
-                client().admin().indices().prepareRefresh("users").get();
+                indicesAdmin().prepareRefresh("users").get();
             }
         }
         if (randomBoolean()) {
-            client().admin().indices().prepareForceMerge("users").setMaxNumSegments(1).get();
+            indicesAdmin().prepareForceMerge("users").setMaxNumSegments(1).get();
         }
-        client().admin().indices().prepareRefresh("users").get();
+        indicesAdmin().prepareRefresh("users").get();
         List<NamedExpression> enrichAttributes = List.of(
             new FieldAttribute(Source.EMPTY, "name", new EsField("name", DataTypes.KEYWORD, Map.of(), true)),
             new FieldAttribute(Source.EMPTY, "city", new EsField("city", DataTypes.KEYWORD, Map.of(), true)),

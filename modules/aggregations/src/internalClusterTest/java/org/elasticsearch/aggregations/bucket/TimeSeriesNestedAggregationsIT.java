@@ -71,7 +71,7 @@ public class TimeSeriesNestedAggregationsIT extends AggregationIntegTestCase {
 
         final BulkResponse bulkIndexResponse = bulkIndexRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE).get();
         assertFalse(bulkIndexResponse.hasFailures());
-        assertEquals(RestStatus.OK.getStatus(), client().admin().indices().prepareFlush("index").get().getStatus().getStatus());
+        assertEquals(RestStatus.OK.getStatus(), indicesAdmin().prepareFlush("index").get().getStatus().getStatus());
     }
 
     private static XContentBuilder timeSeriesDocument(

@@ -136,9 +136,7 @@ public class DataStreamLifecycleDownsampleDisruptionIT extends ESIntegTestCase {
             final String targetIndex = "downsample-5m-" + sourceIndex;
             assertBusy(() -> {
                 try {
-                    GetSettingsResponse getSettingsResponse = client().admin()
-                        .indices()
-                        .getSettings(new GetSettingsRequest().indices(targetIndex))
+                    GetSettingsResponse getSettingsResponse = indicesAdmin().getSettings(new GetSettingsRequest().indices(targetIndex))
                         .actionGet();
                     Settings indexSettings = getSettingsResponse.getIndexToSettings().get(targetIndex);
                     assertThat(indexSettings, is(notNullValue()));
