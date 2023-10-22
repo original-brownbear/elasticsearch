@@ -188,7 +188,7 @@ public class LocalExporterResourceIntegTests extends LocalExporterIntegTestCase 
         final String templateName = MonitoringTemplateRegistry.getTemplateConfigForMonitoredSystem(system).getTemplateName();
         final BytesReference source = generateTemplateSource(templateName, version);
 
-        assertAcked(client().admin().indices().preparePutTemplate(templateName).setSource(source, XContentType.JSON).get());
+        assertAcked(client().admin().indices().preparePutTemplate(templateName).setSource(source, XContentType.JSON));
     }
 
     /**

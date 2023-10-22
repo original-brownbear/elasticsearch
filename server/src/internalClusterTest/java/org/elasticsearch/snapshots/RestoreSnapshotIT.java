@@ -398,7 +398,7 @@ public class RestoreSnapshotIT extends AbstractSnapshotIntegTestCase {
         createRepository("test-repo", "fs");
 
         logger.info("-->  creating test template");
-        assertThat(
+        assertAcked(
             indicesAdmin().preparePutTemplate("test-template")
                 .setPatterns(Collections.singletonList("te*"))
                 .setMapping(
@@ -418,16 +418,13 @@ public class RestoreSnapshotIT extends AbstractSnapshotIntegTestCase {
                         .endObject()
                         .endObject()
                 )
-                .get()
-                .isAcknowledged(),
-            equalTo(true)
         );
 
         createSnapshot("test-repo", "test-snap", Collections.emptyList());
         assertThat(getSnapshot("test-repo", "test-snap").state(), equalTo(SnapshotState.SUCCESS));
 
         logger.info("-->  delete test template");
-        assertThat(indicesAdmin().prepareDeleteTemplate("test-template").get().isAcknowledged(), equalTo(true));
+        assertAcked(indicesAdmin().prepareDeleteTemplate("test-template").get());
         GetIndexTemplatesResponse getIndexTemplatesResponse = indicesAdmin().prepareGetTemplates().get();
         assertIndexTemplateMissing(getIndexTemplatesResponse, "test-template");
 

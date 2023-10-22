@@ -16,7 +16,6 @@ import org.elasticsearch.action.admin.indices.stats.IndicesStatsResponse;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.IndicesOptions;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.Strings;
@@ -53,8 +52,7 @@ public class OpenCloseIndexIT extends ESIntegTestCase {
         ClusterHealthResponse healthResponse = client.admin().cluster().prepareHealth().setWaitForGreenStatus().execute().actionGet();
         assertThat(healthResponse.isTimedOut(), equalTo(false));
 
-        AcknowledgedResponse closeIndexResponse = client.admin().indices().prepareClose("test1").execute().actionGet();
-        assertThat(closeIndexResponse.isAcknowledged(), equalTo(true));
+        assertAcked(client.admin().indices().prepareClose("test1"));
         assertIndexIsClosed("test1");
 
         OpenIndexResponse openIndexResponse = client.admin().indices().prepareOpen("test1").execute().actionGet();
@@ -102,10 +100,8 @@ public class OpenCloseIndexIT extends ESIntegTestCase {
         ClusterHealthResponse healthResponse = client.admin().cluster().prepareHealth().setWaitForGreenStatus().execute().actionGet();
         assertThat(healthResponse.isTimedOut(), equalTo(false));
 
-        AcknowledgedResponse closeIndexResponse1 = client.admin().indices().prepareClose("test1").execute().actionGet();
-        assertThat(closeIndexResponse1.isAcknowledged(), equalTo(true));
-        AcknowledgedResponse closeIndexResponse2 = client.admin().indices().prepareClose("test2").execute().actionGet();
-        assertThat(closeIndexResponse2.isAcknowledged(), equalTo(true));
+        assertAcked(client.admin().indices().prepareClose("test1"));
+        assertAcked(client.admin().indices().prepareClose("test2"));
         assertIndexIsClosed("test1", "test2");
         assertIndexIsOpened("test3");
 
@@ -124,8 +120,7 @@ public class OpenCloseIndexIT extends ESIntegTestCase {
         ClusterHealthResponse healthResponse = client.admin().cluster().prepareHealth().setWaitForGreenStatus().execute().actionGet();
         assertThat(healthResponse.isTimedOut(), equalTo(false));
 
-        AcknowledgedResponse closeIndexResponse = client.admin().indices().prepareClose("test*").execute().actionGet();
-        assertThat(closeIndexResponse.isAcknowledged(), equalTo(true));
+        assertAcked(client.admin().indices().prepareClose("test*"));
         assertIndexIsClosed("test1", "test2");
         assertIndexIsOpened("a");
 
@@ -141,8 +136,7 @@ public class OpenCloseIndexIT extends ESIntegTestCase {
         ClusterHealthResponse healthResponse = client.admin().cluster().prepareHealth().setWaitForGreenStatus().execute().actionGet();
         assertThat(healthResponse.isTimedOut(), equalTo(false));
 
-        AcknowledgedResponse closeIndexResponse = client.admin().indices().prepareClose("_all").execute().actionGet();
-        assertThat(closeIndexResponse.isAcknowledged(), equalTo(true));
+        assertAcked(client.admin().indices().prepareClose("_all"));
         assertIndexIsClosed("test1", "test2", "test3");
 
         OpenIndexResponse openIndexResponse = client.admin().indices().prepareOpen("_all").execute().actionGet();
@@ -157,8 +151,7 @@ public class OpenCloseIndexIT extends ESIntegTestCase {
         ClusterHealthResponse healthResponse = client.admin().cluster().prepareHealth().setWaitForGreenStatus().execute().actionGet();
         assertThat(healthResponse.isTimedOut(), equalTo(false));
 
-        AcknowledgedResponse closeIndexResponse = client.admin().indices().prepareClose("*").execute().actionGet();
-        assertThat(closeIndexResponse.isAcknowledged(), equalTo(true));
+        assertAcked(client.admin().indices().prepareClose("*"));
         assertIndexIsClosed("test1", "test2", "test3");
 
         OpenIndexResponse openIndexResponse = client.admin().indices().prepareOpen("*").execute().actionGet();
@@ -199,16 +192,9 @@ public class OpenCloseIndexIT extends ESIntegTestCase {
         ClusterHealthResponse healthResponse = client.admin().cluster().prepareHealth().setWaitForGreenStatus().execute().actionGet();
         assertThat(healthResponse.isTimedOut(), equalTo(false));
 
-        AcknowledgedResponse aliasesResponse = client.admin()
-            .indices()
-            .prepareAliases()
-            .addAlias("test1", "test1-alias")
-            .execute()
-            .actionGet();
-        assertThat(aliasesResponse.isAcknowledged(), equalTo(true));
+        assertAcked(client.admin().indices().prepareAliases().addAlias("test1", "test1-alias"));
 
-        AcknowledgedResponse closeIndexResponse = client.admin().indices().prepareClose("test1-alias").execute().actionGet();
-        assertThat(closeIndexResponse.isAcknowledged(), equalTo(true));
+        assertAcked(client.admin().indices().prepareClose("test1-alias"));
         assertIndexIsClosed("test1");
 
         OpenIndexResponse openIndexResponse = client.admin().indices().prepareOpen("test1-alias").execute().actionGet();
@@ -223,23 +209,10 @@ public class OpenCloseIndexIT extends ESIntegTestCase {
         ClusterHealthResponse healthResponse = client.admin().cluster().prepareHealth().setWaitForGreenStatus().execute().actionGet();
         assertThat(healthResponse.isTimedOut(), equalTo(false));
 
-        AcknowledgedResponse aliasesResponse1 = client.admin()
-            .indices()
-            .prepareAliases()
-            .addAlias("test1", "test-alias")
-            .execute()
-            .actionGet();
-        assertThat(aliasesResponse1.isAcknowledged(), equalTo(true));
-        AcknowledgedResponse aliasesResponse2 = client.admin()
-            .indices()
-            .prepareAliases()
-            .addAlias("test2", "test-alias")
-            .execute()
-            .actionGet();
-        assertThat(aliasesResponse2.isAcknowledged(), equalTo(true));
+        assertAcked(client.admin().indices().prepareAliases().addAlias("test1", "test-alias"));
+        assertAcked(client.admin().indices().prepareAliases().addAlias("test2", "test-alias"));
 
-        AcknowledgedResponse closeIndexResponse = client.admin().indices().prepareClose("test-alias").execute().actionGet();
-        assertThat(closeIndexResponse.isAcknowledged(), equalTo(true));
+        assertAcked(client.admin().indices().prepareClose("test-alias"));
         assertIndexIsClosed("test1", "test2");
 
         OpenIndexResponse openIndexResponse = client.admin().indices().prepareOpen("test-alias").execute().actionGet();
@@ -254,8 +227,8 @@ public class OpenCloseIndexIT extends ESIntegTestCase {
             .put(IndexMetadata.INDEX_NUMBER_OF_SHARDS_SETTING.getKey(), 1)
             .put(IndexMetadata.INDEX_NUMBER_OF_REPLICAS_SETTING.getKey(), 0)
             .build();
-        assertAcked(client.admin().indices().prepareCreate("test").setSettings(settings).get());
-        assertAcked(client.admin().indices().prepareClose("test").get());
+        assertAcked(client.admin().indices().prepareCreate("test").setSettings(settings));
+        assertAcked(client.admin().indices().prepareClose("test"));
 
         OpenIndexResponse response = client.admin().indices().prepareOpen("test").setTimeout("100ms").setWaitForActiveShards(2).get();
         assertThat(response.isShardsAcknowledged(), equalTo(false));
@@ -315,8 +288,7 @@ public class OpenCloseIndexIT extends ESIntegTestCase {
                 enableIndexBlock("test", blockSetting);
 
                 // Closing an index is not blocked
-                AcknowledgedResponse closeIndexResponse = indicesAdmin().prepareClose("test").execute().actionGet();
-                assertAcked(closeIndexResponse);
+                assertAcked(indicesAdmin().prepareClose("test"));
                 assertIndexIsClosed("test");
 
                 // Opening an index is not blocked
@@ -340,8 +312,7 @@ public class OpenCloseIndexIT extends ESIntegTestCase {
             }
         }
 
-        AcknowledgedResponse closeIndexResponse = indicesAdmin().prepareClose("test").execute().actionGet();
-        assertAcked(closeIndexResponse);
+        assertAcked(indicesAdmin().prepareClose("test"));
         assertIndexIsClosed("test");
 
         // Opening an index is blocked

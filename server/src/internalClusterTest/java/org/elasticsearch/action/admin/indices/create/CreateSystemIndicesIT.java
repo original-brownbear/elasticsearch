@@ -65,10 +65,8 @@ public class CreateSystemIndicesIT extends ESIntegTestCase {
 
     @After
     public void afterEach() throws Exception {
-        assertAcked(indicesAdmin().prepareDeleteTemplate("*").get());
-        assertAcked(
-            client().execute(DeleteComposableIndexTemplateAction.INSTANCE, new DeleteComposableIndexTemplateAction.Request("*")).get()
-        );
+        assertAcked(indicesAdmin().prepareDeleteTemplate("*"));
+        assertAcked(client().execute(DeleteComposableIndexTemplateAction.INSTANCE, new DeleteComposableIndexTemplateAction.Request("*")));
     }
 
     @Override
@@ -160,7 +158,6 @@ public class CreateSystemIndicesIT extends ESIntegTestCase {
             indicesAdmin().preparePutTemplate("test-template")
                 .setPatterns(List.of(indexName + "*"))
                 .addAlias(new Alias(indexName + "-legacy-alias"))
-                .get()
         );
 
         assertAcked(prepareCreate(primaryIndexName));
@@ -213,7 +210,7 @@ public class CreateSystemIndicesIT extends ESIntegTestCase {
             client().execute(
                 PutComposableIndexTemplateAction.INSTANCE,
                 new PutComposableIndexTemplateAction.Request("test-composable-template").indexTemplate(cit)
-            ).get()
+            )
         );
 
         assertAcked(prepareCreate(primaryIndexName));
@@ -232,7 +229,7 @@ public class CreateSystemIndicesIT extends ESIntegTestCase {
             client().execute(
                 DeleteComposableIndexTemplateAction.INSTANCE,
                 new DeleteComposableIndexTemplateAction.Request("test-composable-template")
-            ).get()
+            )
         );
     }
 
@@ -259,7 +256,7 @@ public class CreateSystemIndicesIT extends ESIntegTestCase {
             client().execute(
                 DeleteComposableIndexTemplateAction.INSTANCE,
                 new DeleteComposableIndexTemplateAction.Request("test-composable-template")
-            ).get()
+            )
         );
     }
 
@@ -273,7 +270,7 @@ public class CreateSystemIndicesIT extends ESIntegTestCase {
         assertMappingsAndSettings(TestSystemIndexDescriptor.getOldMappings(), concreteIndex);
 
         // Remove the index and alias...
-        assertAcked(indicesAdmin().prepareAliases().removeAlias(concreteIndex, INDEX_NAME).get());
+        assertAcked(indicesAdmin().prepareAliases().removeAlias(concreteIndex, INDEX_NAME));
         assertAcked(indicesAdmin().prepareDelete(concreteIndex));
 
         // ...so that we can check that the they will still be auto-created again,

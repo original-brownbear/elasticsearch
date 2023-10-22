@@ -40,6 +40,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.elasticsearch.xcontent.XContentFactory.jsonBuilder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -75,8 +76,7 @@ public class TransformProgressIT extends TransformSingleNodeTestCase {
             }
             builder.endObject();
 
-            var response = client().admin().indices().prepareCreate(REVIEWS_INDEX_NAME).setMapping(builder).get();
-            assertThat(response.isAcknowledged(), is(true));
+            assertAcked(client().admin().indices().prepareCreate(REVIEWS_INDEX_NAME).setMapping(builder));
         }
 
         // create index
@@ -205,8 +205,7 @@ public class TransformProgressIT extends TransformSingleNodeTestCase {
             assertThat(progress.getPercentComplete(), equalTo(100.0));
         }
 
-        var ackResponse = client().admin().indices().prepareDelete(REVIEWS_INDEX_NAME).get();
-        assertTrue(ackResponse.isAcknowledged());
+        assertAcked(client().admin().indices().prepareDelete(REVIEWS_INDEX_NAME));
     }
 
     private TransformProgress getProgress(Function function, SearchRequest searchRequest) throws Exception {

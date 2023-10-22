@@ -109,7 +109,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -602,14 +601,13 @@ public class IndexFollowingIT extends CcrIntegTestCase {
 
     public void testFollowNonExistentIndex() throws Exception {
         String indexSettings = getIndexSettings(1, 0);
-        assertAcked(leaderClient().admin().indices().prepareCreate("test-leader").setSource(indexSettings, XContentType.JSON).get());
+        assertAcked(leaderClient().admin().indices().prepareCreate("test-leader").setSource(indexSettings, XContentType.JSON));
         assertAcked(
             followerClient().admin()
                 .indices()
                 .prepareCreate("test-follower")
                 .setSource(indexSettings, XContentType.JSON)
                 .setMasterNodeTimeout(TimeValue.MAX_VALUE)
-                .get()
         );
         ensureLeaderGreen("test-leader");
         ensureFollowerGreen("test-follower");
@@ -632,7 +630,7 @@ public class IndexFollowingIT extends CcrIntegTestCase {
 
     public void testFollowWith$InIndexName() throws Exception {
         String indexSettings = getIndexSettings(1, 0);
-        assertAcked(leaderClient().admin().indices().prepareCreate("test-leader$").setSource(indexSettings, XContentType.JSON).get());
+        assertAcked(leaderClient().admin().indices().prepareCreate("test-leader$").setSource(indexSettings, XContentType.JSON));
         followerClient().execute(PutFollowAction.INSTANCE, putFollow("test-leader$", "test-follower$")).actionGet();
         ensureFollowerGreen("test-follower$");
     }
@@ -677,7 +675,7 @@ public class IndexFollowingIT extends CcrIntegTestCase {
 
     public void testAttemptToChangeCcrFollowingIndexSetting() throws Exception {
         String leaderIndexSettings = getIndexSettings(1, 0);
-        assertAcked(leaderClient().admin().indices().prepareCreate("index1").setSource(leaderIndexSettings, XContentType.JSON).get());
+        assertAcked(leaderClient().admin().indices().prepareCreate("index1").setSource(leaderIndexSettings, XContentType.JSON));
         ensureLeaderYellow("index1");
         PutFollowAction.Request followRequest = putFollow("index1", "index2");
         followerClient().execute(PutFollowAction.INSTANCE, followRequest).get();
@@ -907,7 +905,7 @@ public class IndexFollowingIT extends CcrIntegTestCase {
         );
         followerClient().execute(PutFollowAction.INSTANCE, putFollow("leader", "follower")).get();
         assertAcked(followerClient().admin().indices().prepareCreate("regular-index").setMasterNodeTimeout(TimeValue.MAX_VALUE));
-        assertAcked(followerClient().execute(PauseFollowAction.INSTANCE, new PauseFollowAction.Request("follower")).actionGet());
+        assertAcked(followerClient().execute(PauseFollowAction.INSTANCE, new PauseFollowAction.Request("follower")));
         assertThat(
             expectThrows(
                 IllegalArgumentException.class,
@@ -933,7 +931,7 @@ public class IndexFollowingIT extends CcrIntegTestCase {
 
     public void testUnfollowIndex() throws Exception {
         String leaderIndexSettings = getIndexSettings(1, 0);
-        assertAcked(leaderClient().admin().indices().prepareCreate("index1").setSource(leaderIndexSettings, XContentType.JSON).get());
+        assertAcked(leaderClient().admin().indices().prepareCreate("index1").setSource(leaderIndexSettings, XContentType.JSON));
         PutFollowAction.Request followRequest = putFollow("index1", "index2");
         followerClient().execute(PutFollowAction.INSTANCE, followRequest).get();
         leaderClient().prepareIndex("index1").setSource("{}", XContentType.JSON).get();
@@ -945,7 +943,7 @@ public class IndexFollowingIT extends CcrIntegTestCase {
         // Turn follow index into a regular index by: pausing shard follow, close index, unfollow index and then open index:
         pauseFollow("index2");
         followerClient().admin().indices().close(new CloseIndexRequest("index2").masterNodeTimeout(TimeValue.MAX_VALUE)).actionGet();
-        assertAcked(followerClient().execute(UnfollowAction.INSTANCE, new UnfollowAction.Request("index2")).actionGet());
+        assertAcked(followerClient().execute(UnfollowAction.INSTANCE, new UnfollowAction.Request("index2")));
         followerClient().admin().indices().open(new OpenIndexRequest("index2").masterNodeTimeout(TimeValue.MAX_VALUE)).actionGet();
         ensureFollowerGreen("index2");
 
@@ -1515,7 +1513,7 @@ public class IndexFollowingIT extends CcrIntegTestCase {
             );
             Setting<List<String>> seeds = SniffConnectionStrategy.REMOTE_CLUSTER_SEEDS.getConcreteSettingForNamespace("leader_cluster");
             settingsRequest.persistentSettings(Settings.builder().put(compress.getKey(), true).put(seeds.getKey(), address));
-            assertAcked(followerClient().admin().cluster().updateSettings(settingsRequest).actionGet());
+            assertAcked(followerClient().admin().cluster().updateSettings(settingsRequest));
 
             waitForDocs(firstBatchNumDocs, indexer);
             indexer.assertNoFailures();
@@ -1554,7 +1552,7 @@ public class IndexFollowingIT extends CcrIntegTestCase {
             settingsRequest.persistentSettings(
                 Settings.builder().put(compress.getKey(), compress.getDefault(Settings.EMPTY)).put(seeds.getKey(), address)
             );
-            assertAcked(followerClient().admin().cluster().updateSettings(settingsRequest).actionGet());
+            assertAcked(followerClient().admin().cluster().updateSettings(settingsRequest));
         }
     }
 
@@ -1754,14 +1752,14 @@ public class IndexFollowingIT extends CcrIntegTestCase {
         return settings;
     }
 
-    private void putFollowerTemplate(String setting, String settingValue) throws InterruptedException, ExecutionException {
+    private void putFollowerTemplate(String setting, String settingValue) {
         Template template = new Template(Settings.builder().put(setting, settingValue).build(), null, null);
         ComposableIndexTemplate cit = new ComposableIndexTemplate(List.of("follower"), template, null, null, null, null);
         assertAcked(
             followerClient().execute(
                 PutComposableIndexTemplateAction.INSTANCE,
                 new PutComposableIndexTemplateAction.Request("my-it").indexTemplate(cit)
-            ).get()
+            )
         );
     }
 

@@ -19,7 +19,6 @@ import org.elasticsearch.action.admin.indices.stats.IndicesStatsResponse;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.common.FieldMemoryStats;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.Fuzziness;
@@ -670,26 +669,26 @@ public class CompletionSuggestSearchIT extends ESIntegTestCase {
             .get();
         ensureGreen(INDEX);
 
-        AcknowledgedResponse putMappingResponse = indicesAdmin().preparePutMapping(INDEX)
-            .setSource(
-                jsonBuilder().startObject()
-                    .startObject("_doc")
-                    .startObject("properties")
-                    .startObject(FIELD)
-                    .field("type", "text")
-                    .startObject("fields")
-                    .startObject("suggest")
-                    .field("type", "completion")
-                    .field("analyzer", "simple")
-                    .endObject()
-                    .endObject()
-                    .endObject()
-                    .endObject()
-                    .endObject()
-                    .endObject()
-            )
-            .get();
-        assertThat(putMappingResponse.isAcknowledged(), is(true));
+        assertAcked(
+            indicesAdmin().preparePutMapping(INDEX)
+                .setSource(
+                    jsonBuilder().startObject()
+                        .startObject("_doc")
+                        .startObject("properties")
+                        .startObject(FIELD)
+                        .field("type", "text")
+                        .startObject("fields")
+                        .startObject("suggest")
+                        .field("type", "completion")
+                        .field("analyzer", "simple")
+                        .endObject()
+                        .endObject()
+                        .endObject()
+                        .endObject()
+                        .endObject()
+                        .endObject()
+                )
+        );
 
         SearchResponse searchResponse = prepareSearch(INDEX).suggest(
             new SuggestBuilder().addSuggestion("suggs", SuggestBuilders.completionSuggestion(FIELD + ".suggest").text("f").size(10))
@@ -880,25 +879,25 @@ public class CompletionSuggestSearchIT extends ESIntegTestCase {
         String otherField = "testOtherField";
         indicesAdmin().prepareCreate(INDEX).setSettings(indexSettings(2, 0)).get();
         ensureGreen();
-        AcknowledgedResponse putMappingResponse = indicesAdmin().preparePutMapping(INDEX)
-            .setSource(
-                jsonBuilder().startObject()
-                    .startObject("_doc")
-                    .startObject("properties")
-                    .startObject(FIELD)
-                    .field("type", "completion")
-                    .field("analyzer", "simple")
-                    .endObject()
-                    .startObject(otherField)
-                    .field("type", "completion")
-                    .field("analyzer", "simple")
-                    .endObject()
-                    .endObject()
-                    .endObject()
-                    .endObject()
-            )
-            .get();
-        assertThat(putMappingResponse.isAcknowledged(), is(true));
+        assertAcked(
+            indicesAdmin().preparePutMapping(INDEX)
+                .setSource(
+                    jsonBuilder().startObject()
+                        .startObject("_doc")
+                        .startObject("properties")
+                        .startObject(FIELD)
+                        .field("type", "completion")
+                        .field("analyzer", "simple")
+                        .endObject()
+                        .startObject(otherField)
+                        .field("type", "completion")
+                        .field("analyzer", "simple")
+                        .endObject()
+                        .endObject()
+                        .endObject()
+                        .endObject()
+                )
+        );
 
         // Index two entities
         client().prepareIndex(INDEX)
@@ -1221,7 +1220,7 @@ public class CompletionSuggestSearchIT extends ESIntegTestCase {
         mapping = mapping.endObject().endObject().endObject().endObject();
 
         assertAcked(
-            indicesAdmin().prepareCreate(INDEX).setSettings(Settings.builder().put(indexSettings()).put(settings)).setMapping(mapping).get()
+            indicesAdmin().prepareCreate(INDEX).setSettings(Settings.builder().put(indexSettings()).put(settings)).setMapping(mapping)
         );
     }
 
@@ -1275,7 +1274,6 @@ public class CompletionSuggestSearchIT extends ESIntegTestCase {
                         .endObject()
                         .endObject()
                 )
-                .get()
         );
         // can cause stack overflow without the default max_input_length
         String longString = replaceReservedChars(randomRealisticUnicodeOfLength(randomIntBetween(5000, 10000)), (char) 0x01);
@@ -1304,7 +1302,6 @@ public class CompletionSuggestSearchIT extends ESIntegTestCase {
                         .endObject()
                         .endObject()
                 )
-                .get()
         );
         // can cause stack overflow without the default max_input_length
         String string = "foo" + (char) 0x00 + "bar";
@@ -1342,7 +1339,6 @@ public class CompletionSuggestSearchIT extends ESIntegTestCase {
                         .endObject()
                         .endObject()
                 )
-                .get()
         );
         String string = "foo bar";
         client().prepareIndex(INDEX)
@@ -1454,7 +1450,7 @@ public class CompletionSuggestSearchIT extends ESIntegTestCase {
 
         String index = "test";
         assertAcked(
-            indicesAdmin().prepareCreate(index).setSettings(Settings.builder().put("index.number_of_shards", 2)).setMapping(mapping).get()
+            indicesAdmin().prepareCreate(index).setSettings(Settings.builder().put("index.number_of_shards", 2)).setMapping(mapping)
         );
 
         int numDocs = 2;

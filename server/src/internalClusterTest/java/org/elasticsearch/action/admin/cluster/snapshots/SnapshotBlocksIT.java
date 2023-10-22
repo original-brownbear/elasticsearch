@@ -131,7 +131,7 @@ public class SnapshotBlocksIT extends ESIntegTestCase {
         logger.info("-->  deleting a snapshot is allowed when the cluster is read only");
         try {
             setClusterReadOnly(true);
-            assertTrue(clusterAdmin().prepareDeleteSnapshot(REPOSITORY_NAME, SNAPSHOT_NAME).get().isAcknowledged());
+            assertAcked(clusterAdmin().prepareDeleteSnapshot(REPOSITORY_NAME, SNAPSHOT_NAME));
         } finally {
             setClusterReadOnly(false);
         }

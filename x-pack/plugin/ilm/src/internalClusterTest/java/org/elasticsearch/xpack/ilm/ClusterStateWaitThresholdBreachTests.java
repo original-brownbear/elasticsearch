@@ -7,7 +7,6 @@
 
 package org.elasticsearch.xpack.ilm;
 
-import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.ClusterStateUpdateTask;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
@@ -96,7 +95,7 @@ public class ClusterStateWaitThresholdBreachTests extends ESIntegTestCase {
         );
         LifecyclePolicy lifecyclePolicy = new LifecyclePolicy(policy, Map.of("warm", warmPhase));
         PutLifecycleAction.Request putLifecycleRequest = new PutLifecycleAction.Request(lifecyclePolicy);
-        assertAcked(client().execute(PutLifecycleAction.INSTANCE, putLifecycleRequest).get());
+        assertAcked(client().execute(PutLifecycleAction.INSTANCE, putLifecycleRequest));
 
         // we're configuring a very high number of replicas. this will make ths shrunk index unable to allocate successfully, so ILM will
         // wait in the `shrunk-shards-allocated` step (we don't wait for the original index to be GREEN before)
@@ -108,8 +107,7 @@ public class ClusterStateWaitThresholdBreachTests extends ESIntegTestCase {
             // configuring the threshold to the minimum value
             .put(LifecycleSettings.LIFECYCLE_STEP_WAIT_TIME_THRESHOLD, "1h")
             .build();
-        CreateIndexResponse res = indicesAdmin().prepareCreate(managedIndex).setSettings(settings).get();
-        assertTrue(res.isAcknowledged());
+        assertAcked(indicesAdmin().prepareCreate(managedIndex).setSettings(settings));
 
         String[] firstAttemptShrinkIndexName = new String[1];
         assertBusy(() -> {

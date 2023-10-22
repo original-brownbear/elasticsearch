@@ -11,7 +11,6 @@ package org.elasticsearch.repositories.gcs;
 import fixture.gcs.GoogleCloudStorageHttpFixture;
 import fixture.gcs.TestUtils;
 
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.common.settings.MockSecureSettings;
 import org.elasticsearch.common.settings.SecureSettings;
 import org.elasticsearch.common.settings.Settings;
@@ -23,8 +22,8 @@ import org.junit.ClassRule;
 import java.util.Base64;
 import java.util.Collection;
 
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.hamcrest.Matchers.blankOrNullString;
-import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
 
 public class GoogleCloudStorageThirdPartyTests extends AbstractThirdPartyRepositoryTestCase {
@@ -71,14 +70,14 @@ public class GoogleCloudStorageThirdPartyTests extends AbstractThirdPartyReposit
 
     @Override
     protected void createRepository(final String repoName) {
-        AcknowledgedResponse putRepositoryResponse = clusterAdmin().preparePutRepository("test-repo")
-            .setType("gcs")
-            .setSettings(
-                Settings.builder()
-                    .put("bucket", System.getProperty("test.google.bucket"))
-                    .put("base_path", System.getProperty("test.google.base", "/"))
-            )
-            .get();
-        assertThat(putRepositoryResponse.isAcknowledged(), equalTo(true));
+        assertAcked(
+            clusterAdmin().preparePutRepository("test-repo")
+                .setType("gcs")
+                .setSettings(
+                    Settings.builder()
+                        .put("bucket", System.getProperty("test.google.bucket"))
+                        .put("base_path", System.getProperty("test.google.base", "/"))
+                )
+        );
     }
 }

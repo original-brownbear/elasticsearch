@@ -161,7 +161,7 @@ public class DateHistogramIT extends ESIntegTestCase {
         addExpectedBucket(date(1, 6), 1, 5, 1);
         addExpectedBucket(date(1, 7), 1, 5, 1);
 
-        assertAcked(indicesAdmin().prepareCreate("sort_idx").setMapping("date", "type=date").get());
+        assertAcked(indicesAdmin().prepareCreate("sort_idx").setMapping("date", "type=date"));
         for (int i = 1; i <= 3; i++) {
             builders.add(
                 client().prepareIndex("sort_idx")
@@ -1306,7 +1306,7 @@ public class DateHistogramIT extends ESIntegTestCase {
     }
 
     public void testDSTBoundaryIssue9491() throws InterruptedException, ExecutionException {
-        assertAcked(indicesAdmin().prepareCreate("test9491").setMapping("d", "type=date").get());
+        assertAcked(indicesAdmin().prepareCreate("test9491").setMapping("d", "type=date"));
         indexRandom(
             true,
             client().prepareIndex("test9491").setSource("d", "2014-10-08T13:00:00Z"),
@@ -1327,7 +1327,7 @@ public class DateHistogramIT extends ESIntegTestCase {
     }
 
     public void testIssue8209() throws InterruptedException, ExecutionException {
-        assertAcked(indicesAdmin().prepareCreate("test8209").setMapping("d", "type=date").get());
+        assertAcked(indicesAdmin().prepareCreate("test8209").setMapping("d", "type=date"));
         indexRandom(
             true,
             client().prepareIndex("test8209").setSource("d", "2014-01-01T00:00:00Z"),
@@ -1392,7 +1392,7 @@ public class DateHistogramIT extends ESIntegTestCase {
      */
     public void testRewriteTimeZone_EpochMillisFormat() throws InterruptedException, ExecutionException {
         String index = "test31392";
-        assertAcked(indicesAdmin().prepareCreate(index).setMapping("d", "type=date,format=epoch_millis").get());
+        assertAcked(indicesAdmin().prepareCreate(index).setMapping("d", "type=date,format=epoch_millis"));
         indexRandom(true, client().prepareIndex(index).setSource("d", "1477954800000"));
         ensureSearchable(index);
         SearchResponse response = prepareSearch(index).addAggregation(
@@ -1494,7 +1494,6 @@ public class DateHistogramIT extends ESIntegTestCase {
         assertAcked(
             prepareCreate("cache_test_idx").setMapping("d", "type=date")
                 .setSettings(Settings.builder().put("requests.cache.enable", true).put("number_of_shards", 1).put("number_of_replicas", 1))
-                .get()
         );
         String date = DateFieldMapper.DEFAULT_DATE_TIME_FORMATTER.format(date(1, 1));
         String date2 = DateFieldMapper.DEFAULT_DATE_TIME_FORMATTER.format(date(2, 1));
@@ -1651,7 +1650,7 @@ public class DateHistogramIT extends ESIntegTestCase {
      * timeZones.
      */
     public void testDateNanosHistogram() throws Exception {
-        assertAcked(prepareCreate("nanos").setMapping("date", "type=date_nanos").get());
+        assertAcked(prepareCreate("nanos").setMapping("date", "type=date_nanos"));
         indexRandom(true, client().prepareIndex("nanos").setId("1").setSource("date", "2000-01-01"));
         indexRandom(true, client().prepareIndex("nanos").setId("2").setSource("date", "2000-01-02"));
 

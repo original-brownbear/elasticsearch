@@ -12,7 +12,6 @@ import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.cluster.routing.RoutingNode;
@@ -203,8 +202,7 @@ public class IndexLifecycleActionIT extends ESIntegTestCase {
 
         logger.info("Deleting index [test]");
         // last, lets delete the index
-        AcknowledgedResponse deleteIndexResponse = indicesAdmin().prepareDelete("test").execute().actionGet();
-        assertThat(deleteIndexResponse.isAcknowledged(), equalTo(true));
+        assertAcked(indicesAdmin().prepareDelete("test"));
 
         clusterState = clusterAdmin().prepareState().get().getState();
         assertNodesPresent(clusterState.getRoutingNodes(), node3, node2);

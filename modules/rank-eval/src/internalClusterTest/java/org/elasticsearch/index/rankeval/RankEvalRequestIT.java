@@ -274,7 +274,7 @@ public class RankEvalRequestIT extends ESIntegTestCase {
         assertEquals(6, details.getRelevantRetrieved());
 
         // test that ignore_unavailable=true works but returns one result less
-        assertTrue(indicesAdmin().prepareClose("test2").get().isAcknowledged());
+        assertAcked(indicesAdmin().prepareClose("test2"));
 
         request.indicesOptions(IndicesOptions.fromParameters(null, "true", null, "false", SearchRequest.DEFAULT_INDICES_OPTIONS));
         response = client().execute(RankEvalPlugin.ACTION, request).actionGet();
@@ -283,7 +283,7 @@ public class RankEvalRequestIT extends ESIntegTestCase {
         assertEquals(5, details.getRelevantRetrieved());
 
         // test that ignore_unavailable=false or default settings throw an IndexClosedException
-        assertTrue(indicesAdmin().prepareClose("test2").get().isAcknowledged());
+        assertAcked(indicesAdmin().prepareClose("test2"));
         request.indicesOptions(IndicesOptions.fromParameters(null, "false", null, "false", SearchRequest.DEFAULT_INDICES_OPTIONS));
         response = client().execute(RankEvalPlugin.ACTION, request).actionGet();
         assertEquals(1, response.getFailures().size());

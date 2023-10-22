@@ -90,7 +90,7 @@ public class AutoscalingIT extends MlNativeAutodetectIntegTestCase {
             new TreeSet<>(List.of("master", "data", "ingest", "ml")),
             deciders
         );
-        assertAcked(client().execute(PutAutoscalingPolicyAction.INSTANCE, request).actionGet());
+        assertAcked(client().execute(PutAutoscalingPolicyAction.INSTANCE, request));
 
         assertBusy(
             () -> assertMlCapacity(

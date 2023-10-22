@@ -1414,8 +1414,7 @@ public class CrossClusterAsyncSearchIT extends AbstractMultiClustersTestCase {
                 assertFalse("taskInfo on remote cluster should not be cancelled yet: " + taskInfo, taskInfo.cancelled());
             }
 
-            AcknowledgedResponse ack = deleteAsyncSearch(response.getId());
-            assertTrue(ack.isAcknowledged());
+            assertAcked(deleteAsyncSearch(response.getId()));
 
             assertBusy(() -> {
                 final Iterable<TransportService> transportServices = cluster(REMOTE_CLUSTER).getInstances(TransportService.class);

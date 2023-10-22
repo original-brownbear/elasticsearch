@@ -614,7 +614,7 @@ public class FieldCapabilitiesIT extends ESIntegTestCase {
             """;
         String[] indices = IntStream.range(0, between(1, 9)).mapToObj(n -> "test_many_index_" + n).toArray(String[]::new);
         for (String index : indices) {
-            assertAcked(indicesAdmin().prepareCreate(index).setMapping(mapping).get());
+            assertAcked(indicesAdmin().prepareCreate(index).setMapping(mapping));
         }
         FieldCapabilitiesRequest request = new FieldCapabilitiesRequest();
         request.indices("test_many_index_*");

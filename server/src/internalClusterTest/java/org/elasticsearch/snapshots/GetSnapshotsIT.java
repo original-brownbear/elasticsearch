@@ -612,7 +612,7 @@ public class GetSnapshotsIT extends AbstractSnapshotIntegTestCase {
             final long duration = snapshotInfo.endTime() - snapshotInfo.startTime();
             if (forbiddenStartTimes.contains(snapshotInfo.startTime()) || forbiddenDurations.contains(duration)) {
                 logger.info("--> snapshot start time or duration collided");
-                assertAcked(startDeleteSnapshot(repoName, snapshotName).get());
+                assertAcked(startDeleteSnapshot(repoName, snapshotName));
             } else {
                 assertTrue(forbiddenStartTimes.add(snapshotInfo.startTime()));
                 assertTrue(forbiddenDurations.add(duration));

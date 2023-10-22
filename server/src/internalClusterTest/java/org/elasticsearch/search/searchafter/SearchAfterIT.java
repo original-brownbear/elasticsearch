@@ -61,7 +61,7 @@ public class SearchAfterIT extends ESIntegTestCase {
     private static final int NUM_DOCS = 100;
 
     public void testsShouldFail() throws Exception {
-        assertAcked(indicesAdmin().prepareCreate("test").setMapping("field1", "type=long", "field2", "type=keyword").get());
+        assertAcked(indicesAdmin().prepareCreate("test").setMapping("field1", "type=long", "field2", "type=keyword"));
         ensureGreen();
         indexRandom(true, client().prepareIndex("test").setId("0").setSource("field1", 0, "field2", "toto"));
         {
@@ -150,7 +150,7 @@ public class SearchAfterIT extends ESIntegTestCase {
     }
 
     public void testWithNullStrings() throws InterruptedException {
-        assertAcked(indicesAdmin().prepareCreate("test").setMapping("field2", "type=keyword").get());
+        assertAcked(indicesAdmin().prepareCreate("test").setMapping("field2", "type=keyword"));
         ensureGreen();
         indexRandom(
             true,

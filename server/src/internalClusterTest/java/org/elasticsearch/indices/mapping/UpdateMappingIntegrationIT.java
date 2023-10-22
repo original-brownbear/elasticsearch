@@ -12,7 +12,6 @@ import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsResponse;
 import org.elasticsearch.action.admin.indices.refresh.RefreshResponse;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.cluster.action.index.MappingUpdatedAction;
 import org.elasticsearch.cluster.metadata.MappingMetadata;
@@ -106,11 +105,9 @@ public class UpdateMappingIntegrationIT extends ESIntegTestCase {
             """).execute().actionGet();
         clusterAdmin().prepareHealth().setWaitForEvents(Priority.LANGUID).setWaitForGreenStatus().execute().actionGet();
 
-        AcknowledgedResponse putMappingResponse = indicesAdmin().preparePutMapping("test").setSource("""
+        assertAcked(indicesAdmin().preparePutMapping("test").setSource("""
             {"properties":{"date":{"type":"integer"}}}
-            """, XContentType.JSON).execute().actionGet();
-
-        assertThat(putMappingResponse.isAcknowledged(), equalTo(true));
+            """, XContentType.JSON));
 
         GetMappingsResponse getMappingsResponse = indicesAdmin().prepareGetMappings("test").execute().actionGet();
         assertThat(getMappingsResponse.mappings().get("test").source().toString(), equalTo("""
@@ -121,10 +118,8 @@ public class UpdateMappingIntegrationIT extends ESIntegTestCase {
         createIndex("test", 1, 0);
         clusterAdmin().prepareHealth().setWaitForEvents(Priority.LANGUID).setWaitForGreenStatus().execute().actionGet();
 
-        AcknowledgedResponse putMappingResponse = indicesAdmin().preparePutMapping("test").setSource("""
-            {"properties":{"date":{"type":"integer"}}}""", XContentType.JSON).execute().actionGet();
-
-        assertThat(putMappingResponse.isAcknowledged(), equalTo(true));
+        assertAcked(indicesAdmin().preparePutMapping("test").setSource("""
+            {"properties":{"date":{"type":"integer"}}}""", XContentType.JSON));
 
         GetMappingsResponse getMappingsResponse = indicesAdmin().prepareGetMappings("test").execute().actionGet();
         assertThat(getMappingsResponse.mappings().get("test").source().toString(), equalTo("""
@@ -169,12 +164,10 @@ public class UpdateMappingIntegrationIT extends ESIntegTestCase {
             {"properties":{"body":{"type":"text"}}}""").execute().actionGet();
         clusterAdmin().prepareHealth().setWaitForEvents(Priority.LANGUID).setWaitForGreenStatus().execute().actionGet();
 
-        AcknowledgedResponse putMappingResponse = indicesAdmin().preparePutMapping("test").setSource("""
-            {"_doc":{"properties":{"body":{"type":"text"}}}}
-            """, XContentType.JSON).execute().actionGet();
-
         // no changes, we return
-        assertThat(putMappingResponse.isAcknowledged(), equalTo(true));
+        assertAcked(indicesAdmin().preparePutMapping("test").setSource("""
+            {"_doc":{"properties":{"body":{"type":"text"}}}}
+            """, XContentType.JSON));
     }
 
     public void testUpdateMappingConcurrently() throws Throwable {
@@ -204,25 +197,24 @@ public class UpdateMappingIntegrationIT extends ESIntegTestCase {
                         String indexName = i % 2 == 0 ? "test2" : "test1";
                         String fieldName = Thread.currentThread().getName() + "_" + i;
 
-                        AcknowledgedResponse response = client1.admin()
-                            .indices()
-                            .preparePutMapping(indexName)
-                            .setSource(
-                                JsonXContent.contentBuilder()
-                                    .startObject()
-                                    .startObject("_doc")
-                                    .startObject("properties")
-                                    .startObject(fieldName)
-                                    .field("type", "text")
-                                    .endObject()
-                                    .endObject()
-                                    .endObject()
-                                    .endObject()
-                            )
-                            .setMasterNodeTimeout(TimeValue.timeValueMinutes(5))
-                            .get();
-
-                        assertThat(response.isAcknowledged(), equalTo(true));
+                        assertAcked(
+                            client1.admin()
+                                .indices()
+                                .preparePutMapping(indexName)
+                                .setSource(
+                                    JsonXContent.contentBuilder()
+                                        .startObject()
+                                        .startObject("_doc")
+                                        .startObject("properties")
+                                        .startObject(fieldName)
+                                        .field("type", "text")
+                                        .endObject()
+                                        .endObject()
+                                        .endObject()
+                                        .endObject()
+                                )
+                                .setMasterNodeTimeout(TimeValue.timeValueMinutes(5))
+                        );
                         GetMappingsResponse getMappingResponse = client2.admin().indices().prepareGetMappings(indexName).get();
                         MappingMetadata mappings = getMappingResponse.getMappings().get(indexName);
                         @SuppressWarnings("unchecked")

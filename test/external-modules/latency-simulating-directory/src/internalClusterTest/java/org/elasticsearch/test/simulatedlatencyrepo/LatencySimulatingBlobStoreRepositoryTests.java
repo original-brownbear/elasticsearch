@@ -116,7 +116,7 @@ public class LatencySimulatingBlobStoreRepositoryTests extends AbstractSnapshotI
         SnapshotInfo si = createSnapshot(repositoryName, "test-snap-1", List.of(indexName));
 
         logger.info("--> delete index");
-        assertAcked(client.admin().indices().prepareDelete("test-idx").get());
+        assertAcked(client.admin().indices().prepareDelete("test-idx"));
 
         logger.info("--> mount snapshot");
         final MountSearchableSnapshotRequest req = new MountSearchableSnapshotRequest(

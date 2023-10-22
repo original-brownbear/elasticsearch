@@ -52,7 +52,7 @@ public class SnapshotCustomPluginStateIT extends AbstractSnapshotIntegTestCase {
 
         if (testTemplate) {
             logger.info("-->  creating test template");
-            assertThat(
+            assertAcked(
                 indicesAdmin().preparePutTemplate("test-template")
                     .setPatterns(Collections.singletonList("te*"))
                     .setMapping(
@@ -72,9 +72,6 @@ public class SnapshotCustomPluginStateIT extends AbstractSnapshotIntegTestCase {
                             .endObject()
                             .endObject()
                     )
-                    .get()
-                    .isAcknowledged(),
-                equalTo(true)
             );
         }
 
@@ -91,7 +88,7 @@ public class SnapshotCustomPluginStateIT extends AbstractSnapshotIntegTestCase {
                     .endArray()
                     .endObject()
             );
-            assertAcked(clusterAdmin().preparePutPipeline("barbaz", pipelineSource, XContentType.JSON).get());
+            assertAcked(clusterAdmin().preparePutPipeline("barbaz", pipelineSource, XContentType.JSON));
         }
 
         if (testScript) {
@@ -145,12 +142,12 @@ public class SnapshotCustomPluginStateIT extends AbstractSnapshotIntegTestCase {
 
         if (testPipeline) {
             logger.info("-->  delete test pipeline");
-            assertAcked(clusterAdmin().deletePipeline(new DeletePipelineRequest("barbaz")).get());
+            assertAcked(clusterAdmin().deletePipeline(new DeletePipelineRequest("barbaz")));
         }
 
         if (testScript) {
             logger.info("-->  delete test script");
-            assertAcked(clusterAdmin().prepareDeleteStoredScript("foobar").get());
+            assertAcked(clusterAdmin().prepareDeleteStoredScript("foobar"));
         }
 
         logger.info("--> try restoring from snapshot without global state");

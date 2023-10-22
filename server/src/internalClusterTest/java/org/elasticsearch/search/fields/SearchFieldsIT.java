@@ -754,7 +754,7 @@ public class SearchFieldsIT extends ESIntegTestCase {
 
     // see #8203
     public void testSingleValueFieldDatatField() throws ExecutionException, InterruptedException {
-        assertAcked(indicesAdmin().prepareCreate("test").setMapping("test_field", "type=keyword").get());
+        assertAcked(indicesAdmin().prepareCreate("test").setMapping("test_field", "type=keyword"));
         indexRandom(true, client().prepareIndex("test").setId("1").setSource("test_field", "foobar"));
         refresh();
         SearchResponse searchResponse = prepareSearch("test").setSource(
@@ -988,7 +988,7 @@ public class SearchFieldsIT extends ESIntegTestCase {
                 "type=long",
                 "md",
                 "type=double"
-            ).get()
+            )
         );
         final int numDocs = randomIntBetween(3, 8);
         List<IndexRequestBuilder> reqs = new ArrayList<>();

@@ -47,7 +47,7 @@ public class CartesianShapeIT extends CartesianShapeIntegTestCase {
     public void testMappingUpdate() {
         // create index
         IndexVersion version = randomSupportedVersion();
-        assertAcked(indicesAdmin().prepareCreate("test").setSettings(settings(version).build()).setMapping("shape", "type=shape").get());
+        assertAcked(indicesAdmin().prepareCreate("test").setSettings(settings(version).build()).setMapping("shape", "type=shape"));
         ensureGreen();
 
         String update = """

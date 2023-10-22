@@ -78,8 +78,8 @@ public class SearchableSnapshotsLicenseIntegTests extends BaseFrozenSearchableSn
         assertThat(restoreSnapshotResponse.getRestoreInfo().failedShards(), equalTo(0));
         ensureGreen(indexName);
 
-        assertAcked(client().execute(DeleteLicenseAction.INSTANCE, new DeleteLicenseRequest()).get());
-        assertAcked(client().execute(PostStartBasicAction.INSTANCE, new PostStartBasicRequest()).get());
+        assertAcked(client().execute(DeleteLicenseAction.INSTANCE, new DeleteLicenseRequest()));
+        assertAcked(client().execute(PostStartBasicAction.INSTANCE, new PostStartBasicRequest()));
 
         ensureClusterSizeConsistency();
         ensureClusterStateConsistency();

@@ -133,7 +133,7 @@ public abstract class ESSingleNodeTestCase extends ESTestCase {
         var deleteDataStreamsRequest = new DeleteDataStreamAction.Request("*");
         deleteDataStreamsRequest.indicesOptions(IndicesOptions.LENIENT_EXPAND_OPEN_CLOSED_HIDDEN);
         try {
-            assertAcked(client().execute(DeleteDataStreamAction.INSTANCE, deleteDataStreamsRequest).actionGet());
+            assertAcked(client().execute(DeleteDataStreamAction.INSTANCE, deleteDataStreamsRequest));
         } catch (IllegalStateException e) {
             // Ignore if action isn't registered, because data streams is a module and
             // if the delete action isn't registered then there no data streams to delete.
@@ -142,10 +142,10 @@ public abstract class ESSingleNodeTestCase extends ESTestCase {
             }
         }
         var deleteComposableIndexTemplateRequest = new DeleteComposableIndexTemplateAction.Request("*");
-        assertAcked(client().execute(DeleteComposableIndexTemplateAction.INSTANCE, deleteComposableIndexTemplateRequest).actionGet());
+        assertAcked(client().execute(DeleteComposableIndexTemplateAction.INSTANCE, deleteComposableIndexTemplateRequest));
         var deleteComponentTemplateRequest = new DeleteComponentTemplateAction.Request("*");
         assertAcked(client().execute(DeleteComponentTemplateAction.INSTANCE, deleteComponentTemplateRequest).actionGet());
-        assertAcked(indicesAdmin().prepareDelete("*").setIndicesOptions(IndicesOptions.LENIENT_EXPAND_OPEN_CLOSED_HIDDEN).get());
+        assertAcked(indicesAdmin().prepareDelete("*").setIndicesOptions(IndicesOptions.LENIENT_EXPAND_OPEN_CLOSED_HIDDEN));
         Metadata metadata = clusterAdmin().prepareState().get().getState().getMetadata();
         assertThat(
             "test leaves persistent cluster metadata behind: " + metadata.persistentSettings().keySet(),
@@ -362,7 +362,7 @@ public abstract class ESSingleNodeTestCase extends ESTestCase {
     }
 
     protected IndexService createIndex(String index, CreateIndexRequestBuilder createIndexRequestBuilder) {
-        assertAcked(createIndexRequestBuilder.get());
+        assertAcked(createIndexRequestBuilder);
         // Wait for the index to be allocated so that cluster state updates don't override
         // changes that would have been done locally
         ClusterHealthResponse health = clusterAdmin().health(

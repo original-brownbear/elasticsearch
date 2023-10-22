@@ -164,7 +164,7 @@ public class WriteLoadForecasterIT extends ESIntegTestCase {
                         null
                     )
                 )
-            ).actionGet()
+            )
         );
         assertAcked(client().execute(CreateDataStreamAction.INSTANCE, new CreateDataStreamAction.Request(dataStreamName)).actionGet());
 
@@ -190,7 +190,7 @@ public class WriteLoadForecasterIT extends ESIntegTestCase {
                 }
             });
 
-            assertAcked(indicesAdmin().rolloverIndex(new RolloverRequest(dataStreamName, null)).actionGet());
+            assertAcked(indicesAdmin().rolloverIndex(new RolloverRequest(dataStreamName, null)));
         }
     }
 

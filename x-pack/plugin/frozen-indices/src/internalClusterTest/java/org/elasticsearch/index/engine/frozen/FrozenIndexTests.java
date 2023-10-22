@@ -287,7 +287,7 @@ public class FrozenIndexTests extends ESSingleNodeTestCase {
             client().execute(
                 FreezeIndexAction.INSTANCE,
                 new FreezeRequest("idx*").setFreeze(false).indicesOptions(IndicesOptions.strictExpand())
-            ).actionGet()
+            )
         );
         ClusterStateResponse stateResponse = clusterAdmin().prepareState().get();
         assertEquals(IndexMetadata.State.CLOSE, stateResponse.getState().getMetadata().index("idx-closed").getState());
@@ -479,7 +479,7 @@ public class FrozenIndexTests extends ESSingleNodeTestCase {
                 new FreezeRequest("idx*", "not_available").indicesOptions(
                     IndicesOptions.fromParameters(null, "true", null, null, IndicesOptions.strictExpandOpen())
                 )
-            ).actionGet()
+            )
         );
         assertIndexFrozen("idx");
         assertEquals(IndexMetadata.State.CLOSE, clusterAdmin().prepareState().get().getState().metadata().index("idx-close").getState());
@@ -616,7 +616,7 @@ public class FrozenIndexTests extends ESSingleNodeTestCase {
         client().prepareIndex("index").setSource(DataStream.TIMESTAMP_FIELD_NAME, "2010-01-05T01:02:03.456Z").get();
         client().prepareIndex("index").setSource(DataStream.TIMESTAMP_FIELD_NAME, "2010-01-06T02:03:04.567Z").get();
 
-        assertAcked(client().execute(FreezeIndexAction.INSTANCE, new FreezeRequest("index")).actionGet());
+        assertAcked(client().execute(FreezeIndexAction.INSTANCE, new FreezeRequest("index")));
 
         final IndexLongFieldRange timestampFieldRange = clusterAdmin().prepareState()
             .get()
@@ -648,7 +648,7 @@ public class FrozenIndexTests extends ESSingleNodeTestCase {
         client().prepareIndex("index").setSource(DataStream.TIMESTAMP_FIELD_NAME, "2010-01-05T01:02:03.456789012Z").get();
         client().prepareIndex("index").setSource(DataStream.TIMESTAMP_FIELD_NAME, "2010-01-06T02:03:04.567890123Z").get();
 
-        assertAcked(client().execute(FreezeIndexAction.INSTANCE, new FreezeRequest("index")).actionGet());
+        assertAcked(client().execute(FreezeIndexAction.INSTANCE, new FreezeRequest("index")));
 
         final IndexLongFieldRange timestampFieldRange = clusterAdmin().prepareState()
             .get()

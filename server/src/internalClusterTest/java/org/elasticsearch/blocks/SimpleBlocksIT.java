@@ -13,7 +13,6 @@ import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.readonly.AddIndexBlockRequestBuilder;
-import org.elasticsearch.action.admin.indices.readonly.AddIndexBlockResponse;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.support.ActiveShardCount;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
@@ -257,8 +256,7 @@ public class SimpleBlocksIT extends ESIntegTestCase {
 
         final APIBlock block = randomAddableBlock();
         try {
-            AddIndexBlockResponse response = indicesAdmin().prepareAddBlock(block, indexName).get();
-            assertTrue("Add block [" + block + "] to index [" + indexName + "] not acknowledged: " + response, response.isAcknowledged());
+            assertAcked(indicesAdmin().prepareAddBlock(block, indexName));
             assertIndexHasBlock(block, indexName);
         } finally {
             disableIndexBlock(indexName, block);
@@ -377,11 +375,7 @@ public class SimpleBlocksIT extends ESIntegTestCase {
                 });
 
                 waitForDocs(randomIntBetween(10, 50), indexer);
-                final AddIndexBlockResponse response = indicesAdmin().prepareAddBlock(block, indexName).get();
-                assertTrue(
-                    "Add block [" + block + "] to index [" + indexName + "] not acknowledged: " + response,
-                    response.isAcknowledged()
-                );
+                assertAcked(indicesAdmin().prepareAddBlock(block, indexName));
                 indexer.stopAndAwaitStopped();
                 nbDocs += indexer.totalIndexedDocs();
             }

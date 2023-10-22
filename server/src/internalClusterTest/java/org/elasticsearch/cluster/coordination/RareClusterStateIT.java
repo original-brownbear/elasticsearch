@@ -239,7 +239,7 @@ public class RareClusterStateIT extends ESIntegTestCase {
         assertNotNull(otherNode);
 
         // Don't allocate the shard on the master node
-        assertAcked(prepareCreate("index").setSettings(indexSettings(1, 0).put("index.routing.allocation.exclude._name", master)).get());
+        assertAcked(prepareCreate("index").setSettings(indexSettings(1, 0).put("index.routing.allocation.exclude._name", master)));
         ensureGreen();
 
         // Check routing tables

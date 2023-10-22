@@ -9,7 +9,6 @@ package org.elasticsearch.xpack.watcher.test;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.admin.indices.alias.get.GetAliasesResponse;
-import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.get.GetIndexResponse;
 import org.elasticsearch.action.admin.indices.template.get.GetComposableIndexTemplateAction;
 import org.elasticsearch.action.search.SearchRequestBuilder;
@@ -223,10 +222,7 @@ public abstract class AbstractWatcherIntegrationTestCase extends ESIntegTestCase
             String triggeredWatchIndexName;
             if (randomBoolean()) {
                 // Create an index to get the template
-                CreateIndexResponse response = indicesAdmin().prepareCreate(Watch.INDEX)
-                    .setCause("Index to test aliases with .watches index")
-                    .get();
-                assertAcked(response);
+                assertAcked(indicesAdmin().prepareCreate(Watch.INDEX).setCause("Index to test aliases with .watches index"));
 
                 // Now replace it with a randomly named index
                 watchIndexName = randomAlphaOfLengthBetween(5, 10).toLowerCase(Locale.ROOT);
@@ -244,10 +240,10 @@ public abstract class AbstractWatcherIntegrationTestCase extends ESIntegTestCase
 
             // alias for .triggered-watches, ensuring the index template is set appropriately
             if (randomBoolean()) {
-                CreateIndexResponse response = indicesAdmin().prepareCreate(TriggeredWatchStoreField.INDEX_NAME)
-                    .setCause("Index to test aliases with .triggered-watches index")
-                    .get();
-                assertAcked(response);
+                assertAcked(
+                    indicesAdmin().prepareCreate(TriggeredWatchStoreField.INDEX_NAME)
+                        .setCause("Index to test aliases with .triggered-watches index")
+                );
 
                 // Now replace it with a randomly-named index
                 triggeredWatchIndexName = randomValueOtherThan(
@@ -274,11 +270,7 @@ public abstract class AbstractWatcherIntegrationTestCase extends ESIntegTestCase
         newSettings.remove("index.creation_date");
         newSettings.remove("index.version.created");
 
-        CreateIndexResponse createIndexResponse = indicesAdmin().prepareCreate(to)
-            .setMapping(mapping.sourceAsMap())
-            .setSettings(newSettings)
-            .get();
-        assertTrue(createIndexResponse.isAcknowledged());
+        assertAcked(indicesAdmin().prepareCreate(to).setMapping(mapping.sourceAsMap()).setSettings(newSettings));
         ensureGreen(to);
 
         AtomicReference<String> originalIndex = new AtomicReference<>(originalIndexOrAlias);

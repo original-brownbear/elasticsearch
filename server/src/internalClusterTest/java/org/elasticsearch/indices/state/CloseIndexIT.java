@@ -324,7 +324,7 @@ public class CloseIndexIT extends ESIntegTestCase {
             threads.add(new Thread(() -> {
                 try {
                     safeAwait(latch);
-                    assertAcked(indicesAdmin().prepareOpen(indexName).get());
+                    assertAcked(indicesAdmin().prepareOpen(indexName));
                 } catch (final Exception e) {
                     throw new AssertionError(e);
                 }
@@ -395,14 +395,14 @@ public class CloseIndexIT extends ESIntegTestCase {
             ensureGreen(indexName);
 
             // Closing an index should execute noop peer recovery
-            assertAcked(indicesAdmin().prepareClose(indexName).get());
+            assertAcked(indicesAdmin().prepareClose(indexName));
             assertIndexIsClosed(indexName);
             ensureGreen(indexName);
             assertNoFileBasedRecovery(indexName);
             internalCluster().assertSameDocIdsOnShards();
 
             // Open a closed index should execute noop recovery
-            assertAcked(indicesAdmin().prepareOpen(indexName).get());
+            assertAcked(indicesAdmin().prepareOpen(indexName));
             assertIndexIsOpened(indexName);
             ensureGreen(indexName);
             assertNoFileBasedRecovery(indexName);

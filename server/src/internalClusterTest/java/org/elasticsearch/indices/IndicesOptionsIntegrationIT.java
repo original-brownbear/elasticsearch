@@ -26,7 +26,6 @@ import org.elasticsearch.action.search.MultiSearchRequestBuilder;
 import org.elasticsearch.action.search.MultiSearchResponse;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.support.IndicesOptions;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Setting.Property;
@@ -247,11 +246,11 @@ public class IndicesOptionsIntegrationIT extends ESIntegTestCase {
         ensureGreen("test1");
         waitForRelocation();
 
-        AcknowledgedResponse putRepositoryResponse = clusterAdmin().preparePutRepository("dummy-repo")
-            .setType("fs")
-            .setSettings(Settings.builder().put("location", randomRepoPath()))
-            .get();
-        assertThat(putRepositoryResponse.isAcknowledged(), equalTo(true));
+        assertAcked(
+            clusterAdmin().preparePutRepository("dummy-repo")
+                .setType("fs")
+                .setSettings(Settings.builder().put("location", randomRepoPath()))
+        );
         clusterAdmin().prepareCreateSnapshot("dummy-repo", "snap1").setWaitForCompletion(true).get();
 
         verify(snapshot("snap2", "test1", "test2"), true);
@@ -364,11 +363,11 @@ public class IndicesOptionsIntegrationIT extends ESIntegTestCase {
         ensureGreen("foobar");
         waitForRelocation();
 
-        AcknowledgedResponse putRepositoryResponse = clusterAdmin().preparePutRepository("dummy-repo")
-            .setType("fs")
-            .setSettings(Settings.builder().put("location", randomRepoPath()))
-            .get();
-        assertThat(putRepositoryResponse.isAcknowledged(), equalTo(true));
+        assertAcked(
+            clusterAdmin().preparePutRepository("dummy-repo")
+                .setType("fs")
+                .setSettings(Settings.builder().put("location", randomRepoPath()))
+        );
         clusterAdmin().prepareCreateSnapshot("dummy-repo", "snap1").setWaitForCompletion(true).get();
 
         IndicesOptions options = IndicesOptions.fromOptions(false, false, true, false);
@@ -416,7 +415,7 @@ public class IndicesOptionsIntegrationIT extends ESIntegTestCase {
         createIndex("test1", "test2");
         ensureGreen();
         verify(search("test1", "test2"), false);
-        assertAcked(indicesAdmin().prepareClose("test2").get());
+        assertAcked(indicesAdmin().prepareClose("test2"));
 
         verify(search("test1", "test2"), true);
 
@@ -538,7 +537,7 @@ public class IndicesOptionsIntegrationIT extends ESIntegTestCase {
 
         verify(indicesAdmin().preparePutMapping("c*").setSource("field", "type=text"), true);
 
-        assertAcked(indicesAdmin().prepareClose("barbaz").get());
+        assertAcked(indicesAdmin().prepareClose("barbaz"));
         verify(indicesAdmin().preparePutMapping("barbaz").setSource("field", "type=text"), false);
         assertThat(indicesAdmin().prepareGetMappings("barbaz").get().mappings().get("barbaz"), notNullValue());
     }
@@ -573,7 +572,7 @@ public class IndicesOptionsIntegrationIT extends ESIntegTestCase {
 
         createIndex("foo", "foobar", "bar", "barbaz");
         ensureGreen();
-        assertAcked(indicesAdmin().prepareClose("_all").get());
+        assertAcked(indicesAdmin().prepareClose("_all"));
 
         verify(indicesAdmin().prepareUpdateSettings("foo").setSettings(Settings.builder().put("a", "b")), false);
         verify(indicesAdmin().prepareUpdateSettings("bar*").setSettings(Settings.builder().put("a", "b")), false);
@@ -590,7 +589,7 @@ public class IndicesOptionsIntegrationIT extends ESIntegTestCase {
         assertThat(settingsResponse.getSetting("bar", "index.c"), equalTo("d"));
         assertThat(settingsResponse.getSetting("barbaz", "index.c"), equalTo("d"));
 
-        assertAcked(indicesAdmin().prepareOpen("_all").get());
+        assertAcked(indicesAdmin().prepareOpen("_all"));
         try {
             verify(indicesAdmin().prepareUpdateSettings("barbaz").setSettings(Settings.builder().put("e", "f")), false);
         } catch (IllegalArgumentException e) {

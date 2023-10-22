@@ -36,7 +36,7 @@ import static org.elasticsearch.test.ESTestCase.frequently;
 import static org.elasticsearch.test.ESTestCase.randomInt;
 import static org.elasticsearch.test.ESTestCase.randomIntBetween;
 import static org.elasticsearch.test.ESTestCase.randomMillisUpToYear9999;
-import static org.junit.Assert.assertTrue;
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 
 /**
  * Provides helper methods that can be used to tests. Examples of the functionalities it provides are:
@@ -94,7 +94,7 @@ public class DataStreamLifecycleFixtures {
                 null
             )
         );
-        assertTrue(client().execute(PutComposableIndexTemplateAction.INSTANCE, request).actionGet().isAcknowledged());
+        assertAcked(client().execute(PutComposableIndexTemplateAction.INSTANCE, request).actionGet());
     }
 
     static DataStreamLifecycle randomLifecycle() {

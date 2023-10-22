@@ -385,7 +385,7 @@ public class PointInTimeIT extends ESIntegTestCase {
     }
 
     public void testPITTiebreak() throws Exception {
-        assertAcked(indicesAdmin().prepareDelete("index-*").get());
+        assertAcked(indicesAdmin().prepareDelete("index-*"));
         int numIndex = randomIntBetween(2, 10);
         int expectedNumDocs = 0;
         for (int i = 0; i < numIndex; i++) {

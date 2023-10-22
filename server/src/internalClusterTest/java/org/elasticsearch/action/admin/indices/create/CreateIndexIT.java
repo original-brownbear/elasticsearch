@@ -235,7 +235,7 @@ public class CreateIndexIT extends ESIntegTestCase {
                                 indexVersion.incrementAndGet();
                             }
                             // from here on all docs with index_version == 0|1 must be gone!!!! only 2 are ok;
-                            assertAcked(indicesAdmin().prepareDelete("test").get());
+                            assertAcked(indicesAdmin().prepareDelete("test"));
                         } finally {
                             latch.countDown();
                         }
@@ -293,7 +293,7 @@ public class CreateIndexIT extends ESIntegTestCase {
             .put(IndexMetadata.INDEX_NUMBER_OF_SHARDS_SETTING.getKey(), 1)
             .put(IndexMetadata.INDEX_NUMBER_OF_REPLICAS_SETTING.getKey(), numReplicas)
             .build();
-        assertAcked(indicesAdmin().prepareCreate("test-idx-1").setSettings(settings).addAlias(new Alias("alias1").writeIndex(true)).get());
+        assertAcked(indicesAdmin().prepareCreate("test-idx-1").setSettings(settings).addAlias(new Alias("alias1").writeIndex(true)));
 
         assertRequestBuilderThrows(
             indicesAdmin().prepareCreate("test-idx-2").setSettings(settings).addAlias(new Alias("alias1").writeIndex(true)),
@@ -316,7 +316,7 @@ public class CreateIndexIT extends ESIntegTestCase {
             .put(IndexMetadata.INDEX_NUMBER_OF_SHARDS_SETTING.getKey(), 1)
             .put(IndexMetadata.INDEX_NUMBER_OF_REPLICAS_SETTING.getKey(), numReplicas)
             .build();
-        assertAcked(indicesAdmin().prepareCreate("test-idx-1").setSettings(settings).get());
+        assertAcked(indicesAdmin().prepareCreate("test-idx-1").setSettings(settings));
 
         // all should fail
         settings = Settings.builder().put(settings).put(SETTING_WAIT_FOR_ACTIVE_SHARDS.getKey(), "all").build();

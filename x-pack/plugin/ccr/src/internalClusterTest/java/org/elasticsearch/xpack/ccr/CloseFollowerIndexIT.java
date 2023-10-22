@@ -10,7 +10,6 @@ import org.elasticsearch.action.admin.indices.close.CloseIndexRequest;
 import org.elasticsearch.action.admin.indices.open.OpenIndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.support.ActiveShardCount;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
@@ -99,8 +98,7 @@ public class CloseFollowerIndexIT extends CcrIntegTestCase {
 
         CloseIndexRequest closeIndexRequest = new CloseIndexRequest("index2").masterNodeTimeout(TimeValue.MAX_VALUE);
         closeIndexRequest.waitForActiveShards(ActiveShardCount.NONE);
-        AcknowledgedResponse response = followerClient().admin().indices().close(closeIndexRequest).get();
-        assertThat(response.isAcknowledged(), is(true));
+        assertAcked(followerClient().admin().indices().close(closeIndexRequest).get());
 
         ClusterState clusterState = followerClient().admin().cluster().prepareState().get().getState();
         assertThat(clusterState.metadata().index("index2").getState(), is(IndexMetadata.State.CLOSE));

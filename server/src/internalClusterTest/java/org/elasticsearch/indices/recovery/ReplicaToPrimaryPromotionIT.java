@@ -7,7 +7,6 @@
  */
 package org.elasticsearch.indices.recovery;
 
-import org.elasticsearch.action.admin.indices.close.CloseIndexResponse;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.node.DiscoveryNode;
@@ -20,7 +19,6 @@ import java.util.Locale;
 
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHitCount;
-import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
 @ESIntegTestCase.ClusterScope(numDataNodes = 2)
@@ -49,8 +47,7 @@ public class ReplicaToPrimaryPromotionIT extends ESIntegTestCase {
         // sometimes test with a closed index
         final IndexMetadata.State indexState = randomFrom(IndexMetadata.State.OPEN, IndexMetadata.State.CLOSE);
         if (indexState == IndexMetadata.State.CLOSE) {
-            CloseIndexResponse closeIndexResponse = indicesAdmin().prepareClose(indexName).get();
-            assertThat("close index not acked - " + closeIndexResponse, closeIndexResponse.isAcknowledged(), equalTo(true));
+            assertAcked(indicesAdmin().prepareClose(indexName));
             ensureGreen(indexName);
         }
 

@@ -20,7 +20,7 @@ import static org.hamcrest.Matchers.notNullValue;
 public class SqlClearCursorActionIT extends AbstractSqlIntegTestCase {
 
     public void testSqlClearCursorAction() {
-        assertAcked(indicesAdmin().prepareCreate("test").get());
+        assertAcked(indicesAdmin().prepareCreate("test"));
         BulkRequestBuilder bulkRequestBuilder = client().prepareBulk();
         int indexSize = randomIntBetween(100, 300);
         logger.info("Indexing {} records", indexSize);
@@ -52,7 +52,7 @@ public class SqlClearCursorActionIT extends AbstractSqlIntegTestCase {
     }
 
     public void testAutoCursorCleanup() {
-        assertAcked(indicesAdmin().prepareCreate("test").get());
+        assertAcked(indicesAdmin().prepareCreate("test"));
         BulkRequestBuilder bulkRequestBuilder = client().prepareBulk();
         int indexSize = randomIntBetween(100, 300);
         logger.info("Indexing {} records", indexSize);

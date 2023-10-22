@@ -12,7 +12,6 @@ import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsResponse;
 import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotResponse;
 import org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotResponse;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.Metadata;
@@ -121,7 +120,6 @@ public class ClusterShardLimitIT extends ESIntegTestCase {
                 .setPatterns(Collections.singletonList("should-fail"))
                 .setOrder(1)
                 .setSettings(indexSettings(counts.getFailingIndexShards(), counts.getFailingIndexReplicas()))
-                .get()
         );
 
         final IllegalArgumentException e = expectThrows(
@@ -243,7 +241,6 @@ public class ClusterShardLimitIT extends ESIntegTestCase {
             indicesAdmin().prepareUpdateSettings("test-index")
                 .setPreserveExisting(true)
                 .setSettings(Settings.builder().put("number_of_replicas", dataNodes))
-                .get()
         );
         ClusterState clusterState = clusterAdmin().prepareState().get().getState();
         assertEquals(0, clusterState.getMetadata().index("test-index").getNumberOfReplicas());
@@ -346,8 +343,7 @@ public class ClusterShardLimitIT extends ESIntegTestCase {
         ClusterHealthResponse healthResponse = client.admin().cluster().prepareHealth().setWaitForGreenStatus().execute().actionGet();
         assertFalse(healthResponse.isTimedOut());
 
-        AcknowledgedResponse closeIndexResponse = client.admin().indices().prepareClose("test-index-1").execute().actionGet();
-        assertTrue(closeIndexResponse.isAcknowledged());
+        assertAcked(client.admin().indices().prepareClose("test-index-1"));
 
         // Fill up the cluster
         setShardsPerNode(counts.getShardsPerNode());

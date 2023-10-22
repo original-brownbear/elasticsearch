@@ -9,7 +9,6 @@ package org.elasticsearch.integration;
 import org.elasticsearch.action.admin.indices.template.get.GetIndexTemplatesAction;
 import org.elasticsearch.action.admin.indices.template.get.GetIndexTemplatesResponse;
 import org.elasticsearch.action.admin.indices.template.put.PutIndexTemplateAction;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.cluster.metadata.IndexTemplateMetadata;
 import org.elasticsearch.common.settings.SecureString;
@@ -80,14 +79,14 @@ public class PermissionPrecedenceTests extends SecurityIntegTestCase {
         Client client = client();
 
         // first lets try with "admin"... all should work
-
-        AcknowledgedResponse putResponse = client.filterWithHeader(
-            Collections.singletonMap(
-                UsernamePasswordToken.BASIC_AUTH_HEADER,
-                basicAuthHeaderValue(nodeClientUsername(), nodeClientPassword())
-            )
-        ).admin().indices().preparePutTemplate("template1").setPatterns(Collections.singletonList("test_*")).get();
-        assertAcked(putResponse);
+        assertAcked(
+            client.filterWithHeader(
+                Collections.singletonMap(
+                    UsernamePasswordToken.BASIC_AUTH_HEADER,
+                    basicAuthHeaderValue(nodeClientUsername(), nodeClientPassword())
+                )
+            ).admin().indices().preparePutTemplate("template1").setPatterns(Collections.singletonList("test_*"))
+        );
 
         GetIndexTemplatesResponse getResponse = client.admin().indices().prepareGetTemplates("template1").get();
         List<IndexTemplateMetadata> templates = getResponse.getIndexTemplates();

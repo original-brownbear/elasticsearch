@@ -324,14 +324,14 @@ public class GeoIpDownloaderIT extends AbstractGeoIpIT {
 
         // Creating an index which does not reference the pipeline should not trigger the database download.
         String indexIdentifier = randomIdentifier();
-        assertAcked(indicesAdmin().prepareCreate(indexIdentifier).get());
+        assertAcked(indicesAdmin().prepareCreate(indexIdentifier));
         assertNull(getTask().getState());
 
         // Set the pipeline as default_pipeline or final_pipeline for the index.
         // This should trigger the database download.
         Setting<String> pipelineSetting = randomFrom(IndexSettings.FINAL_PIPELINE, IndexSettings.DEFAULT_PIPELINE);
         Settings indexSettings = Settings.builder().put(pipelineSetting.getKey(), pipelineId).build();
-        assertAcked(indicesAdmin().prepareUpdateSettings(indexIdentifier).setSettings(indexSettings).get());
+        assertAcked(indicesAdmin().prepareUpdateSettings(indexIdentifier).setSettings(indexSettings));
         assertBusy(() -> {
             GeoIpTaskState state = getGeoIpTaskState();
             assertEquals(

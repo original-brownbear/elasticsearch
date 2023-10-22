@@ -77,7 +77,7 @@ abstract class BucketMetricsPipeLineAggregationTestCase<T extends NumericMetrics
 
     @Override
     public void setupSuiteScopeCluster() throws Exception {
-        assertAcked(indicesAdmin().prepareCreate("idx").setMapping("tag", "type=keyword").get());
+        assertAcked(indicesAdmin().prepareCreate("idx").setMapping("tag", "type=keyword"));
         createIndex("idx_unmapped");
 
         numDocs = randomIntBetween(6, 20);
@@ -445,7 +445,7 @@ abstract class BucketMetricsPipeLineAggregationTestCase<T extends NumericMetrics
             .endObject()
           .endObject();
         // end::noformat
-        assertAcked(indicesAdmin().prepareCreate("foo_2").setMapping(builder).get());
+        assertAcked(indicesAdmin().prepareCreate("foo_2").setMapping(builder));
         // tag::noformat
         XContentBuilder docBuilder = jsonBuilder().startObject()
             .startObject("license")

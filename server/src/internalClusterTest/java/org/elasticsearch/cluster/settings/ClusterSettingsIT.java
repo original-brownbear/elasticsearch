@@ -349,9 +349,7 @@ public class ClusterSettingsIT extends ESIntegTestCase {
         if (readOnlyAllowDelete) {
             settingsBuilder.put(Metadata.SETTING_READ_ONLY_ALLOW_DELETE_SETTING.getKey(), "true");
         }
-        assertAcked(
-            clusterAdmin().prepareUpdateSettings().setPersistentSettings(settingsBuilder).setTransientSettings(settingsBuilder).get()
-        );
+        assertAcked(clusterAdmin().prepareUpdateSettings().setPersistentSettings(settingsBuilder).setTransientSettings(settingsBuilder));
 
         ClusterState state = clusterAdmin().prepareState().get().getState();
         if (readOnly) {
@@ -447,7 +445,7 @@ public class ClusterSettingsIT extends ESIntegTestCase {
         Settings.Builder builder = Settings.builder().putNull("archived.*");
         clearOrSetFalse(builder, readOnly, Metadata.SETTING_READ_ONLY_SETTING);
         clearOrSetFalse(builder, readOnlyAllowDelete, Metadata.SETTING_READ_ONLY_ALLOW_DELETE_SETTING);
-        assertAcked(clusterAdmin().prepareUpdateSettings().setPersistentSettings(builder).setTransientSettings(builder).get());
+        assertAcked(clusterAdmin().prepareUpdateSettings().setPersistentSettings(builder).setTransientSettings(builder));
 
         state = clusterAdmin().prepareState().get().getState();
         assertFalse(Metadata.SETTING_READ_ONLY_SETTING.get(state.getMetadata().transientSettings()));
@@ -485,7 +483,7 @@ public class ClusterSettingsIT extends ESIntegTestCase {
 
             // But it's possible to update the settings to update the "cluster.blocks.read_only" setting
             Settings settings = Settings.builder().putNull(Metadata.SETTING_READ_ONLY_SETTING.getKey()).build();
-            assertAcked(clusterAdmin().prepareUpdateSettings().setTransientSettings(settings).get());
+            assertAcked(clusterAdmin().prepareUpdateSettings().setTransientSettings(settings));
 
         } finally {
             setClusterReadOnly(false);
@@ -495,12 +493,12 @@ public class ClusterSettingsIT extends ESIntegTestCase {
         try {
             // But it's possible to update the settings to update the "cluster.blocks.read_only" setting
             Settings settings = Settings.builder().put(Metadata.SETTING_READ_ONLY_ALLOW_DELETE_SETTING.getKey(), true).build();
-            assertAcked(clusterAdmin().prepareUpdateSettings().setTransientSettings(settings).get());
+            assertAcked(clusterAdmin().prepareUpdateSettings().setTransientSettings(settings));
             assertBlocked(request, Metadata.CLUSTER_READ_ONLY_ALLOW_DELETE_BLOCK);
         } finally {
             // But it's possible to update the settings to update the "cluster.blocks.read_only" setting
             Settings s = Settings.builder().putNull(Metadata.SETTING_READ_ONLY_ALLOW_DELETE_SETTING.getKey()).build();
-            assertAcked(clusterAdmin().prepareUpdateSettings().setTransientSettings(s).get());
+            assertAcked(clusterAdmin().prepareUpdateSettings().setTransientSettings(s));
         }
 
         // It should work now

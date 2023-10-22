@@ -109,7 +109,7 @@ public class CcrRepositoryIT extends CcrIntegTestCase {
         ClusterUpdateSettingsRequest putSecondCluster = newSettingsRequest();
         String address = getFollowerCluster().getDataNodeInstance(TransportService.class).boundAddress().publishAddress().toString();
         putSecondCluster.persistentSettings(Settings.builder().put("cluster.remote.follower_cluster_copy.seeds", address));
-        assertAcked(followerClient().admin().cluster().updateSettings(putSecondCluster).actionGet());
+        assertAcked(followerClient().admin().cluster().updateSettings(putSecondCluster));
 
         String followerCopyRepoName = CcrRepository.NAME_PREFIX + "follower_cluster_copy";
         try {
@@ -122,7 +122,7 @@ public class CcrRepositoryIT extends CcrIntegTestCase {
 
         ClusterUpdateSettingsRequest deleteLeaderCluster = newSettingsRequest();
         deleteLeaderCluster.persistentSettings(Settings.builder().put("cluster.remote.leader_cluster.seeds", ""));
-        assertAcked(followerClient().admin().cluster().updateSettings(deleteLeaderCluster).actionGet());
+        assertAcked(followerClient().admin().cluster().updateSettings(deleteLeaderCluster));
 
         expectThrows(RepositoryMissingException.class, () -> repositoriesService.repository(leaderClusterRepoName));
 

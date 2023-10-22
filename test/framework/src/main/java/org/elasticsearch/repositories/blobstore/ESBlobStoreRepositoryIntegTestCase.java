@@ -352,7 +352,7 @@ public abstract class ESBlobStoreRepositoryIntegTestCase extends ESIntegTestCase
         }
 
         logger.info("-->  delete snapshot {}:{}", repoName, snapshotName);
-        assertAcked(clusterAdmin().prepareDeleteSnapshot(repoName, snapshotName).get());
+        assertAcked(clusterAdmin().prepareDeleteSnapshot(repoName, snapshotName));
 
         expectThrows(
             SnapshotMissingException.class,
@@ -373,7 +373,7 @@ public abstract class ESBlobStoreRepositoryIntegTestCase extends ESIntegTestCase
         int[] docCounts = new int[iterationCount];
         String indexName = randomName();
         String snapshotName = randomName();
-        assertAcked(client().admin().indices().prepareCreate(indexName).get());
+        assertAcked(client().admin().indices().prepareCreate(indexName));
         for (int i = 0; i < iterationCount; i++) {
             if (randomBoolean() && i > 0) { // don't delete on the first iteration
                 int docCount = docCounts[i - 1];
@@ -420,7 +420,7 @@ public abstract class ESBlobStoreRepositoryIntegTestCase extends ESIntegTestCase
 
         for (int i = 0; i < iterationCount; i++) {
             logger.info("-->  delete snapshot {}:{}", repoName, snapshotName + "-" + i);
-            assertAcked(clusterAdmin().prepareDeleteSnapshot(repoName, snapshotName + "-" + i).get());
+            assertAcked(clusterAdmin().prepareDeleteSnapshot(repoName, snapshotName + "-" + i));
         }
     }
 
@@ -463,7 +463,7 @@ public abstract class ESBlobStoreRepositoryIntegTestCase extends ESIntegTestCase
         assertEquals(createSnapshotResponse.getSnapshotInfo().successfulShards(), createSnapshotResponse.getSnapshotInfo().totalShards());
 
         logger.info("--> delete a snapshot");
-        assertAcked(clusterAdmin().prepareDeleteSnapshot(repoName, "test-snap").get());
+        assertAcked(clusterAdmin().prepareDeleteSnapshot(repoName, "test-snap"));
 
         logger.info("--> verify index folder deleted from blob container");
         RepositoriesService repositoriesSvc = internalCluster().getInstance(RepositoriesService.class, internalCluster().getMasterName());
@@ -483,7 +483,7 @@ public abstract class ESBlobStoreRepositoryIntegTestCase extends ESIntegTestCase
             }
         }
 
-        assertAcked(clusterAdmin().prepareDeleteSnapshot(repoName, "test-snap2").get());
+        assertAcked(clusterAdmin().prepareDeleteSnapshot(repoName, "test-snap2"));
     }
 
     public void testBlobStoreBulkDeletion() throws Exception {

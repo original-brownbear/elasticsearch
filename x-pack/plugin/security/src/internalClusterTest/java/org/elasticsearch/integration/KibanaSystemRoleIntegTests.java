@@ -7,7 +7,6 @@
 package org.elasticsearch.integration;
 
 import org.elasticsearch.action.DocWriteResponse;
-import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.common.settings.SecureString;
 import org.elasticsearch.test.SecurityIntegTestCase;
@@ -18,7 +17,7 @@ import java.util.Locale;
 
 import static java.util.Collections.singletonMap;
 import static org.elasticsearch.action.support.WriteRequest.RefreshPolicy.IMMEDIATE;
-import static org.hamcrest.Matchers.is;
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 
 public class KibanaSystemRoleIntegTests extends SecurityIntegTestCase {
 
@@ -39,10 +38,11 @@ public class KibanaSystemRoleIntegTests extends SecurityIntegTestCase {
         final String index = randomBoolean() ? ".kibana" : ".kibana-" + randomAlphaOfLengthBetween(1, 10).toLowerCase(Locale.ENGLISH);
 
         if (randomBoolean()) {
-            CreateIndexResponse createIndexResponse = client().filterWithHeader(
-                singletonMap("Authorization", UsernamePasswordToken.basicAuthHeaderValue("my_kibana_system", USERS_PASSWD))
-            ).admin().indices().prepareCreate(index).get();
-            assertThat(createIndexResponse.isAcknowledged(), is(true));
+            assertAcked(
+                client().filterWithHeader(
+                    singletonMap("Authorization", UsernamePasswordToken.basicAuthHeaderValue("my_kibana_system", USERS_PASSWD))
+                ).admin().indices().prepareCreate(index)
+            );
         }
 
         DocWriteResponse response = client().filterWithHeader(

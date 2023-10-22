@@ -10,7 +10,6 @@ package org.elasticsearch.action.support;
 
 import org.elasticsearch.action.UnavailableShardsException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
-import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.common.Priority;
 import org.elasticsearch.core.Strings;
@@ -29,9 +28,7 @@ import static org.hamcrest.Matchers.startsWith;
  */
 public class WaitActiveShardCountIT extends ESIntegTestCase {
     public void testReplicationWaitsForActiveShardCount() throws Exception {
-        CreateIndexResponse createIndexResponse = prepareCreate("test", 1, indexSettings(1, 2)).get();
-
-        assertAcked(createIndexResponse);
+        assertAcked(prepareCreate("test", 1, indexSettings(1, 2)));
 
         // indexing, by default, will work (waiting for one shard copy only)
         client().prepareIndex("test").setId("1").setSource(source("1", "test"), XContentType.JSON).execute().actionGet();

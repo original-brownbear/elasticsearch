@@ -127,7 +127,7 @@ public class DiskThresholdDeciderIT extends DiskUsageIntegTestCase {
         assertThat(snapshotInfo.successfulShards(), is(snapshotInfo.totalShards()));
         assertThat(snapshotInfo.state(), is(SnapshotState.SUCCESS));
 
-        assertAcked(indicesAdmin().prepareDelete(indexName).get());
+        assertAcked(indicesAdmin().prepareDelete(indexName));
 
         // reduce disk size of node 0 so that no shards fit below the low watermark, forcing shards to be assigned to the other data node
         getTestFileStore(dataNodeName).setTotalSpace(smallestShard.size + WATERMARK_BYTES - 1L);

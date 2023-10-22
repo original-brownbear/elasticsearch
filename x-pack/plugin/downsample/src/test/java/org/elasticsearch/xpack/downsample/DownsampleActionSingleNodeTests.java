@@ -238,7 +238,7 @@ public class DownsampleActionSingleNodeTests extends ESSingleNodeTestCase {
             .endObject();
 
         mapping.endObject().endObject().endObject();
-        assertAcked(indicesAdmin().prepareCreate(sourceIndex).setSettings(settings.build()).setMapping(mapping).get());
+        assertAcked(indicesAdmin().prepareCreate(sourceIndex).setSettings(settings.build()).setMapping(mapping));
     }
 
     public void testDownsampleIndex() throws IOException {
@@ -449,7 +449,7 @@ public class DownsampleActionSingleNodeTests extends ESSingleNodeTestCase {
         prepareSourceIndex(sourceIndex, true);
 
         // Create an empty index with the same name as the downsample index
-        assertAcked(indicesAdmin().prepareCreate(downsampleIndex).setSettings(indexSettings(1, 0)).get());
+        assertAcked(indicesAdmin().prepareCreate(downsampleIndex).setSettings(indexSettings(1, 0)));
         ResourceAlreadyExistsException exception = expectThrows(
             ResourceAlreadyExistsException.class,
             () -> downsample(sourceIndex, downsampleIndex, config)
@@ -683,7 +683,6 @@ public class DownsampleActionSingleNodeTests extends ESSingleNodeTestCase {
             indicesAdmin().preparePutTemplate(downsampleIndex)
                 .setPatterns(List.of(downsampleIndex))
                 .setSettings(Settings.builder().put("index.blocks.write", "true").build())
-                .get()
         );
 
         ElasticsearchException exception = expectThrows(ElasticsearchException.class, indexer::execute);
@@ -1047,14 +1046,12 @@ public class DownsampleActionSingleNodeTests extends ESSingleNodeTestCase {
         assertAcked(
             indicesAdmin().prepareUpdateSettings(sourceIndex)
                 .setSettings(Settings.builder().put(IndexMetadata.INDEX_BLOCKS_WRITE_SETTING.getKey(), blockWrite).build())
-                .get()
         );
     }
 
     private void downsample(String sourceIndex, String downsampleIndex, DownsampleConfig config) {
         assertAcked(
             client().execute(DownsampleAction.INSTANCE, new DownsampleAction.Request(sourceIndex, downsampleIndex, TIMEOUT, config))
-                .actionGet()
         );
     }
 

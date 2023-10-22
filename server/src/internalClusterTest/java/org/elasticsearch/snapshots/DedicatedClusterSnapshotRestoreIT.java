@@ -247,7 +247,6 @@ public class DedicatedClusterSnapshotRestoreIT extends AbstractSnapshotIntegTest
         assertAcked(
             prepareCreate("test-idx-none", 1, indexSettingsNoReplicas(6).put("index.routing.allocation.include.tag", "nowhere"))
                 .setWaitForActiveShards(ActiveShardCount.NONE)
-                .get()
         );
         assertTrue(indexExists("test-idx-none"));
 
@@ -640,7 +639,7 @@ public class DedicatedClusterSnapshotRestoreIT extends AbstractSnapshotIntegTest
 
         logger.info("--> shrink the index");
         updateIndexSettings(Settings.builder().put("index.blocks.write", true), sourceIdx);
-        assertAcked(indicesAdmin().prepareResizeIndex(sourceIdx, shrunkIdx).get());
+        assertAcked(indicesAdmin().prepareResizeIndex(sourceIdx, shrunkIdx));
 
         logger.info("--> snapshot the shrunk index");
         createSnapshot(repo, snapshot, Collections.singletonList(shrunkIdx));

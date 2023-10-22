@@ -24,6 +24,7 @@ import java.util.List;
 
 import static org.elasticsearch.datastreams.lifecycle.DataStreamLifecycleFixtures.putComposableIndexTemplate;
 import static org.elasticsearch.datastreams.lifecycle.DataStreamLifecycleFixtures.randomLifecycle;
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -155,10 +156,7 @@ public class CrudDataStreamLifecycleIT extends ESIntegTestCase {
                 new String[] { "*" },
                 dataRetention
             );
-            assertThat(
-                client().execute(PutDataStreamLifecycleAction.INSTANCE, putDataLifecycleRequest).get().isAcknowledged(),
-                equalTo(true)
-            );
+            assertAcked(client().execute(PutDataStreamLifecycleAction.INSTANCE, putDataLifecycleRequest).get());
             GetDataStreamLifecycleAction.Request getDataLifecycleRequest = new GetDataStreamLifecycleAction.Request(
                 new String[] { "my-data-stream" }
             );
@@ -180,10 +178,7 @@ public class CrudDataStreamLifecycleIT extends ESIntegTestCase {
                 dataRetention,
                 false
             );
-            assertThat(
-                client().execute(PutDataStreamLifecycleAction.INSTANCE, putDataLifecycleRequest).get().isAcknowledged(),
-                equalTo(true)
-            );
+            assertAcked(client().execute(PutDataStreamLifecycleAction.INSTANCE, putDataLifecycleRequest).get());
             GetDataStreamLifecycleAction.Request getDataLifecycleRequest = new GetDataStreamLifecycleAction.Request(
                 new String[] { "my-data-stream" }
             );
@@ -235,10 +230,7 @@ public class CrudDataStreamLifecycleIT extends ESIntegTestCase {
             DeleteDataStreamLifecycleAction.Request deleteDataLifecycleRequest = new DeleteDataStreamLifecycleAction.Request(
                 new String[] { "with-lifecycle-1" }
             );
-            assertThat(
-                client().execute(DeleteDataStreamLifecycleAction.INSTANCE, deleteDataLifecycleRequest).get().isAcknowledged(),
-                equalTo(true)
-            );
+            assertAcked(client().execute(DeleteDataStreamLifecycleAction.INSTANCE, deleteDataLifecycleRequest).get());
             GetDataStreamLifecycleAction.Request getDataLifecycleRequest = new GetDataStreamLifecycleAction.Request(
                 new String[] { "with-lifecycle*" }
             );
@@ -260,10 +252,7 @@ public class CrudDataStreamLifecycleIT extends ESIntegTestCase {
             DeleteDataStreamLifecycleAction.Request deleteDataLifecycleRequest = new DeleteDataStreamLifecycleAction.Request(
                 new String[] { "*" }
             );
-            assertThat(
-                client().execute(DeleteDataStreamLifecycleAction.INSTANCE, deleteDataLifecycleRequest).get().isAcknowledged(),
-                equalTo(true)
-            );
+            assertAcked(client().execute(DeleteDataStreamLifecycleAction.INSTANCE, deleteDataLifecycleRequest).get());
             GetDataStreamLifecycleAction.Request getDataLifecycleRequest = new GetDataStreamLifecycleAction.Request(
                 new String[] { "with-lifecycle*" }
             );

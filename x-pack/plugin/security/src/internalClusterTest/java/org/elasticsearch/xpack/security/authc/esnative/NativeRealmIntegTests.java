@@ -11,7 +11,6 @@ import org.elasticsearch.ElasticsearchSecurityException;
 import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotResponse;
-import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.stats.IndicesStatsResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.PlainActionFuture;
@@ -551,12 +550,7 @@ public class NativeRealmIntegTests extends NativeRealmIntegTestCase {
         assertThat(Arrays.asList(getRolesResponse.roles()[0].getIndicesPrivileges()[0].getPrivileges()), contains("create_index"));
         assertThat(Arrays.asList(getRolesResponse.roles()[0].getIndicesPrivileges()[0].getIndices()), contains("*"));
         // joe can create indices
-        CreateIndexResponse createIndexResponse = client().filterWithHeader(Collections.singletonMap("Authorization", token))
-            .admin()
-            .indices()
-            .prepareCreate("idx")
-            .get();
-        assertThat(createIndexResponse.isAcknowledged(), is(true));
+        assertAcked(client().filterWithHeader(Collections.singletonMap("Authorization", token)).admin().indices().prepareCreate("idx"));
         assertAcked(clusterAdmin().prepareDeleteRepository("test-repo"));
     }
 

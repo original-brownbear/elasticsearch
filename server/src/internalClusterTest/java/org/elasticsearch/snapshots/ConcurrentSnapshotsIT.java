@@ -1627,10 +1627,7 @@ public class ConcurrentSnapshotsIT extends AbstractSnapshotIntegTestCase {
         awaitNumberOfSnapshotsInProgress(1);
 
         final String targetSnapshot = "target-snapshot";
-        final ActionFuture<AcknowledgedResponse> clone = clusterAdmin().prepareCloneSnapshot(repository, sourceSnapshot, targetSnapshot)
-            .setIndices(index1)
-            .execute();
-        assertAcked(clone.get());
+        assertAcked(clusterAdmin().prepareCloneSnapshot(repository, sourceSnapshot, targetSnapshot).setIndices(index1));
 
         unblockAllDataNodes(repository);
         assertSuccessful(snapshot1);

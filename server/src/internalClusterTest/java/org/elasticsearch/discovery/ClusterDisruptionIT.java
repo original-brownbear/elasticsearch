@@ -279,7 +279,7 @@ public class ClusterDisruptionIT extends AbstractDisruptionTestCase {
     public void testRejoinDocumentExistsInAllShardCopies() throws Exception {
         List<String> nodes = startCluster(3);
 
-        assertAcked(prepareCreate("test").setSettings(indexSettings(1, 2)).get());
+        assertAcked(prepareCreate("test").setSettings(indexSettings(1, 2)));
         ensureGreen("test");
 
         nodes = new ArrayList<>(nodes);

@@ -8,7 +8,6 @@
 
 package org.elasticsearch.index.search;
 
-import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.query.MatchPhraseQueryBuilder;
@@ -30,13 +29,14 @@ public class MatchPhraseQueryIT extends ESIntegTestCase {
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        CreateIndexRequestBuilder createIndexRequest = prepareCreate(INDEX).setSettings(
-            Settings.builder()
-                .put(indexSettings())
-                .put("index.analysis.analyzer.standard_stopwords.type", "standard")
-                .putList("index.analysis.analyzer.standard_stopwords.stopwords", "of", "the", "who")
+        assertAcked(
+            prepareCreate(INDEX).setSettings(
+                Settings.builder()
+                    .put(indexSettings())
+                    .put("index.analysis.analyzer.standard_stopwords.type", "standard")
+                    .putList("index.analysis.analyzer.standard_stopwords.stopwords", "of", "the", "who")
+            )
         );
-        assertAcked(createIndexRequest);
         ensureGreen();
     }
 

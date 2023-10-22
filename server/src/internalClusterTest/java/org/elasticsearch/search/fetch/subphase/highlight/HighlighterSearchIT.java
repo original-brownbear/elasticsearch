@@ -1258,7 +1258,7 @@ public class HighlighterSearchIT extends ESIntegTestCase {
     }
 
     public void testFastVectorHighlighterOffsetParameter() throws Exception {
-        assertAcked(prepareCreate("test").setMapping("title", "type=text,store=true,term_vector=with_positions_offsets").get());
+        assertAcked(prepareCreate("test").setMapping("title", "type=text,store=true,term_vector=with_positions_offsets"));
 
         IndexRequestBuilder[] indexRequestBuilders = new IndexRequestBuilder[5];
         for (int i = 0; i < 5; i++) {
@@ -2285,7 +2285,7 @@ public class HighlighterSearchIT extends ESIntegTestCase {
     }
 
     public void testPostingsHighlighterMultipleFields() throws Exception {
-        assertAcked(prepareCreate("test").setMapping(type1PostingsffsetsMapping()).get());
+        assertAcked(prepareCreate("test").setMapping(type1PostingsffsetsMapping()));
         ensureGreen();
 
         indexDoc(
@@ -3392,7 +3392,6 @@ public class HighlighterSearchIT extends ESIntegTestCase {
             indicesAdmin().prepareCreate("index-1")
                 .setMapping("d", "type=date", "field", "type=text,store=true,term_vector=with_positions_offsets")
                 .setSettings(indexSettings(2, 0))
-                .get()
         );
         ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
         DateFormatter formatter = DateFormatter.forPattern("strict_date_optional_time");

@@ -43,7 +43,7 @@ public class MissingValueIT extends ESIntegTestCase {
 
     @Override
     protected void setupSuiteScopeCluster() throws Exception {
-        assertAcked(prepareCreate("idx").setMapping("date", "type=date", "location", "type=geo_point", "str", "type=keyword").get());
+        assertAcked(prepareCreate("idx").setMapping("date", "type=date", "location", "type=geo_point", "str", "type=keyword"));
         indexRandom(
             true,
             client().prepareIndex("idx").setId("1").setSource(),

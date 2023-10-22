@@ -128,13 +128,9 @@ public class TemplateUpgradeServiceIT extends ESIntegTestCase {
         assertTemplates();
 
         // Change some templates
-        assertAcked(indicesAdmin().preparePutTemplate("test_dummy_template").setOrder(0).setPatterns(Collections.singletonList("*")).get());
-        assertAcked(
-            indicesAdmin().preparePutTemplate("test_changed_template").setOrder(0).setPatterns(Collections.singletonList("*")).get()
-        );
-        assertAcked(
-            indicesAdmin().preparePutTemplate("test_removed_template").setOrder(1).setPatterns(Collections.singletonList("*")).get()
-        );
+        assertAcked(indicesAdmin().preparePutTemplate("test_dummy_template").setOrder(0).setPatterns(Collections.singletonList("*")));
+        assertAcked(indicesAdmin().preparePutTemplate("test_changed_template").setOrder(0).setPatterns(Collections.singletonList("*")));
+        assertAcked(indicesAdmin().preparePutTemplate("test_removed_template").setOrder(1).setPatterns(Collections.singletonList("*")));
 
         AtomicInteger updateCount = new AtomicInteger();
         // Wait for the templates to be updated back to normal
@@ -172,7 +168,7 @@ public class TemplateUpgradeServiceIT extends ESIntegTestCase {
         });
 
         // Wipe out all templates
-        assertAcked(indicesAdmin().prepareDeleteTemplate("test_*").get());
+        assertAcked(indicesAdmin().prepareDeleteTemplate("test_*"));
 
         assertTemplates();
 

@@ -129,7 +129,7 @@ public class IndexAliasesTests extends SecurityIntegTestCase {
             basicAuthHeaderValue("create_only", SecuritySettingsSourceField.TEST_PASSWORD_SECURE_STRING)
         );
         final Client client = client().filterWithHeader(headers);
-        assertAcked(client.admin().indices().prepareCreate("test_1").get());
+        assertAcked(client.admin().indices().prepareCreate("test_1"));
 
         assertThrowsAuthorizationException(
             client.admin().indices().prepareAliases().addAlias("test_1", "test_alias")::get,
@@ -297,13 +297,13 @@ public class IndexAliasesTests extends SecurityIntegTestCase {
         );
         final Client client = client().filterWithHeader(headers);
 
-        assertAcked(client.admin().indices().prepareCreate("test_1").get());
+        assertAcked(client.admin().indices().prepareCreate("test_1"));
 
         // ok: user has manage_aliases on test_*
-        assertAcked(client.admin().indices().prepareAliases().addAlias("test_1", "test_alias").get());
+        assertAcked(client.admin().indices().prepareAliases().addAlias("test_1", "test_alias"));
 
         // ok: user has manage_aliases on test_*
-        assertAcked(client.admin().indices().prepareAliases().addAlias("test_*", "test_alias_2").get());
+        assertAcked(client.admin().indices().prepareAliases().addAlias("test_*", "test_alias_2"));
 
         // fails: user doesn't have manage_aliases on alias_1
         assertThrowsAuthorizationException(
@@ -323,7 +323,7 @@ public class IndexAliasesTests extends SecurityIntegTestCase {
         );
         final Client client = client(headers);
 
-        assertAcked(client.admin().indices().prepareCreate("test_1").addAlias(new Alias("test_alias")).get());
+        assertAcked(client.admin().indices().prepareCreate("test_1").addAlias(new Alias("test_alias")));
 
         // fails: user doesn't have manage_aliases on alias_1
         assertThrowsAuthorizationException(
@@ -351,14 +351,13 @@ public class IndexAliasesTests extends SecurityIntegTestCase {
                 .addAlias(new Alias("test_alias_2"))
                 .addAlias(new Alias("test_alias_3"))
                 .addAlias(new Alias("test_alias_4"))
-                .get()
         );
         // ok: user has manage_aliases on test_*
-        assertAcked(client.admin().indices().prepareAliases().removeAlias("test_1", "test_alias_1").get());
+        assertAcked(client.admin().indices().prepareAliases().removeAlias("test_1", "test_alias_1"));
         // ok: user has manage_aliases on test_*
-        assertAcked(client.admin().indices().prepareAliases().removeAlias("test_*", "test_alias_2").get());
+        assertAcked(client.admin().indices().prepareAliases().removeAlias("test_*", "test_alias_2"));
         // ok: user has manage_aliases on test_*
-        assertAcked(client.admin().indices().prepareAliases().removeAlias("test_1", "test_alias_*").get());
+        assertAcked(client.admin().indices().prepareAliases().removeAlias("test_1", "test_alias_*"));
 
         {
             // fails: all aliases have been deleted, no existing aliases match test_alias_*
@@ -413,7 +412,7 @@ public class IndexAliasesTests extends SecurityIntegTestCase {
             basicAuthHeaderValue("create_test_aliases_test", SecuritySettingsSourceField.TEST_PASSWORD_SECURE_STRING)
         );
         final Client client = client(headers);
-        assertAcked(client.admin().indices().prepareCreate("test_1").addAlias(new Alias("test_alias")).get());
+        assertAcked(client.admin().indices().prepareCreate("test_1").addAlias(new Alias("test_alias")));
 
         // ok: user has manage_aliases on test_*
         assertAliases(client.admin().indices().prepareGetAliases().setAliases("test_alias").setIndices("test_1"), "test_1", "test_alias");
@@ -793,7 +792,7 @@ public class IndexAliasesTests extends SecurityIntegTestCase {
         );
         final Client client = client(headers);
 
-        assertAcked(client.admin().indices().prepareCreate("test_delete_1").get());
+        assertAcked(client.admin().indices().prepareCreate("test_delete_1"));
         assertAcked(client.admin().indices().prepareCreate("test_1").addAlias(new Alias("test_alias_1")));
 
         assertAcked(client.admin().indices().prepareAliases().removeIndex("test_delete_*").get());
@@ -824,11 +823,7 @@ public class IndexAliasesTests extends SecurityIntegTestCase {
         final Client aliasesClient = client(aliasHeaders);
 
         assertAcked(
-            createClient.admin()
-                .indices()
-                .prepareCreate(hiddenIndex)
-                .setSettings(Settings.builder().put("index.hidden", true).build())
-                .get()
+            createClient.admin().indices().prepareCreate(hiddenIndex).setSettings(Settings.builder().put("index.hidden", true).build())
         );
 
         assertAcked(

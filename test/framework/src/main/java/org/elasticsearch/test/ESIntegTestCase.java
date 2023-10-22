@@ -41,7 +41,6 @@ import org.elasticsearch.action.admin.indices.segments.IndexSegments;
 import org.elasticsearch.action.admin.indices.segments.IndexShardSegments;
 import org.elasticsearch.action.admin.indices.segments.IndicesSegmentResponse;
 import org.elasticsearch.action.admin.indices.segments.ShardSegments;
-import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequestBuilder;
 import org.elasticsearch.action.admin.indices.template.put.PutIndexTemplateRequestBuilder;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -835,9 +834,7 @@ public abstract class ESIntegTestCase extends ESTestCase {
      * updates the settings for an index
      */
     public static void updateIndexSettings(Settings.Builder settingsBuilder, String... index) {
-        UpdateSettingsRequestBuilder settingsRequest = indicesAdmin().prepareUpdateSettings(index);
-        settingsRequest.setSettings(settingsBuilder);
-        assertAcked(settingsRequest.execute().actionGet());
+        assertAcked(indicesAdmin().prepareUpdateSettings(index).setSettings(settingsBuilder));
     }
 
     public static void setReplicaCount(int replicas, String index) {
@@ -1730,7 +1727,7 @@ public abstract class ESIntegTestCase extends ESTestCase {
 
     /** Sets cluster persistent settings **/
     public static void updateClusterSettings(Settings.Builder persistentSettings) {
-        assertAcked(clusterAdmin().prepareUpdateSettings().setPersistentSettings(persistentSettings).get());
+        assertAcked(clusterAdmin().prepareUpdateSettings().setPersistentSettings(persistentSettings));
     }
 
     private static CountDownLatch newLatch(List<CountDownLatch> latches) {

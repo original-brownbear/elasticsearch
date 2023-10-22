@@ -23,7 +23,6 @@ import org.elasticsearch.TransportVersions;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.OriginalIndices;
-import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsResponse;
 import org.elasticsearch.action.search.ClearScrollRequest;
 import org.elasticsearch.action.search.ClosePointInTimeAction;
 import org.elasticsearch.action.search.ClosePointInTimeRequest;
@@ -1934,12 +1933,12 @@ public class SearchServiceTests extends ESSingleNodeTestCase {
             }
 
             try {
-                ClusterUpdateSettingsResponse response = client().admin()
-                    .cluster()
-                    .prepareUpdateSettings()
-                    .setPersistentSettings(Settings.builder().put(SEARCH_WORKER_THREADS_ENABLED.getKey(), false).build())
-                    .get();
-                assertTrue(response.isAcknowledged());
+                assertAcked(
+                    client().admin()
+                        .cluster()
+                        .prepareUpdateSettings()
+                        .setPersistentSettings(Settings.builder().put(SEARCH_WORKER_THREADS_ENABLED.getKey(), false).build())
+                );
                 {
                     SearchContext searchContext = service.createContext(readerContext, request, task, ResultsType.DFS, randomBoolean());
                     assertNull(searchContext.searcher().getExecutor());
@@ -1990,12 +1989,12 @@ public class SearchServiceTests extends ESSingleNodeTestCase {
             assertEquals(1, service.determineMaximumNumberOfSlices(notThreadPoolExecutor, request, ResultsType.DFS));
         }
         try {
-            ClusterUpdateSettingsResponse response = client().admin()
-                .cluster()
-                .prepareUpdateSettings()
-                .setPersistentSettings(Settings.builder().put(QUERY_PHASE_PARALLEL_COLLECTION_ENABLED.getKey(), false).build())
-                .get();
-            assertTrue(response.isAcknowledged());
+            assertAcked(
+                client().admin()
+                    .cluster()
+                    .prepareUpdateSettings()
+                    .setPersistentSettings(Settings.builder().put(QUERY_PHASE_PARALLEL_COLLECTION_ENABLED.getKey(), false).build())
+            );
             {
                 assertEquals(executorPoolSize, service.determineMaximumNumberOfSlices(threadPoolExecutor, request, ResultsType.DFS));
                 assertEquals(1, service.determineMaximumNumberOfSlices(null, request, ResultsType.DFS));
@@ -2131,12 +2130,12 @@ public class SearchServiceTests extends ESSingleNodeTestCase {
             }
 
             try {
-                ClusterUpdateSettingsResponse response = client().admin()
-                    .cluster()
-                    .prepareUpdateSettings()
-                    .setPersistentSettings(Settings.builder().put(QUERY_PHASE_PARALLEL_COLLECTION_ENABLED.getKey(), false).build())
-                    .get();
-                assertTrue(response.isAcknowledged());
+                assertAcked(
+                    client().admin()
+                        .cluster()
+                        .prepareUpdateSettings()
+                        .setPersistentSettings(Settings.builder().put(QUERY_PHASE_PARALLEL_COLLECTION_ENABLED.getKey(), false).build())
+                );
                 {
                     SearchContext searchContext = service.createContext(readerContext, request, task, ResultsType.QUERY, true);
                     ContextIndexSearcher searcher = searchContext.searcher();

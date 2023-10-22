@@ -108,8 +108,8 @@ public class LifecycleOperationSnapshotTests extends ESSingleNodeTestCase {
             }
         });
 
-        assertAcked(client().execute(StopILMAction.INSTANCE, new StopILMRequest()).get());
-        assertAcked(client().execute(StopSLMAction.INSTANCE, new StopSLMAction.Request()).get());
+        assertAcked(client().execute(StopILMAction.INSTANCE, new StopILMRequest()));
+        assertAcked(client().execute(StopSLMAction.INSTANCE, new StopSLMAction.Request()));
         assertBusy(() -> assertThat(ilmMode(), equalTo(OperationMode.STOPPED)));
         assertBusy(() -> assertThat(slmMode(), equalTo(OperationMode.STOPPED)));
 

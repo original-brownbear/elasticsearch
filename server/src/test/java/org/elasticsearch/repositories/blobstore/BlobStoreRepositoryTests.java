@@ -85,13 +85,13 @@ public class BlobStoreRepositoryTests extends ESSingleNodeTestCase {
         final Path location = ESIntegTestCase.randomRepoPath(node().settings());
 
         logger.info("-->  creating repository");
-        AcknowledgedResponse putRepositoryResponse = client.admin()
-            .cluster()
-            .preparePutRepository(TEST_REPO_NAME)
-            .setType(REPO_TYPE)
-            .setSettings(Settings.builder().put(node().settings()).put("location", location))
-            .get();
-        assertThat(putRepositoryResponse.isAcknowledged(), equalTo(true));
+        assertAcked(
+            client.admin()
+                .cluster()
+                .preparePutRepository(TEST_REPO_NAME)
+                .setType(REPO_TYPE)
+                .setSettings(Settings.builder().put(node().settings()).put("location", location))
+        );
 
         logger.info("--> creating an index and indexing documents");
         final String indexName = "test-idx";

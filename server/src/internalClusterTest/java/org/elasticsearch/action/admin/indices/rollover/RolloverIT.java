@@ -76,7 +76,7 @@ public class RolloverIT extends ESIntegTestCase {
         if (explicitWriteIndex) {
             testAlias.writeIndex(true);
         }
-        assertAcked(prepareCreate("test_index-1").addAlias(testAlias).get());
+        assertAcked(prepareCreate("test_index-1").addAlias(testAlias));
         final RolloverResponse response = indicesAdmin().prepareRolloverIndex("test_alias").get();
         assertThat(response.getOldIndex(), equalTo("test_index-1"));
         assertThat(response.getNewIndex(), equalTo("test_index-000002"));
@@ -97,7 +97,7 @@ public class RolloverIT extends ESIntegTestCase {
 
     public void testRollover() throws Exception {
         long beforeTime = client().threadPool().absoluteTimeInMillis() - 1000L;
-        assertAcked(prepareCreate("test_index-2").addAlias(new Alias("test_alias")).get());
+        assertAcked(prepareCreate("test_index-2").addAlias(new Alias("test_alias")));
         indexDoc("test_index-2", "1", "field", "value");
         flush("test_index-2");
         final RolloverResponse response = indicesAdmin().prepareRolloverIndex("test_alias").get();
@@ -122,7 +122,7 @@ public class RolloverIT extends ESIntegTestCase {
 
     public void testRolloverWithExplicitWriteIndex() throws Exception {
         long beforeTime = client().threadPool().absoluteTimeInMillis() - 1000L;
-        assertAcked(prepareCreate("test_index-2").addAlias(new Alias("test_alias").writeIndex(true)).get());
+        assertAcked(prepareCreate("test_index-2").addAlias(new Alias("test_alias").writeIndex(true)));
         indexDoc("test_index-2", "1", "field", "value");
         flush("test_index-2");
         final RolloverResponse response = indicesAdmin().prepareRolloverIndex("test_alias").get();
@@ -149,9 +149,9 @@ public class RolloverIT extends ESIntegTestCase {
 
     public void testRolloverWithNoWriteIndex() {
         Boolean firstIsWriteIndex = randomFrom(false, null);
-        assertAcked(prepareCreate("index1").addAlias(new Alias("alias").writeIndex(firstIsWriteIndex)).get());
+        assertAcked(prepareCreate("index1").addAlias(new Alias("alias").writeIndex(firstIsWriteIndex)));
         if (firstIsWriteIndex == null) {
-            assertAcked(prepareCreate("index2").addAlias(new Alias("alias").writeIndex(randomFrom(false, null))).get());
+            assertAcked(prepareCreate("index2").addAlias(new Alias("alias").writeIndex(randomFrom(false, null))));
         }
         IllegalArgumentException exception = expectThrows(
             IllegalArgumentException.class,
@@ -166,7 +166,7 @@ public class RolloverIT extends ESIntegTestCase {
         if (explicitWriteIndex) {
             testAlias.writeIndex(true);
         }
-        assertAcked(prepareCreate("test_index-2").addAlias(testAlias).get());
+        assertAcked(prepareCreate("test_index-2").addAlias(testAlias));
         indexDoc("test_index-2", "1", "field", "value");
         flush("test_index-2");
         final Settings settings = indexSettings(1, 0).build();
@@ -200,7 +200,7 @@ public class RolloverIT extends ESIntegTestCase {
         if (explicitWriteIndex) {
             testAlias.writeIndex(true);
         }
-        assertAcked(prepareCreate("test_index-2").addAlias(testAlias).get());
+        assertAcked(prepareCreate("test_index-2").addAlias(testAlias));
         indexDoc("test_index-2", "1", "field", "value");
         flush("test_index-2");
         final Settings settings = Settings.builder().put("number_of_shards", 1).put("number_of_replicas", 0).build();
@@ -236,7 +236,7 @@ public class RolloverIT extends ESIntegTestCase {
                 .setSettings(Settings.builder().put(AutoExpandReplicas.SETTING.getKey(), "0-all"));
             assertAcked(putTemplate.get());
         }
-        assertAcked(prepareCreate("test_index-1").addAlias(new Alias("test_alias")).get());
+        assertAcked(prepareCreate("test_index-1").addAlias(new Alias("test_alias")));
         indexDoc("test_index-1", "1", "field", "value");
         flush("test_index-1");
         ensureGreen();
@@ -278,7 +278,7 @@ public class RolloverIT extends ESIntegTestCase {
         if (explicitWriteIndex) {
             testAlias.writeIndex(true);
         }
-        assertAcked(prepareCreate("test_index-0").addAlias(testAlias).get());
+        assertAcked(prepareCreate("test_index-0").addAlias(testAlias));
         indexDoc("test_index-0", "1", "field", "value");
         flush("test_index-0");
         final RolloverResponse response = indicesAdmin().prepareRolloverIndex("test_alias")
@@ -321,7 +321,7 @@ public class RolloverIT extends ESIntegTestCase {
         if (explicitWriteIndex) {
             testAlias.writeIndex(true);
         }
-        assertAcked(prepareCreate("test_index").addAlias(testAlias).get());
+        assertAcked(prepareCreate("test_index").addAlias(testAlias));
         indexDoc("test_index", "1", "field", "value");
         flush("test_index");
         final RolloverResponse response = indicesAdmin().prepareRolloverIndex("test_alias").setNewIndexName("test_new_index").get();
@@ -343,9 +343,9 @@ public class RolloverIT extends ESIntegTestCase {
     }
 
     public void testRolloverOnExistingIndex() throws Exception {
-        assertAcked(prepareCreate("test_index-0").addAlias(new Alias("test_alias")).get());
+        assertAcked(prepareCreate("test_index-0").addAlias(new Alias("test_alias")));
         indexDoc("test_index-0", "1", "field", "value");
-        assertAcked(prepareCreate("test_index-000001").get());
+        assertAcked(prepareCreate("test_index-000001"));
         indexDoc("test_index-000001", "1", "field", "value");
         flush("test_index-0", "test_index-000001");
         try {
@@ -361,7 +361,7 @@ public class RolloverIT extends ESIntegTestCase {
         assumeTrue("only works on the same day", now.plusMinutes(5).getDayOfYear() == now.getDayOfYear());
         String index = "test-" + DateFormatter.forPattern("yyyy.MM.dd").format(now) + "-1";
         String dateMathExp = "<test-{now/d}-1>";
-        assertAcked(prepareCreate(dateMathExp).addAlias(new Alias("test_alias")).get());
+        assertAcked(prepareCreate(dateMathExp).addAlias(new Alias("test_alias")));
         ensureGreen(index);
         // now we modify the provided name such that we can test that the pattern is carried on
         indicesAdmin().prepareClose(index).get();
@@ -402,7 +402,7 @@ public class RolloverIT extends ESIntegTestCase {
     }
 
     public void testRolloverMaxSize() throws Exception {
-        assertAcked(prepareCreate("test-1").addAlias(new Alias("test_alias")).get());
+        assertAcked(prepareCreate("test-1").addAlias(new Alias("test_alias")));
         int numDocs = randomIntBetween(10, 20);
         for (int i = 0; i < numDocs; i++) {
             indexDoc("test-1", Integer.toString(i), "field", "foo-" + i);
@@ -525,7 +525,7 @@ public class RolloverIT extends ESIntegTestCase {
 
     public void testRolloverMaxPrimaryShardDocs() throws Exception {
         assertAcked(
-            prepareCreate("test-1").setSettings(Settings.builder().put("index.number_of_shards", 1)).addAlias(new Alias("test_alias")).get()
+            prepareCreate("test-1").setSettings(Settings.builder().put("index.number_of_shards", 1)).addAlias(new Alias("test_alias"))
         );
         int numDocs = randomIntBetween(10, 20);
         for (int i = 0; i < numDocs; i++) {
@@ -586,7 +586,7 @@ public class RolloverIT extends ESIntegTestCase {
 
     public void testRejectIfAliasFoundInTemplate() throws Exception {
         indicesAdmin().preparePutTemplate("logs").setPatterns(Collections.singletonList("logs-*")).addAlias(new Alias("logs-write")).get();
-        assertAcked(indicesAdmin().prepareCreate("logs-000001").get());
+        assertAcked(indicesAdmin().prepareCreate("logs-000001"));
         ensureYellow("logs-write");
         final IllegalArgumentException error = expectThrows(
             IllegalArgumentException.class,
@@ -605,9 +605,9 @@ public class RolloverIT extends ESIntegTestCase {
         final String openNonwriteIndex = "open-index-nonwrite";
         final String closedIndex = "closed-index-nonwrite";
         final String writeIndexPrefix = "write-index-";
-        assertAcked(prepareCreate(openNonwriteIndex).addAlias(new Alias(aliasName)).get());
-        assertAcked(prepareCreate(closedIndex).addAlias(new Alias(aliasName)).get());
-        assertAcked(prepareCreate(writeIndexPrefix + "000001").addAlias(new Alias(aliasName).writeIndex(true)).get());
+        assertAcked(prepareCreate(openNonwriteIndex).addAlias(new Alias(aliasName)));
+        assertAcked(prepareCreate(closedIndex).addAlias(new Alias(aliasName)));
+        assertAcked(prepareCreate(writeIndexPrefix + "000001").addAlias(new Alias(aliasName).writeIndex(true)));
         ensureGreen();
 
         index(closedIndex, null, "{\"foo\": \"bar\"}");
@@ -630,9 +630,9 @@ public class RolloverIT extends ESIntegTestCase {
         final String openNonwriteIndex = "open-index-nonwrite";
         final String closedIndex = "closed-index-nonwrite";
         final String writeIndexPrefix = "write-index-";
-        assertAcked(prepareCreate(openNonwriteIndex).addAlias(new Alias(aliasName)).get());
-        assertAcked(prepareCreate(closedIndex).addAlias(new Alias(aliasName)).get());
-        assertAcked(prepareCreate(writeIndexPrefix + "000001").addAlias(new Alias(aliasName).writeIndex(true)).get());
+        assertAcked(prepareCreate(openNonwriteIndex).addAlias(new Alias(aliasName)));
+        assertAcked(prepareCreate(closedIndex).addAlias(new Alias(aliasName)));
+        assertAcked(prepareCreate(writeIndexPrefix + "000001").addAlias(new Alias(aliasName).writeIndex(true)));
 
         index(closedIndex, null, "{\"foo\": \"bar\"}");
         index(aliasName, null, "{\"foo\": \"bar\"}");
@@ -640,7 +640,7 @@ public class RolloverIT extends ESIntegTestCase {
         refresh(aliasName);
 
         assertAcked(indicesAdmin().prepareClose(closedIndex).get());
-        assertAcked(indicesAdmin().prepareClose(writeIndexPrefix + "000001").get());
+        assertAcked(indicesAdmin().prepareClose(writeIndexPrefix + "000001"));
         ensureGreen(aliasName);
 
         RolloverResponse rolloverResponse = indicesAdmin().prepareRolloverIndex(aliasName)
@@ -658,7 +658,7 @@ public class RolloverIT extends ESIntegTestCase {
         final String secondIndexName = indexNamePrefix + "000002";
 
         final String aliasName = "test_alias";
-        assertAcked(prepareCreate(firstIndexName).addAlias(new Alias(aliasName).writeIndex(true).isHidden(true)).get());
+        assertAcked(prepareCreate(firstIndexName).addAlias(new Alias(aliasName).writeIndex(true).isHidden(true)));
         indexDoc(aliasName, "1", "field", "value");
         refresh();
         final RolloverResponse response = indicesAdmin().prepareRolloverIndex(aliasName).get();
@@ -692,7 +692,7 @@ public class RolloverIT extends ESIntegTestCase {
         final String secondIndexName = indexNamePrefix + "000002";
 
         final String aliasName = "test_alias";
-        assertAcked(prepareCreate(firstIndexName).addAlias(new Alias(aliasName).isHidden(true)).get());
+        assertAcked(prepareCreate(firstIndexName).addAlias(new Alias(aliasName).isHidden(true)));
         indexDoc(aliasName, "1", "field", "value");
         refresh();
         final RolloverResponse response = indicesAdmin().prepareRolloverIndex(aliasName).get();
@@ -723,7 +723,7 @@ public class RolloverIT extends ESIntegTestCase {
     public void testMultiThreadedRollover() throws Exception {
         final String aliasName = "alias";
         final String writeIndexPrefix = "tt-";
-        assertAcked(prepareCreate(writeIndexPrefix + "000001").addAlias(new Alias(aliasName).writeIndex(true)).get());
+        assertAcked(prepareCreate(writeIndexPrefix + "000001").addAlias(new Alias(aliasName).writeIndex(true)));
         ensureGreen();
 
         final int threadCount = randomIntBetween(5, 10);
@@ -802,7 +802,7 @@ public class RolloverIT extends ESIntegTestCase {
         for (int i = 0; i < numOfThreads; i++) {
             var aliasName = "test-" + i;
             threads[i] = new Thread(() -> {
-                assertAcked(prepareCreate(aliasName + "-000001").addAlias(new Alias(aliasName).writeIndex(true)).get());
+                assertAcked(prepareCreate(aliasName + "-000001").addAlias(new Alias(aliasName).writeIndex(true)));
                 for (int j = 1; j <= numberOfRolloversPerThread; j++) {
                     try {
                         barrier.await();

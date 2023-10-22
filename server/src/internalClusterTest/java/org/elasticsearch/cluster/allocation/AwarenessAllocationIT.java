@@ -62,7 +62,7 @@ public class AwarenessAllocationIT extends ESIntegTestCase {
         ensureGreen();
 
         final List<String> indicesToClose = randomSubsetOf(Arrays.asList("test1", "test2"));
-        indicesToClose.forEach(indexToClose -> assertAcked(indicesAdmin().prepareClose(indexToClose).get()));
+        indicesToClose.forEach(indexToClose -> assertAcked(indicesAdmin().prepareClose(indexToClose)));
 
         logger.info("--> starting 1 node on a different rack");
         final String node3 = internalCluster().startNode(Settings.builder().put(commonSettings).put("node.attr.rack_id", "rack_2").build());

@@ -16,7 +16,6 @@ import com.azure.storage.blob.models.BlobStorageException;
 
 import org.elasticsearch.action.ActionRunnable;
 import org.elasticsearch.action.support.PlainActionFuture;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.blobstore.BlobContainer;
@@ -36,8 +35,8 @@ import java.io.ByteArrayInputStream;
 import java.net.HttpURLConnection;
 import java.util.Collection;
 
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.hamcrest.Matchers.blankOrNullString;
-import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
 
 public class AzureStorageCleanupThirdPartyTests extends AbstractThirdPartyRepositoryTestCase {
@@ -88,16 +87,16 @@ public class AzureStorageCleanupThirdPartyTests extends AbstractThirdPartyReposi
 
     @Override
     protected void createRepository(String repoName) {
-        AcknowledgedResponse putRepositoryResponse = clusterAdmin().preparePutRepository(repoName)
-            .setType("azure")
-            .setSettings(
-                Settings.builder()
-                    .put("container", System.getProperty("test.azure.container"))
-                    .put("base_path", System.getProperty("test.azure.base") + randomAlphaOfLength(8))
-                    .put("max_single_part_upload_size", new ByteSizeValue(1, ByteSizeUnit.MB))
-            )
-            .get();
-        assertThat(putRepositoryResponse.isAcknowledged(), equalTo(true));
+        assertAcked(
+            clusterAdmin().preparePutRepository(repoName)
+                .setType("azure")
+                .setSettings(
+                    Settings.builder()
+                        .put("container", System.getProperty("test.azure.container"))
+                        .put("base_path", System.getProperty("test.azure.base") + randomAlphaOfLength(8))
+                        .put("max_single_part_upload_size", new ByteSizeValue(1, ByteSizeUnit.MB))
+                )
+        );
         if (Strings.hasText(System.getProperty("test.azure.sas_token"))) {
             ensureSasTokenPermissions();
         }

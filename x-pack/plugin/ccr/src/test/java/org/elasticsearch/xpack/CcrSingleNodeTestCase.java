@@ -64,7 +64,7 @@ public abstract class CcrSingleNodeTestCase extends ESSingleNodeTestCase {
         ClusterUpdateSettingsRequest updateSettingsRequest = new ClusterUpdateSettingsRequest();
         String address = getInstanceFromNode(TransportService.class).boundAddress().publishAddress().toString();
         updateSettingsRequest.transientSettings(Settings.builder().put("cluster.remote.local.seeds", address));
-        assertAcked(client().admin().cluster().updateSettings(updateSettingsRequest).actionGet());
+        assertAcked(client().admin().cluster().updateSettings(updateSettingsRequest));
 
         List<RemoteConnectionInfo> infos = client().execute(TransportRemoteInfoAction.TYPE, new RemoteInfoRequest()).get().getInfos();
         assertThat(infos.size(), equalTo(1));
@@ -86,7 +86,7 @@ public abstract class CcrSingleNodeTestCase extends ESSingleNodeTestCase {
     public void removeLocalRemote() throws Exception {
         ClusterUpdateSettingsRequest updateSettingsRequest = new ClusterUpdateSettingsRequest();
         updateSettingsRequest.transientSettings(Settings.builder().put("cluster.remote.local.seeds", (String) null));
-        assertAcked(client().admin().cluster().updateSettings(updateSettingsRequest).actionGet());
+        assertAcked(client().admin().cluster().updateSettings(updateSettingsRequest));
 
         assertBusy(() -> {
             List<RemoteConnectionInfo> infos = client().execute(TransportRemoteInfoAction.TYPE, new RemoteInfoRequest()).get().getInfos();

@@ -103,15 +103,12 @@ public class RepositoriesIT extends AbstractSnapshotIntegTestCase {
 
         logger.info("--> check that trying to create a repository with the same settings repeatedly does not update cluster state");
         String beforeStateUuid = clusterStateResponse.getState().stateUUID();
-        assertThat(
+        assertAcked(
             client.admin()
                 .cluster()
                 .preparePutRepository("test-repo-1")
                 .setType("fs")
                 .setSettings(Settings.builder().put("location", location))
-                .get()
-                .isAcknowledged(),
-            equalTo(true)
         );
         assertEquals(beforeStateUuid, client.admin().cluster().prepareState().clear().get().getState().stateUUID());
 
@@ -176,24 +173,23 @@ public class RepositoriesIT extends AbstractSnapshotIntegTestCase {
         assertThat(putRepositoryResponse.isAcknowledged(), equalTo(false));
 
         logger.info("-->  creating repository test-repo-2 with standard timeout - should ack");
-        putRepositoryResponse = clusterAdmin().preparePutRepository("test-repo-2")
-            .setType("fs")
-            .setSettings(
-                Settings.builder()
-                    .put("location", randomRepoPath())
-                    .put("compress", randomBoolean())
-                    .put("chunk_size", randomIntBetween(5, 100), ByteSizeUnit.BYTES)
-            )
-            .get();
-        assertThat(putRepositoryResponse.isAcknowledged(), equalTo(true));
+        assertAcked(
+            clusterAdmin().preparePutRepository("test-repo-2")
+                .setType("fs")
+                .setSettings(
+                    Settings.builder()
+                        .put("location", randomRepoPath())
+                        .put("compress", randomBoolean())
+                        .put("chunk_size", randomIntBetween(5, 100), ByteSizeUnit.BYTES)
+                )
+        );
 
         logger.info("-->  deleting repository test-repo-2 with 0s timeout - shouldn't ack");
         AcknowledgedResponse deleteRepositoryResponse = clusterAdmin().prepareDeleteRepository("test-repo-2").setTimeout("0s").get();
         assertThat(deleteRepositoryResponse.isAcknowledged(), equalTo(false));
 
         logger.info("-->  deleting repository test-repo-1 with standard timeout - should ack");
-        deleteRepositoryResponse = clusterAdmin().prepareDeleteRepository("test-repo-1").get();
-        assertThat(deleteRepositoryResponse.isAcknowledged(), equalTo(true));
+        assertAcked(clusterAdmin().prepareDeleteRepository("test-repo-1"));
     }
 
     public void testRepositoryVerification() {
@@ -257,7 +253,6 @@ public class RepositoriesIT extends AbstractSnapshotIntegTestCase {
                         .put("random", randomAlphaOfLength(10))
                         .put("wait_after_unblock", 200)
                 )
-                .get()
         );
 
         logger.info("--> snapshot");

@@ -443,7 +443,7 @@ public class DynamicMappingIT extends ESIntegTestCase {
 
     public void testDynamicRuntimeNoConflicts() {
         assertAcked(indicesAdmin().prepareCreate("test").setMapping("""
-            {"_doc":{"dynamic":"runtime"}}""").get());
+            {"_doc":{"dynamic":"runtime"}}"""));
 
         List<IndexRequest> docs = new ArrayList<>();
         // the root is mapped dynamic:runtime hence there are no type conflicts
@@ -481,7 +481,7 @@ public class DynamicMappingIT extends ESIntegTestCase {
                   }
                 }
               }
-            }""").get());
+            }"""));
 
         List<IndexRequest> docs = new ArrayList<>();
         docs.add(new IndexRequest("test").source("obj.one", 1));
@@ -574,7 +574,7 @@ public class DynamicMappingIT extends ESIntegTestCase {
                   }
                 }
               }
-            }""").get());
+            }"""));
 
         IndexRequest request = new IndexRequest("test").setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE)
             .source("host.name", "localhost", "host.id", 111, "time", 100, "time.max", 1000);
@@ -610,7 +610,7 @@ public class DynamicMappingIT extends ESIntegTestCase {
                   }
                 }
               }
-            }""").get());
+            }"""));
 
         IndexRequest request = new IndexRequest("test").setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE)
             .source(
@@ -659,7 +659,7 @@ public class DynamicMappingIT extends ESIntegTestCase {
                   }
                 }
               }
-            }""").get());
+            }"""));
 
         client().index(new IndexRequest("test").source("mapped_obj.vector", Randomness.get().doubles(3, 0.0, 5.0).toArray())).get();
 

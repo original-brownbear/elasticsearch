@@ -9,7 +9,6 @@
 package org.elasticsearch.ingest;
 
 import org.elasticsearch.ElasticsearchParseException;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.node.NodeService;
 import org.elasticsearch.plugins.Plugin;
@@ -21,10 +20,10 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.elasticsearch.xcontent.XContentFactory.jsonBuilder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
 @ESIntegTestCase.ClusterScope(numDataNodes = 0, numClientNodes = 0, scope = ESIntegTestCase.Scope.TEST)
@@ -86,8 +85,7 @@ public class IngestProcessorNotInstalledOnAllNodesIT extends ESIntegTestCase {
         installPlugin = true;
         String node1 = internalCluster().startNode();
 
-        AcknowledgedResponse response = clusterAdmin().preparePutPipeline("_id", pipelineSource, XContentType.JSON).get();
-        assertThat(response.isAcknowledged(), is(true));
+        assertAcked(clusterAdmin().preparePutPipeline("_id", pipelineSource, XContentType.JSON).get());
         Pipeline pipeline = internalCluster().getInstance(NodeService.class, node1).getIngestService().getPipeline("_id");
         assertThat(pipeline, notNullValue());
 

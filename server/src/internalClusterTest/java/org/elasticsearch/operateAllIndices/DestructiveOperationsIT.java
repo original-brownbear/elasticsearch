@@ -33,9 +33,9 @@ public class DestructiveOperationsIT extends ESIntegTestCase {
         createIndex("index1", "1index");
 
         // Should succeed, since no wildcards
-        assertAcked(indicesAdmin().prepareDelete("1index").get());
+        assertAcked(indicesAdmin().prepareDelete("1index"));
         // Special "match none" pattern succeeds, since non-destructive
-        assertAcked(indicesAdmin().prepareDelete("*", "-*").get());
+        assertAcked(indicesAdmin().prepareDelete("*", "-*"));
 
         expectThrows(IllegalArgumentException.class, () -> indicesAdmin().prepareDelete("i*").get());
         expectThrows(IllegalArgumentException.class, () -> indicesAdmin().prepareDelete("_all").get());
@@ -49,9 +49,9 @@ public class DestructiveOperationsIT extends ESIntegTestCase {
         createIndex("index1", "1index");
 
         if (randomBoolean()) {
-            assertAcked(indicesAdmin().prepareDelete("_all").get());
+            assertAcked(indicesAdmin().prepareDelete("_all"));
         } else {
-            assertAcked(indicesAdmin().prepareDelete("*").get());
+            assertAcked(indicesAdmin().prepareDelete("*"));
         }
 
         assertThat(indexExists("_all"), equalTo(false));
@@ -63,9 +63,9 @@ public class DestructiveOperationsIT extends ESIntegTestCase {
         createIndex("index1", "1index");
 
         // Should succeed, since no wildcards
-        assertAcked(indicesAdmin().prepareClose("1index").get());
+        assertAcked(indicesAdmin().prepareClose("1index"));
         // Special "match none" pattern succeeds, since non-destructive
-        assertAcked(indicesAdmin().prepareClose("*", "-*").get());
+        assertAcked(indicesAdmin().prepareClose("*", "-*"));
 
         expectThrows(IllegalArgumentException.class, () -> indicesAdmin().prepareClose("i*").get());
         expectThrows(IllegalArgumentException.class, () -> indicesAdmin().prepareClose("_all").get());
@@ -79,9 +79,9 @@ public class DestructiveOperationsIT extends ESIntegTestCase {
         createIndex("index1", "1index");
 
         if (randomBoolean()) {
-            assertAcked(indicesAdmin().prepareClose("_all").get());
+            assertAcked(indicesAdmin().prepareClose("_all"));
         } else {
-            assertAcked(indicesAdmin().prepareClose("*").get());
+            assertAcked(indicesAdmin().prepareClose("*"));
         }
 
         ClusterState state = clusterAdmin().prepareState().get().getState();
@@ -94,10 +94,10 @@ public class DestructiveOperationsIT extends ESIntegTestCase {
         updateClusterSettings(Settings.builder().put(DestructiveOperations.REQUIRES_NAME_SETTING.getKey(), true));
 
         createIndex("index1", "1index");
-        assertAcked(indicesAdmin().prepareClose("1index", "index1").get());
+        assertAcked(indicesAdmin().prepareClose("1index", "index1"));
 
         // Special "match none" pattern succeeds, since non-destructive
-        assertAcked(indicesAdmin().prepareOpen("*", "-*").get());
+        assertAcked(indicesAdmin().prepareOpen("*", "-*"));
 
         expectThrows(IllegalArgumentException.class, () -> indicesAdmin().prepareOpen("i*").get());
         expectThrows(IllegalArgumentException.class, () -> indicesAdmin().prepareOpen("_all").get());
@@ -129,9 +129,9 @@ public class DestructiveOperationsIT extends ESIntegTestCase {
         createIndex("index1", "1index");
 
         // Should succeed, since no wildcards
-        assertAcked(indicesAdmin().prepareAddBlock(WRITE, "1index").get());
+        assertAcked(indicesAdmin().prepareAddBlock(WRITE, "1index"));
         // Special "match none" pattern succeeds, since non-destructive
-        assertAcked(indicesAdmin().prepareAddBlock(WRITE, "*", "-*").get());
+        assertAcked(indicesAdmin().prepareAddBlock(WRITE, "*", "-*"));
 
         expectThrows(IllegalArgumentException.class, () -> indicesAdmin().prepareAddBlock(WRITE, "i*").get());
         expectThrows(IllegalArgumentException.class, () -> indicesAdmin().prepareAddBlock(WRITE, "_all").get());
@@ -145,9 +145,9 @@ public class DestructiveOperationsIT extends ESIntegTestCase {
         createIndex("index1", "1index");
 
         if (randomBoolean()) {
-            assertAcked(indicesAdmin().prepareAddBlock(WRITE, "_all").get());
+            assertAcked(indicesAdmin().prepareAddBlock(WRITE, "_all"));
         } else {
-            assertAcked(indicesAdmin().prepareAddBlock(WRITE, "*").get());
+            assertAcked(indicesAdmin().prepareAddBlock(WRITE, "*"));
         }
 
         ClusterState state = clusterAdmin().prepareState().get().getState();

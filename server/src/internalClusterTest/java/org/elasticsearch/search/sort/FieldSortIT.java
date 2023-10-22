@@ -202,7 +202,7 @@ public class FieldSortIT extends ESIntegTestCase {
     }
 
     public void testTrackScores() throws Exception {
-        assertAcked(indicesAdmin().prepareCreate("test").setMapping("svalue", "type=keyword").get());
+        assertAcked(indicesAdmin().prepareCreate("test").setMapping("svalue", "type=keyword"));
         ensureGreen();
         index(
             "test",
@@ -311,7 +311,7 @@ public class FieldSortIT extends ESIntegTestCase {
     }
 
     public void test3078() {
-        assertAcked(indicesAdmin().prepareCreate("test").setMapping("field", "type=keyword").get());
+        assertAcked(indicesAdmin().prepareCreate("test").setMapping("field", "type=keyword"));
         ensureGreen();
 
         for (int i = 1; i < 101; i++) {
@@ -440,7 +440,7 @@ public class FieldSortIT extends ESIntegTestCase {
     }
 
     public void testIssue2986() {
-        assertAcked(indicesAdmin().prepareCreate("test").setMapping("field1", "type=keyword").get());
+        assertAcked(indicesAdmin().prepareCreate("test").setMapping("field1", "type=keyword"));
 
         client().prepareIndex("test").setId("1").setSource("{\"field1\":\"value1\"}", XContentType.JSON).get();
         client().prepareIndex("test").setId("2").setSource("{\"field1\":\"value2\"}", XContentType.JSON).get();
@@ -460,7 +460,7 @@ public class FieldSortIT extends ESIntegTestCase {
             } catch (Exception e) {
                 // ignore
             }
-            assertAcked(indicesAdmin().prepareCreate("test").setMapping("tag", "type=keyword").get());
+            assertAcked(indicesAdmin().prepareCreate("test").setMapping("tag", "type=keyword"));
             ensureGreen();
             client().prepareIndex("test").setId("1").setSource("tag", "alpha").get();
             refresh();
@@ -1654,12 +1654,11 @@ public class FieldSortIT extends ESIntegTestCase {
         assertAcked(
             prepareCreate("test1").setSettings(
                 Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, between(2, maximumNumberOfShards()))
-            ).setMapping(sortField, "type=long").get()
+            ).setMapping(sortField, "type=long")
         );
         assertAcked(
             prepareCreate("test2").setSettings(Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1))
                 .setMapping(sortField, "type=long")
-                .get()
         );
 
         for (String index : new String[] { "test1", "test2" }) {
@@ -1983,7 +1982,6 @@ public class FieldSortIT extends ESIntegTestCase {
         assertAcked(
             prepareCreate("test1").setSettings(Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 2))
                 .setMapping("long_field", "type=long")
-                .get()
         );
 
         BulkRequestBuilder bulkBuilder = client().prepareBulk();
@@ -2023,10 +2021,10 @@ public class FieldSortIT extends ESIntegTestCase {
     }
 
     public void testSortMixedFieldTypes() {
-        assertAcked(prepareCreate("index_long").setMapping("foo", "type=long").get());
-        assertAcked(prepareCreate("index_integer").setMapping("foo", "type=integer").get());
-        assertAcked(prepareCreate("index_double").setMapping("foo", "type=double").get());
-        assertAcked(prepareCreate("index_keyword").setMapping("foo", "type=keyword").get());
+        assertAcked(prepareCreate("index_long").setMapping("foo", "type=long"));
+        assertAcked(prepareCreate("index_integer").setMapping("foo", "type=integer"));
+        assertAcked(prepareCreate("index_double").setMapping("foo", "type=double"));
+        assertAcked(prepareCreate("index_keyword").setMapping("foo", "type=keyword"));
 
         client().prepareIndex("index_long").setId("1").setSource("foo", "123").get();
         client().prepareIndex("index_integer").setId("1").setSource("foo", "123").get();

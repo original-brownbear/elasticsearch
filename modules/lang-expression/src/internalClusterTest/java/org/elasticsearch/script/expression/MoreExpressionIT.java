@@ -503,7 +503,7 @@ public class MoreExpressionIT extends ESIntegTestCase {
 
     public void testStringSpecialValueVariable() throws Exception {
         // i.e. expression script for term aggregations, which is not allowed
-        assertAcked(indicesAdmin().prepareCreate("test").setMapping("text", "type=keyword").get());
+        assertAcked(indicesAdmin().prepareCreate("test").setMapping("text", "type=keyword"));
         ensureGreen("test");
         indexRandom(
             true,

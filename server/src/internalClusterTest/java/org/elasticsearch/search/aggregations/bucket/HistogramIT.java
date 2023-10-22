@@ -188,7 +188,7 @@ public class HistogramIT extends ESIntegTestCase {
         addExpectedBucket(6, 1, 5, 1);
         addExpectedBucket(7, 1, 5, 1);
 
-        assertAcked(indicesAdmin().prepareCreate("sort_idx").setMapping(SINGLE_VALUED_FIELD_NAME, "type=double").get());
+        assertAcked(indicesAdmin().prepareCreate("sort_idx").setMapping(SINGLE_VALUED_FIELD_NAME, "type=double"));
         for (int i = 1; i <= 3; i++) {
             builders.add(
                 client().prepareIndex("sort_idx")
@@ -1062,7 +1062,7 @@ public class HistogramIT extends ESIntegTestCase {
     }
 
     public void testDecimalIntervalAndOffset() throws Exception {
-        assertAcked(prepareCreate("decimal_values").setMapping("d", "type=float").get());
+        assertAcked(prepareCreate("decimal_values").setMapping("d", "type=float"));
         indexRandom(
             true,
             client().prepareIndex("decimal_values").setId("1").setSource("d", -0.6),
@@ -1089,7 +1089,6 @@ public class HistogramIT extends ESIntegTestCase {
         assertAcked(
             prepareCreate("cache_test_idx").setMapping("d", "type=float")
                 .setSettings(Settings.builder().put("requests.cache.enable", true).put("number_of_shards", 1).put("number_of_replicas", 1))
-                .get()
         );
         indexRandom(
             true,
@@ -1220,7 +1219,7 @@ public class HistogramIT extends ESIntegTestCase {
     }
 
     public void testHardBounds() throws Exception {
-        assertAcked(prepareCreate("test").setMapping("d", "type=double").get());
+        assertAcked(prepareCreate("test").setMapping("d", "type=double"));
         indexRandom(
             true,
             client().prepareIndex("test").setId("1").setSource("d", -0.6),

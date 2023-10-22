@@ -7,7 +7,6 @@
 package org.elasticsearch.xpack.security;
 
 import org.elasticsearch.action.admin.indices.template.get.GetIndexTemplatesResponse;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.cluster.ClusterChangedEvent;
 import org.elasticsearch.cluster.metadata.IndexTemplateMetadata;
@@ -53,11 +52,11 @@ public class TemplateUpgraderTests extends SecurityIntegTestCase {
             return map;
         };
 
-        AcknowledgedResponse putIndexTemplateResponse = indicesAdmin().preparePutTemplate("removed-template")
-            .setOrder(1)
-            .setPatterns(Collections.singletonList(randomAlphaOfLength(10)))
-            .get();
-        assertAcked(putIndexTemplateResponse);
+        assertAcked(
+            indicesAdmin().preparePutTemplate("removed-template")
+                .setOrder(1)
+                .setPatterns(Collections.singletonList(randomAlphaOfLength(10)))
+        );
         assertTemplates("removed-template", "added-template");
 
         TemplateUpgradeService templateUpgradeService = new TemplateUpgradeService(

@@ -113,7 +113,7 @@ public class TransformIntegrationTests extends AbstractWatcherIntegrationTestCas
                     "lang": "%s",
                     "source": "['key3' : ctx.payload.key1 + ctx.payload.key2]"
                   }
-                }""", MockScriptPlugin.NAME)), XContentType.JSON).get());
+                }""", MockScriptPlugin.NAME)), XContentType.JSON));
             script = new Script(ScriptType.STORED, null, "my-script", Collections.emptyMap());
         }
 

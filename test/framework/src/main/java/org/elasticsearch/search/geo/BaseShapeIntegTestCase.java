@@ -230,7 +230,7 @@ public abstract class BaseShapeIntegTestCase<T extends AbstractGeometryQueryBuil
         mapping.endObject().endObject().endObject();
 
         // create index
-        assertAcked(indicesAdmin().prepareCreate("test").setSettings(settings(randomSupportedVersion()).build()).setMapping(mapping).get());
+        assertAcked(indicesAdmin().prepareCreate("test").setSettings(settings(randomSupportedVersion()).build()).setMapping(mapping));
         ensureGreen();
 
         String source = """

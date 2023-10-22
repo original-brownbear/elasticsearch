@@ -7,12 +7,10 @@
 package org.elasticsearch.integration;
 
 import org.elasticsearch.action.DocWriteResponse;
-import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.get.MultiGetResponse;
 import org.elasticsearch.action.search.MultiSearchResponse;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.client.internal.Requests;
@@ -26,6 +24,7 @@ import java.util.Collections;
 
 import static org.elasticsearch.action.support.WriteRequest.RefreshPolicy.IMMEDIATE;
 import static org.elasticsearch.action.support.WriteRequest.RefreshPolicy.NONE;
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.elasticsearch.xpack.core.security.authc.support.UsernamePasswordToken.basicAuthHeaderValue;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
@@ -63,8 +62,7 @@ public class DateMathExpressionIntegTests extends SecurityIntegTestCase {
         Client client = client().filterWithHeader(Collections.singletonMap("Authorization", basicAuthHeaderValue("user1", USERS_PASSWD)));
 
         if (randomBoolean()) {
-            CreateIndexResponse response = client.admin().indices().prepareCreate(expression).get();
-            assertThat(response.isAcknowledged(), is(true));
+            assertAcked(client.admin().indices().prepareCreate(expression));
         }
         DocWriteResponse response = client.prepareIndex(expression)
             .setSource("foo", "bar")
@@ -106,8 +104,7 @@ public class DateMathExpressionIntegTests extends SecurityIntegTestCase {
         assertTrue(multiGetResponse.getResponses()[0].getResponse().isExists());
         assertEquals(expectedIndexName, multiGetResponse.getResponses()[0].getResponse().getIndex());
 
-        AcknowledgedResponse deleteIndexResponse = client.admin().indices().prepareDelete(expression).get();
-        assertThat(deleteIndexResponse.isAcknowledged(), is(true));
+        assertAcked(client.admin().indices().prepareDelete(expression));
     }
 
 }

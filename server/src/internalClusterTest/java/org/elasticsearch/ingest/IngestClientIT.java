@@ -22,7 +22,6 @@ import org.elasticsearch.action.ingest.PutPipelineRequest;
 import org.elasticsearch.action.ingest.SimulateDocumentBaseResult;
 import org.elasticsearch.action.ingest.SimulatePipelineRequest;
 import org.elasticsearch.action.ingest.SimulatePipelineResponse;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.internal.Requests;
 import org.elasticsearch.common.bytes.BytesReference;
@@ -39,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.elasticsearch.test.NodeRoles.nonIngestNode;
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.elasticsearch.xcontent.XContentFactory.jsonBuilder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
@@ -118,8 +118,7 @@ public class IngestClientIT extends ESIntegTestCase {
         assertThat(simulateDocumentBaseResult.getFailure(), nullValue());
 
         // cleanup
-        AcknowledgedResponse deletePipelineResponse = clusterAdmin().prepareDeletePipeline("_id").get();
-        assertTrue(deletePipelineResponse.isAcknowledged());
+        assertAcked(clusterAdmin().prepareDeletePipeline("_id"));
     }
 
     public void testBulkWithIngestFailures() throws Exception {
@@ -169,8 +168,7 @@ public class IngestClientIT extends ESIntegTestCase {
         }
 
         // cleanup
-        AcknowledgedResponse deletePipelineResponse = clusterAdmin().prepareDeletePipeline("_id").get();
-        assertTrue(deletePipelineResponse.isAcknowledged());
+        assertAcked(clusterAdmin().prepareDeletePipeline("_id").get());
     }
 
     public void testBulkWithUpsert() throws Exception {
@@ -244,8 +242,7 @@ public class IngestClientIT extends ESIntegTestCase {
         assertThat(doc.get("processed"), equalTo(true));
 
         DeletePipelineRequest deletePipelineRequest = new DeletePipelineRequest("_id");
-        AcknowledgedResponse response = clusterAdmin().deletePipeline(deletePipelineRequest).get();
-        assertThat(response.isAcknowledged(), is(true));
+        assertAcked(clusterAdmin().deletePipeline(deletePipelineRequest).get());
 
         getResponse = clusterAdmin().prepareGetPipeline("_id").get();
         assertThat(getResponse.isFound(), is(false));

@@ -498,7 +498,7 @@ public class IndicesRequestIT extends ESIntegTestCase {
 
         String[] randomIndicesOrAliases = randomUniqueIndices();
         DeleteIndexRequest deleteIndexRequest = new DeleteIndexRequest(randomIndicesOrAliases);
-        assertAcked(internalCluster().coordOnlyNodeClient().admin().indices().delete(deleteIndexRequest).actionGet());
+        assertAcked(internalCluster().coordOnlyNodeClient().admin().indices().delete(deleteIndexRequest));
 
         clearInterceptedActions();
         assertSameIndices(deleteIndexRequest, DeleteIndexAction.NAME);

@@ -14,6 +14,7 @@ import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.ActionRequestBuilder;
+import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequestBuilder;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
@@ -88,12 +89,23 @@ import static org.junit.Assert.fail;
 
 public class ElasticsearchAssertions {
 
-    public static void assertAcked(AcknowledgedRequestBuilder<?, ?, ?> builder) {
-        assertAcked(builder, TimeValue.timeValueSeconds(30));
-    }
-
     public static void assertAcked(AcknowledgedRequestBuilder<?, ?, ?> builder, TimeValue timeValue) {
         assertAcked(builder.get(timeValue));
+    }
+
+    public static <T extends ActionResponse & IsAcknowledgedSupplier> void assertAcked(
+        ActionRequestBuilder<?, T> builder,
+        TimeValue timeValue
+    ) {
+        assertAcked(builder.get(timeValue));
+    }
+
+    public static <T extends ActionResponse & IsAcknowledgedSupplier> void assertAcked(ActionRequestBuilder<?, T> builder) {
+        assertAcked(builder.get(TimeValue.timeValueSeconds(30)));
+    }
+
+    public static <T extends ActionResponse & IsAcknowledgedSupplier> void assertAcked(ActionFuture<T> future) {
+        assertAcked(future.actionGet(TimeValue.timeValueSeconds(30)));
     }
 
     public static void assertNoTimeout(ClusterHealthRequestBuilder requestBuilder) {

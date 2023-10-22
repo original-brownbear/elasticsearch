@@ -446,7 +446,7 @@ public class IndexLifecycleInitialisationTests extends ESIntegTestCase {
         logger.info("Creating lifecycle [test_lifecycle]");
         PutLifecycleAction.Request putLifecycleRequest = new PutLifecycleAction.Request(lifecyclePolicy);
         long lowerBoundModifiedDate = Instant.now().toEpochMilli();
-        assertAcked(client().execute(PutLifecycleAction.INSTANCE, putLifecycleRequest).get());
+        assertAcked(client().execute(PutLifecycleAction.INSTANCE, putLifecycleRequest));
         long upperBoundModifiedDate = Instant.now().toEpochMilli();
 
         // assert version and modified_date

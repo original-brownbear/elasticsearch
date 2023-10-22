@@ -38,7 +38,7 @@ import static org.hamcrest.Matchers.notNullValue;
 public class GetIndexIT extends ESIntegTestCase {
     @Override
     protected void setupSuiteScopeCluster() throws Exception {
-        assertAcked(prepareCreate("idx").addAlias(new Alias("alias_idx")).setSettings(Settings.builder().put("number_of_shards", 1)).get());
+        assertAcked(prepareCreate("idx").addAlias(new Alias("alias_idx")).setSettings(Settings.builder().put("number_of_shards", 1)));
         ensureSearchable("idx");
         createIndex("empty_idx");
         ensureSearchable("idx", "empty_idx");

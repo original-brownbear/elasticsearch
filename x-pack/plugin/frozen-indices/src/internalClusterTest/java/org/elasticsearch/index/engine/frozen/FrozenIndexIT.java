@@ -89,9 +89,7 @@ public class FrozenIndexIT extends ESIntegTestCase {
 
         assertThat(client().prepareDelete("index", indexResponse.getId()).get().status(), equalTo(RestStatus.OK));
 
-        assertAcked(
-            client().execute(FreezeIndexAction.INSTANCE, new FreezeRequest("index").waitForActiveShards(ActiveShardCount.ONE)).actionGet()
-        );
+        assertAcked(client().execute(FreezeIndexAction.INSTANCE, new FreezeRequest("index").waitForActiveShards(ActiveShardCount.ONE)));
 
         assertThat(
             clusterAdmin().prepareState().get().getState().metadata().index("index").getTimestampRange(),
@@ -309,7 +307,7 @@ public class FrozenIndexIT extends ESIntegTestCase {
             String id = Integer.toString(i);
             client().prepareIndex("test-index").setId(id).setSource("value", i).get();
         }
-        assertAcked(client().execute(FreezeIndexAction.INSTANCE, new FreezeRequest("test-index")).actionGet());
+        assertAcked(client().execute(FreezeIndexAction.INSTANCE, new FreezeRequest("test-index")));
         // include the frozen indices
         {
             final OpenPointInTimeRequest openPointInTimeRequest = new OpenPointInTimeRequest("test-*").indicesOptions(
