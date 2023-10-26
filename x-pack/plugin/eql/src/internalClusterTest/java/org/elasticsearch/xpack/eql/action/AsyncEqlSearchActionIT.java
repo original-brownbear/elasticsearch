@@ -154,11 +154,7 @@ public class AsyncEqlSearchActionIT extends AbstractEqlBlockingIntegTestCase {
             Exception ex = expectThrows(Exception.class, future::actionGet);
             assertThat(ex.getCause().getMessage(), containsString("by zero"));
         }
-        AcknowledgedResponse deleteResponse = client().execute(
-            DeleteAsyncResultAction.INSTANCE,
-            new DeleteAsyncResultRequest(response.id())
-        ).actionGet();
-        assertThat(deleteResponse.isAcknowledged(), equalTo(true));
+        assertAcked(client().execute(DeleteAsyncResultAction.INSTANCE, new DeleteAsyncResultRequest(response.id())));
     }
 
     public void testGoingAsync() throws Exception {
@@ -294,11 +290,7 @@ public class AsyncEqlSearchActionIT extends AbstractEqlBlockingIntegTestCase {
                 ).actionGet();
                 assertThat(storedResponse, equalTo(response));
 
-                AcknowledgedResponse deleteResponse = client().execute(
-                    DeleteAsyncResultAction.INSTANCE,
-                    new DeleteAsyncResultRequest(response.id())
-                ).actionGet();
-                assertThat(deleteResponse.isAcknowledged(), equalTo(true));
+                assertAcked(client().execute(DeleteAsyncResultAction.INSTANCE, new DeleteAsyncResultRequest(response.id())));
             }
         } else {
             Exception ex = expectThrows(Exception.class, () -> client().execute(EqlSearchAction.INSTANCE, request).get());

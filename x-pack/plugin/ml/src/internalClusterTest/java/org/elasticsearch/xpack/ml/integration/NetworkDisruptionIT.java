@@ -8,7 +8,6 @@ package org.elasticsearch.xpack.ml.integration;
 
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.IndicesOptions;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -29,6 +28,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
+
 public class NetworkDisruptionIT extends BaseMlIntegTestCase {
 
     @Override
@@ -44,9 +45,7 @@ public class NetworkDisruptionIT extends BaseMlIntegTestCase {
         PutJobAction.Request putJobRequest = new PutJobAction.Request(job);
         client().execute(PutJobAction.INSTANCE, putJobRequest).actionGet();
 
-        OpenJobAction.Request openJobRequest = new OpenJobAction.Request(job.getId());
-        AcknowledgedResponse openJobResponse = client().execute(OpenJobAction.INSTANCE, openJobRequest).actionGet();
-        assertTrue(openJobResponse.isAcknowledged());
+        assertAcked(client().execute(OpenJobAction.INSTANCE, new OpenJobAction.Request(job.getId())));
 
         setMlIndicesDelayedNodeLeftTimeoutToZero();
 

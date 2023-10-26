@@ -23,6 +23,7 @@ import org.elasticsearch.xpack.core.transform.transforms.TransformConfigUpdate;
 import org.elasticsearch.xpack.core.transform.transforms.pivot.PivotConfigTests;
 import org.elasticsearch.xpack.transform.TransformSingleNodeTestCase;
 
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
@@ -84,8 +85,7 @@ public class TransformNoRemoteClusterClientNodeIT extends TransformSingleNodeTes
         {
             TransformConfig config = randomConfig(transformId, "my-index");
             PutTransformAction.Request request = new PutTransformAction.Request(config, true, AcknowledgedRequest.DEFAULT_ACK_TIMEOUT);
-            AcknowledgedResponse response = client().execute(PutTransformAction.INSTANCE, request).actionGet();
-            assertThat(response.isAcknowledged(), is(true));
+            assertAcked(client().execute(PutTransformAction.INSTANCE, request));
         }
 
         TransformConfigUpdate update = new TransformConfigUpdate(

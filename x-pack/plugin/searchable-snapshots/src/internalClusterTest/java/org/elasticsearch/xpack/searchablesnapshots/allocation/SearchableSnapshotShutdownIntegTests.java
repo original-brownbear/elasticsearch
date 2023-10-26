@@ -115,7 +115,7 @@ public class SearchableSnapshotShutdownIntegTests extends BaseSearchableSnapshot
         return restoredIndices;
     }
 
-    private void putShutdown(String nodeToRestartId) throws InterruptedException, ExecutionException {
+    private void putShutdown(String nodeToRestartId) {
         PutShutdownNodeAction.Request putShutdownRequest = new PutShutdownNodeAction.Request(
             nodeToRestartId,
             SingleNodeShutdownMetadata.Type.RESTART,
@@ -124,10 +124,10 @@ public class SearchableSnapshotShutdownIntegTests extends BaseSearchableSnapshot
             null,
             null
         );
-        assertTrue(client().execute(PutShutdownNodeAction.INSTANCE, putShutdownRequest).get().isAcknowledged());
+        assertAcked(client().execute(PutShutdownNodeAction.INSTANCE, putShutdownRequest));
     }
 
     private void removeShutdown(String node) throws ExecutionException, InterruptedException {
-        assertTrue(client().execute(DeleteShutdownNodeAction.INSTANCE, new DeleteShutdownNodeAction.Request(node)).get().isAcknowledged());
+        assertAcked(client().execute(DeleteShutdownNodeAction.INSTANCE, new DeleteShutdownNodeAction.Request(node)));
     }
 }

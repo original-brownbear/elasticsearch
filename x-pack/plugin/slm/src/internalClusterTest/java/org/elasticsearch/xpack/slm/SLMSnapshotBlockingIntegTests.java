@@ -234,11 +234,7 @@ public class SLMSnapshotBlockingIntegTests extends AbstractSnapshotIntegTestCase
 
             // Run retention
             logger.info("--> triggering retention");
-            assertTrue(
-                client().execute(ExecuteSnapshotRetentionAction.INSTANCE, new ExecuteSnapshotRetentionAction.Request())
-                    .get()
-                    .isAcknowledged()
-            );
+            assertAcked(client().execute(ExecuteSnapshotRetentionAction.INSTANCE, new ExecuteSnapshotRetentionAction.Request()));
 
             logger.info("--> unblocking snapshots");
             unblockNode(REPO, internalCluster().getMasterName());

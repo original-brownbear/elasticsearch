@@ -10,7 +10,6 @@ import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.action.support.PlainActionFuture;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.action.support.master.MasterNodeRequest;
 import org.elasticsearch.client.internal.OriginSettingClient;
 import org.elasticsearch.cluster.ClusterState;
@@ -99,6 +98,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.stream.Collectors.toList;
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.elasticsearch.xcontent.json.JsonXContent.jsonXContent;
 import static org.elasticsearch.xpack.core.ml.job.persistence.AnomalyDetectorsIndex.createStateIndexAndAliasIfNecessary;
 import static org.hamcrest.Matchers.closeTo;
@@ -207,9 +207,7 @@ public class AutodetectResultProcessorIT extends MlSingleNodeTestCase {
 
     @After
     public void deleteJob() throws Exception {
-        DeleteJobAction.Request request = new DeleteJobAction.Request(JOB_ID);
-        AcknowledgedResponse response = client().execute(DeleteJobAction.INSTANCE, request).actionGet();
-        assertTrue(response.isAcknowledged());
+        assertAcked(client().execute(DeleteJobAction.INSTANCE, new DeleteJobAction.Request(JOB_ID)));
         // Verify that deleting job also deletes associated model snapshots annotations
         assertThat(
             getAnnotations().stream().map(Annotation::getAnnotation).collect(toList()),
@@ -796,9 +794,7 @@ public class AutodetectResultProcessorIT extends MlSingleNodeTestCase {
     }
 
     private void deleteModelSnapshot(String jobId, String snapshotId) {
-        DeleteModelSnapshotAction.Request request = new DeleteModelSnapshotAction.Request(jobId, snapshotId);
-        AcknowledgedResponse response = client().execute(DeleteModelSnapshotAction.INSTANCE, request).actionGet();
-        assertThat(response.isAcknowledged(), is(true));
+        assertAcked(client().execute(DeleteModelSnapshotAction.INSTANCE, new DeleteModelSnapshotAction.Request(jobId, snapshotId)));
     }
 
     private Optional<Quantiles> getQuantiles() throws Exception {

@@ -9,7 +9,6 @@ package org.elasticsearch.xpack.ilm;
 
 import org.elasticsearch.action.admin.cluster.allocation.ClusterAllocationExplainRequest;
 import org.elasticsearch.action.admin.cluster.allocation.ClusterAllocationExplainResponse;
-import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.cluster.node.DiscoveryNodeRole;
 import org.elasticsearch.cluster.routing.ShardRoutingState;
 import org.elasticsearch.cluster.routing.allocation.DataTier;
@@ -118,8 +117,7 @@ public class DataTiersMigrationsTests extends ESIntegTestCase {
             .put(SETTING_NUMBER_OF_REPLICAS, 1)
             .put(LifecycleSettings.LIFECYCLE_NAME, policy)
             .build();
-        CreateIndexResponse res = indicesAdmin().prepareCreate(managedIndex).setSettings(settings).get();
-        assertTrue(res.isAcknowledged());
+        assertAcked(indicesAdmin().prepareCreate(managedIndex).setSettings(settings));
 
         assertBusy(() -> {
             ExplainLifecycleRequest explainRequest = new ExplainLifecycleRequest().indices(managedIndex);
@@ -179,8 +177,7 @@ public class DataTiersMigrationsTests extends ESIntegTestCase {
             .put(SETTING_NUMBER_OF_REPLICAS, 1)
             .put(LifecycleSettings.LIFECYCLE_NAME, policy)
             .build();
-        CreateIndexResponse res = indicesAdmin().prepareCreate(managedIndex).setSettings(settings).get();
-        assertTrue(res.isAcknowledged());
+        assertAcked(indicesAdmin().prepareCreate(managedIndex).setSettings(settings));
 
         assertBusy(() -> {
             ExplainLifecycleRequest explainRequest = new ExplainLifecycleRequest().indices(managedIndex);

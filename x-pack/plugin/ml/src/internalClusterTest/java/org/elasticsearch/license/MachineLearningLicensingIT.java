@@ -70,6 +70,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasItem;
@@ -527,18 +528,16 @@ public class MachineLearningLicensingIT extends BaseMlIntegTestCase {
                   }]}
             """;
         // Creating a pipeline should work
-        PlainActionFuture<AcknowledgedResponse> putPipelineListener = PlainActionFuture.newFuture();
-        client().execute(
-            PutPipelineAction.INSTANCE,
-            new PutPipelineRequest(
-                "test_infer_license_pipeline",
-                new BytesArray(pipeline.getBytes(StandardCharsets.UTF_8)),
-                XContentType.JSON
-            ),
-            putPipelineListener
+        assertAcked(
+            client().execute(
+                PutPipelineAction.INSTANCE,
+                new PutPipelineRequest(
+                    "test_infer_license_pipeline",
+                    new BytesArray(pipeline.getBytes(StandardCharsets.UTF_8)),
+                    XContentType.JSON
+                )
+            )
         );
-        AcknowledgedResponse putPipelineResponse = putPipelineListener.actionGet();
-        assertTrue(putPipelineResponse.isAcknowledged());
 
         client().prepareIndex("infer_license_test")
             .setPipeline("test_infer_license_pipeline")
@@ -583,18 +582,16 @@ public class MachineLearningLicensingIT extends BaseMlIntegTestCase {
         }
 
         // Creating a new pipeline with an inference processor should work
-        putPipelineListener = PlainActionFuture.newFuture();
-        client().execute(
-            PutPipelineAction.INSTANCE,
-            new PutPipelineRequest(
-                "test_infer_license_pipeline_again",
-                new BytesArray(pipeline.getBytes(StandardCharsets.UTF_8)),
-                XContentType.JSON
-            ),
-            putPipelineListener
+        assertAcked(
+            client().execute(
+                PutPipelineAction.INSTANCE,
+                new PutPipelineRequest(
+                    "test_infer_license_pipeline_again",
+                    new BytesArray(pipeline.getBytes(StandardCharsets.UTF_8)),
+                    XContentType.JSON
+                )
+            )
         );
-        putPipelineResponse = putPipelineListener.actionGet();
-        assertTrue(putPipelineResponse.isAcknowledged());
 
         // Inference against the new pipeline should fail since it has never previously succeeded
         ElasticsearchSecurityException e = expectThrows(ElasticsearchSecurityException.class, () -> {
@@ -621,18 +618,16 @@ public class MachineLearningLicensingIT extends BaseMlIntegTestCase {
         enableLicensing(mode);
         assertMLAllowed(true);
         // test that license restricted apis do now work
-        PlainActionFuture<AcknowledgedResponse> putPipelineListenerNewLicense = PlainActionFuture.newFuture();
-        client().execute(
-            PutPipelineAction.INSTANCE,
-            new PutPipelineRequest(
-                "test_infer_license_pipeline",
-                new BytesArray(pipeline.getBytes(StandardCharsets.UTF_8)),
-                XContentType.JSON
-            ),
-            putPipelineListenerNewLicense
+        assertAcked(
+            client().execute(
+                PutPipelineAction.INSTANCE,
+                new PutPipelineRequest(
+                    "test_infer_license_pipeline",
+                    new BytesArray(pipeline.getBytes(StandardCharsets.UTF_8)),
+                    XContentType.JSON
+                )
+            )
         );
-        AcknowledgedResponse putPipelineResponseNewLicense = putPipelineListenerNewLicense.actionGet();
-        assertTrue(putPipelineResponseNewLicense.isAcknowledged());
 
         PlainActionFuture<SimulatePipelineResponse> simulatePipelineListenerNewLicense = PlainActionFuture.newFuture();
         client().execute(

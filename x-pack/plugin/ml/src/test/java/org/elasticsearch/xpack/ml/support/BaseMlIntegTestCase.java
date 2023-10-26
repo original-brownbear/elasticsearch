@@ -19,7 +19,6 @@ import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.support.WriteRequest;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.analysis.common.CommonAnalysisPlugin;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.client.internal.OriginSettingClient;
@@ -102,6 +101,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.ArgumentMatchers.any;
@@ -386,11 +386,7 @@ public abstract class BaseMlIntegTestCase extends ESIntegTestCase {
                     throw new RuntimeException(e);
                 }
             });
-            AcknowledgedResponse deleteResponse = client.execute(
-                DeleteDatafeedAction.INSTANCE,
-                new DeleteDatafeedAction.Request(datafeed.getId())
-            ).get();
-            assertTrue(deleteResponse.isAcknowledged());
+            assertAcked(client.execute(DeleteDatafeedAction.INSTANCE, new DeleteDatafeedAction.Request(datafeed.getId())));
         }
     }
 
@@ -429,8 +425,7 @@ public abstract class BaseMlIntegTestCase extends ESIntegTestCase {
                 ).actionGet();
                 assertEquals(JobState.CLOSED, statsResponse.getResponse().results().get(0).getState());
             });
-            AcknowledgedResponse response = client.execute(DeleteJobAction.INSTANCE, new DeleteJobAction.Request(job.getId())).get();
-            assertTrue(response.isAcknowledged());
+            assertAcked(client.execute(DeleteJobAction.INSTANCE, new DeleteJobAction.Request(job.getId())));
         }
     }
 

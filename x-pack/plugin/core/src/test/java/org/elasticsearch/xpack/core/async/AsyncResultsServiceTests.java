@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static java.util.Collections.emptyMap;
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertFutureThrows;
 import static org.elasticsearch.xpack.core.ClientHelper.ASYNC_SEARCH_ORIGIN;
 import static org.elasticsearch.xpack.core.async.AsyncExecutionIdTests.randomAsyncId;
@@ -315,7 +316,7 @@ public class AsyncResultsServiceTests extends ESSingleNodeTestCase {
 
         PlainActionFuture<AcknowledgedResponse> deleteListener = new PlainActionFuture<>();
         deleteService.deleteResponse(new DeleteAsyncResultRequest(task.getExecutionId().getEncoded()), deleteListener);
-        assertThat(deleteListener.actionGet().isAcknowledged(), equalTo(true));
+        assertAcked(deleteListener);
 
         deleteListener = new PlainActionFuture<>();
         deleteService.deleteResponse(new DeleteAsyncResultRequest(task.getExecutionId().getEncoded()), deleteListener);

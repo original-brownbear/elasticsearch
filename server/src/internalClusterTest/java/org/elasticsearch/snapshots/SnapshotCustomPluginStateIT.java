@@ -52,7 +52,7 @@ public class SnapshotCustomPluginStateIT extends AbstractSnapshotIntegTestCase {
 
         if (testTemplate) {
             logger.info("-->  creating test template");
-            assertThat(
+            assertAcked(
                 indicesAdmin().preparePutTemplate("test-template")
                     .setPatterns(Collections.singletonList("te*"))
                     .setMapping(
@@ -72,9 +72,6 @@ public class SnapshotCustomPluginStateIT extends AbstractSnapshotIntegTestCase {
                             .endObject()
                             .endObject()
                     )
-                    .get()
-                    .isAcknowledged(),
-                equalTo(true)
             );
         }
 

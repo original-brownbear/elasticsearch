@@ -148,11 +148,7 @@ public class AsyncSqlSearchActionIT extends AbstractSqlBlockingIntegTestCase {
             Exception ex = expectThrows(Exception.class, future::actionGet);
             assertThat(ex.getCause().getMessage(), containsString("by zero"));
         }
-        AcknowledgedResponse deleteResponse = client().execute(
-            DeleteAsyncResultAction.INSTANCE,
-            new DeleteAsyncResultRequest(response.id())
-        ).actionGet();
-        assertThat(deleteResponse.isAcknowledged(), equalTo(true));
+        assertAcked(client().execute(DeleteAsyncResultAction.INSTANCE, new DeleteAsyncResultRequest(response.id())));
     }
 
     public void testGoingAsync() throws Exception {
@@ -246,10 +242,12 @@ public class AsyncSqlSearchActionIT extends AbstractSqlBlockingIntegTestCase {
             new DeleteAsyncResultRequest(response.id())
         );
         disableBlocks(plugins);
-        assertThat(deleteResponse.actionGet().isAcknowledged(), equalTo(true));
+        assertAcked(deleteResponse);
 
-        deleteResponse = client().execute(DeleteAsyncResultAction.INSTANCE, new DeleteAsyncResultRequest(response.id()));
-        assertFutureThrows(deleteResponse, ResourceNotFoundException.class);
+        assertFutureThrows(
+            client().execute(DeleteAsyncResultAction.INSTANCE, new DeleteAsyncResultRequest(response.id())),
+            ResourceNotFoundException.class
+        );
     }
 
     public void testFinishingBeforeTimeout() throws Exception {

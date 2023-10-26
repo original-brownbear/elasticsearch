@@ -8,7 +8,6 @@
 package org.elasticsearch.xpack.shutdown;
 
 import org.elasticsearch.action.index.IndexRequestBuilder;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.SingleNodeShutdownMetadata;
 import org.elasticsearch.cluster.routing.RoutingNodesHelper;
@@ -25,6 +24,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.hamcrest.Matchers.equalTo;
 
 @ESIntegTestCase.ClusterScope(scope = ESIntegTestCase.Scope.TEST, numDataNodes = 0)
@@ -56,8 +56,7 @@ public class NodeShutdownDelayedAllocationIT extends ESIntegTestCase {
             null,
             null
         );
-        AcknowledgedResponse putShutdownResponse = client().execute(PutShutdownNodeAction.INSTANCE, putShutdownRequest).get();
-        assertTrue(putShutdownResponse.isAcknowledged());
+        assertAcked(client().execute(PutShutdownNodeAction.INSTANCE, putShutdownRequest));
 
         internalCluster().restartNode(nodeToRestartName, new InternalTestCluster.RestartCallback() {
             @Override
@@ -92,8 +91,7 @@ public class NodeShutdownDelayedAllocationIT extends ESIntegTestCase {
             null,
             null
         );
-        AcknowledgedResponse putShutdownResponse = client().execute(PutShutdownNodeAction.INSTANCE, putShutdownRequest).get();
-        assertTrue(putShutdownResponse.isAcknowledged());
+        assertAcked(client().execute(PutShutdownNodeAction.INSTANCE, putShutdownRequest));
 
         // Actually stop the node
         internalCluster().stopNode(nodeToRestartName);
@@ -123,8 +121,7 @@ public class NodeShutdownDelayedAllocationIT extends ESIntegTestCase {
             null,
             null
         );
-        AcknowledgedResponse putShutdownResponse = client().execute(PutShutdownNodeAction.INSTANCE, putShutdownRequest).get();
-        assertTrue(putShutdownResponse.isAcknowledged());
+        assertAcked(client().execute(PutShutdownNodeAction.INSTANCE, putShutdownRequest));
 
         internalCluster().restartNode(nodeToRestartName, new InternalTestCluster.RestartCallback() {
             @Override
@@ -150,8 +147,7 @@ public class NodeShutdownDelayedAllocationIT extends ESIntegTestCase {
             null,
             null
         );
-        AcknowledgedResponse putShutdownResponse = client().execute(PutShutdownNodeAction.INSTANCE, putShutdownRequest).get();
-        assertTrue(putShutdownResponse.isAcknowledged());
+        assertAcked(client().execute(PutShutdownNodeAction.INSTANCE, putShutdownRequest));
 
         // And the index should turn green again
         ensureGreen("test");
@@ -161,8 +157,7 @@ public class NodeShutdownDelayedAllocationIT extends ESIntegTestCase {
         String nodeToRestartId = setupLongTimeoutTestCase();
 
         DeleteShutdownNodeAction.Request deleteShutdownRequest = new DeleteShutdownNodeAction.Request(nodeToRestartId);
-        AcknowledgedResponse deleteShutdownResponse = client().execute(DeleteShutdownNodeAction.INSTANCE, deleteShutdownRequest).get();
-        assertTrue(deleteShutdownResponse.isAcknowledged());
+        assertAcked(client().execute(DeleteShutdownNodeAction.INSTANCE, deleteShutdownRequest));
 
         // And the index should turn green again
         ensureGreen("test");
@@ -196,8 +191,7 @@ public class NodeShutdownDelayedAllocationIT extends ESIntegTestCase {
                 null,
                 null
             );
-            AcknowledgedResponse putShutdownResponse = client().execute(PutShutdownNodeAction.INSTANCE, putShutdownRequest).get();
-            assertTrue(putShutdownResponse.isAcknowledged());
+            assertAcked(client().execute(PutShutdownNodeAction.INSTANCE, putShutdownRequest));
         }
 
         // Actually stop the node
