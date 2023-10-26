@@ -43,7 +43,7 @@ public class LocalIndicesCleanerTests extends AbstractIndicesCleanerTestCase {
     @Override
     protected void createIndex(String name, ZonedDateTime creationDate) {
         long creationMillis = creationDate.toInstant().toEpochMilli();
-        assertAcked(prepareCreate(name).setSettings(Settings.builder().put(IndexMetadata.SETTING_CREATION_DATE, creationMillis).build()));
+        assertAcked(prepareCreate(name).setSettings(Settings.builder().put(IndexMetadata.SETTING_CREATION_DATE, creationMillis)));
     }
 
     @Override

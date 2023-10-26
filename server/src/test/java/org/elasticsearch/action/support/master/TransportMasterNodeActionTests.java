@@ -817,9 +817,8 @@ public class TransportMasterNodeActionTests extends ESTestCase {
         // nothing should happen here, since the request doesn't touch any of the immutable state keys
         noHandler.validateForReservedState(new Request(), clusterState);
 
-        ClusterUpdateSettingsRequest request = new ClusterUpdateSettingsRequest().persistentSettings(
-            Settings.builder().put("a", "a value").build()
-        ).transientSettings(Settings.builder().put("e", "e value").build());
+        ClusterUpdateSettingsRequest request = new ClusterUpdateSettingsRequest().persistentSettings(Settings.builder().put("a", "a value"))
+            .transientSettings(Settings.builder().put("e", "e value"));
 
         FakeClusterStateUpdateAction action = new FakeClusterStateUpdateAction(
             "internal:testClusterSettings",
@@ -837,8 +836,8 @@ public class TransportMasterNodeActionTests extends ESTestCase {
         );
 
         ClusterUpdateSettingsRequest okRequest = new ClusterUpdateSettingsRequest().persistentSettings(
-            Settings.builder().put("m", "m value").build()
-        ).transientSettings(Settings.builder().put("n", "n value").build());
+            Settings.builder().put("m", "m value")
+        ).transientSettings(Settings.builder().put("n", "n value"));
 
         // this should just work, no conflicts
         action.validateForReservedState(okRequest, clusterState);

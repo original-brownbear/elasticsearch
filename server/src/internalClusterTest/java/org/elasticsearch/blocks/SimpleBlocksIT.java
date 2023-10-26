@@ -298,7 +298,7 @@ public class SimpleBlocksIT extends ESIntegTestCase {
         final String indexName = randomAlphaOfLength(10).toLowerCase(Locale.ROOT);
         assertAcked(
             prepareCreate(indexName).setWaitForActiveShards(ActiveShardCount.NONE)
-                .setSettings(Settings.builder().put("index.routing.allocation.include._name", "nothing").build())
+                .setSettings(Settings.builder().put("index.routing.allocation.include._name", "nothing"))
         );
 
         final ClusterState clusterState = clusterAdmin().prepareState().get().getState();

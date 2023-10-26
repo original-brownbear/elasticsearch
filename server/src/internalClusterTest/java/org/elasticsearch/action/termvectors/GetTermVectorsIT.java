@@ -1068,7 +1068,7 @@ public class GetTermVectorsIT extends AbstractTermVectorsTestCase {
             .putList("index.analysis.analyzer.my_analyzer.filter", "lowercase")
             .putList("index.analysis.normalizer.my_normalizer.filter", "lowercase");
         assertAcked(
-            prepareCreate(indexNames[0]).setSettings(builder.build())
+            prepareCreate(indexNames[0]).setSettings(builder)
                 .setMapping(
                     "field1",
                     "type=text,term_vector=with_positions_offsets,analyzer=my_analyzer",
@@ -1077,7 +1077,7 @@ public class GetTermVectorsIT extends AbstractTermVectorsTestCase {
                 )
         );
         assertAcked(
-            prepareCreate(indexNames[1]).setSettings(builder.build())
+            prepareCreate(indexNames[1]).setSettings(builder)
                 .setMapping("field1", "type=keyword,normalizer=my_normalizer", "field2", "type=keyword")
         );
         ensureGreen();

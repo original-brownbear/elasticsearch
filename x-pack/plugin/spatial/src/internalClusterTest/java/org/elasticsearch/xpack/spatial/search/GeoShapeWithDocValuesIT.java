@@ -71,7 +71,7 @@ public class GeoShapeWithDocValuesIT extends GeoShapeIntegTestCase {
     public void testMappingUpdate() {
         // create index
         IndexVersion version = randomSupportedVersion();
-        assertAcked(indicesAdmin().prepareCreate("test").setSettings(settings(version).build()).setMapping("shape", "type=geo_shape"));
+        assertAcked(indicesAdmin().prepareCreate("test").setSettings(settings(version)).setMapping("shape", "type=geo_shape"));
         ensureGreen();
 
         String update = """
@@ -167,7 +167,7 @@ public class GeoShapeWithDocValuesIT extends GeoShapeIntegTestCase {
         mapping.endObject().endObject().endObject();
 
         // create index
-        assertAcked(indicesAdmin().prepareCreate("test").setSettings(settings(randomSupportedVersion()).build()).setMapping(mapping).get());
+        assertAcked(indicesAdmin().prepareCreate("test").setSettings(settings(randomSupportedVersion())).setMapping(mapping).get());
         ensureGreen();
 
         String source = """

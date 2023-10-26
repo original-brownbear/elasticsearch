@@ -828,7 +828,7 @@ public abstract class ESIntegTestCase extends ESTestCase {
             internalCluster().ensureAtLeastNumDataNodes(numNodes);
             getExcludeSettings(numNodes, builder);
         }
-        return indicesAdmin().prepareCreate(index).setSettings(builder.build());
+        return indicesAdmin().prepareCreate(index).setSettings(builder);
     }
 
     /**

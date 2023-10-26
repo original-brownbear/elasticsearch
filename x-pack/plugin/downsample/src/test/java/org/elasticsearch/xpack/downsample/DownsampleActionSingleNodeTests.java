@@ -238,7 +238,7 @@ public class DownsampleActionSingleNodeTests extends ESSingleNodeTestCase {
             .endObject();
 
         mapping.endObject().endObject().endObject();
-        assertAcked(indicesAdmin().prepareCreate(sourceIndex).setSettings(settings.build()).setMapping(mapping).get());
+        assertAcked(indicesAdmin().prepareCreate(sourceIndex).setSettings(settings).setMapping(mapping).get());
     }
 
     public void testDownsampleIndex() throws IOException {
@@ -682,7 +682,7 @@ public class DownsampleActionSingleNodeTests extends ESSingleNodeTestCase {
         assertAcked(
             indicesAdmin().preparePutTemplate(downsampleIndex)
                 .setPatterns(List.of(downsampleIndex))
-                .setSettings(Settings.builder().put("index.blocks.write", "true").build())
+                .setSettings(Settings.builder().put("index.blocks.write", "true"))
         );
 
         ElasticsearchException exception = expectThrows(ElasticsearchException.class, indexer::execute);
@@ -1045,7 +1045,7 @@ public class DownsampleActionSingleNodeTests extends ESSingleNodeTestCase {
         // Set the source index to read-only state
         assertAcked(
             indicesAdmin().prepareUpdateSettings(sourceIndex)
-                .setSettings(Settings.builder().put(IndexMetadata.INDEX_BLOCKS_WRITE_SETTING.getKey(), blockWrite).build())
+                .setSettings(Settings.builder().put(IndexMetadata.INDEX_BLOCKS_WRITE_SETTING.getKey(), blockWrite))
         );
     }
 

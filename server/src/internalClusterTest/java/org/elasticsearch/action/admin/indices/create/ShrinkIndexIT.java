@@ -103,7 +103,7 @@ public class ShrinkIndexIT extends ESIntegTestCase {
         // now merge source into a 4 shard index
         assertAcked(
             indicesAdmin().prepareResizeIndex("source", "first_shrink")
-                .setSettings(indexSettings(shardSplits[1], 0).putNull("index.blocks.write").build())
+                .setSettings(indexSettings(shardSplits[1], 0).putNull("index.blocks.write"))
         );
         ensureGreen();
         assertHitCount(prepareSearch("first_shrink").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")), 20);
@@ -128,7 +128,7 @@ public class ShrinkIndexIT extends ESIntegTestCase {
         assertAcked(
             indicesAdmin().prepareResizeIndex("first_shrink", "second_shrink")
                 .setSettings(
-                    indexSettings(shardSplits[2], 0).putNull("index.blocks.write").putNull("index.routing.allocation.require._name").build()
+                    indexSettings(shardSplits[2], 0).putNull("index.blocks.write").putNull("index.routing.allocation.require._name")
                 )
         );
         ensureGreen();
@@ -268,7 +268,6 @@ public class ShrinkIndexIT extends ESIntegTestCase {
                         .put("index.number_of_replicas", createWithReplicas ? 1 : 0)
                         .putNull("index.blocks.write")
                         .putNull("index.routing.allocation.require._name")
-                        .build()
                 )
         );
         ensureGreen();
@@ -370,7 +369,6 @@ public class ShrinkIndexIT extends ESIntegTestCase {
                     .put("index.routing.allocation.exclude._name", mergeNode) // we manually exclude the merge node to forcefully fuck it up
                     .put("index.number_of_replicas", 0)
                     .put("index.allocation.max_retries", 1)
-                    .build()
             )
             .get();
         clusterAdmin().prepareHealth("target").setWaitForEvents(Priority.LANGUID).get();
@@ -452,15 +450,13 @@ public class ShrinkIndexIT extends ESIntegTestCase {
         IllegalArgumentException exc = expectThrows(
             IllegalArgumentException.class,
             () -> indicesAdmin().prepareResizeIndex("source", "target")
-                .setSettings(indexSettings(2, 0).put("index.sort.field", "foo").build())
+                .setSettings(indexSettings(2, 0).put("index.sort.field", "foo"))
                 .get()
         );
         assertThat(exc.getMessage(), containsString("can't override index sort when resizing an index"));
 
         // check that the index sort order of `source` is correctly applied to the `target`
-        assertAcked(
-            indicesAdmin().prepareResizeIndex("source", "target").setSettings(indexSettings(2, 0).putNull("index.blocks.write").build())
-        );
+        assertAcked(indicesAdmin().prepareResizeIndex("source", "target").setSettings(indexSettings(2, 0).putNull("index.blocks.write")));
         ensureGreen();
         assertNoResizeSourceIndexSettings("target");
 
@@ -506,8 +502,7 @@ public class ShrinkIndexIT extends ESIntegTestCase {
         try {
             // now merge source into a single shard index
             assertAcked(
-                indicesAdmin().prepareResizeIndex("source", "target")
-                    .setSettings(Settings.builder().put("index.number_of_replicas", 0).build())
+                indicesAdmin().prepareResizeIndex("source", "target").setSettings(Settings.builder().put("index.number_of_replicas", 0))
             );
             ensureGreen();
             assertNoResizeSourceIndexSettings("target");
@@ -577,7 +572,7 @@ public class ShrinkIndexIT extends ESIntegTestCase {
                 .setSettings(
                     indexSettings(1, 1).putNull(
                         IndexMetadata.INDEX_ROUTING_REQUIRE_GROUP_SETTING.getConcreteSettingForNamespace("_name").getKey()
-                    ).build()
+                    )
                 )
                 .setResizeType(ResizeType.SHRINK)
         );
@@ -596,7 +591,7 @@ public class ShrinkIndexIT extends ESIntegTestCase {
                 .setSettings(
                     indexSettings(shardCount, 0).putNull(
                         IndexMetadata.INDEX_ROUTING_REQUIRE_GROUP_SETTING.getConcreteSettingForNamespace("_name").getKey()
-                    ).build()
+                    )
                 )
                 .setResizeType(ResizeType.SPLIT)
         );

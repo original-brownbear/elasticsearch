@@ -213,13 +213,7 @@ public class FrozenIndexIT extends ESIntegTestCase {
         final String indexName = "test";
         assertAcked(
             indicesAdmin().prepareCreate(indexName)
-                .setSettings(
-                    Settings.builder()
-                        .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, between(1, 5))
-                        .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
-                        .put("index.routing.allocation.require._name", assignedNode)
-                        .build()
-                )
+                .setSettings(indexSettings(between(1, 5), 0).put("index.routing.allocation.require._name", assignedNode))
                 .setMapping("{\"properties\":{\"created_date\":{\"type\": \"date\", \"format\": \"yyyy-MM-dd\"}}}")
         );
         int numDocs = randomIntBetween(1, 100);

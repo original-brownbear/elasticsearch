@@ -1858,7 +1858,7 @@ public class HighlighterSearchIT extends ESIntegTestCase {
     public void testResetTwice() throws Exception {
         assertAcked(
             prepareCreate("test").setSettings(
-                Settings.builder().put(indexSettings()).put("analysis.analyzer.my_analyzer.type", "mock_whitespace").build()
+                Settings.builder().put(indexSettings()).put("analysis.analyzer.my_analyzer.type", "mock_whitespace")
             ).setMapping("text", "type=text,analyzer=my_analyzer")
         );
         ensureGreen();
@@ -3511,7 +3511,7 @@ public class HighlighterSearchIT extends ESIntegTestCase {
     public void testWithNormalizer() throws Exception {
         Builder builder = Settings.builder().put(indexSettings()).putList("index.analysis.normalizer.my_normalizer.filter", "lowercase");
 
-        assertAcked(prepareCreate("test").setSettings(builder.build()).setMapping("keyword", "type=keyword,normalizer=my_normalizer"));
+        assertAcked(prepareCreate("test").setSettings(builder).setMapping("keyword", "type=keyword,normalizer=my_normalizer"));
         ensureGreen();
 
         client().prepareIndex("test")

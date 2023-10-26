@@ -145,7 +145,7 @@ public class DownsampleClusterDisruptionIT extends ESIntegTestCase {
             .endObject();
 
         mapping.endObject().endObject().endObject();
-        assertAcked(indicesAdmin().prepareCreate(sourceIndex).setSettings(settings.build()).setMapping(mapping).get());
+        assertAcked(indicesAdmin().prepareCreate(sourceIndex).setSettings(settings).setMapping(mapping).get());
     }
 
     public void testDownsampleIndexWithDataNodeRestart() throws Exception {
@@ -418,7 +418,7 @@ public class DownsampleClusterDisruptionIT extends ESIntegTestCase {
         // Set the source index to read-only state
         assertAcked(
             indicesAdmin().prepareUpdateSettings(sourceIndex)
-                .setSettings(Settings.builder().put(IndexMetadata.INDEX_BLOCKS_WRITE_SETTING.getKey(), true).build())
+                .setSettings(Settings.builder().put(IndexMetadata.INDEX_BLOCKS_WRITE_SETTING.getKey(), true))
         );
     }
 

@@ -328,7 +328,7 @@ public class SnapshotStatusApisIT extends AbstractSnapshotIntegTestCase {
                     .cluster()
                     .preparePutRepository(repoName)
                     .setType("fs")
-                    .setSettings(Settings.builder().put("location", repoPath).build())
+                    .setSettings(Settings.builder().put("location", repoPath))
             );
             List<String> snapshotNames = new ArrayList<>();
             repo2SnapshotNames.put(repoName, snapshotNames);

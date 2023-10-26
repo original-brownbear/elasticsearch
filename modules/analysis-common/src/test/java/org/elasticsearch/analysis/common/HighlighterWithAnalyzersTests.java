@@ -195,7 +195,7 @@ public class HighlighterWithAnalyzersTests extends ESIntegTestCase {
             .putList("index.analysis.filter.synonym.synonyms", "fast,quick");
 
         assertAcked(
-            prepareCreate("test").setSettings(builder.build())
+            prepareCreate("test").setSettings(builder)
                 .setMapping(
                     "field1",
                     "type=text,term_vector=with_positions_offsets,search_analyzer=synonym," + "analyzer=standard,index_options=offsets"
@@ -227,7 +227,7 @@ public class HighlighterWithAnalyzersTests extends ESIntegTestCase {
             .put("index.analysis.filter.synonym.type", "synonym")
             .putList("index.analysis.filter.synonym.synonyms", "quick => fast");
 
-        assertAcked(prepareCreate("first_test_index").setSettings(builder.build()).setMapping(type1TermVectorMapping()));
+        assertAcked(prepareCreate("first_test_index").setSettings(builder).setMapping(type1TermVectorMapping()));
 
         ensureGreen();
 
@@ -304,7 +304,7 @@ public class HighlighterWithAnalyzersTests extends ESIntegTestCase {
         );
 
         assertAcked(
-            prepareCreate("second_test_index").setSettings(builder.build())
+            prepareCreate("second_test_index").setSettings(builder)
                 .setMapping(
                     "field4",
                     "type=text,term_vector=with_positions_offsets,analyzer=synonym",

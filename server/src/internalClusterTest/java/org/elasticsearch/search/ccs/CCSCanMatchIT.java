@@ -123,7 +123,7 @@ public class CCSCanMatchIT extends AbstractMultiClustersTestCase {
             client.admin()
                 .indices()
                 .prepareUpdateSettings(index)
-                .setSettings(Settings.builder().put(IndexMetadata.INDEX_BLOCKS_WRITE_SETTING.getKey(), true).build())
+                .setSettings(Settings.builder().put(IndexMetadata.INDEX_BLOCKS_WRITE_SETTING.getKey(), true))
                 .get();
             client.admin().indices().prepareOpen(index).get();
             assertBusy(() -> {

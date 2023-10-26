@@ -181,7 +181,6 @@ public abstract class AbstractFeatureMigrationIntegTest extends ESIntegTestCase 
                 Settings.builder()
                     .put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current())
                     .put(IndexMetadata.INDEX_NUMBER_OF_REPLICAS_SETTING.getKey(), 0)
-                    .build()
             );
         }
         if (descriptor.isAutomaticallyManaged() == false) {

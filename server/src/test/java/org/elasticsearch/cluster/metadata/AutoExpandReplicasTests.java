@@ -265,7 +265,7 @@ public class AutoExpandReplicasTests extends ESTestCase {
             state = cluster.updateSettings(
                 state,
                 new UpdateSettingsRequest("index").settings(
-                    Settings.builder().put(IndexMetadata.INDEX_ROUTING_EXCLUDE_GROUP_PREFIX + "._name", oldNode.getName()).build()
+                    Settings.builder().put(IndexMetadata.INDEX_ROUTING_EXCLUDE_GROUP_PREFIX + "._name", oldNode.getName())
                 )
             );
 

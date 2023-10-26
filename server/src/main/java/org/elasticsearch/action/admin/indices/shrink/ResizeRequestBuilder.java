@@ -30,6 +30,11 @@ public class ResizeRequestBuilder extends AcknowledgedRequestBuilder<ResizeReque
         return this;
     }
 
+    public ResizeRequestBuilder setSettings(Settings.Builder settings) {
+        this.request.getTargetIndexRequest().settings(settings);
+        return this;
+    }
+
     public ResizeRequestBuilder setSettings(Settings settings) {
         this.request.getTargetIndexRequest().settings(settings);
         return this;

@@ -28,7 +28,7 @@ public class InternalEngineMergeIT extends ESIntegTestCase {
     public void testMergesHappening() throws Exception {
         final int numOfShards = randomIntBetween(1, 5);
         // some settings to keep num segments low
-        assertAcked(prepareCreate("test").setSettings(indexSettings(numOfShards, 0).build()));
+        assertAcked(prepareCreate("test").setSettings(indexSettings(numOfShards, 0)));
         long id = 0;
         final int rounds = scaledRandomIntBetween(50, 300);
         logger.info("Starting rounds [{}] ", rounds);

@@ -148,9 +148,7 @@ public class SearchableSnapshotDiskThresholdIntegTests extends DiskUsageIntegTes
 
     private void createRepository(String name, String type) {
         assertAcked(
-            clusterAdmin().preparePutRepository(name)
-                .setType(type)
-                .setSettings(Settings.builder().put("location", randomRepoPath()).build())
+            clusterAdmin().preparePutRepository(name).setType(type).setSettings(Settings.builder().put("location", randomRepoPath()))
         );
     }
 

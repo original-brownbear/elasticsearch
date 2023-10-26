@@ -121,7 +121,6 @@ public class SecurityIndexManagerIntegTests extends SecurityIntegTestCase {
                         .put("index.refresh_interval", "1234s")
                         .put("index.priority", "9876")
                         .put("index.number_of_replicas", "8")
-                        .build()
                 )
         );
         // create an new-style template

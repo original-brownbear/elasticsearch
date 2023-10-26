@@ -185,7 +185,7 @@ public class SplitIndexIT extends ESIntegTestCase {
         assertAcked(
             indicesAdmin().prepareResizeIndex("source", "first_split")
                 .setResizeType(ResizeType.SPLIT)
-                .setSettings(firstSplitSettingsBuilder.build())
+                .setSettings(firstSplitSettingsBuilder)
         );
         ensureGreen();
         assertHitCount(prepareSearch("first_split").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")), numDocs);
@@ -212,7 +212,7 @@ public class SplitIndexIT extends ESIntegTestCase {
         assertAcked(
             indicesAdmin().prepareResizeIndex("first_split", "second_split")
                 .setResizeType(ResizeType.SPLIT)
-                .setSettings(indexSettings(secondSplitShards, 0).putNull("index.blocks.write").build())
+                .setSettings(indexSettings(secondSplitShards, 0).putNull("index.blocks.write"))
         );
         ensureGreen();
         assertHitCount(prepareSearch("second_split").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")), numDocs);
@@ -364,7 +364,7 @@ public class SplitIndexIT extends ESIntegTestCase {
             assertAcked(
                 indicesAdmin().prepareResizeIndex("source", "target")
                     .setResizeType(ResizeType.SPLIT)
-                    .setSettings(indexSettings(2, createWithReplicas ? 1 : 0).putNull("index.blocks.write").build())
+                    .setSettings(indexSettings(2, createWithReplicas ? 1 : 0).putNull("index.blocks.write"))
             );
             ensureGreen();
             assertNoResizeSourceIndexSettings("target");
@@ -465,7 +465,7 @@ public class SplitIndexIT extends ESIntegTestCase {
             IllegalArgumentException.class,
             () -> indicesAdmin().prepareResizeIndex("source", "target")
                 .setResizeType(ResizeType.SPLIT)
-                .setSettings(indexSettings(4, 0).put("index.sort.field", "foo").build())
+                .setSettings(indexSettings(4, 0).put("index.sort.field", "foo"))
                 .get()
         );
         assertThat(exc.getMessage(), containsString("can't override index sort when resizing an index"));
@@ -474,7 +474,7 @@ public class SplitIndexIT extends ESIntegTestCase {
         assertAcked(
             indicesAdmin().prepareResizeIndex("source", "target")
                 .setResizeType(ResizeType.SPLIT)
-                .setSettings(indexSettings(4, 0).putNull("index.blocks.write").build())
+                .setSettings(indexSettings(4, 0).putNull("index.blocks.write"))
         );
         ensureGreen();
         flushAndRefresh();

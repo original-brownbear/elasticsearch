@@ -65,7 +65,7 @@ public class SearchableSnapshotsResizeIntegTests extends BaseFrozenSearchableSna
             IllegalArgumentException.class,
             () -> indicesAdmin().prepareResizeIndex("mounted-index", "shrunk-index")
                 .setResizeType(ResizeType.SHRINK)
-                .setSettings(indexSettingsNoReplicas(1).build())
+                .setSettings(indexSettingsNoReplicas(1))
                 .get()
         );
         assertThat(exception.getMessage(), equalTo("can't shrink searchable snapshot index [mounted-index]"));
@@ -76,7 +76,7 @@ public class SearchableSnapshotsResizeIntegTests extends BaseFrozenSearchableSna
             IllegalArgumentException.class,
             () -> indicesAdmin().prepareResizeIndex("mounted-index", "split-index")
                 .setResizeType(ResizeType.SPLIT)
-                .setSettings(indexSettingsNoReplicas(4).build())
+                .setSettings(indexSettingsNoReplicas(4))
                 .get()
         );
         assertThat(exception.getMessage(), equalTo("can't split searchable snapshot index [mounted-index]"));
@@ -96,7 +96,7 @@ public class SearchableSnapshotsResizeIntegTests extends BaseFrozenSearchableSna
             IllegalArgumentException.class,
             () -> indicesAdmin().prepareResizeIndex("mounted-index", "cloned-index")
                 .setResizeType(ResizeType.CLONE)
-                .setSettings(Settings.builder().putNull(IndexModule.INDEX_STORE_TYPE_SETTING.getKey()).build())
+                .setSettings(Settings.builder().putNull(IndexModule.INDEX_STORE_TYPE_SETTING.getKey()))
                 .get()
         );
         assertThat(
@@ -113,7 +113,6 @@ public class SearchableSnapshotsResizeIntegTests extends BaseFrozenSearchableSna
                         .putNull(IndexModule.INDEX_RECOVERY_TYPE_SETTING.getKey())
                         .put(DataTier.TIER_PREFERENCE, DataTier.DATA_HOT)
                         .put(INDEX_NUMBER_OF_REPLICAS_SETTING.getKey(), 0)
-                        .build()
                 )
         );
         ensureGreen("cloned-index");

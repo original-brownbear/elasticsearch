@@ -148,7 +148,7 @@ public class TooManyJobsIT extends BaseMlIntegTestCase {
         for (int i = 1; i <= (clusterWideMaxNumberOfJobs + 1); i++) {
             if (i == 2 && testDynamicChange) {
                 ClusterUpdateSettingsRequest clusterUpdateSettingsRequest = new ClusterUpdateSettingsRequest().persistentSettings(
-                    Settings.builder().put(MachineLearning.MAX_OPEN_JOBS_PER_NODE.getKey(), maxNumberOfJobsPerNode).build()
+                    Settings.builder().put(MachineLearning.MAX_OPEN_JOBS_PER_NODE.getKey(), maxNumberOfJobsPerNode)
                 );
                 client().execute(ClusterUpdateSettingsAction.INSTANCE, clusterUpdateSettingsRequest).actionGet();
             }

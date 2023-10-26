@@ -123,7 +123,7 @@ public class ILMDownsampleDisruptionIT extends ESIntegTestCase {
             .endObject();
 
         mapping.endObject().endObject().endObject();
-        assertAcked(indicesAdmin().prepareCreate(sourceIndex).setSettings(settings.build()).setMapping(mapping).get());
+        assertAcked(indicesAdmin().prepareCreate(sourceIndex).setSettings(settings).setMapping(mapping).get());
 
         Map<String, Phase> phases = new HashMap<>();
         phases.put(

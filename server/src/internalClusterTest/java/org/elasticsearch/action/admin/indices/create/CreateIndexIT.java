@@ -138,14 +138,14 @@ public class CreateIndexIT extends ESIntegTestCase {
     public void testInvalidShardCountSettings() throws Exception {
         int value = randomIntBetween(-10, 0);
         try {
-            prepareCreate("test").setSettings(Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, value).build()).get();
+            prepareCreate("test").setSettings(Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, value)).get();
             fail("should have thrown an exception about the primary shard count");
         } catch (IllegalArgumentException e) {
             assertEquals("Failed to parse value [" + value + "] for setting [index.number_of_shards] must be >= 1", e.getMessage());
         }
         value = randomIntBetween(-10, -1);
         try {
-            prepareCreate("test").setSettings(Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, value).build()).get();
+            prepareCreate("test").setSettings(Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, value)).get();
             fail("should have thrown an exception about the replica shard count");
         } catch (IllegalArgumentException e) {
             assertEquals("Failed to parse value [" + value + "] for setting [index.number_of_replicas] must be >= 0", e.getMessage());
@@ -170,7 +170,7 @@ public class CreateIndexIT extends ESIntegTestCase {
 
     public void testUnknownSettingFails() {
         try {
-            prepareCreate("test").setSettings(Settings.builder().put("index.unknown.value", "this must fail").build()).get();
+            prepareCreate("test").setSettings(Settings.builder().put("index.unknown.value", "this must fail")).get();
             fail("should have thrown an exception about the shard count");
         } catch (IllegalArgumentException e) {
             assertEquals(
@@ -185,9 +185,7 @@ public class CreateIndexIT extends ESIntegTestCase {
         int value = randomIntBetween(-10, 0);
         try {
             prepareCreate("test").setSettings(
-                Settings.builder()
-                    .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS.substring(IndexMetadata.INDEX_SETTING_PREFIX.length()), value)
-                    .build()
+                Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS.substring(IndexMetadata.INDEX_SETTING_PREFIX.length()), value)
             ).get();
             fail("should have thrown an exception about the shard count");
         } catch (IllegalArgumentException e) {
@@ -198,7 +196,6 @@ public class CreateIndexIT extends ESIntegTestCase {
             prepareCreate("test").setSettings(
                 Settings.builder()
                     .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS.substring(IndexMetadata.INDEX_SETTING_PREFIX.length()), value)
-                    .build()
             ).get();
             fail("should have thrown an exception about the shard count");
         } catch (IllegalArgumentException e) {
@@ -356,7 +353,7 @@ public class CreateIndexIT extends ESIntegTestCase {
     }
 
     public void testIndexNameInResponse() {
-        CreateIndexResponse response = prepareCreate("foo").setSettings(Settings.builder().build()).get();
+        CreateIndexResponse response = prepareCreate("foo").setSettings(Settings.EMPTY).get();
 
         assertEquals("Should have index name in response", "foo", response.index());
     }

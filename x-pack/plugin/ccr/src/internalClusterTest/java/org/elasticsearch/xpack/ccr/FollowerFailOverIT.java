@@ -229,7 +229,7 @@ public class FollowerFailOverIT extends CcrIntegTestCase {
             .indices()
             .prepareUpdateSettings("follower-index")
             .setMasterNodeTimeout(TimeValue.MAX_VALUE)
-            .setSettings(Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, numberOfReplicas + 1).build())
+            .setSettings(Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, numberOfReplicas + 1))
             .get();
         ensureFollowerGreen("follower-index");
         awaitGlobalCheckpointAtLeast(followerClient(), new ShardId(resolveFollowerIndex("follower-index"), 0), 100);

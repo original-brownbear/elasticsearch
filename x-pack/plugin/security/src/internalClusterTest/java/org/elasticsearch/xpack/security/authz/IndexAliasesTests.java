@@ -822,9 +822,7 @@ public class IndexAliasesTests extends SecurityIntegTestCase {
         );
         final Client aliasesClient = client(aliasHeaders);
 
-        assertAcked(
-            createClient.admin().indices().prepareCreate(hiddenIndex).setSettings(Settings.builder().put("index.hidden", true).build())
-        );
+        assertAcked(createClient.admin().indices().prepareCreate(hiddenIndex).setSettings(Settings.builder().put("index.hidden", true)));
 
         assertAcked(
             aliasesClient.admin()

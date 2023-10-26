@@ -79,7 +79,6 @@ public class SearchableSnapshotsRepositoryIntegTests extends BaseFrozenSearchabl
                     Settings.builder()
                         .put(repositorySettings.build())
                         .put(FsRepository.REPOSITORIES_CHUNK_SIZE_SETTING.getKey(), ByteSizeValue.ofMb(1L))
-                        .build()
                 )
         );
 

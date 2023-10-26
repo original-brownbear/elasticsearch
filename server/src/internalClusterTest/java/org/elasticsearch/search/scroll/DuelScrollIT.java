@@ -200,7 +200,7 @@ public class DuelScrollIT extends ESIntegTestCase {
         // we need to control refreshes as they might take different merges into account
         settings.put("index.refresh_interval", -1);
 
-        assertAcked(prepareCreate("test").setSettings(settings.build()).get());
+        assertAcked(prepareCreate("test").setSettings(settings).get());
         final int numDocs = randomIntBetween(10, 200);
 
         IndexRequestBuilder[] builders = new IndexRequestBuilder[numDocs];

@@ -153,10 +153,7 @@ public class HdfsTests extends ESSingleNodeTestCase {
 
     public void testEmptyUri() {
         try {
-            clusterAdmin().preparePutRepository("test-repo")
-                .setType("hdfs")
-                .setSettings(Settings.builder().put("uri", "/path").build())
-                .get();
+            clusterAdmin().preparePutRepository("test-repo").setType("hdfs").setSettings(Settings.builder().put("uri", "/path")).get();
             fail();
         } catch (RepositoryException e) {
             assertTrue(e.getCause() instanceof IllegalArgumentException);
@@ -166,10 +163,7 @@ public class HdfsTests extends ESSingleNodeTestCase {
 
     public void testNonHdfsUri() {
         try {
-            clusterAdmin().preparePutRepository("test-repo")
-                .setType("hdfs")
-                .setSettings(Settings.builder().put("uri", "file:///").build())
-                .get();
+            clusterAdmin().preparePutRepository("test-repo").setType("hdfs").setSettings(Settings.builder().put("uri", "file:///")).get();
             fail();
         } catch (RepositoryException e) {
             assertTrue(e.getCause() instanceof IllegalArgumentException);
@@ -181,7 +175,7 @@ public class HdfsTests extends ESSingleNodeTestCase {
         try {
             clusterAdmin().preparePutRepository("test-repo")
                 .setType("hdfs")
-                .setSettings(Settings.builder().put("uri", "hdfs:///some/path").build())
+                .setSettings(Settings.builder().put("uri", "hdfs:///some/path"))
                 .get();
             fail();
         } catch (RepositoryException e) {
@@ -192,10 +186,7 @@ public class HdfsTests extends ESSingleNodeTestCase {
 
     public void testMissingPath() {
         try {
-            clusterAdmin().preparePutRepository("test-repo")
-                .setType("hdfs")
-                .setSettings(Settings.builder().put("uri", "hdfs:///").build())
-                .get();
+            clusterAdmin().preparePutRepository("test-repo").setType("hdfs").setSettings(Settings.builder().put("uri", "hdfs:///")).get();
             fail();
         } catch (RepositoryException e) {
             assertTrue(e.getCause() instanceof IllegalArgumentException);
@@ -209,7 +200,7 @@ public class HdfsTests extends ESSingleNodeTestCase {
                 .cluster()
                 .preparePutRepository("test-repo")
                 .setType("hdfs")
-                .setSettings(Settings.builder().put("uri", "hdfs:///").put("replication_factor", "0").put("path", "foo").build())
+                .setSettings(Settings.builder().put("uri", "hdfs:///").put("replication_factor", "0").put("path", "foo"))
                 .get();
             fail();
         } catch (RepositoryException e) {
@@ -224,7 +215,7 @@ public class HdfsTests extends ESSingleNodeTestCase {
                 .cluster()
                 .preparePutRepository("test-repo")
                 .setType("hdfs")
-                .setSettings(Settings.builder().put("uri", "hdfs:///").put("replication_factor", "32768").put("path", "foo").build())
+                .setSettings(Settings.builder().put("uri", "hdfs:///").put("replication_factor", "32768").put("path", "foo"))
                 .get();
             fail();
         } catch (RepositoryException e) {
@@ -245,7 +236,6 @@ public class HdfsTests extends ESSingleNodeTestCase {
                         .put("replication_factor", "4")
                         .put("path", "foo")
                         .put("conf.dfs.replication.min", "5")
-                        .build()
                 )
                 .get();
             fail();
@@ -267,7 +257,6 @@ public class HdfsTests extends ESSingleNodeTestCase {
                         .put("replication_factor", "600")
                         .put("path", "foo")
                         .put("conf.dfs.replication.max", "512")
-                        .build()
                 )
                 .get();
             fail();

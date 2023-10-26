@@ -644,7 +644,7 @@ public class SharedClusterSnapshotRestoreIT extends AbstractSnapshotIntegTestCas
         assertAcked(
             clusterAdmin().preparePutRepository("test-repo")
                 .setType("mock")
-                .setSettings(Settings.builder().put("location", repositoryLocation).put(repositorySettings).build())
+                .setSettings(Settings.builder().put("location", repositoryLocation).put(repositorySettings))
         );
 
         // attempt to restore the snapshot with the given settings

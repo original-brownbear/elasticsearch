@@ -446,7 +446,6 @@ public class PointInTimeIT extends ESIntegTestCase {
                     Settings.builder()
                         .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, numShards)
                         .put("index.routing.allocation.require._id", dataNode.getId())
-                        .build()
                 )
         );
         var transportService = (MockTransportService) internalCluster().getInstance(TransportService.class, dataNode.getName());

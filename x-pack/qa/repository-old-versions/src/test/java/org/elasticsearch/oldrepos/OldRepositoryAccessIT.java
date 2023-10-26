@@ -214,7 +214,7 @@ public class OldRepositoryAccessIT extends ESRestTestCase {
         }
         Request createRepo = new Request("PUT", "/_snapshot/" + repoName);
         createRepo.setJsonEntity(
-            Strings.toString(new PutRepositoryRequest().type(sourceOnlyRepository ? "source" : "fs").settings(repoSettingsBuilder.build()))
+            Strings.toString(new PutRepositoryRequest().type(sourceOnlyRepository ? "source" : "fs").settings(repoSettingsBuilder))
         );
         assertAcknowledged(client().performRequest(createRepo));
 

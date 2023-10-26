@@ -62,7 +62,7 @@ public class CloneIndexIT extends ESIntegTestCase {
                 indicesAdmin().prepareResizeIndex("source", "target")
                     .setResizeType(ResizeType.CLONE)
                     .setSettings(
-                        Settings.builder().put("index.number_of_replicas", createWithReplicas ? 1 : 0).putNull("index.blocks.write").build()
+                        Settings.builder().put("index.number_of_replicas", createWithReplicas ? 1 : 0).putNull("index.blocks.write")
                     )
             );
             ensureGreen();

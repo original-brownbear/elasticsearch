@@ -1170,7 +1170,7 @@ public class SuggestSearchIT extends ESIntegTestCase {
             .endObject()
             .endObject()
             .endObject();
-        assertAcked(prepareCreate("test").setSettings(Settings.builder().put("index.number_of_shards", 1).build()).setMapping(mapping));
+        assertAcked(prepareCreate("test").setSettings(Settings.builder().put("index.number_of_shards", 1)).setMapping(mapping));
 
         List<IndexRequestBuilder> builders = new ArrayList<>();
         builders.add(client().prepareIndex("test").setSource("text", "apple"));

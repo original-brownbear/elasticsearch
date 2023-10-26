@@ -87,7 +87,7 @@ public class SimpleIndexStateIT extends ESIntegTestCase {
         logger.info("--> creating test index that cannot be allocated");
         indicesAdmin().prepareCreate("test")
             .setWaitForActiveShards(ActiveShardCount.NONE)
-            .setSettings(Settings.builder().put("index.routing.allocation.include.tag", "no_such_node").build())
+            .setSettings(Settings.builder().put("index.routing.allocation.include.tag", "no_such_node"))
             .get();
 
         ClusterHealthResponse health = clusterAdmin().prepareHealth("test").setWaitForNodes(">=2").get();

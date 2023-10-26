@@ -78,7 +78,6 @@ public class SettingsFilteringIT extends ESIntegTestCase {
                         .put("filter_test.bar2", "test")
                         .put("filter_test.notbar", "test")
                         .put("filter_test.notfoo", "test")
-                        .build()
                 )
         );
         GetSettingsResponse response = indicesAdmin().prepareGetSettings("test-idx").get();

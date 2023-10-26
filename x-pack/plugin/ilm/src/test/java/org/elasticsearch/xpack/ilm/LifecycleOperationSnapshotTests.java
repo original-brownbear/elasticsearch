@@ -57,7 +57,7 @@ public class LifecycleOperationSnapshotTests extends ESSingleNodeTestCase {
     }
 
     public void testModeSnapshotRestore() throws Exception {
-        clusterAdmin().preparePutRepository("repo").setType("fs").setSettings(Settings.builder().put("location", "repo").build()).get();
+        clusterAdmin().preparePutRepository("repo").setType("fs").setSettings(Settings.builder().put("location", "repo")).get();
 
         client().execute(
             PutSnapshotLifecycleAction.INSTANCE,

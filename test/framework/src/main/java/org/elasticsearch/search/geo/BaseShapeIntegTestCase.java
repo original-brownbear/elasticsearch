@@ -95,13 +95,13 @@ public abstract class BaseShapeIntegTestCase<T extends AbstractGeometryQueryBuil
         mapping.field("orientation", "left").endObject().endObject().endObject();
 
         // create index
-        assertAcked(prepareCreate(idxName).setMapping(mapping).setSettings(settings(randomSupportedVersion()).build()));
+        assertAcked(prepareCreate(idxName).setMapping(mapping).setSettings(settings(randomSupportedVersion())));
 
         mapping = XContentFactory.jsonBuilder().startObject().startObject("properties").startObject("location");
         getGeoShapeMapping(mapping);
         mapping.field("orientation", "right").endObject().endObject().endObject();
 
-        assertAcked(prepareCreate(idxName + "2").setMapping(mapping).setSettings(settings(randomSupportedVersion()).build()));
+        assertAcked(prepareCreate(idxName + "2").setMapping(mapping).setSettings(settings(randomSupportedVersion())));
         ensureGreen(idxName, idxName + "2");
 
         internalCluster().fullRestart();
@@ -141,7 +141,7 @@ public abstract class BaseShapeIntegTestCase<T extends AbstractGeometryQueryBuil
         XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject("properties").startObject("shape");
         getGeoShapeMapping(mapping);
         mapping.field("ignore_malformed", true).endObject().endObject().endObject();
-        assertAcked(prepareCreate("test").setMapping(mapping).setSettings(settings(randomSupportedVersion()).build()));
+        assertAcked(prepareCreate("test").setMapping(mapping).setSettings(settings(randomSupportedVersion())));
         ensureGreen();
 
         // test self crossing ccw poly not crossing dateline
@@ -229,7 +229,7 @@ public abstract class BaseShapeIntegTestCase<T extends AbstractGeometryQueryBuil
         mapping.endObject().endObject().endObject();
 
         // create index
-        assertAcked(indicesAdmin().prepareCreate("test").setSettings(settings(randomSupportedVersion()).build()).setMapping(mapping).get());
+        assertAcked(indicesAdmin().prepareCreate("test").setSettings(settings(randomSupportedVersion())).setMapping(mapping).get());
         ensureGreen();
 
         String source = """
@@ -280,7 +280,7 @@ public abstract class BaseShapeIntegTestCase<T extends AbstractGeometryQueryBuil
         final IndexVersion version = randomSupportedVersion();
         CreateIndexRequestBuilder mappingRequest = indicesAdmin().prepareCreate("shapes")
             .setMapping(mapping)
-            .setSettings(settings(version).build());
+            .setSettings(settings(version));
         mappingRequest.get();
         clusterAdmin().prepareHealth().setWaitForEvents(Priority.LANGUID).setWaitForGreenStatus().get();
 

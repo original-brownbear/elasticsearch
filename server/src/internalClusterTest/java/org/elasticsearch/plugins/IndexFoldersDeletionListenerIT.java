@@ -277,7 +277,7 @@ public class IndexFoldersDeletionListenerIT extends ESIntegTestCase {
         logger.debug("--> creating a new index [{}]", indexName);
         assertAcked(
             indicesAdmin().prepareCreate(indexName)
-                .setSettings(indexSettings(1, 0).put("index.routing.allocation.enable", EnableAllocationDecider.Allocation.NONE).build())
+                .setSettings(indexSettings(1, 0).put("index.routing.allocation.enable", EnableAllocationDecider.Allocation.NONE))
                 .setWaitForActiveShards(ActiveShardCount.NONE)
         );
 

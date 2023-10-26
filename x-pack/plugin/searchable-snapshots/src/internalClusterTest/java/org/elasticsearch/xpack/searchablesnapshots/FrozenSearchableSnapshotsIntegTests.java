@@ -400,7 +400,6 @@ public class FrozenSearchableSnapshotsIntegTests extends BaseFrozenSearchableSna
                         .putNull(IndexModule.INDEX_STORE_TYPE_SETTING.getKey())
                         .putNull(IndexModule.INDEX_RECOVERY_TYPE_SETTING.getKey())
                         .put(DataTier.TIER_PREFERENCE, DataTier.DATA_HOT)
-                        .build()
                 )
         );
         ensureGreen(clonedIndexName);

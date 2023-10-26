@@ -1759,7 +1759,6 @@ public class SearchQueryIT extends ESIntegTestCase {
                 Settings.builder()
                     .put("index.analysis.normalizer.lowercase_normalizer.type", "custom")
                     .putList("index.analysis.normalizer.lowercase_normalizer.filter", "lowercase")
-                    .build()
             ).setMapping("field1", "type=keyword,normalizer=lowercase_normalizer")
         );
         client().prepareIndex("test").setId("1").setSource("field1", "Bbb Aaa").get();
@@ -1784,7 +1783,6 @@ public class SearchQueryIT extends ESIntegTestCase {
                     .put("index.analysis.analyzer.lowercase_analyzer.type", "custom")
                     .put("index.analysis.analyzer.lowercase_analyzer.tokenizer", "standard")
                     .putList("index.analysis.analyzer.lowercase_analyzer.filter", "lowercase")
-                    .build()
             ).setMapping("field1", "type=text,analyzer=lowercase_analyzer")
         );
         client().prepareIndex("test").setId("1").setSource("field1", "Bbb Aaa").get();
@@ -1814,7 +1812,6 @@ public class SearchQueryIT extends ESIntegTestCase {
                     .put("index.analysis.char_filter.no_wildcard.type", "mock_pattern_replace")
                     .put("index.analysis.normalizer.no_wildcard.type", "custom")
                     .put("index.analysis.normalizer.no_wildcard.char_filter", "no_wildcard")
-                    .build()
             ).setMapping("field", "type=keyword,normalizer=no_wildcard")
         );
         client().prepareIndex("test").setId("1").setSource("field", "label-1").get();

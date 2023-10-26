@@ -367,7 +367,6 @@ public class BasicDistributedJobsIT extends BaseMlIntegTestCase {
                 Settings.builder()
                     .put("index.routing.allocation.include.ml-indices", "state-and-results")
                     .put("index.routing.allocation.exclude.ml-indices", "config")
-                    .build()
             )
             .get();
         indicesAdmin().prepareCreate(".ml-state")
@@ -375,7 +374,6 @@ public class BasicDistributedJobsIT extends BaseMlIntegTestCase {
                 Settings.builder()
                     .put("index.routing.allocation.include.ml-indices", "state-and-results")
                     .put("index.routing.allocation.exclude.ml-indices", "config")
-                    .build()
             )
             .get();
         indicesAdmin().prepareCreate(".ml-config")
@@ -383,7 +381,6 @@ public class BasicDistributedJobsIT extends BaseMlIntegTestCase {
                 Settings.builder()
                     .put("index.routing.allocation.exclude.ml-indices", "state-and-results")
                     .put("index.routing.allocation.include.ml-indices", "config")
-                    .build()
             )
             .get();
 

@@ -89,7 +89,7 @@ public class DownsampleDataStreamTests extends ESSingleNodeTestCase {
         indexDocs(dataStreamName, 10, Instant.parse(newIndexStartTime).toEpochMilli());
         indicesAdmin().updateSettings(
             new UpdateSettingsRequest().indices(rolloverResponse.getOldIndex())
-                .settings(Settings.builder().put(IndexMetadata.SETTING_BLOCKS_WRITE, true).build())
+                .settings(Settings.builder().put(IndexMetadata.SETTING_BLOCKS_WRITE, true))
         ).actionGet();
 
         // WHEN (simulate downsampling as done by an ILM action)
@@ -109,7 +109,7 @@ public class DownsampleDataStreamTests extends ESSingleNodeTestCase {
          */
         indicesAdmin().updateSettings(
             new UpdateSettingsRequest().indices(downsampleTargetIndex)
-                .settings(Settings.builder().put(IndexMetadata.SETTING_INDEX_HIDDEN, false).build())
+                .settings(Settings.builder().put(IndexMetadata.SETTING_INDEX_HIDDEN, false))
         ).actionGet();
 
         final ModifyDataStreamsAction.Request modifyDataStreamRequest = new ModifyDataStreamsAction.Request(

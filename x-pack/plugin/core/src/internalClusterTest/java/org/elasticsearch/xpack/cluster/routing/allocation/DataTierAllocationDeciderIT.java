@@ -320,12 +320,7 @@ public class DataTierAllocationDeciderIT extends ESIntegTestCase {
             .get();
 
         indicesAdmin().prepareAddBlock(IndexMetadata.APIBlock.READ_ONLY, index).get();
-        indicesAdmin().prepareResizeIndex(index, index + "-shrunk")
-            .setResizeType(ResizeType.SHRINK)
-            .setSettings(
-                Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1).put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0).build()
-            )
-            .get();
+        indicesAdmin().prepareResizeIndex(index, index + "-shrunk").setResizeType(ResizeType.SHRINK).setSettings(indexSettings(1, 0)).get();
 
         ensureGreen(index + "-shrunk");
 

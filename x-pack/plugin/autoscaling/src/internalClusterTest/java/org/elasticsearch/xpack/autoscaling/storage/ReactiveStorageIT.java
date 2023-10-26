@@ -152,12 +152,8 @@ public class ReactiveStorageIT extends AutoscalingStorageIntegTestCase {
         final String indexName = randomAlphaOfLength(10).toLowerCase(Locale.ROOT);
         assertAcked(
             prepareCreate(indexName).setSettings(
-                Settings.builder()
-                    .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
-                    .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 6)
-                    .put(INDEX_STORE_STATS_REFRESH_INTERVAL_SETTING.getKey(), "0ms")
+                indexSettings(6, 0).put(INDEX_STORE_STATS_REFRESH_INTERVAL_SETTING.getKey(), "0ms")
                     .put(DataTier.TIER_PREFERENCE, allocatable ? "data_hot" : "data_content")
-                    .build()
             ).setWaitForActiveShards(allocatable ? ActiveShardCount.DEFAULT : ActiveShardCount.NONE)
         );
         if (allocatable) {
@@ -195,26 +191,18 @@ public class ReactiveStorageIT extends AutoscalingStorageIntegTestCase {
         // add an index using `_id` allocation to check that it does not trigger spinning up the tier.
         assertAcked(
             prepareCreate(randomAlphaOfLength(10).toLowerCase(Locale.ROOT)).setSettings(
-                Settings.builder()
-                    // more than 0 replica provokes the same shard decider to say no.
-                    .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, between(0, 5))
-                    .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 6)
-                    .put(INDEX_STORE_STATS_REFRESH_INTERVAL_SETTING.getKey(), "0ms")
+                // more than 0 replica provokes the same shard decider to say no.
+                indexSettings(6, between(0, 5)).put(INDEX_STORE_STATS_REFRESH_INTERVAL_SETTING.getKey(), "0ms")
                     .put(IndexMetadata.INDEX_ROUTING_INCLUDE_GROUP_SETTING.getKey() + "_id", randomAlphaOfLength(5))
-                    .build()
             ).setWaitForActiveShards(ActiveShardCount.NONE)
         );
 
         final String indexName = randomAlphaOfLength(10).toLowerCase(Locale.ROOT);
         assertAcked(
             prepareCreate(indexName).setSettings(
-                Settings.builder()
-                    // more than 0 replica provokes the same shard decider to say no.
-                    .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, between(0, 5))
-                    .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 6)
-                    .put(INDEX_STORE_STATS_REFRESH_INTERVAL_SETTING.getKey(), "0ms")
+                // more than 0 replica provokes the same shard decider to say no.
+                indexSettings(6, between(0, 5)).put(INDEX_STORE_STATS_REFRESH_INTERVAL_SETTING.getKey(), "0ms")
                     .put(IndexMetadata.INDEX_ROUTING_INCLUDE_GROUP_SETTING.getKey() + "data_tier", "hot")
-                    .build()
             ).setWaitForActiveShards(ActiveShardCount.NONE)
         );
 
@@ -344,12 +332,7 @@ public class ReactiveStorageIT extends AutoscalingStorageIntegTestCase {
         String shrinkName = "shrink-" + indexName;
         assertAcked(
             indicesAdmin().prepareResizeIndex(indexName, shrinkName)
-                .setSettings(
-                    Settings.builder()
-                        .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
-                        .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
-                        .build()
-                )
+                .setSettings(indexSettings(1, 0))
                 .setWaitForActiveShards(ActiveShardCount.NONE)
         );
 
@@ -459,12 +442,7 @@ public class ReactiveStorageIT extends AutoscalingStorageIntegTestCase {
         int resizedShardCount = resizeType == ResizeType.CLONE ? 1 : between(2, 10);
         assertAcked(
             indicesAdmin().prepareResizeIndex(indexName, cloneName)
-                .setSettings(
-                    Settings.builder()
-                        .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, resizedShardCount)
-                        .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
-                        .build()
-                )
+                .setSettings(indexSettings(resizedShardCount, 0))
                 .setWaitForActiveShards(ActiveShardCount.NONE)
                 .setResizeType(resizeType)
         );

@@ -433,7 +433,7 @@ public class IndicesClusterStateServiceRandomUpdatesTests extends AbstractIndice
                 settings.put(SETTING_NUMBER_OF_REPLICAS, randomInt(2));
             }
             settings.put("index.refresh_interval", randomIntBetween(1, 5) + "s");
-            updateSettingsRequest.settings(settings.build());
+            updateSettingsRequest.settings(settings);
             state = cluster.updateSettings(state, updateSettingsRequest);
         }
 

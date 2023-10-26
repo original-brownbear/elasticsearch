@@ -521,7 +521,7 @@ public abstract class BaseMlIntegTestCase extends ESIntegTestCase {
             .indices()
             .updateSettings(
                 new UpdateSettingsRequest(".ml-*").origin(ClientHelper.ML_ORIGIN)
-                    .settings(Settings.builder().put(UnassignedInfo.INDEX_DELAYED_NODE_LEFT_TIMEOUT_SETTING.getKey(), 0).build())
+                    .settings(Settings.builder().put(UnassignedInfo.INDEX_DELAYED_NODE_LEFT_TIMEOUT_SETTING.getKey(), 0))
             )
             .actionGet();
     }

@@ -323,7 +323,6 @@ public class SearchableSnapshotsIntegTests extends BaseSearchableSnapshotsIntegT
                     Settings.builder()
                         .putNull(IndexModule.INDEX_STORE_TYPE_SETTING.getKey())
                         .putNull(IndexModule.INDEX_RECOVERY_TYPE_SETTING.getKey())
-                        .build()
                 )
         );
         ensureGreen(clonedIndexName);
