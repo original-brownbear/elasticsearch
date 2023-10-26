@@ -1040,24 +1040,28 @@ public class SharedBlobCacheService<KeyType> implements Releasable {
         public boolean tryReadMultiRegion(ByteBuffer buf, long offset) throws IOException {
             final int startRegion = getRegion(offset);
             final int initialLimit = buf.limit();
-            final long regionEnd = getRegionEnd(startRegion);
-            int endRegion = getEndingRegion(offset + buf.remaining());
-            int readFirstRegion = (int) (regionEnd - offset);
-            buf.limit(buf.position() + readFirstRegion);
-            if (tryRead(buf, offset) == false) {
-                buf.limit(initialLimit);
-                return false;
-            }
-            int fullPages = endRegion - startRegion - 1;
-            for (int i = 0; i < fullPages; i++) {
-                buf.limit(buf.position() + regionSize);
-                if (tryRead(buf, offset + readFirstRegion + (long) i * regionSize) == false) {
+            try {
+                final long regionEnd = getRegionEnd(startRegion);
+                int endRegion = getEndingRegion(offset + buf.remaining());
+                int readFirstRegion = (int) (regionEnd - offset);
+                buf.limit(buf.position() + readFirstRegion);
+                if (tryRead(buf, offset) == false) {
                     buf.limit(initialLimit);
                     return false;
                 }
+                int fullPages = endRegion - startRegion - 1;
+                for (int i = 0; i < fullPages; i++) {
+                    buf.limit(buf.position() + regionSize);
+                    if (tryRead(buf, offset + readFirstRegion + (long) i * regionSize) == false) {
+                        buf.limit(initialLimit);
+                        return false;
+                    }
+                }
+                buf.limit(initialLimit);
+                return tryRead(buf, getRegionStart(endRegion));
+            } finally {
+                buf.limit(initialLimit);
             }
-            buf.limit(initialLimit);
-            return tryRead(buf, getRegionStart(endRegion));
         }
 
         public int populateAndRead(
