@@ -93,6 +93,7 @@ final class SearchResponseMerger {
      */
     void add(SearchResponse searchResponse) {
         assert searchResponse.getScrollId() == null : "merging scroll results is not supported";
+        searchResponse.incRef();
         searchResponses.add(searchResponse);
     }
 
@@ -212,6 +213,9 @@ final class SearchResponseMerger {
             numReducePhases
         );
         long tookInMillis = searchTimeProvider.buildTookInMillis();
+        for (SearchResponse r : searchResponses) {
+            r.decRef();
+        }
         return new SearchResponse(
             response,
             null,
