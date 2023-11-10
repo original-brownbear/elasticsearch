@@ -5,11 +5,13 @@
  * in compliance with, at your election, the Elastic License 2.0 or the Server
  * Side Public License, v 1.
  */
+
 package org.elasticsearch.search.aggregations.metrics;
 
-import org.elasticsearch.search.aggregations.AggregationExecutionContext;
+import org.apache.lucene.search.ScoreMode;
+import org.elasticsearch.common.util.DoubleArray;
+import org.elasticsearch.search.DocValueFormat;
 import org.elasticsearch.search.aggregations.Aggregator;
-import org.elasticsearch.search.aggregations.LeafBucketCollector;
 import org.elasticsearch.search.aggregations.support.AggregationContext;
 import org.elasticsearch.search.aggregations.support.ValuesSource;
 import org.elasticsearch.search.aggregations.support.ValuesSourceConfig;
@@ -17,21 +19,28 @@ import org.elasticsearch.search.aggregations.support.ValuesSourceConfig;
 import java.io.IOException;
 import java.util.Map;
 
-public class SumAggregator extends AbstractSumAggregator<ValuesSource.Numeric> {
+public abstract class AbstractSingleValueNumericAggregator<T extends ValuesSource> extends NumericMetricsAggregator.SingleValue {
 
-    SumAggregator(
+    protected final T valuesSource;
+    protected final DocValueFormat format;
+    protected DoubleArray acc;
+
+    @SuppressWarnings("unchecked")
+    protected AbstractSingleValueNumericAggregator(
         String name,
         ValuesSourceConfig valuesSourceConfig,
         AggregationContext context,
         Aggregator parent,
         Map<String, Object> metadata
     ) throws IOException {
-        super(name, valuesSourceConfig, context, parent, metadata);
+        super(name, context, parent, metadata);
+        assert valuesSourceConfig.hasValues();
+        valuesSource = (T) valuesSourceConfig.getValuesSource();
+        format = valuesSourceConfig.format();
     }
 
     @Override
-    public LeafBucketCollector getLeafCollector(AggregationExecutionContext aggCtx, final LeafBucketCollector sub) throws IOException {
-        return doGetLeafBucketCollector(sub, (valuesSource.doubleValues(aggCtx.getLeafReaderContext())));
+    public ScoreMode scoreMode() {
+        return valuesSource.needsScores() ? ScoreMode.COMPLETE : ScoreMode.COMPLETE_NO_SCORES;
     }
-
 }
