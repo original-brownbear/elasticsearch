@@ -33,6 +33,7 @@ import static org.elasticsearch.search.builder.SearchSourceBuilder.highlight;
 import static org.elasticsearch.search.builder.SearchSourceBuilder.searchSource;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHighlight;
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertResponse;
 import static org.elasticsearch.xcontent.XContentFactory.jsonBuilder;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.equalTo;
@@ -114,10 +115,11 @@ public class HighlighterWithAnalyzersTests extends ESIntegTestCase {
         );
         client().prepareIndex("test").setId("1").setSource("name", "ARCOTEL Hotels Deutschland").get();
         refresh();
-        SearchResponse search = prepareSearch("test").setQuery(matchQuery("name.autocomplete", "deut tel").operator(Operator.OR))
-            .highlighter(new HighlightBuilder().field("name.autocomplete"))
-            .get();
-        assertHighlight(search, 0, "name.autocomplete", 0, equalTo("ARCO<em>TEL</em> Ho<em>tel</em>s <em>Deut</em>schland"));
+        assertResponse(
+            prepareSearch("test").setQuery(matchQuery("name.autocomplete", "deut tel").operator(Operator.OR))
+                .highlighter(new HighlightBuilder().field("name.autocomplete")),
+            search -> assertHighlight(search, 0, "name.autocomplete", 0, equalTo("ARCO<em>TEL</em> Ho<em>tel</em>s <em>Deut</em>schland"))
+        );
     }
 
     public void testMultiPhraseCutoff() throws IOException {
