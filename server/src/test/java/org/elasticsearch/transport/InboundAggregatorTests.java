@@ -12,6 +12,7 @@ import org.elasticsearch.TransportVersion;
 import org.elasticsearch.common.breaker.CircuitBreakingException;
 import org.elasticsearch.common.breaker.TestCircuitBreaker;
 import org.elasticsearch.common.bytes.BytesArray;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.settings.Settings;
@@ -61,22 +62,22 @@ public class InboundAggregatorTests extends ESTestCase {
         aggregator.headerReceived(header);
 
         BytesArray bytes = new BytesArray(randomByteArrayOfLength(10));
-        ArrayList<ReleasableBytesReference> references = new ArrayList<>();
+        ArrayList<BytesReference> references = new ArrayList<>();
         if (randomBoolean()) {
-            final ReleasableBytesReference content = ReleasableBytesReference.wrap(bytes);
+            final BytesReference content = ReleasableBytesReference.wrap(bytes);
             references.add(content);
             aggregator.aggregate(content);
             content.close();
         } else {
-            final ReleasableBytesReference content1 = ReleasableBytesReference.wrap(bytes.slice(0, 3));
+            final BytesReference content1 = ReleasableBytesReference.wrap(bytes.slice(0, 3));
             references.add(content1);
             aggregator.aggregate(content1);
             content1.close();
-            final ReleasableBytesReference content2 = ReleasableBytesReference.wrap(bytes.slice(3, 3));
+            final BytesReference content2 = ReleasableBytesReference.wrap(bytes.slice(3, 3));
             references.add(content2);
             aggregator.aggregate(content2);
             content2.close();
-            final ReleasableBytesReference content3 = ReleasableBytesReference.wrap(bytes.slice(6, 4));
+            final BytesReference content3 = ReleasableBytesReference.wrap(bytes.slice(6, 4));
             references.add(content3);
             aggregator.aggregate(content3);
             content3.close();
@@ -90,11 +91,11 @@ public class InboundAggregatorTests extends ESTestCase {
         assertTrue(aggregated.getHeader().isRequest());
         assertThat(aggregated.getHeader().getRequestId(), equalTo(requestId));
         assertThat(aggregated.getHeader().getVersion(), equalTo(TransportVersion.current()));
-        for (ReleasableBytesReference reference : references) {
+        for (BytesReference reference : references) {
             assertTrue(reference.hasReferences());
         }
         aggregated.decRef();
-        for (ReleasableBytesReference reference : references) {
+        for (BytesReference reference : references) {
             assertFalse(reference.hasReferences());
         }
     }
@@ -108,7 +109,7 @@ public class InboundAggregatorTests extends ESTestCase {
         aggregator.headerReceived(header);
 
         BytesArray bytes = new BytesArray(randomByteArrayOfLength(10));
-        final ReleasableBytesReference content = ReleasableBytesReference.wrap(bytes);
+        final BytesReference content = ReleasableBytesReference.wrap(bytes);
         aggregator.aggregate(content);
         content.close();
         assertFalse(content.hasReferences());
@@ -137,7 +138,7 @@ public class InboundAggregatorTests extends ESTestCase {
         aggregator.headerReceived(breakableHeader);
 
         BytesArray bytes = new BytesArray(randomByteArrayOfLength(10));
-        final ReleasableBytesReference content1 = ReleasableBytesReference.wrap(bytes);
+        final BytesReference content1 = ReleasableBytesReference.wrap(bytes);
         aggregator.aggregate(content1);
         content1.close();
 
@@ -161,7 +162,7 @@ public class InboundAggregatorTests extends ESTestCase {
         // Initiate Message
         aggregator.headerReceived(unbreakableHeader);
 
-        final ReleasableBytesReference content2 = ReleasableBytesReference.wrap(bytes);
+        final BytesReference content2 = ReleasableBytesReference.wrap(bytes);
         aggregator.aggregate(content2);
         content2.close();
 
@@ -180,7 +181,7 @@ public class InboundAggregatorTests extends ESTestCase {
         // Initiate Message
         aggregator.headerReceived(handshakeHeader);
 
-        final ReleasableBytesReference content3 = ReleasableBytesReference.wrap(bytes);
+        final BytesReference content3 = ReleasableBytesReference.wrap(bytes);
         aggregator.aggregate(content3);
         content3.close();
 
@@ -201,18 +202,18 @@ public class InboundAggregatorTests extends ESTestCase {
         aggregator.headerReceived(header);
 
         BytesArray bytes = new BytesArray(randomByteArrayOfLength(10));
-        ArrayList<ReleasableBytesReference> references = new ArrayList<>();
+        ArrayList<BytesReference> references = new ArrayList<>();
         if (randomBoolean()) {
-            final ReleasableBytesReference content = ReleasableBytesReference.wrap(bytes);
+            final BytesReference content = ReleasableBytesReference.wrap(bytes);
             references.add(content);
             aggregator.aggregate(content);
             content.close();
         } else {
-            final ReleasableBytesReference content1 = ReleasableBytesReference.wrap(bytes.slice(0, 5));
+            final BytesReference content1 = ReleasableBytesReference.wrap(bytes.slice(0, 5));
             references.add(content1);
             aggregator.aggregate(content1);
             content1.close();
-            final ReleasableBytesReference content2 = ReleasableBytesReference.wrap(bytes.slice(5, 5));
+            final BytesReference content2 = ReleasableBytesReference.wrap(bytes.slice(5, 5));
             references.add(content2);
             aggregator.aggregate(content2);
             content2.close();
@@ -220,7 +221,7 @@ public class InboundAggregatorTests extends ESTestCase {
 
         aggregator.close();
 
-        for (ReleasableBytesReference reference : references) {
+        for (BytesReference reference : references) {
             assertFalse(reference.hasReferences());
         }
     }
@@ -243,7 +244,7 @@ public class InboundAggregatorTests extends ESTestCase {
             streamOutput.writeString(actionName);
             streamOutput.write(randomByteArrayOfLength(10));
 
-            final ReleasableBytesReference content = ReleasableBytesReference.wrap(streamOutput.bytes());
+            final BytesReference content = ReleasableBytesReference.wrap(streamOutput.bytes());
             aggregator.aggregate(content);
             content.close();
 

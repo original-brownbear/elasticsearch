@@ -10,6 +10,7 @@ package org.elasticsearch.transport;
 
 import org.elasticsearch.common.breaker.CircuitBreaker;
 import org.elasticsearch.common.breaker.CircuitBreakingException;
+import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.bytes.CompositeBytesReference;
 import org.elasticsearch.common.bytes.ReleasableBytesReference;
@@ -28,8 +29,8 @@ public class InboundAggregator implements Releasable {
     private final Supplier<CircuitBreaker> circuitBreaker;
     private final Predicate<String> requestCanTripBreaker;
 
-    private ReleasableBytesReference firstContent;
-    private ArrayList<ReleasableBytesReference> contentAggregation;
+    private BytesReference firstContent;
+    private ArrayList<BytesReference> contentAggregation;
     private Header currentHeader;
     private Exception aggregationException;
     private boolean canTripBreaker = true;
@@ -74,12 +75,13 @@ public class InboundAggregator implements Releasable {
         currentHeader.setCompressionScheme(compressionScheme);
     }
 
-    public void aggregate(ReleasableBytesReference content) {
+    public void aggregate(BytesReference content) {
         ensureOpen();
         assert isAggregating();
         if (isShortCircuited() == false) {
             if (isFirstContent()) {
-                firstContent = content.retain();
+                firstContent = content;
+                content.incRef();
             } else {
                 if (contentAggregation == null) {
                     contentAggregation = new ArrayList<>(4);
@@ -87,20 +89,21 @@ public class InboundAggregator implements Releasable {
                     contentAggregation.add(firstContent);
                     firstContent = null;
                 }
-                contentAggregation.add(content.retain());
+                contentAggregation.add(content);
+                content.incRef();
             }
         }
     }
 
     public InboundMessage finishAggregation() throws IOException {
         ensureOpen();
-        final ReleasableBytesReference releasableContent;
+        final BytesReference releasableContent;
         if (isFirstContent()) {
-            releasableContent = ReleasableBytesReference.empty();
+            releasableContent = BytesArray.EMPTY;
         } else if (contentAggregation == null) {
             releasableContent = firstContent;
         } else {
-            final ReleasableBytesReference[] references = contentAggregation.toArray(new ReleasableBytesReference[0]);
+            final BytesReference[] references = contentAggregation.toArray(new BytesReference[0]);
             final BytesReference content = CompositeBytesReference.of(references);
             releasableContent = new ReleasableBytesReference(content, () -> Releasables.close(references));
         }

@@ -18,6 +18,7 @@ import org.elasticsearch.action.ActionRunnable;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.cluster.node.DiscoveryNode;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.common.compress.CompressorFactory;
 import org.elasticsearch.common.io.Streams;
@@ -101,7 +102,7 @@ public class JoinValidationService {
     private final Supplier<ClusterState> clusterStateSupplier;
     private final AtomicInteger queueSize = new AtomicInteger();
     private final Queue<AbstractRunnable> queue = new ConcurrentLinkedQueue<>();
-    private final Map<TransportVersion, ReleasableBytesReference> statesByVersion = new HashMap<>();
+    private final Map<TransportVersion, BytesReference> statesByVersion = new HashMap<>();
     private final RefCounted executeRefs;
     private final Executor responseExecutor;
 
@@ -391,11 +392,7 @@ public class JoinValidationService {
     }
 
     @Nullable // if we are not the master according to the current cluster state
-    private ReleasableBytesReference maybeSerializeClusterState(
-        ReleasableBytesReference cachedBytes,
-        DiscoveryNode discoveryNode,
-        TransportVersion version
-    ) {
+    private BytesReference maybeSerializeClusterState(BytesReference cachedBytes, DiscoveryNode discoveryNode, TransportVersion version) {
         if (cachedBytes != null) {
             return cachedBytes;
         }

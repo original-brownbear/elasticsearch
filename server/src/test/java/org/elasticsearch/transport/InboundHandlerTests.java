@@ -337,7 +337,7 @@ public class InboundHandlerTests extends ESTestCase {
                     }
                 }
             });
-            handler.inboundMessage(channel, new InboundMessage(responseHeader, ReleasableBytesReference.empty(), () -> {}));
+            handler.inboundMessage(channel, new InboundMessage(responseHeader, BytesArray.EMPTY, () -> {}));
 
             mockAppender.assertAllExpectationsMatched();
         } finally {

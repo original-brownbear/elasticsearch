@@ -8,6 +8,7 @@
 package org.elasticsearch.rest;
 
 import org.apache.lucene.util.BytesRef;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.common.io.stream.BytesStream;
 import org.elasticsearch.common.io.stream.RecyclerBytesStreamOutput;
@@ -50,7 +51,7 @@ public interface ChunkedRestResponseBody extends Releasable {
      * @return serialized chunk
      * @throws IOException on serialization failure
      */
-    ReleasableBytesReference encodeChunk(int sizeHint, Recycler<BytesRef> recycler) throws IOException;
+    BytesReference encodeChunk(int sizeHint, Recycler<BytesRef> recycler) throws IOException;
 
     /**
      * @return the response Content-Type header value for this response body
@@ -106,7 +107,7 @@ public interface ChunkedRestResponseBody extends Releasable {
             }
 
             @Override
-            public ReleasableBytesReference encodeChunk(int sizeHint, Recycler<BytesRef> recycler) throws IOException {
+            public BytesReference encodeChunk(int sizeHint, Recycler<BytesRef> recycler) throws IOException {
                 try {
                     final RecyclerBytesStreamOutput chunkStream = new RecyclerBytesStreamOutput(recycler);
                     assert target == null;
@@ -190,7 +191,7 @@ public interface ChunkedRestResponseBody extends Releasable {
             }
 
             @Override
-            public ReleasableBytesReference encodeChunk(int sizeHint, Recycler<BytesRef> recycler) throws IOException {
+            public BytesReference encodeChunk(int sizeHint, Recycler<BytesRef> recycler) throws IOException {
                 try {
                     assert currentOutput == null;
                     currentOutput = new RecyclerBytesStreamOutput(recycler);

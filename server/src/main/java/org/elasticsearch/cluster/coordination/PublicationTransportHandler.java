@@ -22,6 +22,7 @@ import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.node.DiscoveryNodeRole;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.common.CheckedSupplier;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.common.compress.Compressor;
 import org.elasticsearch.common.compress.CompressorFactory;
@@ -231,7 +232,7 @@ public class PublicationTransportHandler {
         }
     }
 
-    private ReleasableBytesReference serializeFullClusterState(ClusterState clusterState, DiscoveryNode node, TransportVersion version) {
+    private BytesReference serializeFullClusterState(ClusterState clusterState, DiscoveryNode node, TransportVersion version) {
         final RecyclerBytesStreamOutput bytesStream = transportService.newNetworkBytesStream();
         boolean success = false;
         try {
@@ -248,7 +249,7 @@ public class PublicationTransportHandler {
             } catch (IOException e) {
                 throw new ElasticsearchException("failed to serialize cluster state for publishing to node {}", e, node);
             }
-            final ReleasableBytesReference result = new ReleasableBytesReference(bytesStream.bytes(), bytesStream);
+            final BytesReference result = new ReleasableBytesReference(bytesStream.bytes(), bytesStream);
             serializationStatsTracker.serializedFullState(uncompressedBytes, result.length());
             logger.trace(
                 "serialized full cluster state version [{}] using transport version [{}] with size [{}]",
@@ -265,7 +266,7 @@ public class PublicationTransportHandler {
         }
     }
 
-    private ReleasableBytesReference serializeDiffClusterState(
+    private BytesReference serializeDiffClusterState(
         ClusterState newState,
         Diff<ClusterState> diff,
         DiscoveryNode node,
@@ -292,7 +293,7 @@ public class PublicationTransportHandler {
             } catch (IOException e) {
                 throw new ElasticsearchException("failed to serialize cluster state diff for publishing to node {}", e, node);
             }
-            final ReleasableBytesReference result = new ReleasableBytesReference(bytesStream.bytes(), bytesStream);
+            final BytesReference result = new ReleasableBytesReference(bytesStream.bytes(), bytesStream);
             serializationStatsTracker.serializedDiff(uncompressedBytes, result.length());
             logger.trace(
                 "serialized cluster state diff for version [{}] using transport version [{}] with size [{}]",
@@ -326,8 +327,8 @@ public class PublicationTransportHandler {
 
         private final Map<DiscoveryNode, Transport.Connection> nodeConnections = new HashMap<>();
         // All the values of these maps have one ref for the context (while it's open) and one for each in-flight message.
-        private final Map<TransportVersion, ReleasableBytesReference> serializedStates = new ConcurrentHashMap<>();
-        private final Map<TransportVersion, ReleasableBytesReference> serializedDiffs = new HashMap<>();
+        private final Map<TransportVersion, BytesReference> serializedStates = new ConcurrentHashMap<>();
+        private final Map<TransportVersion, BytesReference> serializedDiffs = new HashMap<>();
 
         PublicationContext(ClusterStatePublicationEvent clusterStatePublicationEvent) {
             discoveryNodes = clusterStatePublicationEvent.getNewState().nodes();
@@ -434,7 +435,7 @@ public class PublicationTransportHandler {
             }
 
             var version = connection.getTransportVersion();
-            ReleasableBytesReference bytes = serializedStates.get(version);
+            BytesReference bytes = serializedStates.get(version);
             if (bytes == null) {
                 try {
                     bytes = serializedStates.computeIfAbsent(version, v -> serializeFullClusterState(newState, destination, v));
@@ -455,7 +456,7 @@ public class PublicationTransportHandler {
                 return;
             }
 
-            final ReleasableBytesReference bytes = serializedDiffs.get(connection.getTransportVersion());
+            final BytesReference bytes = serializedDiffs.get(connection.getTransportVersion());
             assert bytes != null
                 : "failed to find serialized diff for node " + destination + " of version [" + connection.getTransportVersion() + "]";
 
@@ -487,7 +488,7 @@ public class PublicationTransportHandler {
 
         private void sendClusterState(
             Transport.Connection connection,
-            ReleasableBytesReference bytes,
+            BytesReference bytes,
             ActionListener<PublishWithJoinResponse> listener
         ) {
             assert refCount() > 0;

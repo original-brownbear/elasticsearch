@@ -237,8 +237,8 @@ public class InboundPipelineTests extends ESTestCase {
             }
 
             final BytesReference reference = message.serialize(streamOutput);
-            try (ReleasableBytesReference releasable = ReleasableBytesReference.wrap(reference)) {
-                expectThrows(IllegalStateException.class, () -> pipeline.handleBytes(new FakeTcpChannel(), releasable));
+            try (reference) {
+                expectThrows(IllegalStateException.class, () -> pipeline.handleBytes(new FakeTcpChannel(), reference));
             }
 
             // Pipeline cannot be reused after uncaught exception
@@ -279,9 +279,7 @@ public class InboundPipelineTests extends ESTestCase {
             final int totalHeaderSize = fixedHeaderSize + variableHeaderSize;
             final AtomicBoolean bodyReleased = new AtomicBoolean(false);
             for (int i = 0; i < totalHeaderSize - 1; ++i) {
-                try (ReleasableBytesReference slice = ReleasableBytesReference.wrap(reference.slice(i, 1))) {
-                    pipeline.handleBytes(new FakeTcpChannel(), slice);
-                }
+                pipeline.handleBytes(new FakeTcpChannel(), reference.slice(i, 1));
             }
 
             final Releasable releasable = () -> bodyReleased.set(true);

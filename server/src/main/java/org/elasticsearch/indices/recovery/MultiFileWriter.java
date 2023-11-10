@@ -14,7 +14,6 @@ import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.BytesRefIterator;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
 import org.elasticsearch.core.AbstractRefCounted;
 import org.elasticsearch.core.Releasable;
@@ -71,7 +70,7 @@ public class MultiFileWriter extends AbstractRefCounted implements Releasable {
         this.verifyOutput = verifyOutput;
     }
 
-    public void writeFileChunk(StoreFileMetadata fileMetadata, long position, ReleasableBytesReference content, boolean lastChunk)
+    public void writeFileChunk(StoreFileMetadata fileMetadata, long position, BytesReference content, boolean lastChunk)
         throws IOException {
         assert Transports.assertNotTransportThread("multi_file_writer");
         final FileChunkWriter writer = fileChunkWriters.computeIfAbsent(fileMetadata.name(), name -> new FileChunkWriter());
@@ -245,12 +244,11 @@ public class MultiFileWriter extends AbstractRefCounted implements Releasable {
         store.renameTempFilesSafe(tempFileNames);
     }
 
-    private record FileChunk(StoreFileMetadata md, ReleasableBytesReference content, long position, boolean lastChunk)
-        implements
-            Releasable {
-        private FileChunk(StoreFileMetadata md, ReleasableBytesReference content, long position, boolean lastChunk) {
+    private record FileChunk(StoreFileMetadata md, BytesReference content, long position, boolean lastChunk) implements Releasable {
+        private FileChunk(StoreFileMetadata md, BytesReference content, long position, boolean lastChunk) {
             this.md = md;
-            this.content = content.retain();
+            this.content = content;
+            content.incRef();
             this.position = position;
             this.lastChunk = lastChunk;
         }

@@ -8,6 +8,7 @@
 
 package org.elasticsearch.transport;
 
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.bytes.CompositeBytesReference;
 import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.core.Releasable;
@@ -30,7 +31,7 @@ public class InboundPipeline implements Releasable {
     private final InboundAggregator aggregator;
     private final BiConsumer<TcpChannel, InboundMessage> messageHandler;
     private Exception uncaughtException;
-    private final ArrayDeque<ReleasableBytesReference> pending = new ArrayDeque<>(2);
+    private final ArrayDeque<BytesReference> pending = new ArrayDeque<>(2);
     private boolean isClosed = false;
 
     public InboundPipeline(
@@ -53,7 +54,7 @@ public class InboundPipeline implements Releasable {
         Releasables.closeExpectNoException(decoder, aggregator, () -> Releasables.close(pending), pending::clear);
     }
 
-    public void handleBytes(TcpChannel channel, ReleasableBytesReference reference) throws IOException {
+    public void handleBytes(TcpChannel channel, BytesReference reference) throws IOException {
         if (uncaughtException != null) {
             throw new IllegalStateException("Pipeline state corrupted by uncaught exception", uncaughtException);
         }
@@ -65,10 +66,11 @@ public class InboundPipeline implements Releasable {
         }
     }
 
-    public void doHandleBytes(TcpChannel channel, ReleasableBytesReference reference) throws IOException {
+    public void doHandleBytes(TcpChannel channel, BytesReference reference) throws IOException {
         channel.getChannelStats().markAccessed(relativeTimeInMillis.getAsLong());
         statsTracker.markBytesRead(reference.length());
-        pending.add(reference.retain());
+        pending.add(reference);
+        reference.incRef();
 
         final ArrayList<Object> fragments = fragmentList.get();
         boolean continueHandling = true;
@@ -76,7 +78,7 @@ public class InboundPipeline implements Releasable {
         while (continueHandling && isClosed == false) {
             boolean continueDecoding = true;
             while (continueDecoding && pending.isEmpty() == false) {
-                try (ReleasableBytesReference toDecode = getPendingBytes()) {
+                try (BytesReference toDecode = getPendingBytes()) {
                     final int bytesDecoded = decoder.decode(toDecode, fragments::add);
                     if (bytesDecoded != 0) {
                         releasePendingBytes(bytesDecoded);
@@ -96,8 +98,8 @@ public class InboundPipeline implements Releasable {
                     forwardFragments(channel, fragments);
                 } finally {
                     for (Object fragment : fragments) {
-                        if (fragment instanceof ReleasableBytesReference) {
-                            ((ReleasableBytesReference) fragment).close();
+                        if (fragment instanceof BytesReference bytesReference) {
+                            bytesReference.close();
                         }
                     }
                     fragments.clear();
@@ -127,8 +129,8 @@ public class InboundPipeline implements Releasable {
                 }
             } else {
                 assert aggregator.isAggregating();
-                assert fragment instanceof ReleasableBytesReference;
-                aggregator.aggregate((ReleasableBytesReference) fragment);
+                assert fragment instanceof BytesReference;
+                aggregator.aggregate((BytesReference) fragment);
             }
         }
     }
@@ -142,14 +144,17 @@ public class InboundPipeline implements Releasable {
         return fragment == InboundDecoder.PING || fragment == InboundDecoder.END_CONTENT || fragment instanceof Exception;
     }
 
-    private ReleasableBytesReference getPendingBytes() {
+    private BytesReference getPendingBytes() {
         if (pending.size() == 1) {
-            return pending.peekFirst().retain();
+            var res = pending.peekFirst();
+            res.incRef();
+            return res;
         } else {
-            final ReleasableBytesReference[] bytesReferences = new ReleasableBytesReference[pending.size()];
+            final BytesReference[] bytesReferences = new BytesReference[pending.size()];
             int index = 0;
-            for (ReleasableBytesReference pendingReference : pending) {
-                bytesReferences[index] = pendingReference.retain();
+            for (BytesReference pendingReference : pending) {
+                bytesReferences[index] = pendingReference;
+                pendingReference.incRef();
                 ++index;
             }
             final Releasable releasable = () -> Releasables.closeExpectNoException(bytesReferences);
@@ -160,10 +165,12 @@ public class InboundPipeline implements Releasable {
     private void releasePendingBytes(int bytesConsumed) {
         int bytesToRelease = bytesConsumed;
         while (bytesToRelease != 0) {
-            try (ReleasableBytesReference reference = pending.pollFirst()) {
+            try (BytesReference reference = pending.pollFirst()) {
                 assert reference != null;
                 if (bytesToRelease < reference.length()) {
-                    pending.addFirst(reference.retainedSlice(bytesToRelease, reference.length() - bytesToRelease));
+                    var slice = reference.slice(bytesToRelease, reference.length() - bytesToRelease);
+                    slice.incRef();
+                    pending.addFirst(slice);
                     bytesToRelease -= bytesToRelease;
                 } else {
                     bytesToRelease -= reference.length();

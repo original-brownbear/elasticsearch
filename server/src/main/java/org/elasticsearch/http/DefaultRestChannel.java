@@ -133,8 +133,8 @@ public class DefaultRestChannel extends AbstractRestChannel implements RestChann
                 httpResponse = httpRequest.createResponse(restResponse.status(), chunkedContent);
             } else {
                 final BytesReference content = restResponse.content();
-                if (content instanceof Releasable releasable) {
-                    toClose.add(releasable);
+                if (content != null) {
+                    toClose.add(content);
                 } else if (restResponse.isChunked()) {
                     toClose.add(restResponse.chunkedContent());
                 }

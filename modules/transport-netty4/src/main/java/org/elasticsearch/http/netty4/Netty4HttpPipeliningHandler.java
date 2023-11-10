@@ -27,7 +27,7 @@ import io.netty.util.concurrent.PromiseCombiner;
 
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ExceptionsHelper;
-import org.elasticsearch.common.bytes.ReleasableBytesReference;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.core.Booleans;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.Tuple;
@@ -311,10 +311,7 @@ public class Netty4HttpPipeliningHandler extends ChannelDuplexHandler {
 
     private boolean writeChunk(ChannelHandlerContext ctx, PromiseCombiner combiner, ChunkedRestResponseBody body) throws IOException {
         assert body.isDone() == false : "should not continue to try and serialize once done";
-        final ReleasableBytesReference bytes = body.encodeChunk(
-            Netty4WriteThrottlingHandler.MAX_BYTES_PER_WRITE,
-            serverTransport.recycler()
-        );
+        final BytesReference bytes = body.encodeChunk(Netty4WriteThrottlingHandler.MAX_BYTES_PER_WRITE, serverTransport.recycler());
         assert bytes.length() > 0 : "serialization should not produce empty buffers";
         final ByteBuf content = Netty4Utils.toByteBuf(bytes);
         final boolean done = body.isDone();

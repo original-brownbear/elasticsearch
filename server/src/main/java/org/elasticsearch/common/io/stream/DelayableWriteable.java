@@ -10,7 +10,6 @@ package org.elasticsearch.common.io.stream;
 
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.core.Releasable;
 
 import java.io.IOException;
@@ -53,7 +52,7 @@ public abstract class DelayableWriteable<T extends Writeable> implements Writeab
     }
 
     public static <T extends Writeable> DelayableWriteable<T> referencing(Writeable.Reader<T> reader, StreamInput in) throws IOException {
-        try (ReleasableBytesReference serialized = in.readReleasableBytesReference()) {
+        try (BytesReference serialized = in.readReleasableBytesReference()) {
             return new Referencing<>(deserialize(reader, in.getTransportVersion(), in.namedWriteableRegistry(), serialized));
         }
     }
@@ -108,7 +107,7 @@ public abstract class DelayableWriteable<T extends Writeable> implements Writeab
                 throw new RuntimeException("unexpected error writing writeable to buffer", e);
             }
             // TODO: this path is currently not used in production code, if it ever is this should start using pooled buffers
-            return new Serialized<>(reader, TransportVersion.current(), registry, ReleasableBytesReference.wrap(buffer.bytes()));
+            return new Serialized<>(reader, TransportVersion.current(), registry, buffer.bytes());
         }
 
         @Override
@@ -136,20 +135,20 @@ public abstract class DelayableWriteable<T extends Writeable> implements Writeab
     }
 
     /**
-     * A {@link Writeable} stored in serialized form backed by a {@link ReleasableBytesReference}. Once an instance is no longer used its
+     * A {@link Writeable} stored in serialized form backed by a {@link BytesReference}. Once an instance is no longer used its
      * backing memory must be manually released by invoking {@link #close()} on it.
      */
     public static class Serialized<T extends Writeable> extends DelayableWriteable<T> {
         private final Writeable.Reader<T> reader;
         private final TransportVersion serializedAtVersion;
         private final NamedWriteableRegistry registry;
-        private final ReleasableBytesReference serialized;
+        private final BytesReference serialized;
 
         private Serialized(
             Writeable.Reader<T> reader,
             TransportVersion serializedAtVersion,
             NamedWriteableRegistry registry,
-            ReleasableBytesReference serialized
+            BytesReference serialized
         ) {
             this.reader = reader;
             this.serializedAtVersion = serializedAtVersion;

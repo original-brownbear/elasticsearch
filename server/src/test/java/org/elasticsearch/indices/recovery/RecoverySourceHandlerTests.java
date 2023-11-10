@@ -31,7 +31,7 @@ import org.elasticsearch.common.Randomness;
 import org.elasticsearch.common.StopWatch;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.bytes.BytesArray;
-import org.elasticsearch.common.bytes.ReleasableBytesReference;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.FileSystemUtils;
 import org.elasticsearch.common.lucene.store.IndexOutputOutputStream;
 import org.elasticsearch.common.lucene.uid.Versions;
@@ -196,7 +196,7 @@ public class RecoverySourceHandlerTests extends MapperServiceTestCase {
             public void writeFileChunk(
                 StoreFileMetadata md,
                 long position,
-                ReleasableBytesReference content,
+                BytesReference content,
                 boolean lastChunk,
                 int totalTranslogOps,
                 ActionListener<Void> listener
@@ -583,7 +583,7 @@ public class RecoverySourceHandlerTests extends MapperServiceTestCase {
             public void writeFileChunk(
                 StoreFileMetadata md,
                 long position,
-                ReleasableBytesReference content,
+                BytesReference content,
                 boolean lastChunk,
                 int totalTranslogOps,
                 ActionListener<Void> listener
@@ -658,7 +658,7 @@ public class RecoverySourceHandlerTests extends MapperServiceTestCase {
             public void writeFileChunk(
                 StoreFileMetadata md,
                 long position,
-                ReleasableBytesReference content,
+                BytesReference content,
                 boolean lastChunk,
                 int totalTranslogOps,
                 ActionListener<Void> listener
@@ -840,7 +840,7 @@ public class RecoverySourceHandlerTests extends MapperServiceTestCase {
             public void writeFileChunk(
                 StoreFileMetadata md,
                 long position,
-                ReleasableBytesReference content,
+                BytesReference content,
                 boolean lastChunk,
                 int totalTranslogOps,
                 ActionListener<Void> listener
@@ -916,7 +916,7 @@ public class RecoverySourceHandlerTests extends MapperServiceTestCase {
             public void writeFileChunk(
                 StoreFileMetadata md,
                 long position,
-                ReleasableBytesReference content,
+                BytesReference content,
                 boolean lastChunk,
                 int totalTranslogOps,
                 ActionListener<Void> listener
@@ -1013,7 +1013,7 @@ public class RecoverySourceHandlerTests extends MapperServiceTestCase {
             public void writeFileChunk(
                 StoreFileMetadata md,
                 long position,
-                ReleasableBytesReference content,
+                BytesReference content,
                 boolean lastChunk,
                 int totalTranslogOps,
                 ActionListener<Void> listener
@@ -1243,7 +1243,7 @@ public class RecoverySourceHandlerTests extends MapperServiceTestCase {
                 public void writeFileChunk(
                     StoreFileMetadata fileMetadata,
                     long position,
-                    ReleasableBytesReference content,
+                    BytesReference content,
                     boolean lastChunk,
                     int totalTranslogOps,
                     ActionListener<Void> listener
@@ -1311,7 +1311,7 @@ public class RecoverySourceHandlerTests extends MapperServiceTestCase {
                 public void writeFileChunk(
                     StoreFileMetadata fileMetadata,
                     long position,
-                    ReleasableBytesReference content,
+                    BytesReference content,
                     boolean lastChunk,
                     int totalTranslogOps,
                     ActionListener<Void> listener
@@ -1403,7 +1403,7 @@ public class RecoverySourceHandlerTests extends MapperServiceTestCase {
                 public void writeFileChunk(
                     StoreFileMetadata fileMetadata,
                     long position,
-                    ReleasableBytesReference content,
+                    BytesReference content,
                     boolean lastChunk,
                     int totalTranslogOps,
                     ActionListener<Void> listener
@@ -1475,7 +1475,7 @@ public class RecoverySourceHandlerTests extends MapperServiceTestCase {
                 public void writeFileChunk(
                     StoreFileMetadata fileMetadata,
                     long position,
-                    ReleasableBytesReference content,
+                    BytesReference content,
                     boolean lastChunk,
                     int totalTranslogOps,
                     ActionListener<Void> listener
@@ -1611,7 +1611,7 @@ public class RecoverySourceHandlerTests extends MapperServiceTestCase {
                 public void writeFileChunk(
                     StoreFileMetadata fileMetadata,
                     long position,
-                    ReleasableBytesReference content,
+                    BytesReference content,
                     boolean lastChunk,
                     int totalTranslogOps,
                     ActionListener<Void> listener
@@ -1891,7 +1891,7 @@ public class RecoverySourceHandlerTests extends MapperServiceTestCase {
         public void writeFileChunk(
             StoreFileMetadata fileMetadata,
             long position,
-            ReleasableBytesReference content,
+            BytesReference content,
             boolean lastChunk,
             int totalTranslogOps,
             ActionListener<Void> listener
@@ -1915,7 +1915,7 @@ public class RecoverySourceHandlerTests extends MapperServiceTestCase {
         public void writeFileChunk(
             StoreFileMetadata fileMetadata,
             long position,
-            ReleasableBytesReference content,
+            BytesReference content,
             boolean lastChunk,
             int totalTranslogOps,
             ActionListener<Void> listener

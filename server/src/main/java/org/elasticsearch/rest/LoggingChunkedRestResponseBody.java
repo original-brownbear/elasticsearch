@@ -9,7 +9,7 @@
 package org.elasticsearch.rest;
 
 import org.apache.lucene.util.BytesRef;
-import org.elasticsearch.common.bytes.ReleasableBytesReference;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.recycler.Recycler;
 
 import java.io.IOException;
@@ -31,7 +31,7 @@ public class LoggingChunkedRestResponseBody implements ChunkedRestResponseBody {
     }
 
     @Override
-    public ReleasableBytesReference encodeChunk(int sizeHint, Recycler<BytesRef> recycler) throws IOException {
+    public BytesReference encodeChunk(int sizeHint, Recycler<BytesRef> recycler) throws IOException {
         var chunk = inner.encodeChunk(sizeHint, recycler);
         try {
             chunk.writeTo(loggerStream);

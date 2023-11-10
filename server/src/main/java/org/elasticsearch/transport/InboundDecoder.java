@@ -12,7 +12,6 @@ import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.TransportVersions;
 import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.recycler.Recycler;
 import org.elasticsearch.common.unit.ByteSizeUnit;
@@ -52,7 +51,7 @@ public class InboundDecoder implements Releasable {
         this.channelType = channelType;
     }
 
-    public int decode(ReleasableBytesReference reference, Consumer<Object> fragmentConsumer) throws IOException {
+    public int decode(BytesReference reference, Consumer<Object> fragmentConsumer) throws IOException {
         ensureOpen();
         try {
             return internalDecode(reference, fragmentConsumer);
@@ -62,7 +61,7 @@ public class InboundDecoder implements Releasable {
         }
     }
 
-    public int internalDecode(ReleasableBytesReference reference, Consumer<Object> fragmentConsumer) throws IOException {
+    public int internalDecode(BytesReference reference, Consumer<Object> fragmentConsumer) throws IOException {
         if (isOnHeader()) {
             int messageLength = TcpTransport.readMessageLength(reference);
             if (messageLength == -1) {
@@ -103,18 +102,19 @@ public class InboundDecoder implements Releasable {
             }
             int remainingToConsume = totalNetworkSize - bytesConsumed;
             int maxBytesToConsume = Math.min(reference.length(), remainingToConsume);
-            ReleasableBytesReference retainedContent;
+            BytesReference retainedContent;
             if (maxBytesToConsume == remainingToConsume) {
-                retainedContent = reference.retainedSlice(0, maxBytesToConsume);
+                retainedContent = reference.slice(0, maxBytesToConsume);
             } else {
-                retainedContent = reference.retain();
+                retainedContent = reference;
             }
+            reference.incRef();
 
             int bytesConsumedThisDecode = 0;
             if (decompressor != null) {
                 bytesConsumedThisDecode += decompress(retainedContent);
                 bytesConsumed += bytesConsumedThisDecode;
-                ReleasableBytesReference decompressed;
+                BytesReference decompressed;
                 while ((decompressed = decompressor.pollDecompressedPage(isDone())) != null) {
                     fragmentConsumer.accept(decompressed);
                 }
@@ -153,7 +153,7 @@ public class InboundDecoder implements Releasable {
         }
     }
 
-    private int decompress(ReleasableBytesReference content) throws IOException {
+    private int decompress(BytesReference content) throws IOException {
         try (content) {
             return decompressor.decompress(content);
         }

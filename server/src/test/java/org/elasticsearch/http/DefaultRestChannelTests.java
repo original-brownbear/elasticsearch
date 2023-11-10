@@ -740,10 +740,10 @@ public class DefaultRestChannelTests extends ESTestCase {
                     }
 
                     @Override
-                    public ReleasableBytesReference encodeChunk(int sizeHint, Recycler<BytesRef> recycler) {
+                    public BytesReference encodeChunk(int sizeHint, Recycler<BytesRef> recycler) {
                         assertFalse(isDone);
                         isDone = true;
-                        return ReleasableBytesReference.wrap(responseBody);
+                        return responseBody;
                     }
 
                     @Override

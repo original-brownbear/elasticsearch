@@ -8,7 +8,7 @@
 
 package org.elasticsearch.indices.recovery;
 
-import org.elasticsearch.common.bytes.ReleasableBytesReference;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.core.RefCounted;
@@ -20,7 +20,7 @@ import java.io.IOException;
 public final class RecoveryFileChunkRequest extends RecoveryTransportRequest implements RefCounted {
     private final boolean lastChunk;
     private final long position;
-    private final ReleasableBytesReference content;
+    private final BytesReference content;
     private final StoreFileMetadata metadata;
     private final long sourceThrottleTimeInNanos;
 
@@ -46,7 +46,7 @@ public final class RecoveryFileChunkRequest extends RecoveryTransportRequest imp
         ShardId shardId,
         StoreFileMetadata metadata,
         long position,
-        ReleasableBytesReference content,
+        BytesReference content,
         boolean lastChunk,
         int totalTranslogOps,
         long sourceThrottleTimeInNanos
@@ -54,7 +54,8 @@ public final class RecoveryFileChunkRequest extends RecoveryTransportRequest imp
         super(requestSeqNo, recoveryId, shardId);
         this.metadata = metadata;
         this.position = position;
-        this.content = content.retain();
+        this.content = content;
+        content.incRef();
         this.lastChunk = lastChunk;
         this.totalTranslogOps = totalTranslogOps;
         this.sourceThrottleTimeInNanos = sourceThrottleTimeInNanos;
@@ -72,7 +73,7 @@ public final class RecoveryFileChunkRequest extends RecoveryTransportRequest imp
         return metadata.length();
     }
 
-    public ReleasableBytesReference content() {
+    public BytesReference content() {
         return content;
     }
 

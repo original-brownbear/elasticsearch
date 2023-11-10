@@ -82,7 +82,7 @@ public class InboundDecoderTests extends ESTestCase {
 
             InboundDecoder decoder = new InboundDecoder(recycler);
             final ArrayList<Object> fragments = new ArrayList<>();
-            final ReleasableBytesReference releasable1 = ReleasableBytesReference.wrap(totalBytes);
+            final BytesReference releasable1 = ReleasableBytesReference.wrap(totalBytes);
             int bytesConsumed = decoder.decode(releasable1, fragments::add);
             assertEquals(totalHeaderSize, bytesConsumed);
             assertTrue(releasable1.hasReferences());
@@ -104,7 +104,7 @@ public class InboundDecoderTests extends ESTestCase {
             fragments.clear();
 
             final BytesReference bytes2 = totalBytes.slice(bytesConsumed, totalBytes.length() - bytesConsumed);
-            final ReleasableBytesReference releasable2 = ReleasableBytesReference.wrap(bytes2);
+            final BytesReference releasable2 = ReleasableBytesReference.wrap(bytes2);
             int bytesConsumed2 = decoder.decode(releasable2, fragments::add);
             assertEquals(totalBytes.length() - totalHeaderSize, bytesConsumed2);
 
@@ -146,7 +146,7 @@ public class InboundDecoderTests extends ESTestCase {
 
             InboundDecoder decoder = new InboundDecoder(recycler);
             final ArrayList<Object> fragments = new ArrayList<>();
-            final ReleasableBytesReference releasable1 = ReleasableBytesReference.wrap(totalBytes);
+            final BytesReference releasable1 = ReleasableBytesReference.wrap(totalBytes);
             int bytesConsumed = decoder.decode(releasable1, fragments::add);
             assertEquals(partialHeaderSize, bytesConsumed);
             assertTrue(releasable1.hasReferences());
@@ -165,7 +165,7 @@ public class InboundDecoderTests extends ESTestCase {
             fragments.clear();
 
             final BytesReference bytes2 = totalBytes.slice(bytesConsumed, totalBytes.length() - bytesConsumed);
-            final ReleasableBytesReference releasable2 = ReleasableBytesReference.wrap(bytes2);
+            final BytesReference releasable2 = ReleasableBytesReference.wrap(bytes2);
             int bytesConsumed2 = decoder.decode(releasable2, fragments::add);
             if (compressionScheme == null) {
                 assertEquals(2, fragments.size());
@@ -203,7 +203,7 @@ public class InboundDecoderTests extends ESTestCase {
 
             InboundDecoder decoder = new InboundDecoder(recycler);
             final ArrayList<Object> fragments = new ArrayList<>();
-            final ReleasableBytesReference releasable1 = ReleasableBytesReference.wrap(bytes);
+            final BytesReference releasable1 = ReleasableBytesReference.wrap(bytes);
             int bytesConsumed = decoder.decode(releasable1, fragments::add);
             assertEquals(totalHeaderSize, bytesConsumed);
             assertTrue(releasable1.hasReferences());
@@ -291,7 +291,7 @@ public class InboundDecoderTests extends ESTestCase {
         try (RecyclerBytesStreamOutput os = new RecyclerBytesStreamOutput(recycler)) {
             final BytesReference bytes = message.serialize(os);
             try (InboundDecoder decoder = new InboundDecoder(recycler, ChannelType.SERVER)) {
-                final ReleasableBytesReference releasable1 = ReleasableBytesReference.wrap(bytes);
+                final BytesReference releasable1 = ReleasableBytesReference.wrap(bytes);
                 IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> decoder.decode(releasable1, ignored -> {}));
                 assertThat(e.getMessage(), containsString("server channels do not accept inbound responses, only requests"));
             }
@@ -350,7 +350,7 @@ public class InboundDecoderTests extends ESTestCase {
 
             InboundDecoder decoder = new InboundDecoder(recycler);
             final ArrayList<Object> fragments = new ArrayList<>();
-            final ReleasableBytesReference releasable1 = ReleasableBytesReference.wrap(totalBytes);
+            final BytesReference releasable1 = ReleasableBytesReference.wrap(totalBytes);
             int bytesConsumed = decoder.decode(releasable1, fragments::add);
             assertEquals(totalHeaderSize, bytesConsumed);
             assertTrue(releasable1.hasReferences());
@@ -372,7 +372,7 @@ public class InboundDecoderTests extends ESTestCase {
             fragments.clear();
 
             final BytesReference bytes2 = totalBytes.slice(bytesConsumed, totalBytes.length() - bytesConsumed);
-            final ReleasableBytesReference releasable2 = ReleasableBytesReference.wrap(bytes2);
+            final BytesReference releasable2 = ReleasableBytesReference.wrap(bytes2);
             int bytesConsumed2 = decoder.decode(releasable2, fragments::add);
             assertEquals(totalBytes.length() - totalHeaderSize, bytesConsumed2);
 
@@ -414,7 +414,7 @@ public class InboundDecoderTests extends ESTestCase {
 
             InboundDecoder decoder = new InboundDecoder(recycler);
             final ArrayList<Object> fragments = new ArrayList<>();
-            final ReleasableBytesReference releasable1 = ReleasableBytesReference.wrap(bytes);
+            final BytesReference releasable1 = ReleasableBytesReference.wrap(bytes);
             int bytesConsumed = decoder.decode(releasable1, fragments::add);
             assertEquals(totalHeaderSize, bytesConsumed);
             assertTrue(releasable1.hasReferences());
@@ -445,13 +445,13 @@ public class InboundDecoderTests extends ESTestCase {
             Compression.Scheme.DEFLATE
         );
 
-        final ReleasableBytesReference releasable1;
+        final BytesReference releasable1;
         try (RecyclerBytesStreamOutput os = new RecyclerBytesStreamOutput(recycler)) {
             final BytesReference bytes = message.serialize(os);
 
             InboundDecoder decoder = new InboundDecoder(recycler);
             final ArrayList<Object> fragments = new ArrayList<>();
-            try (ReleasableBytesReference r = ReleasableBytesReference.wrap(bytes)) {
+            try (BytesReference r = ReleasableBytesReference.wrap(bytes)) {
                 releasable1 = r;
                 expectThrows(IllegalStateException.class, () -> decoder.decode(releasable1, fragments::add));
             }

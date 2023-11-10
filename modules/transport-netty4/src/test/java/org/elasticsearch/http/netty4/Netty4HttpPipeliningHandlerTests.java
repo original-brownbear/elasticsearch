@@ -29,7 +29,6 @@ import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.common.Randomness;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.common.recycler.Recycler;
 import org.elasticsearch.http.HttpResponse;
 import org.elasticsearch.rest.ChunkedRestResponseBody;
@@ -468,10 +467,10 @@ public class Netty4HttpPipeliningHandlerTests extends ESTestCase {
             }
 
             @Override
-            public ReleasableBytesReference encodeChunk(int sizeHint, Recycler<BytesRef> recycler) {
+            public BytesReference encodeChunk(int sizeHint, Recycler<BytesRef> recycler) {
                 assertThat(remaining, greaterThan(0));
                 remaining--;
-                return ReleasableBytesReference.wrap(chunk);
+                return chunk;
             }
 
             @Override

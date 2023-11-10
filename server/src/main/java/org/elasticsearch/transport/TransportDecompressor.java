@@ -40,7 +40,7 @@ public abstract class TransportDecompressor implements Releasable {
      */
     public abstract int decompress(BytesReference bytesReference) throws IOException;
 
-    public ReleasableBytesReference pollDecompressedPage(boolean isEOS) {
+    public BytesReference pollDecompressedPage(boolean isEOS) {
         if (pages.isEmpty()) {
             return null;
         } else if (pages.size() == 1) {
@@ -78,10 +78,10 @@ public abstract class TransportDecompressor implements Releasable {
         }
     }
 
-    protected ReleasableBytesReference pollLastPage() {
+    protected BytesReference pollLastPage() {
         Recycler.V<BytesRef> page = pages.pollFirst();
         BytesArray delegate = new BytesArray(page.v().bytes, page.v().offset, pageOffset);
-        ReleasableBytesReference reference = new ReleasableBytesReference(delegate, page);
+        BytesReference reference = new ReleasableBytesReference(delegate, page);
         pageLength = 0;
         pageOffset = 0;
         return reference;

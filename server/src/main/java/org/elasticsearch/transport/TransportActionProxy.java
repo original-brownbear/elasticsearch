@@ -8,7 +8,7 @@
 package org.elasticsearch.transport;
 
 import org.elasticsearch.cluster.node.DiscoveryNode;
-import org.elasticsearch.common.bytes.ReleasableBytesReference;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
@@ -108,7 +108,7 @@ public final class TransportActionProxy {
     }
 
     static final class BytesTransportResponse extends TransportResponse {
-        final ReleasableBytesReference bytes;
+        final BytesReference bytes;
 
         BytesTransportResponse(StreamInput in) throws IOException {
             super(in);

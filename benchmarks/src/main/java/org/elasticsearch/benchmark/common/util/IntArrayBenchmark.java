@@ -12,7 +12,6 @@ import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.bytes.CompositeBytesReference;
 import org.elasticsearch.common.bytes.PagedBytesReference;
-import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.util.BigArrays;
@@ -58,7 +57,7 @@ public class IntArrayBenchmark {
         }
         BytesStreamOutput out = new BytesStreamOutput();
         ints.writeTo(out);
-        read = IntArray.readFrom(new ReleasableBytesReference(bytesImpl(out.bytes()), () -> {}).streamInput());
+        read = IntArray.readFrom(bytesImpl(out.bytes()).streamInput());
     }
 
     private BytesReference bytesImpl(BytesReference bytes) {

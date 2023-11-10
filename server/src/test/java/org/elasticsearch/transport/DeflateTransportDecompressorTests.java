@@ -11,7 +11,6 @@ package org.elasticsearch.transport;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.bytes.CompositeBytesReference;
-import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.common.compress.CompressorFactory;
 import org.elasticsearch.common.io.Streams;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
@@ -44,7 +43,7 @@ public class DeflateTransportDecompressorTests extends ESTestCase {
             int bytesConsumed = decompressor.decompress(bytes);
             assertEquals(bytes.length(), bytesConsumed);
             assertTrue(decompressor.isEOS());
-            ReleasableBytesReference releasableBytesReference = decompressor.pollDecompressedPage(true);
+            BytesReference releasableBytesReference = decompressor.pollDecompressedPage(true);
             assertEquals(randomByte, releasableBytesReference.get(0));
             releasableBytesReference.close();
 
@@ -69,9 +68,9 @@ public class DeflateTransportDecompressorTests extends ESTestCase {
             int bytesConsumed = decompressor.decompress(bytes);
             assertEquals(bytes.length(), bytesConsumed);
             assertTrue(decompressor.isEOS());
-            ReleasableBytesReference reference1 = decompressor.pollDecompressedPage(false);
-            ReleasableBytesReference reference2 = decompressor.pollDecompressedPage(false);
-            ReleasableBytesReference reference3 = decompressor.pollDecompressedPage(true);
+            BytesReference reference1 = decompressor.pollDecompressedPage(false);
+            BytesReference reference2 = decompressor.pollDecompressedPage(false);
+            BytesReference reference3 = decompressor.pollDecompressedPage(true);
             assertNull(decompressor.pollDecompressedPage(true));
             BytesReference composite = CompositeBytesReference.of(reference1, reference2, reference3);
             assertEquals(4 * 10000, composite.length());
@@ -114,9 +113,9 @@ public class DeflateTransportDecompressorTests extends ESTestCase {
             int bytesConsumed3 = decompressor.decompress(inbound3);
             assertEquals(inbound3.length(), bytesConsumed3);
             assertTrue(decompressor.isEOS());
-            ReleasableBytesReference reference1 = decompressor.pollDecompressedPage(false);
-            ReleasableBytesReference reference2 = decompressor.pollDecompressedPage(false);
-            ReleasableBytesReference reference3 = decompressor.pollDecompressedPage(true);
+            BytesReference reference1 = decompressor.pollDecompressedPage(false);
+            BytesReference reference2 = decompressor.pollDecompressedPage(false);
+            BytesReference reference3 = decompressor.pollDecompressedPage(true);
             assertNull(decompressor.pollDecompressedPage(false));
             BytesReference composite = CompositeBytesReference.of(reference1, reference2, reference3);
             assertEquals(4 * 10000, composite.length());

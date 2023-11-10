@@ -45,7 +45,7 @@ public class Lz4TransportDecompressorTests extends ESTestCase {
             Lz4TransportDecompressor decompressor = new Lz4TransportDecompressor(recycler);
             int bytesConsumed = decompressor.decompress(bytes);
             assertEquals(bytes.length(), bytesConsumed);
-            ReleasableBytesReference releasableBytesReference = decompressor.pollDecompressedPage(true);
+            BytesReference releasableBytesReference = decompressor.pollDecompressedPage(true);
             assertEquals(randomByte, releasableBytesReference.get(0));
             releasableBytesReference.close();
         }
@@ -86,7 +86,7 @@ public class Lz4TransportDecompressorTests extends ESTestCase {
                 numOfUncompressedPages += 1;
             }
 
-            ReleasableBytesReference[] polledReferences = new ReleasableBytesReference[numOfUncompressedPages];
+            BytesReference[] polledReferences = new ReleasableBytesReference[numOfUncompressedPages];
             for (int i = 0; i < numOfUncompressedPages - 1; ++i) {
                 polledReferences[i] = decompressor.pollDecompressedPage(false);
             }
@@ -157,7 +157,7 @@ public class Lz4TransportDecompressorTests extends ESTestCase {
                 numOfUncompressedPages += 1;
             }
 
-            ReleasableBytesReference[] polledReferences = new ReleasableBytesReference[numOfUncompressedPages];
+            BytesReference[] polledReferences = new ReleasableBytesReference[numOfUncompressedPages];
             for (int i = 0; i < numOfUncompressedPages - 1; ++i) {
                 polledReferences[i] = decompressor.pollDecompressedPage(false);
             }

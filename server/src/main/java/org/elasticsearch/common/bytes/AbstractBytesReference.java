@@ -194,4 +194,21 @@ public abstract class AbstractBytesReference implements BytesReference {
         return builder.value(bytes.bytes, bytes.offset, bytes.length);
     }
 
+    @Override
+    public void incRef() {}
+
+    @Override
+    public boolean tryIncRef() {
+        return true;
+    }
+
+    @Override
+    public boolean decRef() {
+        return false;
+    }
+
+    @Override
+    public boolean hasReferences() {
+        return true;
+    }
 }

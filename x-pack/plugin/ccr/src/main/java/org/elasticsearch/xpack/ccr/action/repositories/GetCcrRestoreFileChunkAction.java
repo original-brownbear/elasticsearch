@@ -81,7 +81,7 @@ public class GetCcrRestoreFileChunkAction extends ActionType<GetCcrRestoreFileCh
             String fileName = request.getFileName();
             String sessionUUID = request.getSessionUUID();
             BytesReference pagedBytesReference = BytesReference.fromByteArray(array, bytesRequested);
-            try (ReleasableBytesReference reference = new ReleasableBytesReference(pagedBytesReference, array)) {
+            try (BytesReference reference = new ReleasableBytesReference(pagedBytesReference, array)) {
                 try (CcrRestoreSourceService.SessionReader sessionReader = restoreSourceService.getSessionReader(sessionUUID)) {
                     long offsetAfterRead = sessionReader.readFileBytes(fileName, reference);
                     long offsetBeforeRead = offsetAfterRead - reference.length();
@@ -131,7 +131,7 @@ public class GetCcrRestoreFileChunkAction extends ActionType<GetCcrRestoreFileCh
     public static class GetCcrRestoreFileChunkResponse extends ActionResponse {
 
         private final long offset;
-        private final ReleasableBytesReference chunk;
+        private final BytesReference chunk;
 
         GetCcrRestoreFileChunkResponse(StreamInput streamInput) throws IOException {
             super(streamInput);
@@ -140,16 +140,17 @@ public class GetCcrRestoreFileChunkAction extends ActionType<GetCcrRestoreFileCh
             chunk = streamInput.readReleasableBytesReference();
         }
 
-        GetCcrRestoreFileChunkResponse(long offset, ReleasableBytesReference chunk) {
+        GetCcrRestoreFileChunkResponse(long offset, BytesReference chunk) {
             this.offset = offset;
-            this.chunk = chunk.retain();
+            this.chunk = chunk;
+            chunk.incRef();
         }
 
         public long getOffset() {
             return offset;
         }
 
-        public ReleasableBytesReference getChunk() {
+        public BytesReference getChunk() {
             return chunk;
         }
 

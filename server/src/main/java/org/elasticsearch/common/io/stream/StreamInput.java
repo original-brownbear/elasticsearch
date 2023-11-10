@@ -115,8 +115,8 @@ public abstract class StreamInput extends InputStream {
      * bytes in a pooled buffer and must be explicitly released via {@link ReleasableBytesReference#close()} once no longer used.
      * Prefer this method over {@link #readBytesReference()} when reading large bytes references to avoid allocations and copying.
      */
-    public ReleasableBytesReference readReleasableBytesReference() throws IOException {
-        return ReleasableBytesReference.wrap(readBytesReference());
+    public BytesReference readReleasableBytesReference() throws IOException {
+        return readBytesReference();
     }
 
     /**
@@ -134,7 +134,7 @@ public abstract class StreamInput extends InputStream {
      * <p>
      * NOTE: Always check {@link #supportReadAllToReleasableBytesReference()} before calling this method.
      */
-    public ReleasableBytesReference readAllToReleasableBytesReference() throws IOException {
+    public BytesReference readAllToReleasableBytesReference() throws IOException {
         assert false : "This InputStream doesn't support readAllToReleasableBytesReference";
         throw new UnsupportedOperationException("This InputStream doesn't support readAllToReleasableBytesReference");
     }

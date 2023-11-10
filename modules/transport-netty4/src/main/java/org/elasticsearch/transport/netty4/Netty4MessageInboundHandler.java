@@ -44,7 +44,7 @@ public class Netty4MessageInboundHandler extends ChannelInboundHandlerAdapter {
         final ByteBuf buffer = (ByteBuf) msg;
         Netty4TcpChannel channel = ctx.channel().attr(Netty4Transport.CHANNEL_KEY).get();
         final BytesReference wrapped = Netty4Utils.toBytesReference(buffer);
-        try (ReleasableBytesReference reference = new ReleasableBytesReference(wrapped, new ByteBufRefCounted(buffer))) {
+        try (BytesReference reference = new ReleasableBytesReference(wrapped, new ByteBufRefCounted(buffer))) {
             pipeline.handleBytes(channel, reference);
         }
     }

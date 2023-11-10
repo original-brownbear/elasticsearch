@@ -18,7 +18,6 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.breaker.CircuitBreaker;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.common.io.stream.BytesStream;
 import org.elasticsearch.common.logging.DeprecationLogger;
 import org.elasticsearch.common.path.PathTrie;
@@ -834,8 +833,8 @@ public class RestController implements HttpServerTransport.Dispatcher {
         }
 
         @Override
-        public ReleasableBytesReference encodeChunk(int sizeHint, Recycler<BytesRef> recycler) throws IOException {
-            final ReleasableBytesReference bytesReference = delegate.encodeChunk(sizeHint, recycler);
+        public BytesReference encodeChunk(int sizeHint, Recycler<BytesRef> recycler) throws IOException {
+            final BytesReference bytesReference = delegate.encodeChunk(sizeHint, recycler);
             encodedLength += bytesReference.length();
             return bytesReference;
         }

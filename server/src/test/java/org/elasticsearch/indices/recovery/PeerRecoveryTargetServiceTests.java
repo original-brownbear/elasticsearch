@@ -26,7 +26,7 @@ import org.elasticsearch.cluster.routing.ShardRoutingHelper;
 import org.elasticsearch.common.Randomness;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.bytes.BytesArray;
-import org.elasticsearch.common.bytes.ReleasableBytesReference;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.lucene.store.ByteArrayIndexInput;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
@@ -127,7 +127,7 @@ public class PeerRecoveryTargetServiceTests extends IndexShardTestCase {
                             sourceShard.shardId(),
                             md,
                             pos,
-                            ReleasableBytesReference.wrap(new BytesArray(buffer)),
+                            new BytesArray(buffer),
                             pos + length == md.length(),
                             1,
                             1
@@ -559,7 +559,7 @@ public class PeerRecoveryTargetServiceTests extends IndexShardTestCase {
 
         // Subsequent writes on the same file can proceed without issues
         PlainActionFuture<Void> writeChunkFuture = PlainActionFuture.newFuture();
-        ReleasableBytesReference bytesRef = ReleasableBytesReference.wrap(new BytesArray(fileData));
+        BytesReference bytesRef = new BytesArray(fileData);
         recoveryTarget.writeFileChunk(storeFileMetadata, 0, bytesRef, true, 0, writeChunkFuture);
         writeChunkFuture.get();
 

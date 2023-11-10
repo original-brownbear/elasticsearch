@@ -9,7 +9,7 @@
 package org.elasticsearch.indices.recovery;
 
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.common.bytes.ReleasableBytesReference;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.index.seqno.ReplicationTracker;
 import org.elasticsearch.index.seqno.RetentionLeases;
 import org.elasticsearch.index.snapshots.blobstore.BlobStoreIndexShardSnapshot;
@@ -106,16 +106,16 @@ public class AsyncRecoveryTarget implements RecoveryTargetHandler {
     public void writeFileChunk(
         StoreFileMetadata fileMetadata,
         long position,
-        ReleasableBytesReference content,
+        BytesReference content,
         boolean lastChunk,
         int totalTranslogOps,
         ActionListener<Void> listener
     ) {
-        final ReleasableBytesReference retained = content.retain();
-        final ActionListener<Void> wrappedListener = ActionListener.runBefore(listener, retained::close);
+        content.incRef();
+        final ActionListener<Void> wrappedListener = ActionListener.runBefore(listener, content::decRef);
         boolean success = false;
         try {
-            executor.execute(() -> target.writeFileChunk(fileMetadata, position, retained, lastChunk, totalTranslogOps, wrappedListener));
+            executor.execute(() -> target.writeFileChunk(fileMetadata, position, content, lastChunk, totalTranslogOps, wrappedListener));
             success = true;
         } finally {
             if (success == false) {

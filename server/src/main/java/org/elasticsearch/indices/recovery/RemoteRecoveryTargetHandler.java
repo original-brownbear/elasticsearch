@@ -20,7 +20,7 @@ import org.elasticsearch.action.ActionRunnable;
 import org.elasticsearch.action.support.RetryableAction;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.breaker.CircuitBreakingException;
-import org.elasticsearch.common.bytes.ReleasableBytesReference;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.util.CancellableThreads;
 import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
@@ -251,7 +251,7 @@ public class RemoteRecoveryTargetHandler implements RecoveryTargetHandler {
     public void writeFileChunk(
         StoreFileMetadata fileMetadata,
         long position,
-        ReleasableBytesReference content,
+        BytesReference content,
         boolean lastChunk,
         int totalTranslogOps,
         ActionListener<Void> listener

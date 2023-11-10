@@ -40,7 +40,6 @@ import org.elasticsearch.cluster.routing.allocation.decider.MaxRetryAllocationDe
 import org.elasticsearch.cluster.routing.allocation.decider.ThrottlingAllocationDecider;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.bytes.BytesArray;
-import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.lucene.Lucene;
 import org.elasticsearch.common.settings.Settings;
@@ -426,7 +425,7 @@ public class CorruptedFileIT extends ESIntegTestCase {
                         req.shardId(),
                         req.metadata(),
                         req.position(),
-                        ReleasableBytesReference.wrap(array),
+                        array,
                         req.lastChunk(),
                         req.totalTranslogOps(),
                         req.sourceThrottleTimeInNanos()

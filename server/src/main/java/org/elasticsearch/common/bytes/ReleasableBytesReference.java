@@ -24,19 +24,12 @@ import java.io.OutputStream;
  * An extension to {@link BytesReference} that requires releasing its content. This
  * class exists to make it explicit when a bytes reference needs to be released, and when not.
  */
-public final class ReleasableBytesReference implements RefCounted, Releasable, BytesReference {
+public final class ReleasableBytesReference implements BytesReference, Releasable {
 
     public static final Releasable NO_OP = () -> {};
 
-    private static final ReleasableBytesReference EMPTY = new ReleasableBytesReference(BytesArray.EMPTY, NO_OP);
-
     private final BytesReference delegate;
     private final RefCounted refCounted;
-
-    public static ReleasableBytesReference empty() {
-        EMPTY.incRef();
-        return EMPTY;
-    }
 
     public ReleasableBytesReference(BytesReference delegate, Releasable releasable) {
         this(delegate, new RefCountedReleasable(releasable));
@@ -48,9 +41,9 @@ public final class ReleasableBytesReference implements RefCounted, Releasable, B
         assert refCounted.hasReferences();
     }
 
-    public static ReleasableBytesReference wrap(BytesReference reference) {
+    public static BytesReference wrap(BytesReference reference) {
         assert reference instanceof ReleasableBytesReference == false : "use #retain() instead of #wrap() on a " + reference.getClass();
-        return reference.length() == 0 ? empty() : new ReleasableBytesReference(reference, NO_OP);
+        return reference.length() == 0 ? BytesArray.EMPTY : new ReleasableBytesReference(reference, NO_OP);
     }
 
     @Override
@@ -85,11 +78,6 @@ public final class ReleasableBytesReference implements RefCounted, Releasable, B
         final BytesReference slice = delegate.slice(from, length);
         refCounted.incRef();
         return new ReleasableBytesReference(slice, refCounted);
-    }
-
-    @Override
-    public void close() {
-        refCounted.decRef();
     }
 
     @Override
@@ -136,7 +124,7 @@ public final class ReleasableBytesReference implements RefCounted, Releasable, B
     @Override
     public BytesReference slice(int from, int length) {
         assert hasReferences();
-        return delegate.slice(from, length);
+        return new ReleasableBytesReference(delegate.slice(from, length), refCounted);
     }
 
     @Override
@@ -148,7 +136,7 @@ public final class ReleasableBytesReference implements RefCounted, Releasable, B
     public StreamInput streamInput() throws IOException {
         assert hasReferences();
         return new BytesReferenceStreamInput(this) {
-            private ReleasableBytesReference retainAndSkip(int len) throws IOException {
+            private BytesReference retainAndSkip(int len) throws IOException {
                 // instead of reading the bytes from a stream we just create a slice of the underlying bytes
                 final ReleasableBytesReference result = retainedSlice(offset(), len);
                 // move the stream manually since creating the slice didn't move it
@@ -157,13 +145,13 @@ public final class ReleasableBytesReference implements RefCounted, Releasable, B
             }
 
             @Override
-            public ReleasableBytesReference readReleasableBytesReference() throws IOException {
+            public BytesReference readReleasableBytesReference() throws IOException {
                 final int len = readArraySize();
                 return retainAndSkip(len);
             }
 
             @Override
-            public ReleasableBytesReference readAllToReleasableBytesReference() throws IOException {
+            public BytesReference readAllToReleasableBytesReference() throws IOException {
                 return retainAndSkip(length() - offset());
             }
 

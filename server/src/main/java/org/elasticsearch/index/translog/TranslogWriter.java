@@ -477,7 +477,7 @@ public class TranslogWriter extends BaseTranslogReader implements Closeable {
                     // the lock we should check again since if this code is busy we might have fsynced enough already
                     final Checkpoint checkpointToSync;
                     final List<Long> flushedSequenceNumbers;
-                    final ReleasableBytesReference toWrite;
+                    final BytesReference toWrite;
                     try (ReleasableLock toClose = writeLock.acquire()) {
                         synchronized (this) {
                             ensureOpen();
@@ -538,7 +538,7 @@ public class TranslogWriter extends BaseTranslogReader implements Closeable {
         }
     }
 
-    private synchronized ReleasableBytesReference pollOpsToWrite() {
+    private synchronized BytesReference pollOpsToWrite() {
         ensureOpen();
         if (this.buffer != null) {
             ReleasableBytesStreamOutput toWrite = this.buffer;
@@ -546,12 +546,12 @@ public class TranslogWriter extends BaseTranslogReader implements Closeable {
             this.bufferedBytes = 0;
             return new ReleasableBytesReference(toWrite.bytes(), toWrite);
         } else {
-            return ReleasableBytesReference.empty();
+            return BytesArray.EMPTY;
         }
     }
 
-    private void writeAndReleaseOps(ReleasableBytesReference toWrite) throws IOException {
-        try (ReleasableBytesReference toClose = toWrite) {
+    private void writeAndReleaseOps(BytesReference toWrite) throws IOException {
+        try (BytesReference toClose = toWrite) {
             assert writeLock.isHeldByCurrentThread();
             final int length = toWrite.length();
             if (length == 0) {
