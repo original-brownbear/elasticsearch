@@ -202,7 +202,6 @@ public class FetchSourceContext implements Writeable, ToXContentObject {
 
     private static String[] parseStringArray(XContentParser parser, String currentFieldName) throws IOException {
         XContentParser.Token token;
-        String[] excludes;
         List<String> excludesList = new ArrayList<>();
         while ((token = parser.nextToken()) != XContentParser.Token.END_ARRAY) {
             if (token == XContentParser.Token.VALUE_STRING) {
@@ -215,8 +214,7 @@ public class FetchSourceContext implements Writeable, ToXContentObject {
                 );
             }
         }
-        excludes = excludesList.toArray(Strings.EMPTY_ARRAY);
-        return excludes;
+        return excludesList.toArray(Strings.EMPTY_ARRAY);
     }
 
     @Override

@@ -17,6 +17,7 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.logging.DeprecationLogger;
 import org.elasticsearch.common.xcontent.XContentHelper;
+import org.elasticsearch.common.xcontent.XContentParserUtils;
 import org.elasticsearch.core.Booleans;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.RestApiVersion;
@@ -1262,17 +1263,11 @@ public final class SearchSourceBuilder implements Writeable, ToXContentObject, R
 
     private SearchSourceBuilder parseXContent(XContentParser parser, boolean checkTrailingTokens, Consumer<SearchUsage> searchUsageConsumer)
         throws IOException {
-        XContentParser.Token token = parser.currentToken();
-        String currentFieldName = null;
-        if (token != XContentParser.Token.START_OBJECT && (token = parser.nextToken()) != XContentParser.Token.START_OBJECT) {
-            throw new ParsingException(
-                parser.getTokenLocation(),
-                "Expected [" + XContentParser.Token.START_OBJECT + "] but found [" + token + "]",
-                parser.getTokenLocation()
-            );
-        }
+        XContentParserUtils.moveToStartObject(parser);
 
         SearchUsage searchUsage = new SearchUsage();
+        String currentFieldName = null;
+        XContentParser.Token token;
         while ((token = parser.nextToken()) != XContentParser.Token.END_OBJECT) {
             if (token == XContentParser.Token.FIELD_NAME) {
                 currentFieldName = parser.currentName();

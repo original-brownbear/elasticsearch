@@ -14,6 +14,7 @@ import org.elasticsearch.common.ParsingException;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.xcontent.XContentParserUtils;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.tasks.CancellableTask;
 import org.elasticsearch.tasks.Task;
@@ -85,16 +86,10 @@ public class GetStackTracesRequest extends ActionRequest implements IndicesReque
     }
 
     public void parseXContent(XContentParser parser) throws IOException {
-        XContentParser.Token token = parser.currentToken();
-        String currentFieldName = null;
-        if (token != XContentParser.Token.START_OBJECT && (token = parser.nextToken()) != XContentParser.Token.START_OBJECT) {
-            throw new ParsingException(
-                parser.getTokenLocation(),
-                "Expected [" + XContentParser.Token.START_OBJECT + "] but found [" + token + "]",
-                parser.getTokenLocation()
-            );
-        }
+        XContentParserUtils.moveToStartObject(parser);
 
+        String currentFieldName = null;
+        XContentParser.Token token;
         while ((token = parser.nextToken()) != XContentParser.Token.END_OBJECT) {
             if (token == XContentParser.Token.FIELD_NAME) {
                 currentFieldName = parser.currentName();

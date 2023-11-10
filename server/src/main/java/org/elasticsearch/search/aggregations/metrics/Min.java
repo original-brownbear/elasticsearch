@@ -12,6 +12,7 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.search.DocValueFormat;
 import org.elasticsearch.search.aggregations.AggregationReduceContext;
 import org.elasticsearch.search.aggregations.InternalAggregation;
+import org.elasticsearch.search.aggregations.pipeline.InternalBucketMetricValue;
 import org.elasticsearch.search.aggregations.support.SamplingContext;
 import org.elasticsearch.xcontent.XContentBuilder;
 
@@ -87,11 +88,7 @@ public class Min extends InternalNumericMetricsAggregation.SingleValue {
 
     @Override
     public XContentBuilder doXContentBody(XContentBuilder builder, Params params) throws IOException {
-        boolean hasValue = Double.isInfinite(min) == false;
-        builder.field(CommonFields.VALUE.getPreferredName(), hasValue ? min : null);
-        if (hasValue && format != DocValueFormat.RAW) {
-            builder.field(CommonFields.VALUE_AS_STRING.getPreferredName(), format.format(min).toString());
-        }
+        InternalBucketMetricValue.writeFormattedDouble(builder, min, format);
         return builder;
     }
 

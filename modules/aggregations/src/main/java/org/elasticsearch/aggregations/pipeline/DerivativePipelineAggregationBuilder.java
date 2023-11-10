@@ -14,6 +14,7 @@ import org.elasticsearch.common.ParsingException;
 import org.elasticsearch.common.Rounding;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.xcontent.XContentParserUtils;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.search.DocValueFormat;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramAggregationBuilder;
@@ -26,8 +27,6 @@ import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -193,12 +192,7 @@ public class DerivativePipelineAggregationBuilder extends AbstractPipelineAggreg
                 }
             } else if (token == XContentParser.Token.START_ARRAY) {
                 if (BUCKETS_PATH_FIELD.match(currentFieldName, parser.getDeprecationHandler())) {
-                    List<String> paths = new ArrayList<>();
-                    while ((token = parser.nextToken()) != XContentParser.Token.END_ARRAY) {
-                        String path = parser.text();
-                        paths.add(path);
-                    }
-                    bucketsPaths = paths.toArray(new String[paths.size()]);
+                    bucketsPaths = XContentParserUtils.parseStringArray(parser);
                 } else {
                     throw new ParsingException(
                         parser.getTokenLocation(),

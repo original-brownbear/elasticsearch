@@ -12,6 +12,7 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.search.DocValueFormat;
 import org.elasticsearch.search.aggregations.AggregationReduceContext;
 import org.elasticsearch.search.aggregations.InternalAggregation;
+import org.elasticsearch.search.aggregations.pipeline.InternalBucketMetricValue;
 import org.elasticsearch.search.aggregations.support.SamplingContext;
 import org.elasticsearch.xcontent.XContentBuilder;
 
@@ -85,11 +86,7 @@ public class Max extends InternalNumericMetricsAggregation.SingleValue {
 
     @Override
     public XContentBuilder doXContentBody(XContentBuilder builder, Params params) throws IOException {
-        boolean hasValue = Double.isInfinite(max) == false;
-        builder.field(CommonFields.VALUE.getPreferredName(), hasValue ? max : null);
-        if (hasValue && format != DocValueFormat.RAW) {
-            builder.field(CommonFields.VALUE_AS_STRING.getPreferredName(), format.format(max).toString());
-        }
+        InternalBucketMetricValue.writeFormattedDouble(builder, max, format);
         return builder;
     }
 

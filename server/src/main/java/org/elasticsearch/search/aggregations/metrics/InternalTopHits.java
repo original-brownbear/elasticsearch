@@ -117,25 +117,11 @@ public class InternalTopHits extends InternalAggregation implements TopHits {
         if (topDocs.topDocs instanceof TopFieldDocs) {
             Sort sort = new Sort(((TopFieldDocs) topDocs.topDocs).fields);
             shardDocs = new TopFieldDocs[aggregations.size()];
-            for (int i = 0; i < shardDocs.length; i++) {
-                InternalTopHits topHitsAgg = (InternalTopHits) aggregations.get(i);
-                shardDocs[i] = topHitsAgg.topDocs.topDocs;
-                shardHits[i] = topHitsAgg.searchHits;
-                for (ScoreDoc doc : shardDocs[i].scoreDocs) {
-                    doc.shardIndex = i;
-                }
-            }
+            reduceShardHits(aggregations, shardHits, shardDocs);
             reducedTopDocs = TopDocs.merge(sort, from, size, (TopFieldDocs[]) shardDocs);
         } else {
             shardDocs = new TopDocs[aggregations.size()];
-            for (int i = 0; i < shardDocs.length; i++) {
-                InternalTopHits topHitsAgg = (InternalTopHits) aggregations.get(i);
-                shardDocs[i] = topHitsAgg.topDocs.topDocs;
-                shardHits[i] = topHitsAgg.searchHits;
-                for (ScoreDoc doc : shardDocs[i].scoreDocs) {
-                    doc.shardIndex = i;
-                }
-            }
+            reduceShardHits(aggregations, shardHits, shardDocs);
             reducedTopDocs = TopDocs.merge(from, size, shardDocs);
         }
 
@@ -170,6 +156,17 @@ public class InternalTopHits extends InternalAggregation implements TopHits {
             new SearchHits(hits, reducedTopDocs.totalHits, maxScore),
             getMetadata()
         );
+    }
+
+    private static void reduceShardHits(List<InternalAggregation> aggregations, SearchHits[] shardHits, TopDocs[] shardDocs) {
+        for (int i = 0; i < shardDocs.length; i++) {
+            InternalTopHits topHitsAgg = (InternalTopHits) aggregations.get(i);
+            shardDocs[i] = topHitsAgg.topDocs.topDocs;
+            shardHits[i] = topHitsAgg.searchHits;
+            for (ScoreDoc doc : shardDocs[i].scoreDocs) {
+                doc.shardIndex = i;
+            }
+        }
     }
 
     @Override

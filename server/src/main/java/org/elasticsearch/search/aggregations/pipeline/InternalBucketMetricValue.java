@@ -27,8 +27,8 @@ public class InternalBucketMetricValue extends InternalNumericMetricsAggregation
     public static final String NAME = "bucket_metric_value";
     static final ParseField KEYS_FIELD = new ParseField("keys");
 
-    private double value;
-    private String[] keys;
+    private final double value;
+    private final String[] keys;
 
     public InternalBucketMetricValue(String name, String[] keys, double value, DocValueFormat formatter, Map<String, Object> metadata) {
         super(name, formatter, metadata);
@@ -91,13 +91,17 @@ public class InternalBucketMetricValue extends InternalNumericMetricsAggregation
 
     @Override
     public XContentBuilder doXContentBody(XContentBuilder builder, Params params) throws IOException {
+        writeFormattedDouble(builder, value, format);
+        builder.array(KEYS_FIELD.getPreferredName(), keys);
+        return builder;
+    }
+
+    public static void writeFormattedDouble(XContentBuilder builder, double value, DocValueFormat format) throws IOException {
         boolean hasValue = Double.isInfinite(value) == false;
         builder.field(CommonFields.VALUE.getPreferredName(), hasValue ? value : null);
         if (hasValue && format != DocValueFormat.RAW) {
             builder.field(CommonFields.VALUE_AS_STRING.getPreferredName(), format.format(value).toString());
         }
-        builder.array(KEYS_FIELD.getPreferredName(), keys);
-        return builder;
     }
 
     @Override

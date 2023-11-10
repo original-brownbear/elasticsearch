@@ -178,4 +178,20 @@ public final class XContentParserUtils {
         } while (parser.nextToken() != Token.END_ARRAY);
         return list;
     }
+
+    public static String[] parseStringArray(XContentParser parser) throws IOException {
+        return parseList(parser, XContentParser::text).toArray(Strings.EMPTY_ARRAY);
+    }
+
+    public static void moveToStartObject(XContentParser parser) throws IOException {
+        XContentParser.Token t = parser.currentToken();
+        if (t != XContentParser.Token.START_OBJECT && (t = parser.nextToken()) != XContentParser.Token.START_OBJECT) {
+            throw new ParsingException(
+                parser.getTokenLocation(),
+                "Expected [" + XContentParser.Token.START_OBJECT + "] but found [" + t + "]",
+                parser.getTokenLocation()
+            );
+        }
+    }
+
 }

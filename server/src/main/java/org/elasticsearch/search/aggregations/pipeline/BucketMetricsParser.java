@@ -10,13 +10,12 @@ package org.elasticsearch.search.aggregations.pipeline;
 
 import org.elasticsearch.common.ParsingException;
 import org.elasticsearch.common.util.Maps;
+import org.elasticsearch.common.xcontent.XContentParserUtils;
 import org.elasticsearch.search.aggregations.pipeline.BucketHelpers.GapPolicy;
 import org.elasticsearch.xcontent.ParseField;
 import org.elasticsearch.xcontent.XContentParser;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -54,12 +53,7 @@ public abstract class BucketMetricsParser implements PipelineAggregator.Parser {
                 }
             } else if (token == XContentParser.Token.START_ARRAY) {
                 if (BUCKETS_PATH.match(currentFieldName, parser.getDeprecationHandler())) {
-                    List<String> paths = new ArrayList<>();
-                    while ((token = parser.nextToken()) != XContentParser.Token.END_ARRAY) {
-                        String path = parser.text();
-                        paths.add(path);
-                    }
-                    bucketsPaths = paths.toArray(new String[paths.size()]);
+                    bucketsPaths = XContentParserUtils.parseStringArray(parser);
                 } else {
                     parseToken(pipelineAggregatorName, parser, currentFieldName, token, params);
                 }
