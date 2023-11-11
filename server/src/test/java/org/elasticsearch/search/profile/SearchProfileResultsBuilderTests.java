@@ -17,8 +17,8 @@ import org.elasticsearch.test.ESTestCase;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.matchesPattern;
@@ -30,7 +30,7 @@ public class SearchProfileResultsBuilderTests extends ESTestCase {
             randomValueOtherThanMany(searchPhase::containsKey, SearchProfileResultsBuilderTests::randomTarget),
             null
         );
-        Exception e = expectThrows(IllegalStateException.class, () -> builder(searchPhase).build(List.of(fetchPhase)));
+        Exception e = expectThrows(IllegalStateException.class, () -> builder(searchPhase).build(Stream.of(fetchPhase)));
         assertThat(
             e.getMessage(),
             matchesPattern(
@@ -42,7 +42,7 @@ public class SearchProfileResultsBuilderTests extends ESTestCase {
     public void testQueryWithoutAnyFetch() {
         Map<SearchShardTarget, SearchProfileQueryPhaseResult> searchPhase = randomSearchPhaseResults(between(1, 2));
         FetchSearchResult fetchPhase = fetchResult(searchPhase.keySet().iterator().next(), null);
-        SearchProfileResults result = builder(searchPhase).build(List.of(fetchPhase));
+        SearchProfileResults result = builder(searchPhase).build(Stream.of(fetchPhase));
         assertThat(
             result.getShardResults().values().stream().filter(r -> r.getQueryPhase() != null).count(),
             equalTo((long) searchPhase.size())
@@ -52,11 +52,16 @@ public class SearchProfileResultsBuilderTests extends ESTestCase {
 
     public void testQueryAndFetch() {
         Map<SearchShardTarget, SearchProfileQueryPhaseResult> searchPhase = randomSearchPhaseResults(between(1, 2));
-        List<FetchSearchResult> fetchPhase = searchPhase.entrySet()
-            .stream()
-            .map(e -> fetchResult(e.getKey(), new ProfileResult("fetch", "", Map.of(), Map.of(), 1, List.of())))
-            .collect(toList());
-        SearchProfileResults result = builder(searchPhase).build(fetchPhase);
+        SearchProfileResults result = builder(searchPhase).build(
+            searchPhase.keySet()
+                .stream()
+                .map(
+                    searchProfileQueryPhaseResult -> fetchResult(
+                        searchProfileQueryPhaseResult,
+                        new ProfileResult("fetch", "", Map.of(), Map.of(), 1, List.of())
+                    )
+                )
+        );
         assertThat(
             result.getShardResults().values().stream().filter(r -> r.getQueryPhase() != null).count(),
             equalTo((long) searchPhase.size())

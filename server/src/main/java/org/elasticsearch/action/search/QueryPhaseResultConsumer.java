@@ -135,8 +135,9 @@ public class QueryPhaseResultConsumer extends ArraySearchPhaseResults<SearchPhas
             // Add an estimate of the final reduce size
             breakerSize = pendingMerges.addEstimateAndMaybeBreak(PendingMerges.estimateRamBytesUsedForReduce(breakerSize));
         }
+        var resList = results.asList();
         SearchPhaseController.ReducedQueryPhase reducePhase = SearchPhaseController.reducedQueryPhase(
-            results.asList(),
+            resList,
             aggsList,
             topDocsList,
             topDocsStats,
@@ -157,7 +158,7 @@ public class QueryPhaseResultConsumer extends ArraySearchPhaseResults<SearchPhas
         }
         if (progressListener != SearchProgressListener.NOOP) {
             progressListener.notifyFinalReduce(
-                SearchProgressListener.buildSearchShards(results.asList()),
+                SearchProgressListener.buildSearchShards(resList),
                 reducePhase.totalHits(),
                 reducePhase.aggregations(),
                 reducePhase.numReducePhases()

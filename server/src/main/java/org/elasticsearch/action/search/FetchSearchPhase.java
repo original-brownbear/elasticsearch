@@ -267,8 +267,7 @@ final class FetchSearchPhase extends SearchPhase {
         final InternalSearchResponse internalResponse = SearchPhaseController.merge(
             context.getRequest().scroll() != null,
             reducedQueryPhase,
-            fetchResultsArr.asList(),
-            fetchResultsArr::get
+            fetchResultsArr
         );
         context.executeNextPhase(this, nextPhaseFactory.apply(internalResponse, queryPhaseResults));
     }

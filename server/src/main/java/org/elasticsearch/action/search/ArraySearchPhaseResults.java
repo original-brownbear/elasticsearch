@@ -25,7 +25,7 @@ class ArraySearchPhaseResults<Result extends SearchPhaseResult> extends SearchPh
     }
 
     Stream<Result> getSuccessfulResults() {
-        return results.asList().stream();
+        return results.stream();
     }
 
     @Override

@@ -463,12 +463,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
         if (shardFailures == null) {
             return ShardSearchFailure.EMPTY_ARRAY;
         }
-        List<ShardSearchFailure> entries = shardFailures.asList();
-        ShardSearchFailure[] failures = new ShardSearchFailure[entries.size()];
-        for (int i = 0; i < failures.length; i++) {
-            failures[i] = entries.get(i);
-        }
-        return failures;
+        return shardFailures.stream().toArray(ShardSearchFailure[]::new);
     }
 
     private void onShardFailure(final int shardIndex, SearchShardTarget shard, final SearchShardIterator shardIt, Exception e) {
@@ -588,7 +583,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
         // in the #addShardFailure, because by definition, it will happen on *another* shardIndex
         AtomicArray<ShardSearchFailure> shardFailures = this.shardFailures.get();
         if (shardFailures != null) {
-            shardFailures.set(result.getShardIndex(), null);
+            shardFailures.unset(result.getShardIndex());
         }
         // we need to increment successful ops first before we compare the exit condition otherwise if we
         // are fast we could concurrently update totalOps but then preempt one of the threads which can

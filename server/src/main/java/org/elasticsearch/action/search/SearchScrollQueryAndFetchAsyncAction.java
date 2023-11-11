@@ -50,7 +50,7 @@ final class SearchScrollQueryAndFetchAsyncAction extends SearchScrollAsyncAction
 
     @Override
     protected SearchPhase moveToNextPhase(BiFunction<String, String, DiscoveryNode> clusterNodeLookup) {
-        return sendResponsePhase(SearchPhaseController.reducedScrollQueryPhase(queryFetchResults.asList()), queryFetchResults);
+        return sendResponsePhase(SearchPhaseController.reducedScrollQueryPhase(queryFetchResults), queryFetchResults);
     }
 
     @Override

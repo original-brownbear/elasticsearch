@@ -13,7 +13,10 @@ import org.elasticsearch.ElasticsearchGenerationException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReferenceArray;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  * A list backed by an {@link AtomicReferenceArray} with potential null values, easily allowing
@@ -58,10 +61,11 @@ public class AtomicArray<E> {
      * @param value the new value
      */
     public void set(int i, E value) {
-        array.set(i, value);
-        if (nonNullList != null) { // read first, lighter, and most times it will be null...
-            nonNullList = null;
-        }
+        setOnce(i, value);
+    }
+
+    public E unset(int i) {
+        return array.getAndSet(i, null);
     }
 
     public final void setOnce(int i, E value) {
@@ -88,7 +92,7 @@ public class AtomicArray<E> {
      */
     public List<E> asList() {
         if (nonNullList == null) {
-            if (array == null || array.length() == 0) {
+            if (array.length() == 0) {
                 nonNullList = Collections.emptyList();
             } else {
                 List<E> list = new ArrayList<>(array.length());
@@ -115,5 +119,9 @@ public class AtomicArray<E> {
             a[i] = array.get(i);
         }
         return a;
+    }
+
+    public Stream<E> stream() {
+        return IntStream.range(0, array.length()).mapToObj(array::get).filter(Objects::nonNull);
     }
 }

@@ -10,11 +10,10 @@ package org.elasticsearch.search.profile;
 
 import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.search.SearchPhaseResult;
-import org.elasticsearch.search.fetch.FetchSearchResult;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.stream.Stream;
 
 /**
  * Profile results for the query phase run on all shards.
@@ -30,10 +29,9 @@ public class SearchProfileResultsBuilder {
      * Merge the profiling information from some fetch results into this
      * profiling information.
      */
-    public SearchProfileResults build(Collection<? extends SearchPhaseResult> fetchResults) {
+    public SearchProfileResults build(Stream<? extends SearchPhaseResult> fetchResults) {
         Map<String, SearchProfileShardResult> mergedShardResults = Maps.newMapWithExpectedSize(queryPhaseResults.size());
-        for (SearchPhaseResult r : fetchResults) {
-            FetchSearchResult fr = r.fetchResult();
+        fetchResults.map(SearchPhaseResult::fetchResult).forEach(fr -> {
             String key = fr.getSearchShardTarget().toString();
             SearchProfileQueryPhaseResult queryPhase = queryPhaseResults.get(key);
             if (queryPhase == null) {
@@ -45,7 +43,7 @@ public class SearchProfileResultsBuilder {
                 );
             }
             mergedShardResults.put(key, new SearchProfileShardResult(queryPhase, fr.profileResult()));
-        }
+        });
         for (Map.Entry<String, SearchProfileQueryPhaseResult> e : queryPhaseResults.entrySet()) {
             if (false == mergedShardResults.containsKey(e.getKey())) {
                 mergedShardResults.put(e.getKey(), new SearchProfileShardResult(e.getValue(), null));
