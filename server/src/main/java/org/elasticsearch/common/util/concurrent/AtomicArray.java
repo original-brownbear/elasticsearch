@@ -61,19 +61,14 @@ public class AtomicArray<E> {
      * @param value the new value
      */
     public void set(int i, E value) {
-        setOnce(i, value);
-    }
-
-    public E unset(int i) {
-        return array.getAndSet(i, null);
+        assert nonNullList == null : nonNullList;
+        array.set(i, value);
     }
 
     public final void setOnce(int i, E value) {
+        assert nonNullList == null : nonNullList;
         if (array.compareAndSet(i, null, value) == false) {
             throw new IllegalStateException("index [" + i + "] has already been set");
-        }
-        if (nonNullList != null) { // read first, lighter, and most times it will be null...
-            nonNullList = null;
         }
     }
 

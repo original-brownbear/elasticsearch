@@ -864,7 +864,7 @@ public class IndexShardTests extends IndexShardTestCase {
         allPermitsAcquired.await();
         assertTrue(blocked.get());
         assertEquals(IndexShard.OPERATIONS_BLOCKED, indexShard.getActiveOperationsCount());
-        assertTrue("Expected no results, operations are blocked", results.asList().isEmpty());
+        assertEquals("Expected no results, operations are blocked", 0, results.nonNullLength());
         futures.forEach(future -> assertFalse(future.isDone()));
 
         allPermitsTerminated.countDown();
@@ -872,7 +872,7 @@ public class IndexShardTests extends IndexShardTestCase {
         final Releasable allPermits = futureAllPermits.get();
         assertTrue(futureAllPermits.isDone());
 
-        assertTrue("Expected no results, operations are blocked", results.asList().isEmpty());
+        assertEquals("Expected no results, operations are blocked", 0, results.nonNullLength());
         futures.forEach(future -> assertFalse(future.isDone()));
 
         Releasables.close(allPermits);

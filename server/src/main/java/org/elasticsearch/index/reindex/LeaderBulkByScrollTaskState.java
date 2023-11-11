@@ -76,13 +76,15 @@ public class LeaderBulkByScrollTaskState {
     }
 
     private void addResultsToList(List<BulkByScrollTask.StatusOrException> sliceStatuses) {
-        for (Result t : results.asList()) {
-            if (t.response != null) {
-                sliceStatuses.set(t.sliceId, new BulkByScrollTask.StatusOrException(t.response.getStatus()));
-            } else {
-                sliceStatuses.set(t.sliceId, new BulkByScrollTask.StatusOrException(t.failure));
-            }
-        }
+        results.stream()
+            .forEach(
+                t -> sliceStatuses.set(
+                    t.sliceId,
+                    t.response != null
+                        ? new BulkByScrollTask.StatusOrException(t.response.getStatus())
+                        : new BulkByScrollTask.StatusOrException(t.failure)
+                )
+            );
     }
 
     /**
