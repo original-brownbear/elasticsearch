@@ -170,8 +170,10 @@ public final class SearchHits extends AbstractRefCounted implements Writeable, C
 
     @Override
     protected void closeInternal() {
-        for (SearchHit hit : hits) {
+        for (int i = 0; i < hits.length; i++) {
+            SearchHit hit = hits[i];
             hit.decRef();
+            hits[i] = null;
         }
     }
 
