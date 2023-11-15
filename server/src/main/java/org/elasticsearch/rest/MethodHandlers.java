@@ -8,6 +8,7 @@
 
 package org.elasticsearch.rest;
 
+import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.core.RestApiVersion;
 import org.elasticsearch.http.HttpRouteStats;
 import org.elasticsearch.http.HttpRouteStatsTracker;
@@ -27,13 +28,12 @@ final class MethodHandlers {
     private final HttpRouteStatsTracker statsTracker = new HttpRouteStatsTracker();
 
     MethodHandlers(String path) {
-        this.path = path;
+        this(path, Map.of());
+    }
 
-        // by setting the loadFactor to 1, these maps are resized only when they *must* be, and the vast majority of these
-        // maps contain only 1 or 2 entries anyway, so most of these maps are never resized at all and waste only 1 or 0
-        // array references, while those few that contain 3 or 4 elements will have been resized just once and will still
-        // waste only 1 or 0 array references
-        this.methodHandlers = new HashMap<>(2, 1);
+    MethodHandlers(String path, Map<RestRequest.Method, Map<RestApiVersion, RestHandler>> methodHandlers) {
+        this.path = path;
+        this.methodHandlers = Map.copyOf(methodHandlers);
     }
 
     public String getPath() {
@@ -45,15 +45,18 @@ final class MethodHandlers {
      * does not allow replacing the handler for an already existing method.
      */
     MethodHandlers addMethod(RestRequest.Method method, RestApiVersion version, RestHandler handler) {
-        RestHandler existing = methodHandlers
-            // same sizing notes as 'methodHandlers' above, except that having a size here that's more than 1 is vanishingly
-            // rare, so an initialCapacity of 1 with a loadFactor of 1 is perfect
-            .computeIfAbsent(method, k -> new HashMap<>(1, 1))
-            .putIfAbsent(version, handler);
-        if (existing != null) {
-            throw new IllegalArgumentException("Cannot replace existing handler for [" + path + "] for method: " + method);
-        }
-        return this;
+        var copy = new HashMap<>(methodHandlers);
+        copy.compute(method, (m, handlers) -> {
+            if (handlers == null) {
+                return Map.of(version, handler);
+            }
+            var existing = handlers.get(version);
+            if (existing != null) {
+                throw new IllegalArgumentException("Cannot replace existing handler for [" + path + "] for method: " + method);
+            }
+            return Maps.copyMapWithAddedEntry(handlers, version, handler);
+        });
+        return new MethodHandlers(path, copy);
     }
 
     /**
