@@ -107,11 +107,9 @@ final class FetchSearchPhase extends SearchPhase {
         final boolean queryAndFetchOptimization = queryResults.length() == 1
             && context.getRequest().hasKnnSearch() == false
             && reducedQueryPhase.rankCoordinatorContext() == null;
-        final Runnable finishPhase = () -> moveToNextPhase(
-            queryResults,
-            reducedQueryPhase,
-            queryAndFetchOptimization ? queryResults : fetchResults.getAtomicArray()
-        );
+        final Runnable finishPhase = queryAndFetchOptimization
+            ? () -> moveToNextPhase(queryResults, reducedQueryPhase, queryResults)
+            : () -> moveToNextPhase(queryResults, reducedQueryPhase, fetchResults.getAtomicArray());
         if (queryAndFetchOptimization) {
             assert phaseResults.isEmpty() || phaseResults.get(0).fetchResult() != null
                 : "phaseResults empty [" + phaseResults.isEmpty() + "], single result: " + phaseResults.get(0).fetchResult();

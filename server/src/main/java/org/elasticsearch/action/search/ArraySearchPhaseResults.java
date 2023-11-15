@@ -9,6 +9,7 @@
 package org.elasticsearch.action.search;
 
 import org.elasticsearch.common.util.concurrent.AtomicArray;
+import org.elasticsearch.core.Releasable;
 import org.elasticsearch.search.SearchPhaseResult;
 
 import java.util.stream.Stream;
@@ -16,7 +17,7 @@ import java.util.stream.Stream;
 /**
  * This class acts as a basic result collection that can be extended to do on-the-fly reduction or result processing
  */
-class ArraySearchPhaseResults<Result extends SearchPhaseResult> extends SearchPhaseResults<Result> {
+class ArraySearchPhaseResults<Result extends SearchPhaseResult> extends SearchPhaseResults<Result> implements Releasable {
     final AtomicArray<Result> results;
 
     ArraySearchPhaseResults(int size) {
@@ -31,6 +32,7 @@ class ArraySearchPhaseResults<Result extends SearchPhaseResult> extends SearchPh
     @Override
     void consumeResult(Result result, Runnable next) {
         assert results.get(result.getShardIndex()) == null : "shardIndex: " + result.getShardIndex() + " is already set";
+        result.incRef();
         results.set(result.getShardIndex(), result);
         next.run();
     }
@@ -42,5 +44,12 @@ class ArraySearchPhaseResults<Result extends SearchPhaseResult> extends SearchPh
     @Override
     AtomicArray<Result> getAtomicArray() {
         return results;
+    }
+
+    @Override
+    public void close() {
+        for (SearchPhaseResult searchPhaseResult : results.asList()) {
+            searchPhaseResult.decRef();
+        }
     }
 }

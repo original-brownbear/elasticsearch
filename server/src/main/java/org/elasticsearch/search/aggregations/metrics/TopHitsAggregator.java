@@ -254,6 +254,6 @@ class TopHitsAggregator extends MetricsAggregator {
 
     @Override
     protected void doClose() {
-        Releasables.close(topDocsCollectors, leafCollectors);
+        Releasables.close(topDocsCollectors, leafCollectors, subSearchContext);
     }
 }

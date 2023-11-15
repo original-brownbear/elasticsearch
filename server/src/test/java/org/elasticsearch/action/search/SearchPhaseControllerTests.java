@@ -716,6 +716,7 @@ public class SearchPhaseControllerTests extends ESTestCase {
         assertEquals(numTotalReducePhases, reduce.numReducePhases());
         assertEquals(numTotalReducePhases, reductions.size());
         assertAggReduction(request);
+        consumer.close();
         Max max = (Max) reduce.aggregations().asList().get(0);
         assertEquals(3.0D, max.value(), 0.0D);
         assertFalse(reduce.sortedTopDocs().isSortedByField());
