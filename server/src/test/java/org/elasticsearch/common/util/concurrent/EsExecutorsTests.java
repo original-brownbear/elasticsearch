@@ -84,16 +84,11 @@ public class EsExecutorsTests extends ESTestCase {
 
         final AtomicBoolean executed3 = new AtomicBoolean();
         final CountDownLatch exec3Wait = new CountDownLatch(1);
-        executor.execute(new AbstractRunnable() {
+        executor.execute(new AbstractRunnable.ForceExec() {
             @Override
             protected void doRun() {
                 executed3.set(true);
                 exec3Wait.countDown();
-            }
-
-            @Override
-            public boolean isForceExecution() {
-                return true;
             }
 
             @Override

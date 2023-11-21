@@ -128,4 +128,16 @@ public abstract class ActionRunnable<Response> extends AbstractRunnable {
     public String toString() {
         return getClass().getName() + "/" + listener;
     }
+
+    public abstract static class ForceExecution<T> extends ActionRunnable<T> {
+
+        public ForceExecution(ActionListener<T> listener) {
+            super(listener);
+        }
+
+        @Override
+        public final boolean isForceExecution() {
+            return true;
+        }
+    }
 }

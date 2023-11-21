@@ -238,15 +238,10 @@ public abstract class TransportWriteAction<
      */
     @Override
     protected void shardOperationOnReplica(ReplicaRequest request, IndexShard replica, ActionListener<ReplicaResult> listener) {
-        threadPool.executor(executorFunction.apply(executorSelector, replica)).execute(new ActionRunnable<>(listener) {
+        threadPool.executor(executorFunction.apply(executorSelector, replica)).execute(new ActionRunnable.ForceExecution<>(listener) {
             @Override
             protected void doRun() {
                 dispatchedShardOperationOnReplica(request, replica, listener);
-            }
-
-            @Override
-            public boolean isForceExecution() {
-                return true;
             }
         });
     }

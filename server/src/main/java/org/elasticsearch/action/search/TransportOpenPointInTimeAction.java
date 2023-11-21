@@ -181,7 +181,8 @@ public class TransportOpenPointInTimeAction extends HandledTransportAction<OpenP
 
                         @Override
                         public void run() {
-                            execute(new AbstractRunnable() {
+                            // we already created the PIT, no sense in rejecting the task that sends the response.
+                            execute(new AbstractRunnable.ForceExec() {
                                 @Override
                                 public void onFailure(Exception e) {
                                     onExecuteFailure(e);
@@ -192,10 +193,6 @@ public class TransportOpenPointInTimeAction extends HandledTransportAction<OpenP
                                     sendSearchResponse(InternalSearchResponse.EMPTY_WITH_TOTAL_HITS, results.getAtomicArray());
                                 }
 
-                                @Override
-                                public boolean isForceExecution() {
-                                    return true; // we already created the PIT, no sense in rejecting the task that sends the response.
-                                }
                             });
                         }
                     };

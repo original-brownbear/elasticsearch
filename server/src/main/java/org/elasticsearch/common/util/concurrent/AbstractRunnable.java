@@ -57,4 +57,12 @@ public abstract class AbstractRunnable implements Runnable {
      * @throws InterruptedException if the run method throws an InterruptedException
      */
     protected abstract void doRun() throws Exception;
+
+    public abstract static class ForceExec extends AbstractRunnable {
+
+        @Override
+        public final boolean isForceExecution() {
+            return true;
+        }
+    }
 }

@@ -335,15 +335,10 @@ public class ReplicationOperation<
         } catch (final AlreadyClosedException e) {
             // the index was deleted or this shard was never activated after a relocation; fall through and finish normally
         } catch (final Exception e) {
-            threadPool.executor(ThreadPool.Names.WRITE).execute(new AbstractRunnable() {
+            threadPool.executor(ThreadPool.Names.WRITE).execute(new AbstractRunnable.ForceExec() {
                 @Override
                 public void onFailure(Exception e) {
                     assert false : e;
-                }
-
-                @Override
-                public boolean isForceExecution() {
-                    return true;
                 }
 
                 @Override
@@ -384,7 +379,7 @@ public class ReplicationOperation<
             );
         } else {
             assert failure instanceof ShardStateAction.NoLongerPrimaryShardException : failure;
-            threadPool.executor(ThreadPool.Names.WRITE).execute(new AbstractRunnable() {
+            threadPool.executor(ThreadPool.Names.WRITE).execute(new AbstractRunnable.ForceExec() {
                 @Override
                 protected void doRun() {
                     // we are no longer the primary, fail ourselves and start over
@@ -395,11 +390,6 @@ public class ReplicationOperation<
                     );
                     primary.failShard(message, failure);
                     finishAsFailed(new RetryOnPrimaryException(primary.routingEntry().shardId(), message, failure));
-                }
-
-                @Override
-                public boolean isForceExecution() {
-                    return true;
                 }
 
                 @Override

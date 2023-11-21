@@ -369,7 +369,8 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
     );
 
     protected void fork(final Runnable runnable) {
-        executor.execute(new AbstractRunnable() {
+        // we can not allow a stuffed queue to reject execution here
+        executor.execute(new AbstractRunnable.ForceExec() {
             @Override
             public void onFailure(Exception e) {}
 
@@ -378,11 +379,6 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
                 runnable.run();
             }
 
-            @Override
-            public boolean isForceExecution() {
-                // we can not allow a stuffed queue to reject execution here
-                return true;
-            }
         });
     }
 

@@ -20,8 +20,9 @@ import static org.elasticsearch.core.Strings.format;
 /**
  * {@link AbstractRunnable} implementation for completing a forking response handler, overriding any threadpool queue length limit and
  * handling shutdown-related rejections by completing the handler without forking.
+ * Extends {@link AbstractRunnable.ForceExec} to ensure that every listener is resolved.
  */
-abstract class ForkingResponseHandlerRunnable extends AbstractRunnable {
+abstract class ForkingResponseHandlerRunnable extends AbstractRunnable.ForceExec {
 
     private static final Logger logger = LogManager.getLogger(ForkingResponseHandlerRunnable.class);
 
@@ -42,12 +43,6 @@ abstract class ForkingResponseHandlerRunnable extends AbstractRunnable {
 
     @Override
     protected abstract void doRun(); // no 'throws Exception' here
-
-    @Override
-    public boolean isForceExecution() {
-        // we must complete every pending listener
-        return true;
-    }
 
     @Override
     public void onRejection(Exception e) {

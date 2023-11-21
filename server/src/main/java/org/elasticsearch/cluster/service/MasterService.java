@@ -1425,7 +1425,7 @@ public class MasterService extends AbstractLifecycleComponent {
         );
     }
 
-    private static class TaskTimeoutHandler<T extends ClusterStateTaskListener> extends AbstractRunnable {
+    private static class TaskTimeoutHandler<T extends ClusterStateTaskListener> extends AbstractRunnable.ForceExec {
 
         private final TimeValue timeout;
         private final String source;
@@ -1448,11 +1448,6 @@ public class MasterService extends AbstractLifecycleComponent {
             logger.error("unexpected failure executing task timeout handler", e);
             assert false : e;
             completeTask(e);
-        }
-
-        @Override
-        public boolean isForceExecution() {
-            return true;
         }
 
         @Override
