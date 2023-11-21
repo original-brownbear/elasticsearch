@@ -103,7 +103,10 @@ public final class InnerHitsPhase implements FetchSubPhase {
                     searchHitFields.sortValues(fieldDoc.fields, innerHitsContext.sort().formats);
                 }
             }
-            results.put(entry.getKey(), fetchResult.hits());
+            final var hits = fetchResult.hits();
+            hits.incRef();
+            results.put(entry.getKey(), hits);
+            innerHitsContext.addReleasable(hits::decRef);
         }
     }
 }

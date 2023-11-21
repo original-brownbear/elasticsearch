@@ -54,6 +54,11 @@ public final class SearchHits implements Writeable, ChunkedToXContent, Iterable<
     private final RefCounted refCounted = LeakTracker.wrap(new AbstractRefCounted() {
         @Override
         protected void closeInternal() {
+            for (SearchHit hit : hits) {
+                if (hit != null) {
+                    hit.decRef();
+                }
+            }
             Arrays.fill(hits, null);
         }
     });

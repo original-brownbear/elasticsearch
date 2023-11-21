@@ -122,7 +122,7 @@ public class TransportSearchIT extends ESIntegTestCase {
         return Collections.singletonList(TestPlugin.class);
     }
 
-    public void testLocalClusterAlias() {
+    public void testLocalClusterAlias() throws ExecutionException, InterruptedException {
         long nowInMillis = randomLongBetween(0, Long.MAX_VALUE);
         IndexRequest indexRequest = new IndexRequest("test");
         indexRequest.id("1");
@@ -141,14 +141,15 @@ public class TransportSearchIT extends ESIntegTestCase {
                 nowInMillis,
                 randomBoolean()
             );
-            SearchResponse searchResponse = client().search(searchRequest).actionGet();
-            assertEquals(1, searchResponse.getHits().getTotalHits().value);
-            SearchHit[] hits = searchResponse.getHits().getHits();
-            assertEquals(1, hits.length);
-            SearchHit hit = hits[0];
-            assertEquals("local", hit.getClusterAlias());
-            assertEquals("test", hit.getIndex());
-            assertEquals("1", hit.getId());
+            assertResponse(client().search(searchRequest), searchResponse -> {
+                assertEquals(1, searchResponse.getHits().getTotalHits().value);
+                SearchHit[] hits = searchResponse.getHits().getHits();
+                assertEquals(1, hits.length);
+                SearchHit hit = hits[0];
+                assertEquals("local", hit.getClusterAlias());
+                assertEquals("test", hit.getIndex());
+                assertEquals("1", hit.getId());
+            });
         }
         {
             SearchRequest searchRequest = SearchRequest.subSearchRequest(
@@ -159,14 +160,15 @@ public class TransportSearchIT extends ESIntegTestCase {
                 nowInMillis,
                 randomBoolean()
             );
-            SearchResponse searchResponse = client().search(searchRequest).actionGet();
-            assertEquals(1, searchResponse.getHits().getTotalHits().value);
-            SearchHit[] hits = searchResponse.getHits().getHits();
-            assertEquals(1, hits.length);
-            SearchHit hit = hits[0];
-            assertEquals("", hit.getClusterAlias());
-            assertEquals("test", hit.getIndex());
-            assertEquals("1", hit.getId());
+            assertResponse(client().search(searchRequest), searchResponse -> {
+                assertEquals(1, searchResponse.getHits().getTotalHits().value);
+                SearchHit[] hits = searchResponse.getHits().getHits();
+                assertEquals(1, hits.length);
+                SearchHit hit = hits[0];
+                assertEquals("", hit.getClusterAlias());
+                assertEquals("test", hit.getIndex());
+                assertEquals("1", hit.getId());
+            });
         }
     }
 
@@ -194,8 +196,7 @@ public class TransportSearchIT extends ESIntegTestCase {
         {
             SearchRequest searchRequest = new SearchRequest("<test-{now/d}>");
             searchRequest.indicesOptions(IndicesOptions.fromOptions(true, true, true, true));
-            SearchResponse searchResponse = client().search(searchRequest).actionGet();
-            assertEquals(0, searchResponse.getTotalShards());
+            assertResponse(client().search(searchRequest), resp -> assertEquals(0, resp.getTotalShards()));
         }
         {
             SearchRequest searchRequest = SearchRequest.subSearchRequest(
@@ -218,9 +219,10 @@ public class TransportSearchIT extends ESIntegTestCase {
                 randomBoolean()
             );
             searchRequest.indices("<test-{now/d}>");
-            SearchResponse searchResponse = client().search(searchRequest).actionGet();
-            assertEquals(1, searchResponse.getHits().getTotalHits().value);
-            assertEquals("test-1970.01.01", searchResponse.getHits().getHits()[0].getIndex());
+            assertResponse(client().search(searchRequest), response -> {
+                assertEquals(1, response.getHits().getTotalHits().value);
+                assertEquals("test-1970.01.01", response.getHits().getHits()[0].getIndex());
+            });
         }
         {
             SearchRequest searchRequest = SearchRequest.subSearchRequest(
@@ -237,13 +239,14 @@ public class TransportSearchIT extends ESIntegTestCase {
             rangeQuery.lt("1982-01-01");
             sourceBuilder.query(rangeQuery);
             searchRequest.source(sourceBuilder);
-            SearchResponse searchResponse = client().search(searchRequest).actionGet();
-            assertEquals(1, searchResponse.getHits().getTotalHits().value);
-            assertEquals("test-1970.01.01", searchResponse.getHits().getHits()[0].getIndex());
+            assertResponse(client().search(searchRequest), response -> {
+                assertEquals(1, response.getHits().getTotalHits().value);
+                assertEquals("test-1970.01.01", response.getHits().getHits()[0].getIndex());
+            });
         }
     }
 
-    public void testFinalReduce() {
+    public void testFinalReduce() throws ExecutionException, InterruptedException {
         long nowInMillis = randomLongBetween(0, Long.MAX_VALUE);
         TaskId taskId = new TaskId("node", randomNonNegativeLong());
         {
@@ -275,11 +278,12 @@ public class TransportSearchIT extends ESIntegTestCase {
             SearchRequest searchRequest = randomBoolean()
                 ? originalRequest
                 : SearchRequest.subSearchRequest(taskId, originalRequest, Strings.EMPTY_ARRAY, "remote", nowInMillis, true);
-            SearchResponse searchResponse = client().search(searchRequest).actionGet();
-            assertEquals(2, searchResponse.getHits().getTotalHits().value);
-            Aggregations aggregations = searchResponse.getAggregations();
-            LongTerms longTerms = aggregations.get("terms");
-            assertEquals(1, longTerms.getBuckets().size());
+            assertResponse(client().search(searchRequest), response -> {
+                assertEquals(2, response.getHits().getTotalHits().value);
+                Aggregations aggregations = response.getAggregations();
+                LongTerms longTerms = aggregations.get("terms");
+                assertEquals(1, longTerms.getBuckets().size());
+            });
         }
         {
             SearchRequest searchRequest = SearchRequest.subSearchRequest(
@@ -290,11 +294,12 @@ public class TransportSearchIT extends ESIntegTestCase {
                 nowInMillis,
                 false
             );
-            SearchResponse searchResponse = client().search(searchRequest).actionGet();
-            assertEquals(2, searchResponse.getHits().getTotalHits().value);
-            Aggregations aggregations = searchResponse.getAggregations();
-            LongTerms longTerms = aggregations.get("terms");
-            assertEquals(2, longTerms.getBuckets().size());
+            assertResponse(client().search(searchRequest), response -> {
+                assertEquals(2, response.getHits().getTotalHits().value);
+                Aggregations aggregations = response.getAggregations();
+                LongTerms longTerms = aggregations.get("terms");
+                assertEquals(2, longTerms.getBuckets().size());
+            });
         }
     }
 
@@ -474,7 +479,7 @@ public class TransportSearchIT extends ESIntegTestCase {
             assertBusy(() -> {
                 Exception exc = expectThrows(
                     Exception.class,
-                    () -> client.prepareSearch("test").addAggregation(new TestAggregationBuilder("test")).get()
+                    () -> client.prepareSearch("test").addAggregation(new TestAggregationBuilder("test")).get().decRef()
                 );
                 assertThat(exc.getCause().getMessage(), containsString("<reduce_aggs>"));
             });

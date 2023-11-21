@@ -32,8 +32,10 @@ public final class FetchSearchResult extends SearchPhaseResult {
     private ProfileResult profileResult;
 
     private final RefCounted refCounted = LeakTracker.wrap(AbstractRefCounted.of(() -> {
-        hits.decRef();
-        hits = null;
+        if (hits != null) {
+            hits.decRef();
+            hits = null;
+        }
     }));
 
     public FetchSearchResult() {}
