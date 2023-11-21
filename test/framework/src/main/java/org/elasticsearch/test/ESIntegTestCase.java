@@ -1062,13 +1062,13 @@ public abstract class ESIntegTestCase extends ESTestCase {
 
             if (lastKnownCount >= numDocs) {
                 try {
-                    long count = prepareSearch().setTrackTotalHits(true)
-                        .setSize(0)
-                        .setQuery(matchAllQuery())
-                        .get()
-                        .getHits()
-                        .getTotalHits().value;
-
+                    var response = prepareSearch().setTrackTotalHits(true).setSize(0).setQuery(matchAllQuery()).get();
+                    final long count;
+                    try {
+                        count = response.getHits().getTotalHits().value;
+                    } finally {
+                        response.decRef();
+                    }
                     if (count == lastKnownCount) {
                         // no progress - try to refresh for the next time
                         indicesAdmin().prepareRefresh().get();

@@ -235,6 +235,7 @@ final class FetchSearchPhase extends SearchPhase {
             reducedQueryPhase,
             fetchResultsArr
         );
+        context.addReleasable(internalResponse::decRef);
         context.executeNextPhase(this, nextPhaseFactory.apply(internalResponse, queryResults));
     }
 }

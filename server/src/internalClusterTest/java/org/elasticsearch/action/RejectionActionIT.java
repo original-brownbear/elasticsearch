@@ -75,6 +75,7 @@ public class RejectionActionIT extends ESIntegTestCase {
                         anyOf(containsString("cancelled"), containsString("rejected"))
                     );
                 }
+                ((SearchResponse) response).decRef();
             } else {
                 Exception t = (Exception) response;
                 Throwable unwrap = ExceptionsHelper.unwrapCause(t);

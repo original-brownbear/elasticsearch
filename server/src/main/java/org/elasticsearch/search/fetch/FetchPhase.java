@@ -68,7 +68,11 @@ public final class FetchPhase {
         if (docIdsToLoad == null || docIdsToLoad.length == 0) {
             // no individual hits to process, so we shortcut
             SearchHits hits = new SearchHits(new SearchHit[0], context.queryResult().getTotalHits(), context.queryResult().getMaxScore());
-            context.fetchResult().shardResult(hits, null);
+            try {
+                context.fetchResult().shardResult(hits, null);
+            } finally {
+                hits.decRef();
+            }
             return;
         }
 
@@ -81,7 +85,11 @@ public final class FetchPhase {
             ProfileResult profileResult = profiler.finish();
             // Only set the shardResults if building search hits was successful
             if (hits != null) {
-                context.fetchResult().shardResult(hits, profileResult);
+                try {
+                    context.fetchResult().shardResult(hits, profileResult);
+                } finally {
+                    hits.decRef();
+                }
             }
         }
     }

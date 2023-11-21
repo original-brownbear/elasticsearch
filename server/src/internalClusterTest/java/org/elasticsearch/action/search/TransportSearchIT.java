@@ -74,6 +74,7 @@ import java.util.concurrent.ExecutionException;
 
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHitCount;
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertResponse;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 
@@ -309,7 +310,7 @@ public class TransportSearchIT extends ESIntegTestCase {
         Arrays.fill(validCheckpoints, SequenceNumbers.UNASSIGNED_SEQ_NO);
 
         // no exception
-        prepareSearch("testAlias").setWaitForCheckpoints(Collections.singletonMap("testAlias", validCheckpoints)).get();
+        prepareSearch("testAlias").setWaitForCheckpoints(Collections.singletonMap("testAlias", validCheckpoints)).get().decRef();
 
         IllegalArgumentException e = expectThrows(
             IllegalArgumentException.class,
@@ -373,7 +374,7 @@ public class TransportSearchIT extends ESIntegTestCase {
             assertAcked(prepareCreate("test2").setSettings(Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, numPrimaries2)));
 
             // no exception
-            prepareSearch("test1").get();
+            prepareSearch("test1").get().decRef();
 
             updateClusterSettings(Settings.builder().put(TransportSearchAction.SHARD_COUNT_LIMIT_SETTING.getKey(), numPrimaries1 - 1));
 
@@ -386,7 +387,7 @@ public class TransportSearchIT extends ESIntegTestCase {
             updateClusterSettings(Settings.builder().put(TransportSearchAction.SHARD_COUNT_LIMIT_SETTING.getKey(), numPrimaries1));
 
             // no exception
-            prepareSearch("test1").get();
+            prepareSearch("test1").get().decRef();
 
             e = expectThrows(IllegalArgumentException.class, () -> prepareSearch("test1", "test2").get());
             assertThat(
@@ -422,12 +423,13 @@ public class TransportSearchIT extends ESIntegTestCase {
         client().prepareIndex("test").setId("1").setSource("created_date", "2020-01-01").get();
         client().prepareIndex("test").setId("2").setSource("created_date", "2020-01-02").get();
         client().prepareIndex("test").setId("3").setSource("created_date", "2020-01-03").get();
-        assertBusy(() -> {
-            SearchResponse resp = prepareSearch("test").setQuery(new RangeQueryBuilder("created_date").gte("2020-01-02").lte("2020-01-03"))
-                .setPreFilterShardSize(randomIntBetween(1, 3))
-                .get();
-            assertThat(resp.getHits().getTotalHits().value, equalTo(2L));
-        });
+        assertBusy(
+            () -> assertResponse(
+                prepareSearch("test").setQuery(new RangeQueryBuilder("created_date").gte("2020-01-02").lte("2020-01-03"))
+                    .setPreFilterShardSize(randomIntBetween(1, 3)),
+                resp -> assertThat(resp.getHits().getTotalHits().value, equalTo(2L))
+            )
+        );
     }
 
     public void testCircuitBreakerReduceFail() throws Exception {
@@ -446,6 +448,7 @@ public class TransportSearchIT extends ESIntegTestCase {
                 client().search(request, new ActionListener<>() {
                     @Override
                     public void onResponse(SearchResponse response) {
+                        response.decRef();
                         responses.set(index, true);
                         latch.countDown();
                     }
@@ -487,6 +490,7 @@ public class TransportSearchIT extends ESIntegTestCase {
                 client().search(request, new ActionListener<>() {
                     @Override
                     public void onResponse(SearchResponse response) {
+                        response.decRef();
                         latch.countDown();
                     }
 
@@ -524,6 +528,7 @@ public class TransportSearchIT extends ESIntegTestCase {
             client().search(request, new ActionListener<>() {
                 @Override
                 public void onResponse(SearchResponse response) {
+                    response.decRef();
                     latch.countDown();
                 }
 

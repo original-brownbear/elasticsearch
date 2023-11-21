@@ -50,6 +50,7 @@ import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcke
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertFailures;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHitCount;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNoFailures;
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNoFailuresAndResponse;
 import static org.hamcrest.Matchers.arrayWithSize;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
@@ -252,29 +253,32 @@ public class PointInTimeIT extends ESIntegTestCase {
         refresh();
         String pit = openPointInTime(new String[] { "index-*" }, TimeValue.timeValueMinutes(2));
         try {
-            SearchResponse resp = prepareSearch().setPreference(null).setPointInTime(new PointInTimeBuilder(pit)).get();
-            assertNoFailures(resp);
-            assertHitCount(resp, index1 + index2);
-            indicesAdmin().prepareDelete("index-1").get();
-            if (randomBoolean()) {
-                resp = prepareSearch("index-*").get();
-                assertNoFailures(resp);
-                assertHitCount(resp, index2);
-            }
+            assertNoFailuresAndResponse(prepareSearch().setPreference(null).setPointInTime(new PointInTimeBuilder(pit)), resp -> {
+                assertHitCount(resp, index1 + index2);
+                indicesAdmin().prepareDelete("index-1").get();
+                if (randomBoolean()) {
+                    resp = prepareSearch("index-*").get();
+                    assertNoFailures(resp);
+                    assertHitCount(resp, index2);
+                }
 
-            // Allow partial search result
-            resp = prepareSearch().setPreference(null).setAllowPartialSearchResults(true).setPointInTime(new PointInTimeBuilder(pit)).get();
-            assertFailures(resp);
-            assertHitCount(resp, index2);
-
-            // Do not allow partial search result
-            expectThrows(
-                ElasticsearchException.class,
-                () -> prepareSearch().setPreference(null)
-                    .setAllowPartialSearchResults(false)
+                // Allow partial search result
+                resp = prepareSearch().setPreference(null)
+                    .setAllowPartialSearchResults(true)
                     .setPointInTime(new PointInTimeBuilder(pit))
-                    .get()
-            );
+                    .get();
+                assertFailures(resp);
+                assertHitCount(resp, index2);
+
+                // Do not allow partial search result
+                expectThrows(
+                    ElasticsearchException.class,
+                    () -> prepareSearch().setPreference(null)
+                        .setAllowPartialSearchResults(false)
+                        .setPointInTime(new PointInTimeBuilder(pit))
+                        .get()
+                );
+            });
         } finally {
             closePointInTime(pit);
         }
@@ -494,42 +498,50 @@ public class PointInTimeIT extends ESIntegTestCase {
             reverseMuls[i] = expectedSorts.get(i).order() == SortOrder.ASC ? 1 : -1;
         }
         SearchResponse response = client().search(searchRequest).get();
-        Object[] lastSortValues = null;
-        while (response.getHits().getHits().length > 0) {
-            Object[] lastHitSortValues = null;
-            for (SearchHit hit : response.getHits().getHits()) {
-                assertTrue(seen.add(hit.getIndex() + hit.getId()));
+        try {
+            Object[] lastSortValues = null;
+            while (response.getHits().getHits().length > 0) {
+                Object[] lastHitSortValues = null;
+                for (SearchHit hit : response.getHits().getHits()) {
+                    assertTrue(seen.add(hit.getIndex() + hit.getId()));
 
-                if (lastHitSortValues != null) {
+                    if (lastHitSortValues != null) {
+                        for (int i = 0; i < expectedSorts.size(); i++) {
+                            Comparable value = (Comparable) hit.getRawSortValues()[i];
+                            int cmp = value.compareTo(lastHitSortValues[i]) * reverseMuls[i];
+                            if (cmp != 0) {
+                                assertThat(cmp, equalTo(1));
+                                break;
+                            }
+                        }
+                    }
+                    lastHitSortValues = hit.getRawSortValues();
+                }
+                int len = response.getHits().getHits().length;
+                SearchHit last = response.getHits().getHits()[len - 1];
+                if (lastSortValues != null) {
                     for (int i = 0; i < expectedSorts.size(); i++) {
-                        Comparable value = (Comparable) hit.getRawSortValues()[i];
-                        int cmp = value.compareTo(lastHitSortValues[i]) * reverseMuls[i];
+                        Comparable value = (Comparable) last.getSortValues()[i];
+                        int cmp = value.compareTo(lastSortValues[i]) * reverseMuls[i];
                         if (cmp != 0) {
                             assertThat(cmp, equalTo(1));
                             break;
                         }
                     }
                 }
-                lastHitSortValues = hit.getRawSortValues();
+                assertThat(last.getSortValues().length, equalTo(expectedSorts.size()));
+                lastSortValues = last.getSortValues();
+                searchRequest.source().searchAfter(last.getSortValues());
+                response.decRef();
+                response = null;
+                response = client().search(searchRequest).get();
             }
-            int len = response.getHits().getHits().length;
-            SearchHit last = response.getHits().getHits()[len - 1];
-            if (lastSortValues != null) {
-                for (int i = 0; i < expectedSorts.size(); i++) {
-                    Comparable value = (Comparable) last.getSortValues()[i];
-                    int cmp = value.compareTo(lastSortValues[i]) * reverseMuls[i];
-                    if (cmp != 0) {
-                        assertThat(cmp, equalTo(1));
-                        break;
-                    }
-                }
+            assertThat(seen.size(), equalTo(expectedNumDocs));
+        } finally {
+            if (response != null) {
+                response.decRef();
             }
-            assertThat(last.getSortValues().length, equalTo(expectedSorts.size()));
-            lastSortValues = last.getSortValues();
-            searchRequest.source().searchAfter(last.getSortValues());
-            response = client().search(searchRequest).get();
         }
-        assertThat(seen.size(), equalTo(expectedNumDocs));
     }
 
     private String openPointInTime(String[] indices, TimeValue keepAlive) {

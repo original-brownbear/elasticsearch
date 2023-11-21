@@ -31,7 +31,10 @@ public final class FetchSearchResult extends SearchPhaseResult {
 
     private ProfileResult profileResult;
 
-    private final RefCounted refCounted = LeakTracker.wrap(AbstractRefCounted.of(() -> hits = null));
+    private final RefCounted refCounted = LeakTracker.wrap(AbstractRefCounted.of(() -> {
+        hits.decRef();
+        hits = null;
+    }));
 
     public FetchSearchResult() {}
 
@@ -68,6 +71,7 @@ public final class FetchSearchResult extends SearchPhaseResult {
     public void shardResult(SearchHits hits, ProfileResult profileResult) {
         assert assertNoSearchTarget(hits);
         this.hits = hits;
+        hits.incRef();
         assert this.profileResult == null;
         this.profileResult = profileResult;
     }
@@ -80,6 +84,7 @@ public final class FetchSearchResult extends SearchPhaseResult {
     }
 
     public SearchHits hits() {
+        assert hits.hasReferences();
         return hits;
     }
 
