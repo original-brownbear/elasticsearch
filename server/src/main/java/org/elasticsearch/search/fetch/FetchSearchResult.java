@@ -58,6 +58,7 @@ public final class FetchSearchResult extends SearchPhaseResult {
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
+        assert hasReferences();
         contextId.writeTo(out);
         hits.writeTo(out);
         if (out.getTransportVersion().onOrAfter(TransportVersions.V_7_16_0)) {

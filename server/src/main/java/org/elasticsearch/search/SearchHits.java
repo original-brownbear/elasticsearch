@@ -76,6 +76,9 @@ public final class SearchHits implements Writeable, ChunkedToXContent, Iterable<
         @Nullable Object[] collapseValues
     ) {
         this.hits = hits;
+        for (SearchHit hit : hits) {
+            hit.incRef();
+        }
         this.totalHits = totalHits;
         this.maxScore = maxScore;
         this.sortFields = sortFields;
@@ -107,6 +110,7 @@ public final class SearchHits implements Writeable, ChunkedToXContent, Iterable<
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
+        assert hasReferences();
         final boolean hasTotalHits = totalHits != null;
         out.writeBoolean(hasTotalHits);
         if (hasTotalHits) {

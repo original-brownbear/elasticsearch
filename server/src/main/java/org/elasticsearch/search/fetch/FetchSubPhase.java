@@ -32,6 +32,7 @@ public interface FetchSubPhase {
 
         public HitContext(SearchHit hit, LeafReaderContext context, int docId, Map<String, List<Object>> loadedFields, Source source) {
             this.hit = hit;
+            hit.incRef();
             this.readerContext = context;
             this.docId = docId;
             this.source = source;

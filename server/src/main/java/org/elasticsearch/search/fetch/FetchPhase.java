@@ -260,20 +260,24 @@ public final class FetchPhase {
             return new HitContext(hit, subReaderContext, subDocId, Map.of(), source);
         } else {
             SearchHit hit = new SearchHit(docId, id);
-            Source source;
-            if (requiresSource) {
-                Timer timer = profiler.startLoadingSource();
-                try {
-                    source = sourceLoader.source(leafStoredFieldLoader, subDocId);
-                } finally {
-                    if (timer != null) {
-                        timer.stop();
+            try {
+                Source source;
+                if (requiresSource) {
+                    Timer timer = profiler.startLoadingSource();
+                    try {
+                        source = sourceLoader.source(leafStoredFieldLoader, subDocId);
+                    } finally {
+                        if (timer != null) {
+                            timer.stop();
+                        }
                     }
+                } else {
+                    source = Source.lazy(lazyStoredSourceLoader(profiler, subReaderContext, subDocId));
                 }
-            } else {
-                source = Source.lazy(lazyStoredSourceLoader(profiler, subReaderContext, subDocId));
+                return new HitContext(hit, subReaderContext, subDocId, leafStoredFieldLoader.storedFields(), source);
+            } finally {
+                hit.decRef();
             }
-            return new HitContext(hit, subReaderContext, subDocId, leafStoredFieldLoader.storedFields(), source);
         }
     }
 

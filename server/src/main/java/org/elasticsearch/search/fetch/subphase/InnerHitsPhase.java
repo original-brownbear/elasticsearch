@@ -106,7 +106,6 @@ public final class InnerHitsPhase implements FetchSubPhase {
             final var hits = fetchResult.hits();
             hits.incRef();
             results.put(entry.getKey(), hits);
-            innerHitsContext.addReleasable(hits::decRef);
         }
     }
 }
