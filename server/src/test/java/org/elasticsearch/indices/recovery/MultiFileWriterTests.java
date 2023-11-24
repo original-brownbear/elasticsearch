@@ -10,6 +10,7 @@ package org.elasticsearch.indices.recovery;
 
 import org.apache.lucene.codecs.CodecUtil;
 import org.apache.lucene.index.CorruptIndexException;
+import org.apache.lucene.store.AlreadyClosedException;
 import org.apache.lucene.store.ByteBuffersDataOutput;
 import org.apache.lucene.store.ByteBuffersIndexOutput;
 import org.apache.lucene.store.Directory;
@@ -34,6 +35,7 @@ import static org.mockito.Mockito.verify;
 public class MultiFileWriterTests extends IndexShardTestCase {
 
     private IndexShard indexShard;
+    private Directory directory;
     private Directory directorySpy;
     private Store store;
 
@@ -41,7 +43,7 @@ public class MultiFileWriterTests extends IndexShardTestCase {
     public void setUp() throws Exception {
         super.setUp();
         indexShard = newShard(true);
-        Directory directory = newMockFSDirectory(indexShard.shardPath().resolveIndex());
+        directory = newMockFSDirectory(indexShard.shardPath().resolveIndex());
         directorySpy = spy(directory);
         store = createStore(indexShard.shardId(), indexShard.indexSettings(), directorySpy);
     }
@@ -49,8 +51,13 @@ public class MultiFileWriterTests extends IndexShardTestCase {
     @Override
     public void tearDown() throws Exception {
         super.tearDown();
-        store.decRef();
+        store.close();
         closeShards(indexShard);
+        try {
+            directory.close();
+        } catch (AlreadyClosedException ignored) {
+            // hack to statisfy the MockDirectoryWrapper check for the directory close while the directorySpy has already been closed
+        }
     }
 
     public void testWritesFile() throws IOException {

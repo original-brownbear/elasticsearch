@@ -290,72 +290,74 @@ public class FsRepositoryTests extends ESTestCase {
                 Settings.builder().put(IndexMetadata.SETTING_INDEX_UUID, "myindexUUID").build()
             );
             final ShardId shardId1 = new ShardId(idxSettings.getIndex(), 1);
-            final Store store1 = new Store(shardId1, idxSettings, directory, new DummyShardLock(shardId1));
             final SnapshotId snapshotId = new SnapshotId("test", "test");
             final IndexId indexId = new IndexId(idxSettings.getIndex().getName(), idxSettings.getUUID());
-            IndexCommit indexCommit1 = Lucene.getIndexCommit(Lucene.readSegmentInfos(store1.directory()), store1.directory());
-            final PlainActionFuture<ShardSnapshotResult> snapshot1Future = new PlainActionFuture<>();
-            IndexShardSnapshotStatus snapshotStatus1 = IndexShardSnapshotStatus.newInitializing(null);
+            try (Store store1 = new Store(shardId1, idxSettings, directory, new DummyShardLock(shardId1))) {
+                IndexCommit indexCommit1 = Lucene.getIndexCommit(Lucene.readSegmentInfos(store1.directory()), store1.directory());
+                final PlainActionFuture<ShardSnapshotResult> snapshot1Future = new PlainActionFuture<>();
+                IndexShardSnapshotStatus snapshotStatus1 = IndexShardSnapshotStatus.newInitializing(null);
 
-            // Scenario 1 - Shard data files will be cleaned up if they fail to write
-            canErrorForWriteBlob.set(true);
-            shouldErrorForWriteMetadataBlob.set(false);
-            repository.snapshotShard(
-                new SnapshotShardContext(
-                    store1,
-                    null,
-                    snapshotId,
-                    indexId,
-                    new SnapshotIndexCommit(new Engine.IndexCommitRef(indexCommit1, () -> {})),
-                    null,
-                    snapshotStatus1,
-                    IndexVersion.current(),
-                    randomMillisUpToYear9999(),
-                    snapshot1Future
-                )
-            );
-            if (writeBlobErrored.get()) {
-                final var e = expectThrows(UncategorizedExecutionException.class, snapshot1Future::actionGet);
-                assertThat(e.getCause().getCause(), instanceOf(IOException.class));
-                assertThat(e.getCause().getCause().getMessage(), equalTo("disk full"));
+                // Scenario 1 - Shard data files will be cleaned up if they fail to write
+                canErrorForWriteBlob.set(true);
+                shouldErrorForWriteMetadataBlob.set(false);
+                repository.snapshotShard(
+                    new SnapshotShardContext(
+                        store1,
+                        null,
+                        snapshotId,
+                        indexId,
+                        new SnapshotIndexCommit(new Engine.IndexCommitRef(indexCommit1, () -> {})),
+                        null,
+                        snapshotStatus1,
+                        IndexVersion.current(),
+                        randomMillisUpToYear9999(),
+                        snapshot1Future
+                    )
+                );
+                if (writeBlobErrored.get()) {
+                    final var e = expectThrows(UncategorizedExecutionException.class, snapshot1Future::actionGet);
+                    assertThat(e.getCause().getCause(), instanceOf(IOException.class));
+                    assertThat(e.getCause().getCause().getMessage(), equalTo("disk full"));
 
-                final Path shardSnapshotPath = repo.resolve("indices/myindexUUID/1");
-                try (Stream<Path> pathStream = Files.list(shardSnapshotPath)) {
-                    final List<Path> files = pathStream.filter(p -> p.getFileName().toString().startsWith("__")).toList();
-                    assertThat(files, empty());
+                    final Path shardSnapshotPath = repo.resolve("indices/myindexUUID/1");
+                    try (Stream<Path> pathStream = Files.list(shardSnapshotPath)) {
+                        final List<Path> files = pathStream.filter(p -> p.getFileName().toString().startsWith("__")).toList();
+                        assertThat(files, empty());
+                    }
+                } else {
+                    snapshot1Future.actionGet();
                 }
-            } else {
-                snapshot1Future.actionGet();
             }
 
             // Scenario 2 - Shard data files will not be cleaned up if shard level snap file fails to write
             final ShardId shardId2 = new ShardId(idxSettings.getIndex(), 2);
-            final Store store2 = new Store(shardId2, idxSettings, directory, new DummyShardLock(shardId2));
-            final IndexCommit indexCommit2 = Lucene.getIndexCommit(Lucene.readSegmentInfos(store2.directory()), store2.directory());
-            final PlainActionFuture<ShardSnapshotResult> snapshot2Future = new PlainActionFuture<>();
-            canErrorForWriteBlob.set(false);
-            shouldErrorForWriteMetadataBlob.set(true);
-            repository.snapshotShard(
-                new SnapshotShardContext(
-                    store2,
-                    null,
-                    snapshotId,
-                    indexId,
-                    new SnapshotIndexCommit(new Engine.IndexCommitRef(indexCommit2, () -> {})),
-                    null,
-                    IndexShardSnapshotStatus.newInitializing(null),
-                    IndexVersion.current(),
-                    randomMillisUpToYear9999(),
-                    snapshot2Future
-                )
-            );
-            final var e = expectThrows(RuntimeException.class, snapshot2Future::actionGet);
-            assertThat(e.getMessage(), equalTo("snap file error"));
+            try (Store store2 = new Store(shardId2, idxSettings, directory, new DummyShardLock(shardId2))) {
+                final IndexCommit indexCommit2 = Lucene.getIndexCommit(Lucene.readSegmentInfos(store2.directory()), store2.directory());
+                final PlainActionFuture<ShardSnapshotResult> snapshot2Future = new PlainActionFuture<>();
+                canErrorForWriteBlob.set(false);
+                shouldErrorForWriteMetadataBlob.set(true);
+                repository.snapshotShard(
+                    new SnapshotShardContext(
+                        store2,
+                        null,
+                        snapshotId,
+                        indexId,
+                        new SnapshotIndexCommit(new Engine.IndexCommitRef(indexCommit2, () -> {})),
+                        null,
+                        IndexShardSnapshotStatus.newInitializing(null),
+                        IndexVersion.current(),
+                        randomMillisUpToYear9999(),
+                        snapshot2Future
+                    )
+                );
+                final var e = expectThrows(RuntimeException.class, snapshot2Future::actionGet);
+                assertThat(e.getMessage(), equalTo("snap file error"));
 
-            final Path shardSnapshotPath = repo.resolve("indices/myindexUUID/2");
-            try (Stream<Path> pathStream = Files.list(shardSnapshotPath)) {
-                final List<Path> files = pathStream.filter(p -> p.getFileName().toString().startsWith("__")).toList();
-                assertThat(files, not(empty()));
+                final Path shardSnapshotPath = repo.resolve("indices/myindexUUID/2");
+                try (Stream<Path> pathStream = Files.list(shardSnapshotPath)) {
+                    final List<Path> files = pathStream.filter(p -> p.getFileName().toString().startsWith("__")).toList();
+                    assertThat(files, not(empty()));
+                }
             }
         }
     }
