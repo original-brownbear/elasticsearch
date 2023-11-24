@@ -67,6 +67,7 @@ import org.elasticsearch.index.shard.AbstractIndexShardComponent;
 import org.elasticsearch.index.shard.IndexShard;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.index.translog.Translog;
+import org.elasticsearch.transport.LeakTracker;
 
 import java.io.Closeable;
 import java.io.EOFException;
@@ -154,7 +155,7 @@ public class Store extends AbstractIndexShardComponent implements Closeable, Ref
     private final ShardLock shardLock;
     private final OnClose onClose;
 
-    private final AbstractRefCounted refCounter = AbstractRefCounted.of(this::closeInternal); // close us once we are done
+    private final RefCounted refCounter = LeakTracker.wrap(AbstractRefCounted.of(this::closeInternal)); // close us once we are done
 
     public Store(ShardId shardId, IndexSettings indexSettings, Directory directory, ShardLock shardLock) {
         this(shardId, indexSettings, directory, shardLock, OnClose.EMPTY);
@@ -215,7 +216,7 @@ public class Store extends AbstractIndexShardComponent implements Closeable, Ref
     }
 
     final void ensureOpen() {
-        if (this.refCounter.refCount() <= 0) {
+        if (this.refCounter.hasReferences() == false) {
             throw new AlreadyClosedException("store is already closed");
         }
     }
@@ -417,7 +418,7 @@ public class Store extends AbstractIndexShardComponent implements Closeable, Ref
         if (isClosed.compareAndSet(false, true)) {
             // only do this once!
             decRef();
-            logger.debug("store reference count on close: {}", refCounter.refCount());
+            logger.debug("store has references on close: {}", refCounter.hasReferences());
         }
     }
 
@@ -718,13 +719,6 @@ public class Store extends AbstractIndexShardComponent implements Closeable, Ref
                 );
             }
         }
-    }
-
-    /**
-     * Returns the current reference count.
-     */
-    public int refCount() {
-        return refCounter.refCount();
     }
 
     public void beforeClose() {

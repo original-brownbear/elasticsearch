@@ -14,6 +14,8 @@ import org.elasticsearch.action.support.RefCountingRunnable;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.core.Releasable;
+import org.elasticsearch.core.Releasables;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.engine.Engine;
@@ -31,6 +33,8 @@ import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.threadpool.TestThreadPool;
 import org.elasticsearch.threadpool.ThreadPool;
 
+import java.util.Collection;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -137,14 +141,23 @@ public class ShardSnapshotTaskRunnerTests extends ESTestCase {
         ShardSnapshotTaskRunner taskRunner = new ShardSnapshotTaskRunner(maxTasks, executor, repo::snapshotShard, repo::snapshotFile);
         repo.setTaskRunner(taskRunner);
         int enqueuedSnapshots = randomIntBetween(maxTasks * 2, maxTasks * 10);
-        for (int i = 0; i < enqueuedSnapshots; i++) {
-            threadPool.generic().execute(() -> taskRunner.enqueueShardSnapshot(dummyContext()));
+        final Collection<Releasable> releasables = new CopyOnWriteArrayList<>();
+        try {
+            for (int i = 0; i < enqueuedSnapshots; i++) {
+                threadPool.generic().execute(() -> {
+                    var ctx = dummyContext();
+                    releasables.add(ctx.store()::decRef);
+                    taskRunner.enqueueShardSnapshot(ctx);
+                });
+            }
+            // Eventually all snapshots are finished
+            assertBusy(() -> {
+                assertThat(repo.finishedShardSnapshots(), equalTo(enqueuedSnapshots));
+                assertThat(taskRunner.runningTasks(), equalTo(0));
+            });
+        } finally {
+            Releasables.close(releasables);
         }
-        // Eventually all snapshots are finished
-        assertBusy(() -> {
-            assertThat(repo.finishedShardSnapshots(), equalTo(enqueuedSnapshots));
-            assertThat(taskRunner.runningTasks(), equalTo(0));
-        });
         assertThat(taskRunner.queueSize(), equalTo(0));
         assertThat(repo.finishedFileSnapshotTasks(), equalTo(repo.expectedFileSnapshotTasks()));
         assertThat(repo.finishedShardSnapshotTasks(), equalTo(enqueuedSnapshots));
@@ -161,33 +174,39 @@ public class ShardSnapshotTaskRunnerTests extends ESTestCase {
         SnapshotShardContext s1Context = dummyContext(s1, s1StartTime);
         SnapshotShardContext s2Context = dummyContext(s2, s2StartTime);
         SnapshotShardContext s3Context = dummyContext(s3, s2StartTime);
-        // Shard snapshot and file snapshot tasks for earlier snapshots have higher priority
-        assertThat(
-            workers.new ShardSnapshotTask(s1Context).compareTo(
-                workers.new FileSnapshotTask(s2Context, ShardSnapshotTaskRunnerTests::dummyFileInfo, listener)
-            ),
-            lessThan(0)
-        );
-        assertThat(
-            workers.new FileSnapshotTask(s1Context, ShardSnapshotTaskRunnerTests::dummyFileInfo, listener).compareTo(
-                workers.new ShardSnapshotTask(s2Context)
-            ),
-            lessThan(0)
-        );
-        // Two tasks with the same start time and of the same type are ordered by snapshot UUID
-        assertThat(workers.new ShardSnapshotTask(s2Context).compareTo(workers.new ShardSnapshotTask(s3Context)), lessThan(0));
-        assertThat(
-            workers.new FileSnapshotTask(s2Context, ShardSnapshotTaskRunnerTests::dummyFileInfo, listener).compareTo(
-                workers.new ShardSnapshotTask(s3Context)
-            ),
-            lessThan(0)
-        );
-        // Shard snapshot task has a higher priority over file snapshot within the same snapshot
-        assertThat(
-            workers.new ShardSnapshotTask(s1Context).compareTo(
-                workers.new FileSnapshotTask(s1Context, ShardSnapshotTaskRunnerTests::dummyFileInfo, listener)
-            ),
-            lessThan(0)
-        );
+        try {
+            // Shard snapshot and file snapshot tasks for earlier snapshots have higher priority
+            assertThat(
+                workers.new ShardSnapshotTask(s1Context).compareTo(
+                    workers.new FileSnapshotTask(s2Context, ShardSnapshotTaskRunnerTests::dummyFileInfo, listener)
+                ),
+                lessThan(0)
+            );
+            assertThat(
+                workers.new FileSnapshotTask(s1Context, ShardSnapshotTaskRunnerTests::dummyFileInfo, listener).compareTo(
+                    workers.new ShardSnapshotTask(s2Context)
+                ),
+                lessThan(0)
+            );
+            // Two tasks with the same start time and of the same type are ordered by snapshot UUID
+            assertThat(workers.new ShardSnapshotTask(s2Context).compareTo(workers.new ShardSnapshotTask(s3Context)), lessThan(0));
+            assertThat(
+                workers.new FileSnapshotTask(s2Context, ShardSnapshotTaskRunnerTests::dummyFileInfo, listener).compareTo(
+                    workers.new ShardSnapshotTask(s3Context)
+                ),
+                lessThan(0)
+            );
+            // Shard snapshot task has a higher priority over file snapshot within the same snapshot
+            assertThat(
+                workers.new ShardSnapshotTask(s1Context).compareTo(
+                    workers.new FileSnapshotTask(s1Context, ShardSnapshotTaskRunnerTests::dummyFileInfo, listener)
+                ),
+                lessThan(0)
+            );
+        } finally {
+            s1Context.store().decRef();
+            s2Context.store().decRef();
+            s3Context.store().decRef();
+        }
     }
 }

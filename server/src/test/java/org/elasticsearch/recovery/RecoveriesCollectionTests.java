@@ -117,7 +117,6 @@ public class RecoveriesCollectionTests extends ESIndexLevelReplicationTestCase {
             final long recoveryId = startRecovery(collection, shards.getPrimaryNode(), shard);
             RecoveryTarget recoveryTarget = collection.getRecoveryTarget(recoveryId);
             final int currentAsTarget = shard.recoveryStats().currentAsTarget();
-            final int referencesToStore = recoveryTarget.store().refCount();
             IndexShard indexShard = recoveryTarget.indexShard();
             Store store = recoveryTarget.store();
             String tempFileName = recoveryTarget.getTempNameForFile("foobar");
@@ -127,7 +126,6 @@ public class RecoveriesCollectionTests extends ESIndexLevelReplicationTestCase {
             assertNotSame(recoveryTarget.cancellableThreads(), resetRecovery.cancellableThreads());
             assertSame(indexShard, resetRecovery.indexShard());
             assertSame(store, resetRecovery.store());
-            assertEquals(referencesToStore, resetRecovery.store().refCount());
             assertEquals(currentAsTarget, shard.recoveryStats().currentAsTarget());
             assertEquals(recoveryTarget.refCount(), 0);
             expectThrows(ElasticsearchException.class, () -> recoveryTarget.store());

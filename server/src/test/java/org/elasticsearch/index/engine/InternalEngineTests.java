@@ -3137,31 +3137,24 @@ public class InternalEngineTests extends EngineTestCase {
             wrapper.setRandomIOExceptionRateOnOpen(randomDouble());
             final Path translogPath = createTempDir("testFailStart");
             try (Store store = createStore(wrapper)) {
-                int refCount = store.refCount();
-                assertTrue("refCount: " + store.refCount(), store.refCount() > 0);
+                assertTrue(store.hasReferences());
                 InternalEngine holder;
                 try {
                     holder = createEngine(store, translogPath);
                 } catch (EngineCreationFailureException | IOException ex) {
-                    assertEquals(store.refCount(), refCount);
                     continue;
                 }
-                assertEquals(store.refCount(), refCount + 1);
                 final int numStarts = scaledRandomIntBetween(1, 5);
                 for (int j = 0; j < numStarts; j++) {
                     try {
-                        assertEquals(store.refCount(), refCount + 1);
                         holder.close();
                         holder = createEngine(store, translogPath);
-                        assertEquals(store.refCount(), refCount + 1);
                     } catch (EngineCreationFailureException ex) {
                         // all is fine
-                        assertEquals(store.refCount(), refCount);
                         break;
                     }
                 }
                 holder.close();
-                assertEquals(store.refCount(), refCount);
             }
         }
     }

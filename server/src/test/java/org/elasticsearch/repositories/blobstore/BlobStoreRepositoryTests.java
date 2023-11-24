@@ -412,15 +412,19 @@ public class BlobStoreRepositoryTests extends ESSingleNodeTestCase {
         repository.start();
         // Generate some FileInfo, as the files that get uploaded as part of the shard snapshot
         SnapshotShardContext context = ShardSnapshotTaskRunnerTests.dummyContext();
-        int noOfFiles = randomIntBetween(10, 100);
-        BlockingQueue<BlobStoreIndexShardSnapshot.FileInfo> files = new LinkedBlockingQueue<>(noOfFiles);
-        PlainActionFuture<Void> listenerCalled = new PlainActionFuture<>();
-        ActionListener<Collection<Void>> allFilesUploadListener = ActionListener.running(() -> listenerCalled.onResponse(null));
-        for (int i = 0; i < noOfFiles; i++) {
-            files.add(ShardSnapshotTaskRunnerTests.dummyFileInfo());
+        try {
+            int noOfFiles = randomIntBetween(10, 100);
+            BlockingQueue<BlobStoreIndexShardSnapshot.FileInfo> files = new LinkedBlockingQueue<>(noOfFiles);
+            PlainActionFuture<Void> listenerCalled = new PlainActionFuture<>();
+            ActionListener<Collection<Void>> allFilesUploadListener = ActionListener.running(() -> listenerCalled.onResponse(null));
+            for (int i = 0; i < noOfFiles; i++) {
+                files.add(ShardSnapshotTaskRunnerTests.dummyFileInfo());
+            }
+            repository.snapshotFiles(context, files, allFilesUploadListener);
+            listenerCalled.get(10, TimeUnit.SECONDS);
+        } finally {
+            context.store().decRef();
         }
-        repository.snapshotFiles(context, files, allFilesUploadListener);
-        listenerCalled.get(10, TimeUnit.SECONDS);
     }
 
     public void testGetRepositoryDataThreadContext() {

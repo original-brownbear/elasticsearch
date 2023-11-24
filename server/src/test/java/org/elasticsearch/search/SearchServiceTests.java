@@ -289,16 +289,13 @@ public class SearchServiceTests extends ESSingleNodeTestCase {
         SearchService service = getInstanceFromNode(SearchService.class);
         IndicesService indicesService = getInstanceFromNode(IndicesService.class);
         IndexService indexService = indicesService.indexServiceSafe(resolveIndex("index"));
-        IndexShard indexShard = indexService.getShard(0);
 
         final int activeContexts = service.getActiveContexts();
-        final int activeRefs = indexShard.store().refCount();
         expectThrows(
             SearchPhaseExecutionException.class,
             () -> client().prepareSearch("index").setQuery(new FailOnRewriteQueryBuilder()).get()
         );
         assertEquals(activeContexts, service.getActiveContexts());
-        assertEquals(activeRefs, indexShard.store().refCount());
     }
 
     public void testSearchWhileIndexDeleted() throws InterruptedException {
@@ -1306,10 +1303,6 @@ public class SearchServiceTests extends ESSingleNodeTestCase {
             );
             assertEquals("expected", e.getMessage());
         }
-        // Needs to busily assert because Engine#refreshNeeded can increase the refCount.
-        assertBusy(
-            () -> assertEquals("should have 2 store refs (IndexService + InternalEngine)", 2, indexService.getShard(0).store().refCount())
-        );
     }
 
     public void testMatchNoDocsEmptyResponse() throws InterruptedException {

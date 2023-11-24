@@ -34,7 +34,6 @@ import static org.mockito.Mockito.verify;
 public class MultiFileWriterTests extends IndexShardTestCase {
 
     private IndexShard indexShard;
-    private Directory directory;
     private Directory directorySpy;
     private Store store;
 
@@ -42,7 +41,7 @@ public class MultiFileWriterTests extends IndexShardTestCase {
     public void setUp() throws Exception {
         super.setUp();
         indexShard = newShard(true);
-        directory = newMockFSDirectory(indexShard.shardPath().resolveIndex());
+        Directory directory = newMockFSDirectory(indexShard.shardPath().resolveIndex());
         directorySpy = spy(directory);
         store = createStore(indexShard.shardId(), indexShard.indexSettings(), directorySpy);
     }
@@ -50,7 +49,7 @@ public class MultiFileWriterTests extends IndexShardTestCase {
     @Override
     public void tearDown() throws Exception {
         super.tearDown();
-        directory.close();
+        store.decRef();
         closeShards(indexShard);
     }
 

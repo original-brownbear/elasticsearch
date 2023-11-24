@@ -67,7 +67,6 @@ import org.elasticsearch.indices.store.TransportNodesListShardStoreMetadata;
 import org.elasticsearch.test.DummyShardLock;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.test.IndexSettingsModule;
-import org.hamcrest.Matchers;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -149,8 +148,7 @@ public class StoreTests extends ESTestCase {
             store.ensureOpen();
         }
 
-        store.decRef();
-        assertThat(store.refCount(), Matchers.equalTo(0));
+        assertTrue(store.decRef());
         assertFalse(store.tryIncRef());
         expectThrows(IllegalStateException.class, store::incRef);
         expectThrows(IllegalStateException.class, store::ensureOpen);

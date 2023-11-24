@@ -3419,7 +3419,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 }
 
                 void ensureNotClosing(final Store store) throws AlreadyClosedException {
-                    assert store.refCount() > 0;
+                    assert store.hasReferences();
                     if (store.isClosing()) {
                         throw new AlreadyClosedException("store is closing");
                     }
