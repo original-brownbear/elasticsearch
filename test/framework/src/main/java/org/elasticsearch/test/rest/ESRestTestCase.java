@@ -49,6 +49,7 @@ import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
 import org.elasticsearch.core.CharArrays;
 import org.elasticsearch.core.CheckedRunnable;
+import org.elasticsearch.core.FunctionalUtils;
 import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.PathUtils;
@@ -507,7 +508,7 @@ public abstract class ESRestTestCase extends ESTestCase {
      * @throws Exception if an exception is thrown while checking the outstanding tasks
      */
     public static void waitForPendingTasks(final RestClient restClient) throws Exception {
-        waitForPendingTasks(restClient, taskName -> false);
+        waitForPendingTasks(restClient, FunctionalUtils.alwaysFalse());
     }
 
     /**

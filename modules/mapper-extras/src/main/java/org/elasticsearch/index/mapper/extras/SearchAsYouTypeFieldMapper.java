@@ -36,6 +36,7 @@ import org.apache.lucene.util.automaton.Automata;
 import org.apache.lucene.util.automaton.Automaton;
 import org.apache.lucene.util.automaton.Operations;
 import org.elasticsearch.common.collect.Iterators;
+import org.elasticsearch.core.FunctionalUtils;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.analysis.AnalyzerScope;
 import org.elasticsearch.index.analysis.IndexAnalyzers;
@@ -107,7 +108,7 @@ public class SearchAsYouTypeFieldMapper extends FieldMapper {
         // This is only here because for some reason the initial impl of this always serialized
         // `doc_values=false`, even though it cannot be set; and so we need to continue
         // serializing it forever because of mapper assertions in mixed clusters.
-        private final Parameter<Boolean> docValues = Parameter.docValuesParam(m -> false, false).addValidator(v -> {
+        private final Parameter<Boolean> docValues = Parameter.docValuesParam(FunctionalUtils.alwaysFalseFun(), false).addValidator(v -> {
             if (v) {
                 throw new MapperParsingException("Cannot set [doc_values] on field of type [search_as_you_type]");
             }

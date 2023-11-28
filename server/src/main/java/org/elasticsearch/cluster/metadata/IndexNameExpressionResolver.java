@@ -25,6 +25,7 @@ import org.elasticsearch.common.time.DateUtils;
 import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.common.util.set.Sets;
+import org.elasticsearch.core.FunctionalUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexNotFoundException;
@@ -947,7 +948,7 @@ public class IndexNameExpressionResolver {
         final SystemIndexAccessLevel systemIndexAccessLevel = getSystemIndexAccessLevel();
         final Predicate<String> systemIndexAccessLevelPredicate;
         if (systemIndexAccessLevel == SystemIndexAccessLevel.NONE) {
-            systemIndexAccessLevelPredicate = s -> false;
+            systemIndexAccessLevelPredicate = FunctionalUtils.alwaysFalse();
         } else if (systemIndexAccessLevel == SystemIndexAccessLevel.BACKWARDS_COMPATIBLE_ONLY) {
             systemIndexAccessLevelPredicate = getNetNewSystemIndexPredicate();
         } else if (systemIndexAccessLevel == SystemIndexAccessLevel.ALL) {
@@ -981,7 +982,7 @@ public class IndexNameExpressionResolver {
         private final Predicate<String> netNewSystemIndexPredicate;
 
         Context(ClusterState state, IndicesOptions options, SystemIndexAccessLevel systemIndexAccessLevel) {
-            this(state, options, systemIndexAccessLevel, ALWAYS_TRUE, s -> false);
+            this(state, options, systemIndexAccessLevel, ALWAYS_TRUE, FunctionalUtils.alwaysFalse());
         }
 
         Context(
@@ -1722,7 +1723,18 @@ public class IndexNameExpressionResolver {
         }
 
         public ResolverContext(long startTime) {
-            super(null, null, startTime, false, false, false, false, SystemIndexAccessLevel.ALL, name -> false, name -> false);
+            super(
+                null,
+                null,
+                startTime,
+                false,
+                false,
+                false,
+                false,
+                SystemIndexAccessLevel.ALL,
+                FunctionalUtils.alwaysFalse(),
+                FunctionalUtils.alwaysFalse()
+            );
         }
 
         @Override

@@ -10,6 +10,7 @@ package org.elasticsearch.xpack.esql.expression.function.scalar.math;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.Rounding;
 import org.elasticsearch.compute.operator.EvalOperator.ExpressionEvaluator;
+import org.elasticsearch.core.FunctionalUtils;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.mapper.DateFieldMapper;
 import org.elasticsearch.xpack.esql.EsqlIllegalArgumentException;
@@ -181,7 +182,7 @@ public class AutoBucket extends ScalarFunction implements EvaluatorMapper {
         if (field.dataType().isNumeric()) {
             return resolveType((e, o) -> isNumeric(e, sourceText(), o));
         }
-        return isType(field, e -> false, sourceText(), FIRST, "datetime", "numeric");
+        return isType(field, FunctionalUtils.alwaysFalse(), sourceText(), FIRST, "datetime", "numeric");
     }
 
     private TypeResolution resolveType(BiFunction<Expression, TypeResolutions.ParamOrdinal, TypeResolution> checkThirdAndForth) {

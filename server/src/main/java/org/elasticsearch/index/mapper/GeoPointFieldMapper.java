@@ -26,6 +26,7 @@ import org.elasticsearch.common.geo.ShapeRelation;
 import org.elasticsearch.common.geo.SimpleVectorTileFormatter;
 import org.elasticsearch.common.unit.DistanceUnit;
 import org.elasticsearch.core.CheckedFunction;
+import org.elasticsearch.core.FunctionalUtils;
 import org.elasticsearch.geometry.Point;
 import org.elasticsearch.index.IndexMode;
 import org.elasticsearch.index.IndexVersion;
@@ -127,7 +128,7 @@ public class GeoPointFieldMapper extends AbstractPointGeometryFieldMapper<GeoPoi
                 }
             });
             // We allow `time_series_dimension` parameter to be parsed, but only allow it to be `false`
-            this.dimension = TimeSeriesParams.dimensionParam(m -> false).addValidator(v -> {
+            this.dimension = TimeSeriesParams.dimensionParam(FunctionalUtils.alwaysFalseFun()).addValidator(v -> {
                 if (v) {
                     throw new IllegalArgumentException(
                         "Parameter [" + TimeSeriesParams.TIME_SERIES_DIMENSION_PARAM + "] cannot be set to geo_point"

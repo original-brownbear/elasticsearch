@@ -12,6 +12,7 @@ import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexMetadata.State;
+import org.elasticsearch.core.FunctionalUtils;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.indices.SystemIndices.SystemIndexAccessLevel;
@@ -21,7 +22,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Predicate;
 
 import static org.elasticsearch.cluster.metadata.DataStreamTestHelper.createBackingIndex;
 import static org.elasticsearch.common.util.set.Sets.newHashSet;
@@ -31,8 +31,6 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
 public class WildcardExpressionResolverTests extends ESTestCase {
-
-    private static final Predicate<String> NONE = name -> false;
 
     public void testConvertWildcardsJustIndicesTests() {
         Metadata.Builder mdBuilder = Metadata.builder()
@@ -577,8 +575,8 @@ public class WildcardExpressionResolverTests extends ESTestCase {
                 false,
                 true,
                 SystemIndexAccessLevel.NONE,
-                NONE,
-                NONE
+                FunctionalUtils.alwaysFalse(),
+                FunctionalUtils.alwaysFalse()
             );
 
             // data stream's corresponding backing indices are resolved
@@ -634,8 +632,8 @@ public class WildcardExpressionResolverTests extends ESTestCase {
                 false,
                 true,
                 SystemIndexAccessLevel.NONE,
-                NONE,
-                NONE
+                FunctionalUtils.alwaysFalse(),
+                FunctionalUtils.alwaysFalse()
             );
 
             // data stream's corresponding backing indices are resolved

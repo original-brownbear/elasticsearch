@@ -12,6 +12,7 @@ import org.elasticsearch.common.breaker.CircuitBreakingException;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.BigArrays;
+import org.elasticsearch.core.FunctionalUtils;
 import org.elasticsearch.indices.breaker.CircuitBreakerMetrics;
 import org.elasticsearch.indices.breaker.HierarchyCircuitBreakerService;
 import org.elasticsearch.search.aggregations.Aggregation;
@@ -248,7 +249,7 @@ public abstract class InternalMultiBucketAggregationTestCase<T extends InternalA
         AggregationReduceContext reduceContext = new AggregationReduceContext.ForFinal(
             BigArrays.NON_RECYCLING_INSTANCE,
             null,
-            () -> false,
+            FunctionalUtils.alwaysFalseSupplier(),
             mock(AggregationBuilder.class),
             new IntConsumer() {
                 int buckets;
@@ -285,7 +286,7 @@ public abstract class InternalMultiBucketAggregationTestCase<T extends InternalA
         AggregationReduceContext reduceContext = new AggregationReduceContext.ForFinal(
             BigArrays.NON_RECYCLING_INSTANCE,
             null,
-            () -> false,
+            FunctionalUtils.alwaysFalseSupplier(),
             mock(AggregationBuilder.class),
             v -> breaker.getBreaker("request").addEstimateBytesAndMaybeBreak(0, "test"),
             PipelineTree.EMPTY

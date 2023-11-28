@@ -14,6 +14,7 @@ import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.core.FunctionalUtils;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.persistent.PersistentTasksCustomMetadata.PersistentTask;
 import org.elasticsearch.persistent.PersistentTasksService.WaitForPersistentTaskListener;
@@ -244,7 +245,12 @@ public class PersistentTasksExecutorIT extends ESIntegTestCase {
         }
 
         WaitForPersistentTaskFuture<?> future1 = new WaitForPersistentTaskFuture<>();
-        persistentTasksService.waitForPersistentTaskCondition(taskId, task -> false, TimeValue.timeValueMillis(10), future1);
+        persistentTasksService.waitForPersistentTaskCondition(
+            taskId,
+            FunctionalUtils.alwaysFalse(),
+            TimeValue.timeValueMillis(10),
+            future1
+        );
 
         assertFutureThrows(future1, IllegalStateException.class, "timed out after 10ms");
 

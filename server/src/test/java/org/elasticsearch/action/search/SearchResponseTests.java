@@ -19,6 +19,7 @@ import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.ChunkedToXContent;
 import org.elasticsearch.common.xcontent.XContentHelper;
+import org.elasticsearch.core.FunctionalUtils;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.rest.action.search.RestSearchAction;
 import org.elasticsearch.search.SearchHit;
@@ -199,7 +200,12 @@ public class SearchResponseTests extends ESTestCase {
             remoteClusterIndices.put("cluster_" + i, new OriginalIndices(new String[] { "foo", "bar*" }, IndicesOptions.lenientExpand()));
         }
 
-        var clusters = new SearchResponse.Clusters(localIndices, remoteClusterIndices, ccsMinimizeRoundtrips, alias -> false);
+        var clusters = new SearchResponse.Clusters(
+            localIndices,
+            remoteClusterIndices,
+            ccsMinimizeRoundtrips,
+            FunctionalUtils.alwaysFalse()
+        );
 
         int successful = successfulClusters;
         int skipped = skippedClusters;

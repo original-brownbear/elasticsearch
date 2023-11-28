@@ -47,6 +47,7 @@ import org.elasticsearch.common.time.DateFormatter;
 import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.common.xcontent.XContentHelper;
+import org.elasticsearch.core.FunctionalUtils;
 import org.elasticsearch.core.Strings;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.index.IndexSettings;
@@ -567,7 +568,7 @@ public class IngestServiceTests extends ESTestCase {
         ingestService.applyClusterState(new ClusterChangedEvent("", clusterState, previousClusterState));
 
         assertThat(ingestService.getPipelineWithProcessorType(FakeProcessor.class, processor -> true), containsInAnyOrder("_id1", "_id2"));
-        assertThat(ingestService.getPipelineWithProcessorType(FakeProcessor.class, processor -> false), emptyIterable());
+        assertThat(ingestService.getPipelineWithProcessorType(FakeProcessor.class, FunctionalUtils.alwaysFalse()), emptyIterable());
         assertThat(ingestService.getPipelineWithProcessorType(WrappingProcessorImpl.class, processor -> true), containsInAnyOrder("_id1"));
     }
 

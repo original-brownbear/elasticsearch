@@ -14,6 +14,7 @@ import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver.Context;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver.DateMathExpressionResolver;
+import org.elasticsearch.core.FunctionalUtils;
 import org.elasticsearch.indices.SystemIndices.SystemIndexAccessLevel;
 import org.elasticsearch.test.ESTestCase;
 import org.hamcrest.Matchers;
@@ -198,8 +199,8 @@ public class DateMathExpressionResolverTests extends ESTestCase {
             this.context.getOptions(),
             now.toInstant().toEpochMilli(),
             SystemIndexAccessLevel.NONE,
-            name -> false,
-            name -> false
+            FunctionalUtils.alwaysFalse(),
+            FunctionalUtils.alwaysFalse()
         );
         List<String> results = DateMathExpressionResolver.resolve(
             context,

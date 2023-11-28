@@ -24,6 +24,7 @@ import org.elasticsearch.cluster.metadata.IndexMetadata.State;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
+import org.elasticsearch.core.FunctionalUtils;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexNotFoundException;
@@ -1634,7 +1635,7 @@ public class IndexNameExpressionResolverTests extends ESTestCase {
             state,
             "test-0",
             x -> x.alias().equals("test-alias-1"),
-            x -> false,
+            FunctionalUtils.alwaysFalse(),
             true,
             resolvedExpressions
         );

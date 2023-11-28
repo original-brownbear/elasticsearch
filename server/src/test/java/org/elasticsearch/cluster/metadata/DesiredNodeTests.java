@@ -12,6 +12,7 @@ import org.elasticsearch.Version;
 import org.elasticsearch.cluster.node.DiscoveryNodeRole;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeValue;
+import org.elasticsearch.core.FunctionalUtils;
 import org.elasticsearch.test.ESTestCase;
 
 import static org.elasticsearch.cluster.node.DiscoveryNodeRole.VOTING_ONLY_NODE_ROLE;
@@ -202,7 +203,7 @@ public class DesiredNodeTests extends ESTestCase {
                 Version.CURRENT
             );
             assertThat(desiredNode.clusterHasRequiredFeatures(DesiredNode.RANGE_FLOAT_PROCESSORS_SUPPORTED::equals), is(true));
-            assertThat(desiredNode.clusterHasRequiredFeatures(nf -> false), is(false));
+            assertThat(desiredNode.clusterHasRequiredFeatures(FunctionalUtils.alwaysFalse()), is(false));
         }
 
         {
@@ -214,13 +215,13 @@ public class DesiredNodeTests extends ESTestCase {
                 Version.CURRENT
             );
             assertThat(desiredNode.clusterHasRequiredFeatures(DesiredNode.RANGE_FLOAT_PROCESSORS_SUPPORTED::equals), is(true));
-            assertThat(desiredNode.clusterHasRequiredFeatures(nf -> false), is(false));
+            assertThat(desiredNode.clusterHasRequiredFeatures(FunctionalUtils.alwaysFalse()), is(false));
         }
 
         {
             final var desiredNode = new DesiredNode(settings, 2.0f, ByteSizeValue.ofGb(1), ByteSizeValue.ofGb(1), Version.CURRENT);
             assertThat(desiredNode.clusterHasRequiredFeatures(DesiredNode.RANGE_FLOAT_PROCESSORS_SUPPORTED::equals), is(true));
-            assertThat(desiredNode.clusterHasRequiredFeatures(nf -> false), is(true));
+            assertThat(desiredNode.clusterHasRequiredFeatures(FunctionalUtils.alwaysFalse()), is(true));
         }
     }
 

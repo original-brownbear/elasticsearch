@@ -18,6 +18,7 @@ import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.common.util.concurrent.EsExecutors.TaskTrackingConfig;
 import org.elasticsearch.common.util.concurrent.EsThreadPoolExecutor;
+import org.elasticsearch.core.FunctionalUtils;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.search.DocValueFormat;
 import org.elasticsearch.search.SearchShardTarget;
@@ -108,7 +109,7 @@ public class QueryPhaseResultConsumerTests extends ESTestCase {
             executor,
             new NoopCircuitBreaker(CircuitBreaker.REQUEST),
             searchPhaseController,
-            () -> false,
+            FunctionalUtils.alwaysFalseSupplier(),
             searchProgressListener,
             10,
             e -> onPartialMergeFailure.accumulateAndGet(e, (prev, curr) -> {

@@ -15,6 +15,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
 import org.elasticsearch.common.util.concurrent.ListenableFuture;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
+import org.elasticsearch.core.FunctionalUtils;
 import org.elasticsearch.tasks.TaskCancelledException;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.threadpool.TestThreadPool;
@@ -53,12 +54,12 @@ public class CancellableSingleObjectCacheTests extends ESTestCase {
 
         // The first get() calls the refresh function
         final TestFuture future0 = new TestFuture();
-        testCache.get("foo", () -> false, future0);
+        testCache.get("foo", FunctionalUtils.alwaysFalseBooleanSupplier(), future0);
         testCache.assertPendingRefreshes(1);
 
         // The second get() with a matching key does not refresh again
         final TestFuture future1 = new TestFuture();
-        testCache.get("foo", () -> false, future1);
+        testCache.get("foo", FunctionalUtils.alwaysFalseBooleanSupplier(), future1);
         assertFalse(future0.isDone());
         assertFalse(future1.isDone());
         testCache.assertPendingRefreshes(1);
@@ -68,13 +69,13 @@ public class CancellableSingleObjectCacheTests extends ESTestCase {
 
         // A further get() call with a matching key re-uses the cached value
         final TestFuture future2 = new TestFuture();
-        testCache.get("foo", () -> false, future2);
+        testCache.get("foo", FunctionalUtils.alwaysFalseBooleanSupplier(), future2);
         testCache.assertNoPendingRefreshes();
         assertThat(future2.result(), sameInstance(future1.result()));
 
         // A call with a different key triggers another refresh
         final TestFuture future3 = new TestFuture();
-        testCache.get("bar", () -> false, future3);
+        testCache.get("bar", FunctionalUtils.alwaysFalseBooleanSupplier(), future3);
         assertFalse(future3.isDone());
         testCache.assertPendingRefreshes(1);
         testCache.completeNextRefresh("bar", 2);
@@ -94,7 +95,7 @@ public class CancellableSingleObjectCacheTests extends ESTestCase {
 
         // However the refresh continues and makes its result available to a later get() call for the same value.
         final TestFuture future2 = new TestFuture();
-        testCache.get("foo", () -> false, future2);
+        testCache.get("foo", FunctionalUtils.alwaysFalseBooleanSupplier(), future2);
         testCache.assertPendingRefreshes(1);
         testCache.completeNextRefresh("foo", 1);
         assertThat(future2.result(), equalTo(1));
@@ -117,7 +118,7 @@ public class CancellableSingleObjectCacheTests extends ESTestCase {
 
         // A second get() call with a non-matching key cancels the original refresh and starts another one
         final TestFuture future2 = new TestFuture();
-        testCache.get("bar", () -> false, future2);
+        testCache.get("bar", FunctionalUtils.alwaysFalseBooleanSupplier(), future2);
         testCache.assertPendingRefreshes(2);
         testCache.assertNextRefreshCancelled();
         expectThrows(TaskCancelledException.class, future1::result);
@@ -130,12 +131,12 @@ public class CancellableSingleObjectCacheTests extends ESTestCase {
 
         // This computation is superseded before it completes.
         final TestFuture future1 = new TestFuture();
-        testCache.get("foo", () -> false, future1);
+        testCache.get("foo", FunctionalUtils.alwaysFalseBooleanSupplier(), future1);
         testCache.assertPendingRefreshes(1);
 
         // A second get() call with a non-matching key supersedes the original refresh and starts another one
         final TestFuture future2 = new TestFuture();
-        testCache.get("bar", () -> false, future2);
+        testCache.get("bar", FunctionalUtils.alwaysFalseBooleanSupplier(), future2);
         testCache.assertPendingRefreshes(2);
         testCache.assertNextRefreshCancelled();
         assertFalse(future1.isDone());
@@ -156,7 +157,7 @@ public class CancellableSingleObjectCacheTests extends ESTestCase {
 
         // A second get() call with a non-matching key supersedes the original refresh and starts another one
         final TestFuture future2 = new TestFuture();
-        testCache.get("bar", () -> false, future2);
+        testCache.get("bar", FunctionalUtils.alwaysFalseBooleanSupplier(), future2);
         testCache.assertPendingRefreshes(2);
 
         testCache.assertNextRefreshCancelled();
@@ -173,8 +174,8 @@ public class CancellableSingleObjectCacheTests extends ESTestCase {
         // If a refresh results in an exception then all the pending get() calls complete exceptionally
         final TestFuture future0 = new TestFuture();
         final TestFuture future1 = new TestFuture();
-        testCache.get("foo", () -> false, future0);
-        testCache.get("foo", () -> false, future1);
+        testCache.get("foo", FunctionalUtils.alwaysFalseBooleanSupplier(), future0);
+        testCache.get("foo", FunctionalUtils.alwaysFalseBooleanSupplier(), future1);
         testCache.assertPendingRefreshes(1);
         final ElasticsearchException exception = new ElasticsearchException("simulated");
         testCache.completeNextRefresh(exception);
@@ -184,7 +185,7 @@ public class CancellableSingleObjectCacheTests extends ESTestCase {
         testCache.assertNoPendingRefreshes();
         // The exception is not cached, however, so a subsequent get() call with a matching key performs another refresh
         final TestFuture future2 = new TestFuture();
-        testCache.get("foo", () -> false, future2);
+        testCache.get("foo", FunctionalUtils.alwaysFalseBooleanSupplier(), future2);
         testCache.assertPendingRefreshes(1);
         testCache.completeNextRefresh("foo", 1);
         assertThat(future2.actionResult(), equalTo(1));
@@ -413,7 +414,7 @@ public class CancellableSingleObjectCacheTests extends ESTestCase {
         cancelledThread.start();
         safeAwait(barrier); // main-thread barrier 1
         isCancelled.set(true);
-        testCache.get("successful", () -> false, successfulFuture);
+        testCache.get("successful", FunctionalUtils.alwaysFalseBooleanSupplier(), successfulFuture);
         cancelledThread.join();
 
         expectThrows(TaskCancelledException.class, cancelledFuture::result);

@@ -11,6 +11,7 @@ package org.elasticsearch.ingest.geoip;
 import com.maxmind.geoip2.DatabaseReader;
 
 import org.elasticsearch.common.CheckedSupplier;
+import org.elasticsearch.core.FunctionalUtils;
 import org.elasticsearch.core.PathUtils;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.RandomDocumentPicks;
@@ -513,7 +514,7 @@ public class GeoIpProcessorTests extends ESTestCase {
             null,
             "source_field",
             loader("/GeoLite2-City.mmdb"),
-            () -> false,
+            FunctionalUtils.alwaysFalseSupplier(),
             "target_field",
             EnumSet.allOf(GeoIpProcessor.Property.class),
             false,

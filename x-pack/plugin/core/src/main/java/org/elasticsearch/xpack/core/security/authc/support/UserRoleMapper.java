@@ -14,6 +14,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.util.automaton.CharacterRunAutomaton;
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.core.FunctionalUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.xpack.core.security.authc.RealmConfig;
 import org.elasticsearch.xpack.core.security.authc.support.mapper.expressiondsl.ExpressionModel;
@@ -87,7 +88,7 @@ public interface UserRoleMapper {
                 groups,
                 groups.stream().<Predicate<FieldExpression.FieldValue>>map(g -> new DistinguishedNamePredicate(g, dnNormalizer))
                     .reduce(Predicate::or)
-                    .orElse(fieldValue -> false)
+                    .orElse(FunctionalUtils.alwaysFalse())
             );
             metadata.keySet().forEach(k -> model.defineField("metadata." + k, metadata.get(k)));
             model.defineField("realm.name", realm.name());
@@ -216,7 +217,7 @@ public interface UserRoleMapper {
      *
      * The X500 specs define how to compare DistinguishedNames (but we mostly rely on {@link DN#equals(Object)}),
      * which means "CN=me,DC=example,DC=com" should be equal to "cn=me, dc=Example, dc=COM" (and other variations).
-
+    
      * The {@link FieldExpression} class doesn't know about special rules for special data types, but the
      * {@link ExpressionModel} class can take a custom {@code Predicate} that tests whether the data in the model
      * matches the {@link FieldExpression.FieldValue value} in the expression.

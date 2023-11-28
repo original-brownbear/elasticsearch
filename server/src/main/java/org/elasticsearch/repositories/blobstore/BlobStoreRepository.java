@@ -77,6 +77,7 @@ import org.elasticsearch.common.xcontent.ChunkedToXContent;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
 import org.elasticsearch.core.AbstractRefCounted;
 import org.elasticsearch.core.CheckedConsumer;
+import org.elasticsearch.core.FunctionalUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.RefCounted;
 import org.elasticsearch.core.Releasable;
@@ -2615,26 +2616,33 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     if (snapshotIdsWithMissingDetails.isEmpty() == false) {
                         final Map<SnapshotId, SnapshotDetails> extraDetailsMap = new ConcurrentHashMap<>();
                         getSnapshotInfo(
-                            new GetSnapshotInfoContext(snapshotIdsWithMissingDetails, false, () -> false, (context, snapshotInfo) -> {
-                                extraDetailsMap.put(snapshotInfo.snapshotId(), SnapshotDetails.fromSnapshotInfo(snapshotInfo));
-                            }, ActionListener.runAfter(new ActionListener<>() {
-                                @Override
-                                public void onResponse(Void aVoid) {
-                                    logger.info(
-                                        "Successfully loaded all snapshots' detailed information for {} from snapshot metadata",
-                                        AllocationService.firstListElementsToCommaDelimitedString(
-                                            snapshotIdsWithMissingDetails,
-                                            SnapshotId::toString,
-                                            logger.isDebugEnabled()
-                                        )
-                                    );
-                                }
+                            new GetSnapshotInfoContext(
+                                snapshotIdsWithMissingDetails,
+                                false,
+                                FunctionalUtils.alwaysFalseBooleanSupplier(),
+                                (context, snapshotInfo) -> extraDetailsMap.put(
+                                    snapshotInfo.snapshotId(),
+                                    SnapshotDetails.fromSnapshotInfo(snapshotInfo)
+                                ),
+                                ActionListener.runAfter(new ActionListener<>() {
+                                    @Override
+                                    public void onResponse(Void aVoid) {
+                                        logger.info(
+                                            "Successfully loaded all snapshots' detailed information for {} from snapshot metadata",
+                                            AllocationService.firstListElementsToCommaDelimitedString(
+                                                snapshotIdsWithMissingDetails,
+                                                SnapshotId::toString,
+                                                logger.isDebugEnabled()
+                                            )
+                                        );
+                                    }
 
-                                @Override
-                                public void onFailure(Exception e) {
-                                    logger.warn("Failure when trying to load missing details from snapshot metadata", e);
-                                }
-                            }, () -> filterRepositoryDataStep.onResponse(repositoryData.withExtraDetails(extraDetailsMap))))
+                                    @Override
+                                    public void onFailure(Exception e) {
+                                        logger.warn("Failure when trying to load missing details from snapshot metadata", e);
+                                    }
+                                }, () -> filterRepositoryDataStep.onResponse(repositoryData.withExtraDetails(extraDetailsMap)))
+                            )
                         );
                     } else {
                         filterRepositoryDataStep.onResponse(repositoryData);

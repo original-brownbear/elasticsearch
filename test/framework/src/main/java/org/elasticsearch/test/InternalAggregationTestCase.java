@@ -22,6 +22,7 @@ import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.util.MockBigArrays;
 import org.elasticsearch.common.util.MockPageCacheRecycler;
 import org.elasticsearch.common.xcontent.XContentParserUtils;
+import org.elasticsearch.core.FunctionalUtils;
 import org.elasticsearch.index.mapper.DateFieldMapper.Resolution;
 import org.elasticsearch.indices.breaker.NoneCircuitBreakerService;
 import org.elasticsearch.plugins.Plugin;
@@ -190,12 +191,23 @@ public abstract class InternalAggregationTestCase<T extends InternalAggregation>
         return new AggregationReduceContext.Builder() {
             @Override
             public AggregationReduceContext forPartialReduction() {
-                return new AggregationReduceContext.ForPartial(BigArrays.NON_RECYCLING_INSTANCE, null, () -> false, aggs);
+                return new AggregationReduceContext.ForPartial(
+                    BigArrays.NON_RECYCLING_INSTANCE,
+                    null,
+                    FunctionalUtils.alwaysFalseSupplier(),
+                    aggs
+                );
             }
 
             @Override
             public AggregationReduceContext forFinalReduction() {
-                return new AggregationReduceContext.ForFinal(BigArrays.NON_RECYCLING_INSTANCE, null, () -> false, aggs, b -> {});
+                return new AggregationReduceContext.ForFinal(
+                    BigArrays.NON_RECYCLING_INSTANCE,
+                    null,
+                    FunctionalUtils.alwaysFalseSupplier(),
+                    aggs,
+                    b -> {}
+                );
             }
         };
     }
@@ -208,7 +220,12 @@ public abstract class InternalAggregationTestCase<T extends InternalAggregation>
         return new AggregationReduceContext.Builder() {
             @Override
             public AggregationReduceContext forPartialReduction() {
-                return new AggregationReduceContext.ForPartial(BigArrays.NON_RECYCLING_INSTANCE, null, () -> false, agg);
+                return new AggregationReduceContext.ForPartial(
+                    BigArrays.NON_RECYCLING_INSTANCE,
+                    null,
+                    FunctionalUtils.alwaysFalseSupplier(),
+                    agg
+                );
             }
 
             @Override
@@ -216,7 +233,7 @@ public abstract class InternalAggregationTestCase<T extends InternalAggregation>
                 return new AggregationReduceContext.ForFinal(
                     BigArrays.NON_RECYCLING_INSTANCE,
                     null,
-                    () -> false,
+                    FunctionalUtils.alwaysFalseSupplier(),
                     agg,
                     b -> {},
                     PipelineTree.EMPTY
@@ -432,7 +449,7 @@ public abstract class InternalAggregationTestCase<T extends InternalAggregation>
             AggregationReduceContext context = new AggregationReduceContext.ForPartial(
                 bigArrays,
                 mockScriptService,
-                () -> false,
+                FunctionalUtils.alwaysFalseSupplier(),
                 inputs.builder()
             );
             @SuppressWarnings("unchecked")
@@ -462,7 +479,7 @@ public abstract class InternalAggregationTestCase<T extends InternalAggregation>
         AggregationReduceContext context = new AggregationReduceContext.ForFinal(
             bigArrays,
             mockScriptService,
-            () -> false,
+            FunctionalUtils.alwaysFalseSupplier(),
             inputs.builder(),
             bucketConsumer,
             PipelineTree.EMPTY
@@ -658,7 +675,7 @@ public abstract class InternalAggregationTestCase<T extends InternalAggregation>
      * Overwrite this in your test if other than the basic xContent paths should be excluded during insertion of random fields
      */
     protected Predicate<String> excludePathsFromXContentInsertion() {
-        return path -> false;
+        return FunctionalUtils.alwaysFalse();
     }
 
     /**

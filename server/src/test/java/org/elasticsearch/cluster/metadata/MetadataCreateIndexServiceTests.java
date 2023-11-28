@@ -36,6 +36,7 @@ import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.IndexScopedSettings;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.core.FunctionalUtils;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexModule;
@@ -712,7 +713,7 @@ public class MetadataCreateIndexServiceTests extends ESTestCase {
                 xContentRegistry(),
                 searchExecutionContext,
                 IndexNameExpressionResolver::resolveDateMathExpression,
-                m -> false
+                FunctionalUtils.alwaysFalse()
             )
         );
     }
@@ -730,7 +731,7 @@ public class MetadataCreateIndexServiceTests extends ESTestCase {
             xContentRegistry(),
             searchExecutionContext,
             IndexNameExpressionResolver::resolveDateMathExpression,
-            m -> false
+            FunctionalUtils.alwaysFalse()
         );
 
         assertEquals("date-math-based-2021-01-01", aliasMetadata.get(0).alias());
@@ -764,7 +765,7 @@ public class MetadataCreateIndexServiceTests extends ESTestCase {
             xContentRegistry(),
             searchExecutionContext,
             IndexNameExpressionResolver::resolveDateMathExpression,
-            m -> false
+            FunctionalUtils.alwaysFalse()
         );
 
         Settings aggregatedIndexSettings = aggregateIndexSettings(
@@ -864,7 +865,7 @@ public class MetadataCreateIndexServiceTests extends ESTestCase {
             xContentRegistry(),
             searchExecutionContext,
             IndexNameExpressionResolver::resolveDateMathExpression,
-            m -> false
+            FunctionalUtils.alwaysFalse()
         );
 
         assertThat(aggregatedIndexSettings.get(SETTING_NUMBER_OF_SHARDS), equalTo("12"));
@@ -905,7 +906,7 @@ public class MetadataCreateIndexServiceTests extends ESTestCase {
             xContentRegistry(),
             searchExecutionContext,
             IndexNameExpressionResolver::resolveDateMathExpression,
-            m -> false
+            FunctionalUtils.alwaysFalse()
         );
 
         assertThat(resolvedAliases.get(0).alias(), equalTo("jan-2021-01-01"));

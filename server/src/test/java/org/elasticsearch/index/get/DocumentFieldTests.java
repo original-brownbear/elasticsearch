@@ -11,6 +11,7 @@ package org.elasticsearch.index.get;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.document.DocumentField;
+import org.elasticsearch.core.FunctionalUtils;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.index.mapper.IgnoredFieldMapper;
 import org.elasticsearch.indices.IndicesModule;
@@ -110,7 +111,7 @@ public class DocumentFieldTests extends ESTestCase {
     }
 
     public static Tuple<DocumentField, DocumentField> randomDocumentField(XContentType xContentType) {
-        return randomDocumentField(xContentType, randomBoolean(), fieldName -> false);  // don't exclude any meta-fields
+        return randomDocumentField(xContentType, randomBoolean(), FunctionalUtils.alwaysFalse());  // don't exclude any meta-fields
     }
 
     public static Tuple<DocumentField, DocumentField> randomDocumentField(

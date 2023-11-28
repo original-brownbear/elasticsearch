@@ -7,6 +7,7 @@
 package org.elasticsearch.xpack.ml.datafeed.extractor.aggregation;
 
 import org.elasticsearch.common.util.set.Sets;
+import org.elasticsearch.core.FunctionalUtils;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.aggregations.Aggregations;
@@ -692,7 +693,7 @@ public class AggregationToJsonProcessorTests extends ESTestCase {
             compositeAggValueSource
         );
         processor.process(aggregations);
-        processor.writeAllDocsCancellable(_timestamp -> false, outputStream);
+        processor.writeAllDocsCancellable(FunctionalUtils.alwaysFalse(), outputStream);
         keyValuePairsWritten = processor.getKeyValueCount();
         return outputStream.toString(StandardCharsets.UTF_8.name());
     }

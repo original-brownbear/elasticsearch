@@ -8,6 +8,7 @@
 
 package org.elasticsearch.common.util.iterable;
 
+import org.elasticsearch.core.FunctionalUtils;
 import org.elasticsearch.test.ESTestCase;
 
 import java.util.ArrayList;
@@ -88,7 +89,7 @@ public class IterablesTests extends ESTestCase {
             final String val = list.get(i);
             assertThat(Iterables.indexOf(list, val::equals), is(i));
         }
-        assertThat(Iterables.indexOf(list, s -> false), is(-1));
+        assertThat(Iterables.indexOf(list, FunctionalUtils.alwaysFalse()), is(-1));
         assertThat(Iterables.indexOf(list, s -> true), is(0));
     }
 

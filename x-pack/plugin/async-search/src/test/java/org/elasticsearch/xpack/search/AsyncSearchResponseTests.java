@@ -20,6 +20,7 @@ import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.ChunkedToXContent;
 import org.elasticsearch.common.xcontent.XContentElasticsearchExtension;
+import org.elasticsearch.core.FunctionalUtils;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.script.ScriptException;
@@ -763,7 +764,7 @@ public class AsyncSearchResponseTests extends ESTestCase {
             remoteClusterIndices.put("cluster_" + i, new OriginalIndices(new String[] { "foo", "bar*" }, IndicesOptions.lenientExpand()));
         }
 
-        return new SearchResponse.Clusters(localIndices, remoteClusterIndices, ccsMinimizeRoundtrips, alias -> false);
+        return new SearchResponse.Clusters(localIndices, remoteClusterIndices, ccsMinimizeRoundtrips, FunctionalUtils.alwaysFalse());
     }
 
     static SearchResponse.Clusters createCCSClusterObjects(

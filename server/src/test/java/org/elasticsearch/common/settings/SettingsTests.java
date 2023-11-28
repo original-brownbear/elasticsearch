@@ -18,6 +18,7 @@ import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
+import org.elasticsearch.core.FunctionalUtils;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.xcontent.ToXContent;
@@ -395,7 +396,7 @@ public class SettingsTests extends ESTestCase {
         builder.put("a.c", "ac1");
         builder.put("a.b.c.d", "ab3");
 
-        Settings filteredSettings = builder.build().filter((k) -> false);
+        Settings filteredSettings = builder.build().filter(FunctionalUtils.alwaysFalse());
         assertEquals(0, filteredSettings.size());
 
         assertFalse(filteredSettings.keySet().contains("a.c"));

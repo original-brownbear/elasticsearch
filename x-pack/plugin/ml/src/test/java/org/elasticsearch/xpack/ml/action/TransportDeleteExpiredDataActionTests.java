@@ -12,6 +12,7 @@ import org.elasticsearch.action.support.ActionTestUtils;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
+import org.elasticsearch.core.FunctionalUtils;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.threadpool.TestThreadPool;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -92,7 +93,7 @@ public class TransportDeleteExpiredDataActionTests extends ESTestCase {
             response -> succeeded.set(response.isDeleted())
         );
 
-        BooleanSupplier isTimedOutSupplier = () -> false;
+        BooleanSupplier isTimedOutSupplier = FunctionalUtils.alwaysFalseBooleanSupplier();
 
         DeleteExpiredDataAction.Request request = new DeleteExpiredDataAction.Request(null, null);
         transportDeleteExpiredDataAction.deleteExpiredData(request, removers.iterator(), 1.0f, finalListener, isTimedOutSupplier, true);

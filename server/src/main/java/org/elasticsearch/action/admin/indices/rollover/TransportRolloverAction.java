@@ -41,6 +41,7 @@ import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
+import org.elasticsearch.core.FunctionalUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.index.shard.DocsStats;
 import org.elasticsearch.tasks.CancellableTask;
@@ -197,7 +198,7 @@ public class TransportRolloverAction extends TransportMasterNodeAction<RolloverR
                 .collect(Collectors.toMap(result -> result.condition().toString(), Condition.Result::matched));
         } else {
             // no conditions matched
-            return conditions.stream().collect(Collectors.toMap(Condition::toString, cond -> false));
+            return conditions.stream().collect(Collectors.toMap(Condition::toString, FunctionalUtils.alwaysFalseFun()));
         }
     }
 

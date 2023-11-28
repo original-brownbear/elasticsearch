@@ -41,6 +41,7 @@ import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.Maps;
+import org.elasticsearch.core.FunctionalUtils;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.snapshots.SnapshotShardSizeInfo;
@@ -106,7 +107,12 @@ public class DesiredBalanceComputerTests extends ESAllocationTestCase {
 
         // if the isFresh flag is false then we only do one iteration, allocating the primaries but not the replicas
         var desiredBalance0 = DesiredBalance.INITIAL;
-        var desiredBalance1 = desiredBalanceComputer.compute(desiredBalance0, createInput(clusterState), queue(), input -> false);
+        var desiredBalance1 = desiredBalanceComputer.compute(
+            desiredBalance0,
+            createInput(clusterState),
+            queue(),
+            FunctionalUtils.alwaysFalse()
+        );
         assertDesiredAssignments(
             desiredBalance1,
             Map.of(

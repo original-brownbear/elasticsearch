@@ -21,6 +21,7 @@ import org.elasticsearch.common.settings.Setting.Property;
 import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
+import org.elasticsearch.core.FunctionalUtils;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.IndexVersions;
 import org.elasticsearch.index.analysis.NamedAnalyzer;
@@ -828,7 +829,10 @@ public abstract class FieldMapper extends Mapper {
             return new Parameter<>(
                 name,
                 updateable,
-                defaultValue ? () -> true : () -> false,
+                defaultValue
+                    ? () -> true
+                    : FunctionalUtils
+                        .alwaysFalseSupplier(),
                 (n, c, o) -> XContentMapValues.nodeBooleanValue(o),
                 initializer,
                 XContentBuilder::field,

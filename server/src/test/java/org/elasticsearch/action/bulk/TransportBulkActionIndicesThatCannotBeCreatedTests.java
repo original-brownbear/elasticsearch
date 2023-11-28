@@ -24,6 +24,7 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.AtomicArray;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
+import org.elasticsearch.core.FunctionalUtils;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.IndexingPressure;
@@ -56,7 +57,7 @@ public class TransportBulkActionIndicesThatCannotBeCreatedTests extends ESTestCa
         // Test emulating that index can be auto-created
         indicesThatCannotBeCreatedTestCase(emptySet(), bulkRequest, index -> true, noop);
         // Test emulating that index cannot be auto-created
-        indicesThatCannotBeCreatedTestCase(emptySet(), bulkRequest, index -> false, noop);
+        indicesThatCannotBeCreatedTestCase(emptySet(), bulkRequest, FunctionalUtils.alwaysFalseFun(), noop);
         // Test emulating auto_create_index=true with some indices already created.
         indicesThatCannotBeCreatedTestCase(emptySet(), bulkRequest, index -> randomBoolean(), noop);
     }

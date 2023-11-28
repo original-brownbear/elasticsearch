@@ -12,6 +12,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.util.MockBigArrays;
 import org.elasticsearch.common.util.MockPageCacheRecycler;
+import org.elasticsearch.core.FunctionalUtils;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.indices.breaker.NoneCircuitBreakerService;
 import org.elasticsearch.test.ESTestCase;
@@ -32,7 +33,7 @@ import static org.hamcrest.Matchers.lessThan;
 
 public class EclatMapReducerTests extends ESTestCase {
 
-    private static Supplier<Boolean> doNotCancelSupplier = () -> false;
+    private static final Supplier<Boolean> doNotCancelSupplier = FunctionalUtils.alwaysFalseSupplier();
 
     public void testSimple() throws IOException {
         Field field1 = createKeywordFieldTestInstance("keyword1", 0);

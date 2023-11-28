@@ -67,6 +67,7 @@ import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.util.MockBigArrays;
 import org.elasticsearch.common.util.MockPageCacheRecycler;
 import org.elasticsearch.core.CheckedConsumer;
+import org.elasticsearch.core.FunctionalUtils;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.Releasables;
 import org.elasticsearch.core.Strings;
@@ -397,7 +398,7 @@ public abstract class AggregatorTestCase extends ESTestCase {
             bitsetFilterCache,
             randomInt(),
             () -> 0L,
-            () -> false,
+            FunctionalUtils.alwaysFalseSupplier(),
             q -> q,
             true,
             isInSortOrderExecutionRequired
@@ -620,7 +621,7 @@ public abstract class AggregatorTestCase extends ESTestCase {
                     Supplier<AggregationReduceContext> reduceContextSupplier = () -> new AggregationReduceContext.ForPartial(
                         bigArraysForReduction,
                         getMockScriptService(),
-                        () -> false,
+                        FunctionalUtils.alwaysFalseSupplier(),
                         builder
                     );
                     AggregatorCollectorManager aggregatorCollectorManager = new AggregatorCollectorManager(
@@ -645,7 +646,7 @@ public abstract class AggregatorTestCase extends ESTestCase {
                 AggregationReduceContext reduceContext = new AggregationReduceContext.ForPartial(
                     bigArraysForReduction,
                     getMockScriptService(),
-                    () -> false,
+                    FunctionalUtils.alwaysFalseSupplier(),
                     builder
                 );
                 internalAggs = new ArrayList<>(internalAggs.subList(r, toReduceSize));
@@ -663,7 +664,7 @@ public abstract class AggregatorTestCase extends ESTestCase {
             AggregationReduceContext reduceContext = new AggregationReduceContext.ForFinal(
                 bigArraysForReduction,
                 getMockScriptService(),
-                () -> false,
+                FunctionalUtils.alwaysFalseSupplier(),
                 builder,
                 reduceBucketConsumer
             );
@@ -832,7 +833,7 @@ public abstract class AggregatorTestCase extends ESTestCase {
                 new AggregationReduceContext.ForFinal(
                     context.bigArrays(),
                     getMockScriptService(),
-                    () -> false,
+                    FunctionalUtils.alwaysFalseSupplier(),
                     builder,
                     new MultiBucketConsumer(context.maxBuckets(), context.breaker())
                 )

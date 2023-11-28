@@ -16,6 +16,7 @@ import org.elasticsearch.common.breaker.CircuitBreaker;
 import org.elasticsearch.common.breaker.NoopCircuitBreaker;
 import org.elasticsearch.common.lucene.search.TopDocsAndMaxScore;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
+import org.elasticsearch.core.FunctionalUtils;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.search.DocValueFormat;
 import org.elasticsearch.search.SearchHit;
@@ -52,7 +53,7 @@ public class FetchSearchPhaseTests extends ESTestCase {
         QueryPhaseResultConsumer results = controller.newSearchPhaseResults(
             EsExecutors.DIRECT_EXECUTOR_SERVICE,
             new NoopCircuitBreaker(CircuitBreaker.REQUEST),
-            () -> false,
+            FunctionalUtils.alwaysFalseSupplier(),
             SearchProgressListener.NOOP,
             mockSearchPhaseContext.getRequest(),
             1,
@@ -142,7 +143,7 @@ public class FetchSearchPhaseTests extends ESTestCase {
         QueryPhaseResultConsumer results = controller.newSearchPhaseResults(
             EsExecutors.DIRECT_EXECUTOR_SERVICE,
             new NoopCircuitBreaker(CircuitBreaker.REQUEST),
-            () -> false,
+            FunctionalUtils.alwaysFalseSupplier(),
             SearchProgressListener.NOOP,
             mockSearchPhaseContext.getRequest(),
             2,
@@ -259,7 +260,7 @@ public class FetchSearchPhaseTests extends ESTestCase {
         QueryPhaseResultConsumer results = controller.newSearchPhaseResults(
             EsExecutors.DIRECT_EXECUTOR_SERVICE,
             new NoopCircuitBreaker(CircuitBreaker.REQUEST),
-            () -> false,
+            FunctionalUtils.alwaysFalseSupplier(),
             SearchProgressListener.NOOP,
             mockSearchPhaseContext.getRequest(),
             2,
@@ -387,7 +388,7 @@ public class FetchSearchPhaseTests extends ESTestCase {
         QueryPhaseResultConsumer results = controller.newSearchPhaseResults(
             EsExecutors.DIRECT_EXECUTOR_SERVICE,
             new NoopCircuitBreaker(CircuitBreaker.REQUEST),
-            () -> false,
+            FunctionalUtils.alwaysFalseSupplier(),
             SearchProgressListener.NOOP,
             mockSearchPhaseContext.getRequest(),
             numHits,
@@ -498,7 +499,7 @@ public class FetchSearchPhaseTests extends ESTestCase {
         QueryPhaseResultConsumer results = controller.newSearchPhaseResults(
             EsExecutors.DIRECT_EXECUTOR_SERVICE,
             new NoopCircuitBreaker(CircuitBreaker.REQUEST),
-            () -> false,
+            FunctionalUtils.alwaysFalseSupplier(),
             SearchProgressListener.NOOP,
             mockSearchPhaseContext.getRequest(),
             2,
@@ -609,7 +610,7 @@ public class FetchSearchPhaseTests extends ESTestCase {
         QueryPhaseResultConsumer results = controller.newSearchPhaseResults(
             EsExecutors.DIRECT_EXECUTOR_SERVICE,
             new NoopCircuitBreaker(CircuitBreaker.REQUEST),
-            () -> false,
+            FunctionalUtils.alwaysFalseSupplier(),
             SearchProgressListener.NOOP,
             mockSearchPhaseContext.getRequest(),
             2,

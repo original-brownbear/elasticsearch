@@ -15,6 +15,7 @@ import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.xcontent.ChunkedToXContent;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.core.CheckedFunction;
+import org.elasticsearch.core.FunctionalUtils;
 import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContent;
 import org.elasticsearch.xcontent.XContentBuilder;
@@ -119,7 +120,7 @@ public abstract class AbstractXContentTestCase<T extends ToXContent> extends EST
         private int numberOfTestRuns = NUMBER_OF_TEST_RUNS;
         private boolean supportsUnknownFields = false;
         private String[] shuffleFieldsExceptions = Strings.EMPTY_ARRAY;
-        private Predicate<String> randomFieldsExcludeFilter = field -> false;
+        private Predicate<String> randomFieldsExcludeFilter = FunctionalUtils.alwaysFalse();
         private BiConsumer<T, T> assertEqualsConsumer = (expectedInstance, newInstance) -> {
             assertNotSame(newInstance, expectedInstance);
             assertEquals(expectedInstance, newInstance);
@@ -288,7 +289,7 @@ public abstract class AbstractXContentTestCase<T extends ToXContent> extends EST
      * Returns a predicate that given the field name indicates whether the field has to be excluded from random fields insertion or not
      */
     protected Predicate<String> getRandomFieldsExcludeFilter() {
-        return field -> false;
+        return FunctionalUtils.alwaysFalse();
     }
 
     /**

@@ -15,6 +15,7 @@ import org.elasticsearch.cluster.metadata.RepositoryMetadata;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.component.LifecycleComponent;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.core.FunctionalUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.shard.ShardId;
@@ -83,20 +84,22 @@ public interface Repository extends LifecycleComponent {
      * @param listener   listener to resolve with snapshot description (is resolved on the {@link ThreadPool.Names#SNAPSHOT_META} pool)
      */
     default void getSnapshotInfo(SnapshotId snapshotId, ActionListener<SnapshotInfo> listener) {
-        getSnapshotInfo(new GetSnapshotInfoContext(List.of(snapshotId), true, () -> false, (context, snapshotInfo) -> {
-            assert Repository.assertSnapshotMetaThread();
-            listener.onResponse(snapshotInfo);
-        }, new ActionListener<>() {
-            @Override
-            public void onResponse(Void o) {
-                // ignored
-            }
+        getSnapshotInfo(
+            new GetSnapshotInfoContext(List.of(snapshotId), true, FunctionalUtils.alwaysFalseBooleanSupplier(), (context, snapshotInfo) -> {
+                assert Repository.assertSnapshotMetaThread();
+                listener.onResponse(snapshotInfo);
+            }, new ActionListener<>() {
+                @Override
+                public void onResponse(Void o) {
+                    // ignored
+                }
 
-            @Override
-            public void onFailure(Exception e) {
-                listener.onFailure(e);
-            }
-        }));
+                @Override
+                public void onFailure(Exception e) {
+                    listener.onFailure(e);
+                }
+            })
+        );
     }
 
     /**
