@@ -11,8 +11,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.admin.indices.get.GetIndexAction;
 import org.elasticsearch.action.admin.indices.get.GetIndexRequest;
+import org.elasticsearch.action.admin.indices.get.TransportGetIndexAction;
 import org.elasticsearch.action.admin.indices.stats.IndicesStatsAction;
 import org.elasticsearch.action.admin.indices.stats.IndicesStatsRequest;
 import org.elasticsearch.action.admin.indices.stats.ShardStats;
@@ -269,7 +269,7 @@ class DefaultCheckpointProvider implements CheckpointProvider {
             headers,
             ClientHelper.TRANSFORM_ORIGIN,
             client,
-            GetIndexAction.INSTANCE,
+            TransportGetIndexAction.TYPE,
             getIndexRequest,
             ActionListener.wrap(getIndexResponse -> {
                 Set<String> userIndices = getIndexResponse.getIndices() != null

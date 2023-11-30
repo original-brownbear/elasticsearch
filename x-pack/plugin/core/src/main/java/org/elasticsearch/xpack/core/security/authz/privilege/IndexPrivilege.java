@@ -15,7 +15,7 @@ import org.elasticsearch.action.admin.indices.close.CloseIndexAction;
 import org.elasticsearch.action.admin.indices.create.AutoCreateAction;
 import org.elasticsearch.action.admin.indices.create.CreateIndexAction;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexAction;
-import org.elasticsearch.action.admin.indices.get.GetIndexAction;
+import org.elasticsearch.action.admin.indices.get.TransportGetIndexAction;
 import org.elasticsearch.action.admin.indices.mapping.get.GetFieldMappingsAction;
 import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsAction;
 import org.elasticsearch.action.admin.indices.mapping.put.AutoPutMappingAction;
@@ -28,7 +28,7 @@ import org.elasticsearch.action.datastreams.CreateDataStreamAction;
 import org.elasticsearch.action.datastreams.DeleteDataStreamAction;
 import org.elasticsearch.action.datastreams.GetDataStreamAction;
 import org.elasticsearch.action.datastreams.PromoteDataStreamAction;
-import org.elasticsearch.action.fieldcaps.FieldCapabilitiesAction;
+import org.elasticsearch.action.fieldcaps.TransportFieldCapabilitiesAction;
 import org.elasticsearch.action.search.TransportSearchShardsAction;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.index.seqno.RetentionLeaseActions;
@@ -104,7 +104,7 @@ public final class IndexPrivilege extends Privilege {
     private static final Automaton MANAGE_AUTOMATON = unionAndMinimize(
         Arrays.asList(
             MONITOR_AUTOMATON,
-            patterns("indices:admin/*", FieldCapabilitiesAction.NAME + "*", GetRollupIndexCapsAction.NAME + "*")
+            patterns("indices:admin/*", TransportFieldCapabilitiesAction.NAME + "*", GetRollupIndexCapsAction.NAME + "*")
         )
     );
     private static final Automaton CREATE_INDEX_AUTOMATON = patterns(
@@ -115,7 +115,7 @@ public final class IndexPrivilege extends Privilege {
     private static final Automaton DELETE_INDEX_AUTOMATON = patterns(DeleteIndexAction.NAME, DeleteDataStreamAction.NAME);
     private static final Automaton VIEW_METADATA_AUTOMATON = patterns(
         GetAliasesAction.NAME,
-        GetIndexAction.NAME,
+        TransportGetIndexAction.NAME,
         GetFieldMappingsAction.NAME + "*",
         GetMappingsAction.NAME,
         ClusterSearchShardsAction.NAME,
@@ -127,7 +127,7 @@ public final class IndexPrivilege extends Privilege {
         "indices:admin/data_stream/lifecycle/explain",
         GetDataStreamAction.NAME,
         ResolveIndexAction.NAME,
-        FieldCapabilitiesAction.NAME + "*",
+        TransportFieldCapabilitiesAction.NAME + "*",
         GetRollupIndexCapsAction.NAME + "*",
         GetCheckpointAction.NAME + "*" // transform internal action
     );

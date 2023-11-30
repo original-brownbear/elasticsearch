@@ -9,6 +9,7 @@
 package org.elasticsearch.action.admin.indices.get;
 
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.ActionType;
 import org.elasticsearch.action.admin.indices.get.GetIndexRequest.Feature;
 import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.master.info.TransportClusterInfoAction;
@@ -40,6 +41,8 @@ import java.util.stream.Collectors;
  */
 public class TransportGetIndexAction extends TransportClusterInfoAction<GetIndexRequest, GetIndexResponse> {
 
+    public static final String NAME = "indices:admin/get";
+    public static final ActionType<GetIndexResponse> TYPE = new ActionType<>(NAME, GetIndexResponse::new);
     private final IndicesService indicesService;
     private final IndexScopedSettings indexScopedSettings;
     private final SettingsFilter settingsFilter;
@@ -56,7 +59,7 @@ public class TransportGetIndexAction extends TransportClusterInfoAction<GetIndex
         IndexScopedSettings indexScopedSettings
     ) {
         super(
-            GetIndexAction.NAME,
+            NAME,
             transportService,
             clusterService,
             threadPool,

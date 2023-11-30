@@ -12,8 +12,8 @@ import org.elasticsearch.action.admin.indices.alias.IndicesAliasesAction;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
 import org.elasticsearch.action.admin.indices.create.CreateIndexAction;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
-import org.elasticsearch.action.admin.indices.get.GetIndexAction;
 import org.elasticsearch.action.admin.indices.get.GetIndexResponse;
+import org.elasticsearch.action.admin.indices.get.TransportGetIndexAction;
 import org.elasticsearch.action.support.ActionTestUtils;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.cluster.metadata.MappingMetadata;
@@ -80,7 +80,7 @@ public class TransformIndexTests extends ESTestCase {
     }
 
     public void testIsDestinationIndexCreatedByTransform_NoIndex() throws Exception {
-        doAnswer(withFailure(new IndexNotFoundException(DEST_INDEX))).when(client).execute(eq(GetIndexAction.INSTANCE), any(), any());
+        doAnswer(withFailure(new IndexNotFoundException(DEST_INDEX))).when(client).execute(eq(TransportGetIndexAction.TYPE), any(), any());
 
         CountDownLatch latch = new CountDownLatch(1);
         TransformIndex.isDestinationIndexCreatedByTransform(
@@ -93,7 +93,7 @@ public class TransformIndexTests extends ESTestCase {
 
     private void testIsDestinationIndexCreatedByTransform(Map<String, MappingMetadata> mappings, boolean expectedValue) throws Exception {
         GetIndexResponse getIndexResponse = new GetIndexResponse(new String[] { DEST_INDEX }, mappings, null, null, null, null);
-        doAnswer(withResponse(getIndexResponse)).when(client).execute(eq(GetIndexAction.INSTANCE), any(), any());
+        doAnswer(withResponse(getIndexResponse)).when(client).execute(eq(TransportGetIndexAction.TYPE), any(), any());
 
         CountDownLatch latch = new CountDownLatch(1);
         TransformIndex.isDestinationIndexCreatedByTransform(

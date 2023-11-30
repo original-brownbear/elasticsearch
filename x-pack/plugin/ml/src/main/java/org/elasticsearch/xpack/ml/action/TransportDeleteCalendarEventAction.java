@@ -11,8 +11,8 @@ import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.delete.DeleteAction;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
-import org.elasticsearch.action.get.GetAction;
 import org.elasticsearch.action.get.GetRequest;
+import org.elasticsearch.action.get.TransportGetAction;
 import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.HandledTransportAction;
 import org.elasticsearch.action.support.WriteRequest;
@@ -67,7 +67,7 @@ public class TransportDeleteCalendarEventAction extends HandledTransportAction<D
 
         ActionListener<Calendar> calendarListener = ActionListener.wrap(calendar -> {
             GetRequest getRequest = new GetRequest(MlMetaIndex.indexName(), eventId);
-            executeAsyncWithOrigin(client, ML_ORIGIN, GetAction.INSTANCE, getRequest, ActionListener.wrap(getResponse -> {
+            executeAsyncWithOrigin(client, ML_ORIGIN, TransportGetAction.TYPE, getRequest, ActionListener.wrap(getResponse -> {
                 if (getResponse.isExists() == false) {
                     listener.onFailure(new ResourceNotFoundException("No event with id [" + eventId + "]"));
                     return;

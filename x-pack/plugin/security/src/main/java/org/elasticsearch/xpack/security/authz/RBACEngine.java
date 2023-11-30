@@ -22,7 +22,7 @@ import org.elasticsearch.action.bulk.BulkAction;
 import org.elasticsearch.action.bulk.BulkShardRequest;
 import org.elasticsearch.action.bulk.SimulateBulkAction;
 import org.elasticsearch.action.delete.DeleteAction;
-import org.elasticsearch.action.get.MultiGetAction;
+import org.elasticsearch.action.get.TransportMultiGetAction;
 import org.elasticsearch.action.index.IndexAction;
 import org.elasticsearch.action.search.SearchScrollRequest;
 import org.elasticsearch.action.search.SearchTransportService;
@@ -259,7 +259,7 @@ public class RBACEngine implements AuthorizationEngine {
             case INDEX_SUB_REQUEST_REPLICA:
             case DELETE_SUB_REQUEST_PRIMARY:
             case DELETE_SUB_REQUEST_REPLICA:
-            case MultiGetAction.NAME:
+            case TransportMultiGetAction.NAME:
             case MultiTermVectorsAction.NAME:
             case TransportMultiSearchAction.NAME:
             case "indices:data/read/mpercolate":

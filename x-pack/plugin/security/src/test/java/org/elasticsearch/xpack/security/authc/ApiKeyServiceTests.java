@@ -31,9 +31,7 @@ import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.search.TransportSearchAction;
 import org.elasticsearch.action.support.PlainActionFuture;
-import org.elasticsearch.action.update.UpdateAction;
 import org.elasticsearch.action.update.UpdateRequestBuilder;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.internal.Client;
@@ -271,7 +269,7 @@ public class ApiKeyServiceTests extends ESTestCase {
         when(clock.instant()).thenReturn(Instant.ofEpochMilli(now));
         final Settings settings = Settings.builder().put(XPackSettings.API_KEY_SERVICE_ENABLED_SETTING.getKey(), true).build();
         when(client.threadPool()).thenReturn(threadPool);
-        SearchRequestBuilder searchRequestBuilder = Mockito.spy(new SearchRequestBuilder(client, TransportSearchAction.TYPE));
+        SearchRequestBuilder searchRequestBuilder = Mockito.spy(new SearchRequestBuilder(client));
         when(client.prepareSearch(eq(SECURITY_MAIN_ALIAS))).thenReturn(searchRequestBuilder);
         final ApiKeyService service = createApiKeyService(settings);
         final AtomicReference<SearchRequest> searchRequest = new AtomicReference<>();
@@ -332,7 +330,7 @@ public class ApiKeyServiceTests extends ESTestCase {
     public void testInvalidateApiKeys() throws Exception {
         final Settings settings = Settings.builder().put(XPackSettings.API_KEY_SERVICE_ENABLED_SETTING.getKey(), true).build();
         when(client.threadPool()).thenReturn(threadPool);
-        SearchRequestBuilder searchRequestBuilder = Mockito.spy(new SearchRequestBuilder(client, TransportSearchAction.TYPE));
+        SearchRequestBuilder searchRequestBuilder = Mockito.spy(new SearchRequestBuilder(client));
         when(client.prepareSearch(eq(SECURITY_MAIN_ALIAS))).thenReturn(searchRequestBuilder);
         final ApiKeyService service = createApiKeyService(settings);
         final AtomicReference<SearchRequest> searchRequest = new AtomicReference<>();
@@ -406,7 +404,7 @@ public class ApiKeyServiceTests extends ESTestCase {
 
         // Mock the search request for keys to invalidate
         when(client.threadPool()).thenReturn(threadPool);
-        when(client.prepareSearch(eq(SECURITY_MAIN_ALIAS))).thenReturn(new SearchRequestBuilder(client, TransportSearchAction.TYPE));
+        when(client.prepareSearch(eq(SECURITY_MAIN_ALIAS))).thenReturn(new SearchRequestBuilder(client));
         doAnswer(invocation -> {
             final var listener = (ActionListener<SearchResponse>) invocation.getArguments()[1];
             final var searchHit = new SearchHit(docId, apiKeyId);
@@ -446,7 +444,7 @@ public class ApiKeyServiceTests extends ESTestCase {
 
         // Capture the Update request so that we can verify it is configured as expected
         when(client.prepareBulk()).thenReturn(new BulkRequestBuilder(client, BulkAction.INSTANCE));
-        final var updateRequestBuilder = Mockito.spy(new UpdateRequestBuilder(client, UpdateAction.INSTANCE));
+        final var updateRequestBuilder = Mockito.spy(new UpdateRequestBuilder(client));
         when(client.prepareUpdate(eq(SECURITY_MAIN_ALIAS), eq(apiKeyId))).thenReturn(updateRequestBuilder);
 
         // Stub bulk and cache clearing calls so that the entire action flow can complete (not strictly necessary but nice to have)
@@ -739,7 +737,7 @@ public class ApiKeyServiceTests extends ESTestCase {
         final Instant now = Instant.now();
         when(clock.instant()).thenReturn(now);
         when(client.threadPool()).thenReturn(threadPool);
-        SearchRequestBuilder searchRequestBuilder = Mockito.spy(new SearchRequestBuilder(client, TransportSearchAction.TYPE));
+        SearchRequestBuilder searchRequestBuilder = Mockito.spy(new SearchRequestBuilder(client));
         when(client.prepareSearch(eq(SECURITY_MAIN_ALIAS))).thenReturn(searchRequestBuilder);
 
         final List<SearchHit> searchHits = new ArrayList<>();

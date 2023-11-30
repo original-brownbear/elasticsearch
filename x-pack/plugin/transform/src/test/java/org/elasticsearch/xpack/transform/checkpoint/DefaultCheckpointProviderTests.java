@@ -13,8 +13,8 @@ import org.apache.logging.log4j.Logger;
 import org.apache.lucene.util.SetOnce;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.LatchedActionListener;
-import org.elasticsearch.action.admin.indices.get.GetIndexAction;
 import org.elasticsearch.action.admin.indices.get.GetIndexResponse;
+import org.elasticsearch.action.admin.indices.get.TransportGetIndexAction;
 import org.elasticsearch.action.admin.indices.stats.IndicesStatsAction;
 import org.elasticsearch.action.admin.indices.stats.IndicesStatsResponse;
 import org.elasticsearch.action.support.DefaultShardOperationFailedException;
@@ -245,7 +245,7 @@ public class DefaultCheckpointProviderTests extends ESTestCase {
         ).resolve(transformConfig.getSource().getIndex());
 
         GetIndexResponse getIndexResponse = new GetIndexResponse(new String[] { indexName }, null, null, null, null, null);
-        doAnswer(withResponse(getIndexResponse)).when(client).execute(eq(GetIndexAction.INSTANCE), any(), any());
+        doAnswer(withResponse(getIndexResponse)).when(client).execute(eq(TransportGetIndexAction.TYPE), any(), any());
 
         IndicesStatsResponse indicesStatsResponse = mock(IndicesStatsResponse.class);
         doReturn(7).when(indicesStatsResponse).getFailedShards();

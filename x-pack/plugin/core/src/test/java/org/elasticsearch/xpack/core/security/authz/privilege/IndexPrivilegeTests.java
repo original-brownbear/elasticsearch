@@ -14,7 +14,7 @@ import org.elasticsearch.action.admin.indices.stats.IndicesStatsAction;
 import org.elasticsearch.action.delete.DeleteAction;
 import org.elasticsearch.action.index.IndexAction;
 import org.elasticsearch.action.search.TransportSearchAction;
-import org.elasticsearch.action.update.UpdateAction;
+import org.elasticsearch.action.update.TransportUpdateAction;
 import org.elasticsearch.common.util.iterable.Iterables;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.xpack.core.rollup.action.GetRollupIndexCapsAction;
@@ -61,7 +61,7 @@ public class IndexPrivilegeTests extends ESTestCase {
     public void testFindPrivilegesThatGrant() {
         assertThat(findPrivilegesThatGrant(TransportSearchAction.TYPE.name()), equalTo(List.of("read", "all")));
         assertThat(findPrivilegesThatGrant(IndexAction.NAME), equalTo(List.of("create_doc", "create", "index", "write", "all")));
-        assertThat(findPrivilegesThatGrant(UpdateAction.NAME), equalTo(List.of("index", "write", "all")));
+        assertThat(findPrivilegesThatGrant(TransportUpdateAction.NAME), equalTo(List.of("index", "write", "all")));
         assertThat(findPrivilegesThatGrant(DeleteAction.NAME), equalTo(List.of("delete", "write", "all")));
         assertThat(
             findPrivilegesThatGrant(IndicesStatsAction.NAME),

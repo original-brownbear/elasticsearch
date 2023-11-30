@@ -9,8 +9,8 @@ package org.elasticsearch.xpack.ml.job.retention;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexAction;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
-import org.elasticsearch.action.admin.indices.get.GetIndexAction;
 import org.elasticsearch.action.admin.indices.get.GetIndexResponse;
+import org.elasticsearch.action.admin.indices.get.TransportGetIndexAction;
 import org.elasticsearch.action.admin.indices.stats.CommonStats;
 import org.elasticsearch.action.admin.indices.stats.IndexStats;
 import org.elasticsearch.action.admin.indices.stats.IndicesStatsAction;
@@ -130,7 +130,7 @@ public class EmptyStateIndexRemoverTests extends ESTestCase {
         doAnswer(withResponse(indicesStatsResponse)).when(client).execute(eq(IndicesStatsAction.INSTANCE), any(), any());
 
         GetIndexResponse getIndexResponse = new GetIndexResponse(new String[] { ".ml-state-e" }, null, null, null, null, null);
-        doAnswer(withResponse(getIndexResponse)).when(client).execute(eq(GetIndexAction.INSTANCE), any(), any());
+        doAnswer(withResponse(getIndexResponse)).when(client).execute(eq(TransportGetIndexAction.TYPE), any(), any());
 
         AcknowledgedResponse deleteIndexResponse = AcknowledgedResponse.of(acknowledged);
         doAnswer(withResponse(deleteIndexResponse)).when(client).execute(eq(DeleteIndexAction.INSTANCE), any(), any());
@@ -139,7 +139,7 @@ public class EmptyStateIndexRemoverTests extends ESTestCase {
 
         InOrder inOrder = inOrder(client, listener);
         inOrder.verify(client).execute(eq(IndicesStatsAction.INSTANCE), any(), any());
-        inOrder.verify(client).execute(eq(GetIndexAction.INSTANCE), any(), any());
+        inOrder.verify(client).execute(eq(TransportGetIndexAction.TYPE), any(), any());
         inOrder.verify(client).execute(eq(DeleteIndexAction.INSTANCE), deleteIndexRequestCaptor.capture(), any());
         inOrder.verify(listener).onResponse(acknowledged);
 
@@ -161,13 +161,13 @@ public class EmptyStateIndexRemoverTests extends ESTestCase {
         doAnswer(withResponse(indicesStatsResponse)).when(client).execute(eq(IndicesStatsAction.INSTANCE), any(), any());
 
         GetIndexResponse getIndexResponse = new GetIndexResponse(new String[] { ".ml-state-a" }, null, null, null, null, null);
-        doAnswer(withResponse(getIndexResponse)).when(client).execute(eq(GetIndexAction.INSTANCE), any(), any());
+        doAnswer(withResponse(getIndexResponse)).when(client).execute(eq(TransportGetIndexAction.TYPE), any(), any());
 
         remover.remove(1.0f, listener, () -> false);
 
         InOrder inOrder = inOrder(client, listener);
         inOrder.verify(client).execute(eq(IndicesStatsAction.INSTANCE), any(), any());
-        inOrder.verify(client).execute(eq(GetIndexAction.INSTANCE), any(), any());
+        inOrder.verify(client).execute(eq(TransportGetIndexAction.TYPE), any(), any());
         inOrder.verify(listener).onResponse(true);
     }
 

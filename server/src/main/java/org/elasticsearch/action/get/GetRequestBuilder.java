@@ -20,12 +20,8 @@ import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
  */
 public class GetRequestBuilder extends SingleShardOperationRequestBuilder<GetRequest, GetResponse, GetRequestBuilder> {
 
-    public GetRequestBuilder(ElasticsearchClient client, GetAction action) {
-        super(client, action, new GetRequest());
-    }
-
-    public GetRequestBuilder(ElasticsearchClient client, GetAction action, @Nullable String index) {
-        super(client, action, new GetRequest(index));
+    public GetRequestBuilder(ElasticsearchClient client) {
+        super(client, TransportGetAction.TYPE, new GetRequest());
     }
 
     /**

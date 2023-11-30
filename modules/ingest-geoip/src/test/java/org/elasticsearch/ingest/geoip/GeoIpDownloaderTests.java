@@ -15,9 +15,9 @@ import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.action.ActionType;
 import org.elasticsearch.action.DocWriteRequest.OpType;
 import org.elasticsearch.action.DocWriteResponse;
-import org.elasticsearch.action.admin.indices.flush.FlushAction;
 import org.elasticsearch.action.admin.indices.flush.FlushRequest;
 import org.elasticsearch.action.admin.indices.flush.FlushResponse;
+import org.elasticsearch.action.admin.indices.flush.TransportFlushAction;
 import org.elasticsearch.action.admin.indices.refresh.RefreshAction;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.admin.indices.refresh.RefreshResponse;
@@ -178,7 +178,7 @@ public class GeoIpDownloaderTests extends ESTestCase {
     }
 
     public void testIndexChunksNoData() throws IOException {
-        client.addHandler(FlushAction.INSTANCE, (FlushRequest request, ActionListener<FlushResponse> flushResponseActionListener) -> {
+        client.addHandler(TransportFlushAction.TYPE, (FlushRequest request, ActionListener<FlushResponse> flushResponseActionListener) -> {
             assertArrayEquals(new String[] { GeoIpDownloader.DATABASES_INDEX }, request.indices());
             flushResponseActionListener.onResponse(mock(FlushResponse.class));
         });
@@ -192,7 +192,7 @@ public class GeoIpDownloaderTests extends ESTestCase {
     }
 
     public void testIndexChunksMd5Mismatch() {
-        client.addHandler(FlushAction.INSTANCE, (FlushRequest request, ActionListener<FlushResponse> flushResponseActionListener) -> {
+        client.addHandler(TransportFlushAction.TYPE, (FlushRequest request, ActionListener<FlushResponse> flushResponseActionListener) -> {
             assertArrayEquals(new String[] { GeoIpDownloader.DATABASES_INDEX }, request.indices());
             flushResponseActionListener.onResponse(mock(FlushResponse.class));
         });
@@ -232,7 +232,7 @@ public class GeoIpDownloaderTests extends ESTestCase {
             assertEquals(chunk + 15, source.get("chunk"));
             listener.onResponse(mock(IndexResponse.class));
         });
-        client.addHandler(FlushAction.INSTANCE, (FlushRequest request, ActionListener<FlushResponse> flushResponseActionListener) -> {
+        client.addHandler(TransportFlushAction.TYPE, (FlushRequest request, ActionListener<FlushResponse> flushResponseActionListener) -> {
             assertArrayEquals(new String[] { GeoIpDownloader.DATABASES_INDEX }, request.indices());
             flushResponseActionListener.onResponse(mock(FlushResponse.class));
         });

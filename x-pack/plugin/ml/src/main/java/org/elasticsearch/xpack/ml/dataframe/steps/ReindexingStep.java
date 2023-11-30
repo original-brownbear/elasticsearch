@@ -15,9 +15,9 @@ import org.elasticsearch.action.admin.cluster.node.tasks.cancel.CancelTasksReque
 import org.elasticsearch.action.admin.cluster.node.tasks.cancel.CancelTasksResponse;
 import org.elasticsearch.action.admin.cluster.node.tasks.get.GetTaskRequest;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
-import org.elasticsearch.action.admin.indices.get.GetIndexAction;
 import org.elasticsearch.action.admin.indices.get.GetIndexRequest;
 import org.elasticsearch.action.admin.indices.get.GetIndexResponse;
+import org.elasticsearch.action.admin.indices.get.TransportGetIndexAction;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.support.ContextPreservingActionListener;
 import org.elasticsearch.client.internal.ParentTaskAssigningClient;
@@ -227,7 +227,7 @@ public class ReindexingStep extends AbstractDataFrameAnalyticsStep {
             config.getHeaders(),
             ML_ORIGIN,
             parentTaskClient,
-            GetIndexAction.INSTANCE,
+            TransportGetIndexAction.TYPE,
             new GetIndexRequest().indices(config.getDest().getIndex()),
             destIndexListener
         );

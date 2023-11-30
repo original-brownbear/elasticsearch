@@ -34,7 +34,7 @@ import java.io.IOException;
 
 public class TransportShardFlushAction extends TransportReplicationAction<ShardFlushRequest, ShardFlushRequest, ReplicationResponse> {
 
-    public static final String NAME = FlushAction.NAME + "[s]";
+    public static final String NAME = TransportFlushAction.NAME + "[s]";
     public static final ActionType<ReplicationResponse> TYPE = new ActionType<>(NAME, ReplicationResponse::new);
 
     @Inject

@@ -16,9 +16,9 @@ import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.delete.DeleteAction;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
-import org.elasticsearch.action.get.GetAction;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.get.TransportGetAction;
 import org.elasticsearch.action.index.IndexAction;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
@@ -176,7 +176,7 @@ public class DatafeedConfigProvider {
         if (parentTaskId != null) {
             getRequest.setParentTask(parentTaskId);
         }
-        executeAsyncWithOrigin(client, ML_ORIGIN, GetAction.INSTANCE, getRequest, new ActionListener<GetResponse>() {
+        executeAsyncWithOrigin(client, ML_ORIGIN, TransportGetAction.TYPE, getRequest, new ActionListener<GetResponse>() {
             @Override
             public void onResponse(GetResponse getResponse) {
                 if (getResponse.isExists() == false) {
@@ -314,42 +314,48 @@ public class DatafeedConfigProvider {
     ) {
         GetRequest getRequest = new GetRequest(MlConfigIndex.indexName(), DatafeedConfig.documentId(datafeedId));
 
-        executeAsyncWithOrigin(client, ML_ORIGIN, GetAction.INSTANCE, getRequest, new DelegatingActionListener<>(updatedConfigListener) {
-            @Override
-            public void onResponse(GetResponse getResponse) {
-                if (getResponse.isExists() == false) {
-                    delegate.onFailure(ExceptionsHelper.missingDatafeedException(datafeedId));
-                    return;
-                }
-                final long seqNo = getResponse.getSeqNo();
-                final long primaryTerm = getResponse.getPrimaryTerm();
-                BytesReference source = getResponse.getSourceAsBytesRef();
-                DatafeedConfig.Builder configBuilder;
-                try {
-                    configBuilder = parseLenientlyFromSource(source);
-                } catch (IOException e) {
-                    delegate.onFailure(new ElasticsearchParseException("Failed to parse datafeed config [" + datafeedId + "]", e));
-                    return;
-                }
+        executeAsyncWithOrigin(
+            client,
+            ML_ORIGIN,
+            TransportGetAction.TYPE,
+            getRequest,
+            new DelegatingActionListener<>(updatedConfigListener) {
+                @Override
+                public void onResponse(GetResponse getResponse) {
+                    if (getResponse.isExists() == false) {
+                        delegate.onFailure(ExceptionsHelper.missingDatafeedException(datafeedId));
+                        return;
+                    }
+                    final long seqNo = getResponse.getSeqNo();
+                    final long primaryTerm = getResponse.getPrimaryTerm();
+                    BytesReference source = getResponse.getSourceAsBytesRef();
+                    DatafeedConfig.Builder configBuilder;
+                    try {
+                        configBuilder = parseLenientlyFromSource(source);
+                    } catch (IOException e) {
+                        delegate.onFailure(new ElasticsearchParseException("Failed to parse datafeed config [" + datafeedId + "]", e));
+                        return;
+                    }
 
-                DatafeedConfig updatedConfig;
-                try {
-                    updatedConfig = update.apply(configBuilder.build(), headers, clusterService.state());
-                } catch (Exception e) {
-                    delegate.onFailure(e);
-                    return;
-                }
+                    DatafeedConfig updatedConfig;
+                    try {
+                        updatedConfig = update.apply(configBuilder.build(), headers, clusterService.state());
+                    } catch (Exception e) {
+                        delegate.onFailure(e);
+                        return;
+                    }
 
-                ActionListener<Boolean> validatedListener = ActionListener.wrap(
-                    ok -> indexUpdatedConfig(updatedConfig, seqNo, primaryTerm, ActionListener.wrap(indexResponse -> {
-                        assert indexResponse.getResult() == DocWriteResponse.Result.UPDATED;
-                        delegate.onResponse(updatedConfig);
-                    }, delegate::onFailure)),
-                    delegate::onFailure
-                );
-                validator.accept(updatedConfig, validatedListener);
+                    ActionListener<Boolean> validatedListener = ActionListener.wrap(
+                        ok -> indexUpdatedConfig(updatedConfig, seqNo, primaryTerm, ActionListener.wrap(indexResponse -> {
+                            assert indexResponse.getResult() == DocWriteResponse.Result.UPDATED;
+                            delegate.onResponse(updatedConfig);
+                        }, delegate::onFailure)),
+                        delegate::onFailure
+                    );
+                    validator.accept(updatedConfig, validatedListener);
+                }
             }
-        });
+        );
     }
 
     private void indexUpdatedConfig(DatafeedConfig updatedConfig, long seqNo, long primaryTerm, ActionListener<DocWriteResponse> listener) {

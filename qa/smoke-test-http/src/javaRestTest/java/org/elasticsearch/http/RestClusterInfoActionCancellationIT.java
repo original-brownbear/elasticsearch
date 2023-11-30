@@ -9,7 +9,7 @@
 package org.elasticsearch.http;
 
 import org.apache.http.client.methods.HttpGet;
-import org.elasticsearch.action.admin.indices.get.GetIndexAction;
+import org.elasticsearch.action.admin.indices.get.TransportGetIndexAction;
 import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsAction;
 import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
@@ -46,7 +46,7 @@ public class RestClusterInfoActionCancellationIT extends HttpSmokeTestCase {
     }
 
     public void testGetIndicesCancellation() throws Exception {
-        runTest(GetIndexAction.NAME, "/test");
+        runTest(TransportGetIndexAction.NAME, "/test");
     }
 
     private void runTest(String actionName, String endpoint) throws Exception {

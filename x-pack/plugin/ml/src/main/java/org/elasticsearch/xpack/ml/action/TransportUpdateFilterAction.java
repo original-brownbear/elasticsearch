@@ -9,9 +9,9 @@ package org.elasticsearch.xpack.ml.action;
 import org.elasticsearch.ResourceNotFoundException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.DocWriteResponse;
-import org.elasticsearch.action.get.GetAction;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.get.TransportGetAction;
 import org.elasticsearch.action.index.IndexAction;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.support.ActionFilters;
@@ -164,7 +164,7 @@ public class TransportUpdateFilterAction extends HandledTransportAction<UpdateFi
 
     private void getFilterWithVersion(String filterId, ActionListener<FilterWithSeqNo> listener) {
         GetRequest getRequest = new GetRequest(MlMetaIndex.indexName(), MlFilter.documentId(filterId));
-        executeAsyncWithOrigin(client, ML_ORIGIN, GetAction.INSTANCE, getRequest, listener.delegateFailure((l, getDocResponse) -> {
+        executeAsyncWithOrigin(client, ML_ORIGIN, TransportGetAction.TYPE, getRequest, listener.delegateFailure((l, getDocResponse) -> {
             try {
                 if (getDocResponse.isExists()) {
                     BytesReference docSource = getDocResponse.getSourceAsBytesRef();

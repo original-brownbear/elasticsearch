@@ -16,8 +16,8 @@ import org.elasticsearch.action.admin.indices.alias.IndicesAliasesAction;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
 import org.elasticsearch.action.admin.indices.create.CreateIndexAction;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
-import org.elasticsearch.action.admin.indices.get.GetIndexAction;
 import org.elasticsearch.action.admin.indices.get.GetIndexRequest;
+import org.elasticsearch.action.admin.indices.get.TransportGetIndexAction;
 import org.elasticsearch.action.admin.indices.stats.IndicesStatsResponse;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.client.internal.Client;
@@ -66,37 +66,43 @@ public final class TransformIndex {
         GetIndexRequest getIndexRequest = new GetIndexRequest().indices(destIndex)
             // We only need mappings, more specifically its "_meta" part
             .features(GetIndexRequest.Feature.MAPPINGS);
-        executeAsyncWithOrigin(client, TRANSFORM_ORIGIN, GetIndexAction.INSTANCE, getIndexRequest, ActionListener.wrap(getIndexResponse -> {
-            Map<String, MappingMetadata> indicesMappings = getIndexResponse.mappings();
-            if (indicesMappings.containsKey(destIndex) == false) {
-                listener.onResponse(false);
-                return;
-            }
-            Map<String, Object> indexMapping = indicesMappings.get(destIndex).getSourceAsMap();
-            if (indexMapping.containsKey(META) == false) {
-                listener.onResponse(false);
-                return;
-            }
-            @SuppressWarnings("unchecked")
-            Map<String, Object> indexMappingMetadata = (Map<String, Object>) indexMapping.get(META);
-            if (indexMappingMetadata.containsKey(TransformField.CREATED_BY) == false) {
-                listener.onResponse(false);
-                return;
-            }
-            String createdBy = (String) indexMappingMetadata.get(TransformField.CREATED_BY);
-            if (TransformField.TRANSFORM_SIGNATURE.equals(createdBy) == false) {
-                listener.onResponse(false);
-                return;
-            }
-            listener.onResponse(true);
-        }, e -> {
-            if (e instanceof IndexNotFoundException) {
-                // Missing index is ok, we should report that it was not created by transform (because it doesn't exist)
-                listener.onResponse(false);
-                return;
-            }
-            listener.onFailure(e);
-        }));
+        executeAsyncWithOrigin(
+            client,
+            TRANSFORM_ORIGIN,
+            TransportGetIndexAction.TYPE,
+            getIndexRequest,
+            ActionListener.wrap(getIndexResponse -> {
+                Map<String, MappingMetadata> indicesMappings = getIndexResponse.mappings();
+                if (indicesMappings.containsKey(destIndex) == false) {
+                    listener.onResponse(false);
+                    return;
+                }
+                Map<String, Object> indexMapping = indicesMappings.get(destIndex).getSourceAsMap();
+                if (indexMapping.containsKey(META) == false) {
+                    listener.onResponse(false);
+                    return;
+                }
+                @SuppressWarnings("unchecked")
+                Map<String, Object> indexMappingMetadata = (Map<String, Object>) indexMapping.get(META);
+                if (indexMappingMetadata.containsKey(TransformField.CREATED_BY) == false) {
+                    listener.onResponse(false);
+                    return;
+                }
+                String createdBy = (String) indexMappingMetadata.get(TransformField.CREATED_BY);
+                if (TransformField.TRANSFORM_SIGNATURE.equals(createdBy) == false) {
+                    listener.onResponse(false);
+                    return;
+                }
+                listener.onResponse(true);
+            }, e -> {
+                if (e instanceof IndexNotFoundException) {
+                    // Missing index is ok, we should report that it was not created by transform (because it doesn't exist)
+                    listener.onResponse(false);
+                    return;
+                }
+                listener.onFailure(e);
+            })
+        );
     }
 
     public static void createDestinationIndex(

@@ -158,18 +158,18 @@ import org.elasticsearch.action.admin.indices.dangling.list.ListDanglingIndicesR
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexAction;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequestBuilder;
-import org.elasticsearch.action.admin.indices.flush.FlushAction;
 import org.elasticsearch.action.admin.indices.flush.FlushRequest;
 import org.elasticsearch.action.admin.indices.flush.FlushRequestBuilder;
 import org.elasticsearch.action.admin.indices.flush.FlushResponse;
+import org.elasticsearch.action.admin.indices.flush.TransportFlushAction;
 import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeAction;
 import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeRequest;
 import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeRequestBuilder;
 import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeResponse;
-import org.elasticsearch.action.admin.indices.get.GetIndexAction;
 import org.elasticsearch.action.admin.indices.get.GetIndexRequest;
 import org.elasticsearch.action.admin.indices.get.GetIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.get.GetIndexResponse;
+import org.elasticsearch.action.admin.indices.get.TransportGetIndexAction;
 import org.elasticsearch.action.admin.indices.mapping.get.GetFieldMappingsAction;
 import org.elasticsearch.action.admin.indices.mapping.get.GetFieldMappingsRequest;
 import org.elasticsearch.action.admin.indices.mapping.get.GetFieldMappingsRequestBuilder;
@@ -251,18 +251,18 @@ import org.elasticsearch.action.explain.ExplainRequest;
 import org.elasticsearch.action.explain.ExplainRequestBuilder;
 import org.elasticsearch.action.explain.ExplainResponse;
 import org.elasticsearch.action.explain.TransportExplainAction;
-import org.elasticsearch.action.fieldcaps.FieldCapabilitiesAction;
 import org.elasticsearch.action.fieldcaps.FieldCapabilitiesRequest;
 import org.elasticsearch.action.fieldcaps.FieldCapabilitiesRequestBuilder;
 import org.elasticsearch.action.fieldcaps.FieldCapabilitiesResponse;
-import org.elasticsearch.action.get.GetAction;
+import org.elasticsearch.action.fieldcaps.TransportFieldCapabilitiesAction;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetRequestBuilder;
 import org.elasticsearch.action.get.GetResponse;
-import org.elasticsearch.action.get.MultiGetAction;
 import org.elasticsearch.action.get.MultiGetRequest;
 import org.elasticsearch.action.get.MultiGetRequestBuilder;
 import org.elasticsearch.action.get.MultiGetResponse;
+import org.elasticsearch.action.get.TransportGetAction;
+import org.elasticsearch.action.get.TransportMultiGetAction;
 import org.elasticsearch.action.index.IndexAction;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexRequestBuilder;
@@ -305,7 +305,7 @@ import org.elasticsearch.action.termvectors.TermVectorsAction;
 import org.elasticsearch.action.termvectors.TermVectorsRequest;
 import org.elasticsearch.action.termvectors.TermVectorsRequestBuilder;
 import org.elasticsearch.action.termvectors.TermVectorsResponse;
-import org.elasticsearch.action.update.UpdateAction;
+import org.elasticsearch.action.update.TransportUpdateAction;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateRequestBuilder;
 import org.elasticsearch.action.update.UpdateResponse;
@@ -414,22 +414,22 @@ public abstract class AbstractClient implements Client {
 
     @Override
     public ActionFuture<UpdateResponse> update(final UpdateRequest request) {
-        return execute(UpdateAction.INSTANCE, request);
+        return execute(TransportUpdateAction.TYPE, request);
     }
 
     @Override
     public void update(final UpdateRequest request, final ActionListener<UpdateResponse> listener) {
-        execute(UpdateAction.INSTANCE, request, listener);
+        execute(TransportUpdateAction.TYPE, request, listener);
     }
 
     @Override
     public UpdateRequestBuilder prepareUpdate() {
-        return new UpdateRequestBuilder(this, UpdateAction.INSTANCE, null, null);
+        return new UpdateRequestBuilder(this, null, null);
     }
 
     @Override
     public UpdateRequestBuilder prepareUpdate(String index, String id) {
-        return new UpdateRequestBuilder(this, UpdateAction.INSTANCE, index, id);
+        return new UpdateRequestBuilder(this, index, id);
     }
 
     @Override
@@ -474,17 +474,17 @@ public abstract class AbstractClient implements Client {
 
     @Override
     public ActionFuture<GetResponse> get(final GetRequest request) {
-        return execute(GetAction.INSTANCE, request);
+        return execute(TransportGetAction.TYPE, request);
     }
 
     @Override
     public void get(final GetRequest request, final ActionListener<GetResponse> listener) {
-        execute(GetAction.INSTANCE, request, listener);
+        execute(TransportGetAction.TYPE, request, listener);
     }
 
     @Override
     public GetRequestBuilder prepareGet() {
-        return new GetRequestBuilder(this, GetAction.INSTANCE, null);
+        return new GetRequestBuilder(this);
     }
 
     @Override
@@ -494,17 +494,17 @@ public abstract class AbstractClient implements Client {
 
     @Override
     public ActionFuture<MultiGetResponse> multiGet(final MultiGetRequest request) {
-        return execute(MultiGetAction.INSTANCE, request);
+        return execute(TransportMultiGetAction.TYPE, request);
     }
 
     @Override
     public void multiGet(final MultiGetRequest request, final ActionListener<MultiGetResponse> listener) {
-        execute(MultiGetAction.INSTANCE, request, listener);
+        execute(TransportMultiGetAction.TYPE, request, listener);
     }
 
     @Override
     public MultiGetRequestBuilder prepareMultiGet() {
-        return new MultiGetRequestBuilder(this, MultiGetAction.INSTANCE);
+        return new MultiGetRequestBuilder(this);
     }
 
     @Override
@@ -519,7 +519,7 @@ public abstract class AbstractClient implements Client {
 
     @Override
     public SearchRequestBuilder prepareSearch(String... indices) {
-        return new SearchRequestBuilder(this, TransportSearchAction.TYPE).setIndices(indices);
+        return new SearchRequestBuilder(this).setIndices(indices);
     }
 
     @Override
@@ -534,7 +534,7 @@ public abstract class AbstractClient implements Client {
 
     @Override
     public SearchScrollRequestBuilder prepareSearchScroll(String scrollId) {
-        return new SearchScrollRequestBuilder(this, TransportSearchScrollAction.TYPE, scrollId);
+        return new SearchScrollRequestBuilder(this, scrollId);
     }
 
     @Override
@@ -549,7 +549,7 @@ public abstract class AbstractClient implements Client {
 
     @Override
     public MultiSearchRequestBuilder prepareMultiSearch() {
-        return new MultiSearchRequestBuilder(this, TransportMultiSearchAction.TYPE);
+        return new MultiSearchRequestBuilder(this);
     }
 
     @Override
@@ -589,7 +589,7 @@ public abstract class AbstractClient implements Client {
 
     @Override
     public ExplainRequestBuilder prepareExplain(String index, String id) {
-        return new ExplainRequestBuilder(this, TransportExplainAction.TYPE, index, id);
+        return new ExplainRequestBuilder(this, index, id);
     }
 
     @Override
@@ -614,22 +614,22 @@ public abstract class AbstractClient implements Client {
 
     @Override
     public ClearScrollRequestBuilder prepareClearScroll() {
-        return new ClearScrollRequestBuilder(this, TransportClearScrollAction.TYPE);
+        return new ClearScrollRequestBuilder(this);
     }
 
     @Override
     public void fieldCaps(FieldCapabilitiesRequest request, ActionListener<FieldCapabilitiesResponse> listener) {
-        execute(FieldCapabilitiesAction.INSTANCE, request, listener);
+        execute(TransportFieldCapabilitiesAction.TYPE, request, listener);
     }
 
     @Override
     public ActionFuture<FieldCapabilitiesResponse> fieldCaps(FieldCapabilitiesRequest request) {
-        return execute(FieldCapabilitiesAction.INSTANCE, request);
+        return execute(TransportFieldCapabilitiesAction.TYPE, request);
     }
 
     @Override
     public FieldCapabilitiesRequestBuilder prepareFieldCaps(String... indices) {
-        return new FieldCapabilitiesRequestBuilder(this, FieldCapabilitiesAction.INSTANCE, indices);
+        return new FieldCapabilitiesRequestBuilder(this, indices);
     }
 
     static class Admin implements AdminClient {
@@ -763,7 +763,7 @@ public abstract class AbstractClient implements Client {
 
         @Override
         public NodesInfoRequestBuilder prepareNodesInfo(String... nodesIds) {
-            return new NodesInfoRequestBuilder(this, TransportNodesInfoAction.TYPE).setNodesIds(nodesIds);
+            return new NodesInfoRequestBuilder(this).setNodesIds(nodesIds);
         }
 
         @Override
@@ -778,7 +778,7 @@ public abstract class AbstractClient implements Client {
 
         @Override
         public NodesStatsRequestBuilder prepareNodesStats(String... nodesIds) {
-            return new NodesStatsRequestBuilder(this, TransportNodesStatsAction.TYPE).setNodesIds(nodesIds);
+            return new NodesStatsRequestBuilder(this).setNodesIds(nodesIds);
         }
 
         @Override
@@ -803,7 +803,7 @@ public abstract class AbstractClient implements Client {
 
         @Override
         public NodesHotThreadsRequestBuilder prepareNodesHotThreads(String... nodesIds) {
-            return new NodesHotThreadsRequestBuilder(this, TransportNodesHotThreadsAction.TYPE).setNodesIds(nodesIds);
+            return new NodesHotThreadsRequestBuilder(this).setNodesIds(nodesIds);
         }
 
         @Override
@@ -818,7 +818,7 @@ public abstract class AbstractClient implements Client {
 
         @Override
         public ListTasksRequestBuilder prepareListTasks(String... nodesIds) {
-            return new ListTasksRequestBuilder(this, TransportListTasksAction.TYPE).setNodesIds(nodesIds);
+            return new ListTasksRequestBuilder(this).setNodesIds(nodesIds);
         }
 
         @Override
@@ -1200,17 +1200,17 @@ public abstract class AbstractClient implements Client {
 
         @Override
         public ActionFuture<GetIndexResponse> getIndex(GetIndexRequest request) {
-            return execute(GetIndexAction.INSTANCE, request);
+            return execute(TransportGetIndexAction.TYPE, request);
         }
 
         @Override
         public void getIndex(GetIndexRequest request, ActionListener<GetIndexResponse> listener) {
-            execute(GetIndexAction.INSTANCE, request, listener);
+            execute(TransportGetIndexAction.TYPE, request, listener);
         }
 
         @Override
         public GetIndexRequestBuilder prepareGetIndex() {
-            return new GetIndexRequestBuilder(this, GetIndexAction.INSTANCE);
+            return new GetIndexRequestBuilder(this);
         }
 
         @Override
@@ -1295,17 +1295,17 @@ public abstract class AbstractClient implements Client {
 
         @Override
         public ActionFuture<FlushResponse> flush(final FlushRequest request) {
-            return execute(FlushAction.INSTANCE, request);
+            return execute(TransportFlushAction.TYPE, request);
         }
 
         @Override
         public void flush(final FlushRequest request, final ActionListener<FlushResponse> listener) {
-            execute(FlushAction.INSTANCE, request, listener);
+            execute(TransportFlushAction.TYPE, request, listener);
         }
 
         @Override
         public FlushRequestBuilder prepareFlush(String... indices) {
-            return new FlushRequestBuilder(this, FlushAction.INSTANCE).setIndices(indices);
+            return new FlushRequestBuilder(this).setIndices(indices);
         }
 
         @Override

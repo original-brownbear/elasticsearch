@@ -21,8 +21,8 @@ import org.elasticsearch.action.admin.indices.mapping.put.PutMappingAction;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.fieldcaps.FieldCapabilitiesAction;
 import org.elasticsearch.action.fieldcaps.FieldCapabilitiesRequest;
+import org.elasticsearch.action.fieldcaps.TransportFieldCapabilitiesAction;
 import org.elasticsearch.action.get.MultiGetRequest;
 import org.elasticsearch.action.search.MultiSearchRequest;
 import org.elasticsearch.action.search.SearchRequest;
@@ -1514,7 +1514,7 @@ public class IndicesAndAliasesResolverTests extends ESTestCase {
             new Tuple<TransportRequest, String>(new SearchRequest("remote:foo").indicesOptions(options), TransportSearchAction.TYPE.name()),
             new Tuple<TransportRequest, String>(
                 new FieldCapabilitiesRequest().indices("remote:foo").indicesOptions(options),
-                FieldCapabilitiesAction.NAME
+                TransportFieldCapabilitiesAction.NAME
             ),
             new Tuple<TransportRequest, String>(
                 new GraphExploreRequest().indices("remote:foo").indicesOptions(options),

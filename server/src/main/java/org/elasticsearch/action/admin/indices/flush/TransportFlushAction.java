@@ -9,6 +9,7 @@
 
 package org.elasticsearch.action.admin.indices.flush;
 
+import org.elasticsearch.action.ActionType;
 import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.DefaultShardOperationFailedException;
 import org.elasticsearch.action.support.replication.ReplicationResponse;
@@ -32,6 +33,9 @@ public class TransportFlushAction extends TransportBroadcastReplicationAction<
     ShardFlushRequest,
     ReplicationResponse> {
 
+    public static final String NAME = "indices:admin/flush";
+    public static final ActionType<FlushResponse> TYPE = new ActionType<>(NAME, FlushResponse::new);
+
     @Inject
     public TransportFlushAction(
         ClusterService clusterService,
@@ -41,7 +45,7 @@ public class TransportFlushAction extends TransportBroadcastReplicationAction<
         IndexNameExpressionResolver indexNameExpressionResolver
     ) {
         super(
-            FlushAction.NAME,
+            NAME,
             FlushRequest::new,
             clusterService,
             transportService,

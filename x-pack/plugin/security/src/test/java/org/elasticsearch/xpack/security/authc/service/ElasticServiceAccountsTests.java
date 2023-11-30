@@ -21,8 +21,8 @@ import org.elasticsearch.action.admin.indices.template.get.GetIndexTemplatesActi
 import org.elasticsearch.action.admin.indices.template.put.PutIndexTemplateAction;
 import org.elasticsearch.action.bulk.BulkAction;
 import org.elasticsearch.action.delete.DeleteAction;
-import org.elasticsearch.action.get.GetAction;
-import org.elasticsearch.action.get.MultiGetAction;
+import org.elasticsearch.action.get.TransportGetAction;
+import org.elasticsearch.action.get.TransportMultiGetAction;
 import org.elasticsearch.action.index.IndexAction;
 import org.elasticsearch.action.search.TransportMultiSearchAction;
 import org.elasticsearch.action.search.TransportSearchAction;
@@ -138,8 +138,8 @@ public class ElasticServiceAccountsTests extends ESTestCase {
             assertThat(role.indices().allowedIndicesMatcher(IndexAction.NAME).test(index), is(true));
             assertThat(role.indices().allowedIndicesMatcher(BulkAction.NAME).test(index), is(true));
             assertThat(role.indices().allowedIndicesMatcher(DeleteIndexAction.NAME).test(index), is(false));
-            assertThat(role.indices().allowedIndicesMatcher(GetAction.NAME).test(index), is(false));
-            assertThat(role.indices().allowedIndicesMatcher(MultiGetAction.NAME).test(index), is(false));
+            assertThat(role.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(index), is(false));
+            assertThat(role.indices().allowedIndicesMatcher(TransportMultiGetAction.NAME).test(index), is(false));
             assertThat(role.indices().allowedIndicesMatcher(TransportSearchAction.TYPE.name()).test(index), is(false));
             assertThat(role.indices().allowedIndicesMatcher(TransportMultiSearchAction.TYPE.name()).test(index), is(false));
             assertThat(role.indices().allowedIndicesMatcher(UpdateSettingsAction.NAME).test(index), is(false));
@@ -153,8 +153,8 @@ public class ElasticServiceAccountsTests extends ESTestCase {
         assertThat(role.indices().allowedIndicesMatcher(IndexAction.NAME).test(profilingIndex), is(true));
         assertThat(role.indices().allowedIndicesMatcher(BulkAction.NAME).test(profilingIndex), is(true));
         assertThat(role.indices().allowedIndicesMatcher(DeleteIndexAction.NAME).test(profilingIndex), is(false));
-        assertThat(role.indices().allowedIndicesMatcher(GetAction.NAME).test(profilingIndex), is(true));
-        assertThat(role.indices().allowedIndicesMatcher(MultiGetAction.NAME).test(profilingIndex), is(true));
+        assertThat(role.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(profilingIndex), is(true));
+        assertThat(role.indices().allowedIndicesMatcher(TransportMultiGetAction.NAME).test(profilingIndex), is(true));
         assertThat(role.indices().allowedIndicesMatcher(TransportSearchAction.TYPE.name()).test(profilingIndex), is(true));
         assertThat(role.indices().allowedIndicesMatcher(TransportMultiSearchAction.TYPE.name()).test(profilingIndex), is(true));
         assertThat(role.indices().allowedIndicesMatcher(UpdateSettingsAction.NAME).test(profilingIndex), is(false));
@@ -167,8 +167,8 @@ public class ElasticServiceAccountsTests extends ESTestCase {
             assertThat(role.indices().allowedIndicesMatcher(IndexAction.NAME).test(index), is(true));
             assertThat(role.indices().allowedIndicesMatcher(BulkAction.NAME).test(index), is(true));
             assertThat(role.indices().allowedIndicesMatcher(DeleteIndexAction.NAME).test(index), is(false));
-            assertThat(role.indices().allowedIndicesMatcher(GetAction.NAME).test(index), is(true));
-            assertThat(role.indices().allowedIndicesMatcher(MultiGetAction.NAME).test(index), is(true));
+            assertThat(role.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(index), is(true));
+            assertThat(role.indices().allowedIndicesMatcher(TransportMultiGetAction.NAME).test(index), is(true));
             assertThat(role.indices().allowedIndicesMatcher(TransportSearchAction.TYPE.name()).test(index), is(true));
             assertThat(role.indices().allowedIndicesMatcher(TransportMultiSearchAction.TYPE.name()).test(index), is(true));
             assertThat(role.indices().allowedIndicesMatcher(UpdateSettingsAction.NAME).test(index), is(false));
@@ -190,8 +190,8 @@ public class ElasticServiceAccountsTests extends ESTestCase {
             assertThat(role.indices().allowedIndicesMatcher(CreateIndexAction.NAME).test(dotFleetIndex), is(true));
             assertThat(role.indices().allowedIndicesMatcher(IndexAction.NAME).test(dotFleetIndex), is(true));
             assertThat(role.indices().allowedIndicesMatcher(BulkAction.NAME).test(dotFleetIndex), is(true));
-            assertThat(role.indices().allowedIndicesMatcher(GetAction.NAME).test(dotFleetIndex), is(true));
-            assertThat(role.indices().allowedIndicesMatcher(MultiGetAction.NAME).test(dotFleetIndex), is(true));
+            assertThat(role.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(dotFleetIndex), is(true));
+            assertThat(role.indices().allowedIndicesMatcher(TransportMultiGetAction.NAME).test(dotFleetIndex), is(true));
             assertThat(role.indices().allowedIndicesMatcher(TransportSearchAction.TYPE.name()).test(dotFleetIndex), is(true));
             assertThat(role.indices().allowedIndicesMatcher(TransportMultiSearchAction.TYPE.name()).test(dotFleetIndex), is(true));
             assertThat(role.indices().allowedIndicesMatcher(IndicesStatsAction.NAME).test(dotFleetIndex), is(true));
@@ -205,8 +205,8 @@ public class ElasticServiceAccountsTests extends ESTestCase {
         assertThat(role.indices().allowedIndicesMatcher(CreateIndexAction.NAME).test(dotFleetSecretsIndex), is(false));
         assertThat(role.indices().allowedIndicesMatcher(IndexAction.NAME).test(dotFleetSecretsIndex), is(false));
         assertThat(role.indices().allowedIndicesMatcher(BulkAction.NAME).test(dotFleetSecretsIndex), is(false));
-        assertThat(role.indices().allowedIndicesMatcher(GetAction.NAME).test(dotFleetSecretsIndex), is(true));
-        assertThat(role.indices().allowedIndicesMatcher(MultiGetAction.NAME).test(dotFleetSecretsIndex), is(true));
+        assertThat(role.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(dotFleetSecretsIndex), is(true));
+        assertThat(role.indices().allowedIndicesMatcher(TransportMultiGetAction.NAME).test(dotFleetSecretsIndex), is(true));
         assertThat(role.indices().allowedIndicesMatcher(TransportSearchAction.TYPE.name()).test(dotFleetSecretsIndex), is(true));
         assertThat(role.indices().allowedIndicesMatcher(TransportMultiSearchAction.TYPE.name()).test(dotFleetSecretsIndex), is(true));
         assertThat(role.indices().allowedIndicesMatcher(IndicesStatsAction.NAME).test(dotFleetSecretsIndex), is(false));
@@ -224,8 +224,8 @@ public class ElasticServiceAccountsTests extends ESTestCase {
         assertThat(role.indices().allowedIndicesMatcher(CreateIndexAction.NAME).test(apmSampledTracesIndex), is(true));
         assertThat(role.indices().allowedIndicesMatcher(IndexAction.NAME).test(apmSampledTracesIndex), is(true));
         assertThat(role.indices().allowedIndicesMatcher(BulkAction.NAME).test(apmSampledTracesIndex), is(true));
-        assertThat(role.indices().allowedIndicesMatcher(GetAction.NAME).test(apmSampledTracesIndex), is(true));
-        assertThat(role.indices().allowedIndicesMatcher(MultiGetAction.NAME).test(apmSampledTracesIndex), is(true));
+        assertThat(role.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(apmSampledTracesIndex), is(true));
+        assertThat(role.indices().allowedIndicesMatcher(TransportMultiGetAction.NAME).test(apmSampledTracesIndex), is(true));
         assertThat(role.indices().allowedIndicesMatcher(TransportSearchAction.TYPE.name()).test(apmSampledTracesIndex), is(true));
         assertThat(role.indices().allowedIndicesMatcher(TransportMultiSearchAction.TYPE.name()).test(apmSampledTracesIndex), is(true));
         assertThat(role.indices().allowedIndicesMatcher(IndicesStatsAction.NAME).test(apmSampledTracesIndex), is(true));
@@ -370,8 +370,8 @@ public class ElasticServiceAccountsTests extends ESTestCase {
             assertThat(role.indices().allowedIndicesMatcher(DeleteIndexAction.NAME).test(enterpriseSearchIndex), is(true));
             assertThat(role.indices().allowedIndicesMatcher(IndexAction.NAME).test(enterpriseSearchIndex), is(true));
             assertThat(role.indices().allowedIndicesMatcher(BulkAction.NAME).test(enterpriseSearchIndex), is(true));
-            assertThat(role.indices().allowedIndicesMatcher(GetAction.NAME).test(enterpriseSearchIndex), is(true));
-            assertThat(role.indices().allowedIndicesMatcher(MultiGetAction.NAME).test(enterpriseSearchIndex), is(true));
+            assertThat(role.indices().allowedIndicesMatcher(TransportGetAction.NAME).test(enterpriseSearchIndex), is(true));
+            assertThat(role.indices().allowedIndicesMatcher(TransportMultiGetAction.NAME).test(enterpriseSearchIndex), is(true));
             assertThat(role.indices().allowedIndicesMatcher(TransportSearchAction.TYPE.name()).test(enterpriseSearchIndex), is(true));
             assertThat(role.indices().allowedIndicesMatcher(TransportMultiSearchAction.TYPE.name()).test(enterpriseSearchIndex), is(true));
             assertThat(role.indices().allowedIndicesMatcher(IndicesStatsAction.NAME).test(enterpriseSearchIndex), is(true));

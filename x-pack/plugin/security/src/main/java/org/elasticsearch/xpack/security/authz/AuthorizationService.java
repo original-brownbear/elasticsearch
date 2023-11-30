@@ -27,7 +27,7 @@ import org.elasticsearch.action.delete.DeleteAction;
 import org.elasticsearch.action.index.IndexAction;
 import org.elasticsearch.action.support.GroupedActionListener;
 import org.elasticsearch.action.support.replication.TransportReplicationAction.ConcreteShardRequest;
-import org.elasticsearch.action.update.UpdateAction;
+import org.elasticsearch.action.update.TransportUpdateAction;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.cluster.service.ClusterService;
@@ -903,7 +903,7 @@ public class AuthorizationService {
         return switch (docWriteRequest.opType()) {
             case INDEX -> IMPLIED_INDEX_ACTION;
             case CREATE -> IMPLIED_CREATE_ACTION;
-            case UPDATE -> UpdateAction.NAME;
+            case UPDATE -> TransportUpdateAction.NAME;
             case DELETE -> DeleteAction.NAME;
         };
     }

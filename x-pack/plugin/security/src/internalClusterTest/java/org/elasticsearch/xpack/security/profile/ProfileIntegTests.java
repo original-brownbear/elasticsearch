@@ -9,9 +9,9 @@ package org.elasticsearch.xpack.security.profile;
 
 import org.apache.lucene.search.TotalHits;
 import org.elasticsearch.ResourceNotFoundException;
-import org.elasticsearch.action.admin.indices.get.GetIndexAction;
 import org.elasticsearch.action.admin.indices.get.GetIndexRequest;
 import org.elasticsearch.action.admin.indices.get.GetIndexResponse;
+import org.elasticsearch.action.admin.indices.get.TransportGetIndexAction;
 import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
@@ -871,7 +871,7 @@ public class ProfileIntegTests extends AbstractProfileIntegTestCase {
     private GetIndexResponse getProfileIndexResponse() {
         final GetIndexRequest getIndexRequest = new GetIndexRequest();
         getIndexRequest.indices(".*");
-        return client().execute(GetIndexAction.INSTANCE, getIndexRequest).actionGet();
+        return client().execute(TransportGetIndexAction.TYPE, getIndexRequest).actionGet();
     }
 
     private ProfileHasPrivilegesResponse checkProfilePrivileges(String uid, PrivilegesToCheck privilegesToCheck) {

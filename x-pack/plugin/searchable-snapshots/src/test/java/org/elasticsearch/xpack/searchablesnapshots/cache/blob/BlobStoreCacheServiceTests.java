@@ -8,9 +8,9 @@
 package org.elasticsearch.xpack.searchablesnapshots.cache.blob;
 
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.get.GetAction;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.get.TransportGetAction;
 import org.elasticsearch.action.index.IndexAction;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
@@ -98,7 +98,7 @@ public class BlobStoreCacheServiceTests extends ESTestCase {
                 )
             );
             return null;
-        }).when(mockClient).execute(eq(GetAction.INSTANCE), any(GetRequest.class), any(ActionListener.class));
+        }).when(mockClient).execute(eq(TransportGetAction.TYPE), any(GetRequest.class), any(ActionListener.class));
 
         BlobStoreCacheService blobCacheService = new BlobStoreCacheService(null, mockClient, SNAPSHOT_BLOB_CACHE_INDEX);
         blobCacheService.start();

@@ -15,9 +15,9 @@ import org.elasticsearch.action.admin.cluster.node.info.NodesInfoRequest;
 import org.elasticsearch.action.admin.cluster.node.info.TransportNodesInfoAction;
 import org.elasticsearch.action.admin.indices.create.CreateIndexAction;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
-import org.elasticsearch.action.get.GetAction;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.get.TransportGetAction;
 import org.elasticsearch.action.ingest.GetPipelineAction;
 import org.elasticsearch.action.ingest.GetPipelineRequest;
 import org.elasticsearch.action.support.PlainActionFuture;
@@ -578,7 +578,7 @@ public class ApiKeySingleNodeTests extends SecuritySingleNodeTestCase {
         );
 
         // Check the API key attributes with raw document
-        final Map<String, Object> document = client().execute(GetAction.INSTANCE, new GetRequest(SECURITY_MAIN_ALIAS, apiKeyId))
+        final Map<String, Object> document = client().execute(TransportGetAction.TYPE, new GetRequest(SECURITY_MAIN_ALIAS, apiKeyId))
             .actionGet()
             .getSource();
         assertThat(document.get("type"), equalTo("cross_cluster"));
@@ -807,7 +807,7 @@ public class ApiKeySingleNodeTests extends SecuritySingleNodeTestCase {
     }
 
     private Map<String, Object> getApiKeyDocument(String apiKeyId) {
-        final GetResponse getResponse = client().execute(GetAction.INSTANCE, new GetRequest(".security-7", apiKeyId)).actionGet();
+        final GetResponse getResponse = client().execute(TransportGetAction.TYPE, new GetRequest(".security-7", apiKeyId)).actionGet();
         return getResponse.getSource();
     }
 }

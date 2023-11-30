@@ -196,7 +196,7 @@ public class CancellationTests extends ESTestCase {
 
         // Emulation of search cancellation
         ArgumentCaptor<SearchRequest> searchRequestCaptor = ArgumentCaptor.forClass(SearchRequest.class);
-        when(client.prepareSearch(any())).thenReturn(new SearchRequestBuilder(client, TransportSearchAction.TYPE).setIndices(indices));
+        when(client.prepareSearch(any())).thenReturn(new SearchRequestBuilder(client).setIndices(indices));
         doAnswer((Answer<Void>) invocation -> {
             @SuppressWarnings("unchecked")
             SearchRequest request = (SearchRequest) invocation.getArguments()[1];
