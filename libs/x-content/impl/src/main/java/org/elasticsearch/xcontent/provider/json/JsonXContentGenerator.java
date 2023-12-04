@@ -476,7 +476,7 @@ public class JsonXContentGenerator implements XContentGenerator {
         } else {
             writeStartRaw(name);
             flush();
-            Streams.copy(content, os);
+            content.transferTo(os);
             writeEndRaw();
         }
     }

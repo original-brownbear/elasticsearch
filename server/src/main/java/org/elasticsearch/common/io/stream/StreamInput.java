@@ -27,12 +27,14 @@ import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.core.CharArrays;
 import org.elasticsearch.core.Nullable;
+import org.elasticsearch.core.Streams;
 import org.elasticsearch.core.TimeValue;
 
 import java.io.EOFException;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.time.Duration;
@@ -586,6 +588,11 @@ public abstract class StreamInput extends InputStream {
 
     @Override
     public abstract int available() throws IOException;
+
+    @Override
+    public long transferTo(OutputStream out) throws IOException {
+        return Streams.copy(this, out);
+    }
 
     public String[] readStringArray() throws IOException {
         int size = readArraySize();

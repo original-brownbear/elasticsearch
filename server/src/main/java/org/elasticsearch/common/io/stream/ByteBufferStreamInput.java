@@ -9,6 +9,7 @@ package org.elasticsearch.common.io.stream;
 
 import java.io.EOFException;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 
@@ -246,4 +247,17 @@ public class ByteBufferStreamInput extends StreamInput {
 
     @Override
     public void close() throws IOException {}
+
+    @Override
+    public long transferTo(OutputStream out) throws IOException {
+        if (buffer.hasArray()) {
+            int pos = buffer.position();
+            int len = buffer.remaining();
+            out.write(buffer.array(), pos + buffer.arrayOffset(), len);
+            buffer.position(pos + len);
+            return len;
+        } else {
+            return super.transferTo(out);
+        }
+    }
 }

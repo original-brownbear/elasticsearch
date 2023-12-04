@@ -15,6 +15,7 @@ import org.elasticsearch.common.io.stream.StreamInput;
 
 import java.io.EOFException;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.Objects;
 
@@ -222,5 +223,15 @@ class BytesReferenceStreamInput extends StreamInput {
     public void mark(int readLimit) {
         // We ignore readLimit since the data is all in-memory and therefore we can reset the mark no matter how far we advance.
         this.mark = offset();
+    }
+
+    @Override
+    public long transferTo(OutputStream out) throws IOException {
+        int len = bytesReference.length();
+        int offset = offset();
+        var toWrite = bytesReference.slice(offset, len - offset);
+        toWrite.writeTo(out);
+        skip(len);
+        return len;
     }
 }
