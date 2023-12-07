@@ -7,7 +7,7 @@
 
 package org.elasticsearch.xpack.security.authz;
 
-import org.elasticsearch.action.LatchedActionListener;
+import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.support.ActionTestUtils;
 import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
@@ -182,7 +182,7 @@ public class AuthorizationServiceIntegTests extends SecurityIntegTestCase {
                         authzService.getRoleDescriptorsIntersectionForRemoteCluster(
                             concreteClusterAlias,
                             authentication.getEffectiveSubject(),
-                            new LatchedActionListener<>(ActionTestUtils.assertNoFailureListener(newValue -> {
+                            ActionListener.latched(ActionTestUtils.assertNoFailureListener(newValue -> {
                                 assertThat(threadContext.getTransient(AUTHORIZATION_INFO_KEY), not(nullValue()));
                                 actual.set(newValue);
                             }), latch)
@@ -193,7 +193,7 @@ public class AuthorizationServiceIntegTests extends SecurityIntegTestCase {
                 authzService.getRoleDescriptorsIntersectionForRemoteCluster(
                     concreteClusterAlias,
                     authentication.getEffectiveSubject(),
-                    new LatchedActionListener<>(ActionTestUtils.assertNoFailureListener(newValue -> {
+                    ActionListener.latched(ActionTestUtils.assertNoFailureListener(newValue -> {
                         assertThat(threadContext.getTransient(AUTHORIZATION_INFO_KEY), nullValue());
                         actual.set(newValue);
                     }), latch)

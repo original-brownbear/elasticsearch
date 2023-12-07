@@ -7,7 +7,6 @@
 package org.elasticsearch.xpack.transform.persistence;
 
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.LatchedActionListener;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesAction;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
 import org.elasticsearch.action.admin.indices.create.CreateIndexAction;
@@ -86,7 +85,7 @@ public class TransformIndexTests extends ESTestCase {
         TransformIndex.isDestinationIndexCreatedByTransform(
             client,
             DEST_INDEX,
-            new LatchedActionListener<>(ActionTestUtils.assertNoFailureListener(Assert::assertFalse), latch)
+            ActionListener.latched(ActionTestUtils.assertNoFailureListener(Assert::assertFalse), latch)
         );
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
@@ -99,10 +98,7 @@ public class TransformIndexTests extends ESTestCase {
         TransformIndex.isDestinationIndexCreatedByTransform(
             client,
             DEST_INDEX,
-            new LatchedActionListener<>(
-                ActionTestUtils.assertNoFailureListener(value -> assertThat(value, is(equalTo(expectedValue)))),
-                latch
-            )
+            ActionListener.latched(ActionTestUtils.assertNoFailureListener(value -> assertThat(value, is(equalTo(expectedValue)))), latch)
         );
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }

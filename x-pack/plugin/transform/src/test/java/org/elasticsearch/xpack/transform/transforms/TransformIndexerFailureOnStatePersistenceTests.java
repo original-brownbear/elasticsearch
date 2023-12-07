@@ -9,7 +9,6 @@ package org.elasticsearch.xpack.transform.transforms;
 
 import org.elasticsearch.ElasticsearchTimeoutException;
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.LatchedActionListener;
 import org.elasticsearch.client.internal.ParentTaskAssigningClient;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.Tuple;
@@ -533,7 +532,7 @@ public class TransformIndexerFailureOnStatePersistenceTests extends ESTestCase {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicBoolean listenerCalled = new AtomicBoolean(false);
 
-        LatchedActionListener<T> listener = new LatchedActionListener<>(ActionListener.wrap(r -> {
+        ActionListener<T> listener = ActionListener.latched(ActionListener.wrap(r -> {
             assertTrue("listener called more than once", listenerCalled.compareAndSet(false, true));
             furtherTests.accept(r);
         }, e -> {
@@ -550,7 +549,7 @@ public class TransformIndexerFailureOnStatePersistenceTests extends ESTestCase {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicBoolean listenerCalled = new AtomicBoolean(false);
 
-        LatchedActionListener<T> listener = new LatchedActionListener<>(ActionListener.wrap(r -> {
+        ActionListener<T> listener = ActionListener.latched(ActionListener.wrap(r -> {
             assertTrue("listener called more than once", listenerCalled.compareAndSet(false, true));
             fail("got unexpected response: " + r);
         }, e -> {

@@ -10,7 +10,6 @@ import org.elasticsearch.ElasticsearchSecurityException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.CompositeIndicesRequest;
 import org.elasticsearch.action.DocWriteRequest;
-import org.elasticsearch.action.LatchedActionListener;
 import org.elasticsearch.action.MockIndicesRequest;
 import org.elasticsearch.action.OriginalIndices;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthAction;
@@ -1153,7 +1152,7 @@ public class AuthorizationServiceTests extends ESTestCase {
                 authentication,
                 TransportSearchAction.TYPE.name(),
                 searchRequest,
-                new LatchedActionListener<>(listener, latch)
+                ActionListener.latched(listener, latch)
             );
             latch.await();
             verify(auditTrail).accessGranted(

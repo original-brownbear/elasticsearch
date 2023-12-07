@@ -13,7 +13,6 @@ import org.apache.lucene.util.SetOnce;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.ResourceNotFoundException;
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.LatchedActionListener;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.client.internal.ParentTaskAssigningClient;
@@ -373,7 +372,7 @@ public class TransformPersistentTasksExecutor extends PersistentTasksExecutor<Tr
         task.fail(
             exception,
             reason,
-            new LatchedActionListener<>(
+            ActionListener.latched(
                 ActionListener.wrap(
                     nil -> {},
                     failure -> logger.error("Failed to set task [" + task.getTransformId() + "] to failed", failure)

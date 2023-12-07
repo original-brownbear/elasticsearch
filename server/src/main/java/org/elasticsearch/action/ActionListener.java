@@ -21,6 +21,7 @@ import org.elasticsearch.core.Releasable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -387,6 +388,13 @@ public interface ActionListener<Response> {
         } catch (Exception e) {
             safeOnFailure(listener, e);
         }
+    }
+
+    /**
+      * An action listener that allows passing in a {@link CountDownLatch} that will be counted down after onResponse or onFailure is called
+     */
+    static <T> ActionListener<T> latched(ActionListener<T> listener, CountDownLatch latch) {
+        return runAfter(listener, latch::countDown);
     }
 
 }

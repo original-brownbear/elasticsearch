@@ -8,7 +8,6 @@
 package org.elasticsearch.xpack.transform;
 
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.LatchedActionListener;
 import org.elasticsearch.action.admin.cluster.snapshots.features.ResetFeatureStateAction;
 import org.elasticsearch.action.admin.cluster.snapshots.features.ResetFeatureStateRequest;
 import org.elasticsearch.common.settings.Settings;
@@ -52,7 +51,7 @@ public abstract class TransformSingleNodeTestCase extends ESSingleNodeTestCase {
 
         CountDownLatch latch = new CountDownLatch(1);
 
-        LatchedActionListener<T> listener = new LatchedActionListener<>(ActionListener.wrap(r -> {
+        ActionListener<T> listener = ActionListener.latched(ActionListener.wrap(r -> {
             if (expected == null) {
                 fail("expected an exception but got a response");
             } else {

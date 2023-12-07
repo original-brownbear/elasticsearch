@@ -8,7 +8,6 @@
 package org.elasticsearch.xpack.core.ml.utils;
 
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.LatchedActionListener;
 import org.elasticsearch.action.admin.cluster.node.info.NodeInfo;
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
 import org.elasticsearch.cluster.node.DiscoveryNode;
@@ -177,7 +176,7 @@ public class MlPlatformArchitecturesUtilTests extends ESTestCase {
 
         CountDownLatch latch = new CountDownLatch(1);
 
-        LatchedActionListener<T> listener = new LatchedActionListener<>(ActionListener.wrap(r -> {
+        ActionListener<T> listener = ActionListener.latched(ActionListener.wrap(r -> {
             if (expected == null) {
                 fail("expected an exception but got a response");
             } else {

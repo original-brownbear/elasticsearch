@@ -13,7 +13,6 @@ import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.DocWriteRequest;
 import org.elasticsearch.action.DocWriteResponse;
-import org.elasticsearch.action.LatchedActionListener;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexRequest;
@@ -334,7 +333,7 @@ public class TransportShardBulkActionTests extends IndexShardTestCase {
             threadPool::absoluteTimeInMillis,
             errorOnWait == false ? new ThrowingMappingUpdatePerformer(err) : new NoopMappingUpdatePerformer(),
             errorOnWait ? listener -> listener.onFailure(err) : listener -> listener.onResponse(null),
-            new LatchedActionListener<>(new ActionListener<Void>() {
+            ActionListener.latched(new ActionListener<>() {
                 @Override
                 public void onResponse(Void aVoid) {}
 
@@ -899,7 +898,7 @@ public class TransportShardBulkActionTests extends IndexShardTestCase {
             threadPool::absoluteTimeInMillis,
             new NoopMappingUpdatePerformer(),
             listener -> listener.onResponse(null),
-            new LatchedActionListener<>(ActionTestUtils.assertNoFailureListener(result -> {
+            ActionListener.latched(ActionTestUtils.assertNoFailureListener(result -> {
                 assertThat(((WritePrimaryResult<BulkShardRequest, BulkShardResponse>) result).location, equalTo(resultLocation));
                 BulkItemResponse primaryResponse = result.replicaRequest().items()[0].getPrimaryResponse();
                 assertThat(primaryResponse.getItemId(), equalTo(0));
@@ -990,7 +989,7 @@ public class TransportShardBulkActionTests extends IndexShardTestCase {
                     }
                 },
                 listener -> listener.onResponse(null),
-                new LatchedActionListener<>(ActionTestUtils.assertNoFailureListener(result ->
+                ActionListener.latched(ActionTestUtils.assertNoFailureListener(result ->
                 // Assert that we still need to fsync the location that was successfully written
                 assertThat(((WritePrimaryResult<BulkShardRequest, BulkShardResponse>) result).location, equalTo(resultLocation1))), latch),
                 rejectingThreadPool,
@@ -1053,7 +1052,7 @@ public class TransportShardBulkActionTests extends IndexShardTestCase {
                 }
             },
             listener -> listener.onFailure(new IllegalStateException("no failure expected")),
-            new LatchedActionListener<>(ActionTestUtils.assertNoFailureListener(result -> {
+            ActionListener.latched(ActionTestUtils.assertNoFailureListener(result -> {
                 try {
                     BulkStats bulkStats = shard.bulkStats();
                     assertThat(bulkStats.getTotalOperations(), greaterThan(0L));

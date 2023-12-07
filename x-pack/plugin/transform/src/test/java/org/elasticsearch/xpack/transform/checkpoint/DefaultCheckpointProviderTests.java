@@ -12,7 +12,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.util.SetOnce;
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.LatchedActionListener;
 import org.elasticsearch.action.admin.indices.get.GetIndexAction;
 import org.elasticsearch.action.admin.indices.get.GetIndexResponse;
 import org.elasticsearch.action.admin.indices.stats.IndicesStatsAction;
@@ -267,7 +266,7 @@ public class DefaultCheckpointProviderTests extends ESTestCase {
         CountDownLatch latch = new CountDownLatch(1);
         provider.createNextCheckpoint(
             null,
-            new LatchedActionListener<>(
+            ActionListener.latched(
                 ActionListener.wrap(
                     response -> fail("This test case must fail"),
                     e -> assertThat(
@@ -294,7 +293,7 @@ public class DefaultCheckpointProviderTests extends ESTestCase {
         CountDownLatch latch = new CountDownLatch(1);
         provider.sourceHasChanged(
             TransformCheckpoint.EMPTY,
-            new LatchedActionListener<>(ActionListener.wrap(hasChangedHolder::set, exceptionHolder::set), latch)
+            ActionListener.latched(ActionListener.wrap(hasChangedHolder::set, exceptionHolder::set), latch)
         );
         assertThat(latch.await(100, TimeUnit.MILLISECONDS), is(true));
         assertThat(hasChangedHolder.get(), is(equalTo(false)));
@@ -335,7 +334,7 @@ public class DefaultCheckpointProviderTests extends ESTestCase {
         CountDownLatch latch = new CountDownLatch(1);
         provider.createNextCheckpoint(
             new TransformCheckpoint(transformId, 100000000L, 7, emptyMap(), 120000000L),
-            new LatchedActionListener<>(ActionListener.wrap(checkpointHolder::set, exceptionHolder::set), latch)
+            ActionListener.latched(ActionListener.wrap(checkpointHolder::set, exceptionHolder::set), latch)
         );
         assertThat(latch.await(100, TimeUnit.MILLISECONDS), is(true));
         assertThat(exceptionHolder.get(), is(nullValue()));
@@ -386,7 +385,7 @@ public class DefaultCheckpointProviderTests extends ESTestCase {
         CountDownLatch latch = new CountDownLatch(1);
         provider.createNextCheckpoint(
             new TransformCheckpoint(transformId, 100000000L, 7, emptyMap(), 120000000L),
-            new LatchedActionListener<>(ActionListener.wrap(checkpointHolder::set, exceptionHolder::set), latch)
+            ActionListener.latched(ActionListener.wrap(checkpointHolder::set, exceptionHolder::set), latch)
         );
         assertThat(latch.await(100, TimeUnit.MILLISECONDS), is(true));
         assertThat(exceptionHolder.get(), is(nullValue()));

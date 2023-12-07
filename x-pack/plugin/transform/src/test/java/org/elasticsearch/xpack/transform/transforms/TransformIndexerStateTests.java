@@ -9,7 +9,6 @@ package org.elasticsearch.xpack.transform.transforms;
 
 import org.apache.lucene.search.TotalHits;
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.LatchedActionListener;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -781,8 +780,8 @@ public class TransformIndexerStateTests extends ESTestCase {
         assertTrue("timed out after 5s", latch.await(5, TimeUnit.SECONDS));
     }
 
-    private void countResponse(Consumer<ActionListener<Void>> function, CountDownLatch latch) throws InterruptedException {
-        LatchedActionListener<Void> listener = new LatchedActionListener<>(
+    private void countResponse(Consumer<ActionListener<Void>> function, CountDownLatch latch) {
+        ActionListener<Void> listener = ActionListener.latched(
             ActionTestUtils.assertNoFailureListener(r -> assertEquals("listener called more than once", 1, latch.getCount())),
             latch
         );

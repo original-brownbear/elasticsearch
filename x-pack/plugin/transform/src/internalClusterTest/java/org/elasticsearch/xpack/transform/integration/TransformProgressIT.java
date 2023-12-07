@@ -8,7 +8,6 @@
 package org.elasticsearch.xpack.transform.integration;
 
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.LatchedActionListener;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
@@ -218,7 +217,7 @@ public class TransformProgressIT extends TransformSingleNodeTestCase {
             client().search(searchRequest),
             response -> function.getInitialProgressFromResponse(
                 response,
-                new LatchedActionListener<>(ActionListener.wrap(progressHolder::set, exceptionHolder::set), latch)
+                ActionListener.latched(ActionListener.wrap(progressHolder::set, exceptionHolder::set), latch)
             )
         );
 

@@ -10,7 +10,6 @@ package org.elasticsearch.xpack.transform.checkpoint;
 import org.elasticsearch.TransportVersions;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.IndicesRequest;
-import org.elasticsearch.action.LatchedActionListener;
 import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.ActionTestUtils;
 import org.elasticsearch.action.support.IndicesOptions;
@@ -303,13 +302,10 @@ public class TransformGetCheckpointTests extends ESSingleNodeTestCase {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicBoolean listenerCalled = new AtomicBoolean(false);
 
-        LatchedActionListener<GetCheckpointAction.Response> listener = new LatchedActionListener<>(
-            ActionTestUtils.assertNoFailureListener(r -> {
-                assertTrue("listener called more than once", listenerCalled.compareAndSet(false, true));
-                furtherTests.accept(r);
-            }),
-            latch
-        );
+        ActionListener<GetCheckpointAction.Response> listener = ActionListener.latched(ActionTestUtils.assertNoFailureListener(r -> {
+            assertTrue("listener called more than once", listenerCalled.compareAndSet(false, true));
+            furtherTests.accept(r);
+        }), latch);
 
         ActionTestUtils.execute(getCheckpointAction, transformTask, request, listener);
         assertTrue("timed out after 20s", latch.await(20, TimeUnit.SECONDS));

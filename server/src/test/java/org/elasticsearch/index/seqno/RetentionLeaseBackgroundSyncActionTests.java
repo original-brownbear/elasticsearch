@@ -8,7 +8,7 @@
 
 package org.elasticsearch.index.seqno;
 
-import org.elasticsearch.action.LatchedActionListener;
+import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.ActionTestUtils;
 import org.elasticsearch.action.support.PlainActionFuture;
@@ -106,7 +106,7 @@ public class RetentionLeaseBackgroundSyncActionTests extends ESTestCase {
         );
 
         final CountDownLatch latch = new CountDownLatch(1);
-        action.shardOperationOnPrimary(request, indexShard, new LatchedActionListener<>(ActionTestUtils.assertNoFailureListener(result -> {
+        action.shardOperationOnPrimary(request, indexShard, ActionListener.latched(ActionTestUtils.assertNoFailureListener(result -> {
             // the retention leases on the shard should be persisted
             verify(indexShard).persistRetentionLeases();
             // we should forward the request containing the current retention leases to the replica

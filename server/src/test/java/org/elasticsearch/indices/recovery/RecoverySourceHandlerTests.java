@@ -22,7 +22,6 @@ import org.apache.lucene.tests.store.BaseDirectoryWrapper;
 import org.apache.lucene.util.SetOnce;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.LatchedActionListener;
 import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.node.DiscoveryNodeUtils;
@@ -618,7 +617,7 @@ public class RecoverySourceHandlerTests extends MapperServiceTestCase {
             store,
             metas.toArray(new StoreFileMetadata[0]),
             () -> 0,
-            new LatchedActionListener<>(ActionListener.wrap(r -> sendFilesError.set(null), e -> sendFilesError.set(e)), latch)
+            ActionListener.latched(ActionListener.wrap(r -> sendFilesError.set(null), e -> sendFilesError.set(e)), latch)
         );
         latch.await();
         assertThat(sendFilesError.get(), instanceOf(IOException.class));
@@ -950,7 +949,7 @@ public class RecoverySourceHandlerTests extends MapperServiceTestCase {
             store,
             files.toArray(new StoreFileMetadata[0]),
             () -> 0,
-            new LatchedActionListener<>(ActionListener.wrap(r -> sendFilesError.set(null), e -> sendFilesError.set(e)), sendFilesLatch)
+            ActionListener.latched(ActionListener.wrap(r -> sendFilesError.set(null), e -> sendFilesError.set(e)), sendFilesLatch)
         );
         assertBusy(() -> assertThat(sentChunks.get(), equalTo(Math.min(totalChunks, maxConcurrentChunks))));
         List<FileChunkResponse> failedChunks = randomSubsetOf(between(1, unrepliedChunks.size()), unrepliedChunks);
@@ -1069,7 +1068,7 @@ public class RecoverySourceHandlerTests extends MapperServiceTestCase {
         final ListenableFuture<RecoverySourceHandler.SendFileResult> phase1Listener = new ListenableFuture<>();
         try {
             final CountDownLatch latch = new CountDownLatch(1);
-            handler.phase1(DirectoryReader.listCommits(dir).get(0), 0, () -> 0, new LatchedActionListener<>(phase1Listener, latch));
+            handler.phase1(DirectoryReader.listCommits(dir).get(0), 0, () -> 0, ActionListener.latched(phase1Listener, latch));
             latch.await();
             phase1Listener.result();
         } catch (Exception e) {

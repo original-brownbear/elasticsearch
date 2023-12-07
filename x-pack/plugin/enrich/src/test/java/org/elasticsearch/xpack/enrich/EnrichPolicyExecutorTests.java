@@ -14,7 +14,6 @@ import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.action.ActionType;
-import org.elasticsearch.action.LatchedActionListener;
 import org.elasticsearch.action.admin.cluster.node.tasks.get.GetTaskAction;
 import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.client.internal.Client;
@@ -89,7 +88,7 @@ public class EnrichPolicyExecutorTests extends ESTestCase {
         final CountDownLatch firstTaskComplete = new CountDownLatch(1);
         testExecutor.coordinatePolicyExecution(
             new ExecuteEnrichPolicyAction.Request(testPolicyName),
-            new LatchedActionListener<>(ActionListener.noop(), firstTaskComplete)
+            ActionListener.latched(ActionListener.noop(), firstTaskComplete)
         );
 
         // Launch a second fake run that should fail immediately because the lock is obtained.
@@ -119,7 +118,7 @@ public class EnrichPolicyExecutorTests extends ESTestCase {
         CountDownLatch secondTaskComplete = new CountDownLatch(1);
         testExecutor.coordinatePolicyExecution(
             new ExecuteEnrichPolicyAction.Request(testPolicyName),
-            new LatchedActionListener<>(ActionListener.noop(), secondTaskComplete)
+            ActionListener.latched(ActionListener.noop(), secondTaskComplete)
         );
         secondTaskComplete.await();
     }
@@ -145,13 +144,13 @@ public class EnrichPolicyExecutorTests extends ESTestCase {
         final CountDownLatch firstTaskComplete = new CountDownLatch(1);
         testExecutor.coordinatePolicyExecution(
             new ExecuteEnrichPolicyAction.Request(testPolicyBaseName + "1"),
-            new LatchedActionListener<>(ActionListener.noop(), firstTaskComplete)
+            ActionListener.latched(ActionListener.noop(), firstTaskComplete)
         );
 
         final CountDownLatch secondTaskComplete = new CountDownLatch(1);
         testExecutor.coordinatePolicyExecution(
             new ExecuteEnrichPolicyAction.Request(testPolicyBaseName + "2"),
-            new LatchedActionListener<>(ActionListener.noop(), secondTaskComplete)
+            ActionListener.latched(ActionListener.noop(), secondTaskComplete)
         );
 
         // Launch a third fake run that should fail immediately because the lock is obtained.
@@ -189,7 +188,7 @@ public class EnrichPolicyExecutorTests extends ESTestCase {
         CountDownLatch finalTaskComplete = new CountDownLatch(1);
         testExecutor.coordinatePolicyExecution(
             new ExecuteEnrichPolicyAction.Request(testPolicyBaseName + "1"),
-            new LatchedActionListener<>(ActionListener.noop(), finalTaskComplete)
+            ActionListener.latched(ActionListener.noop(), finalTaskComplete)
         );
         finalTaskComplete.await();
     }

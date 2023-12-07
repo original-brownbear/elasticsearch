@@ -52,7 +52,7 @@ public class RejectionActionIT extends ESIntegTestCase {
         for (int i = 0; i < numberOfAsyncOps; i++) {
             prepareSearch("test").setSearchType(SearchType.QUERY_THEN_FETCH)
                 .setQuery(QueryBuilders.matchQuery("field", "1"))
-                .execute(new LatchedActionListener<>(new ActionListener<SearchResponse>() {
+                .execute(ActionListener.latched(new ActionListener<>() {
                     @Override
                     public void onResponse(SearchResponse searchResponse) {
                         responses.add(searchResponse);

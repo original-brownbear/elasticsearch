@@ -12,7 +12,6 @@ import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.action.ActionType;
 import org.elasticsearch.action.DocWriteResponse;
-import org.elasticsearch.action.LatchedActionListener;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthAction;
 import org.elasticsearch.action.admin.indices.create.CreateIndexAction;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
@@ -2488,7 +2487,7 @@ public class EnrichPolicyRunnerTests extends ESSingleNodeTestCase {
         final CountDownLatch latch,
         final Consumer<Exception> exceptionConsumer
     ) {
-        return new LatchedActionListener<>(ActionListener.wrap((r) -> logger.info("Run complete"), exceptionConsumer), latch);
+        return ActionListener.latched(ActionListener.wrap((r) -> logger.info("Run complete"), exceptionConsumer), latch);
     }
 
     private void validateMappingMetadata(Map<?, ?> mapping, String policyName, EnrichPolicy policy) {

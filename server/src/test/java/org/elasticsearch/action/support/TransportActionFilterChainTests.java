@@ -13,7 +13,6 @@ import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.action.ActionResponse;
-import org.elasticsearch.action.LatchedActionListener;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.set.Sets;
@@ -172,7 +171,7 @@ public class TransportActionFilterChainTests extends ESTestCase {
         final AtomicInteger responses = new AtomicInteger();
         final List<Throwable> failures = new CopyOnWriteArrayList<>();
 
-        ActionTestUtils.execute(transportAction, null, new TestRequest(), new LatchedActionListener<>(new ActionListener<>() {
+        ActionTestUtils.execute(transportAction, null, new TestRequest(), ActionListener.latched(new ActionListener<>() {
             @Override
             public void onResponse(TestResponse testResponse) {
                 responses.incrementAndGet();

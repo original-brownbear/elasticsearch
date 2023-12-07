@@ -12,7 +12,6 @@ import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.action.ActionType;
-import org.elasticsearch.action.LatchedActionListener;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.ClusterState;
@@ -850,7 +849,7 @@ public class SourceDestValidatorTests extends ESTestCase {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicBoolean listenerCalled = new AtomicBoolean(false);
 
-        LatchedActionListener<T> listener = new LatchedActionListener<>(ActionListener.wrap(r -> {
+        ActionListener<T> listener = ActionListener.latched(ActionListener.wrap(r -> {
             assertTrue("listener called more than once", listenerCalled.compareAndSet(false, true));
             if (expected == null) {
                 fail("expected an exception but got a response");
@@ -882,7 +881,7 @@ public class SourceDestValidatorTests extends ESTestCase {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicBoolean listenerCalled = new AtomicBoolean(false);
 
-        LatchedActionListener<Context> listener = new LatchedActionListener<>(ActionListener.wrap(r -> {
+        ActionListener<Context> listener = ActionListener.latched(ActionListener.wrap(r -> {
             assertTrue("listener called more than once", listenerCalled.compareAndSet(false, true));
             if (onAnswer == null) {
                 fail("expected an exception but got a response");

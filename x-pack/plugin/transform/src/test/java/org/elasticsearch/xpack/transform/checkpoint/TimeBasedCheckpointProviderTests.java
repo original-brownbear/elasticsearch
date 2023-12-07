@@ -10,7 +10,6 @@ package org.elasticsearch.xpack.transform.checkpoint;
 import org.apache.lucene.search.TotalHits;
 import org.apache.lucene.util.SetOnce;
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.LatchedActionListener;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchResponseSections;
@@ -195,7 +194,7 @@ public class TimeBasedCheckpointProviderTests extends ESTestCase {
         CountDownLatch latch = new CountDownLatch(1);
         provider.sourceHasChanged(
             lastCheckpoint,
-            new LatchedActionListener<>(ActionListener.wrap(hasChangedHolder::set, exceptionHolder::set), latch)
+            ActionListener.latched(ActionListener.wrap(hasChangedHolder::set, exceptionHolder::set), latch)
         );
         assertThat(latch.await(100, TimeUnit.MILLISECONDS), is(true));
 
@@ -272,7 +271,7 @@ public class TimeBasedCheckpointProviderTests extends ESTestCase {
         CountDownLatch latch = new CountDownLatch(1);
         provider.createNextCheckpoint(
             lastCheckpoint,
-            new LatchedActionListener<>(ActionListener.wrap(checkpointHolder::set, exceptionHolder::set), latch)
+            ActionListener.latched(ActionListener.wrap(checkpointHolder::set, exceptionHolder::set), latch)
         );
         assertThat(latch.await(100, TimeUnit.MILLISECONDS), is(true));
         assertThat(checkpointHolder.get(), is(equalTo(expectedNextCheckpoint)));

@@ -17,7 +17,6 @@ import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.action.ActionType;
-import org.elasticsearch.action.LatchedActionListener;
 import org.elasticsearch.action.admin.cluster.node.tasks.cancel.CancelTasksResponse;
 import org.elasticsearch.action.admin.cluster.node.tasks.list.ListTasksResponse;
 import org.elasticsearch.action.support.ActionFilters;
@@ -564,7 +563,7 @@ public class CancellableTasksIT extends ESIntegTestCase {
         protected void startSubTask(TaskId parentTaskId, TestRequest subRequest, ActionListener<TestResponse> listener) {
             subRequest.setParentTask(parentTaskId);
             CountDownLatch completeLatch = completedLatches.get(subRequest);
-            LatchedActionListener<TestResponse> latchedListener = new LatchedActionListener<>(listener, completeLatch);
+            ActionListener<TestResponse> latchedListener = ActionListener.latched(listener, completeLatch);
             transportService.getThreadPool().generic().execute(new AbstractRunnable() {
                 @Override
                 public void onFailure(Exception e) {

@@ -17,7 +17,6 @@ import org.elasticsearch.ResourceAlreadyExistsException;
 import org.elasticsearch.ResourceNotFoundException;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.LatchedActionListener;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.cluster.ClusterChangedEvent;
 import org.elasticsearch.cluster.ClusterName;
@@ -528,7 +527,7 @@ public class TrainedModelAssignmentClusterServiceTests extends ESTestCase {
         CountDownLatch latch = new CountDownLatch(1);
         trainedModelAssignmentClusterService.createNewModelAssignment(
             newParams("new-model", 150),
-            new LatchedActionListener<>(
+            ActionListener.latched(
                 ActionListener.wrap(
                     trainedModelAssignment -> fail("assignment should have failed to be created because reset mode is set"),
                     e -> {
@@ -2110,7 +2109,7 @@ public class TrainedModelAssignmentClusterServiceTests extends ESTestCase {
 
         CountDownLatch latch = new CountDownLatch(1);
 
-        LatchedActionListener<T> listener = new LatchedActionListener<>(ActionListener.wrap(r -> {
+        ActionListener<T> listener = ActionListener.latched(ActionListener.wrap(r -> {
             if (expected == null) {
                 fail("expected an exception but got a response");
             } else {

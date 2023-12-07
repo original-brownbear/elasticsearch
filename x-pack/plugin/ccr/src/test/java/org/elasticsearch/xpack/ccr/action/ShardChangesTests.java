@@ -9,7 +9,6 @@ package org.elasticsearch.xpack.ccr.action;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ResourceNotFoundException;
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.LatchedActionListener;
 import org.elasticsearch.action.admin.indices.flush.FlushRequest;
 import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeRequest;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
@@ -171,7 +170,7 @@ public class ShardChangesTests extends ESSingleNodeTestCase {
             client().execute(
                 ShardChangesAction.INSTANCE,
                 request,
-                new LatchedActionListener<>(ActionListener.wrap(r -> fail("expected an exception"), holder::set), latch)
+                ActionListener.latched(ActionListener.wrap(r -> fail("expected an exception"), holder::set), latch)
             );
             latch.await();
 

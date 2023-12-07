@@ -11,7 +11,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.util.RamUsageEstimator;
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.LatchedActionListener;
 import org.elasticsearch.action.admin.indices.refresh.RefreshResponse;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.xcontent.XContentHelper;
@@ -157,7 +156,7 @@ public class ChunkedTrainedModelPersister {
         CountDownLatch latch = new CountDownLatch(1);
 
         // Latch is attached to this action as it is the last one to execute.
-        ActionListener<RefreshResponse> refreshListener = new LatchedActionListener<>(ActionListener.wrap(refreshed -> {
+        ActionListener<RefreshResponse> refreshListener = ActionListener.latched(ActionListener.wrap(refreshed -> {
             if (refreshed != null) {
                 LOGGER.debug(() -> "[" + analytics.getId() + "] refreshed inference index after model store");
             }
@@ -210,7 +209,7 @@ public class ChunkedTrainedModelPersister {
         CountDownLatch latch = new CountDownLatch(1);
 
         // Latch is attached to this action as it is the last one to execute.
-        ActionListener<RefreshResponse> refreshListener = new LatchedActionListener<>(ActionListener.wrap(refreshed -> {
+        ActionListener<RefreshResponse> refreshListener = ActionListener.latched(ActionListener.wrap(refreshed -> {
             if (refreshed != null) {
                 LOGGER.debug(() -> "[" + analytics.getId() + "] refreshed inference index after model metadata store");
             }
@@ -260,7 +259,7 @@ public class ChunkedTrainedModelPersister {
                 ExceptionsHelper.serverError("error storing trained model config with id [{}]", e, trainedModelConfig.getModelId())
             );
         });
-        provider.storeTrainedModelConfig(trainedModelConfig, new LatchedActionListener<>(storeListener, latch));
+        provider.storeTrainedModelConfig(trainedModelConfig, ActionListener.latched(storeListener, latch));
         return latch;
     }
 

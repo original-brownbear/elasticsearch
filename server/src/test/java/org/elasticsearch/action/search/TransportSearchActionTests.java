@@ -15,7 +15,6 @@ import org.apache.lucene.util.SetOnce;
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.TransportVersions;
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.LatchedActionListener;
 import org.elasticsearch.action.OriginalIndices;
 import org.elasticsearch.action.OriginalIndicesTests;
 import org.elasticsearch.action.admin.cluster.shards.ClusterSearchShardsGroup;
@@ -519,7 +518,7 @@ public class TransportSearchActionTests extends ESTestCase {
             final CountDownLatch latch = new CountDownLatch(1);
             SetOnce<Tuple<SearchRequest, ActionListener<SearchResponse>>> setOnce = new SetOnce<>();
             AtomicReference<Exception> failure = new AtomicReference<>();
-            LatchedActionListener<SearchResponse> listener = new LatchedActionListener<>(
+            ActionListener<SearchResponse> listener = ActionListener.latched(
                 ActionListener.wrap(r -> fail("no response expected"), failure::set),
                 latch
             );
@@ -585,13 +584,10 @@ public class TransportSearchActionTests extends ESTestCase {
                 final CountDownLatch latch = new CountDownLatch(1);
                 SetOnce<Tuple<SearchRequest, ActionListener<SearchResponse>>> setOnce = new SetOnce<>();
                 final SetOnce<SearchResponse> response = new SetOnce<>();
-                LatchedActionListener<SearchResponse> listener = new LatchedActionListener<>(
-                    ActionTestUtils.assertNoFailureListener(newValue -> {
-                        newValue.incRef();
-                        response.set(newValue);
-                    }),
-                    latch
-                );
+                ActionListener<SearchResponse> listener = ActionListener.latched(ActionTestUtils.assertNoFailureListener(newValue -> {
+                    newValue.incRef();
+                    response.set(newValue);
+                }), latch);
                 TransportSearchAction.ccsRemoteReduce(
                     new TaskId("n", 1),
                     searchRequest,
@@ -637,7 +633,7 @@ public class TransportSearchActionTests extends ESTestCase {
                 final CountDownLatch latch = new CountDownLatch(1);
                 SetOnce<Tuple<SearchRequest, ActionListener<SearchResponse>>> setOnce = new SetOnce<>();
                 AtomicReference<Exception> failure = new AtomicReference<>();
-                LatchedActionListener<SearchResponse> listener = new LatchedActionListener<>(
+                ActionListener<SearchResponse> listener = ActionListener.latched(
                     ActionListener.wrap(r -> fail("no response expected"), failure::set),
                     latch
                 );
@@ -697,7 +693,7 @@ public class TransportSearchActionTests extends ESTestCase {
                 final CountDownLatch latch = new CountDownLatch(1);
                 SetOnce<Tuple<SearchRequest, ActionListener<SearchResponse>>> setOnce = new SetOnce<>();
                 AtomicReference<Exception> failure = new AtomicReference<>();
-                LatchedActionListener<SearchResponse> listener = new LatchedActionListener<>(
+                ActionListener<SearchResponse> listener = ActionListener.latched(
                     ActionListener.wrap(r -> fail("no response expected"), failure::set),
                     latch
                 );
@@ -739,13 +735,10 @@ public class TransportSearchActionTests extends ESTestCase {
                 final CountDownLatch latch = new CountDownLatch(1);
                 SetOnce<Tuple<SearchRequest, ActionListener<SearchResponse>>> setOnce = new SetOnce<>();
                 SetOnce<SearchResponse> response = new SetOnce<>();
-                LatchedActionListener<SearchResponse> listener = new LatchedActionListener<>(
-                    ActionTestUtils.assertNoFailureListener(newValue -> {
-                        newValue.mustIncRef();
-                        response.set(newValue);
-                    }),
-                    latch
-                );
+                ActionListener<SearchResponse> listener = ActionListener.latched(ActionTestUtils.assertNoFailureListener(newValue -> {
+                    newValue.mustIncRef();
+                    response.set(newValue);
+                }), latch);
                 Set<String> clusterAliases = new HashSet<>(remoteClusterService.getRegisteredRemoteClusterNames());
                 if (localIndices != null) {
                     clusterAliases.add("");
@@ -810,13 +803,10 @@ public class TransportSearchActionTests extends ESTestCase {
                 final CountDownLatch latch = new CountDownLatch(1);
                 SetOnce<Tuple<SearchRequest, ActionListener<SearchResponse>>> setOnce = new SetOnce<>();
                 AtomicReference<SearchResponse> response = new AtomicReference<>();
-                LatchedActionListener<SearchResponse> listener = new LatchedActionListener<>(
-                    ActionTestUtils.assertNoFailureListener(newValue -> {
-                        newValue.mustIncRef();
-                        response.set(newValue);
-                    }),
-                    latch
-                );
+                ActionListener<SearchResponse> listener = ActionListener.latched(ActionTestUtils.assertNoFailureListener(newValue -> {
+                    newValue.mustIncRef();
+                    response.set(newValue);
+                }), latch);
                 Set<String> clusterAliases = new HashSet<>(remoteClusterService.getRegisteredRemoteClusterNames());
                 if (localIndices != null) {
                     clusterAliases.add("");
@@ -913,7 +903,7 @@ public class TransportSearchActionTests extends ESTestCase {
                     clusters,
                     timeProvider,
                     service,
-                    new LatchedActionListener<>(ActionTestUtils.assertNoFailureListener(response::set), latch)
+                    ActionListener.latched(ActionTestUtils.assertNoFailureListener(response::set), latch)
                 );
                 awaitLatch(latch, 5, TimeUnit.SECONDS);
                 assertNotNull(response.get());
@@ -942,7 +932,7 @@ public class TransportSearchActionTests extends ESTestCase {
                     clusters,
                     timeProvider,
                     service,
-                    new LatchedActionListener<>(ActionListener.wrap(r -> fail("no response expected"), failure::set), latch)
+                    ActionListener.latched(ActionListener.wrap(r -> fail("no response expected"), failure::set), latch)
                 );
                 awaitLatch(latch, 5, TimeUnit.SECONDS);
                 assertEquals(numClusters, clusters.getClusterStateCount(SearchResponse.Cluster.Status.FAILED));
@@ -990,7 +980,7 @@ public class TransportSearchActionTests extends ESTestCase {
                     clusters,
                     timeProvider,
                     service,
-                    new LatchedActionListener<>(ActionListener.wrap(r -> fail("no response expected"), failure::set), latch)
+                    ActionListener.latched(ActionListener.wrap(r -> fail("no response expected"), failure::set), latch)
                 );
                 awaitLatch(latch, 5, TimeUnit.SECONDS);
                 assertEquals(numDisconnectedClusters, clusters.getClusterStateCount(SearchResponse.Cluster.Status.FAILED));
@@ -1020,7 +1010,7 @@ public class TransportSearchActionTests extends ESTestCase {
                     clusters,
                     timeProvider,
                     service,
-                    new LatchedActionListener<>(ActionTestUtils.assertNoFailureListener(response::set), latch)
+                    ActionListener.latched(ActionTestUtils.assertNoFailureListener(response::set), latch)
                 );
                 awaitLatch(latch, 5, TimeUnit.SECONDS);
                 assertNotNull(response.get());
@@ -1066,7 +1056,7 @@ public class TransportSearchActionTests extends ESTestCase {
                     clusters,
                     timeProvider,
                     service,
-                    new LatchedActionListener<>(ActionTestUtils.assertNoFailureListener(response::set), latch)
+                    ActionListener.latched(ActionTestUtils.assertNoFailureListener(response::set), latch)
                 );
                 awaitLatch(latch, 5, TimeUnit.SECONDS);
                 assertEquals(0, clusters.getClusterStateCount(SearchResponse.Cluster.Status.SKIPPED));
