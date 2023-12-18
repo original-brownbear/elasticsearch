@@ -22,7 +22,6 @@ import org.elasticsearch.xcontent.XContentType;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.Reader;
 import java.util.Set;
 
 /**
@@ -90,8 +89,4 @@ public final class YamlXContentImpl implements XContent {
         return new YamlXContentParser(config, yamlFactory.createParser(data, offset, length));
     }
 
-    @Override
-    public XContentParser createParser(XContentParserConfiguration config, Reader reader) throws IOException {
-        return new YamlXContentParser(config, yamlFactory.createParser(reader));
-    }
 }

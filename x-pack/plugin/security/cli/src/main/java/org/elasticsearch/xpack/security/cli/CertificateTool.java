@@ -46,9 +46,9 @@ import org.elasticsearch.xcontent.XContentType;
 import org.elasticsearch.xpack.core.ssl.CertParsingUtils;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.Reader;
 import java.nio.CharBuffer;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.StandardCharsets;
@@ -977,8 +977,8 @@ class CertificateTool extends MultiCommand {
      * @return a collection of certificate information
      */
     static Collection<CertificateInformation> parseFile(Path file) throws Exception {
-        try (Reader reader = Files.newBufferedReader(file)) {
-            XContentParser xContentParser = XContentType.YAML.xContent().createParser(XContentParserConfiguration.EMPTY, reader);
+        try (InputStream inputStream = Files.newInputStream(file)) {
+            XContentParser xContentParser = XContentType.YAML.xContent().createParser(XContentParserConfiguration.EMPTY, inputStream);
             return CertificateToolParser.PARSER.parse(xContentParser, new ArrayList<>(), null);
         }
     }

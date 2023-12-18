@@ -10,9 +10,8 @@ package org.elasticsearch.common.logging;
 import org.elasticsearch.xcontent.ObjectParser;
 import org.hamcrest.Matcher;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.AccessController;
@@ -30,17 +29,15 @@ public class ESJsonLogsConfigIT extends JsonLogsIntegTestCase {
     }
 
     @Override
-    protected BufferedReader openReader(Path logFile) {
+    protected InputStream openInputStream(Path logFile) {
         assumeFalse(
             "Skipping test because it is being run against an external cluster.",
             logFile.getFileName().toString().equals("--external--")
         );
 
-        return AccessController.doPrivileged((PrivilegedAction<BufferedReader>) () -> {
+        return AccessController.doPrivileged((PrivilegedAction<InputStream>) () -> {
             try {
-                String temp = Files.readString(logFile);
-
-                return Files.newBufferedReader(logFile, StandardCharsets.UTF_8);
+                return Files.newInputStream(logFile);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

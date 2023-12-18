@@ -12,9 +12,7 @@ import org.elasticsearch.xcontent.XContentParserConfiguration;
 import org.elasticsearch.xpack.core.textstructure.structurefinder.TextStructure;
 
 import java.io.IOException;
-import java.io.StringReader;
 import java.util.List;
-import java.util.Locale;
 
 import static org.elasticsearch.xcontent.json.JsonXContent.jsonXContent;
 
@@ -38,12 +36,7 @@ public class NdJsonTextStructureFinderFactory implements TextStructureFinderFact
         try {
             String[] sampleLines = sample.split("\n");
             for (String sampleLine : sampleLines) {
-                try (
-                    XContentParser parser = jsonXContent.createParser(
-                        XContentParserConfiguration.EMPTY,
-                        new ContextPrintingStringReader(sampleLine)
-                    )
-                ) {
+                try (XContentParser parser = jsonXContent.createParser(XContentParserConfiguration.EMPTY, sampleLine)) {
 
                     if (parser.map().isEmpty()) {
                         explanation.add("Not NDJSON because an empty object was parsed: [" + sampleLine + "]");
@@ -92,22 +85,4 @@ public class NdJsonTextStructureFinderFactory implements TextStructureFinderFact
         );
     }
 
-    private static class ContextPrintingStringReader extends StringReader {
-
-        private final String str;
-
-        ContextPrintingStringReader(String str) {
-            super(str);
-            this.str = str;
-        }
-
-        @Override
-        public String toString() {
-            if (str.length() <= 80) {
-                return String.format(Locale.ROOT, "\"%s\"", str);
-            } else {
-                return String.format(Locale.ROOT, "\"%.77s...\"", str);
-            }
-        }
-    }
 }

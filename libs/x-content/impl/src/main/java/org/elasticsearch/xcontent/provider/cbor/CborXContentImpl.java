@@ -25,7 +25,6 @@ import org.elasticsearch.xcontent.XContentType;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.Reader;
 import java.util.Set;
 
 /**
@@ -111,8 +110,4 @@ public final class CborXContentImpl implements XContent {
         return new CborXContentParser(config, cborFactory.createParser(data, offset, length));
     }
 
-    @Override
-    public XContentParser createParser(XContentParserConfiguration config, Reader reader) throws IOException {
-        return new CborXContentParser(config, cborFactory.createParser(reader));
-    }
 }

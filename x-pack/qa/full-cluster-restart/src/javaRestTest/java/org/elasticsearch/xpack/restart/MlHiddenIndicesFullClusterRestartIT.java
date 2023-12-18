@@ -27,7 +27,6 @@ import org.elasticsearch.xpack.test.rest.XPackRestTestHelper;
 import org.junit.Before;
 
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
@@ -168,12 +167,14 @@ public class MlHiddenIndicesFullClusterRestartIT extends AbstractXpackFullCluste
 
     @SuppressWarnings("unchecked")
     private static Map<String, Object> contentAsMap(Response response) throws IOException {
-        InputStreamReader reader = new InputStreamReader(response.getEntity().getContent(), StandardCharsets.UTF_8);
-        XContentParser parser = XContentProvider.provider()
-            .getJsonXContent()
-            .XContent()
-            .createParser(XContentParserConfiguration.EMPTY, reader);
-        return parser.map();
+        try (
+            XContentParser parser = XContentProvider.provider()
+                .getJsonXContent()
+                .XContent()
+                .createParser(XContentParserConfiguration.EMPTY, response.getEntity().getContent())
+        ) {
+            return parser.map();
+        }
     }
 
     private void createAnomalyDetectorJob(String jobId) throws IOException {

@@ -11,7 +11,6 @@ package org.elasticsearch.xcontent;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.Reader;
 import java.util.Collections;
 import java.util.Set;
 
@@ -82,8 +81,4 @@ public interface XContent {
      */
     XContentParser createParser(XContentParserConfiguration config, byte[] data, int offset, int length) throws IOException;
 
-    /**
-     * Creates a parser over the provided reader.
-     */
-    XContentParser createParser(XContentParserConfiguration config, Reader reader) throws IOException;
 }

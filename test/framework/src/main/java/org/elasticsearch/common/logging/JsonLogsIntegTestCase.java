@@ -12,8 +12,8 @@ import org.elasticsearch.core.SuppressForbidden;
 import org.elasticsearch.test.rest.ESRestTestCase;
 import org.elasticsearch.xcontent.ObjectParser;
 
-import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Iterator;
@@ -54,13 +54,13 @@ public abstract class JsonLogsIntegTestCase extends ESRestTestCase {
      * framework doesn't have permission to read from the log file but
      * subclasses can grant themselves that permission.
      */
-    protected abstract BufferedReader openReader(Path logFile);
+    protected abstract InputStream openInputStream(Path logFile);
 
     public void testElementsPresentOnAllLinesOfLog() throws IOException {
         JsonLogLine firstLine = findFirstLine();
         assertNotNull(firstLine);
 
-        try (Stream<JsonLogLine> stream = JsonLogsStream.from(openReader(getLogFile()), getParser())) {
+        try (Stream<JsonLogLine> stream = JsonLogsStream.from(openInputStream(getLogFile()), getParser())) {
             stream.limit(LINES_TO_CHECK).forEach(jsonLogLine -> {
                 assertThat(jsonLogLine.getDataset(), is(not(emptyOrNullString())));
                 assertThat(jsonLogLine.getTimestamp(), is(not(emptyOrNullString())));
@@ -76,13 +76,13 @@ public abstract class JsonLogsIntegTestCase extends ESRestTestCase {
     }
 
     private JsonLogLine findFirstLine() throws IOException {
-        try (Stream<JsonLogLine> stream = JsonLogsStream.from(openReader(getLogFile()), getParser())) {
+        try (Stream<JsonLogLine> stream = JsonLogsStream.from(openInputStream(getLogFile()), getParser())) {
             return stream.findFirst().orElseThrow(() -> new AssertionError("no logs at all?!"));
         }
     }
 
     public void testNodeIdAndClusterIdConsistentOnceAvailable() throws IOException {
-        try (Stream<JsonLogLine> stream = JsonLogsStream.from(openReader(getLogFile()), getParser())) {
+        try (Stream<JsonLogLine> stream = JsonLogsStream.from(openInputStream(getLogFile()), getParser())) {
             Iterator<JsonLogLine> iterator = stream.iterator();
 
             JsonLogLine firstLine = null;

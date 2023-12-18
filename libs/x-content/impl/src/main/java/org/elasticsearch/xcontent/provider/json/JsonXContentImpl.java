@@ -25,7 +25,6 @@ import org.elasticsearch.xcontent.XContentType;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.Reader;
 import java.util.Set;
 
 /**
@@ -104,8 +103,4 @@ public class JsonXContentImpl implements XContent {
         return new JsonXContentParser(config, jsonFactory.createParser(data, offset, length));
     }
 
-    @Override
-    public XContentParser createParser(XContentParserConfiguration config, Reader reader) throws IOException {
-        return new JsonXContentParser(config, jsonFactory.createParser(reader));
-    }
 }

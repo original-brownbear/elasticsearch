@@ -14,9 +14,9 @@ import org.apache.logging.log4j.message.SimpleMessage;
 import org.elasticsearch.test.ESTestCase;
 import org.hamcrest.Matchers;
 
-import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.equalTo;
@@ -29,7 +29,7 @@ public class JsonThrowablePatternConverterTests extends ESTestCase {
         LogEvent event = Log4jLogEvent.newBuilder().build();
         String result = format(event);
 
-        JsonLogLine jsonLogLine = JsonLogsStream.from(new BufferedReader(new StringReader(result)))
+        JsonLogLine jsonLogLine = JsonLogsStream.from(new ByteArrayInputStream(result.getBytes(StandardCharsets.UTF_8)))
             .findFirst()
             .orElseThrow(() -> new AssertionError("no logs parsed"));
 
@@ -56,9 +56,10 @@ public class JsonThrowablePatternConverterTests extends ESTestCase {
 
         // confirms exception is correctly parsed
 
-        JsonLogLine jsonLogLine = JsonLogsStream.from(new BufferedReader(new StringReader(result)), JsonLogLine.ES_LOG_LINE)
-            .findFirst()
-            .orElseThrow(() -> new AssertionError("no logs parsed"));
+        JsonLogLine jsonLogLine = JsonLogsStream.from(
+            new ByteArrayInputStream(result.getBytes(StandardCharsets.UTF_8)),
+            JsonLogLine.ES_LOG_LINE
+        ).findFirst().orElseThrow(() -> new AssertionError("no logs parsed"));
 
         int jsonLength = json.split(LINE_SEPARATOR).length;
         int stacktraceLength = thrown.getStackTrace().length;

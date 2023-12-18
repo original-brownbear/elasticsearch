@@ -40,9 +40,9 @@ import org.elasticsearch.xcontent.XContentType;
 import org.elasticsearch.xpack.core.ssl.CertParsingUtils;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -322,8 +322,10 @@ class CertificateGenerateTool extends EnvironmentAwareCommand {
      * @return a collection of certificate information
      */
     static Collection<CertificateInformation> parseFile(Path file) throws Exception {
-        try (Reader reader = Files.newBufferedReader(file)) {
-            try (XContentParser xContentParser = XContentType.YAML.xContent().createParser(XContentParserConfiguration.EMPTY, reader)) {
+        try (InputStream inputStream = Files.newInputStream(file)) {
+            try (
+                XContentParser xContentParser = XContentType.YAML.xContent().createParser(XContentParserConfiguration.EMPTY, inputStream)
+            ) {
                 return InputFileParser.PARSER.parse(xContentParser, new ArrayList<>(), null);
             }
         }
