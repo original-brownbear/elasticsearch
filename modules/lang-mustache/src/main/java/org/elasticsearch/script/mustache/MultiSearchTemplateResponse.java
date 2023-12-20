@@ -18,17 +18,17 @@ import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
+import org.elasticsearch.common.xcontent.ChunkedToXContent;
+import org.elasticsearch.common.xcontent.ChunkedToXContentHelper;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.xcontent.ToXContent;
-import org.elasticsearch.xcontent.ToXContentObject;
-import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
 import java.io.IOException;
 import java.util.Iterator;
 
-public class MultiSearchTemplateResponse extends ActionResponse implements Iterable<MultiSearchTemplateResponse.Item>, ToXContentObject {
+public class MultiSearchTemplateResponse extends ActionResponse implements Iterable<MultiSearchTemplateResponse.Item>, ChunkedToXContent {
 
     /**
      * A search template response item, holding the actual search template response, or an error message if it failed.
@@ -142,24 +142,29 @@ public class MultiSearchTemplateResponse extends ActionResponse implements Itera
     }
 
     @Override
-    public XContentBuilder toXContent(XContentBuilder builder, ToXContent.Params params) throws IOException {
-        builder.startObject();
-        builder.field("took", tookInMillis);
-        builder.startArray(Fields.RESPONSES);
-        for (Item item : items) {
-            builder.startObject();
-            if (item.isFailure()) {
-                ElasticsearchException.generateFailureXContent(builder, params, item.getFailure(), true);
-                builder.field(Fields.STATUS, ExceptionsHelper.status(item.getFailure()).getStatus());
-            } else {
-                item.getResponse().innerToXContent(builder, params);
-                builder.field(Fields.STATUS, item.getResponse().status().getStatus());
-            }
-            builder.endObject();
-        }
-        builder.endArray();
-        builder.endObject();
-        return builder;
+    public Iterator<? extends ToXContent> toXContentChunked(ToXContent.Params params) {
+        return Iterators.concat(
+            ChunkedToXContentHelper.startObject(),
+            Iterators.single((b, p) -> b.field("took", tookInMillis).startArray(Fields.RESPONSES)),
+            Iterators.flatMap(Iterators.forArray(items), item -> {
+                if (item.isFailure()) {
+                    return Iterators.single((b, p) -> {
+                        b.startObject();
+                        ElasticsearchException.generateFailureXContent(b, params, item.getFailure(), true);
+                        return b.field(Fields.STATUS, ExceptionsHelper.status(item.getFailure()).getStatus()).endObject();
+                    });
+                } else {
+                    return Iterators.concat(
+                        ChunkedToXContentHelper.startObject(),
+                        item.getResponse().innerToXContentChunked(params),
+                        Iterators.single((b, p) -> b.field(Fields.STATUS, item.getResponse().status().getStatus())),
+                        ChunkedToXContentHelper.endObject()
+                    );
+                }
+            }),
+            Iterators.single((b, p) -> b.endArray()),
+            ChunkedToXContentHelper.endObject()
+        );
     }
 
     static final class Fields {
@@ -186,6 +191,11 @@ public class MultiSearchTemplateResponse extends ActionResponse implements Itera
         } finally {
             mSearchResponse.decRef();
         }
+    }
+
+    @Override
+    public boolean isFragment() {
+        return false;
     }
 
     @Override

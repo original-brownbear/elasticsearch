@@ -12,10 +12,12 @@ import org.apache.lucene.search.TotalHits;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.ShardSearchFailure;
 import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.io.stream.Writeable;
+import org.elasticsearch.common.xcontent.ChunkedToXContent;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.internal.InternalSearchResponse;
-import org.elasticsearch.test.AbstractXContentTestCase;
+import org.elasticsearch.test.AbstractChunkedSerializingTestCase;
 import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentFactory;
@@ -27,7 +29,7 @@ import java.util.function.Predicate;
 
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertToXContentEquivalent;
 
-public class SearchTemplateResponseTests extends AbstractXContentTestCase<SearchTemplateResponse> {
+public class SearchTemplateResponseTests extends AbstractChunkedSerializingTestCase<SearchTemplateResponse> {
 
     @Override
     protected SearchTemplateResponse createTestInstance() {
@@ -38,6 +40,11 @@ public class SearchTemplateResponseTests extends AbstractXContentTestCase<Search
             response.setSource(createSource());
         }
         return response;
+    }
+
+    @Override
+    protected SearchTemplateResponse mutateInstance(SearchTemplateResponse instance) throws IOException {
+        return null;
     }
 
     @Override
@@ -151,7 +158,7 @@ public class SearchTemplateResponseTests extends AbstractXContentTestCase<Search
             .endObject();
 
         XContentBuilder actualResponse = XContentFactory.contentBuilder(contentType);
-        response.toXContent(actualResponse, ToXContent.EMPTY_PARAMS);
+        ChunkedToXContent.wrapAsToXContent(response).toXContent(actualResponse, ToXContent.EMPTY_PARAMS);
 
         assertToXContentEquivalent(BytesReference.bytes(expectedResponse), BytesReference.bytes(actualResponse), contentType);
     }
@@ -211,8 +218,13 @@ public class SearchTemplateResponseTests extends AbstractXContentTestCase<Search
             .endObject();
 
         XContentBuilder actualResponse = XContentFactory.contentBuilder(contentType);
-        response.toXContent(actualResponse, ToXContent.EMPTY_PARAMS);
+        ChunkedToXContent.wrapAsToXContent(response).toXContent(actualResponse, ToXContent.EMPTY_PARAMS);
 
         assertToXContentEquivalent(BytesReference.bytes(expectedResponse), BytesReference.bytes(actualResponse), contentType);
+    }
+
+    @Override
+    protected Writeable.Reader<SearchTemplateResponse> instanceReader() {
+        return null;
     }
 }

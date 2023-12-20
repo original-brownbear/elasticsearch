@@ -15,7 +15,7 @@ import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.Scope;
 import org.elasticsearch.rest.ServerlessScope;
-import org.elasticsearch.rest.action.RestToXContentListener;
+import org.elasticsearch.rest.action.RestRefCountedChunkedToXContentListener;
 import org.elasticsearch.rest.action.search.RestMultiSearchAction;
 import org.elasticsearch.rest.action.search.RestSearchAction;
 
@@ -59,7 +59,11 @@ public class RestMultiSearchTemplateAction extends BaseRestHandler {
     @Override
     public RestChannelConsumer prepareRequest(RestRequest request, NodeClient client) throws IOException {
         MultiSearchTemplateRequest multiRequest = parseRequest(request, allowExplicitIndex);
-        return channel -> client.execute(MustachePlugin.MULTI_SEARCH_TEMPLATE_ACTION, multiRequest, new RestToXContentListener<>(channel));
+        return channel -> client.execute(
+            MustachePlugin.MULTI_SEARCH_TEMPLATE_ACTION,
+            multiRequest,
+            new RestRefCountedChunkedToXContentListener<>(channel)
+        );
     }
 
     /**

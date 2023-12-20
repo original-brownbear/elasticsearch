@@ -10,21 +10,21 @@ package org.elasticsearch.script.mustache;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.ShardSearchFailure;
-import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.search.internal.InternalSearchResponse;
+import org.elasticsearch.test.AbstractChunkedSerializingTestCase;
 import org.elasticsearch.test.AbstractXContentTestCase;
 import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentParser;
 
 import java.io.IOException;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.nullValue;
 
-public class MultiSearchTemplateResponseTests extends AbstractXContentTestCase<MultiSearchTemplateResponse> {
+public class MultiSearchTemplateResponseTests extends AbstractChunkedSerializingTestCase<MultiSearchTemplateResponse> {
 
     @Override
     protected MultiSearchTemplateResponse createTestInstance() {
@@ -55,6 +55,11 @@ public class MultiSearchTemplateResponseTests extends AbstractXContentTestCase<M
             items[i] = new MultiSearchTemplateResponse.Item(searchTemplateResponse, null);
         }
         return new MultiSearchTemplateResponse(items, overallTookInMillis);
+    }
+
+    @Override
+    protected MultiSearchTemplateResponse mutateInstance(MultiSearchTemplateResponse instance) throws IOException {
+        return createTestInstance();
     }
 
     private static SearchResponse.Clusters randomClusters() {
@@ -98,7 +103,7 @@ public class MultiSearchTemplateResponseTests extends AbstractXContentTestCase<M
     }
 
     @Override
-    protected MultiSearchTemplateResponse doParseInstance(XContentParser parser) throws IOException {
+    protected MultiSearchTemplateResponse doParseInstance(XContentParser parser) {
         return MultiSearchTemplateResponse.fromXContext(parser);
     }
 
@@ -134,23 +139,26 @@ public class MultiSearchTemplateResponseTests extends AbstractXContentTestCase<M
      * without failures, and this other test with failures where we disable asserting on xcontent equivalence at the end.
      */
     public void testFromXContentWithFailures() throws IOException {
-        Supplier<MultiSearchTemplateResponse> instanceSupplier = MultiSearchTemplateResponseTests::createTestInstanceWithFailures;
-        // with random fields insertion in the inner exceptions, some random stuff may be parsed back as metadata,
-        // but that does not bother our assertions, as we only want to test that we don't break.
-        boolean supportsUnknownFields = true;
-        // exceptions are not of the same type whenever parsed back
-        boolean assertToXContentEquivalence = false;
-        AbstractXContentTestCase.testFromXContent(
-            NUMBER_OF_TEST_RUNS,
-            instanceSupplier,
-            supportsUnknownFields,
-            Strings.EMPTY_ARRAY,
-            getRandomFieldsExcludeFilterWhenResultHasErrors(),
+        AbstractXContentTestCase.chunkedXContentTester(
             this::createParser,
-            this::doParseInstance,
-            this::assertEqualInstances,
-            assertToXContentEquivalence,
-            ToXContent.EMPTY_PARAMS
-        );
+            p -> MultiSearchTemplateResponseTests.createTestInstanceWithFailures(),
+            ToXContent.EMPTY_PARAMS,
+            this::doParseInstance
+        )
+            // with random fields insertion in the inner exceptions, some random stuff may be parsed back as metadata,
+            // but that does not bother our assertions, as we only want to test that we don't break.
+            .supportsUnknownFields(true)
+            // exceptions are not of the same type whenever parsed back
+            .assertToXContentEquivalence(false)
+            .numberOfTestRuns(NUMBER_OF_TEST_RUNS)
+            .dispose(MultiSearchTemplateResponse::decRef)
+            .randomFieldsExcludeFilter(getRandomFieldsExcludeFilterWhenResultHasErrors())
+            .assertEqualsConsumer(this::assertEqualInstances)
+            .test();
+    }
+
+    @Override
+    protected Writeable.Reader<MultiSearchTemplateResponse> instanceReader() {
+        return MultiSearchTemplateResponse::new;
     }
 }
