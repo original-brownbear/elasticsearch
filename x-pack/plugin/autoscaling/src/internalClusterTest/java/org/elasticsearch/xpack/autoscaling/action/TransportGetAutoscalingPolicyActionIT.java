@@ -26,7 +26,7 @@ public class TransportGetAutoscalingPolicyActionIT extends AutoscalingIntegTestC
             expectedPolicy.roles(),
             expectedPolicy.deciders()
         );
-        assertAcked(client().execute(PutAutoscalingPolicyAction.INSTANCE, putRequest).actionGet());
+        assertAcked(client().execute(PutAutoscalingPolicyAction.INSTANCE, putRequest));
         // we trust that the policy is in the cluster state since we have tests for putting policies
         final GetAutoscalingPolicyAction.Request getRequest = new GetAutoscalingPolicyAction.Request(name);
         final AutoscalingPolicy actualPolicy = client().execute(GetAutoscalingPolicyAction.INSTANCE, getRequest).actionGet().policy();

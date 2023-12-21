@@ -192,7 +192,7 @@ public class BlobStoreRepositoryDeleteThrottlingTests extends ESSingleNodeTestCa
                 .setSettings(Settings.builder().put("location", repoPath))
         );
 
-        assertAcked(client().admin().cluster().prepareDeleteSnapshot(TEST_REPO_NAME, "snapshot-1").get());
+        assertAcked(client().admin().cluster().prepareDeleteSnapshot(TEST_REPO_NAME, "snapshot-1"));
 
         assertAcked(client().admin().cluster().prepareDeleteRepository(TEST_REPO_NAME));
     }

@@ -143,10 +143,10 @@ public abstract class ESSingleNodeTestCase extends ESTestCase {
             }
         }
         var deleteComposableIndexTemplateRequest = new DeleteComposableIndexTemplateAction.Request("*");
-        assertAcked(client().execute(DeleteComposableIndexTemplateAction.INSTANCE, deleteComposableIndexTemplateRequest).actionGet());
+        assertAcked(client().execute(DeleteComposableIndexTemplateAction.INSTANCE, deleteComposableIndexTemplateRequest));
         var deleteComponentTemplateRequest = new DeleteComponentTemplateAction.Request("*");
-        assertAcked(client().execute(DeleteComponentTemplateAction.INSTANCE, deleteComponentTemplateRequest).actionGet());
-        assertAcked(indicesAdmin().prepareDelete("*").setIndicesOptions(IndicesOptions.LENIENT_EXPAND_OPEN_CLOSED_HIDDEN).get());
+        assertAcked(client().execute(DeleteComponentTemplateAction.INSTANCE, deleteComponentTemplateRequest));
+        assertAcked(indicesAdmin().prepareDelete("*").setIndicesOptions(IndicesOptions.LENIENT_EXPAND_OPEN_CLOSED_HIDDEN));
         Metadata metadata = clusterAdmin().prepareState().get().getState().getMetadata();
         assertThat(
             "test leaves persistent cluster metadata behind: " + metadata.persistentSettings().keySet(),

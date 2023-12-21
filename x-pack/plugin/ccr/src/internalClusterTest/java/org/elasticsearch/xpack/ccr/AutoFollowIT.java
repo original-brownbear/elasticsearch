@@ -177,8 +177,7 @@ public class AutoFollowIT extends CcrIntegTestCase {
             assertThat(followedLeaderIndixUUIDs.get(0), equalTo(leaderIndexUUID));
         });
 
-        DeleteIndexRequest deleteIndexRequest = new DeleteIndexRequest("logs-201901");
-        assertAcked(leaderClient().admin().indices().delete(deleteIndexRequest).actionGet());
+        assertAcked(leaderClient().admin().indices().delete(new DeleteIndexRequest("logs-201901")));
 
         assertLongBusy(() -> {
             AutoFollowMetadata autoFollowMetadata = getFollowerCluster().clusterService()
@@ -755,13 +754,15 @@ public class AutoFollowIT extends CcrIntegTestCase {
     }
 
     private void pauseAutoFollowPattern(final String name) {
-        ActivateAutoFollowPatternAction.Request request = new ActivateAutoFollowPatternAction.Request(name, false);
-        assertAcked(followerClient().execute(ActivateAutoFollowPatternAction.INSTANCE, request).actionGet());
+        assertAcked(
+            followerClient().execute(ActivateAutoFollowPatternAction.INSTANCE, new ActivateAutoFollowPatternAction.Request(name, false))
+        );
     }
 
     private void resumeAutoFollowPattern(final String name) {
-        ActivateAutoFollowPatternAction.Request request = new ActivateAutoFollowPatternAction.Request(name, true);
-        assertAcked(followerClient().execute(ActivateAutoFollowPatternAction.INSTANCE, request).actionGet());
+        assertAcked(
+            followerClient().execute(ActivateAutoFollowPatternAction.INSTANCE, new ActivateAutoFollowPatternAction.Request(name, true))
+        );
     }
 
     private AutoFollowMetadata.AutoFollowPattern getAutoFollowPattern(final String name) {

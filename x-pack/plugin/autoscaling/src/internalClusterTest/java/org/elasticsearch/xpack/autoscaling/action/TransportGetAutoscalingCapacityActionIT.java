@@ -93,7 +93,7 @@ public class TransportGetAutoscalingCapacityActionIT extends AutoscalingIntegTes
             new TreeSet<>(Set.of("data")),
             new TreeMap<>()
         );
-        assertAcked(client().execute(PutAutoscalingPolicyAction.INSTANCE, request).actionGet());
+        assertAcked(client().execute(PutAutoscalingPolicyAction.INSTANCE, request));
     }
 
 }

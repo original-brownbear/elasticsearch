@@ -203,14 +203,14 @@ public class BlobStoreIncrementalityIT extends AbstractSnapshotIntegTestCase {
         final long beforeSegmentCount = beforeIndexDetails.getMaxSegmentsPerShard();
 
         // reactivate merges
-        assertAcked(indicesAdmin().prepareClose(indexName).get());
+        assertAcked(indicesAdmin().prepareClose(indexName));
         updateIndexSettings(
             Settings.builder()
                 .put(MergePolicyConfig.INDEX_MERGE_POLICY_SEGMENTS_PER_TIER_SETTING.getKey(), "2")
                 .put(MergePolicyConfig.INDEX_MERGE_ENABLED, "true"),
             indexName
         );
-        assertAcked(indicesAdmin().prepareOpen(indexName).get());
+        assertAcked(indicesAdmin().prepareOpen(indexName));
         assertEquals(0, indicesAdmin().prepareForceMerge(indexName).setFlush(true).get().getFailedShards());
 
         // wait for merges to reduce segment count

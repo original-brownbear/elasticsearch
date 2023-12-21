@@ -29,11 +29,11 @@ public class TransportDeleteAutoscalingPolicyActionIT extends AutoscalingIntegTe
             policy.roles(),
             policy.deciders()
         );
-        assertAcked(client().execute(PutAutoscalingPolicyAction.INSTANCE, putRequest).actionGet());
+        assertAcked(client().execute(PutAutoscalingPolicyAction.INSTANCE, putRequest));
         // we trust that the policy is in the cluster state since we have tests for putting policies
         String deleteName = randomFrom("*", policy.name(), policy.name().substring(0, between(0, policy.name().length())) + "*");
         final DeleteAutoscalingPolicyAction.Request deleteRequest = new DeleteAutoscalingPolicyAction.Request(deleteName);
-        assertAcked(client().execute(DeleteAutoscalingPolicyAction.INSTANCE, deleteRequest).actionGet());
+        assertAcked(client().execute(DeleteAutoscalingPolicyAction.INSTANCE, deleteRequest));
         // now verify that the policy is not in the cluster state
         final ClusterState state = clusterAdmin().prepareState().get().getState();
         final AutoscalingMetadata metadata = state.metadata().custom(AutoscalingMetadata.NAME);
@@ -61,6 +61,6 @@ public class TransportDeleteAutoscalingPolicyActionIT extends AutoscalingIntegTe
     public void testDeleteNonExistentPolicyByWildcard() {
         final String name = randomFrom("*", randomAlphaOfLength(8) + "*");
         final DeleteAutoscalingPolicyAction.Request deleteRequest = new DeleteAutoscalingPolicyAction.Request(name);
-        assertAcked(client().execute(DeleteAutoscalingPolicyAction.INSTANCE, deleteRequest).actionGet());
+        assertAcked(client().execute(DeleteAutoscalingPolicyAction.INSTANCE, deleteRequest));
     }
 }

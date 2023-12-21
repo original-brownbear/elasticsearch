@@ -77,9 +77,12 @@ public class ValidateIndicesAliasesRequestIT extends ESSingleNodeTestCase {
             .putList(IndicesAliasesPlugin.ALLOWED_ORIGINS_SETTING.getKey(), Collections.singletonList("allowed"))
             .build();
         createIndex("index", settings);
-        final IndicesAliasesRequest request = new IndicesAliasesRequest().origin("allowed");
-        request.addAliasAction(IndicesAliasesRequest.AliasActions.add().index("index").alias("alias"));
-        assertAcked(client().admin().indices().aliases(request).actionGet());
+        assertAcked(
+            indicesAdmin().aliases(
+                new IndicesAliasesRequest().origin("allowed")
+                    .addAliasAction(IndicesAliasesRequest.AliasActions.add().index("index").alias("alias"))
+            )
+        );
         final GetAliasesResponse response = client().admin().indices().getAliases(new GetAliasesRequest("alias")).actionGet();
         assertThat(response.getAliases().keySet().size(), equalTo(1));
         assertThat(response.getAliases().keySet().iterator().next(), equalTo("index"));

@@ -416,7 +416,7 @@ public class IndicesOptionsIntegrationIT extends ESIntegTestCase {
         createIndex("test1", "test2");
         ensureGreen();
         verify(search("test1", "test2"), false);
-        assertAcked(indicesAdmin().prepareClose("test2").get());
+        assertAcked(indicesAdmin().prepareClose("test2"));
 
         verify(search("test1", "test2"), true);
 
@@ -538,7 +538,7 @@ public class IndicesOptionsIntegrationIT extends ESIntegTestCase {
 
         verify(indicesAdmin().preparePutMapping("c*").setSource("field", "type=text"), true);
 
-        assertAcked(indicesAdmin().prepareClose("barbaz").get());
+        assertAcked(indicesAdmin().prepareClose("barbaz"));
         verify(indicesAdmin().preparePutMapping("barbaz").setSource("field", "type=text"), false);
         assertThat(indicesAdmin().prepareGetMappings("barbaz").get().mappings().get("barbaz"), notNullValue());
     }
@@ -573,7 +573,7 @@ public class IndicesOptionsIntegrationIT extends ESIntegTestCase {
 
         createIndex("foo", "foobar", "bar", "barbaz");
         ensureGreen();
-        assertAcked(indicesAdmin().prepareClose("_all").get());
+        assertAcked(indicesAdmin().prepareClose("_all"));
 
         verify(indicesAdmin().prepareUpdateSettings("foo").setSettings(Settings.builder().put("a", "b")), false);
         verify(indicesAdmin().prepareUpdateSettings("bar*").setSettings(Settings.builder().put("a", "b")), false);
@@ -590,7 +590,7 @@ public class IndicesOptionsIntegrationIT extends ESIntegTestCase {
         assertThat(settingsResponse.getSetting("bar", "index.c"), equalTo("d"));
         assertThat(settingsResponse.getSetting("barbaz", "index.c"), equalTo("d"));
 
-        assertAcked(indicesAdmin().prepareOpen("_all").get());
+        assertAcked(indicesAdmin().prepareOpen("_all"));
         try {
             verify(indicesAdmin().prepareUpdateSettings("barbaz").setSettings(Settings.builder().put("e", "f")), false);
         } catch (IllegalArgumentException e) {

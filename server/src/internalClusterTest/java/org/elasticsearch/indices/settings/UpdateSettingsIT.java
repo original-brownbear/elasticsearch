@@ -48,7 +48,7 @@ import static org.hamcrest.Matchers.nullValue;
 public class UpdateSettingsIT extends ESIntegTestCase {
     public void testInvalidUpdateOnClosedIndex() {
         createIndex("test");
-        assertAcked(indicesAdmin().prepareClose("test").get());
+        assertAcked(indicesAdmin().prepareClose("test"));
         IllegalArgumentException exception = expectThrows(
             IllegalArgumentException.class,
             () -> indicesAdmin().prepareUpdateSettings("test")

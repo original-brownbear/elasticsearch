@@ -145,7 +145,7 @@ public class IndexSnapshotsServiceIT extends AbstractSnapshotIntegTestCase {
 
         if (useBwCFormat) {
             // Reload the RepositoryData so we don't use cached data that wasn't serialized
-            assertAcked(clusterAdmin().prepareDeleteRepository(repoName).get());
+            assertAcked(clusterAdmin().prepareDeleteRepository(repoName));
             createRepository(repoName, "fs", repoPath);
         }
 

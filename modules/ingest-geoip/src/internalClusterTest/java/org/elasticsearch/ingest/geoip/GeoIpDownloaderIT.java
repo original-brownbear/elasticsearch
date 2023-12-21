@@ -341,7 +341,7 @@ public class GeoIpDownloaderIT extends AbstractGeoIpIT {
         // This should trigger the database download.
         Setting<String> pipelineSetting = randomFrom(IndexSettings.FINAL_PIPELINE, IndexSettings.DEFAULT_PIPELINE);
         Settings indexSettings = Settings.builder().put(pipelineSetting.getKey(), pipelineId).build();
-        assertAcked(indicesAdmin().prepareUpdateSettings(indexIdentifier).setSettings(indexSettings).get());
+        assertAcked(indicesAdmin().prepareUpdateSettings(indexIdentifier).setSettings(indexSettings));
         assertBusy(() -> {
             GeoIpTaskState state = getGeoIpTaskState();
             assertEquals(
@@ -351,7 +351,7 @@ public class GeoIpDownloaderIT extends AbstractGeoIpIT {
         }, 2, TimeUnit.MINUTES);
 
         // Remove the created index.
-        assertAcked(indicesAdmin().prepareDelete(indexIdentifier).get());
+        assertAcked(indicesAdmin().prepareDelete(indexIdentifier));
     }
 
     @TestLogging(value = "org.elasticsearch.ingest.geoip:TRACE", reason = "https://github.com/elastic/elasticsearch/issues/69972")
@@ -620,7 +620,7 @@ public class GeoIpDownloaderIT extends AbstractGeoIpIT {
             builder.endObject();
             bytes = BytesReference.bytes(builder);
         }
-        assertAcked(clusterAdmin().preparePutPipeline(pipelineId, bytes, XContentType.JSON).get());
+        assertAcked(clusterAdmin().preparePutPipeline(pipelineId, bytes, XContentType.JSON));
     }
 
     /**
@@ -665,7 +665,7 @@ public class GeoIpDownloaderIT extends AbstractGeoIpIT {
             builder.endObject();
             bytes = BytesReference.bytes(builder);
         }
-        assertAcked(clusterAdmin().preparePutPipeline(pipelineId, bytes, XContentType.JSON).get());
+        assertAcked(clusterAdmin().preparePutPipeline(pipelineId, bytes, XContentType.JSON));
     }
 
     private List<Path> getGeoIpTmpDirs() throws IOException {

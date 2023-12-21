@@ -12,7 +12,7 @@ import org.elasticsearch.core.RestApiVersion;
 import org.elasticsearch.http.HttpRouteStats;
 import org.elasticsearch.http.HttpRouteStatsTracker;
 
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -22,7 +22,7 @@ import java.util.Set;
 final class MethodHandlers {
 
     private final String path;
-    private final Map<RestRequest.Method, Map<RestApiVersion, RestHandler>> methodHandlers;
+    private final EnumMap<RestRequest.Method, EnumMap<RestApiVersion, RestHandler>> methodHandlers;
 
     private final HttpRouteStatsTracker statsTracker = new HttpRouteStatsTracker();
 
@@ -33,7 +33,7 @@ final class MethodHandlers {
         // maps contain only 1 or 2 entries anyway, so most of these maps are never resized at all and waste only 1 or 0
         // array references, while those few that contain 3 or 4 elements will have been resized just once and will still
         // waste only 1 or 0 array references
-        this.methodHandlers = new HashMap<>(2, 1);
+        this.methodHandlers = new EnumMap<>(RestRequest.Method.class);
     }
 
     public String getPath() {
@@ -48,7 +48,7 @@ final class MethodHandlers {
         RestHandler existing = methodHandlers
             // same sizing notes as 'methodHandlers' above, except that having a size here that's more than 1 is vanishingly
             // rare, so an initialCapacity of 1 with a loadFactor of 1 is perfect
-            .computeIfAbsent(method, k -> new HashMap<>(1, 1))
+            .computeIfAbsent(method, k -> new EnumMap<>(RestApiVersion.class))
             .putIfAbsent(version, handler);
         if (existing != null) {
             throw new IllegalArgumentException("Cannot replace existing handler for [" + path + "] for method: " + method);

@@ -230,8 +230,8 @@ public class OpenCloseIndexIT extends ESIntegTestCase {
             .put(IndexMetadata.INDEX_NUMBER_OF_SHARDS_SETTING.getKey(), 1)
             .put(IndexMetadata.INDEX_NUMBER_OF_REPLICAS_SETTING.getKey(), 0)
             .build();
-        assertAcked(client.admin().indices().prepareCreate("test").setSettings(settings).get());
-        assertAcked(client.admin().indices().prepareClose("test").get());
+        assertAcked(client.admin().indices().prepareCreate("test").setSettings(settings));
+        assertAcked(client.admin().indices().prepareClose("test"));
 
         OpenIndexResponse response = client.admin().indices().prepareOpen("test").setTimeout("100ms").setWaitForActiveShards(2).get();
         assertThat(response.isShardsAcknowledged(), equalTo(false));
@@ -289,8 +289,7 @@ public class OpenCloseIndexIT extends ESIntegTestCase {
                 enableIndexBlock("test", blockSetting);
 
                 // Closing an index is not blocked
-                AcknowledgedResponse closeIndexResponse = indicesAdmin().prepareClose("test").get();
-                assertAcked(closeIndexResponse);
+                assertAcked(indicesAdmin().prepareClose("test"));
                 assertIndexIsClosed("test");
 
                 // Opening an index is not blocked
@@ -314,8 +313,7 @@ public class OpenCloseIndexIT extends ESIntegTestCase {
             }
         }
 
-        AcknowledgedResponse closeIndexResponse = indicesAdmin().prepareClose("test").get();
-        assertAcked(closeIndexResponse);
+        assertAcked(indicesAdmin().prepareClose("test"));
         assertIndexIsClosed("test");
 
         // Opening an index is blocked

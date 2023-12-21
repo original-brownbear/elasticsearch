@@ -16,7 +16,6 @@ import org.elasticsearch.action.admin.indices.readonly.AddIndexBlockRequestBuild
 import org.elasticsearch.action.admin.indices.readonly.AddIndexBlockResponse;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.support.ActiveShardCount;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.block.ClusterBlockException;
 import org.elasticsearch.cluster.block.ClusterBlockLevel;
@@ -163,8 +162,7 @@ public class SimpleBlocksIT extends ESIntegTestCase {
                     enableIndexBlock("test", block.settingName());
 
                     // Adding a block is not blocked
-                    AcknowledgedResponse addBlockResponse = indicesAdmin().prepareAddBlock(otherBlock, "test").get();
-                    assertAcked(addBlockResponse);
+                    assertAcked(indicesAdmin().prepareAddBlock(otherBlock, "test"));
                 } finally {
                     disableIndexBlock("test", otherBlock.settingName());
                     disableIndexBlock("test", block.settingName());

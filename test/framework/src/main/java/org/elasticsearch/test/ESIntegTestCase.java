@@ -42,7 +42,6 @@ import org.elasticsearch.action.admin.indices.segments.IndexShardSegments;
 import org.elasticsearch.action.admin.indices.segments.IndicesSegmentResponse;
 import org.elasticsearch.action.admin.indices.segments.ShardSegments;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequestBuilder;
-import org.elasticsearch.action.admin.indices.template.put.PutIndexTemplateRequestBuilder;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequestBuilder;
@@ -429,11 +428,12 @@ public abstract class ESIntegTestCase extends ESTestCase {
             if (randomBoolean()) {
                 randomSettingsBuilder.put(IndexModule.INDEX_QUERY_CACHE_ENABLED_SETTING.getKey(), randomBoolean());
             }
-            PutIndexTemplateRequestBuilder putTemplate = indicesAdmin().preparePutTemplate("random_index_template")
-                .setPatterns(Collections.singletonList("*"))
-                .setOrder(0)
-                .setSettings(randomSettingsBuilder);
-            assertAcked(putTemplate.get());
+            assertAcked(
+                indicesAdmin().preparePutTemplate("random_index_template")
+                    .setPatterns(Collections.singletonList("*"))
+                    .setOrder(0)
+                    .setSettings(randomSettingsBuilder)
+            );
         }
     }
 
@@ -838,9 +838,7 @@ public abstract class ESIntegTestCase extends ESTestCase {
      * updates the settings for an index
      */
     public static void updateIndexSettings(Settings.Builder settingsBuilder, String... index) {
-        UpdateSettingsRequestBuilder settingsRequest = indicesAdmin().prepareUpdateSettings(index);
-        settingsRequest.setSettings(settingsBuilder);
-        assertAcked(settingsRequest.get());
+        assertAcked(indicesAdmin().prepareUpdateSettings(index).setSettings(settingsBuilder));
     }
 
     public static void setReplicaCount(int replicas, String index) {
@@ -1746,7 +1744,7 @@ public abstract class ESIntegTestCase extends ESTestCase {
 
     /** Sets cluster persistent settings **/
     public static void updateClusterSettings(Settings.Builder persistentSettings) {
-        assertAcked(clusterAdmin().prepareUpdateSettings().setPersistentSettings(persistentSettings).get());
+        assertAcked(clusterAdmin().prepareUpdateSettings().setPersistentSettings(persistentSettings));
     }
 
     private static CountDownLatch newLatch(List<CountDownLatch> latches) {

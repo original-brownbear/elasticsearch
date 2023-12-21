@@ -51,7 +51,7 @@ public class BlobStoreSizeLimitIT extends AbstractSnapshotIntegTestCase {
             )
         );
         assertEquals(repositoryException.repository(), repoName);
-        assertAcked(startDeleteSnapshot(repoName, randomFrom(snapshotNames)).get());
+        assertAcked(startDeleteSnapshot(repoName, randomFrom(snapshotNames)));
         createFullSnapshot(repoName, "last-snapshot");
     }
 }

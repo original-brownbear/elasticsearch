@@ -122,7 +122,7 @@ public class GeoIpDownloaderStatsIT extends AbstractGeoIpIT {
             builder.endObject();
             bytes = BytesReference.bytes(builder);
         }
-        assertAcked(clusterAdmin().preparePutPipeline("_id", bytes, XContentType.JSON).get());
+        assertAcked(clusterAdmin().preparePutPipeline("_id", bytes, XContentType.JSON));
     }
 
     public static Map<String, Object> convertToMap(ToXContent part) throws IOException {

@@ -131,7 +131,7 @@ public class CloneSnapshotIT extends AbstractSnapshotIntegTestCase {
             assertAcked(indicesAdmin().prepareDelete(indexName));
         }
         final String targetSnapshot = "target-snapshot";
-        assertAcked(startClone(repoName, sourceSnapshot, targetSnapshot, indexName).get());
+        assertAcked(startClone(repoName, sourceSnapshot, targetSnapshot, indexName));
 
         final List<SnapshotStatus> status = clusterAdmin().prepareSnapshotStatus(repoName)
             .setSnapshots(sourceSnapshot, targetSnapshot)
@@ -170,7 +170,7 @@ public class CloneSnapshotIT extends AbstractSnapshotIntegTestCase {
         assertThat(ex.getMessage(), containsString("cannot delete snapshot while it is being cloned"));
 
         unblockNode(repoName, masterName);
-        assertAcked(cloneFuture.get());
+        assertAcked(cloneFuture);
         final List<SnapshotStatus> status = clusterAdmin().prepareSnapshotStatus(repoName)
             .setSnapshots(sourceSnapshot, targetSnapshot)
             .get()
@@ -201,7 +201,7 @@ public class CloneSnapshotIT extends AbstractSnapshotIntegTestCase {
         final ActionFuture<AcknowledgedResponse> cloneFuture = startClone(repoName, sourceSnapshot, targetSnapshot, indexName);
         awaitNumberOfSnapshotsInProgress(2);
         unblockNode(repoName, dataNode);
-        assertAcked(cloneFuture.get());
+        assertAcked(cloneFuture);
         assertSuccessful(snapshot2Future);
     }
 
@@ -232,7 +232,7 @@ public class CloneSnapshotIT extends AbstractSnapshotIntegTestCase {
         assertThat(cloneFuture.isDone(), is(false));
         unblockNode(repoName, masterNode);
 
-        assertAcked(cloneFuture.get());
+        assertAcked(cloneFuture);
     }
 
     public void testLongRunningSnapshotAllowsConcurrentClone() throws Exception {
@@ -257,7 +257,7 @@ public class CloneSnapshotIT extends AbstractSnapshotIntegTestCase {
         waitForBlock(dataNode, repoName);
 
         final String targetSnapshot = "target-snapshot";
-        assertAcked(startClone(repoName, sourceSnapshot, targetSnapshot, indexSlow).get());
+        assertAcked(startClone(repoName, sourceSnapshot, targetSnapshot, indexSlow));
 
         assertThat(snapshotFuture.isDone(), is(false));
         unblockNode(repoName, dataNode);
@@ -291,7 +291,7 @@ public class CloneSnapshotIT extends AbstractSnapshotIntegTestCase {
         assertThat(ex.getMessage(), containsString("cannot clone from snapshot that is being deleted"));
 
         unblockNode(repoName, masterName);
-        assertAcked(deleteFuture.get());
+        assertAcked(deleteFuture);
     }
 
     public void testBackToBackClonesForIndexNotInCluster() throws Exception {
@@ -306,7 +306,7 @@ public class CloneSnapshotIT extends AbstractSnapshotIntegTestCase {
         final String sourceSnapshot = "source-snapshot";
         createFullSnapshot(repoName, sourceSnapshot);
 
-        assertAcked(indicesAdmin().prepareDelete(indexBlocked).get());
+        assertAcked(indicesAdmin().prepareDelete(indexBlocked));
 
         final String targetSnapshot1 = "target-snapshot";
         blockMasterOnShardClone(repoName);
@@ -344,10 +344,10 @@ public class CloneSnapshotIT extends AbstractSnapshotIntegTestCase {
         }
 
         unblockNode(repoName, masterNode);
-        assertAcked(cloneFuture1.get());
+        assertAcked(cloneFuture1);
 
         for (ActionFuture<AcknowledgedResponse> extraCloneFuture : extraCloneFutures) {
-            assertAcked(extraCloneFuture.get());
+            assertAcked(extraCloneFuture);
         }
         for (ActionFuture<CreateSnapshotResponse> extraSnapshotFuture : extraSnapshotFutures) {
             assertSuccessful(extraSnapshotFuture);
@@ -454,7 +454,7 @@ public class CloneSnapshotIT extends AbstractSnapshotIntegTestCase {
         expectThrows(SnapshotException.class, cloneFuture::actionGet);
         awaitNoMoreRunningOperations();
         assertAllSnapshotsSuccessful(getRepositoryData(repoName), 1);
-        assertAcked(startDeleteSnapshot(repoName, sourceSnapshot).get());
+        assertAcked(startDeleteSnapshot(repoName, sourceSnapshot));
     }
 
     public void testDoesNotStartOnBrokenSourceSnapshot() throws Exception {
@@ -556,9 +556,9 @@ public class CloneSnapshotIT extends AbstractSnapshotIntegTestCase {
         assertSuccessful(sn1);
         assertSuccessful(sn2);
         assertSuccessful(sn3);
-        assertAcked(clone1.get());
-        assertAcked(clone2.get());
-        assertAcked(clone3.get());
+        assertAcked(clone1);
+        assertAcked(clone2);
+        assertAcked(clone3);
     }
 
     public void testStartSnapshotWithSuccessfulShardClonePendingFinalization() throws Exception {
@@ -586,7 +586,7 @@ public class CloneSnapshotIT extends AbstractSnapshotIntegTestCase {
         awaitNumberOfSnapshotsInProgress(1);
         awaitMasterFinishRepoOperations();
         unblockNode(repoName, dataNode);
-        assertAcked(blockedClone.get());
+        assertAcked(blockedClone);
         assertEquals(getSnapshot(repoName, cloneName).state(), SnapshotState.SUCCESS);
         assertSuccessful(otherSnapshot);
     }
@@ -615,8 +615,8 @@ public class CloneSnapshotIT extends AbstractSnapshotIntegTestCase {
         unblockNode(repoName, masterName);
         awaitNoMoreRunningOperations(masterName);
         awaitMasterFinishRepoOperations();
-        assertAcked(blockedClone.get());
-        assertAcked(otherClone.get());
+        assertAcked(blockedClone);
+        assertAcked(otherClone);
         assertEquals(getSnapshot(repoName, cloneName).state(), SnapshotState.SUCCESS);
         assertEquals(getSnapshot(repoName, otherCloneName).state(), SnapshotState.SUCCESS);
     }
@@ -654,7 +654,7 @@ public class CloneSnapshotIT extends AbstractSnapshotIntegTestCase {
         awaitMasterFinishRepoOperations();
 
         assertSuccessful(blockedSnapshot);
-        assertAcked(clone.get());
+        assertAcked(clone);
         assertEquals(getSnapshot(repoName, cloneName).state(), SnapshotState.SUCCESS);
     }
 
@@ -691,8 +691,8 @@ public class CloneSnapshotIT extends AbstractSnapshotIntegTestCase {
             return false;
         });
         unblockNode(repoName, masterName);
-        assertAcked(deleteFuture.get());
-        assertAcked(cloneFuture.get());
+        assertAcked(deleteFuture);
+        assertAcked(cloneFuture);
     }
 
     public void testManyConcurrentClonesStartOutOfOrder() throws Exception {
@@ -706,7 +706,7 @@ public class CloneSnapshotIT extends AbstractSnapshotIntegTestCase {
 
         final String sourceSnapshot = "source-snapshot";
         createFullSnapshot(repoName, sourceSnapshot);
-        assertAcked(indicesAdmin().prepareDelete(testIndex).get());
+        assertAcked(indicesAdmin().prepareDelete(testIndex));
 
         final MockRepository repo = getRepositoryOnMaster(repoName);
         repo.setBlockOnceOnReadSnapshotInfoIfAlreadyBlocked();
@@ -723,8 +723,8 @@ public class CloneSnapshotIT extends AbstractSnapshotIntegTestCase {
         awaitClusterState(state -> SnapshotsInProgress.get(state).forRepo(repoName).stream().anyMatch(entry -> entry.state().completed()));
         repo.unblock();
 
-        assertAcked(clone1.get());
-        assertAcked(clone2.get());
+        assertAcked(clone1);
+        assertAcked(clone2);
     }
 
     public void testRemoveFailedCloneFromCSWithoutIO() throws Exception {
@@ -747,7 +747,7 @@ public class CloneSnapshotIT extends AbstractSnapshotIntegTestCase {
         expectThrows(SnapshotException.class, cloneFuture::actionGet);
         awaitNoMoreRunningOperations();
         assertAllSnapshotsSuccessful(getRepositoryData(repoName), 1);
-        assertAcked(startDeleteSnapshot(repoName, sourceSnapshot).get());
+        assertAcked(startDeleteSnapshot(repoName, sourceSnapshot));
     }
 
     public void testRemoveFailedCloneFromCSWithQueuedSnapshotInProgress() throws Exception {
@@ -793,7 +793,7 @@ public class CloneSnapshotIT extends AbstractSnapshotIntegTestCase {
         assertSuccessful(fullSnapshotFuture1);
         assertSuccessful(fullSnapshotFuture2);
         assertAllSnapshotsSuccessful(getRepositoryData(repoName), 3);
-        assertAcked(startDeleteSnapshot(repoName, sourceSnapshot).get());
+        assertAcked(startDeleteSnapshot(repoName, sourceSnapshot));
     }
 
     public void testCloneAfterFailedShardSnapshot() throws Exception {
@@ -820,7 +820,7 @@ public class CloneSnapshotIT extends AbstractSnapshotIntegTestCase {
             .execute();
         awaitNumberOfSnapshotsInProgress(2);
         internalCluster().stopNode(dataNode);
-        assertAcked(cloneFuture.get());
+        assertAcked(cloneFuture);
         assertTrue(snapshotFuture.isDone());
     }
 

@@ -100,7 +100,7 @@ public class FrozenExistenceDeciderIT extends AbstractFrozenAutoscalingIntegTest
         );
         LifecyclePolicy lifecyclePolicy = new LifecyclePolicy("policy", Map.of("hot", hotPhase, "frozen", frozenPhase));
         PutLifecycleAction.Request putLifecycleRequest = new PutLifecycleAction.Request(lifecyclePolicy);
-        assertAcked(client().execute(PutLifecycleAction.INSTANCE, putLifecycleRequest).get());
+        assertAcked(client().execute(PutLifecycleAction.INSTANCE, putLifecycleRequest));
 
         Settings settings = Settings.builder()
             .put(indexSettings())

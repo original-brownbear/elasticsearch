@@ -234,7 +234,7 @@ public class CreateIndexIT extends ESIntegTestCase {
                                 indexVersion.incrementAndGet();
                             }
                             // from here on all docs with index_version == 0|1 must be gone!!!! only 2 are ok;
-                            assertAcked(indicesAdmin().prepareDelete("test").get());
+                            assertAcked(indicesAdmin().prepareDelete("test"));
                         } finally {
                             latch.countDown();
                         }

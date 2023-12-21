@@ -156,7 +156,7 @@ public class MetadataNodesIT extends ESIntegTestCase {
         assertThat(indicesMetadata.get(index).getState(), equalTo(IndexMetadata.State.CLOSE));
 
         // finally check that meta data is also written of index opened again
-        assertAcked(indicesAdmin().prepareOpen(index).get());
+        assertAcked(indicesAdmin().prepareOpen(index));
         // make sure index is fully initialized and nothing is changed anymore
         ensureGreen();
         indicesMetadata = getIndicesMetadataOnNode(dataNode);

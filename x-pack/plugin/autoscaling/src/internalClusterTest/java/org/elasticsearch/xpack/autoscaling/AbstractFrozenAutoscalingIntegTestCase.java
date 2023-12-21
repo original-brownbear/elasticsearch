@@ -123,7 +123,7 @@ public abstract class AbstractFrozenAutoscalingIntegTestCase extends AbstractSna
             new TreeSet<>(Set.of(DataTier.DATA_FROZEN)),
             new TreeMap<>(Map.of(deciderName(), settings))
         );
-        assertAcked(client().execute(PutAutoscalingPolicyAction.INSTANCE, request).actionGet());
+        assertAcked(client().execute(PutAutoscalingPolicyAction.INSTANCE, request));
     }
 
     protected abstract String deciderName();

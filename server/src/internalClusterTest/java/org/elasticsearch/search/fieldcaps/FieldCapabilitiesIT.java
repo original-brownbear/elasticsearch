@@ -634,7 +634,7 @@ public class FieldCapabilitiesIT extends ESIntegTestCase {
         // add an extra field for some indices
         String[] indicesWithExtraField = randomSubsetOf(between(1, indices.length), indices).stream().sorted().toArray(String[]::new);
         ensureGreen(indices);
-        assertAcked(indicesAdmin().preparePutMapping(indicesWithExtraField).setSource("extra_field", "type=integer").get());
+        assertAcked(indicesAdmin().preparePutMapping(indicesWithExtraField).setSource("extra_field", "type=integer"));
         for (String index : indicesWithExtraField) {
             prepareIndex(index).setSource("extra_field", randomIntBetween(1, 1000)).get();
         }

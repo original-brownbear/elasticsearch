@@ -537,12 +537,16 @@ public class ReactiveStorageIT extends AutoscalingStorageIntegTestCase {
     }
 
     private void putAutoscalingPolicy(String policyName, String role) {
-        final PutAutoscalingPolicyAction.Request request = new PutAutoscalingPolicyAction.Request(
-            policyName,
-            new TreeSet<>(Set.of(role)),
-            new TreeMap<>(Map.of("reactive_storage", Settings.EMPTY))
+        assertAcked(
+            client().execute(
+                PutAutoscalingPolicyAction.INSTANCE,
+                new PutAutoscalingPolicyAction.Request(
+                    policyName,
+                    new TreeSet<>(Set.of(role)),
+                    new TreeMap<>(Map.of("reactive_storage", Settings.EMPTY))
+                )
+            )
         );
-        assertAcked(client().execute(PutAutoscalingPolicyAction.INSTANCE, request).actionGet());
     }
 
     private ClusterInfo getClusterInfo() {

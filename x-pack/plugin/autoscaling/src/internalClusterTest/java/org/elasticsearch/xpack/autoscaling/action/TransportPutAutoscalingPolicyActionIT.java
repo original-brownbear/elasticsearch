@@ -102,7 +102,7 @@ public class TransportPutAutoscalingPolicyActionIT extends AutoscalingIntegTestC
             policy.roles(),
             policy.deciders()
         );
-        assertAcked(client().execute(PutAutoscalingPolicyAction.INSTANCE, request).actionGet());
+        assertAcked(client().execute(PutAutoscalingPolicyAction.INSTANCE, request));
     }
 
 }

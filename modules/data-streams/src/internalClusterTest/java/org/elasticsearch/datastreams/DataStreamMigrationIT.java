@@ -59,7 +59,7 @@ public class DataStreamMigrationIT extends ESIntegTestCase {
         IndicesAliasesRequest request = new IndicesAliasesRequest();
         request.addAliasAction(IndicesAliasesRequest.AliasActions.add().index("index1").alias(alias).writeIndex(true));
         request.addAliasAction(IndicesAliasesRequest.AliasActions.add().index("index2").alias(alias).writeIndex(false));
-        assertAcked(indicesAdmin().aliases(request).get());
+        assertAcked(indicesAdmin().aliases(request));
 
         ResolveIndexAction.Request resolveRequest = new ResolveIndexAction.Request(
             new String[] { "*" },
@@ -98,7 +98,7 @@ public class DataStreamMigrationIT extends ESIntegTestCase {
         IndicesAliasesRequest request = new IndicesAliasesRequest();
         request.addAliasAction(IndicesAliasesRequest.AliasActions.add().index("index1").alias(alias).writeIndex(true));
         request.addAliasAction(IndicesAliasesRequest.AliasActions.add().index("index2").alias(alias).writeIndex(false));
-        assertAcked(indicesAdmin().aliases(request).get());
+        assertAcked(indicesAdmin().aliases(request));
 
         ResolveIndexAction.Request resolveRequest = new ResolveIndexAction.Request(
             new String[] { "*" },
@@ -130,7 +130,7 @@ public class DataStreamMigrationIT extends ESIntegTestCase {
         IndicesAliasesRequest request = new IndicesAliasesRequest();
         request.addAliasAction(IndicesAliasesRequest.AliasActions.add().index("index1").alias(alias).writeIndex(true));
         request.addAliasAction(IndicesAliasesRequest.AliasActions.add().index("index2").alias(alias).writeIndex(false));
-        assertAcked(indicesAdmin().aliases(request).get());
+        assertAcked(indicesAdmin().aliases(request));
 
         ResolveIndexAction.Request resolveRequest = new ResolveIndexAction.Request(
             new String[] { "*" },
@@ -165,7 +165,7 @@ public class DataStreamMigrationIT extends ESIntegTestCase {
         IndicesAliasesRequest request = new IndicesAliasesRequest();
         request.addAliasAction(IndicesAliasesRequest.AliasActions.add().index("index1").alias(alias).writeIndex(true));
         request.addAliasAction(IndicesAliasesRequest.AliasActions.add().index("index2").alias(alias).writeIndex(false));
-        assertAcked(indicesAdmin().aliases(request).get());
+        assertAcked(indicesAdmin().aliases(request));
 
         ResolveIndexAction.Request resolveRequest = new ResolveIndexAction.Request(
             new String[] { "*" },
@@ -200,7 +200,7 @@ public class DataStreamMigrationIT extends ESIntegTestCase {
         IndicesAliasesRequest request = new IndicesAliasesRequest();
         request.addAliasAction(IndicesAliasesRequest.AliasActions.add().index("index1").alias(alias).writeIndex(false));
         request.addAliasAction(IndicesAliasesRequest.AliasActions.add().index("index2").alias(alias).writeIndex(false));
-        assertAcked(indicesAdmin().aliases(request).get());
+        assertAcked(indicesAdmin().aliases(request));
 
         ResolveIndexAction.Request resolveRequest = new ResolveIndexAction.Request(
             new String[] { "*" },

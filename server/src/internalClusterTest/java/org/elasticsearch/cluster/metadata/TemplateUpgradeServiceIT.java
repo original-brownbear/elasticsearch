@@ -124,7 +124,7 @@ public class TemplateUpgradeServiceIT extends ESIntegTestCase {
         });
 
         // Wipe out all templates
-        assertAcked(indicesAdmin().prepareDeleteTemplate("test_*").get());
+        assertAcked(indicesAdmin().prepareDeleteTemplate("test_*"));
 
         assertTemplates();
 

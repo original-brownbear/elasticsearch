@@ -16,7 +16,6 @@ import org.elasticsearch.action.admin.indices.alias.Alias;
 import org.elasticsearch.action.admin.indices.alias.get.GetAliasesRequest;
 import org.elasticsearch.action.admin.indices.settings.get.GetSettingsResponse;
 import org.elasticsearch.action.admin.indices.template.put.PutComposableIndexTemplateAction;
-import org.elasticsearch.action.admin.indices.template.put.PutIndexTemplateRequestBuilder;
 import org.elasticsearch.action.support.ActiveShardCount;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.AliasMetadata;
@@ -230,11 +229,12 @@ public class RolloverIT extends ESIntegTestCase {
 
     public void testRolloverDryRun() throws Exception {
         if (randomBoolean()) {
-            PutIndexTemplateRequestBuilder putTemplate = indicesAdmin().preparePutTemplate("test_index")
-                .setPatterns(List.of("test_index-*"))
-                .setOrder(-1)
-                .setSettings(Settings.builder().put(AutoExpandReplicas.SETTING.getKey(), "0-all"));
-            assertAcked(putTemplate.get());
+            assertAcked(
+                indicesAdmin().preparePutTemplate("test_index")
+                    .setPatterns(List.of("test_index-*"))
+                    .setOrder(-1)
+                    .setSettings(Settings.builder().put(AutoExpandReplicas.SETTING.getKey(), "0-all"))
+            );
         }
         assertAcked(prepareCreate("test_index-1").addAlias(new Alias("test_alias")).get());
         indexDoc("test_index-1", "1", "field", "value");
@@ -615,7 +615,7 @@ public class RolloverIT extends ESIntegTestCase {
         index(aliasName, null, "{\"foo\": \"bar\"}");
         refresh(aliasName);
 
-        assertAcked(indicesAdmin().prepareClose(closedIndex).setTimeout(TimeValue.timeValueSeconds(60)).get());
+        assertAcked(indicesAdmin().prepareClose(closedIndex).setTimeout(TimeValue.timeValueSeconds(60)));
 
         RolloverResponse rolloverResponse = indicesAdmin().prepareRolloverIndex(aliasName)
             .setConditions(RolloverConditions.newBuilder().addMaxIndexDocsCondition(1L))
@@ -639,8 +639,8 @@ public class RolloverIT extends ESIntegTestCase {
         index(aliasName, null, "{\"foo\": \"bar\"}");
         refresh(aliasName);
 
-        assertAcked(indicesAdmin().prepareClose(closedIndex).get());
-        assertAcked(indicesAdmin().prepareClose(writeIndexPrefix + "000001").get());
+        assertAcked(indicesAdmin().prepareClose(closedIndex));
+        assertAcked(indicesAdmin().prepareClose(writeIndexPrefix + "000001"));
         ensureGreen(aliasName);
 
         RolloverResponse rolloverResponse = indicesAdmin().prepareRolloverIndex(aliasName)
@@ -797,7 +797,7 @@ public class RolloverIT extends ESIntegTestCase {
         putTemplateRequest.indexTemplate(
             ComposableIndexTemplate.builder().indexPatterns(List.of("test-*")).template(template).priority(100L).build()
         );
-        assertAcked(client().execute(PutComposableIndexTemplateAction.INSTANCE, putTemplateRequest).actionGet());
+        assertAcked(client().execute(PutComposableIndexTemplateAction.INSTANCE, putTemplateRequest));
 
         final CyclicBarrier barrier = new CyclicBarrier(numOfThreads);
         final Thread[] threads = new Thread[numOfThreads];

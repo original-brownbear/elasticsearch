@@ -56,7 +56,7 @@ public class AutoscalingSnapshotsIT extends AutoscalingIntegTestCase {
         final boolean deletePolicy = randomBoolean();
         if (deletePolicy) {
             final DeleteAutoscalingPolicyAction.Request deleteRequest = new DeleteAutoscalingPolicyAction.Request(policy.name());
-            assertAcked(client.execute(DeleteAutoscalingPolicyAction.INSTANCE, deleteRequest).actionGet());
+            assertAcked(client.execute(DeleteAutoscalingPolicyAction.INSTANCE, deleteRequest));
         } else {
             // Update the policy
             policy = randomAutoscalingPolicyOfName(policy.name());
@@ -87,7 +87,7 @@ public class AutoscalingSnapshotsIT extends AutoscalingIntegTestCase {
             policy.roles(),
             policy.deciders()
         );
-        assertAcked(client().execute(PutAutoscalingPolicyAction.INSTANCE, request).actionGet());
+        assertAcked(client().execute(PutAutoscalingPolicyAction.INSTANCE, request));
     }
 
     private void assertPolicy(AutoscalingPolicy policy) {

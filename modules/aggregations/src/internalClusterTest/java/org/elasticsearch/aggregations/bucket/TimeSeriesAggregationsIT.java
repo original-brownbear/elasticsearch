@@ -527,7 +527,7 @@ public class TimeSeriesAggregationsIT extends AggregationIntegTestCase {
         );
         assertNoFailures(prepareSearch("test").setQuery(queryBuilder).setSize(10).addAggregation(timeSeries("by_ts")));
 
-        assertAcked(indicesAdmin().delete(new DeleteIndexRequest("test")).actionGet());
+        assertAcked(indicesAdmin().delete(new DeleteIndexRequest("test")));
     }
 
     public static TimeSeriesAggregationBuilder timeSeries(String name) {

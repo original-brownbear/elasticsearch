@@ -237,14 +237,14 @@ public class CancelTests extends ReindexTestCase {
                   "test" : {}
               } ]
             }""");
-        assertAcked(clusterAdmin().preparePutPipeline("set-processed", pipeline, XContentType.JSON).get());
+        assertAcked(clusterAdmin().preparePutPipeline("set-processed", pipeline, XContentType.JSON));
 
         testCancel(UpdateByQueryAction.NAME, updateByQuery().setPipeline("set-processed").source(INDEX), (response, total, modified) -> {
             assertThat(response, matcher().updated(modified).reasonCancelled(equalTo("by user request")));
             assertHitCount(prepareSearch(INDEX).setSize(0).setQuery(termQuery("processed", true)), modified);
         }, equalTo("update-by-query [" + INDEX + "]"));
 
-        assertAcked(clusterAdmin().deletePipeline(new DeletePipelineRequest("set-processed")).get());
+        assertAcked(clusterAdmin().deletePipeline(new DeletePipelineRequest("set-processed")));
     }
 
     public void testDeleteByQueryCancel() throws Exception {

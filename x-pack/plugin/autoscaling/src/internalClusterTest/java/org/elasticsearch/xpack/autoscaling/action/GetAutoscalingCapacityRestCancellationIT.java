@@ -150,6 +150,6 @@ public class GetAutoscalingCapacityRestCancellationIT extends AutoscalingIntegTe
             new TreeMap<>(settingsMap)
         );
         final PutAutoscalingPolicyAction.Request request = request1;
-        assertAcked(client().execute(PutAutoscalingPolicyAction.INSTANCE, request).actionGet());
+        assertAcked(client().execute(PutAutoscalingPolicyAction.INSTANCE, request));
     }
 }

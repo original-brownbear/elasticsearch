@@ -58,7 +58,7 @@ public class ProactiveStorageIT extends AutoscalingStorageIntegTestCase {
                     )
                     .toArray(IndexRequestBuilder[]::new)
             );
-            assertAcked(indicesAdmin().rolloverIndex(new RolloverRequest(dsName, null)).actionGet());
+            assertAcked(indicesAdmin().rolloverIndex(new RolloverRequest(dsName, null)));
         }
         forceMerge();
         refresh();
@@ -115,7 +115,7 @@ public class ProactiveStorageIT extends AutoscalingStorageIntegTestCase {
             new TreeSet<>(Set.of("data")),
             new TreeMap<>(Map.of("proactive_storage", settings))
         );
-        assertAcked(client().execute(PutAutoscalingPolicyAction.INSTANCE, request).actionGet());
+        assertAcked(client().execute(PutAutoscalingPolicyAction.INSTANCE, request));
     }
 
     private static void createDataStreamAndTemplate(String dataStreamName) throws IOException {

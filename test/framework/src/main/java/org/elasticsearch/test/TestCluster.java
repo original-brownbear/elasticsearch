@@ -246,7 +246,7 @@ public abstract class TestCluster {
             var request = new DeleteDataStreamAction.Request("*");
             request.indicesOptions(IndicesOptions.LENIENT_EXPAND_OPEN_CLOSED_HIDDEN);
             try {
-                assertAcked(client().execute(DeleteDataStreamAction.INSTANCE, request).actionGet());
+                assertAcked(client().execute(DeleteDataStreamAction.INSTANCE, request));
             } catch (IllegalStateException e) {
                 // Ignore if action isn't registered, because data streams is a module and
                 // if the delete action isn't registered then there no data streams to delete.
@@ -269,7 +269,7 @@ public abstract class TestCluster {
 
             if (templates.length != 0) {
                 var request = new DeleteComposableIndexTemplateAction.Request(templates);
-                assertAcked(client().execute(DeleteComposableIndexTemplateAction.INSTANCE, request).actionGet());
+                assertAcked(client().execute(DeleteComposableIndexTemplateAction.INSTANCE, request));
             }
         }
     }
@@ -286,7 +286,7 @@ public abstract class TestCluster {
 
             if (templates.length != 0) {
                 var request = new DeleteComponentTemplateAction.Request(templates);
-                assertAcked(client().execute(DeleteComponentTemplateAction.INSTANCE, request).actionGet());
+                assertAcked(client().execute(DeleteComponentTemplateAction.INSTANCE, request));
             }
         }
     }

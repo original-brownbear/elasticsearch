@@ -537,7 +537,7 @@ public class DataStreamIT extends ESIntegTestCase {
         IndicesAliasesRequest aliasesRequest = new IndicesAliasesRequest();
         String aliasToDataStream = "logs";
         aliasesRequest.addAliasAction(new AliasActions(AliasActions.Type.ADD).alias(aliasToDataStream).index("logs-foobar"));
-        assertAcked(indicesAdmin().aliases(aliasesRequest).actionGet());
+        assertAcked(indicesAdmin().aliases(aliasesRequest));
 
         verifyResolvability(
             dataStreamName,
@@ -689,7 +689,7 @@ public class DataStreamIT extends ESIntegTestCase {
         AliasActions addAction = new AliasActions(AliasActions.Type.ADD).index(dataStreamName).aliases("foo");
         IndicesAliasesRequest aliasesAddRequest = new IndicesAliasesRequest();
         aliasesAddRequest.addAliasAction(addAction);
-        assertAcked(indicesAdmin().aliases(aliasesAddRequest).actionGet());
+        assertAcked(indicesAdmin().aliases(aliasesAddRequest));
         GetAliasesResponse response = indicesAdmin().getAliases(new GetAliasesRequest()).actionGet();
         assertThat(
             response.getDataStreamAliases(),
@@ -715,7 +715,7 @@ public class DataStreamIT extends ESIntegTestCase {
             .filter(Map.of("term", Map.of("type", Map.of("value", "y"))));
         IndicesAliasesRequest aliasesAddRequest = new IndicesAliasesRequest();
         aliasesAddRequest.addAliasAction(addAction);
-        assertAcked(indicesAdmin().aliases(aliasesAddRequest).actionGet());
+        assertAcked(indicesAdmin().aliases(aliasesAddRequest));
         GetAliasesResponse response = indicesAdmin().getAliases(new GetAliasesRequest()).actionGet();
         assertThat(
             response.getDataStreamAliases(),
@@ -745,7 +745,7 @@ public class DataStreamIT extends ESIntegTestCase {
             .filter(Map.of("term", Map.of("type", Map.of("value", "x"))));
         aliasesAddRequest = new IndicesAliasesRequest();
         aliasesAddRequest.addAliasAction(addAction);
-        assertAcked(indicesAdmin().aliases(aliasesAddRequest).actionGet());
+        assertAcked(indicesAdmin().aliases(aliasesAddRequest));
         response = indicesAdmin().getAliases(new GetAliasesRequest()).actionGet();
         assertThat(
             response.getDataStreamAliases(),
@@ -791,7 +791,7 @@ public class DataStreamIT extends ESIntegTestCase {
         IndicesAliasesRequest aliasesAddRequest = new IndicesAliasesRequest();
         aliasesAddRequest.addAliasAction(addFilteredAliasAction);
         aliasesAddRequest.addAliasAction(addUnfilteredAliasAction);
-        assertAcked(indicesAdmin().aliases(aliasesAddRequest).actionGet());
+        assertAcked(indicesAdmin().aliases(aliasesAddRequest));
         GetAliasesResponse response = indicesAdmin().getAliases(new GetAliasesRequest()).actionGet();
         assertThat(response.getDataStreamAliases(), hasKey("logs-foobar"));
         assertThat(
@@ -827,10 +827,10 @@ public class DataStreamIT extends ESIntegTestCase {
         }
         Map<String, Object> indexFilters = Map.of("term", Map.of("type", Map.of("value", "y")));
         AliasActions addAction = new AliasActions(AliasActions.Type.ADD).aliases(alias).indices(dataStreams).filter(indexFilters);
-        assertAcked(indicesAdmin().aliases(new IndicesAliasesRequest().addAliasAction(addAction)).actionGet());
+        assertAcked(indicesAdmin().aliases(new IndicesAliasesRequest().addAliasAction(addAction)));
 
         addAction = new AliasActions(AliasActions.Type.ADD).aliases(alias).indices(dataStreams[0]).filter(indexFilters).writeIndex(true);
-        assertAcked(indicesAdmin().aliases(new IndicesAliasesRequest().addAliasAction(addAction)).actionGet());
+        assertAcked(indicesAdmin().aliases(new IndicesAliasesRequest().addAliasAction(addAction)));
 
         GetAliasesResponse response = indicesAdmin().getAliases(new GetAliasesRequest()).actionGet();
         assertThat(response.getDataStreamAliases().size(), equalTo(dataStreams.length));
@@ -929,7 +929,7 @@ public class DataStreamIT extends ESIntegTestCase {
         IndicesAliasesRequest aliasesAddRequest = new IndicesAliasesRequest();
         aliasesAddRequest.addAliasAction(new AliasActions(AliasActions.Type.ADD).index("metrics-foo").aliases("my-alias1"));
         aliasesAddRequest.addAliasAction(new AliasActions(AliasActions.Type.ADD).index("metrics-myindex").aliases("my-alias2"));
-        assertAcked(indicesAdmin().aliases(aliasesAddRequest).actionGet());
+        assertAcked(indicesAdmin().aliases(aliasesAddRequest));
         GetAliasesResponse response = indicesAdmin().getAliases(new GetAliasesRequest()).actionGet();
         assertThat(
             response.getDataStreamAliases(),
@@ -944,7 +944,7 @@ public class DataStreamIT extends ESIntegTestCase {
         } else {
             aliasesAddRequest.addAliasAction(new AliasActions(AliasActions.Type.REMOVE).index("_all").aliases("my-*"));
         }
-        assertAcked(indicesAdmin().aliases(aliasesAddRequest).actionGet());
+        assertAcked(indicesAdmin().aliases(aliasesAddRequest));
         response = indicesAdmin().getAliases(new GetAliasesRequest()).actionGet();
         assertThat(response.getDataStreamAliases(), anEmptyMap());
         assertThat(response.getAliases().get("metrics-myindex").size(), equalTo(0));
@@ -961,7 +961,7 @@ public class DataStreamIT extends ESIntegTestCase {
             aliasesAddRequest.addAliasAction(
                 new AliasActions(AliasActions.Type.ADD).index("metrics-foo").aliases("my-alias1", "my-alias2")
             );
-            assertAcked(indicesAdmin().aliases(aliasesAddRequest).actionGet());
+            assertAcked(indicesAdmin().aliases(aliasesAddRequest));
             GetAliasesResponse response = indicesAdmin().getAliases(new GetAliasesRequest()).actionGet();
             assertThat(response.getDataStreamAliases().keySet(), containsInAnyOrder("metrics-foo"));
             assertThat(
@@ -987,7 +987,7 @@ public class DataStreamIT extends ESIntegTestCase {
             } else {
                 aliasesAddRequest.addAliasAction(new AliasActions(AliasActions.Type.REMOVE).index("_all").aliases("_all"));
             }
-            assertAcked(indicesAdmin().aliases(aliasesAddRequest).actionGet());
+            assertAcked(indicesAdmin().aliases(aliasesAddRequest));
             GetAliasesResponse response = indicesAdmin().getAliases(new GetAliasesRequest()).actionGet();
             assertThat(response.getDataStreamAliases(), anEmptyMap());
             assertThat(response.getAliases().size(), equalTo(0));
@@ -1618,10 +1618,10 @@ public class DataStreamIT extends ESIntegTestCase {
         {
             DataStreamIT.putComposableIndexTemplate("my-template", List.of("my-*"));
             var request = new CreateDataStreamAction.Request("my-ds");
-            assertAcked(client().execute(CreateDataStreamAction.INSTANCE, request).actionGet());
+            assertAcked(client().execute(CreateDataStreamAction.INSTANCE, request));
             var aliasesAddRequest = new IndicesAliasesRequest();
             aliasesAddRequest.addAliasAction(new AliasActions(AliasActions.Type.ADD).index("my-ds").aliases("my-alias"));
-            assertAcked(indicesAdmin().aliases(aliasesAddRequest).actionGet());
+            assertAcked(indicesAdmin().aliases(aliasesAddRequest));
 
             var request2 = new CreateDataStreamAction.Request("my-alias");
             var e = expectThrows(
@@ -1631,7 +1631,7 @@ public class DataStreamIT extends ESIntegTestCase {
             assertThat(e.getMessage(), containsString("data stream alias and data stream have the same name (my-alias)"));
         }
         {
-            assertAcked(client().execute(DeleteDataStreamAction.INSTANCE, new DeleteDataStreamAction.Request("*")).actionGet());
+            assertAcked(client().execute(DeleteDataStreamAction.INSTANCE, new DeleteDataStreamAction.Request("*")));
             DataStreamIT.putComposableIndexTemplate(
                 "my-template",
                 null,
@@ -1642,7 +1642,7 @@ public class DataStreamIT extends ESIntegTestCase {
                 null
             );
             var request = new CreateDataStreamAction.Request("my-ds");
-            assertAcked(client().execute(CreateDataStreamAction.INSTANCE, request).actionGet());
+            assertAcked(client().execute(CreateDataStreamAction.INSTANCE, request));
 
             var request2 = new CreateDataStreamAction.Request("my-alias");
             var e = expectThrows(
@@ -1660,14 +1660,14 @@ public class DataStreamIT extends ESIntegTestCase {
             assertAcked(indicesAdmin().create(createIndexRequest).actionGet());
 
             var request = new CreateDataStreamAction.Request("logs-es");
-            assertAcked(client().execute(CreateDataStreamAction.INSTANCE, request).actionGet());
+            assertAcked(client().execute(CreateDataStreamAction.INSTANCE, request));
             IndicesAliasesRequest aliasesAddRequest = new IndicesAliasesRequest();
             aliasesAddRequest.addAliasAction(new AliasActions(AliasActions.Type.ADD).index("logs-es").aliases("logs"));
             var e = expectThrows(IllegalStateException.class, () -> indicesAdmin().aliases(aliasesAddRequest).actionGet());
             assertThat(e.getMessage(), containsString("data stream alias and indices alias have the same name (logs)"));
         }
         {
-            assertAcked(client().execute(DeleteDataStreamAction.INSTANCE, new DeleteDataStreamAction.Request("*")).actionGet());
+            assertAcked(client().execute(DeleteDataStreamAction.INSTANCE, new DeleteDataStreamAction.Request("*")));
             DataStreamIT.putComposableIndexTemplate(
                 "my-template",
                 null,
@@ -1679,7 +1679,7 @@ public class DataStreamIT extends ESIntegTestCase {
             );
 
             var request = new CreateDataStreamAction.Request("logs-es");
-            var e = expectThrows(IllegalStateException.class, () -> client().execute(CreateDataStreamAction.INSTANCE, request).actionGet());
+            var e = expectThrows(IllegalStateException.class, () -> client().execute(CreateDataStreamAction.INSTANCE, request));
             assertThat(e.getMessage(), containsString("data stream alias and indices alias have the same name (logs)"));
         }
     }
@@ -1692,7 +1692,7 @@ public class DataStreamIT extends ESIntegTestCase {
 
         {
             var request = new CreateDataStreamAction.Request("logs-es");
-            assertAcked(client().execute(CreateDataStreamAction.INSTANCE, request).actionGet());
+            assertAcked(client().execute(CreateDataStreamAction.INSTANCE, request));
             IndicesAliasesRequest aliasesAddRequest = new IndicesAliasesRequest();
             aliasesAddRequest.addAliasAction(new AliasActions(AliasActions.Type.ADD).index("logs-es").aliases("logs"));
             var e = expectThrows(InvalidAliasNameException.class, () -> indicesAdmin().aliases(aliasesAddRequest).actionGet());
@@ -1702,7 +1702,7 @@ public class DataStreamIT extends ESIntegTestCase {
             );
         }
         {
-            assertAcked(client().execute(DeleteDataStreamAction.INSTANCE, new DeleteDataStreamAction.Request("*")).actionGet());
+            assertAcked(client().execute(DeleteDataStreamAction.INSTANCE, new DeleteDataStreamAction.Request("*")));
             var e = expectThrows(
                 IllegalArgumentException.class,
                 () -> DataStreamIT.putComposableIndexTemplate(
@@ -1726,10 +1726,10 @@ public class DataStreamIT extends ESIntegTestCase {
         DataStreamIT.putComposableIndexTemplate("my-template", List.of("logs-*"));
 
         var request = new CreateDataStreamAction.Request("logs-es");
-        assertAcked(client().execute(CreateDataStreamAction.INSTANCE, request).actionGet());
+        assertAcked(client().execute(CreateDataStreamAction.INSTANCE, request));
         IndicesAliasesRequest aliasesAddRequest = new IndicesAliasesRequest();
         aliasesAddRequest.addAliasAction(new AliasActions(AliasActions.Type.ADD).index("logs-es").aliases("logs"));
-        assertAcked(indicesAdmin().aliases(aliasesAddRequest).actionGet());
+        assertAcked(indicesAdmin().aliases(aliasesAddRequest));
 
         CreateIndexRequest createIndexRequest = new CreateIndexRequest("logs");
         var e = expectThrows(InvalidIndexNameException.class, () -> indicesAdmin().create(createIndexRequest).actionGet());
@@ -1740,10 +1740,10 @@ public class DataStreamIT extends ESIntegTestCase {
         DataStreamIT.putComposableIndexTemplate("my-template", List.of("logs-*"));
 
         var request = new CreateDataStreamAction.Request("logs-es");
-        assertAcked(client().execute(CreateDataStreamAction.INSTANCE, request).actionGet());
+        assertAcked(client().execute(CreateDataStreamAction.INSTANCE, request));
         IndicesAliasesRequest aliasesAddRequest = new IndicesAliasesRequest();
         aliasesAddRequest.addAliasAction(new AliasActions(AliasActions.Type.ADD).index("logs-es").aliases("logs"));
-        assertAcked(indicesAdmin().aliases(aliasesAddRequest).actionGet());
+        assertAcked(indicesAdmin().aliases(aliasesAddRequest));
 
         {
             CreateIndexRequest createIndexRequest = new CreateIndexRequest("my-index").alias(new Alias("logs"));
@@ -1764,8 +1764,8 @@ public class DataStreamIT extends ESIntegTestCase {
         String dataStreamName = "logs-es";
         DataStreamIT.putComposableIndexTemplate("my-template", List.of("logs-*"));
         var request = new CreateDataStreamAction.Request(dataStreamName);
-        assertAcked(client().execute(CreateDataStreamAction.INSTANCE, request).actionGet());
-        assertAcked(indicesAdmin().rolloverIndex(new RolloverRequest(dataStreamName, null)).actionGet());
+        assertAcked(client().execute(CreateDataStreamAction.INSTANCE, request));
+        assertAcked(indicesAdmin().rolloverIndex(new RolloverRequest(dataStreamName, null)));
         var indicesStatsResponse = indicesAdmin().stats(new IndicesStatsRequest()).actionGet();
         assertThat(indicesStatsResponse.getIndices().size(), equalTo(2));
         ClusterState before = internalCluster().getCurrentMasterNodeInstance(ClusterService.class).state();
@@ -2053,11 +2053,11 @@ public class DataStreamIT extends ESIntegTestCase {
         final var indexSettings = indexSettings(numberOfShards, numberOfReplicas).build();
         DataStreamIT.putComposableIndexTemplate("my-template", null, List.of("logs-*"), indexSettings, null);
         final var request = new CreateDataStreamAction.Request(dataStreamName);
-        assertAcked(client().execute(CreateDataStreamAction.INSTANCE, request).actionGet());
+        assertAcked(client().execute(CreateDataStreamAction.INSTANCE, request));
 
         indexDocsAndEnsureThereIsCapturedWriteLoad(dataStreamName);
 
-        assertAcked(indicesAdmin().rolloverIndex(new RolloverRequest(dataStreamName, null)).actionGet());
+        assertAcked(indicesAdmin().rolloverIndex(new RolloverRequest(dataStreamName, null)));
         final ClusterState clusterState = internalCluster().getCurrentMasterNodeInstance(ClusterService.class).state();
         final DataStream dataStream = clusterState.getMetadata().dataStreams().get(dataStreamName);
 
@@ -2101,7 +2101,7 @@ public class DataStreamIT extends ESIntegTestCase {
             .build();
         DataStreamIT.putComposableIndexTemplate("my-template", null, List.of("logs-*"), indexSettings, null);
         final var createDataStreamRequest = new CreateDataStreamAction.Request(dataStreamName);
-        assertAcked(client().execute(CreateDataStreamAction.INSTANCE, createDataStreamRequest).actionGet());
+        assertAcked(client().execute(CreateDataStreamAction.INSTANCE, createDataStreamRequest));
         ensureGreen(dataStreamName);
 
         indexDocsAndEnsureThereIsCapturedWriteLoad(dataStreamName);
@@ -2134,7 +2134,7 @@ public class DataStreamIT extends ESIntegTestCase {
             currentDataStreamWriteIndexRoutingTable.shard(1).replicaShards().get(0)
         );
 
-        assertAcked(indicesAdmin().rolloverIndex(new RolloverRequest(dataStreamName, null)).actionGet());
+        assertAcked(indicesAdmin().rolloverIndex(new RolloverRequest(dataStreamName, null)));
         final ClusterState clusterState = internalCluster().getCurrentMasterNodeInstance(ClusterService.class).state();
         final DataStream dataStream = clusterState.getMetadata().dataStreams().get(dataStreamName);
 
@@ -2172,7 +2172,7 @@ public class DataStreamIT extends ESIntegTestCase {
         final var indexSettings = indexSettings(1, 0).put("index.routing.allocation.require._name", dataOnlyNode).build();
         DataStreamIT.putComposableIndexTemplate("my-template", null, List.of("logs-*"), indexSettings, null);
         final var createDataStreamRequest = new CreateDataStreamAction.Request(dataStreamName);
-        assertAcked(client().execute(CreateDataStreamAction.INSTANCE, createDataStreamRequest).actionGet());
+        assertAcked(client().execute(CreateDataStreamAction.INSTANCE, createDataStreamRequest));
 
         for (int i = 0; i < 10; i++) {
             indexDocs(dataStreamName, randomIntBetween(100, 200));
@@ -2193,7 +2193,7 @@ public class DataStreamIT extends ESIntegTestCase {
                 (handler, request, channel, task) -> channel.sendResponse(new RuntimeException("Unable to get stats"))
             );
 
-        assertAcked(indicesAdmin().rolloverIndex(new RolloverRequest(dataStreamName, null)).actionGet());
+        assertAcked(indicesAdmin().rolloverIndex(new RolloverRequest(dataStreamName, null)));
 
         final ClusterState clusterState = internalCluster().getCurrentMasterNodeInstance(ClusterService.class).state();
         final DataStream dataStream = clusterState.getMetadata().dataStreams().get(dataStreamName);
@@ -2210,7 +2210,7 @@ public class DataStreamIT extends ESIntegTestCase {
         final var indexSettings = indexSettings(numberOfShards, numberOfReplicas).build();
         DataStreamIT.putComposableIndexTemplate("my-template", null, List.of("logs-*"), indexSettings, null);
         final var request = new CreateDataStreamAction.Request(dataStreamName);
-        assertAcked(client().execute(CreateDataStreamAction.INSTANCE, request).actionGet());
+        assertAcked(client().execute(CreateDataStreamAction.INSTANCE, request));
 
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 10; j++) {
@@ -2223,7 +2223,7 @@ public class DataStreamIT extends ESIntegTestCase {
                 is(greaterThanOrEqualTo(numberOfShards))
             );
 
-            assertAcked(indicesAdmin().rolloverIndex(new RolloverRequest(dataStreamName, null)).actionGet());
+            assertAcked(indicesAdmin().rolloverIndex(new RolloverRequest(dataStreamName, null)));
         }
 
         final ClusterState clusterState = internalCluster().getCurrentMasterNodeInstance(ClusterService.class).state();

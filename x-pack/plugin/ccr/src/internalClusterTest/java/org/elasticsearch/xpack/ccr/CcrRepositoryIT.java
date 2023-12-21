@@ -109,7 +109,7 @@ public class CcrRepositoryIT extends CcrIntegTestCase {
         ClusterUpdateSettingsRequest putSecondCluster = newSettingsRequest();
         String address = getFollowerCluster().getDataNodeInstance(TransportService.class).boundAddress().publishAddress().toString();
         putSecondCluster.persistentSettings(Settings.builder().put("cluster.remote.follower_cluster_copy.seeds", address));
-        assertAcked(followerClient().admin().cluster().updateSettings(putSecondCluster).actionGet());
+        assertAcked(followerClient().admin().cluster().updateSettings(putSecondCluster));
 
         String followerCopyRepoName = CcrRepository.NAME_PREFIX + "follower_cluster_copy";
         try {
@@ -122,20 +122,20 @@ public class CcrRepositoryIT extends CcrIntegTestCase {
 
         ClusterUpdateSettingsRequest deleteLeaderCluster = newSettingsRequest();
         deleteLeaderCluster.persistentSettings(Settings.builder().put("cluster.remote.leader_cluster.seeds", ""));
-        assertAcked(followerClient().admin().cluster().updateSettings(deleteLeaderCluster).actionGet());
+        assertAcked(followerClient().admin().cluster().updateSettings(deleteLeaderCluster));
 
         expectThrows(RepositoryMissingException.class, () -> repositoriesService.repository(leaderClusterRepoName));
 
         ClusterUpdateSettingsRequest deleteSecondCluster = newSettingsRequest();
         deleteSecondCluster.persistentSettings(Settings.builder().put("cluster.remote.follower_cluster_copy.seeds", ""));
-        assertAcked(followerClient().admin().cluster().updateSettings(deleteSecondCluster).actionGet());
+        assertAcked(followerClient().admin().cluster().updateSettings(deleteSecondCluster));
 
         expectThrows(RepositoryMissingException.class, () -> repositoriesService.repository(followerCopyRepoName));
 
         ClusterUpdateSettingsRequest putLeaderRequest = newSettingsRequest();
         address = getLeaderCluster().getDataNodeInstance(TransportService.class).boundAddress().publishAddress().toString();
         putLeaderRequest.persistentSettings(Settings.builder().put("cluster.remote.leader_cluster.seeds", address));
-        assertAcked(followerClient().admin().cluster().updateSettings(putLeaderRequest).actionGet());
+        assertAcked(followerClient().admin().cluster().updateSettings(putLeaderRequest));
     }
 
     public void testThatRepositoryRecoversEmptyIndexBasedOnLeaderSettings() throws IOException {
@@ -199,7 +199,7 @@ public class CcrRepositoryIT extends CcrIntegTestCase {
         ClusterUpdateSettingsRequest settingsRequest = newSettingsRequest();
         String chunkSize = randomFrom("4KB", "128KB", "1MB");
         settingsRequest.persistentSettings(Settings.builder().put(CcrSettings.RECOVERY_CHUNK_SIZE.getKey(), chunkSize));
-        assertAcked(followerClient().admin().cluster().updateSettings(settingsRequest).actionGet());
+        assertAcked(followerClient().admin().cluster().updateSettings(settingsRequest));
 
         String leaderClusterRepoName = CcrRepository.NAME_PREFIX + "leader_cluster";
         String leaderIndex = "index1";
@@ -244,7 +244,7 @@ public class CcrRepositoryIT extends CcrIntegTestCase {
         settingsRequest = newSettingsRequest();
         ByteSizeValue defaultValue = CcrSettings.RECOVERY_CHUNK_SIZE.getDefault(Settings.EMPTY);
         settingsRequest.persistentSettings(Settings.builder().put(CcrSettings.RECOVERY_CHUNK_SIZE.getKey(), defaultValue));
-        assertAcked(followerClient().admin().cluster().updateSettings(settingsRequest).actionGet());
+        assertAcked(followerClient().admin().cluster().updateSettings(settingsRequest));
     }
 
     public void testRateLimitingIsEmployed() throws Exception {
@@ -253,9 +253,9 @@ public class CcrRepositoryIT extends CcrIntegTestCase {
         ClusterUpdateSettingsRequest settingsRequest = newSettingsRequest();
         settingsRequest.persistentSettings(Settings.builder().put(CcrSettings.RECOVERY_MAX_BYTES_PER_SECOND.getKey(), "10K"));
         if (followerRateLimiting) {
-            assertAcked(followerClient().admin().cluster().updateSettings(settingsRequest).actionGet());
+            assertAcked(followerClient().admin().cluster().updateSettings(settingsRequest));
         } else {
-            assertAcked(leaderClient().admin().cluster().updateSettings(settingsRequest).actionGet());
+            assertAcked(leaderClient().admin().cluster().updateSettings(settingsRequest));
         }
 
         String leaderClusterRepoName = CcrRepository.NAME_PREFIX + "leader_cluster";
@@ -312,9 +312,9 @@ public class CcrRepositoryIT extends CcrIntegTestCase {
         ByteSizeValue defaultValue = CcrSettings.RECOVERY_MAX_BYTES_PER_SECOND.getDefault(Settings.EMPTY);
         settingsRequest.persistentSettings(Settings.builder().put(CcrSettings.RECOVERY_MAX_BYTES_PER_SECOND.getKey(), defaultValue));
         if (followerRateLimiting) {
-            assertAcked(followerClient().admin().cluster().updateSettings(settingsRequest).actionGet());
+            assertAcked(followerClient().admin().cluster().updateSettings(settingsRequest));
         } else {
-            assertAcked(leaderClient().admin().cluster().updateSettings(settingsRequest).actionGet());
+            assertAcked(leaderClient().admin().cluster().updateSettings(settingsRequest));
         }
     }
 
@@ -322,7 +322,7 @@ public class CcrRepositoryIT extends CcrIntegTestCase {
         ClusterUpdateSettingsRequest settingsRequest = newSettingsRequest();
         TimeValue timeValue = TimeValue.timeValueMillis(100);
         settingsRequest.persistentSettings(Settings.builder().put(CcrSettings.INDICES_RECOVERY_ACTION_TIMEOUT_SETTING.getKey(), timeValue));
-        assertAcked(followerClient().admin().cluster().updateSettings(settingsRequest).actionGet());
+        assertAcked(followerClient().admin().cluster().updateSettings(settingsRequest));
 
         String leaderClusterRepoName = CcrRepository.NAME_PREFIX + "leader_cluster";
         String leaderIndex = "index1";
@@ -391,7 +391,7 @@ public class CcrRepositoryIT extends CcrIntegTestCase {
             settingsRequest.persistentSettings(
                 Settings.builder().put(CcrSettings.INDICES_RECOVERY_ACTION_TIMEOUT_SETTING.getKey(), defaultValue)
             );
-            assertAcked(followerClient().admin().cluster().updateSettings(settingsRequest).actionGet());
+            assertAcked(followerClient().admin().cluster().updateSettings(settingsRequest));
             // This test sets individual action timeouts low to attempt to replicated timeouts. Although the
             // clear session action is not blocked, it is possible that it will still occasionally timeout.
             // By wiping the leader index here, we ensure we do not trigger the index commit hanging around
