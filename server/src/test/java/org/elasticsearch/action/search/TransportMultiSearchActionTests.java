@@ -83,12 +83,7 @@ public class TransportMultiSearchActionTests extends ESTestCase {
                     assertEquals(task.getId(), request.getParentTask().getId());
                     assertEquals(localNodeId, request.getParentTask().getNodeId());
                     counter.incrementAndGet();
-                    var response = SearchResponse.empty(() -> 1L, SearchResponse.Clusters.EMPTY);
-                    try {
-                        listener.onResponse(response);
-                    } finally {
-                        response.decRef();
-                    }
+                    ActionListener.respondAndRelease(listener, SearchResponse.empty(() -> 1L, SearchResponse.Clusters.EMPTY));
                 }
 
                 @Override
@@ -166,20 +161,18 @@ public class TransportMultiSearchActionTests extends ESTestCase {
                 final ExecutorService executorService = rarely() ? rarelyExecutor : commonExecutor;
                 executorService.execute(() -> {
                     counter.decrementAndGet();
-                    var response = SearchResponseUtils.emptyWithTotalHits(
-                        null,
-                        0,
-                        0,
-                        0,
-                        0L,
-                        ShardSearchFailure.EMPTY_ARRAY,
-                        SearchResponse.Clusters.EMPTY
+                    ActionListener.respondAndRelease(
+                        listener,
+                        SearchResponseUtils.emptyWithTotalHits(
+                            null,
+                            0,
+                            0,
+                            0,
+                            0L,
+                            ShardSearchFailure.EMPTY_ARRAY,
+                            SearchResponse.Clusters.EMPTY
+                        )
                     );
-                    try {
-                        listener.onResponse(response);
-                    } finally {
-                        response.decRef();
-                    }
                 });
             }
 

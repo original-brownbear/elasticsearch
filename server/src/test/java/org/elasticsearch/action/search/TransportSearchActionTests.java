@@ -549,7 +549,7 @@ public class TransportSearchActionTests extends ESTestCase {
                 Tuple<SearchRequest, ActionListener<SearchResponse>> tuple = setOnce.get();
                 assertEquals("", tuple.v1().getLocalClusterAlias());
                 assertThat(tuple.v2(), instanceOf(TransportSearchAction.CCSActionListener.class));
-                resolveWithEmptySearchResponse(tuple);
+                ActionListener.respondAndRelease(tuple.v2(), emptySearchResponse());
             }
             awaitLatch(latch, 5, TimeUnit.SECONDS);
             assertNotNull(failure.get());
@@ -618,7 +618,7 @@ public class TransportSearchActionTests extends ESTestCase {
                     Tuple<SearchRequest, ActionListener<SearchResponse>> tuple = setOnce.get();
                     assertEquals("", tuple.v1().getLocalClusterAlias());
                     assertThat(tuple.v2(), instanceOf(TransportSearchAction.CCSActionListener.class));
-                    resolveWithEmptySearchResponse(tuple);
+                    ActionListener.respondAndRelease(tuple.v2(), emptySearchResponse());
                 }
                 awaitLatch(latch, 5, TimeUnit.SECONDS);
 
@@ -667,7 +667,7 @@ public class TransportSearchActionTests extends ESTestCase {
                     Tuple<SearchRequest, ActionListener<SearchResponse>> tuple = setOnce.get();
                     assertEquals("", tuple.v1().getLocalClusterAlias());
                     assertThat(tuple.v2(), instanceOf(TransportSearchAction.CCSActionListener.class));
-                    resolveWithEmptySearchResponse(tuple);
+                    ActionListener.respondAndRelease(tuple.v2(), emptySearchResponse());
                 }
                 awaitLatch(latch, 5, TimeUnit.SECONDS);
                 assertNotNull(failure.get());
@@ -727,7 +727,7 @@ public class TransportSearchActionTests extends ESTestCase {
                     Tuple<SearchRequest, ActionListener<SearchResponse>> tuple = setOnce.get();
                     assertEquals("", tuple.v1().getLocalClusterAlias());
                     assertThat(tuple.v2(), instanceOf(TransportSearchAction.CCSActionListener.class));
-                    resolveWithEmptySearchResponse(tuple);
+                    ActionListener.respondAndRelease(tuple.v2(), emptySearchResponse());
                 }
                 awaitLatch(latch, 5, TimeUnit.SECONDS);
                 assertNotNull(failure.get());
@@ -776,7 +776,7 @@ public class TransportSearchActionTests extends ESTestCase {
                     Tuple<SearchRequest, ActionListener<SearchResponse>> tuple = setOnce.get();
                     assertEquals("", tuple.v1().getLocalClusterAlias());
                     assertThat(tuple.v2(), instanceOf(TransportSearchAction.CCSActionListener.class));
-                    resolveWithEmptySearchResponse(tuple);
+                    ActionListener.respondAndRelease(tuple.v2(), emptySearchResponse());
                 }
                 awaitLatch(latch, 5, TimeUnit.SECONDS);
 
@@ -847,7 +847,7 @@ public class TransportSearchActionTests extends ESTestCase {
                     Tuple<SearchRequest, ActionListener<SearchResponse>> tuple = setOnce.get();
                     assertEquals("", tuple.v1().getLocalClusterAlias());
                     assertThat(tuple.v2(), instanceOf(TransportSearchAction.CCSActionListener.class));
-                    resolveWithEmptySearchResponse(tuple);
+                    ActionListener.respondAndRelease(tuple.v2(), emptySearchResponse());
                 }
                 awaitLatch(latch, 5, TimeUnit.SECONDS);
 
@@ -872,15 +872,6 @@ public class TransportSearchActionTests extends ESTestCase {
             for (MockTransportService mockTransportService : mockTransportServices) {
                 mockTransportService.close();
             }
-        }
-    }
-
-    private static void resolveWithEmptySearchResponse(Tuple<SearchRequest, ActionListener<SearchResponse>> tuple) {
-        var resp = emptySearchResponse();
-        try {
-            tuple.v2().onResponse(resp);
-        } finally {
-            resp.decRef();
         }
     }
 
