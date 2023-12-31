@@ -34,11 +34,11 @@ public class XContentParseException extends IllegalArgumentException {
     }
 
     public int getLineNumber() {
-        return location.map(l -> l.lineNumber()).orElse(-1);
+        return location.map(XContentLocation::lineNumber).orElse(-1);
     }
 
     public int getColumnNumber() {
-        return location.map(l -> l.columnNumber()).orElse(-1);
+        return location.map(XContentLocation::columnNumber).orElse(-1);
     }
 
     @Nullable
@@ -48,6 +48,6 @@ public class XContentParseException extends IllegalArgumentException {
 
     @Override
     public String getMessage() {
-        return location.map(l -> "[" + l.toString() + "] ").orElse("") + super.getMessage();
+        return location.map(l -> "[" + l + "] ").orElse("") + super.getMessage();
     }
 }

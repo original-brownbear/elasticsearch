@@ -40,7 +40,7 @@ public class FlatteningXContentParser extends XContentSubParser {
     @Override
     public String currentName() throws IOException {
         if (level() == 1) {
-            return new StringBuilder(parentName).append(DELIMITER).append(delegate().currentName()).toString();
+            return parentName + DELIMITER + delegate().currentName();
         }
         return delegate().currentName();
     }

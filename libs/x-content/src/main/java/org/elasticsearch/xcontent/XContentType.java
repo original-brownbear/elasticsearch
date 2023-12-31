@@ -273,7 +273,7 @@ public enum XContentType implements MediaType {
         return null;
     }
 
-    private int index;
+    private final int index;
 
     XContentType(int index) {
         this.index = index;

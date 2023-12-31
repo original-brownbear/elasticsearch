@@ -170,11 +170,7 @@ public class FilterPath {
                 String field = findEscapes
                     ? filter.substring(0, splitPosition).replaceAll("\\\\.", ".")
                     : filter.substring(0, splitPosition);
-                BuildNode child = node.children.get(field);
-                if (child == null) {
-                    child = new BuildNode(false);
-                    node.children.put(field, child);
-                }
+                BuildNode child = node.children.computeIfAbsent(field, k -> new BuildNode(false));
                 if (false == child.isFinalNode) {
                     insertNode(filter.substring(splitPosition + 1), child);
                 }

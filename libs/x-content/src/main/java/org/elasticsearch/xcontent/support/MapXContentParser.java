@@ -315,13 +315,12 @@ public class MapXContentParser extends AbstractXContentParser {
                         state = State.VALUE;
                         entry = iterator.next();
                         currentToken = Token.FIELD_NAME;
-                        return this;
                     } else {
                         state = State.AFTER;
                         entry = null;
                         currentToken = Token.END_OBJECT;
-                        return this;
                     }
+                    return this;
                 case VALUE:
                     state = State.NAME;
                     return processValue(entry.getValue());

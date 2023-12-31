@@ -136,11 +136,10 @@ public class XContentFactory {
      */
     @Deprecated
     public static XContentType xContentType(CharSequence content) {
-        int length = content.length() < GUESS_HEADER_LENGTH ? content.length() : GUESS_HEADER_LENGTH;
+        int length = Math.min(content.length(), GUESS_HEADER_LENGTH);
         if (length == 0) {
             return null;
         }
-        char first = content.charAt(0);
         if (JsonXContent.jsonXContent.detectContent(content)) {
             return XContentType.JSON;
         }

@@ -33,9 +33,9 @@ public class MediaTypeRegistry<T extends MediaType> {
 
     public MediaTypeRegistry() {}
 
-    private Map<String, T> queryParamToMediaType = new HashMap<>();
-    private Map<String, T> typeWithSubtypeToMediaType = new HashMap<>();
-    private Map<String, Map<String, Pattern>> parametersMap = new HashMap<>();
+    private final Map<String, T> queryParamToMediaType = new HashMap<>();
+    private final Map<String, T> typeWithSubtypeToMediaType = new HashMap<>();
+    private final Map<String, Map<String, Pattern>> parametersMap = new HashMap<>();
 
     public T queryParamToMediaType(String format) {
         if (format == null) {

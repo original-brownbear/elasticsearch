@@ -695,22 +695,6 @@ public final class XContentBuilder implements Closeable, Flushable {
         return this;
     }
 
-    public XContentBuilder array(String name, BigDecimal[] values) throws IOException {
-        return field(name).values(values);
-    }
-
-    private XContentBuilder values(BigDecimal[] values) throws IOException {
-        if (values == null) {
-            return nullValue();
-        }
-        startArray();
-        for (BigDecimal b : values) {
-            value(b);
-        }
-        endArray();
-        return this;
-    }
-
     public XContentBuilder value(BigDecimal value) throws IOException {
         if (value == null) {
             return nullValue();
