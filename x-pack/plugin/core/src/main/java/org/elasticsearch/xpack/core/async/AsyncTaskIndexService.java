@@ -425,7 +425,7 @@ public final class AsyncTaskIndexService<R extends AsyncResponse<R>> {
                 listener.onFailure(e);
                 return;
             }
-            listener.onResponse(resp);
+            ActionListener.respondAndRelease(listener, resp);
         }));
     }
 
