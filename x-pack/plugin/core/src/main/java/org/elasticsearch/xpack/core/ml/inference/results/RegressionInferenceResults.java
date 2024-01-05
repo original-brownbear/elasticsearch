@@ -32,12 +32,7 @@ public class RegressionInferenceResults extends SingleValueInferenceResults {
     }
 
     public RegressionInferenceResults(double value, InferenceConfig config, List<RegressionFeatureImportance> featureImportance) {
-        this(
-            value,
-            ((RegressionConfig) config).getResultsField(),
-            ((RegressionConfig) config).getNumTopFeatureImportanceValues(),
-            featureImportance
-        );
+        this(value, config.getResultsField(), ((RegressionConfig) config).getNumTopFeatureImportanceValues(), featureImportance);
     }
 
     public RegressionInferenceResults(double value, String resultsField) {

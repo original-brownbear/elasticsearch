@@ -169,7 +169,7 @@ abstract class TransactionStore implements Writeable, Releasable, Accountable {
      * variant of ITEMS_BY_COUNT_COMPARATOR that reads counts from the given array
      */
     static Comparator<Long> compareItems(final LongArray counts) {
-        return (Comparator<Long>) (e1, e2) -> {
+        return (e1, e2) -> {
             long count1 = counts.get(e1);
             long count2 = counts.get(e2);
 

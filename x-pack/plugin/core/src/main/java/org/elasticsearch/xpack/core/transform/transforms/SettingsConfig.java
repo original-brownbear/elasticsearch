@@ -111,7 +111,7 @@ public class SettingsConfig implements Writeable, ToXContentObject {
     private final Integer unattended;
 
     public SettingsConfig() {
-        this(null, null, (Integer) null, (Integer) null, (Integer) null, (Integer) null, (Integer) null, (Integer) null);
+        this(null, null, null, null, null, null, null, (Integer) null);
     }
 
     public SettingsConfig(

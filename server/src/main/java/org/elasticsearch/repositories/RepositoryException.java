@@ -31,7 +31,7 @@ public class RepositoryException extends ElasticsearchException {
      * @param args       the arguments for the message
      */
     public RepositoryException(String repository, String msg, Object... args) {
-        this(repository, msg, (Throwable) null, args);
+        this(repository, msg, null, args);
     }
 
     /**

@@ -19,7 +19,6 @@ import org.elasticsearch.client.internal.node.NodeClient;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
-import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.painless.PainlessScriptEngine;
 import org.elasticsearch.painless.lookup.PainlessLookup;
@@ -140,13 +139,7 @@ public class PainlessContextAction {
 
         @Inject
         public TransportAction(TransportService transportService, ActionFilters actionFilters, PainlessScriptEngine painlessScriptEngine) {
-            super(
-                INSTANCE.name(),
-                transportService,
-                actionFilters,
-                (Writeable.Reader<Request>) Request::new,
-                EsExecutors.DIRECT_EXECUTOR_SERVICE
-            );
+            super(INSTANCE.name(), transportService, actionFilters, Request::new, EsExecutors.DIRECT_EXECUTOR_SERVICE);
             this.painlessScriptEngine = painlessScriptEngine;
         }
 

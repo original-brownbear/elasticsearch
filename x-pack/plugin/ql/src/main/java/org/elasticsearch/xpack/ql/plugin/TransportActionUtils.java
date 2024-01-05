@@ -38,8 +38,7 @@ public final class TransportActionUtils {
         queryRunner.accept(e -> {
             // the search request likely ran on nodes with different versions of ES
             // we will retry on a node with an older version that should generate a backwards compatible _search request
-            if (e instanceof SearchPhaseExecutionException
-                && ((SearchPhaseExecutionException) e).getCause() instanceof VersionMismatchException) {
+            if (e instanceof SearchPhaseExecutionException && e.getCause() instanceof VersionMismatchException) {
                 if (log.isDebugEnabled()) {
                     log.debug("Caught exception type [{}] with cause [{}].", e.getClass().getName(), e.getCause());
                 }

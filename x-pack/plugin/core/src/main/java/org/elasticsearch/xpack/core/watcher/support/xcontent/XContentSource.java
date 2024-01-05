@@ -102,9 +102,8 @@ public class XContentSource implements ToXContent {
      * @param path a dot notation path to the requested value
      * @return The extracted value or {@code null} if no value is associated with the given path
      */
-    @SuppressWarnings("unchecked")
     public <T> T getValue(String path) {
-        return (T) ObjectPath.eval(path, data());
+        return ObjectPath.eval(path, data());
     }
 
     @Override

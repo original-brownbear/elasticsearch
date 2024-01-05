@@ -541,7 +541,7 @@ public class Analyzer extends ParameterizedRuleExecutor<LogicalPlan, AnalyzerCon
                                 if (li.next() instanceof Alias a && a.name().equals(resolved.name())) {
                                     reverseAliasing.put(resolved.name(), alias.name());
                                     // update aliased projection in place
-                                    li.set((NamedExpression) alias.replaceChildren(a.children()));
+                                    li.set(alias.replaceChildren(a.children()));
                                     updated = true;
                                     break;
                                 }

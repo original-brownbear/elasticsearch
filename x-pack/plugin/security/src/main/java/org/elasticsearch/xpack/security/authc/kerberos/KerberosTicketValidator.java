@@ -147,10 +147,7 @@ public class KerberosTicketValidator {
     private static byte[] acceptSecContext(final byte[] base64decodedTicket, final GSSContext gssContext, Subject subject)
         throws PrivilegedActionException {
         // process token with gss context
-        return doAsWrapper(
-            subject,
-            (PrivilegedExceptionAction<byte[]>) () -> gssContext.acceptSecContext(base64decodedTicket, 0, base64decodedTicket.length)
-        );
+        return doAsWrapper(subject, () -> gssContext.acceptSecContext(base64decodedTicket, 0, base64decodedTicket.length));
     }
 
     /**
@@ -164,12 +161,7 @@ public class KerberosTicketValidator {
     private static GSSCredential createCredentials(final GSSManager gssManager, final Subject subject) throws PrivilegedActionException {
         return doAsWrapper(
             subject,
-            (PrivilegedExceptionAction<GSSCredential>) () -> gssManager.createCredential(
-                null,
-                GSSCredential.DEFAULT_LIFETIME,
-                SUPPORTED_OIDS,
-                GSSCredential.ACCEPT_ONLY
-            )
+            () -> gssManager.createCredential(null, GSSCredential.DEFAULT_LIFETIME, SUPPORTED_OIDS, GSSCredential.ACCEPT_ONLY)
         );
     }
 

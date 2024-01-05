@@ -78,7 +78,7 @@ public class TransportKibanaEnrollmentAction extends HandledTransportAction<Kiba
         }
         List<X509Certificate> caCertificates;
         try {
-            caCertificates = ((StoreKeyConfig) keyConfig).getKeys()
+            caCertificates = keyConfig.getKeys()
                 .stream()
                 .map(Tuple::v2)
                 .filter(x509Certificate -> x509Certificate.getBasicConstraints() != -1)
