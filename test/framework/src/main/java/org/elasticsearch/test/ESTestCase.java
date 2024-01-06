@@ -41,9 +41,14 @@ import org.apache.lucene.util.SetOnce;
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.ActionRequestBuilder;
+import org.elasticsearch.action.admin.indices.template.delete.DeleteComponentTemplateAction;
+import org.elasticsearch.action.admin.indices.template.delete.DeleteComposableIndexTemplateAction;
+import org.elasticsearch.action.datastreams.DeleteDataStreamAction;
+import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.action.support.SubscribableListener;
 import org.elasticsearch.bootstrap.BootstrapForTesting;
+import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.client.internal.Requests;
 import org.elasticsearch.cluster.ClusterModule;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
@@ -185,6 +190,7 @@ import java.util.stream.Stream;
 
 import static java.util.Collections.emptyMap;
 import static org.elasticsearch.common.util.CollectionUtils.arrayAsArrayList;
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
@@ -407,6 +413,30 @@ public abstract class ESTestCase extends LuceneTestCase {
      */
     public static TransportAddress buildNewFakeTransportAddress() {
         return new TransportAddress(TransportAddress.META_ADDRESS, portGenerator.incrementAndGet());
+    }
+
+    static void wipeAllDataStreams(Client client) {
+        var deleteDataStreamsRequest = new DeleteDataStreamAction.Request("*");
+        deleteDataStreamsRequest.indicesOptions(IndicesOptions.LENIENT_EXPAND_OPEN_CLOSED_HIDDEN);
+        try {
+            assertAcked(client.execute(DeleteDataStreamAction.INSTANCE, deleteDataStreamsRequest));
+        } catch (IllegalStateException e) {
+            // Ignore if action isn't registered, because data streams is a module and
+            // if the delete action isn't registered then there no data streams to delete.
+            if (e.getMessage().startsWith("failed to find action") == false) {
+                throw e;
+            }
+        }
+    }
+
+    static void deleteAllTemplates(Client client) {
+        var deleteComposable = client.execute(
+            DeleteComposableIndexTemplateAction.INSTANCE,
+            new DeleteComposableIndexTemplateAction.Request("*")
+        );
+        var deleteComponent = client.execute(DeleteComponentTemplateAction.INSTANCE, new DeleteComponentTemplateAction.Request("*"));
+        assertAcked(deleteComposable);
+        assertAcked(deleteComponent);
     }
 
     /**
