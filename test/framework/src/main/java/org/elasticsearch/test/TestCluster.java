@@ -12,11 +12,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
+import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.template.delete.DeleteComponentTemplateAction;
 import org.elasticsearch.action.admin.indices.template.delete.DeleteComposableIndexTemplateAction;
 import org.elasticsearch.action.admin.indices.template.get.GetComponentTemplateAction;
 import org.elasticsearch.action.admin.indices.template.get.GetComposableIndexTemplateAction;
-import org.elasticsearch.action.admin.indices.template.get.GetIndexTemplatesResponse;
+import org.elasticsearch.action.support.GroupedActionListener;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.action.support.RefCountingListener;
@@ -32,6 +33,8 @@ import org.elasticsearch.repositories.RepositoryMissingException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -69,18 +72,82 @@ public abstract class TestCluster {
      */
     public void wipe(Set<String> excludeTemplates) {
         // First delete data streams, because composable index templates can't be deleted if these templates are still used by data streams.
-        ESTestCase.wipeAllDataStreams(client());
         if (size() > 0) {
+            final PlainActionFuture<Collection<AcknowledgedResponse>> templatesDeleted = new PlainActionFuture<>();
+            client().admin().indices().prepareGetTemplates().execute(templatesDeleted.delegateFailure((l, getIndexTemplatesResponse) -> {
+                final var templates = getIndexTemplatesResponse.getIndexTemplates()
+                    .stream()
+                    .filter(t -> excludeTemplates.contains(t.getName()) == false)
+                    .toList();
+                if (templates.isEmpty()) {
+                    templatesDeleted.onResponse(List.of());
+                    return;
+                }
+                final ActionListener<AcknowledgedResponse> allTemplatesDeleted = new GroupedActionListener<>(
+                    templates.size(),
+                    templatesDeleted
+                ).delegateResponse((ll, e) -> {
+                    if (e instanceof IndexTemplateMissingException) {
+                        ll.onResponse(AcknowledgedResponse.TRUE);
+                    } else {
+                        ll.onFailure(e);
+                    }
+                });
+                for (IndexTemplateMetadata indexTemplate : templates) {
+                    client().admin().indices().prepareDeleteTemplate(indexTemplate.getName()).execute(allTemplatesDeleted);
+                }
+            }));
+            ESTestCase.wipeAllDataStreams(client());
+            final PlainActionFuture<AcknowledgedResponse> allDeleted = new PlainActionFuture<>();
+            prepareWipeIndices("_all").execute(new ActionListener<>() {
+                @Override
+                public void onResponse(AcknowledgedResponse acknowledgedResponse) {
+                    assertAcked(acknowledgedResponse);
+                    client().admin().cluster().prepareDeleteRepository("*").execute(allDeleted);
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    if (e instanceof IllegalArgumentException) {
+                        deleteIndicesByName();
+                        onResponse(AcknowledgedResponse.TRUE);
+                    } else {
+                        allDeleted.onFailure(e);
+                    }
+                }
+            });
             if (excludeTemplates.isEmpty()) {
                 ESTestCase.deleteAllTemplates(client());
             } else {
                 wipeAllComposableIndexTemplates(excludeTemplates);
                 wipeAllComponentTemplates(excludeTemplates);
             }
+            for (AcknowledgedResponse r : templatesDeleted.actionGet()) {
+                assertAcked(r);
+            }
+            assertAcked(allDeleted);
         }
-        wipeIndices("_all");
-        wipeAllTemplates(excludeTemplates);
-        wipeRepositories();
+    }
+
+    private DeleteIndexRequestBuilder prepareWipeIndices(String... indices) {
+        assert indices != null && indices.length > 0;
+        return client().admin()
+            .indices()
+            .prepareDelete(indices)
+            .setIndicesOptions(IndicesOptions.fromOptions(false, true, true, true, true, false, false, true, false));
+    }
+
+    private void deleteIndicesByName() {
+        // Happens if `action.destructive_requires_name` is set to true
+        // which is the case in the CloseIndexDisableCloseAllTests
+        ClusterStateResponse clusterStateResponse = client().admin().cluster().prepareState().get();
+        ArrayList<String> concreteIndices = new ArrayList<>();
+        for (IndexMetadata indexMetadata : clusterStateResponse.getState().metadata()) {
+            concreteIndices.add(indexMetadata.getIndex().getName());
+        }
+        if (concreteIndices.isEmpty() == false) {
+            assertAcked(client().admin().indices().prepareDelete(concreteIndices.toArray(new String[0])));
+        }
     }
 
     /**
@@ -140,49 +207,17 @@ public abstract class TestCluster {
      * all indices are removed.
      */
     public void wipeIndices(String... indices) {
-        assert indices != null && indices.length > 0;
         if (size() > 0) {
             try {
                 // include wiping hidden indices!
-                assertAcked(
-                    client().admin()
-                        .indices()
-                        .prepareDelete(indices)
-                        .setIndicesOptions(IndicesOptions.fromOptions(false, true, true, true, true, false, false, true, false))
-                );
+                assertAcked(prepareWipeIndices(indices));
             } catch (IndexNotFoundException e) {
                 // ignore
             } catch (IllegalArgumentException e) {
                 // Happens if `action.destructive_requires_name` is set to true
                 // which is the case in the CloseIndexDisableCloseAllTests
                 if ("_all".equals(indices[0])) {
-                    ClusterStateResponse clusterStateResponse = client().admin().cluster().prepareState().get();
-                    ArrayList<String> concreteIndices = new ArrayList<>();
-                    for (IndexMetadata indexMetadata : clusterStateResponse.getState().metadata()) {
-                        concreteIndices.add(indexMetadata.getIndex().getName());
-                    }
-                    if (concreteIndices.isEmpty() == false) {
-                        assertAcked(client().admin().indices().prepareDelete(concreteIndices.toArray(new String[0])));
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Removes all templates, except the templates defined in the exclude
-     */
-    public void wipeAllTemplates(Set<String> exclude) {
-        if (size() > 0) {
-            GetIndexTemplatesResponse response = client().admin().indices().prepareGetTemplates().get();
-            for (IndexTemplateMetadata indexTemplate : response.getIndexTemplates()) {
-                if (exclude.contains(indexTemplate.getName())) {
-                    continue;
-                }
-                try {
-                    client().admin().indices().prepareDeleteTemplate(indexTemplate.getName()).get();
-                } catch (IndexTemplateMissingException e) {
-                    // ignore
+                    deleteIndicesByName();
                 }
             }
         }

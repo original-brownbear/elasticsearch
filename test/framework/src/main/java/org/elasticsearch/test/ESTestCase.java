@@ -40,6 +40,7 @@ import org.apache.lucene.tests.util.TimeUnits;
 import org.apache.lucene.util.SetOnce;
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.action.ActionFuture;
+import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRequestBuilder;
 import org.elasticsearch.action.admin.indices.template.delete.DeleteComponentTemplateAction;
 import org.elasticsearch.action.admin.indices.template.delete.DeleteComposableIndexTemplateAction;
@@ -47,6 +48,7 @@ import org.elasticsearch.action.datastreams.DeleteDataStreamAction;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.action.support.SubscribableListener;
+import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.bootstrap.BootstrapForTesting;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.client.internal.Requests;
@@ -430,13 +432,24 @@ public abstract class ESTestCase extends LuceneTestCase {
     }
 
     static void deleteAllTemplates(Client client) {
-        var deleteComposable = client.execute(
+        final PlainActionFuture<AcknowledgedResponse> res = new PlainActionFuture<>();
+        client.execute(
             DeleteComposableIndexTemplateAction.INSTANCE,
-            new DeleteComposableIndexTemplateAction.Request("*")
+            new DeleteComposableIndexTemplateAction.Request("*"),
+            new ActionListener<>() {
+                @Override
+                public void onResponse(AcknowledgedResponse acknowledgedResponse) {
+                    assertAcked(acknowledgedResponse);
+                    client.execute(DeleteComponentTemplateAction.INSTANCE, new DeleteComponentTemplateAction.Request("*"), res);
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    res.onFailure(e);
+                }
+            }
         );
-        var deleteComponent = client.execute(DeleteComponentTemplateAction.INSTANCE, new DeleteComponentTemplateAction.Request("*"));
-        assertAcked(deleteComposable);
-        assertAcked(deleteComponent);
+        assertAcked(res);
     }
 
     /**

@@ -439,6 +439,9 @@ public class PersistedClusterStateService {
                                 PrintStream printStream = new PrintStream(outputStream, true, StandardCharsets.UTF_8);
                                 CheckIndex checkIndex = new CheckIndex(directory)
                             ) {
+                                // Setting thread count to 1 to prevent Lucene from starting cpu_count threads in a disposable fixed pool
+                                // and instead execute this on the caller thread
+                                checkIndex.setThreadCount(1);
                                 checkIndex.setInfoStream(printStream);
                                 checkIndex.setChecksumsOnly(true);
                                 isClean = checkIndex.checkIndex().clean;
