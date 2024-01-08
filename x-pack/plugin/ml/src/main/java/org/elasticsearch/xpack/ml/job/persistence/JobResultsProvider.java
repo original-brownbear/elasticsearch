@@ -1692,9 +1692,8 @@ public class JobResultsProvider {
             request.request(),
             ActionListener.<SearchResponse>wrap(response -> {
                 List<ScheduledEvent> events = new ArrayList<>();
-                SearchHit[] hits = response.getHits().getHits();
                 try {
-                    for (SearchHit hit : hits) {
+                    for (SearchHit hit : response.getHits()) {
                         ScheduledEvent.Builder event = MlParserUtils.parse(hit, ScheduledEvent.LENIENT_PARSER);
 
                         event.eventId(hit.getId());

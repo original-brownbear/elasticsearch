@@ -244,7 +244,7 @@ public final class SearchHit implements Writeable, ToXContentObject {
         if (size > 0) {
             innerHits = Maps.newMapWithExpectedSize(size);
             for (int i = 0; i < size; i++) {
-                innerHits.put(in.readString(), new SearchHits(in));
+                innerHits.put(in.readString(), SearchHits.readFrom(in));
             }
         } else {
             innerHits = null;

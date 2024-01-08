@@ -72,15 +72,17 @@ public final class SearchHits implements Writeable, ChunkedToXContent, Iterable<
         this.collapseValues = collapseValues;
     }
 
-    public SearchHits(StreamInput in) throws IOException {
+    public static SearchHits readFrom(StreamInput in) throws IOException {
+        final TotalHits totalHits;
         if (in.readBoolean()) {
             totalHits = Lucene.readTotalHits(in);
         } else {
             // track_total_hits is false
             totalHits = null;
         }
-        maxScore = in.readFloat();
+        final float maxScore = in.readFloat();
         int size = in.readVInt();
+        final SearchHit[] hits;
         if (size == 0) {
             hits = EMPTY;
         } else {
@@ -89,9 +91,10 @@ public final class SearchHits implements Writeable, ChunkedToXContent, Iterable<
                 hits[i] = SearchHit.readFrom(in);
             }
         }
-        sortFields = in.readOptionalArray(Lucene::readSortField, SortField[]::new);
-        collapseField = in.readOptionalString();
-        collapseValues = in.readOptionalArray(Lucene::readSortValue, Object[]::new);
+        var sortFields = in.readOptionalArray(Lucene::readSortField, SortField[]::new);
+        var collapseField = in.readOptionalString();
+        var collapseValues = in.readOptionalArray(Lucene::readSortValue, Object[]::new);
+        return new SearchHits(hits, totalHits, maxScore, sortFields, collapseField, collapseValues);
     }
 
     @Override

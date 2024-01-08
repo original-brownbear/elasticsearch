@@ -367,7 +367,7 @@ final class SearchResponseMerger implements Releasable {
         SearchHit[] searchHits;
         if (topDocs == null) {
             // merged TopDocs is null whenever all clusters have returned empty hits
-            searchHits = new SearchHit[0];
+            searchHits = SearchHits.EMPTY;
         } else {
             searchHits = new SearchHit[topDocs.scoreDocs.length];
             for (int i = 0; i < topDocs.scoreDocs.length; i++) {
