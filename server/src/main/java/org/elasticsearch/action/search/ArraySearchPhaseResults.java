@@ -20,13 +20,22 @@ import java.util.stream.Stream;
  * This class acts as a basic result collection that can be extended to do on-the-fly reduction or result processing
  */
 class ArraySearchPhaseResults<Result extends SearchPhaseResult> extends SearchPhaseResults<Result> {
+
+    private static final ArraySearchPhaseResults<?> EMPTY = new ArraySearchPhaseResults<>(0, RefCounted.ALWAYS_REFERENCED);
+
     final AtomicArray<Result> results;
 
-    private final RefCounted refCounted = LeakTracker.wrap(AbstractRefCounted.of(this::doClose));
+    private final RefCounted refCounted;
 
-    ArraySearchPhaseResults(int size) {
+    @SuppressWarnings("unchecked")
+    static <R extends SearchPhaseResult> ArraySearchPhaseResults<R> ofSize(int size) {
+        return size == 0 ? (ArraySearchPhaseResults<R>) EMPTY : new ArraySearchPhaseResults<>(size, null);
+    }
+
+    protected ArraySearchPhaseResults(int size, RefCounted refCounted) {
         super(size);
-        this.results = new AtomicArray<>(size);
+        this.results = AtomicArray.ofSize(size);
+        this.refCounted = refCounted != null ? refCounted : LeakTracker.wrap(AbstractRefCounted.of(this::doClose));
     }
 
     Stream<Result> getSuccessfulResults() {

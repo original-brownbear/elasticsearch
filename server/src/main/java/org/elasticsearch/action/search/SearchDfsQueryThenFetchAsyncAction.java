@@ -60,7 +60,7 @@ final class SearchDfsQueryThenFetchAsyncAction extends AbstractSearchAsyncAction
             timeProvider,
             clusterState,
             task,
-            new ArraySearchPhaseResults<>(shardsIts.size()),
+            ArraySearchPhaseResults.ofSize(shardsIts.size()),
             request.getMaxConcurrentShardRequests(),
             clusters
         );

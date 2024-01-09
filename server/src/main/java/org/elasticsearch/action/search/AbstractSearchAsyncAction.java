@@ -212,7 +212,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
             boolean withTotalHits = trackTotalHitsUpTo != SearchContext.TRACK_TOTAL_HITS_DISABLED;
             sendSearchResponse(
                 withTotalHits ? SearchResponseSections.EMPTY_WITH_TOTAL_HITS : SearchResponseSections.EMPTY_WITHOUT_TOTAL_HITS,
-                new AtomicArray<>(0)
+                AtomicArray.ofSize(0)
             );
             return;
         }
@@ -536,7 +536,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
                 synchronized (shardFailuresMutex) {
                     shardFailures = this.shardFailures.get(); // read again otherwise somebody else has created it?
                     if (shardFailures == null) { // still null so we are the first and create a new instance
-                        shardFailures = new AtomicArray<>(getNumShards());
+                        shardFailures = AtomicArray.ofSize(getNumShards());
                         this.shardFailures.set(shardFailures);
                     }
                 }

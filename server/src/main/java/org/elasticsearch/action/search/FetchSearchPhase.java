@@ -60,7 +60,7 @@ final class FetchSearchPhase extends SearchPhase {
                     + resultConsumer.getNumShards()
             );
         }
-        this.fetchResults = new ArraySearchPhaseResults<>(resultConsumer.getNumShards());
+        this.fetchResults = ArraySearchPhaseResults.ofSize(resultConsumer.getNumShards());
         context.addReleasable(fetchResults::decRef);
         this.queryResults = resultConsumer.getAtomicArray();
         this.aggregatedDfs = aggregatedDfs;

@@ -453,7 +453,7 @@ public class SearchPhaseControllerTests extends ESTestCase {
         boolean profile,
         boolean rank
     ) {
-        AtomicArray<SearchPhaseResult> queryResults = new AtomicArray<>(nShards);
+        AtomicArray<SearchPhaseResult> queryResults = AtomicArray.ofSize(nShards);
         for (int shardIndex = 0; shardIndex < nShards; shardIndex++) {
             String clusterAlias = randomBoolean() ? null : "remote";
             SearchShardTarget searchShardTarget = new SearchShardTarget("", new ShardId("", "", shardIndex), clusterAlias);
@@ -550,7 +550,7 @@ public class SearchPhaseControllerTests extends ESTestCase {
         Suggest mergedSuggest,
         boolean profile
     ) {
-        AtomicArray<SearchPhaseResult> fetchResults = new AtomicArray<>(shards.size());
+        AtomicArray<SearchPhaseResult> fetchResults = AtomicArray.ofSize(shards.size());
         for (int shardIndex = 0; shardIndex < shards.size(); shardIndex++) {
             float maxScore = -1F;
             SearchShardTarget shardTarget = shards.get(shardIndex);

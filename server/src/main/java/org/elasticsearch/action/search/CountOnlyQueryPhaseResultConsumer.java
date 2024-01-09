@@ -100,7 +100,7 @@ class CountOnlyQueryPhaseResultConsumer extends SearchPhaseResults<SearchPhaseRe
 
     @Override
     AtomicArray<SearchPhaseResult> getAtomicArray() {
-        return new AtomicArray<>(0);
+        return AtomicArray.ofSize(0);
     }
 
     @Override

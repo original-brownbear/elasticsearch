@@ -62,7 +62,7 @@ public class TransportMultiGetAction extends HandledTransportAction<MultiGetRequ
         ClusterState clusterState = clusterService.state();
         clusterState.blocks().globalBlockedRaiseException(ClusterBlockLevel.READ);
 
-        final AtomicArray<MultiGetItemResponse> responses = new AtomicArray<>(request.items.size());
+        final AtomicArray<MultiGetItemResponse> responses = AtomicArray.ofSize(request.items.size());
         final Map<ShardId, MultiGetShardRequest> shardRequests = new HashMap<>();
         // single item cache that maps the provided index name to the resolved one
         Tuple<String, String> lastResolvedIndex = Tuple.tuple(null, null);

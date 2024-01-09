@@ -441,7 +441,7 @@ public class TransportSearchIT extends ESIntegTestCase {
         indexSomeDocs("test", numShards, numShards * 3);
 
         {
-            final AtomicArray<Boolean> responses = new AtomicArray<>(10);
+            final AtomicArray<Boolean> responses = AtomicArray.ofSize(10);
             final CountDownLatch latch = new CountDownLatch(10);
             for (int i = 0; i < 10; i++) {
                 int batchReduceSize = randomIntBetween(2, Math.max(numShards + 1, 3));
@@ -482,7 +482,7 @@ public class TransportSearchIT extends ESIntegTestCase {
                 assertThat(exc.getCause().getMessage(), containsString("<reduce_aggs>"));
             });
 
-            final AtomicArray<Exception> exceptions = new AtomicArray<>(10);
+            final AtomicArray<Exception> exceptions = AtomicArray.ofSize(10);
             final CountDownLatch latch = new CountDownLatch(10);
             for (int i = 0; i < 10; i++) {
                 int batchReduceSize = randomIntBetween(2, Math.max(numShards + 1, 3));
@@ -519,7 +519,7 @@ public class TransportSearchIT extends ESIntegTestCase {
         int numDocs = numShards * 10;
         indexSomeDocs("boom", numShards, numDocs);
 
-        final AtomicArray<Exception> exceptions = new AtomicArray<>(10);
+        final AtomicArray<Exception> exceptions = AtomicArray.ofSize(10);
         final CountDownLatch latch = new CountDownLatch(10);
         for (int i = 0; i < 10; i++) {
             int batchReduceSize = randomIntBetween(2, Math.max(numShards + 1, 3));

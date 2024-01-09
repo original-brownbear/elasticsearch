@@ -402,7 +402,7 @@ public class TransportBulkAction extends HandledTransportAction<BulkRequest, Bul
         Map<String, IndexNotFoundException> indicesThatCannotBeCreated,
         long startTime
     ) {
-        final AtomicArray<BulkItemResponse> responses = new AtomicArray<>(bulkRequest.requests.size());
+        final AtomicArray<BulkItemResponse> responses = AtomicArray.ofSize(bulkRequest.requests.size());
         // Optimizing when there are no prerequisite actions
         if (autoCreateIndices.isEmpty() && dataStreamsToBeRolledOver.isEmpty()) {
             executeBulk(task, bulkRequest, startTime, listener, executorName, responses, indicesThatCannotBeCreated);

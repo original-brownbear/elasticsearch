@@ -204,7 +204,7 @@ public class TransportOpenPointInTimeAction extends HandledTransportAction<OpenP
                 timeProvider,
                 clusterState,
                 task,
-                new ArraySearchPhaseResults<>(shardIterators.size()),
+                ArraySearchPhaseResults.ofSize(shardIterators.size()),
                 searchRequest.getMaxConcurrentShardRequests(),
                 clusters
             ) {

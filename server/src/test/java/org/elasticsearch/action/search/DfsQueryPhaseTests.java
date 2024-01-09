@@ -58,7 +58,7 @@ public class DfsQueryPhaseTests extends ESTestCase {
     }
 
     public void testDfsWith2Shards() throws IOException {
-        AtomicArray<DfsSearchResult> results = new AtomicArray<>(2);
+        AtomicArray<DfsSearchResult> results = AtomicArray.ofSize(2);
         AtomicReference<AtomicArray<SearchPhaseResult>> responseRef = new AtomicReference<>();
         results.set(
             0,
@@ -161,7 +161,7 @@ public class DfsQueryPhaseTests extends ESTestCase {
     }
 
     public void testDfsWith1ShardFailed() throws IOException {
-        AtomicArray<DfsSearchResult> results = new AtomicArray<>(2);
+        AtomicArray<DfsSearchResult> results = AtomicArray.ofSize(2);
         AtomicReference<AtomicArray<SearchPhaseResult>> responseRef = new AtomicReference<>();
         results.set(
             0,
@@ -249,7 +249,7 @@ public class DfsQueryPhaseTests extends ESTestCase {
     }
 
     public void testFailPhaseOnException() throws IOException {
-        AtomicArray<DfsSearchResult> results = new AtomicArray<>(2);
+        AtomicArray<DfsSearchResult> results = AtomicArray.ofSize(2);
         AtomicReference<AtomicArray<SearchPhaseResult>> responseRef = new AtomicReference<>();
         results.set(
             0,

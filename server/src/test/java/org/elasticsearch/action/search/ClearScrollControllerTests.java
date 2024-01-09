@@ -76,7 +76,7 @@ public class ClearScrollControllerTests extends ESTestCase {
         DiscoveryNode node1 = DiscoveryNodeUtils.create("node_1");
         DiscoveryNode node2 = DiscoveryNodeUtils.create("node_2");
         DiscoveryNode node3 = DiscoveryNodeUtils.create("node_3");
-        AtomicArray<SearchPhaseResult> array = new AtomicArray<>(3);
+        AtomicArray<SearchPhaseResult> array = AtomicArray.ofSize(3);
         SearchAsyncActionTests.TestSearchPhaseResult testSearchPhaseResult1 = new SearchAsyncActionTests.TestSearchPhaseResult(
             new ShardSearchContextId(UUIDs.randomBase64UUID(), 1),
             node1
@@ -143,7 +143,7 @@ public class ClearScrollControllerTests extends ESTestCase {
         DiscoveryNode node1 = DiscoveryNodeUtils.create("node_1");
         DiscoveryNode node2 = DiscoveryNodeUtils.create("node_2");
         DiscoveryNode node3 = DiscoveryNodeUtils.create("node_3");
-        AtomicArray<SearchPhaseResult> array = new AtomicArray<>(3);
+        AtomicArray<SearchPhaseResult> array = AtomicArray.ofSize(3);
         SearchAsyncActionTests.TestSearchPhaseResult testSearchPhaseResult1 = new SearchAsyncActionTests.TestSearchPhaseResult(
             new ShardSearchContextId(UUIDs.randomBase64UUID(), 1),
             node1

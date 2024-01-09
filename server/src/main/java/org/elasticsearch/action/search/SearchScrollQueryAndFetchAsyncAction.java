@@ -36,7 +36,7 @@ final class SearchScrollQueryAndFetchAsyncAction extends SearchScrollAsyncAction
     ) {
         super(scrollId, logger, clusterService.state().nodes(), listener, request, searchTransportService);
         this.task = task;
-        this.queryFetchResults = new AtomicArray<>(scrollId.getContext().length);
+        this.queryFetchResults = AtomicArray.ofSize(scrollId.getContext().length);
     }
 
     @Override

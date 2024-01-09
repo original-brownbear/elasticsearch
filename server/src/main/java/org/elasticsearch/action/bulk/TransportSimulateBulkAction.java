@@ -74,7 +74,7 @@ public class TransportSimulateBulkAction extends TransportBulkAction {
         Map<String, IndexNotFoundException> indicesThatCannotBeCreated,
         long startTime
     ) {
-        final AtomicArray<BulkItemResponse> responses = new AtomicArray<>(bulkRequest.requests.size());
+        final AtomicArray<BulkItemResponse> responses = AtomicArray.ofSize(bulkRequest.requests.size());
         for (int i = 0; i < bulkRequest.requests.size(); i++) {
             DocWriteRequest<?> request = bulkRequest.requests.get(i);
             assert request instanceof IndexRequest; // This action is only ever called with IndexRequests

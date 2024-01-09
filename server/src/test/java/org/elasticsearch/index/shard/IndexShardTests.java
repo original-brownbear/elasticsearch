@@ -803,7 +803,7 @@ public class IndexShardTests extends IndexShardTestCase {
 
         final Thread[] threads = new Thread[randomIntBetween(2, 5)];
         final List<PlainActionFuture<Releasable>> futures = new ArrayList<>(threads.length);
-        final AtomicArray<Tuple<Boolean, Exception>> results = new AtomicArray<>(threads.length);
+        final AtomicArray<Tuple<Boolean, Exception>> results = AtomicArray.ofSize(threads.length);
         final CountDownLatch allOperationsDone = new CountDownLatch(threads.length);
 
         for (int i = 0; i < threads.length; i++) {

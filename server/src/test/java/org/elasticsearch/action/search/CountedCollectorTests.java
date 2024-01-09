@@ -23,7 +23,7 @@ import java.util.concurrent.Executor;
 
 public class CountedCollectorTests extends ESTestCase {
     public void testCollect() throws InterruptedException {
-        ArraySearchPhaseResults<SearchPhaseResult> consumer = new ArraySearchPhaseResults<>(randomIntBetween(1, 100));
+        ArraySearchPhaseResults<SearchPhaseResult> consumer = ArraySearchPhaseResults.ofSize(randomIntBetween(1, 100));
         try {
             List<Integer> state = new ArrayList<>();
             int numResultsExpected = randomIntBetween(1, consumer.getAtomicArray().length());

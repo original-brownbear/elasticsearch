@@ -82,7 +82,7 @@ public class QueryPhaseResultConsumer extends ArraySearchPhaseResults<SearchPhas
         int expectedResultSize,
         Consumer<Exception> onPartialMergeFailure
     ) {
-        super(expectedResultSize);
+        super(expectedResultSize, null);
         this.executor = executor;
         this.circuitBreaker = circuitBreaker;
         this.progressListener = progressListener;

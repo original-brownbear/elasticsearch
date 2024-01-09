@@ -23,7 +23,14 @@ public class AtomicArray<E> {
     private final AtomicReferenceArray<E> array;
     private volatile List<E> nonNullList;
 
-    public AtomicArray(int size) {
+    private static final AtomicArray<?> EMPTY = new AtomicArray<>(0);
+
+    @SuppressWarnings("unchecked")
+    public static <R> AtomicArray<R> ofSize(int size) {
+        return size == 0 ? (AtomicArray<R>) EMPTY : new AtomicArray<>(size);
+    }
+
+    private AtomicArray(int size) {
         array = new AtomicReferenceArray<>(size);
     }
 

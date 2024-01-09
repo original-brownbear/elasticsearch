@@ -109,7 +109,7 @@ public class SearchAsyncActionTests extends ESTestCase {
             new TransportSearchAction.SearchTimeProvider(0, 0, () -> 0),
             ClusterState.EMPTY_STATE,
             null,
-            new ArraySearchPhaseResults<>(shardsIter.size()),
+            ArraySearchPhaseResults.ofSize(shardsIter.size()),
             request.getMaxConcurrentShardRequests(),
             SearchResponse.Clusters.EMPTY
         ) {
@@ -198,7 +198,7 @@ public class SearchAsyncActionTests extends ESTestCase {
         Map<String, AliasFilter> aliasFilters = Collections.singletonMap("_na_", AliasFilter.EMPTY);
         CountDownLatch awaitInitialRequests = new CountDownLatch(1);
         AtomicInteger numRequests = new AtomicInteger(0);
-        var results = new ArraySearchPhaseResults<TestSearchPhaseResult>(shardsIter.size());
+        var results = ArraySearchPhaseResults.<TestSearchPhaseResult>ofSize(shardsIter.size());
         try {
             AbstractSearchAsyncAction<TestSearchPhaseResult> asyncAction = new AbstractSearchAsyncAction<>(
                 "test",
@@ -312,7 +312,7 @@ public class SearchAsyncActionTests extends ESTestCase {
         ExecutorService executor = Executors.newFixedThreadPool(randomIntBetween(1, Runtime.getRuntime().availableProcessors()));
         final CountDownLatch latch = new CountDownLatch(1);
         final AtomicBoolean latchTriggered = new AtomicBoolean();
-        var results = new ArraySearchPhaseResults<TestSearchPhaseResult>(shardsIter.size());
+        var results = ArraySearchPhaseResults.<TestSearchPhaseResult>ofSize(shardsIter.size());
         final TestSearchResponse testResponse = new TestSearchResponse();
         try {
             AbstractSearchAsyncAction<TestSearchPhaseResult> asyncAction = new AbstractSearchAsyncAction<>(
@@ -457,7 +457,7 @@ public class SearchAsyncActionTests extends ESTestCase {
                 new TransportSearchAction.SearchTimeProvider(0, 0, () -> 0),
                 ClusterState.EMPTY_STATE,
                 null,
-                new ArraySearchPhaseResults<>(shardsIter.size()),
+                ArraySearchPhaseResults.ofSize(shardsIter.size()),
                 request.getMaxConcurrentShardRequests(),
                 SearchResponse.Clusters.EMPTY
             ) {
@@ -546,7 +546,7 @@ public class SearchAsyncActionTests extends ESTestCase {
         Map<String, AliasFilter> aliasFilters = Collections.singletonMap("_na_", AliasFilter.EMPTY);
         AtomicInteger numRequests = new AtomicInteger(0);
         AtomicInteger numFailReplicas = new AtomicInteger(0);
-        var results = new ArraySearchPhaseResults<TestSearchPhaseResult>(shardsIter.size());
+        var results = ArraySearchPhaseResults.<TestSearchPhaseResult>ofSize(shardsIter.size());
         try {
             AbstractSearchAsyncAction<TestSearchPhaseResult> asyncAction = new AbstractSearchAsyncAction<>(
                 "test",
@@ -666,7 +666,7 @@ public class SearchAsyncActionTests extends ESTestCase {
             new TransportSearchAction.SearchTimeProvider(0, 0, () -> 0),
             ClusterState.EMPTY_STATE,
             null,
-            new ArraySearchPhaseResults<>(shardsIter.size()),
+            ArraySearchPhaseResults.ofSize(shardsIter.size()),
             request.getMaxConcurrentShardRequests(),
             SearchResponse.Clusters.EMPTY
         ) {

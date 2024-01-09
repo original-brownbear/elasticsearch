@@ -133,7 +133,7 @@ public class AbstractSearchAsyncActionTests extends ESTestCase {
 
     private void runTestTook(final boolean controlled) {
         final AtomicLong expected = new AtomicLong();
-        var result = new ArraySearchPhaseResults<>(10);
+        var result = ArraySearchPhaseResults.ofSize(10);
         try {
             AbstractSearchAsyncAction<SearchPhaseResult> action = createAction(new SearchRequest(), result, null, controlled, expected);
             final long actual = action.buildTookInMillis();
@@ -152,7 +152,7 @@ public class AbstractSearchAsyncActionTests extends ESTestCase {
     public void testBuildShardSearchTransportRequest() {
         SearchRequest searchRequest = new SearchRequest().allowPartialSearchResults(randomBoolean());
         final AtomicLong expected = new AtomicLong();
-        var result = new ArraySearchPhaseResults<>(10);
+        var result = ArraySearchPhaseResults.ofSize(10);
         try {
             AbstractSearchAsyncAction<SearchPhaseResult> action = createAction(searchRequest, result, null, false, expected);
             String clusterAlias = randomBoolean() ? null : randomAlphaOfLengthBetween(5, 10);
@@ -234,7 +234,7 @@ public class AbstractSearchAsyncActionTests extends ESTestCase {
         AtomicReference<Exception> exception = new AtomicReference<>();
         ActionListener<SearchResponse> listener = ActionListener.wrap(response -> fail("onResponse should not be called"), exception::set);
         int numShards = randomIntBetween(2, 10);
-        ArraySearchPhaseResults<SearchPhaseResult> phaseResults = new ArraySearchPhaseResults<>(numShards);
+        ArraySearchPhaseResults<SearchPhaseResult> phaseResults = ArraySearchPhaseResults.ofSize(numShards);
         AbstractSearchAsyncAction<SearchPhaseResult> action = createAction(searchRequest, phaseResults, listener, false, new AtomicLong());
         // skip one to avoid the "all shards failed" failure.
         SearchShardIterator skipIterator = new SearchShardIterator(null, null, Collections.emptyList(), null);
@@ -255,7 +255,7 @@ public class AbstractSearchAsyncActionTests extends ESTestCase {
         int numFailures
     ) {
         int numResults = randomIntBetween(1, 10);
-        ArraySearchPhaseResults<SearchPhaseResult> phaseResults = new ArraySearchPhaseResults<>(numResults + numFailures);
+        ArraySearchPhaseResults<SearchPhaseResult> phaseResults = ArraySearchPhaseResults.ofSize(numResults + numFailures);
 
         for (int i = 0; i < numResults; i++) {
             ShardSearchContextId contextId = new ShardSearchContextId(UUIDs.randomBase64UUID(), randomNonNegativeLong());

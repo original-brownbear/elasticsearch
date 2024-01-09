@@ -98,7 +98,7 @@ public class TransportMultiSearchAction extends HandledTransportAction<MultiSear
         }
 
         int numRequests = request.requests().size();
-        final AtomicArray<MultiSearchResponse.Item> responses = new AtomicArray<>(numRequests);
+        final AtomicArray<MultiSearchResponse.Item> responses = AtomicArray.ofSize(numRequests);
         final AtomicInteger responseCounter = new AtomicInteger(numRequests);
         int numConcurrentSearches = Math.min(numRequests, maxConcurrentSearches);
         for (int i = 0; i < numConcurrentSearches; i++) {
