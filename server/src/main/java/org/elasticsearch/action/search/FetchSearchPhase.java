@@ -39,9 +39,17 @@ final class FetchSearchPhase extends SearchPhase {
 
     FetchSearchPhase(SearchPhaseResults<SearchPhaseResult> resultConsumer, AggregatedDfs aggregatedDfs, SearchPhaseContext context) {
         this(resultConsumer, aggregatedDfs, context, (response, queryPhaseResults) -> {
-            response.mustIncRef();
-            context.addReleasable(response::decRef);
-            return new ExpandSearchPhase(context, response.hits, () -> new FetchLookupFieldsPhase(context, response, queryPhaseResults));
+            if (ExpandSearchPhase.isCollapseRequest(context) && response.hits.getHits().length > 0) {
+                response.mustIncRef();
+                context.addReleasable(response::decRef);
+                return new ExpandSearchPhase(
+                    context,
+                    response.hits,
+                    () -> new FetchLookupFieldsPhase(context, response, queryPhaseResults)
+                );
+            } else {
+                return new FetchLookupFieldsPhase(context, response, queryPhaseResults);
+            }
         });
     }
 
