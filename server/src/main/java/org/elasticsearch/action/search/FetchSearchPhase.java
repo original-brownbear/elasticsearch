@@ -39,9 +39,22 @@ final class FetchSearchPhase extends SearchPhase {
 
     FetchSearchPhase(SearchPhaseResults<SearchPhaseResult> resultConsumer, AggregatedDfs aggregatedDfs, SearchPhaseContext context) {
         this(resultConsumer, aggregatedDfs, context, (response, queryPhaseResults) -> {
-            response.mustIncRef();
-            context.addReleasable(response::decRef);
-            return new ExpandSearchPhase(context, response.hits, () -> new FetchLookupFieldsPhase(context, response, queryPhaseResults));
+            if (ExpandSearchPhase.isCollapseRequest(context.getRequest(), response.hits)) {
+                response.mustIncRef();
+                context.addReleasable(response::decRef);
+                return new ExpandSearchPhase(
+                    context,
+                    response.hits,
+                    () -> new FetchLookupFieldsPhase(context, response, queryPhaseResults)
+                );
+            } else {
+                var clusters = FetchLookupFieldsPhase.groupLookupFieldsByClusterAlias(response.hits);
+                if (clusters.isEmpty()) {
+                    context.sendSearchResponse(response, queryPhaseResults);
+                    return null;
+                }
+                return new FetchLookupFieldsPhase(context, response, queryPhaseResults, clusters);
+            }
         });
     }
 
@@ -101,41 +114,41 @@ final class FetchSearchPhase extends SearchPhase {
             assert assertConsistentWithQueryAndFetchOptimization();
             // query AND fetch optimization
             moveToNextPhase(reducedQueryPhase, queryResults);
-        } else {
-            ScoreDoc[] scoreDocs = reducedQueryPhase.sortedTopDocs().scoreDocs();
-            // no docs to fetch -- sidestep everything and return
-            if (scoreDocs.length == 0) {
-                // we have to release contexts here to free up resources
-                queryResults.asList().stream().map(SearchPhaseResult::queryResult).forEach(this::releaseIrrelevantSearchContext);
-                moveToNextPhase(reducedQueryPhase, fetchResults.getAtomicArray());
-            } else {
-                final ScoreDoc[] lastEmittedDocPerShard = context.getRequest().scroll() != null
-                    ? SearchPhaseController.getLastEmittedDocPerShard(reducedQueryPhase, numShards)
-                    : null;
-                final List<Integer>[] docIdsToLoad = SearchPhaseController.fillDocIdsToLoad(numShards, scoreDocs);
-                final CountedCollector<FetchSearchResult> counter = new CountedCollector<>(
-                    fetchResults,
-                    docIdsToLoad.length, // we count down every shard in the result no matter if we got any results or not
-                    () -> moveToNextPhase(reducedQueryPhase, fetchResults.getAtomicArray()),
-                    context
-                );
-                for (int i = 0; i < docIdsToLoad.length; i++) {
-                    List<Integer> entry = docIdsToLoad[i];
-                    SearchPhaseResult queryResult = queryResults.get(i);
-                    if (entry == null) { // no results for this shard ID
-                        if (queryResult != null) {
-                            // if we got some hits from this shard we have to release the context there
-                            // we do this as we go since it will free up resources and passing on the request on the
-                            // transport layer is cheap.
-                            releaseIrrelevantSearchContext(queryResult.queryResult());
-                            progressListener.notifyFetchResult(i);
-                        }
-                        // in any case we count down this result since we don't talk to this shard anymore
-                        counter.countDown();
-                    } else {
-                        executeFetch(queryResult, counter, entry, (lastEmittedDocPerShard != null) ? lastEmittedDocPerShard[i] : null);
-                    }
+            return;
+        }
+        ScoreDoc[] scoreDocs = reducedQueryPhase.sortedTopDocs().scoreDocs();
+        // no docs to fetch -- sidestep everything and return
+        if (scoreDocs.length == 0) {
+            // we have to release contexts here to free up resources
+            queryResults.asList().stream().map(SearchPhaseResult::queryResult).forEach(this::releaseIrrelevantSearchContext);
+            moveToNextPhase(reducedQueryPhase, fetchResults.getAtomicArray());
+            return;
+        }
+        final ScoreDoc[] lastEmittedDocPerShard = context.getRequest().scroll() != null
+            ? SearchPhaseController.getLastEmittedDocPerShard(reducedQueryPhase, numShards)
+            : null;
+        final List<Integer>[] docIdsToLoad = SearchPhaseController.fillDocIdsToLoad(numShards, scoreDocs);
+        final CountedCollector<FetchSearchResult> counter = new CountedCollector<>(
+            fetchResults,
+            docIdsToLoad.length, // we count down every shard in the result no matter if we got any results or not
+            () -> moveToNextPhase(reducedQueryPhase, fetchResults.getAtomicArray()),
+            context
+        );
+        for (int i = 0; i < docIdsToLoad.length; i++) {
+            List<Integer> entry = docIdsToLoad[i];
+            SearchPhaseResult queryResult = queryResults.get(i);
+            if (entry == null) { // no results for this shard ID
+                if (queryResult != null) {
+                    // if we got some hits from this shard we have to release the context there
+                    // we do this as we go since it will free up resources and passing on the request on the
+                    // transport layer is cheap.
+                    releaseIrrelevantSearchContext(queryResult.queryResult());
+                    progressListener.notifyFetchResult(i);
                 }
+                // in any case we count down this result since we don't talk to this shard anymore
+                counter.countDown();
+            } else {
+                executeFetch(queryResult, counter, entry, (lastEmittedDocPerShard != null) ? lastEmittedDocPerShard[i] : null);
             }
         }
     }
@@ -226,7 +239,10 @@ final class FetchSearchPhase extends SearchPhase {
     ) {
         var resp = SearchPhaseController.merge(context.getRequest().scroll() != null, reducedQueryPhase, fetchResultsArr);
         try {
-            context.executeNextPhase(this, nextPhaseFactory.apply(resp, queryResults));
+            var nextPhase = nextPhaseFactory.apply(resp, queryResults);
+            if (nextPhase != null) {
+                context.executeNextPhase(this, nextPhase);
+            }
         } finally {
             resp.decRef();
         }

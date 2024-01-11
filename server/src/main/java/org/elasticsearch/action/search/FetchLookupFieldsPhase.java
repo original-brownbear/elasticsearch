@@ -36,24 +36,40 @@ final class FetchLookupFieldsPhase extends SearchPhase {
     private final SearchResponseSections searchResponse;
     private final AtomicArray<SearchPhaseResult> queryResults;
 
+    private final List<Cluster> clusters;
+
     FetchLookupFieldsPhase(SearchPhaseContext context, SearchResponseSections searchResponse, AtomicArray<SearchPhaseResult> queryResults) {
+        this(context, searchResponse, queryResults, groupLookupFieldsByClusterAlias(searchResponse.hits));
+
+    }
+
+    FetchLookupFieldsPhase(
+        SearchPhaseContext context,
+        SearchResponseSections searchResponse,
+        AtomicArray<SearchPhaseResult> queryResults,
+        List<Cluster> clusters
+    ) {
         super("fetch_lookup_fields");
         this.context = context;
         this.searchResponse = searchResponse;
         this.queryResults = queryResults;
+        this.clusters = clusters;
     }
 
-    private record Cluster(String clusterAlias, List<SearchHit> hitsWithLookupFields, List<LookupField> lookupFields) {
+    public record Cluster(String clusterAlias, List<SearchHit> hitsWithLookupFields, List<LookupField> lookupFields) {}
 
-    }
-
-    private static List<Cluster> groupLookupFieldsByClusterAlias(SearchHits searchHits) {
+    public static List<Cluster> groupLookupFieldsByClusterAlias(SearchHits searchHits) {
         final Map<String, List<SearchHit>> perClusters = new HashMap<>();
         for (SearchHit hit : searchHits.getHits()) {
-            String clusterAlias = hit.getClusterAlias() != null ? hit.getClusterAlias() : RemoteClusterService.LOCAL_CLUSTER_GROUP_KEY;
             if (hit.hasLookupFields()) {
-                perClusters.computeIfAbsent(clusterAlias, k -> new ArrayList<>()).add(hit);
+                perClusters.computeIfAbsent(
+                    hit.getClusterAlias() != null ? hit.getClusterAlias() : RemoteClusterService.LOCAL_CLUSTER_GROUP_KEY,
+                    k -> new ArrayList<>()
+                ).add(hit);
             }
+        }
+        if (perClusters.isEmpty()) {
+            return List.of();
         }
         final List<Cluster> clusters = new ArrayList<>(perClusters.size());
         for (Map.Entry<String, List<SearchHit>> e : perClusters.entrySet()) {
@@ -70,7 +86,6 @@ final class FetchLookupFieldsPhase extends SearchPhase {
 
     @Override
     public void run() {
-        final List<Cluster> clusters = groupLookupFieldsByClusterAlias(searchResponse.hits);
         if (clusters.isEmpty()) {
             context.sendSearchResponse(searchResponse, queryResults);
             return;
