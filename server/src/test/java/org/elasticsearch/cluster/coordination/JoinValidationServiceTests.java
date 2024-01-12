@@ -23,7 +23,6 @@ import org.elasticsearch.cluster.node.DiscoveryNodeUtils;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.common.component.Lifecycle;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
@@ -312,10 +311,9 @@ public class JoinValidationServiceTests extends ESTestCase {
                     request.writeTo(out);
                     out.flush();
                     final var handler = joiningNodeTransport.getRequestHandlers().getHandler(action);
-                    handler.processMessageReceived(
-                        handler.newRequest(new NamedWriteableAwareStreamInput(out.bytes().streamInput(), writeableRegistry())),
-                        new TestTransportChannel(listener)
-                    );
+                    var stream = out.bytes().streamInput();
+                    stream.setNamedWriteableRegistry(writeableRegistry());
+                    handler.processMessageReceived(handler.newRequest(stream), new TestTransportChannel(listener));
                 } catch (Exception e) {
                     listener.onFailure(e);
                 }

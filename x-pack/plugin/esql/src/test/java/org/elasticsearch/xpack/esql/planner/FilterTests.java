@@ -10,7 +10,6 @@ package org.elasticsearch.xpack.esql.planner;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.ByteBufferStreamInput;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.logging.LoggerMessageFormat;
 import org.elasticsearch.index.query.AbstractQueryBuilder;
@@ -273,10 +272,8 @@ public class FilterTests extends ESTestCase {
             out.writeString(field);
             writeSource(out, source);
 
-            StreamInput in = new NamedWriteableAwareStreamInput(
-                ByteBufferStreamInput.wrap(BytesReference.toBytes(out.bytes())),
-                SerializationTestUtils.writableRegistry()
-            );
+            StreamInput in = ByteBufferStreamInput.wrap(BytesReference.toBytes(out.bytes()));
+            in.setNamedWriteableRegistry(SerializationTestUtils.writableRegistry());
 
             Object obj = SingleValueQuery.ENTRY.reader.read(in);
             return (QueryBuilder) obj;

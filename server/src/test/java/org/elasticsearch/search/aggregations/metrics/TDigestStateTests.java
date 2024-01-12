@@ -12,7 +12,6 @@ import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.TransportVersions;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.test.ESTestCase;
@@ -165,12 +164,8 @@ public class TDigestStateTests extends ESTestCase {
 
     private static TDigestState writeToAndReadFrom(TDigestState state, TransportVersion version) throws IOException {
         BytesRef serializedAggs = serialize(state, version);
-        try (
-            StreamInput in = new NamedWriteableAwareStreamInput(
-                StreamInput.wrap(serializedAggs.bytes),
-                new NamedWriteableRegistry(Collections.emptyList())
-            )
-        ) {
+        try (StreamInput in = StreamInput.wrap(serializedAggs.bytes)) {
+            in.setNamedWriteableRegistry(new NamedWriteableRegistry(Collections.emptyList()));
             in.setTransportVersion(version);
             return TDigestState.read(in);
 

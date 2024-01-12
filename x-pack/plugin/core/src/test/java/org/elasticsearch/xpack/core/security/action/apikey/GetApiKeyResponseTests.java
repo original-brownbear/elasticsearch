@@ -9,7 +9,6 @@ package org.elasticsearch.xpack.core.security.action.apikey;
 
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.xcontent.XContentHelper;
@@ -77,7 +76,8 @@ public class GetApiKeyResponseTests extends ESTestCase {
 
         try (BytesStreamOutput output = new BytesStreamOutput()) {
             response.writeTo(output);
-            try (StreamInput input = new NamedWriteableAwareStreamInput(output.bytes().streamInput(), namedWriteableRegistry)) {
+            try (StreamInput input = output.bytes().streamInput()) {
+                input.setNamedWriteableRegistry(namedWriteableRegistry);
                 GetApiKeyResponse serialized = new GetApiKeyResponse(input);
                 assertThat(serialized.getApiKeyInfos(), equalTo(response.getApiKeyInfos()));
             }

@@ -9,7 +9,6 @@ package org.elasticsearch.action.explain;
 
 import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.settings.Settings;
@@ -51,7 +50,8 @@ public class ExplainRequestTests extends ESTestCase {
             request.storedFields(new String[] { "field1", "field2" });
             request.routing("some_routing");
             request.writeTo(output);
-            try (StreamInput in = new NamedWriteableAwareStreamInput(output.bytes().streamInput(), namedWriteableRegistry)) {
+            try (StreamInput in = output.bytes().streamInput()) {
+                in.setNamedWriteableRegistry(namedWriteableRegistry);
                 ExplainRequest readRequest = new ExplainRequest(in);
                 assertEquals(request.filteringAlias(), readRequest.filteringAlias());
                 assertArrayEquals(request.storedFields(), readRequest.storedFields());

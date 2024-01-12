@@ -8,7 +8,6 @@
 package org.elasticsearch.xpack.eql.execution;
 
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.settings.Settings;
@@ -31,7 +30,8 @@ public class ExecutionUtils {
     public static SearchSourceBuilder copySource(SearchSourceBuilder source) {
         try (BytesStreamOutput output = new BytesStreamOutput()) {
             source.writeTo(output);
-            try (StreamInput in = new NamedWriteableAwareStreamInput(output.bytes().streamInput(), registry)) {
+            try (StreamInput in = output.bytes().streamInput()) {
+                in.setNamedWriteableRegistry(registry);
                 return new SearchSourceBuilder(in);
             }
         } catch (IOException e) {

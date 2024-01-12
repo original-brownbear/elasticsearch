@@ -11,7 +11,6 @@ import org.elasticsearch.TransportVersions;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.Writeable.Reader;
 import org.elasticsearch.common.util.Maps;
@@ -1016,7 +1015,8 @@ public class TransformConfigTests extends AbstractSerializingTransformTestCase<T
         // Write TransformConfig to wire, read it again and verify that metadata keys are still in the same order
         try (BytesStreamOutput output = new BytesStreamOutput()) {
             transformConfig.writeTo(output);
-            try (StreamInput in = new NamedWriteableAwareStreamInput(output.bytes().streamInput(), getNamedWriteableRegistry())) {
+            try (StreamInput in = output.bytes().streamInput()) {
+                in.setNamedWriteableRegistry(getNamedWriteableRegistry());
                 transformConfig = new TransformConfig(in);
             }
         }

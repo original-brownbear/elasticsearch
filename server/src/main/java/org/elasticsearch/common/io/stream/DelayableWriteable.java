@@ -228,11 +228,8 @@ public abstract class DelayableWriteable<T extends Writeable> implements Writeab
         NamedWriteableRegistry registry,
         BytesReference serialized
     ) throws IOException {
-        try (
-            StreamInput in = registry == null
-                ? serialized.streamInput()
-                : new NamedWriteableAwareStreamInput(serialized.streamInput(), registry)
-        ) {
+        try (StreamInput in = serialized.streamInput()) {
+            in.setNamedWriteableRegistry(registry);
             in.setTransportVersion(serializedAtVersion);
             return reader.read(in);
         }

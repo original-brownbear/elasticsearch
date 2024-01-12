@@ -53,7 +53,6 @@ import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.bytes.CompositeBytesReference;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.NamedWriteable;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
@@ -1653,7 +1652,8 @@ public abstract class ESTestCase extends LuceneTestCase {
         try (BytesStreamOutput output = new BytesStreamOutput()) {
             output.setTransportVersion(version);
             writer.write(output, original);
-            try (StreamInput in = new NamedWriteableAwareStreamInput(output.bytes().streamInput(), namedWriteableRegistry)) {
+            try (StreamInput in = output.bytes().streamInput()) {
+                in.setNamedWriteableRegistry(namedWriteableRegistry);
                 in.setTransportVersion(version);
                 return reader.read(in);
             }

@@ -10,7 +10,6 @@ package org.elasticsearch.xpack.esql.io.stream;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.ByteBufferStreamInput;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.dissect.DissectParser;
 import org.elasticsearch.test.ESTestCase;
@@ -704,10 +703,8 @@ public class PlanNamedTypesTests extends ESTestCase {
     static PlanNameRegistry planNameRegistry = new PlanNameRegistry();
 
     static PlanStreamInput planStreamInput(BytesStreamOutput out) {
-        StreamInput in = new NamedWriteableAwareStreamInput(
-            ByteBufferStreamInput.wrap(BytesReference.toBytes(out.bytes())),
-            SerializationTestUtils.writableRegistry()
-        );
+        StreamInput in = ByteBufferStreamInput.wrap(BytesReference.toBytes(out.bytes()));
+        in.setNamedWriteableRegistry(SerializationTestUtils.writableRegistry());
         return new PlanStreamInput(in, planNameRegistry, SerializationTestUtils.writableRegistry(), EsqlTestUtils.TEST_CFG);
     }
 }

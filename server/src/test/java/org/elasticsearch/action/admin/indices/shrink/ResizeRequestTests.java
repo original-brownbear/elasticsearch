@@ -13,7 +13,6 @@ import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.Writeable;
@@ -144,7 +143,8 @@ public class ResizeRequestTests extends AbstractWireSerializingTestCase<ResizeRe
         request.writeTo(out);
         BytesReference bytes = out.bytes();
         NamedWriteableRegistry namedWriteableRegistry = new NamedWriteableRegistry(NetworkModule.getNamedWriteables());
-        StreamInput wrap = new NamedWriteableAwareStreamInput(bytes.streamInput(), namedWriteableRegistry);
+        StreamInput wrap = bytes.streamInput();
+        wrap.setNamedWriteableRegistry(namedWriteableRegistry);
         ResizeRequest deserializedReq = new ResizeRequest(wrap);
 
         assertEquals(request.getSourceIndex(), deserializedReq.getSourceIndex());

@@ -15,7 +15,6 @@ import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.cache.Cache;
 import org.elasticsearch.common.io.stream.ByteBufferStreamInput;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.settings.Settings;
@@ -505,10 +504,8 @@ public class RoleDescriptorTests extends ESTestCase {
         final RoleDescriptor descriptor = randomRoleDescriptor(true, canIncludeRemoteIndices, canIncludeWorkflows);
         descriptor.writeTo(output);
         final NamedWriteableRegistry registry = new NamedWriteableRegistry(new XPackClientPlugin().getNamedWriteables());
-        StreamInput streamInput = new NamedWriteableAwareStreamInput(
-            ByteBufferStreamInput.wrap(BytesReference.toBytes(output.bytes())),
-            registry
-        );
+        StreamInput streamInput = ByteBufferStreamInput.wrap(BytesReference.toBytes(output.bytes()));
+        streamInput.setNamedWriteableRegistry(registry);
         streamInput.setTransportVersion(version);
         final RoleDescriptor serialized = new RoleDescriptor(streamInput);
 
@@ -528,10 +525,8 @@ public class RoleDescriptorTests extends ESTestCase {
         final RoleDescriptor descriptor = randomRoleDescriptor(true, true, false);
         descriptor.writeTo(output);
         final NamedWriteableRegistry registry = new NamedWriteableRegistry(new XPackClientPlugin().getNamedWriteables());
-        StreamInput streamInput = new NamedWriteableAwareStreamInput(
-            ByteBufferStreamInput.wrap(BytesReference.toBytes(output.bytes())),
-            registry
-        );
+        StreamInput streamInput = ByteBufferStreamInput.wrap(BytesReference.toBytes(output.bytes()));
+        streamInput.setNamedWriteableRegistry(registry);
         streamInput.setTransportVersion(version);
         final RoleDescriptor serialized = new RoleDescriptor(streamInput);
         if (descriptor.hasRemoteIndicesPrivileges()) {
@@ -570,10 +565,8 @@ public class RoleDescriptorTests extends ESTestCase {
         final RoleDescriptor descriptor = randomRoleDescriptor(true, false, true);
         descriptor.writeTo(output);
         final NamedWriteableRegistry registry = new NamedWriteableRegistry(new XPackClientPlugin().getNamedWriteables());
-        StreamInput streamInput = new NamedWriteableAwareStreamInput(
-            ByteBufferStreamInput.wrap(BytesReference.toBytes(output.bytes())),
-            registry
-        );
+        StreamInput streamInput = ByteBufferStreamInput.wrap(BytesReference.toBytes(output.bytes()));
+        streamInput.setNamedWriteableRegistry(registry);
         streamInput.setTransportVersion(version);
         final RoleDescriptor serialized = new RoleDescriptor(streamInput);
         if (descriptor.hasWorkflowsRestriction()) {

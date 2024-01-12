@@ -11,7 +11,6 @@ package org.elasticsearch.search;
 import org.apache.lucene.document.InetAddressPoint;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry.Entry;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -48,13 +47,15 @@ public class DocValueFormatTests extends ESTestCase {
 
         BytesStreamOutput out = new BytesStreamOutput();
         out.writeNamedWriteable(DocValueFormat.BOOLEAN);
-        StreamInput in = new NamedWriteableAwareStreamInput(out.bytes().streamInput(), registry);
+        StreamInput in = out.bytes().streamInput();
+        in.setNamedWriteableRegistry(registry);
         assertSame(DocValueFormat.BOOLEAN, in.readNamedWriteable(DocValueFormat.class));
 
         DocValueFormat.Decimal decimalFormat = new DocValueFormat.Decimal("###.##");
         out = new BytesStreamOutput();
         out.writeNamedWriteable(decimalFormat);
-        in = new NamedWriteableAwareStreamInput(out.bytes().streamInput(), registry);
+        in = out.bytes().streamInput();
+        in.setNamedWriteableRegistry(registry);
         DocValueFormat vf = in.readNamedWriteable(DocValueFormat.class);
         assertEquals(DocValueFormat.Decimal.class, vf.getClass());
         assertEquals("###.##", ((DocValueFormat.Decimal) vf).pattern);
@@ -63,7 +64,8 @@ public class DocValueFormatTests extends ESTestCase {
         DocValueFormat.DateTime dateFormat = new DocValueFormat.DateTime(formatter, ZoneOffset.ofHours(1), Resolution.MILLISECONDS);
         out = new BytesStreamOutput();
         out.writeNamedWriteable(dateFormat);
-        in = new NamedWriteableAwareStreamInput(out.bytes().streamInput(), registry);
+        in = out.bytes().streamInput();
+        in.setNamedWriteableRegistry(registry);
         vf = in.readNamedWriteable(DocValueFormat.class);
         assertEquals(DocValueFormat.DateTime.class, vf.getClass());
         assertEquals("epoch_second", ((DocValueFormat.DateTime) vf).formatter.pattern());
@@ -73,7 +75,8 @@ public class DocValueFormatTests extends ESTestCase {
         dateFormat = (DocValueFormat.DateTime) DocValueFormat.enableFormatSortValues(dateFormat);
         out = new BytesStreamOutput();
         out.writeNamedWriteable(dateFormat);
-        in = new NamedWriteableAwareStreamInput(out.bytes().streamInput(), registry);
+        in = out.bytes().streamInput();
+        in.setNamedWriteableRegistry(registry);
         vf = in.readNamedWriteable(DocValueFormat.class);
         assertEquals(DocValueFormat.DateTime.class, vf.getClass());
         assertEquals("epoch_second", ((DocValueFormat.DateTime) vf).formatter.pattern());
@@ -84,7 +87,8 @@ public class DocValueFormatTests extends ESTestCase {
         DocValueFormat.DateTime nanosDateFormat = new DocValueFormat.DateTime(formatter, ZoneOffset.ofHours(1), Resolution.NANOSECONDS);
         out = new BytesStreamOutput();
         out.writeNamedWriteable(nanosDateFormat);
-        in = new NamedWriteableAwareStreamInput(out.bytes().streamInput(), registry);
+        in = out.bytes().streamInput();
+        in.setNamedWriteableRegistry(registry);
         vf = in.readNamedWriteable(DocValueFormat.class);
         assertEquals(DocValueFormat.DateTime.class, vf.getClass());
         assertEquals("epoch_second", ((DocValueFormat.DateTime) vf).formatter.pattern());
@@ -93,27 +97,32 @@ public class DocValueFormatTests extends ESTestCase {
 
         out = new BytesStreamOutput();
         out.writeNamedWriteable(DocValueFormat.GEOHASH);
-        in = new NamedWriteableAwareStreamInput(out.bytes().streamInput(), registry);
+        in = out.bytes().streamInput();
+        in.setNamedWriteableRegistry(registry);
         assertSame(DocValueFormat.GEOHASH, in.readNamedWriteable(DocValueFormat.class));
 
         out = new BytesStreamOutput();
         out.writeNamedWriteable(DocValueFormat.GEOTILE);
-        in = new NamedWriteableAwareStreamInput(out.bytes().streamInput(), registry);
+        in = out.bytes().streamInput();
+        in.setNamedWriteableRegistry(registry);
         assertSame(DocValueFormat.GEOTILE, in.readNamedWriteable(DocValueFormat.class));
 
         out = new BytesStreamOutput();
         out.writeNamedWriteable(DocValueFormat.IP);
-        in = new NamedWriteableAwareStreamInput(out.bytes().streamInput(), registry);
+        in = out.bytes().streamInput();
+        in.setNamedWriteableRegistry(registry);
         assertSame(DocValueFormat.IP, in.readNamedWriteable(DocValueFormat.class));
 
         out = new BytesStreamOutput();
         out.writeNamedWriteable(DocValueFormat.RAW);
-        in = new NamedWriteableAwareStreamInput(out.bytes().streamInput(), registry);
+        in = out.bytes().streamInput();
+        in.setNamedWriteableRegistry(registry);
         assertSame(DocValueFormat.RAW, in.readNamedWriteable(DocValueFormat.class));
 
         out = new BytesStreamOutput();
         out.writeNamedWriteable(DocValueFormat.BINARY);
-        in = new NamedWriteableAwareStreamInput(out.bytes().streamInput(), registry);
+        in = out.bytes().streamInput();
+        in.setNamedWriteableRegistry(registry);
         assertSame(DocValueFormat.BINARY, in.readNamedWriteable(DocValueFormat.class));
     }
 

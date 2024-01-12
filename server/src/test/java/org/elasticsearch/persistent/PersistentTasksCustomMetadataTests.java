@@ -20,7 +20,6 @@ import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry.Entry;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -287,9 +286,8 @@ public class PersistentTasksCustomMetadataTests extends ChunkedToXContentDiffabl
 
         final StreamInput input = out.bytes().streamInput();
         input.setTransportVersion(streamVersion);
-        PersistentTasksCustomMetadata read = new PersistentTasksCustomMetadata(
-            new NamedWriteableAwareStreamInput(input, getNamedWriteableRegistry())
-        );
+        input.setNamedWriteableRegistry(getNamedWriteableRegistry());
+        PersistentTasksCustomMetadata read = new PersistentTasksCustomMetadata(input);
 
         assertThat(read.taskMap().keySet(), contains("test_compatible_version"));
     }

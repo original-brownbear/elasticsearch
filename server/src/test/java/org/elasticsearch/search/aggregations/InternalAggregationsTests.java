@@ -11,7 +11,6 @@ import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.DelayableWriteable;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.settings.Settings;
@@ -314,7 +313,8 @@ public class InternalAggregationsTests extends ESTestCase {
 
     private void writeToAndReadFrom(InternalAggregations aggregations, TransportVersion version, int iteration) throws IOException {
         BytesRef serializedAggs = serialize(aggregations, version);
-        try (StreamInput in = new NamedWriteableAwareStreamInput(StreamInput.wrap(serializedAggs.bytes), registry)) {
+        try (StreamInput in = StreamInput.wrap(serializedAggs.bytes)) {
+            in.setNamedWriteableRegistry(registry);
             in.setTransportVersion(version);
             InternalAggregations deserialized = InternalAggregations.readFrom(in);
             assertEquals(aggregations.aggregations, deserialized.aggregations);

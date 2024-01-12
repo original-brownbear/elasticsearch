@@ -38,7 +38,6 @@ import org.elasticsearch.TransportVersions;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.InputStreamStreamInput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
@@ -586,8 +585,9 @@ public class PercolateQueryBuilder extends AbstractQueryBuilder<PercolateQueryBu
                     BytesRef qbSource = binaryDocValues.binaryValue();
                     try (
                         InputStream in = new ByteArrayInputStream(qbSource.bytes, qbSource.offset, qbSource.length);
-                        StreamInput input = new NamedWriteableAwareStreamInput(new InputStreamStreamInput(in, qbSource.length), registry)
+                        StreamInput input = new InputStreamStreamInput(in, qbSource.length)
                     ) {
+                        input.setNamedWriteableRegistry(registry);
                         // Query builder's content is stored via BinaryFieldMapper, which has a custom encoding
                         // to encode multiple binary values into a single binary doc values field.
                         // This is the reason we need to first read the number of values and

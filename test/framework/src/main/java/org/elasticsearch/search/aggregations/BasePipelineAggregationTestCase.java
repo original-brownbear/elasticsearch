@@ -10,7 +10,6 @@ package org.elasticsearch.search.aggregations;
 
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.settings.Settings;
@@ -148,7 +147,8 @@ public abstract class BasePipelineAggregationTestCase<AF extends AbstractPipelin
         AF testAgg = createTestAggregatorFactory();
         try (BytesStreamOutput output = new BytesStreamOutput()) {
             output.writeNamedWriteable(testAgg);
-            try (StreamInput in = new NamedWriteableAwareStreamInput(output.bytes().streamInput(), namedWriteableRegistry)) {
+            try (StreamInput in = output.bytes().streamInput()) {
+                in.setNamedWriteableRegistry(namedWriteableRegistry);
                 PipelineAggregationBuilder deserializedQuery = in.readNamedWriteable(PipelineAggregationBuilder.class);
                 assertEquals(deserializedQuery, testAgg);
                 assertEquals(deserializedQuery.hashCode(), testAgg.hashCode());
@@ -168,7 +168,8 @@ public abstract class BasePipelineAggregationTestCase<AF extends AbstractPipelin
     private AF copyAggregation(AF agg) throws IOException {
         try (BytesStreamOutput output = new BytesStreamOutput()) {
             output.writeNamedWriteable(agg);
-            try (StreamInput in = new NamedWriteableAwareStreamInput(output.bytes().streamInput(), namedWriteableRegistry)) {
+            try (StreamInput in = output.bytes().streamInput()) {
+                in.setNamedWriteableRegistry(namedWriteableRegistry);
                 @SuppressWarnings("unchecked")
                 AF secondAgg = (AF) in.readNamedWriteable(PipelineAggregationBuilder.class);
                 return secondAgg;

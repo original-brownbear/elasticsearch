@@ -13,7 +13,6 @@ import com.fasterxml.jackson.core.JsonParser;
 import org.apache.lucene.tests.util.LuceneTestCase;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.xcontent.XContentHelper;
@@ -174,7 +173,9 @@ public final class SqlTestUtils {
     static <T> T clone(Writeable writeable, Writeable.Reader<T> reader, NamedWriteableRegistry namedWriteableRegistry) {
         try (BytesStreamOutput out = new BytesStreamOutput()) {
             writeable.writeTo(out);
-            return reader.read(new NamedWriteableAwareStreamInput(out.bytes().streamInput(), namedWriteableRegistry));
+            var stream = out.bytes().streamInput();
+            stream.setNamedWriteableRegistry(namedWriteableRegistry);
+            return reader.read(stream);
         } catch (IOException ex) {
             throw new IllegalStateException(ex);
         }

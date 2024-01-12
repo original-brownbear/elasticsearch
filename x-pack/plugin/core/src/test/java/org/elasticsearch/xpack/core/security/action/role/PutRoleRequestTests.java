@@ -14,7 +14,6 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.ByteBufferStreamInput;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.util.set.Sets;
@@ -179,7 +178,8 @@ public class PutRoleRequestTests extends ESTestCase {
         original.writeTo(out);
 
         final NamedWriteableRegistry registry = new NamedWriteableRegistry(new XPackClientPlugin().getNamedWriteables());
-        StreamInput in = new NamedWriteableAwareStreamInput(ByteBufferStreamInput.wrap(BytesReference.toBytes(out.bytes())), registry);
+        StreamInput in = ByteBufferStreamInput.wrap(BytesReference.toBytes(out.bytes()));
+        in.setNamedWriteableRegistry(registry);
         in.setTransportVersion(out.getTransportVersion());
         final PutRoleRequest copy = new PutRoleRequest(in);
 
@@ -216,7 +216,8 @@ public class PutRoleRequestTests extends ESTestCase {
         } else {
             original.writeTo(out);
             final NamedWriteableRegistry registry = new NamedWriteableRegistry(new XPackClientPlugin().getNamedWriteables());
-            StreamInput in = new NamedWriteableAwareStreamInput(ByteBufferStreamInput.wrap(BytesReference.toBytes(out.bytes())), registry);
+            StreamInput in = ByteBufferStreamInput.wrap(BytesReference.toBytes(out.bytes()));
+            in.setNamedWriteableRegistry(registry);
             in.setTransportVersion(out.getTransportVersion());
             final PutRoleRequest copy = new PutRoleRequest(in);
             assertThat(copy.roleDescriptor(), equalTo(original.roleDescriptor()));

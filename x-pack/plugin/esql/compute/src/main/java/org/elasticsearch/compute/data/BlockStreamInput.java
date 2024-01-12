@@ -7,14 +7,14 @@
 
 package org.elasticsearch.compute.data;
 
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
+import org.elasticsearch.common.io.stream.FilterStreamInput;
 import org.elasticsearch.common.io.stream.StreamInput;
 
-public class BlockStreamInput extends NamedWriteableAwareStreamInput {
+public class BlockStreamInput extends FilterStreamInput {
     private final BlockFactory blockFactory;
 
     public BlockStreamInput(StreamInput delegate, BlockFactory blockFactory) {
-        super(delegate, delegate.namedWriteableRegistry());
+        super(delegate);
         this.blockFactory = blockFactory;
     }
 

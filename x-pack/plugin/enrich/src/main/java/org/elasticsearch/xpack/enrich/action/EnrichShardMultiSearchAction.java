@@ -35,7 +35,6 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
@@ -158,7 +157,8 @@ public class EnrichShardMultiSearchAction extends ActionType<MultiSearchResponse
             NamedWriteableRegistry registry = new NamedWriteableRegistry(new SearchModule(Settings.EMPTY, List.of()).getNamedWriteables());
             try (BytesStreamOutput output = new BytesStreamOutput()) {
                 source.writeTo(output);
-                try (StreamInput in = new NamedWriteableAwareStreamInput(output.bytes().streamInput(), registry)) {
+                try (StreamInput in = output.bytes().streamInput()) {
+                    in.setNamedWriteableRegistry(registry);
                     return new SearchSourceBuilder(in);
                 }
             } catch (IOException e) {

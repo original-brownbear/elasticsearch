@@ -9,7 +9,6 @@ package org.elasticsearch.xpack.core.transform;
 
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.Writeable;
@@ -122,7 +121,8 @@ public abstract class AbstractSerializingTransformTestCase<T extends ToXContent 
             output.setTransportVersion(version);
             original.writeTo(output);
 
-            try (StreamInput in = new NamedWriteableAwareStreamInput(output.bytes().streamInput(), getNamedWriteableRegistry())) {
+            try (StreamInput in = output.bytes().streamInput()) {
+                in.setNamedWriteableRegistry(getNamedWriteableRegistry());
                 in.setTransportVersion(version);
                 return reader.read(in);
             }

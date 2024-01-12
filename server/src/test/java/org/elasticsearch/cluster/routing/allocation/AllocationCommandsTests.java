@@ -41,7 +41,6 @@ import org.elasticsearch.cluster.routing.allocation.decider.AllocationDeciders;
 import org.elasticsearch.cluster.routing.allocation.decider.EnableAllocationDecider;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.network.NetworkModule;
@@ -759,8 +758,7 @@ public class AllocationCommandsTests extends ESAllocationTestCase {
 
         // Since the commands are named writeable we need to register them and wrap the input stream
         NamedWriteableRegistry namedWriteableRegistry = new NamedWriteableRegistry(NetworkModule.getNamedWriteables());
-        in = new NamedWriteableAwareStreamInput(in, namedWriteableRegistry);
-
+        in.setNamedWriteableRegistry(namedWriteableRegistry);
         // Now we can read them!
         assertThat(AllocationCommands.readFrom(in), equalTo(commands));
     }

@@ -8,7 +8,6 @@
 package org.elasticsearch.xpack.analytics.boxplot;
 
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.util.Maps;
@@ -72,7 +71,8 @@ public class InternalBoxplotTests extends InternalAggregationTestCase<InternalBo
         TDigestState state;
         try (BytesStreamOutput output = new BytesStreamOutput()) {
             TDigestState.write(instance.state(), output);
-            try (StreamInput in = new NamedWriteableAwareStreamInput(output.bytes().streamInput(), getNamedWriteableRegistry())) {
+            try (StreamInput in = output.bytes().streamInput()) {
+                in.setNamedWriteableRegistry(getNamedWriteableRegistry());
                 state = TDigestState.read(in);
             }
         } catch (IOException ex) {

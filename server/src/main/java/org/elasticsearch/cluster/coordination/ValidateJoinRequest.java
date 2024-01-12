@@ -13,7 +13,6 @@ import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.common.CheckedSupplier;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.compress.CompressorFactory;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
@@ -48,13 +47,8 @@ public class ValidateJoinRequest extends TransportRequest {
         BytesReference bytes,
         NamedWriteableRegistry namedWriteableRegistry
     ) throws IOException {
-        try (
-            var bytesStreamInput = bytes.streamInput();
-            var in = new NamedWriteableAwareStreamInput(
-                CompressorFactory.COMPRESSOR.threadLocalStreamInput(bytesStreamInput),
-                namedWriteableRegistry
-            )
-        ) {
+        try (var bytesStreamInput = bytes.streamInput(); var in = CompressorFactory.COMPRESSOR.threadLocalStreamInput(bytesStreamInput)) {
+            in.setNamedWriteableRegistry(namedWriteableRegistry);
             in.setTransportVersion(version);
             return ClusterState.readFrom(in, null);
         }

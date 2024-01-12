@@ -14,7 +14,6 @@ import org.elasticsearch.aggregations.AggregationsPlugin;
 import org.elasticsearch.aggregations.pipeline.DerivativePipelineAggregationBuilder;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.Writeable;
@@ -387,7 +386,8 @@ public class DatafeedUpdateTests extends AbstractXContentSerializingTestCase<Dat
         try (BytesStreamOutput output = new BytesStreamOutput()) {
             output.setTransportVersion(TransportVersion.current());
             datafeedUpdate.writeTo(output);
-            try (StreamInput in = new NamedWriteableAwareStreamInput(output.bytes().streamInput(), getNamedWriteableRegistry())) {
+            try (StreamInput in = output.bytes().streamInput()) {
+                in.setNamedWriteableRegistry(getNamedWriteableRegistry());
                 in.setTransportVersion(TransportVersion.current());
                 DatafeedUpdate streamedDatafeedUpdate = new DatafeedUpdate(in);
                 assertEquals(datafeedUpdate, streamedDatafeedUpdate);

@@ -364,7 +364,8 @@ public class BytesStreamsTests extends ESTestCase {
             out.writeNamedWriteable(namedWriteableIn);
             byte[] bytes = BytesReference.toBytes(out.bytes());
 
-            try (StreamInput in = new NamedWriteableAwareStreamInput(StreamInput.wrap(bytes), namedWriteableRegistry)) {
+            try (StreamInput in = StreamInput.wrap(bytes)) {
+                in.setNamedWriteableRegistry(namedWriteableRegistry);
                 assertEquals(in.available(), bytes.length);
                 BaseNamedWriteable namedWriteableOut = in.readNamedWriteable(BaseNamedWriteable.class);
                 assertEquals(namedWriteableIn, namedWriteableOut);
@@ -387,7 +388,8 @@ public class BytesStreamsTests extends ESTestCase {
 
         try (TestStreamOutput out = new TestStreamOutput()) {
             out.writeNamedWriteableCollection(expected);
-            try (StreamInput in = new NamedWriteableAwareStreamInput(out.bytes().streamInput(), namedWriteableRegistry)) {
+            try (StreamInput in = out.bytes().streamInput()) {
+                in.setNamedWriteableRegistry(namedWriteableRegistry);
                 assertEquals(expected, in.readNamedWriteableCollectionAsList(BaseNamedWriteable.class));
                 assertEquals(0, in.available());
             }
@@ -417,7 +419,8 @@ public class BytesStreamsTests extends ESTestCase {
             );
             out.writeNamedWriteable(namedWriteableIn);
             byte[] bytes = BytesReference.toBytes(out.bytes());
-            try (StreamInput in = new NamedWriteableAwareStreamInput(StreamInput.wrap(bytes), namedWriteableRegistry)) {
+            try (StreamInput in = StreamInput.wrap(bytes)) {
+                in.setNamedWriteableRegistry(namedWriteableRegistry);
                 assertEquals(in.available(), bytes.length);
                 AssertionError e = expectThrows(AssertionError.class, () -> in.readNamedWriteable(BaseNamedWriteable.class));
                 assertThat(e.getCause().getMessage(), endsWith("] returned null which is not allowed."));
@@ -456,7 +459,8 @@ public class BytesStreamsTests extends ESTestCase {
             );
             out.writeNamedWriteable(namedWriteableIn);
             byte[] bytes = BytesReference.toBytes(out.bytes());
-            try (StreamInput in = new NamedWriteableAwareStreamInput(StreamInput.wrap(bytes), namedWriteableRegistry)) {
+            try (StreamInput in = StreamInput.wrap(bytes)) {
+                in.setNamedWriteableRegistry(namedWriteableRegistry);
                 assertEquals(in.available(), bytes.length);
                 AssertionError e = expectThrows(AssertionError.class, () -> in.readNamedWriteable(BaseNamedWriteable.class));
                 assertThat(

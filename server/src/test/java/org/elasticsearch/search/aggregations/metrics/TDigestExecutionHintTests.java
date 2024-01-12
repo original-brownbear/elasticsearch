@@ -9,7 +9,6 @@
 package org.elasticsearch.search.aggregations.metrics;
 
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.test.ESTestCase;
@@ -35,12 +34,8 @@ public class TDigestExecutionHintTests extends ESTestCase {
     private static TDigestExecutionHint writeToAndReadFrom(TDigestExecutionHint state) throws IOException {
         try (BytesStreamOutput out = new BytesStreamOutput()) {
             state.writeTo(out);
-            try (
-                StreamInput in = new NamedWriteableAwareStreamInput(
-                    StreamInput.wrap(out.bytes().toBytesRef().bytes),
-                    new NamedWriteableRegistry(Collections.emptyList())
-                )
-            ) {
+            try (StreamInput in = StreamInput.wrap(out.bytes().toBytesRef().bytes)) {
+                in.setNamedWriteableRegistry(new NamedWriteableRegistry(Collections.emptyList()));
                 return TDigestExecutionHint.readFrom(in);
 
             }
@@ -58,12 +53,8 @@ public class TDigestExecutionHintTests extends ESTestCase {
     public void testUnexpectedSerializedValue() throws IOException {
         try (BytesStreamOutput out = new BytesStreamOutput()) {
             out.writeVInt(-1);
-            try (
-                StreamInput in = new NamedWriteableAwareStreamInput(
-                    StreamInput.wrap(out.bytes().toBytesRef().bytes),
-                    new NamedWriteableRegistry(Collections.emptyList())
-                )
-            ) {
+            try (StreamInput in = StreamInput.wrap(out.bytes().toBytesRef().bytes)) {
+                in.setNamedWriteableRegistry(new NamedWriteableRegistry(Collections.emptyList()));
                 expectThrows(IllegalStateException.class, () -> TDigestExecutionHint.readFrom(in));
             }
         }

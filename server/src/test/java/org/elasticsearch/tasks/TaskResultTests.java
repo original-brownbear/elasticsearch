@@ -9,7 +9,6 @@
 package org.elasticsearch.tasks;
 
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.test.ESTestCase;
@@ -38,7 +37,8 @@ public class TaskResultTests extends ESTestCase {
         TaskResult read;
         try (BytesStreamOutput out = new BytesStreamOutput()) {
             result.writeTo(out);
-            try (StreamInput in = new NamedWriteableAwareStreamInput(out.bytes().streamInput(), registry)) {
+            try (StreamInput in = out.bytes().streamInput()) {
+                in.setNamedWriteableRegistry(registry);
                 read = new TaskResult(in);
             }
         } catch (IOException e) {

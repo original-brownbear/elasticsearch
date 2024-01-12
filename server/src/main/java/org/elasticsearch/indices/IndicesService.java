@@ -46,7 +46,6 @@ import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.io.FileSystemUtils;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
@@ -1541,7 +1540,8 @@ public class IndicesService extends AbstractLifecycleComponent
         if (loadedFromCache[0]) {
             // restore the cached query result into the context
             final QuerySearchResult result = context.queryResult();
-            StreamInput in = new NamedWriteableAwareStreamInput(bytesReference.streamInput(), namedWriteableRegistry);
+            StreamInput in = bytesReference.streamInput();
+            in.setNamedWriteableRegistry(namedWriteableRegistry);
             result.readFromWithId(context.id(), in);
             result.setSearchShardTarget(context.shardTarget());
         } else if (context.queryResult().searchTimedOut()) {

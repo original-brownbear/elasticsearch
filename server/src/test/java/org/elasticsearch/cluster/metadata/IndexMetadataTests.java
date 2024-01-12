@@ -18,7 +18,6 @@ import org.elasticsearch.cluster.routing.allocation.DataTier;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.settings.Settings;
@@ -141,7 +140,8 @@ public class IndexMetadataTests extends ESTestCase {
 
         final BytesStreamOutput out = new BytesStreamOutput();
         metadata.writeTo(out);
-        try (StreamInput in = new NamedWriteableAwareStreamInput(out.bytes().streamInput(), writableRegistry())) {
+        try (StreamInput in = out.bytes().streamInput()) {
+            in.setNamedWriteableRegistry(writableRegistry());
             IndexMetadata deserialized = IndexMetadata.readFrom(in);
             assertEquals(metadata, deserialized);
             assertEquals(metadata.hashCode(), deserialized.hashCode());

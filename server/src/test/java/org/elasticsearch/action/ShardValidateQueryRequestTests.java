@@ -10,7 +10,6 @@ package org.elasticsearch.action;
 import org.elasticsearch.action.admin.indices.validate.query.ShardValidateQueryRequest;
 import org.elasticsearch.action.admin.indices.validate.query.ValidateQueryRequest;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.settings.Settings;
@@ -50,7 +49,8 @@ public class ShardValidateQueryRequestTests extends ESTestCase {
                 validateQueryRequest
             );
             request.writeTo(output);
-            try (StreamInput in = new NamedWriteableAwareStreamInput(output.bytes().streamInput(), namedWriteableRegistry)) {
+            try (StreamInput in = output.bytes().streamInput()) {
+                in.setNamedWriteableRegistry(namedWriteableRegistry);
                 ShardValidateQueryRequest readRequest = new ShardValidateQueryRequest(in);
                 assertEquals(request.filteringAliases(), readRequest.filteringAliases());
                 assertEquals(request.explain(), readRequest.explain());

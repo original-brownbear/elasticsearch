@@ -10,8 +10,8 @@ import com.carrotsearch.randomizedtesting.WriterOutputStream;
 
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.xcontent.ToXContent;
@@ -137,7 +137,8 @@ public class ExpressionParserTests extends ESTestCase {
 
         final Settings settings = Settings.builder().put("path.home", createTempDir()).build();
         final NamedWriteableRegistry registry = new NamedWriteableRegistry(new XPackClientPlugin().getNamedWriteables());
-        final NamedWriteableAwareStreamInput input = new NamedWriteableAwareStreamInput(out.bytes().streamInput(), registry);
+        final StreamInput input = out.bytes().streamInput();
+        input.setNamedWriteableRegistry(registry);
         final RoleMapperExpression exprResult = ExpressionParser.readExpression(input);
         assertThat(json(exprResult), equalTo(json.replaceAll("\\s", "")));
     }

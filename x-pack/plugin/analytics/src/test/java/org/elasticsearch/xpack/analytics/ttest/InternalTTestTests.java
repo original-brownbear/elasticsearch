@@ -8,7 +8,6 @@
 package org.elasticsearch.xpack.analytics.ttest;
 
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.util.Maps;
@@ -99,7 +98,8 @@ public class InternalTTestTests extends InternalAggregationTestCase<InternalTTes
         TTestState state;
         try (BytesStreamOutput output = new BytesStreamOutput()) {
             output.writeNamedWriteable(instance.state);
-            try (StreamInput in = new NamedWriteableAwareStreamInput(output.bytes().streamInput(), getNamedWriteableRegistry())) {
+            try (StreamInput in = output.bytes().streamInput()) {
+                in.setNamedWriteableRegistry(getNamedWriteableRegistry());
                 state = in.readNamedWriteable(TTestState.class);
             }
         } catch (IOException ex) {

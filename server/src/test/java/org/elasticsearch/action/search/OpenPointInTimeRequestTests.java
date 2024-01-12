@@ -11,7 +11,6 @@ package org.elasticsearch.action.search;
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.TransportVersions;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.Writeable;
@@ -102,7 +101,8 @@ public class OpenPointInTimeRequestTests extends AbstractWireSerializingTestCase
             output.setTransportVersion(version);
             OpenPointInTimeRequest original = createTestInstance();
             original.writeTo(output);
-            try (StreamInput in = new NamedWriteableAwareStreamInput(output.bytes().streamInput(), new NamedWriteableRegistry(List.of()))) {
+            try (StreamInput in = output.bytes().streamInput()) {
+                in.setNamedWriteableRegistry(new NamedWriteableRegistry(List.of()));
                 in.setTransportVersion(version);
                 OpenPointInTimeRequest copy = new OpenPointInTimeRequest(in);
                 assertThat(copy.maxConcurrentShardRequests(), equalTo(5));

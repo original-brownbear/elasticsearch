@@ -9,7 +9,6 @@ package org.elasticsearch.xpack.core.security.action.apikey;
 
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.InputStreamStreamInput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.settings.Settings;
@@ -56,7 +55,8 @@ public class QueryApiKeyRequestTests extends ESTestCase {
         final QueryApiKeyRequest request2 = new QueryApiKeyRequest(boolQueryBuilder2);
         try (BytesStreamOutput out = new BytesStreamOutput()) {
             request2.writeTo(out);
-            try (StreamInput in = new NamedWriteableAwareStreamInput(out.bytes().streamInput(), writableRegistry())) {
+            try (StreamInput in = out.bytes().streamInput()) {
+                in.setNamedWriteableRegistry(writableRegistry());
                 final QueryApiKeyRequest deserialized = new QueryApiKeyRequest(in);
                 assertThat(deserialized.getQueryBuilder().getClass(), is(BoolQueryBuilder.class));
                 assertThat((BoolQueryBuilder) deserialized.getQueryBuilder(), equalTo(boolQueryBuilder2));
@@ -77,7 +77,8 @@ public class QueryApiKeyRequestTests extends ESTestCase {
         );
         try (BytesStreamOutput out = new BytesStreamOutput()) {
             request3.writeTo(out);
-            try (StreamInput in = new NamedWriteableAwareStreamInput(out.bytes().streamInput(), writableRegistry())) {
+            try (StreamInput in = out.bytes().streamInput()) {
+                in.setNamedWriteableRegistry(writableRegistry());
                 final QueryApiKeyRequest deserialized = new QueryApiKeyRequest(in);
                 assertThat(deserialized.getQueryBuilder().getClass(), is(MatchAllQueryBuilder.class));
                 assertThat(deserialized.getFrom(), equalTo(request3.getFrom()));

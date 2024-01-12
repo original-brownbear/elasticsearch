@@ -8,7 +8,6 @@ package org.elasticsearch.xpack.rollup;
 
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
@@ -488,11 +487,8 @@ public class RollupRequestTranslator {
             try {
                 output.writeString(metric.getType());
                 metric.writeTo(output);
-                try (
-                    StreamInput stream = output.bytes().streamInput();
-                    NamedWriteableAwareStreamInput in = new NamedWriteableAwareStreamInput(stream, registry)
-                ) {
-
+                try (StreamInput in = output.bytes().streamInput();) {
+                    in.setNamedWriteableRegistry(registry);
                     ValuesSourceAggregationBuilder<?> serialized = ((ValuesSourceAggregationBuilder) in.readNamedWriteable(
                         AggregationBuilder.class
                     )).field(RollupField.formatFieldName(metric, RollupField.VALUE));

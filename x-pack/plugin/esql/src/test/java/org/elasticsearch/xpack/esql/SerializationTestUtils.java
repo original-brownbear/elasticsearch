@@ -10,7 +10,6 @@ package org.elasticsearch.xpack.esql;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.ByteBufferStreamInput;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -63,10 +62,8 @@ public class SerializationTestUtils {
         try (BytesStreamOutput out = new BytesStreamOutput()) {
             PlanStreamOutput planStreamOutput = new PlanStreamOutput(out, planNameRegistry);
             serializer.write(planStreamOutput, orig);
-            StreamInput in = new NamedWriteableAwareStreamInput(
-                ByteBufferStreamInput.wrap(BytesReference.toBytes(out.bytes())),
-                writableRegistry()
-            );
+            StreamInput in = ByteBufferStreamInput.wrap(BytesReference.toBytes(out.bytes()));
+            in.setNamedWriteableRegistry(writableRegistry());
             PlanStreamInput planStreamInput = new PlanStreamInput(in, planNameRegistry, writableRegistry(), config);
             return deserializer.read(planStreamInput);
         } catch (IOException e) {

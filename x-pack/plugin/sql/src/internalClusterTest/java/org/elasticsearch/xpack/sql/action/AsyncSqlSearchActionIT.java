@@ -17,7 +17,6 @@ import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.common.compress.CompressorFactory;
 import org.elasticsearch.common.io.stream.ByteBufferStreamInput;
 import org.elasticsearch.common.io.stream.InputStreamStreamInput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.settings.Settings;
@@ -300,13 +299,9 @@ public class AsyncSqlSearchActionIT extends AbstractSqlBlockingIntegTestCase {
                 String value = doc.getSource().get("result").toString();
                 try (ByteBufferStreamInput buf = new ByteBufferStreamInput(ByteBuffer.wrap(Base64.getDecoder().decode(value)))) {
                     TransportVersion version = TransportVersion.readVersion(buf);
-                    try (
-                        StreamInput in = new NamedWriteableAwareStreamInput(
-                            new InputStreamStreamInput(CompressorFactory.COMPRESSOR.threadLocalStreamInput(buf)),
-                            registry
-                        )
-                    ) {
+                    try (StreamInput in = new InputStreamStreamInput(CompressorFactory.COMPRESSOR.threadLocalStreamInput(buf))) {
                         in.setTransportVersion(version);
+                        in.setNamedWriteableRegistry(registry);
                         return new StoredAsyncResponse<>(SqlQueryResponse::new, in);
                     }
                 }

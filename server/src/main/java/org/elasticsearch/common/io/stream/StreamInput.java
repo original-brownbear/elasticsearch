@@ -30,7 +30,6 @@ import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.TimeValue;
 
 import java.io.EOFException;
-import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
@@ -73,6 +72,8 @@ public abstract class StreamInput extends InputStream {
 
     private TransportVersion version = TransportVersion.current();
 
+    private NamedWriteableRegistry namedWriteableRegistry;
+
     /**
      * The transport version the data is serialized as.
      */
@@ -85,6 +86,10 @@ public abstract class StreamInput extends InputStream {
      */
     public void setTransportVersion(TransportVersion version) {
         this.version = version;
+    }
+
+    public void setNamedWriteableRegistry(NamedWriteableRegistry namedWriteableRegistry) {
+        this.namedWriteableRegistry = namedWriteableRegistry;
     }
 
     /**
@@ -1025,26 +1030,23 @@ public abstract class StreamInput extends InputStream {
      * {@code null} otherwise.
      */
     public NamedWriteableRegistry namedWriteableRegistry() {
-        return null;
+        return this.namedWriteableRegistry;
     }
 
     /**
      * Reads a {@link NamedWriteable} from the current stream, by first reading its name and then looking for
      * the corresponding entry in the registry by name, so that the proper object can be read and returned.
-     * Default implementation throws {@link UnsupportedOperationException} as StreamInput doesn't hold a registry.
-     * Use {@link FilterInputStream} instead which wraps a stream and supports a {@link NamedWriteableRegistry} too.
      */
     @Nullable
     public <C extends NamedWriteable> C readNamedWriteable(@SuppressWarnings("unused") Class<C> categoryClass) throws IOException {
-        throw new UnsupportedOperationException("can't read named writeable from StreamInput");
+        String name = readString();
+        return readNamedWriteable(categoryClass, name);
     }
 
     /**
      * Reads a {@link NamedWriteable} from the current stream with the given name. It is assumed that the caller obtained the name
      * from other source, so it's not read from the stream. The name is used for looking for
      * the corresponding entry in the registry by name, so that the proper object can be read and returned.
-     * Default implementation throws {@link UnsupportedOperationException} as StreamInput doesn't hold a registry.
-     * Use {@link FilterInputStream} instead which wraps a stream and supports a {@link NamedWriteableRegistry} too.
      *
      * Prefer {@link StreamInput#readNamedWriteable(Class)} and {@link StreamOutput#writeNamedWriteable(NamedWriteable)} unless you
      * have a compelling reason to use this method instead.
@@ -1054,7 +1056,22 @@ public abstract class StreamInput extends InputStream {
         @SuppressWarnings("unused") Class<C> categoryClass,
         @SuppressWarnings("unused") String name
     ) throws IOException {
-        throw new UnsupportedOperationException("can't read named writeable from StreamInput");
+        if (namedWriteableRegistry == null) {
+            throw new UnsupportedOperationException("can't read named writeable from StreamInput");
+        }
+        Writeable.Reader<? extends C> reader = namedWriteableRegistry.getReader(categoryClass, name);
+        C c = reader.read(this);
+        if (c == null) {
+            throwOnNullRead(reader);
+        }
+        assert assertNameMatches(name, c);
+        return c;
+    }
+
+    private static <C extends NamedWriteable> boolean assertNameMatches(String name, C c) {
+        assert name.equals(c.getWriteableName())
+            : c + " claims to have a different name [" + c.getWriteableName() + "] than it was read from [" + name + "].";
+        return true;
     }
 
     /**
@@ -1169,7 +1186,20 @@ public abstract class StreamInput extends InputStream {
      * list contains any entries it will be a (mutable) {@link ArrayList}. If it is empty it might be immutable.
      */
     public <T extends NamedWriteable> List<T> readNamedWriteableCollectionAsList(Class<T> categoryClass) throws IOException {
-        throw new UnsupportedOperationException("can't read named writeable from StreamInput");
+        int count = readArraySize();
+        if (count == 0) {
+            return Collections.emptyList();
+        }
+        if (namedWriteableRegistry == null) {
+            throw new UnsupportedOperationException("can't read named writeable from StreamInput");
+        }
+        final Map<String, Writeable.Reader<?>> readers = namedWriteableRegistry.getReaders(categoryClass);
+        List<T> builder = new ArrayList<>(count);
+        for (int i = 0; i < count; i++) {
+            final String name = readString();
+            builder.add(NamedWriteableRegistry.getReader(categoryClass, name, readers).read(this));
+        }
+        return builder;
     }
 
     /**

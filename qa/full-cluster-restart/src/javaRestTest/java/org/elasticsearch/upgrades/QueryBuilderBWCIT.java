@@ -17,7 +17,6 @@ import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.stream.InputStreamStreamInput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.settings.Settings;
@@ -251,9 +250,9 @@ public class QueryBuilderBWCIT extends ParameterizedFullClusterRestartTestCase {
                 byte[] qbSource = Base64.getDecoder().decode(queryBuilderStr);
                 try (
                     InputStream in = new ByteArrayInputStream(qbSource, 0, qbSource.length);
-                    StreamInput input = new NamedWriteableAwareStreamInput(new InputStreamStreamInput(in), registry)
+                    StreamInput input = new InputStreamStreamInput(in)
                 ) {
-
+                    input.setNamedWriteableRegistry(registry);
                     @UpdateForV9 // condition will always be true
                     var originalClusterHasTransportVersion = parseLegacyVersion(getOldClusterVersion()).map(
                         v -> v.onOrAfter(VERSION_INTRODUCING_TRANSPORT_VERSIONS)

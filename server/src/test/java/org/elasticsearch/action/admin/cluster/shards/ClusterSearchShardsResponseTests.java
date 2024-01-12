@@ -16,7 +16,6 @@ import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.routing.ShardRoutingState;
 import org.elasticsearch.cluster.routing.TestShardRouting;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.settings.Settings;
@@ -79,7 +78,8 @@ public class ClusterSearchShardsResponseTests extends ESTestCase {
         try (BytesStreamOutput out = new BytesStreamOutput()) {
             out.setTransportVersion(version);
             clusterSearchShardsResponse.writeTo(out);
-            try (StreamInput in = new NamedWriteableAwareStreamInput(out.bytes().streamInput(), namedWriteableRegistry)) {
+            try (StreamInput in = out.bytes().streamInput()) {
+                in.setNamedWriteableRegistry(namedWriteableRegistry);
                 in.setTransportVersion(version);
                 ClusterSearchShardsResponse deserialized = new ClusterSearchShardsResponse(in);
                 assertArrayEquals(clusterSearchShardsResponse.getNodes(), deserialized.getNodes());

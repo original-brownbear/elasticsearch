@@ -7,7 +7,7 @@
 
 package org.elasticsearch.xpack.esql.io.stream;
 
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
+import org.elasticsearch.common.io.stream.FilterStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.Writeable;
@@ -41,7 +41,7 @@ import static org.elasticsearch.xpack.ql.util.SourceUtils.readSourceWithText;
  * A customized stream input used to deserialize ESQL physical plan fragments. Complements stream
  * input with methods that read plan nodes, Attributes, Expressions, etc.
  */
-public final class PlanStreamInput extends NamedWriteableAwareStreamInput {
+public final class PlanStreamInput extends FilterStreamInput {
 
     /**
      * A Mapper of stream named id, represented as a primitive long value, to NameId instance.
@@ -73,7 +73,8 @@ public final class PlanStreamInput extends NamedWriteableAwareStreamInput {
         NamedWriteableRegistry namedWriteableRegistry,
         EsqlConfiguration configuration
     ) {
-        super(streamInput, namedWriteableRegistry);
+        super(streamInput);
+        setNamedWriteableRegistry(namedWriteableRegistry);
         this.registry = registry;
         this.configuration = configuration;
         this.nameIdFunction = DEFAULT_NAME_ID_FUNC.get();

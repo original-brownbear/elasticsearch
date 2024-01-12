@@ -38,7 +38,6 @@ import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.hash.MurmurHash3;
 import org.elasticsearch.common.io.stream.InputStreamStreamInput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
@@ -883,7 +882,8 @@ public class PercolatorFieldMapperTests extends ESSingleNodeTestCase {
 
     private void assertQueryBuilder(BytesRef actual, QueryBuilder expected) throws IOException {
         try (InputStream in = new ByteArrayInputStream(actual.bytes, actual.offset, actual.length)) {
-            try (StreamInput input = new NamedWriteableAwareStreamInput(new InputStreamStreamInput(in), writableRegistry())) {
+            try (StreamInput input = new InputStreamStreamInput(in)) {
+                input.setNamedWriteableRegistry(writableRegistry());
                 // Query builder's content is stored via BinaryFieldMapper, which has a custom encoding
                 // to encode multiple binary values into a single binary doc values field.
                 // This is the reason we need to first need to read the number of values and
@@ -947,7 +947,8 @@ public class PercolatorFieldMapperTests extends ESSingleNodeTestCase {
             );
         BytesRef querySource = doc.rootDoc().getFields(fieldType.queryBuilderField.name()).get(0).binaryValue();
         try (InputStream in = new ByteArrayInputStream(querySource.bytes, querySource.offset, querySource.length)) {
-            try (StreamInput input = new NamedWriteableAwareStreamInput(new InputStreamStreamInput(in), writableRegistry())) {
+            try (StreamInput input = new InputStreamStreamInput(in)) {
+                input.setNamedWriteableRegistry(writableRegistry());
                 // Query builder's content is stored via BinaryFieldMapper, which has a custom encoding
                 // to encode multiple binary values into a single binary doc values field.
                 // This is the reason we need to first need to read the number of values and
@@ -994,7 +995,8 @@ public class PercolatorFieldMapperTests extends ESSingleNodeTestCase {
             );
         querySource = doc.rootDoc().getFields(fieldType.queryBuilderField.name()).get(0).binaryValue();
         try (InputStream in = new ByteArrayInputStream(querySource.bytes, querySource.offset, querySource.length)) {
-            try (StreamInput input = new NamedWriteableAwareStreamInput(new InputStreamStreamInput(in), writableRegistry())) {
+            try (StreamInput input = new InputStreamStreamInput(in)) {
+                input.setNamedWriteableRegistry(writableRegistry());
                 input.readVInt();
                 input.readVInt();
                 TransportVersion.readVersion(input);

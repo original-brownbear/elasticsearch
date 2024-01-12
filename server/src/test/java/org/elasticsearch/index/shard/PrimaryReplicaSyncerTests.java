@@ -17,7 +17,6 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.io.stream.ByteBufferStreamInput;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.lucene.uid.Versions;
@@ -243,12 +242,8 @@ public class PrimaryReplicaSyncerTests extends IndexShardTestCase {
         );
         try (BytesStreamOutput out = new BytesStreamOutput()) {
             out.writeNamedWriteable(status);
-            try (
-                StreamInput in = new NamedWriteableAwareStreamInput(
-                    new ByteBufferStreamInput(ByteBuffer.wrap(out.bytes().toBytesRef().bytes)),
-                    new NamedWriteableRegistry(NetworkModule.getNamedWriteables())
-                )
-            ) {
+            try (StreamInput in = new ByteBufferStreamInput(ByteBuffer.wrap(out.bytes().toBytesRef().bytes))) {
+                in.setNamedWriteableRegistry(new NamedWriteableRegistry(NetworkModule.getNamedWriteables()));
                 assertThat(in.readNamedWriteable(Task.Status.class), equalTo(status));
             }
         }

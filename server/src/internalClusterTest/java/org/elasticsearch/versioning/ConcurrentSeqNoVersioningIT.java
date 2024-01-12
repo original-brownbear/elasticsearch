@@ -17,7 +17,6 @@ import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.ReferenceDocs;
 import org.elasticsearch.common.io.stream.InputStreamStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteable;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.OutputStreamStreamOutput;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -692,7 +691,7 @@ public class ConcurrentSeqNoVersioningIT extends AbstractDisruptionTestCase {
     private static void runLinearizabilityChecker(FileInputStream fileInputStream, long primaryTerm, long seqNo) throws IOException,
         LinearizabilityCheckAborted {
         StreamInput is = new InputStreamStreamInput(Base64.getDecoder().wrap(fileInputStream));
-        is = new NamedWriteableAwareStreamInput(is, createNamedWriteableRegistry());
+        is.setNamedWriteableRegistry(createNamedWriteableRegistry());
 
         LinearizabilityChecker.History history = readHistory(is);
 

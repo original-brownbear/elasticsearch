@@ -9,7 +9,6 @@ package org.elasticsearch.xpack.core.security.authz;
 
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.xcontent.XContentHelper;
@@ -54,7 +53,8 @@ public class RoleDescriptorsIntersectionTests extends ESTestCase {
 
         try (BytesStreamOutput output = new BytesStreamOutput()) {
             roleDescriptorsIntersection.writeTo(output);
-            try (StreamInput input = new NamedWriteableAwareStreamInput(output.bytes().streamInput(), namedWriteableRegistry)) {
+            try (StreamInput input = output.bytes().streamInput()) {
+                input.setNamedWriteableRegistry(namedWriteableRegistry);
                 RoleDescriptorsIntersection deserialized = new RoleDescriptorsIntersection(input);
                 assertThat(deserialized.roleDescriptorsList(), equalTo(roleDescriptorsIntersection.roleDescriptorsList()));
             }

@@ -8,7 +8,6 @@
 package org.elasticsearch.xpack.core.security.authz.privilege;
 
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.util.set.Sets;
@@ -49,7 +48,8 @@ public class ManageApplicationPrivilegesTests extends ESTestCase {
         try (BytesStreamOutput out = new BytesStreamOutput()) {
             original.writeTo(out);
             final NamedWriteableRegistry registry = new NamedWriteableRegistry(new XPackClientPlugin().getNamedWriteables());
-            try (StreamInput in = new NamedWriteableAwareStreamInput(out.bytes().streamInput(), registry)) {
+            try (StreamInput in = out.bytes().streamInput()) {
+                in.setNamedWriteableRegistry(registry);
                 final ManageApplicationPrivileges copy = ManageApplicationPrivileges.createFrom(in);
                 assertThat(copy, equalTo(original));
                 assertThat(original, equalTo(copy));

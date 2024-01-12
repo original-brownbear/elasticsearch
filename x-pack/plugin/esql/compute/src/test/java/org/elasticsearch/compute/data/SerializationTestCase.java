@@ -11,7 +11,6 @@ import org.elasticsearch.common.breaker.CircuitBreaker;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.ByteBufferStreamInput;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.util.BigArrays;
@@ -52,10 +51,9 @@ public abstract class SerializationTestCase extends ESTestCase {
     }
 
     BlockStreamInput blockStreamInput(BytesStreamOutput out) {
-        return new BlockStreamInput(
-            new NamedWriteableAwareStreamInput(ByteBufferStreamInput.wrap(BytesReference.toBytes(out.bytes())), registry),
-            blockFactory
-        );
+        var in = ByteBufferStreamInput.wrap(BytesReference.toBytes(out.bytes()));
+        in.setNamedWriteableRegistry(registry);
+        return new BlockStreamInput(in, blockFactory);
     }
 
     @SuppressWarnings("unchecked")

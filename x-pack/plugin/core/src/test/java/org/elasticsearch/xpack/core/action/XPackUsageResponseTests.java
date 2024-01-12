@@ -9,7 +9,6 @@ package org.elasticsearch.xpack.core.action;
 
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.test.ESTestCase;
@@ -89,7 +88,8 @@ public class XPackUsageResponseTests extends ESTestCase {
             )
         );
 
-        final StreamInput in = new NamedWriteableAwareStreamInput(oldStream.bytes().streamInput(), registry);
+        final StreamInput in = oldStream.bytes().streamInput();
+        in.setNamedWriteableRegistry(registry);
         final XPackUsageResponse after = new XPackUsageResponse(in);
         assertThat(after.getUsages(), hasSize(1));
         assertThat(after.getUsages().get(0), instanceOf(OldUsage.class));
@@ -108,7 +108,8 @@ public class XPackUsageResponseTests extends ESTestCase {
             )
         );
 
-        final StreamInput in = new NamedWriteableAwareStreamInput(newStream.bytes().streamInput(), registry);
+        final StreamInput in = newStream.bytes().streamInput();
+        in.setNamedWriteableRegistry(registry);
         final XPackUsageResponse after = new XPackUsageResponse(in);
         assertThat(after.getUsages(), hasSize(2));
         assertThat(after.getUsages().get(0), instanceOf(OldUsage.class));

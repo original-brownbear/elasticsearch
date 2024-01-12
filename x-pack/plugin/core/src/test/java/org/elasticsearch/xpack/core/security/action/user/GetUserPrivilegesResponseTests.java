@@ -13,7 +13,6 @@ import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.ByteBufferStreamInput;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.util.CollectionUtils;
@@ -53,7 +52,8 @@ public class GetUserPrivilegesResponseTests extends ESTestCase {
         original.writeTo(out);
 
         final NamedWriteableRegistry registry = new NamedWriteableRegistry(new XPackClientPlugin().getNamedWriteables());
-        StreamInput in = new NamedWriteableAwareStreamInput(ByteBufferStreamInput.wrap(BytesReference.toBytes(out.bytes())), registry);
+        StreamInput in = ByteBufferStreamInput.wrap(BytesReference.toBytes(out.bytes()));
+        in.setNamedWriteableRegistry(registry);
         final GetUserPrivilegesResponse copy = new GetUserPrivilegesResponse(in);
 
         assertThat(copy.getClusterPrivileges(), equalTo(original.getClusterPrivileges()));
@@ -75,7 +75,8 @@ public class GetUserPrivilegesResponseTests extends ESTestCase {
         original.writeTo(out);
 
         final NamedWriteableRegistry registry = new NamedWriteableRegistry(new XPackClientPlugin().getNamedWriteables());
-        StreamInput in = new NamedWriteableAwareStreamInput(ByteBufferStreamInput.wrap(BytesReference.toBytes(out.bytes())), registry);
+        StreamInput in = ByteBufferStreamInput.wrap(BytesReference.toBytes(out.bytes()));
+        in.setNamedWriteableRegistry(registry);
         in.setTransportVersion(version);
         final GetUserPrivilegesResponse copy = new GetUserPrivilegesResponse(in);
         assertThat(copy, equalTo(original));
@@ -109,7 +110,8 @@ public class GetUserPrivilegesResponseTests extends ESTestCase {
         } else {
             original.writeTo(out);
             final NamedWriteableRegistry registry = new NamedWriteableRegistry(new XPackClientPlugin().getNamedWriteables());
-            StreamInput in = new NamedWriteableAwareStreamInput(ByteBufferStreamInput.wrap(BytesReference.toBytes(out.bytes())), registry);
+            StreamInput in = ByteBufferStreamInput.wrap(BytesReference.toBytes(out.bytes()));
+            in.setNamedWriteableRegistry(registry);
             in.setTransportVersion(out.getTransportVersion());
             final GetUserPrivilegesResponse copy = new GetUserPrivilegesResponse(in);
             assertThat(copy, equalTo(original));

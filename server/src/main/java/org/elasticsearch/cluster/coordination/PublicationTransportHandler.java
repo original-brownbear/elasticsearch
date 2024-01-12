@@ -26,7 +26,6 @@ import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.common.compress.Compressor;
 import org.elasticsearch.common.compress.CompressorFactory;
 import org.elasticsearch.common.io.Streams;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.PositionTrackingOutputStreamStreamOutput;
 import org.elasticsearch.common.io.stream.RecyclerBytesStreamOutput;
@@ -129,7 +128,7 @@ public class PublicationTransportHandler {
             if (compressor != null) {
                 in = compressor.threadLocalStreamInput(in);
             }
-            in = new NamedWriteableAwareStreamInput(in, namedWriteableRegistry);
+            in.setNamedWriteableRegistry(namedWriteableRegistry);
             in.setTransportVersion(request.version());
             // If true we received full cluster state - otherwise diffs
             if (in.readBoolean()) {

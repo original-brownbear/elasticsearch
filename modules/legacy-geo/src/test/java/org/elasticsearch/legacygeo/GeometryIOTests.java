@@ -10,7 +10,6 @@ package org.elasticsearch.legacygeo;
 
 import org.elasticsearch.common.geo.GeometryIO;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.geometry.Geometry;
@@ -50,11 +49,10 @@ public class GeometryIOTests extends ESTestCase {
                     try (BytesStreamOutput out = new BytesStreamOutput()) {
                         GeometryIO.writeGeometry(out, geometry);
                         try (StreamInput in = out.bytes().streamInput()) {
-                            try (StreamInput nin = new NamedWriteableAwareStreamInput(in, this.writableRegistry())) {
-                                ShapeBuilder<?, ?, ?> actual = nin.readNamedWriteable(ShapeBuilder.class);
-                                assertEquals(shapeBuilder, actual);
-                                assertEquals(0, in.available());
-                            }
+                            in.setNamedWriteableRegistry(this.writableRegistry());
+                            ShapeBuilder<?, ?, ?> actual = in.readNamedWriteable(ShapeBuilder.class);
+                            assertEquals(shapeBuilder, actual);
+                            assertEquals(0, in.available());
                         }
                     }
                 }

@@ -14,7 +14,6 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.InputStreamStreamInput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.OutputStreamStreamOutput;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -92,8 +91,9 @@ public final class SearchContextId {
     public static SearchContextId decode(NamedWriteableRegistry namedWriteableRegistry, String id) {
         try (
             var decodedInputStream = Base64.getUrlDecoder().wrap(new ByteArrayInputStream(id.getBytes(StandardCharsets.ISO_8859_1)));
-            var in = new NamedWriteableAwareStreamInput(new InputStreamStreamInput(decodedInputStream), namedWriteableRegistry)
+            var in = new InputStreamStreamInput(decodedInputStream)
         ) {
+            in.setNamedWriteableRegistry(namedWriteableRegistry);
             final TransportVersion version = TransportVersion.readVersion(in);
             in.setTransportVersion(version);
             final Map<ShardId, SearchContextIdForNode> shards = Collections.unmodifiableMap(

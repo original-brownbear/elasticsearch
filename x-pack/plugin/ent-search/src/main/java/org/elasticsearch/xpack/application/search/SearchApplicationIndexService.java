@@ -37,7 +37,6 @@ import org.elasticsearch.common.ValidationException;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.document.DocumentField;
 import org.elasticsearch.common.io.stream.InputStreamStreamInput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.OutputStreamStreamOutput;
 import org.elasticsearch.common.io.stream.ReleasableBytesStreamOutput;
@@ -442,9 +441,8 @@ public class SearchApplicationIndexService {
                             }
                         }
                     });
-                    try (
-                        StreamInput in = new NamedWriteableAwareStreamInput(new InputStreamStreamInput(encodedIn), namedWriteableRegistry)
-                    ) {
+                    try (StreamInput in = new InputStreamStreamInput(encodedIn)) {
+                        in.setNamedWriteableRegistry(namedWriteableRegistry);
                         return parseSearchApplicationBinaryWithVersion(in, indices);
                     }
                 } else {

@@ -8,7 +8,6 @@
 package org.elasticsearch.xpack.core.security.authz.privilege;
 
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.test.ESTestCase;
@@ -33,7 +32,8 @@ public class ConfigurableClusterPrivilegesTests extends ESTestCase {
         try (BytesStreamOutput out = new BytesStreamOutput()) {
             ConfigurableClusterPrivileges.writeArray(out, original);
             final NamedWriteableRegistry registry = new NamedWriteableRegistry(new XPackClientPlugin().getNamedWriteables());
-            try (StreamInput in = new NamedWriteableAwareStreamInput(out.bytes().streamInput(), registry)) {
+            try (StreamInput in = out.bytes().streamInput()) {
+                in.setNamedWriteableRegistry(registry);
                 final ConfigurableClusterPrivilege[] copy = ConfigurableClusterPrivileges.readArray(in);
                 assertThat(copy, equalTo(original));
                 assertThat(original, equalTo(copy));

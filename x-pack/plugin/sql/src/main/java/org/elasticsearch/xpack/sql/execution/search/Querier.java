@@ -24,7 +24,6 @@ import org.elasticsearch.client.internal.ParentTaskAssigningClient;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.logging.HeaderWarning;
@@ -244,7 +243,8 @@ public class Querier {
      * Deserializes the search source from a byte array.
      */
     public static SearchSourceBuilder deserializeQuery(NamedWriteableRegistry registry, byte[] source) throws IOException {
-        try (NamedWriteableAwareStreamInput in = new NamedWriteableAwareStreamInput(StreamInput.wrap(source), registry)) {
+        try (StreamInput in = StreamInput.wrap(source)) {
+            in.setNamedWriteableRegistry(registry);
             return new SearchSourceBuilder(in);
         }
     }

@@ -32,11 +32,9 @@ import org.elasticsearch.common.breaker.CircuitBreaker;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.compress.CompressorFactory;
 import org.elasticsearch.common.io.stream.InputStreamStreamInput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.OutputStreamStreamOutput;
 import org.elasticsearch.common.io.stream.ReleasableBytesStreamOutput;
-import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.BigArrays;
@@ -586,15 +584,14 @@ public final class AsyncTaskIndexService<R extends AsyncResponse<R>> {
         });
         TransportVersion version = TransportVersion.readVersion(new InputStreamStreamInput(encodedIn));
         assert version.onOrBefore(TransportVersion.current()) : version + " >= " + TransportVersion.current();
-        final StreamInput input;
-        if (version.onOrAfter(TransportVersions.V_7_15_0)) {
-            input = CompressorFactory.COMPRESSOR.threadLocalStreamInput(encodedIn);
-        } else {
-            input = new InputStreamStreamInput(encodedIn);
-        }
-        try (StreamInput in = new NamedWriteableAwareStreamInput(input, registry)) {
-            in.setTransportVersion(version);
-            return reader.read(in);
+        try (
+            var input = version.onOrAfter(TransportVersions.V_7_15_0)
+                ? CompressorFactory.COMPRESSOR.threadLocalStreamInput(encodedIn)
+                : new InputStreamStreamInput(encodedIn)
+        ) {
+            input.setNamedWriteableRegistry(registry);
+            input.setTransportVersion(version);
+            return reader.read(input);
         }
     }
 

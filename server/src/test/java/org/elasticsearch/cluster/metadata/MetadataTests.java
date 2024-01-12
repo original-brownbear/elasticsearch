@@ -22,7 +22,6 @@ import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.settings.Setting;
@@ -513,9 +512,9 @@ public class MetadataTests extends ESTestCase {
         final BytesStreamOutput out = new BytesStreamOutput();
         originalMeta.writeTo(out);
         NamedWriteableRegistry namedWriteableRegistry = new NamedWriteableRegistry(ClusterModule.getNamedWriteables());
-        final Metadata fromStreamMeta = Metadata.readFrom(
-            new NamedWriteableAwareStreamInput(out.bytes().streamInput(), namedWriteableRegistry)
-        );
+        var inStream = out.bytes().streamInput();
+        inStream.setNamedWriteableRegistry(namedWriteableRegistry);
+        final Metadata fromStreamMeta = Metadata.readFrom(inStream);
         assertThat(fromStreamMeta.clusterUUID(), equalTo(originalMeta.clusterUUID()));
         assertThat(fromStreamMeta.clusterUUIDCommitted(), equalTo(originalMeta.clusterUUIDCommitted()));
     }
@@ -590,9 +589,9 @@ public class MetadataTests extends ESTestCase {
         final BytesStreamOutput out = new BytesStreamOutput();
         originalMeta.writeTo(out);
         NamedWriteableRegistry namedWriteableRegistry = new NamedWriteableRegistry(ClusterModule.getNamedWriteables());
-        final Metadata fromStreamMeta = Metadata.readFrom(
-            new NamedWriteableAwareStreamInput(out.bytes().streamInput(), namedWriteableRegistry)
-        );
+        var inStream = out.bytes().streamInput();
+        inStream.setNamedWriteableRegistry(namedWriteableRegistry);
+        final Metadata fromStreamMeta = Metadata.readFrom(inStream);
         assertThat(fromStreamMeta.indexGraveyard(), equalTo(fromStreamMeta.indexGraveyard()));
     }
 
@@ -1245,9 +1244,9 @@ public class MetadataTests extends ESTestCase {
         final BytesStreamOutput out = new BytesStreamOutput();
         orig.writeTo(out);
         NamedWriteableRegistry namedWriteableRegistry = new NamedWriteableRegistry(ClusterModule.getNamedWriteables());
-        final Metadata fromStreamMeta = Metadata.readFrom(
-            new NamedWriteableAwareStreamInput(out.bytes().streamInput(), namedWriteableRegistry)
-        );
+        var inStream = out.bytes().streamInput();
+        inStream.setNamedWriteableRegistry(namedWriteableRegistry);
+        final Metadata fromStreamMeta = Metadata.readFrom(inStream);
         assertTrue(Metadata.isGlobalStateEquals(orig, fromStreamMeta));
     }
 

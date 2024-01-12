@@ -14,8 +14,6 @@ import org.elasticsearch.aggregations.bucket.AggregationMultiBucketAggregationTe
 import org.elasticsearch.aggregations.bucket.histogram.AutoDateHistogramAggregationBuilder.RoundingInfo;
 import org.elasticsearch.aggregations.bucket.histogram.InternalAutoDateHistogram.BucketInfo;
 import org.elasticsearch.common.Rounding;
-import org.elasticsearch.common.bytes.BytesArray;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.time.DateFormatter;
 import org.elasticsearch.common.util.Maps;
@@ -504,7 +502,8 @@ public class InternalAutoDateHistogramTests extends AggregationMultiBucketAggreg
                     + "A2RheQEEAVqAkPvTCQIAAAABAAAAAwFNBW1vbnRoAQIBWoDYxL11BgAAAAEAAAAFAAAACgAAABQAA"
                     + "AAyAAAAZAF5BHllYXIAAARib29sAQAAAAAAAAAKZAADAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
             );
-        try (StreamInput in = new NamedWriteableAwareStreamInput(new BytesArray(bytes).streamInput(), getNamedWriteableRegistry())) {
+        try (StreamInput in = StreamInput.wrap(bytes)) {
+            in.setNamedWriteableRegistry(getNamedWriteableRegistry());
             in.setTransportVersion(TransportVersions.V_8_2_0);
             InternalAutoDateHistogram deserialized = new InternalAutoDateHistogram(in);
             assertEquals("name", deserialized.getName());

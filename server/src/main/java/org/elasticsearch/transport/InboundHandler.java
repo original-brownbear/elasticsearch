@@ -13,7 +13,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.common.io.stream.ByteBufferStreamInput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.network.HandlingTimeTracker;
@@ -480,7 +479,8 @@ public class InboundHandler {
     }
 
     private StreamInput namedWriteableStream(StreamInput delegate) {
-        return new NamedWriteableAwareStreamInput(delegate, namedWriteableRegistry);
+        delegate.setNamedWriteableRegistry(namedWriteableRegistry);
+        return delegate;
     }
 
     static boolean assertRemoteVersion(StreamInput in, TransportVersion version) {

@@ -13,7 +13,6 @@ import org.elasticsearch.TransportVersions;
 import org.elasticsearch.common.ParsingException;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.text.Text;
@@ -270,7 +269,8 @@ public class SuggestTests extends ESTestCase {
         try (BytesStreamOutput out = new BytesStreamOutput()) {
             out.setTransportVersion(bwcVersion);
             suggest.writeTo(out);
-            try (NamedWriteableAwareStreamInput in = new NamedWriteableAwareStreamInput(out.bytes().streamInput(), registry)) {
+            try (var in = out.bytes().streamInput()) {
+                in.setNamedWriteableRegistry(registry);
                 in.setTransportVersion(bwcVersion);
                 bwcSuggest = new Suggest(in);
             }
@@ -283,7 +283,8 @@ public class SuggestTests extends ESTestCase {
         try (BytesStreamOutput out = new BytesStreamOutput()) {
             out.setTransportVersion(TransportVersion.current());
             bwcSuggest.writeTo(out);
-            try (NamedWriteableAwareStreamInput in = new NamedWriteableAwareStreamInput(out.bytes().streamInput(), registry)) {
+            try (var in = out.bytes().streamInput()) {
+                in.setNamedWriteableRegistry(registry);
                 in.setTransportVersion(TransportVersion.current());
                 backAgain = new Suggest(in);
             }

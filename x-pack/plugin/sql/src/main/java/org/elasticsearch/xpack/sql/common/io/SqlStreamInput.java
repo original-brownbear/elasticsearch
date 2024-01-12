@@ -10,7 +10,7 @@ package org.elasticsearch.xpack.sql.common.io;
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.TransportVersions;
 import org.elasticsearch.common.compress.CompressorFactory;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
+import org.elasticsearch.common.io.stream.FilterStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.xpack.sql.SqlIllegalArgumentException;
@@ -23,7 +23,7 @@ import java.util.Base64;
  * SQL-specific stream extension for {@link StreamInput} used for deserializing
  * SQL components, especially on the client-side.
  */
-public class SqlStreamInput extends NamedWriteableAwareStreamInput {
+public class SqlStreamInput extends FilterStreamInput {
 
     public static SqlStreamInput fromString(String base64encoded, NamedWriteableRegistry namedWriteableRegistry, TransportVersion version)
         throws IOException {
@@ -50,8 +50,9 @@ public class SqlStreamInput extends NamedWriteableAwareStreamInput {
     private final ZoneId zoneId;
 
     private SqlStreamInput(StreamInput input, NamedWriteableRegistry namedWriteableRegistry, TransportVersion version) throws IOException {
-        super(input, namedWriteableRegistry);
-
+        super(input);
+        input.setNamedWriteableRegistry(namedWriteableRegistry);
+        this.setNamedWriteableRegistry(namedWriteableRegistry);
         delegate.setTransportVersion(version);
         zoneId = delegate.readZoneId();
     }

@@ -11,8 +11,6 @@ import org.elasticsearch.TransportVersions;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.InputStreamStreamInput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.settings.Settings;
@@ -142,12 +140,8 @@ public class SearchApplicationTests extends ESTestCase {
                 output,
                 TransportVersions.MINIMUM_COMPATIBLE
             );
-            try (
-                StreamInput in = new NamedWriteableAwareStreamInput(
-                    new InputStreamStreamInput(output.bytes().streamInput()),
-                    namedWriteableRegistry
-                )
-            ) {
+            try (StreamInput in = output.bytes().streamInput()) {
+                in.setNamedWriteableRegistry(namedWriteableRegistry);
                 deserializedInstance = SearchApplicationIndexService.parseSearchApplicationBinaryWithVersion(in, testInstance.indices());
             }
         }

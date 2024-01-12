@@ -47,7 +47,6 @@ import org.elasticsearch.common.Randomness;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.RecyclerBytesStreamOutput;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -2191,10 +2190,8 @@ public class AbstractCoordinatorTestCase extends ESTestCase {
                         }
                     }
 
-                    final StreamInput inStream = new NamedWriteableAwareStreamInput(
-                        outStream.bytes().streamInput(),
-                        namedWriteableRegistry
-                    );
+                    final StreamInput inStream = outStream.bytes().streamInput();
+                    inStream.setNamedWriteableRegistry(namedWriteableRegistry);
                     // adapt cluster state to new localNode instance and add blocks
                     delegate = new InMemoryPersistedState(
                         adaptCurrentTerm.apply(persistedCurrentTerm),

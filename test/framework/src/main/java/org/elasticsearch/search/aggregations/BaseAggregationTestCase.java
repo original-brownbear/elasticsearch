@@ -10,7 +10,6 @@ package org.elasticsearch.search.aggregations;
 
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.search.aggregations.bucket.histogram.HistogramAggregationBuilder;
 import org.elasticsearch.search.aggregations.support.ValuesSourceAggregationBuilder;
@@ -113,7 +112,8 @@ public abstract class BaseAggregationTestCase<AB extends AbstractAggregationBuil
         try (BytesStreamOutput output = new BytesStreamOutput()) {
             builder.writeTo(output);
 
-            try (StreamInput in = new NamedWriteableAwareStreamInput(output.bytes().streamInput(), namedWriteableRegistry())) {
+            try (StreamInput in = output.bytes().streamInput()) {
+                in.setNamedWriteableRegistry(namedWriteableRegistry());
                 AggregatorFactories.Builder newBuilder = new AggregatorFactories.Builder(in);
 
                 assertEquals(builder, newBuilder);
@@ -157,7 +157,8 @@ public abstract class BaseAggregationTestCase<AB extends AbstractAggregationBuil
         AB testAgg = createTestAggregatorBuilder();
         try (BytesStreamOutput output = new BytesStreamOutput()) {
             output.writeNamedWriteable(testAgg);
-            try (StreamInput in = new NamedWriteableAwareStreamInput(output.bytes().streamInput(), namedWriteableRegistry())) {
+            try (StreamInput in = output.bytes().streamInput()) {
+                in.setNamedWriteableRegistry(namedWriteableRegistry());
                 AggregationBuilder deserialized = in.readNamedWriteable(AggregationBuilder.class);
                 assertEquals(testAgg, deserialized);
                 assertEquals(testAgg.hashCode(), deserialized.hashCode());
@@ -194,7 +195,8 @@ public abstract class BaseAggregationTestCase<AB extends AbstractAggregationBuil
     protected AB copyAggregation(AB agg) throws IOException {
         try (BytesStreamOutput output = new BytesStreamOutput()) {
             agg.writeTo(output);
-            try (StreamInput in = new NamedWriteableAwareStreamInput(output.bytes().streamInput(), namedWriteableRegistry())) {
+            try (StreamInput in = output.bytes().streamInput()) {
+                in.setNamedWriteableRegistry(namedWriteableRegistry());
                 @SuppressWarnings("unchecked")
                 AB secondAgg = (AB) namedWriteableRegistry().getReader(AggregationBuilder.class, agg.getWriteableName()).read(in);
                 return secondAgg;
