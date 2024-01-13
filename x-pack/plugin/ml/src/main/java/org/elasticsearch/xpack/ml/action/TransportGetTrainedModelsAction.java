@@ -126,10 +126,7 @@ public class TransportGetTrainedModelsAction extends HandledTransportAction<Requ
                     modelIdAndAliases.getValue(),
                     request.getIncludes(),
                     parentTaskId,
-                    ActionListener.wrap(
-                        config -> getModelDefinitionStatusListener.onResponse(Collections.singletonList(config)),
-                        getModelDefinitionStatusListener::onFailure
-                    )
+                    getModelDefinitionStatusListener.delegateFailureAndWrap((l, config) -> l.onResponse(Collections.singletonList(config)))
                 );
             } else {
                 provider.getTrainedModels(

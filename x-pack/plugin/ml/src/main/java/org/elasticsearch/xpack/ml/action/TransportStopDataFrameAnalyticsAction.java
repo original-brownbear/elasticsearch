@@ -116,23 +116,23 @@ public class TransportStopDataFrameAnalyticsAction extends TransportTasksAction<
 
         logger.debug("Received request to stop data frame analytics [{}]", request.getId());
 
-        ActionListener<Set<String>> expandedIdsListener = ActionListener.wrap(idsToStop -> {
+        ActionListener<Set<String>> expandedIdsListener = listener.delegateFailureAndWrap((delegate, idsToStop) -> {
             logger.debug("Resolved data frame analytics to stop: {}", idsToStop);
 
             PersistentTasksCustomMetadata tasks = state.getMetadata().custom(PersistentTasksCustomMetadata.TYPE);
             AnalyticsByTaskState analyticsByTaskState = AnalyticsByTaskState.build(idsToStop, tasks);
 
             if (analyticsByTaskState.isEmpty()) {
-                listener.onResponse(new StopDataFrameAnalyticsAction.Response(true));
+                delegate.onResponse(new StopDataFrameAnalyticsAction.Response(true));
                 return;
             }
 
             if (request.isForce()) {
-                forceStop(request, listener, tasks, analyticsByTaskState.getNonStopped());
+                forceStop(request, delegate, tasks, analyticsByTaskState.getNonStopped());
             } else {
-                normalStop(task, request, listener, tasks, analyticsByTaskState);
+                normalStop(task, request, delegate, tasks, analyticsByTaskState);
             }
-        }, listener::onFailure);
+        });
 
         findIdsToStop(state, request, expandedIdsListener);
     }
@@ -155,11 +155,8 @@ public class TransportStopDataFrameAnalyticsAction extends TransportTasksAction<
             configProvider.getMultiple(
                 request.getId(),
                 request.allowNoMatch(),
-                ActionListener.wrap(
-                    configs -> matchingIdsListener.onResponse(
-                        configs.stream().map(DataFrameAnalyticsConfig::getId).collect(Collectors.toSet())
-                    ),
-                    matchingIdsListener::onFailure
+                matchingIdsListener.delegateFailureAndWrap(
+                    (l, configs) -> l.onResponse(configs.stream().map(DataFrameAnalyticsConfig::getId).collect(Collectors.toSet()))
                 )
             );
         }
@@ -191,10 +188,7 @@ public class TransportStopDataFrameAnalyticsAction extends TransportTasksAction<
             configProvider.getMultiple(
                 expandedIdsMatcher.unmatchedIdsString(),
                 request.allowNoMatch(),
-                ActionListener.wrap(
-                    configs -> matchingIdsListener.onResponse(MlStrings.findMatching(tokens, startedIds)),
-                    matchingIdsListener::onFailure
-                )
+                matchingIdsListener.delegateFailureAndWrap((l, configs) -> l.onResponse(MlStrings.findMatching(tokens, startedIds)))
             );
         } else {
             matchingIdsListener.onResponse(MlStrings.findMatching(tokens, startedIds));

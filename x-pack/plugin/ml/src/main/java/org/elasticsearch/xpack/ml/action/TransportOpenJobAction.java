@@ -130,13 +130,13 @@ public class TransportOpenJobAction extends TransportMasterNodeAction<OpenJobAct
         if (MachineLearningField.ML_API_FEATURE.check(licenseState)) {
 
             // Clear job finished time once the job is started and respond
-            ActionListener<NodeAcknowledgedResponse> clearJobFinishTime = ActionListener.wrap(response -> {
+            ActionListener<NodeAcknowledgedResponse> clearJobFinishTime = listener.delegateFailureAndWrap((l, response) -> {
                 if (response.isAcknowledged()) {
-                    clearJobFinishedTime(response, state, jobParams.getJobId(), request.masterNodeTimeout(), listener);
+                    clearJobFinishedTime(response, state, jobParams.getJobId(), request.masterNodeTimeout(), l);
                 } else {
-                    listener.onResponse(response);
+                    l.onResponse(response);
                 }
-            }, listener::onFailure);
+            });
 
             // Wait for job to be started
             ActionListener<PersistentTasksCustomMetadata.PersistentTask<OpenJobAction.JobParams>> waitForJobToStart =

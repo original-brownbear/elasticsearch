@@ -93,9 +93,9 @@ public class TransportGetOverallBucketsAction extends HandledTransportAction<
         GetOverallBucketsAction.Request request,
         ActionListener<GetOverallBucketsAction.Response> listener
     ) {
-        jobManager.expandJobs(request.getJobId(), request.allowNoMatch(), ActionListener.wrap(jobPage -> {
+        jobManager.expandJobs(request.getJobId(), request.allowNoMatch(), listener.delegateFailureAndWrap((delegate, jobPage) -> {
             if (jobPage.count() == 0) {
-                listener.onResponse(
+                delegate.onResponse(
                     new GetOverallBucketsAction.Response(new QueryPage<>(Collections.emptyList(), 0, OverallBucket.RESULTS_FIELD))
                 );
                 return;
@@ -105,12 +105,12 @@ public class TransportGetOverallBucketsAction extends HandledTransportAction<
             // we run in a different thread to avoid blocking the network thread.
             threadPool.executor(MachineLearning.UTILITY_THREAD_POOL_NAME).execute(() -> {
                 try {
-                    getOverallBuckets(request, jobPage.results(), listener);
+                    getOverallBuckets(request, jobPage.results(), delegate);
                 } catch (Exception e) {
-                    listener.onFailure(e);
+                    delegate.onFailure(e);
                 }
             });
-        }, listener::onFailure));
+        }));
     }
 
     private void getOverallBuckets(
@@ -188,7 +188,7 @@ public class TransportGetOverallBucketsAction extends HandledTransportAction<
             client.threadPool().getThreadContext(),
             ML_ORIGIN,
             searchRequest,
-            ActionListener.<SearchResponse>wrap(searchResponse -> {
+            listener.<SearchResponse>delegateFailureAndWrap((delegate, searchResponse) -> {
                 long totalHits = searchResponse.getHits().getTotalHits().value;
                 if (totalHits > 0) {
                     Aggregations aggregations = searchResponse.getAggregations();
@@ -196,7 +196,7 @@ public class TransportGetOverallBucketsAction extends HandledTransportAction<
                     long earliestTime = Intervals.alignToFloor((long) min.value(), maxBucketSpanMillis);
                     Max max = aggregations.get(LATEST_TIME);
                     long latestTime = Intervals.alignToCeil((long) max.value() + 1, maxBucketSpanMillis);
-                    listener.onResponse(
+                    delegate.onResponse(
                         new ChunkedBucketSearcher(
                             jobsContext,
                             earliestTime,
@@ -207,9 +207,9 @@ public class TransportGetOverallBucketsAction extends HandledTransportAction<
                         )
                     );
                 } else {
-                    listener.onResponse(null);
+                    delegate.onResponse(null);
                 }
-            }, listener::onFailure),
+            }),
             client::search
         );
     }
@@ -289,11 +289,11 @@ public class TransportGetOverallBucketsAction extends HandledTransportAction<
                 client.threadPool().getThreadContext(),
                 ML_ORIGIN,
                 nextSearch(),
-                ActionListener.<SearchResponse>wrap(searchResponse -> {
+                listener.<SearchResponse>delegateFailureAndWrap((delegate, searchResponse) -> {
                     Histogram histogram = searchResponse.getAggregations().get(Result.TIMESTAMP.getPreferredName());
                     overallBucketsProcessor.process(overallBucketsProvider.computeOverallBuckets(histogram));
                     if (overallBucketsProcessor.size() > MAX_RESULT_COUNT) {
-                        listener.onFailure(
+                        delegate.onFailure(
                             ExceptionsHelper.badRequestException(
                                 "Unable to return more than [{}] results; please use " + "parameters [{}] and [{}] to limit the time range",
                                 MAX_RESULT_COUNT,
@@ -303,8 +303,8 @@ public class TransportGetOverallBucketsAction extends HandledTransportAction<
                         );
                         return;
                     }
-                    searchAndComputeOverallBuckets(listener);
-                }, listener::onFailure),
+                    searchAndComputeOverallBuckets(delegate);
+                }),
                 client::search
             );
         }

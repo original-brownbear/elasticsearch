@@ -95,7 +95,7 @@ public class TransportMlMemoryAction extends TransportMasterNodeAction<MlMemoryA
 
         ParentTaskAssigningClient parentTaskClient = new ParentTaskAssigningClient(client, task.getParentTaskId());
 
-        ActionListener<NodesStatsResponse> nodeStatsListener = ActionListener.wrap(nodesStatsResponse -> {
+        ActionListener<NodesStatsResponse> nodeStatsListener = listener.delegateFailureAndWrap((delegate, nodesStatsResponse) -> {
             TrainedModelCacheInfoAction.Request trainedModelCacheInfoRequest = new TrainedModelCacheInfoAction.Request(
                 nodesStatsResponse.getNodes().stream().map(NodeStats::getNode).toArray(DiscoveryNode[]::new)
             ).timeout(request.timeout());
@@ -103,18 +103,17 @@ public class TransportMlMemoryAction extends TransportMasterNodeAction<MlMemoryA
             parentTaskClient.execute(
                 TrainedModelCacheInfoAction.INSTANCE,
                 trainedModelCacheInfoRequest,
-                ActionListener.wrap(
-                    trainedModelCacheInfoResponse -> handleResponses(
+                delegate.delegateFailureAndWrap(
+                    (l, trainedModelCacheInfoResponse) -> handleResponses(
                         state,
                         clusterSettings,
                         nodesStatsResponse,
                         trainedModelCacheInfoResponse,
-                        listener
-                    ),
-                    listener::onFailure
+                        l
+                    )
                 )
             );
-        }, listener::onFailure);
+        });
 
         // Next get node stats related to the OS and JVM
         ActionListener<Void> memoryTrackerRefreshListener = ActionListener.wrap(

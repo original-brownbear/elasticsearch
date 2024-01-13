@@ -120,17 +120,17 @@ public class TransportInternalInferModelAction extends HandledTransportAction<Re
                 request.getId(),
                 GetTrainedModelsAction.Includes.empty(),
                 parentTaskId,
-                ActionListener.wrap(trainedModelConfig -> {
+                listener.delegateFailureAndWrap((delegate, trainedModelConfig) -> {
                     // Since we just checked MachineLearningField.ML_API_FEATURE.check(licenseState) and that check failed
                     // That means we don't have a plat+ license. The only licenses for trained models are basic (free) and plat.
                     boolean allowed = trainedModelConfig.getLicenseLevel() == License.OperationMode.BASIC;
                     responseBuilder.setLicensed(allowed);
                     if (allowed || request.isPreviouslyLicensed()) {
-                        doInfer(task, request, responseBuilder, parentTaskId, listener);
+                        doInfer(task, request, responseBuilder, parentTaskId, delegate);
                     } else {
-                        listener.onFailure(LicenseUtils.newComplianceException(XPackField.MACHINE_LEARNING));
+                        delegate.onFailure(LicenseUtils.newComplianceException(XPackField.MACHINE_LEARNING));
                     }
-                }, listener::onFailure)
+                })
             );
         }
     }
