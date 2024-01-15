@@ -19,17 +19,15 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.join.BitSetProducer;
 import org.apache.lucene.search.similarities.Similarity;
 import org.apache.lucene.util.SetOnce;
-import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.common.ParsingException;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.lucene.search.Queries;
-import org.elasticsearch.common.regex.Regex;
-import org.elasticsearch.core.CheckedFunction;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.IndexSortConfig;
+import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.analysis.NamedAnalyzer;
 import org.elasticsearch.index.cache.bitset.BitsetFilterCache;
 import org.elasticsearch.index.fielddata.FieldDataContext;
@@ -50,9 +48,9 @@ import org.elasticsearch.index.mapper.SourceToParse;
 import org.elasticsearch.index.query.support.NestedScope;
 import org.elasticsearch.index.similarity.SimilarityService;
 import org.elasticsearch.script.Script;
+import org.elasticsearch.script.ScriptCompiler;
 import org.elasticsearch.script.ScriptContext;
 import org.elasticsearch.script.ScriptFactory;
-import org.elasticsearch.script.ScriptService;
 import org.elasticsearch.search.NestedDocuments;
 import org.elasticsearch.search.aggregations.support.ValuesSourceRegistry;
 import org.elasticsearch.search.lookup.LeafFieldLookupProvider;
@@ -61,7 +59,6 @@ import org.elasticsearch.search.lookup.SourceProvider;
 import org.elasticsearch.transport.RemoteClusterAware;
 import org.elasticsearch.xcontent.XContentParserConfiguration;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -89,7 +86,7 @@ public class SearchExecutionContext extends QueryRewriteContext {
     private final SimilarityService similarityService;
     private final BitsetFilterCache bitsetFilterCache;
     private final BiFunction<MappedFieldType, FieldDataContext, IndexFieldData<?>> indexFieldDataLookup;
-    private SearchLookup lookup = null;
+    private SearchLookup lookup;
 
     private final int shardId;
     private final int shardRequestIndex;
@@ -100,6 +97,8 @@ public class SearchExecutionContext extends QueryRewriteContext {
 
     private final Map<String, Query> namedQueries = new HashMap<>();
     private NestedScope nestedScope;
+    private QueryBuilder aliasFilter;
+    private boolean rewriteToNamedQueries = false;
 
     /**
      * Build a {@linkplain SearchExecutionContext}.
@@ -113,7 +112,7 @@ public class SearchExecutionContext extends QueryRewriteContext {
         MapperService mapperService,
         MappingLookup mappingLookup,
         SimilarityService similarityService,
-        ScriptService scriptService,
+        ScriptCompiler scriptService,
         XContentParserConfiguration parserConfiguration,
         NamedWriteableRegistry namedWriteableRegistry,
         Client client,
@@ -186,7 +185,7 @@ public class SearchExecutionContext extends QueryRewriteContext {
         MapperService mapperService,
         MappingLookup mappingLookup,
         SimilarityService similarityService,
-        ScriptService scriptService,
+        ScriptCompiler scriptService,
         XContentParserConfiguration parserConfig,
         NamedWriteableRegistry namedWriteableRegistry,
         Client client,
@@ -229,6 +228,15 @@ public class SearchExecutionContext extends QueryRewriteContext {
         this.lookup = null;
         this.namedQueries.clear();
         this.nestedScope = new NestedScope();
+    }
+
+    // Set alias filter, so it can be applied for queries that need it (e.g. knn query)
+    public void setAliasFilter(QueryBuilder aliasFilter) {
+        this.aliasFilter = aliasFilter;
+    }
+
+    public QueryBuilder getAliasFilter() {
+        return aliasFilter;
     }
 
     /**
@@ -289,6 +297,10 @@ public class SearchExecutionContext extends QueryRewriteContext {
         return Map.copyOf(namedQueries);
     }
 
+    public boolean hasNamedQueries() {
+        return (namedQueries.isEmpty() == false);
+    }
+
     /**
      * Parse a document with current mapping.
      */
@@ -302,36 +314,6 @@ public class SearchExecutionContext extends QueryRewriteContext {
 
     public boolean hasMappings() {
         return mappingLookup.hasMappings();
-    }
-
-    /**
-     * Returns the names of all mapped fields that match a given pattern
-     *
-     * All names returned by this method are guaranteed to resolve to a
-     * MappedFieldType if passed to {@link #getFieldType(String)}
-     *
-     * @param pattern the field name pattern
-     */
-    public Set<String> getMatchingFieldNames(String pattern) {
-        if (runtimeMappings.isEmpty()) {
-            return mappingLookup.getMatchingFieldNames(pattern);
-        }
-        Set<String> matches = new HashSet<>(mappingLookup.getMatchingFieldNames(pattern));
-        if ("*".equals(pattern)) {
-            matches.addAll(runtimeMappings.keySet());
-        } else if (Regex.isSimpleMatchPattern(pattern) == false) {
-            // no wildcard
-            if (runtimeMappings.containsKey(pattern)) {
-                matches.add(pattern);
-            }
-        } else {
-            for (String name : runtimeMappings.keySet()) {
-                if (Regex.simpleMatch(pattern, name)) {
-                    matches.add(name);
-                }
-            }
-        }
-        return matches;
     }
 
     /**
@@ -354,6 +336,13 @@ public class SearchExecutionContext extends QueryRewriteContext {
 
     public Set<String> sourcePath(String fullName) {
         return mappingLookup.sourcePaths(fullName);
+    }
+
+    /**
+     * If field is a leaf multi-field return the path to the parent field. Otherwise, return null.
+     */
+    public String parentPath(String field) {
+        return mappingLookup.parentField(field);
     }
 
     /**
@@ -391,7 +380,7 @@ public class SearchExecutionContext extends QueryRewriteContext {
             throw new IllegalArgumentException("No mapper found for type [" + type + "]");
         }
         Mapper.Builder builder = typeParser.parse("__anonymous_", Collections.emptyMap(), parserContext);
-        Mapper mapper = builder.build(MapperBuilderContext.root(false));
+        Mapper mapper = builder.build(MapperBuilderContext.root(false, false));
         if (mapper instanceof FieldMapper) {
             return ((FieldMapper) mapper).fieldType();
         }
@@ -429,9 +418,9 @@ public class SearchExecutionContext extends QueryRewriteContext {
      */
     public SearchLookup lookup() {
         if (this.lookup == null) {
-            SourceProvider sourceProvider = isSourceSynthetic() ? (ctx, doc) -> {
-                throw new IllegalArgumentException("Cannot access source from scripts in synthetic mode");
-            } : SourceProvider.fromStoredFields();
+            SourceProvider sourceProvider = isSourceSynthetic()
+                ? SourceProvider.fromSyntheticSource(mappingLookup.getMapping())
+                : SourceProvider.fromStoredFields();
             setLookupProviders(sourceProvider, LeafFieldLookupProvider.fromStoredFields());
         }
         return this.lookup;
@@ -464,17 +453,8 @@ public class SearchExecutionContext extends QueryRewriteContext {
         return nestedScope;
     }
 
-    public Version indexVersionCreated() {
+    public IndexVersion indexVersionCreated() {
         return indexSettings.getIndexVersionCreated();
-    }
-
-    /**
-     *  Given an index pattern, checks whether it matches against the current shard. The pattern
-     *  may represent a fully qualified index name if the search targets remote shards.
-     */
-    public boolean indexMatches(String pattern) {
-        assert indexNameMatcher != null;
-        return indexNameMatcher.test(pattern);
     }
 
     public boolean indexSortedOnField(String field) {
@@ -483,20 +463,13 @@ public class SearchExecutionContext extends QueryRewriteContext {
     }
 
     public ParsedQuery toQuery(QueryBuilder queryBuilder) {
-        return toQuery(queryBuilder, q -> {
-            Query query = q.toQuery(this);
+        reset();
+        try {
+            Query query = Rewriteable.rewrite(queryBuilder, this, true).toQuery(this);
             if (query == null) {
                 query = Queries.newMatchNoDocsQuery("No query left after rewrite.");
             }
-            return query;
-        });
-    }
-
-    private ParsedQuery toQuery(QueryBuilder queryBuilder, CheckedFunction<QueryBuilder, Query, IOException> filterOrQuery) {
-        reset();
-        try {
-            QueryBuilder rewriteQuery = Rewriteable.rewrite(queryBuilder, this, true);
-            return new ParsedQuery(filterOrQuery.apply(rewriteQuery), copyNamedQueries());
+            return new ParsedQuery(query, copyNamedQueries());
         } catch (QueryShardException | ParsingException e) {
             throw e;
         } catch (Exception e) {
@@ -607,14 +580,6 @@ public class SearchExecutionContext extends QueryRewriteContext {
         return this;
     }
 
-    /**
-     * Returns the index settings for this context. This might return null if the
-     * context has not index scope.
-     */
-    public IndexSettings getIndexSettings() {
-        return indexSettings;
-    }
-
     /** Return the current {@link IndexReader}, or {@code null} if no index reader is available,
      *  for instance if this rewrite context is used to index queries (percolation).
      */
@@ -657,5 +622,20 @@ public class SearchExecutionContext extends QueryRewriteContext {
 
     public NestedDocuments getNestedDocuments() {
         return new NestedDocuments(mappingLookup, bitsetFilterCache::getBitSetProducer, indexVersionCreated());
+    }
+
+    /**
+     * Instructs to rewrite Elasticsearch queries with _name to Lucene NamedQuery
+     */
+    public void setRewriteToNamedQueries() {
+        this.rewriteToNamedQueries = true;
+    }
+
+    /**
+     * Returns true if Elasticsearch queries with _name must be rewritten to Lucene NamedQuery
+     * @return
+     */
+    public boolean rewriteToNamedQuery() {
+        return rewriteToNamedQueries;
     }
 }

@@ -67,7 +67,8 @@ public class TransportClusterStatsAction extends TransportNodesAction<
         CommonStatsFlags.Flag.FieldData,
         CommonStatsFlags.Flag.QueryCache,
         CommonStatsFlags.Flag.Completion,
-        CommonStatsFlags.Flag.Segments
+        CommonStatsFlags.Flag.Segments,
+        CommonStatsFlags.Flag.DenseVector
     );
 
     private final NodeService nodeService;
@@ -89,15 +90,11 @@ public class TransportClusterStatsAction extends TransportNodesAction<
     ) {
         super(
             ClusterStatsAction.NAME,
-            threadPool,
             clusterService,
             transportService,
             actionFilters,
-            ClusterStatsRequest::new,
             ClusterStatsNodeRequest::new,
-            ThreadPool.Names.MANAGEMENT,
-            ThreadPool.Names.MANAGEMENT,
-            ClusterStatsNodeResponse.class
+            threadPool.executor(ThreadPool.Names.MANAGEMENT)
         );
         this.nodeService = nodeService;
         this.indicesService = indicesService;
@@ -183,17 +180,19 @@ public class TransportClusterStatsAction extends TransportNodesAction<
         NodeInfo nodeInfo = nodeService.info(true, true, false, true, false, true, false, false, true, false, false, false);
         NodeStats nodeStats = nodeService.stats(
             CommonStatsFlags.NONE,
-            true,
-            true,
-            true,
             false,
             true,
+            true,
+            true,
+            false,
+            true,
             false,
             false,
             false,
             false,
             false,
             true,
+            false,
             false,
             false,
             false
@@ -252,6 +251,7 @@ public class TransportClusterStatsAction extends TransportNodesAction<
 
     public static class ClusterStatsNodeRequest extends TransportRequest {
 
+        // TODO don't wrap the whole top-level request, it contains heavy and irrelevant DiscoveryNode things; see #100878
         ClusterStatsRequest request;
 
         public ClusterStatsNodeRequest(StreamInput in) throws IOException {

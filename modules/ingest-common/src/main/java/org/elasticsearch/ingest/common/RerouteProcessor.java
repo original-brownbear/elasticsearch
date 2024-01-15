@@ -124,7 +124,7 @@ public final class RerouteProcessor extends AbstractProcessor {
         return dataStreamName.substring(indexOfSecondDash + 1);
     }
 
-    private String determineDataStreamField(
+    private static String determineDataStreamField(
         IngestDocument ingestDocument,
         List<DataStreamValueSource> valueSources,
         String fallbackFromCurrentTarget
@@ -240,6 +240,7 @@ public final class RerouteProcessor extends AbstractProcessor {
                 if (fieldReference.startsWith("{") && fieldReference.endsWith("}")) {
                     fieldReference = fieldReference.substring(1, fieldReference.length() - 1);
                 }
+                fieldReference = fieldReference.trim();
                 // only a single field reference is allowed
                 // so something like this is disallowed: {{foo}}-{{bar}}
                 if (fieldReference.contains("{") || fieldReference.contains("}")) {

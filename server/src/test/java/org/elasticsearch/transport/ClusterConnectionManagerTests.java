@@ -10,7 +10,6 @@ package org.elasticsearch.transport;
 
 import org.apache.logging.log4j.Level;
 import org.elasticsearch.TransportVersion;
-import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.cluster.node.DiscoveryNode;
@@ -510,7 +509,7 @@ public class ClusterConnectionManagerTests extends ESTestCase {
                                 connectionPermits.release();
                                 runAgain();
                             } else {
-                                throw new AssertionError("unexpected", e);
+                                fail(e);
                             }
                         }
 
@@ -592,7 +591,7 @@ public class ClusterConnectionManagerTests extends ESTestCase {
                                 && e.getMessage().contains("concurrently connecting and disconnecting")) {
                                 runAgain();
                             } else {
-                                throw new AssertionError("unexpected", e);
+                                fail(e);
                             }
                         }
 
@@ -756,13 +755,8 @@ public class ClusterConnectionManagerTests extends ESTestCase {
         }
 
         @Override
-        public Version getVersion() {
-            return node.getVersion();
-        }
-
-        @Override
         public TransportVersion getTransportVersion() {
-            return TransportVersion.CURRENT;
+            return TransportVersion.current();
         }
 
         @Override

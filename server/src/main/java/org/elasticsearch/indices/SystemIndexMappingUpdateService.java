@@ -12,10 +12,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchParseException;
-import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
-import org.elasticsearch.action.support.GroupedActionListener;
+import org.elasticsearch.action.support.RefCountingRunnable;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.client.internal.OriginSettingClient;
@@ -32,7 +31,6 @@ import org.elasticsearch.cluster.routing.IndexRoutingTable;
 import org.elasticsearch.gateway.GatewayService;
 import org.elasticsearch.xcontent.XContentType;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -100,31 +98,21 @@ public class SystemIndexMappingUpdateService implements ClusterStateListener {
         }
 
         if (isUpgradeInProgress.compareAndSet(false, true)) {
-            final List<SystemIndexDescriptor> descriptors = new ArrayList<>();
-            for (SystemIndexDescriptor systemIndexDescriptor : getEligibleDescriptors(state.getMetadata())) {
-                UpgradeStatus upgradeStatus;
-                try {
-                    upgradeStatus = getUpgradeStatus(state, systemIndexDescriptor);
-                } catch (Exception e) {
-                    logger.warn("Failed to calculate upgrade status: {}" + e.getMessage(), e);
-                    continue;
+            // Use a RefCountingRunnable so that we only release the lock once all upgrade attempts have succeeded or failed.
+            // The failures are logged in upgradeIndexMetadata(), so we don't actually care about them here.
+            try (var refs = new RefCountingRunnable(() -> isUpgradeInProgress.set(false))) {
+                for (SystemIndexDescriptor systemIndexDescriptor : getEligibleDescriptors(state.getMetadata())) {
+                    UpgradeStatus upgradeStatus;
+                    try {
+                        upgradeStatus = getUpgradeStatus(state, systemIndexDescriptor);
+                    } catch (Exception e) {
+                        logger.warn("Failed to calculate upgrade status: {}" + e.getMessage(), e);
+                        continue;
+                    }
+                    if (upgradeStatus == UpgradeStatus.NEEDS_MAPPINGS_UPDATE) {
+                        upgradeIndexMappings(systemIndexDescriptor, ActionListener.releasing(refs.acquire()));
+                    }
                 }
-                if (upgradeStatus == UpgradeStatus.NEEDS_MAPPINGS_UPDATE) {
-                    descriptors.add(systemIndexDescriptor);
-                }
-            }
-
-            if (descriptors.isEmpty() == false) {
-                // Use a GroupedActionListener so that we only release the lock once all upgrade attempts have succeeded or failed.
-                // The failures are logged in upgradeIndexMetadata(), so we don't actually care about them here.
-                ActionListener<AcknowledgedResponse> listener = new GroupedActionListener<>(
-                    descriptors.size(),
-                    ActionListener.running(() -> isUpgradeInProgress.set(false))
-                );
-
-                descriptors.forEach(descriptor -> upgradeIndexMappings(descriptor, listener));
-            } else {
-                isUpgradeInProgress.set(false);
             }
         } else {
             logger.trace("Update already in progress");
@@ -278,13 +266,13 @@ public class SystemIndexMappingUpdateService implements ClusterStateListener {
             return false;
         }
 
-        return Version.CURRENT.onOrBefore(readMappingVersion(descriptor, mappingMetadata));
+        return descriptor.getMappingsVersion().version() <= readMappingVersion(descriptor, mappingMetadata);
     }
 
     /**
      * Fetches the mapping version from an index's mapping's `_meta` info.
      */
-    private static Version readMappingVersion(SystemIndexDescriptor descriptor, MappingMetadata mappingMetadata) {
+    private static int readMappingVersion(SystemIndexDescriptor descriptor, MappingMetadata mappingMetadata) {
         final String indexName = descriptor.getPrimaryIndex();
         try {
             @SuppressWarnings("unchecked")
@@ -297,25 +285,28 @@ public class SystemIndexMappingUpdateService implements ClusterStateListener {
                 );
                 // This can happen with old system indices, such as .watches, which were created before we had the convention of
                 // storing a version under `_meta.` We should just replace the template to be sure.
-                return Version.V_EMPTY;
+                return -1;
             }
 
-            final Object rawVersion = meta.get(descriptor.getVersionMetaKey());
-            if (rawVersion instanceof Integer) {
-                // This can happen with old system indices, such as .tasks, which were created before we used an Elasticsearch
-                // version here. We should just replace the template to be sure.
-                return Version.V_EMPTY;
+            final Object rawVersion = meta.get(SystemIndexDescriptor.VERSION_META_KEY);
+            if (rawVersion == null) {
+                logger.warn(
+                    "No value found in mappings for [_meta.{}], assuming mappings update required",
+                    SystemIndexDescriptor.VERSION_META_KEY
+                );
+                return -1;
             }
-            final String versionString = rawVersion != null ? rawVersion.toString() : null;
-            if (versionString == null) {
-                logger.warn("No value found in mappings for [_meta.{}], assuming mappings update required", descriptor.getVersionMetaKey());
-                // If we called `Version.fromString(null)`, it would return `Version.CURRENT` and we wouldn't update the mappings
-                return Version.V_EMPTY;
+            if (rawVersion instanceof Integer == false) {
+                logger.warn(
+                    "Value in [_meta.{}] was not an integer, assuming mappings update required",
+                    SystemIndexDescriptor.VERSION_META_KEY
+                );
+                return -1;
             }
-            return Version.fromString(versionString);
+            return (int) rawVersion;
         } catch (ElasticsearchParseException | IllegalArgumentException e) {
             logger.error(() -> "Cannot parse the mapping for index [" + indexName + "]", e);
-            return Version.V_EMPTY;
+            return -1;
         }
     }
 

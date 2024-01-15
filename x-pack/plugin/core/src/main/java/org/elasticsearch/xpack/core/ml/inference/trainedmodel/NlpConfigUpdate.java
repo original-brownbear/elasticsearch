@@ -7,7 +7,7 @@
 
 package org.elasticsearch.xpack.core.ml.inference.trainedmodel;
 
-import org.elasticsearch.TransportVersion;
+import org.elasticsearch.TransportVersions;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.core.Nullable;
@@ -40,7 +40,9 @@ public abstract class NlpConfigUpdate implements InferenceConfigUpdate, NamedXCo
             MPNetTokenization.NAME.getPreferredName(),
             MPNetTokenizationUpdate::new,
             RobertaTokenizationUpdate.NAME.getPreferredName(),
-            RobertaTokenizationUpdate::new
+            RobertaTokenizationUpdate::new,
+            XLMRobertaTokenizationUpdate.NAME.getPreferredName(),
+            XLMRobertaTokenizationUpdate::new
         );
 
         Map<String, Object> tokenizationConfig = null;
@@ -80,7 +82,7 @@ public abstract class NlpConfigUpdate implements InferenceConfigUpdate, NamedXCo
     }
 
     public NlpConfigUpdate(StreamInput in) throws IOException {
-        if (in.getTransportVersion().onOrAfter(TransportVersion.V_8_1_0)) {
+        if (in.getTransportVersion().onOrAfter(TransportVersions.V_8_1_0)) {
             tokenizationUpdate = in.readOptionalNamedWriteable(TokenizationUpdate.class);
         } else {
             tokenizationUpdate = null;
@@ -89,7 +91,7 @@ public abstract class NlpConfigUpdate implements InferenceConfigUpdate, NamedXCo
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
-        if (out.getTransportVersion().onOrAfter(TransportVersion.V_8_1_0)) {
+        if (out.getTransportVersion().onOrAfter(TransportVersions.V_8_1_0)) {
             out.writeOptionalNamedWriteable(tokenizationUpdate);
         }
     }

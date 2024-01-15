@@ -7,14 +7,14 @@
 package org.elasticsearch.xpack.transform.notifications;
 
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.Version;
-import org.elasticsearch.action.admin.indices.template.put.PutComposableIndexTemplateAction;
+import org.elasticsearch.action.admin.indices.template.put.TransportPutComposableIndexTemplateAction;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.client.internal.OriginSettingClient;
 import org.elasticsearch.cluster.metadata.ComposableIndexTemplate;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xpack.core.common.notifications.AbstractAuditor;
+import org.elasticsearch.xpack.core.transform.TransformConfigVersion;
 import org.elasticsearch.xpack.core.transform.TransformMetadata;
 import org.elasticsearch.xpack.core.transform.notifications.TransformAuditMessage;
 import org.elasticsearch.xpack.core.transform.transforms.persistence.TransformInternalIndexConstants;
@@ -41,9 +41,10 @@ public class TransformAuditor extends AbstractAuditor<TransformAuditMessage> {
             TransformInternalIndexConstants.AUDIT_INDEX,
             () -> {
                 try {
-                    return new PutComposableIndexTemplateAction.Request(TransformInternalIndexConstants.AUDIT_INDEX).indexTemplate(
-                        new ComposableIndexTemplate.Builder().template(TransformInternalIndex.getAuditIndexTemplate())
-                            .version((long) Version.CURRENT.id)
+                    return new TransportPutComposableIndexTemplateAction.Request(TransformInternalIndexConstants.AUDIT_INDEX).indexTemplate(
+                        ComposableIndexTemplate.builder()
+                            .template(TransformInternalIndex.getAuditIndexTemplate())
+                            .version((long) TransformConfigVersion.CURRENT.id())
                             .indexPatterns(Collections.singletonList(TransformInternalIndexConstants.AUDIT_INDEX_PREFIX + "*"))
                             .priority(Long.MAX_VALUE)
                             .build()

@@ -28,8 +28,8 @@ import static org.hamcrest.Matchers.sameInstance;
 public class TransportVersionTests extends ESTestCase {
 
     public void testVersionComparison() {
-        TransportVersion V_7_2_0 = TransportVersion.V_7_2_0;
-        TransportVersion V_8_0_0 = TransportVersion.V_8_0_0;
+        TransportVersion V_7_2_0 = TransportVersions.V_7_2_0;
+        TransportVersion V_8_0_0 = TransportVersions.V_8_0_0;
         assertThat(V_7_2_0.before(V_8_0_0), is(true));
         assertThat(V_7_2_0.before(V_7_2_0), is(false));
         assertThat(V_8_0_0.before(V_7_2_0), is(false));
@@ -66,7 +66,7 @@ public class TransportVersionTests extends ESTestCase {
 
     public void testStaticTransportVersionChecks() {
         assertThat(
-            TransportVersion.getAllVersionIds(CorrectFakeVersion.class),
+            TransportVersions.getAllVersionIds(CorrectFakeVersion.class),
             equalTo(
                 Map.of(
                     199,
@@ -80,7 +80,7 @@ public class TransportVersionTests extends ESTestCase {
                 )
             )
         );
-        AssertionError e = expectThrows(AssertionError.class, () -> TransportVersion.getAllVersionIds(DuplicatedIdFakeVersion.class));
+        AssertionError e = expectThrows(AssertionError.class, () -> TransportVersions.getAllVersionIds(DuplicatedIdFakeVersion.class));
         assertThat(e.getMessage(), containsString("have the same version number"));
     }
 
@@ -129,11 +129,11 @@ public class TransportVersionTests extends ESTestCase {
     public void testMin() {
         assertEquals(
             TransportVersionUtils.getPreviousVersion(),
-            TransportVersion.min(TransportVersion.CURRENT, TransportVersionUtils.getPreviousVersion())
+            TransportVersion.min(TransportVersion.current(), TransportVersionUtils.getPreviousVersion())
         );
         assertEquals(
             TransportVersion.fromId(1_01_01_99),
-            TransportVersion.min(TransportVersion.fromId(1_01_01_99), TransportVersion.CURRENT)
+            TransportVersion.min(TransportVersion.fromId(1_01_01_99), TransportVersion.current())
         );
         TransportVersion version = TransportVersionUtils.randomVersion();
         TransportVersion version1 = TransportVersionUtils.randomVersion();
@@ -145,8 +145,11 @@ public class TransportVersionTests extends ESTestCase {
     }
 
     public void testMax() {
-        assertEquals(TransportVersion.CURRENT, TransportVersion.max(TransportVersion.CURRENT, TransportVersionUtils.getPreviousVersion()));
-        assertEquals(TransportVersion.CURRENT, TransportVersion.max(TransportVersion.fromId(1_01_01_99), TransportVersion.CURRENT));
+        assertEquals(
+            TransportVersion.current(),
+            TransportVersion.max(TransportVersion.current(), TransportVersionUtils.getPreviousVersion())
+        );
+        assertEquals(TransportVersion.current(), TransportVersion.max(TransportVersion.fromId(1_01_01_99), TransportVersion.current()));
         TransportVersion version = TransportVersionUtils.randomVersion();
         TransportVersion version1 = TransportVersionUtils.randomVersion();
         if (version.id() >= version1.id()) {
@@ -157,8 +160,8 @@ public class TransportVersionTests extends ESTestCase {
     }
 
     public void testVersionConstantPresent() {
-        Set<TransportVersion> ignore = Set.of(TransportVersion.ZERO, TransportVersion.CURRENT, TransportVersion.MINIMUM_COMPATIBLE);
-        assertThat(TransportVersion.CURRENT, sameInstance(TransportVersion.fromId(TransportVersion.CURRENT.id())));
+        Set<TransportVersion> ignore = Set.of(TransportVersions.ZERO, TransportVersion.current(), TransportVersions.MINIMUM_COMPATIBLE);
+        assertThat(TransportVersion.current(), sameInstance(TransportVersion.fromId(TransportVersion.current().id())));
         final int iters = scaledRandomIntBetween(20, 100);
         for (int i = 0; i < iters; i++) {
             TransportVersion version = TransportVersionUtils.randomVersion(ignore);
@@ -168,7 +171,7 @@ public class TransportVersionTests extends ESTestCase {
     }
 
     public void testCURRENTIsLatest() {
-        assertThat(Collections.max(TransportVersion.getAllVersions()), is(TransportVersion.CURRENT));
+        assertThat(Collections.max(TransportVersions.getAllVersions()), is(TransportVersion.current()));
     }
 
     public void testToString() {

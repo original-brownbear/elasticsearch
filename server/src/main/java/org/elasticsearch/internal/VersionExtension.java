@@ -8,30 +8,26 @@
 
 package org.elasticsearch.internal;
 
-import java.util.ServiceLoader;
+import org.elasticsearch.TransportVersion;
+import org.elasticsearch.index.IndexVersion;
 
 /**
  * Allows plugging in current version elements.
  */
 public interface VersionExtension {
     /**
-     * Returns the version id of the current transport version.
-     * Note this cannot return a TransportVersion object because it needs to be
-     * called during static initialization of TransportVersion.
+     * Returns the {@link TransportVersion} that Elasticsearch should use.
+     * <p>
+     * This must be at least as high as the given fallback.
+     * @param fallback The latest transport version from server
      */
-    int getCurrentTransportVersionId();
+    TransportVersion getCurrentTransportVersion(TransportVersion fallback);
 
     /**
-     * Loads a single VersionExtension, or returns {@code null} if none are found.
+     * Returns the {@link IndexVersion} that Elasticsearch should use.
+     * <p>
+     * This must be at least as high as the given fallback.
+     * @param fallback The latest index version from server
      */
-    static VersionExtension load() {
-        var loader = ServiceLoader.load(VersionExtension.class);
-        var extensions = loader.stream().toList();
-        if (extensions.size() > 1) {
-            throw new IllegalStateException("More than one version extension found");
-        } else if (extensions.size() == 0) {
-            return null;
-        }
-        return extensions.get(0).get();
-    }
+    IndexVersion getCurrentIndexVersion(IndexVersion fallback);
 }

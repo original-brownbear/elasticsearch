@@ -32,7 +32,9 @@ import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.discovery.DiscoveryStats;
 import org.elasticsearch.http.HttpStats;
+import org.elasticsearch.http.HttpStatsTests;
 import org.elasticsearch.index.Index;
+import org.elasticsearch.index.IndexVersions;
 import org.elasticsearch.index.bulk.stats.BulkStats;
 import org.elasticsearch.index.cache.query.QueryCacheStats;
 import org.elasticsearch.index.cache.request.RequestCacheStats;
@@ -45,6 +47,7 @@ import org.elasticsearch.index.merge.MergeStats;
 import org.elasticsearch.index.recovery.RecoveryStats;
 import org.elasticsearch.index.refresh.RefreshStats;
 import org.elasticsearch.index.search.stats.SearchStats;
+import org.elasticsearch.index.shard.DenseVectorStats;
 import org.elasticsearch.index.shard.DocsStats;
 import org.elasticsearch.index.shard.IndexingStats;
 import org.elasticsearch.index.shard.ShardCountStats;
@@ -64,6 +67,7 @@ import org.elasticsearch.monitor.os.OsStats;
 import org.elasticsearch.monitor.process.ProcessStats;
 import org.elasticsearch.node.AdaptiveSelectionStats;
 import org.elasticsearch.node.ResponseCollectorService;
+import org.elasticsearch.repositories.RepositoriesStats;
 import org.elasticsearch.script.ScriptCacheStats;
 import org.elasticsearch.script.ScriptContextStats;
 import org.elasticsearch.script.ScriptStats;
@@ -71,6 +75,7 @@ import org.elasticsearch.script.TimeSeries;
 import org.elasticsearch.search.suggest.completion.CompletionStats;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.test.VersionUtils;
+import org.elasticsearch.test.index.IndexVersionUtils;
 import org.elasticsearch.threadpool.ThreadPoolStats;
 import org.elasticsearch.transport.TransportActionStats;
 import org.elasticsearch.transport.TransportStats;
@@ -86,7 +91,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 
-import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static org.elasticsearch.test.AbstractChunkedSerializingTestCase.assertChunkCount;
 import static org.elasticsearch.threadpool.ThreadPoolStatsTests.randomStats;
@@ -458,6 +462,12 @@ public class NodeStatsTests extends ESTestCase {
                     assertEquals(scriptCacheStats, deserializedScriptCacheStats);
                     assertNotSame(scriptCacheStats, deserializedScriptCacheStats);
                 }
+
+                RepositoriesStats repoThrottlingStats = deserializedNodeStats.getRepositoriesStats();
+                assertTrue(repoThrottlingStats.getRepositoryThrottlingStats().containsKey("test-repository"));
+                assertEquals(100, repoThrottlingStats.getRepositoryThrottlingStats().get("test-repository").totalReadThrottledNanos());
+                assertEquals(200, repoThrottlingStats.getRepositoryThrottlingStats().get("test-repository").totalWriteThrottledNanos());
+
             }
         }
     }
@@ -481,8 +491,8 @@ public class NodeStatsTests extends ESTestCase {
     }
 
     private static int expectedChunks(NodeStats nodeStats, NodeStatsLevel level) {
-        return 7 // one per each chunkeable object
-            + expectedChunks(nodeStats.getHttp()) //
+        // expectedChunks = number of static chunks (8 at the moment, see NodeStats#toXContentChunked) + number of variable chunks
+        return 8 + expectedChunks(nodeStats.getHttp()) //
             + expectedChunks(nodeStats.getIndices(), level) //
             + expectedChunks(nodeStats.getTransport()) //
             + expectedChunks(nodeStats.getIngestStats()) //
@@ -532,7 +542,7 @@ public class NodeStatsTests extends ESTestCase {
     }
 
     private static int expectedChunks(@Nullable HttpStats httpStats) {
-        return httpStats == null ? 0 : 2 + httpStats.getClientStats().size();
+        return httpStats == null ? 0 : 3 + httpStats.getClientStats().size() + httpStats.httpRouteStats().size();
     }
 
     private static int expectedChunks(@Nullable TransportStats transportStats) {
@@ -631,6 +641,8 @@ public class NodeStatsTests extends ESTestCase {
         indicesCommonStats.getBulk().add(new BulkStats(++iota, ++iota, ++iota, ++iota, ++iota));
         indicesCommonStats.getShards().add(new ShardCountStats(++iota));
 
+        indicesCommonStats.getDenseVectorStats().add(new DenseVectorStats(++iota));
+
         return indicesCommonStats;
     }
 
@@ -650,13 +662,10 @@ public class NodeStatsTests extends ESTestCase {
     }
 
     public static NodeStats createNodeStats() {
-        DiscoveryNode node = DiscoveryNodeUtils.create(
-            "test_node",
-            buildNewFakeTransportAddress(),
-            emptyMap(),
-            emptySet(),
-            VersionUtils.randomVersion(random())
-        );
+        DiscoveryNode node = DiscoveryNodeUtils.builder("test_node")
+            .roles(emptySet())
+            .version(VersionUtils.randomVersion(random()), IndexVersions.ZERO, IndexVersionUtils.randomVersion())
+            .build();
         NodeIndicesStats nodeIndicesStats = null;
         if (frequently()) {
             final Index indexTest = new Index("test", "_na_");
@@ -672,7 +681,7 @@ public class NodeStatsTests extends ESTestCase {
             statsByShard.put(indexTest, indexShardStats);
 
             CommonStats oldStats = new CommonStats(CommonStatsFlags.ALL);
-            nodeIndicesStats = new NodeIndicesStats(oldStats, statsByIndex, statsByShard);
+            nodeIndicesStats = new NodeIndicesStats(oldStats, statsByIndex, statsByShard, true);
         }
         OsStats osStats = null;
         if (frequently()) {
@@ -851,7 +860,12 @@ public class NodeStatsTests extends ESTestCase {
                 );
                 clientStats.add(cs);
             }
-            httpStats = new HttpStats(randomNonNegativeLong(), randomNonNegativeLong(), clientStats);
+            httpStats = new HttpStats(
+                randomNonNegativeLong(),
+                randomNonNegativeLong(),
+                clientStats,
+                randomMap(1, 3, () -> new Tuple<>(randomAlphaOfLength(10), HttpStatsTests.randomHttpRouteStats()))
+            );
         }
         AllCircuitBreakerStats allCircuitBreakerStats = null;
         if (frequently()) {
@@ -1026,6 +1040,10 @@ public class NodeStatsTests extends ESTestCase {
                 randomLongBetween(0, maxStatValue)
             );
         }
+        RepositoriesStats repositoriesStats = new RepositoriesStats(
+            Map.of("test-repository", new RepositoriesStats.ThrottlingStats(100, 200))
+        );
+
         return new NodeStats(
             node,
             randomNonNegativeLong(),
@@ -1043,7 +1061,8 @@ public class NodeStatsTests extends ESTestCase {
             ingestStats,
             adaptiveSelectionStats,
             scriptCacheStats,
-            indexingPressureStats
+            indexingPressureStats,
+            repositoriesStats
         );
     }
 
@@ -1059,7 +1078,4 @@ public class NodeStatsTests extends ESTestCase {
         }
     }
 
-    private IngestStats.Stats getPipelineStats(List<IngestStats.PipelineStat> pipelineStats, String id) {
-        return pipelineStats.stream().filter(p1 -> p1.pipelineId().equals(id)).findFirst().map(p2 -> p2.stats()).orElse(null);
-    }
 }

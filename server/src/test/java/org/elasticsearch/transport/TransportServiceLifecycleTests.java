@@ -22,6 +22,7 @@ import org.elasticsearch.threadpool.ThreadPool;
 
 import java.util.Random;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -50,11 +51,7 @@ public class TransportServiceLifecycleTests extends ESTestCase {
                 for (int i = 0; i < threads.length; i++) {
                     final var seed = randomLong();
                     threads[i] = new Thread(() -> {
-                        try {
-                            startBarrier.await(10, TimeUnit.SECONDS);
-                        } catch (Exception e) {
-                            throw new AssertionError(e);
-                        }
+                        safeAwait(startBarrier);
                         final var random = new Random(seed);
                         while (keepGoing.get() && requestPermits.tryAcquire()) {
                             nodeB.transportService.sendRequest(
@@ -85,8 +82,8 @@ public class TransportServiceLifecycleTests extends ESTestCase {
                                     }
 
                                     @Override
-                                    public String executor() {
-                                        return executor;
+                                    public Executor executor(ThreadPool threadPool) {
+                                        return threadPool.executor(executor);
                                     }
                                 }
                             );
@@ -135,7 +132,7 @@ public class TransportServiceLifecycleTests extends ESTestCase {
                     return super.executor(name);
                 }
             };
-            final var tcpTransport = MockTransportService.newMockTransport(Settings.EMPTY, TransportVersion.CURRENT, threadPool);
+            final var tcpTransport = MockTransportService.newMockTransport(Settings.EMPTY, TransportVersion.current(), threadPool);
             transportService = new TransportService(
                 Settings.EMPTY,
                 tcpTransport,
@@ -154,7 +151,7 @@ public class TransportServiceLifecycleTests extends ESTestCase {
             for (final var executor : EXECUTOR_NAMES) {
                 transportService.registerRequestHandler(
                     ACTION_NAME_PREFIX + executor,
-                    executor,
+                    threadPool.executor(executor),
                     TransportRequest.Empty::new,
                     (request, channel, task) -> {
                         if (randomBoolean()) {

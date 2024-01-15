@@ -16,6 +16,7 @@ import org.elasticsearch.core.Assertions;
 import org.elasticsearch.core.CheckedConsumer;
 import org.elasticsearch.core.CheckedFunction;
 import org.elasticsearch.core.CheckedRunnable;
+import org.elasticsearch.core.RefCounted;
 import org.elasticsearch.core.Releasable;
 
 import java.util.ArrayList;
@@ -23,6 +24,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static org.elasticsearch.action.ActionListenerImplementations.runnableFromReleasable;
 import static org.elasticsearch.action.ActionListenerImplementations.safeAcceptException;
@@ -67,6 +69,13 @@ public interface ActionListener<Response> {
      */
     default <T> ActionListener<T> map(CheckedFunction<T, Response, Exception> fn) {
         return new ActionListenerImplementations.MappedActionListener<>(fn, this);
+    }
+
+    /**
+     * Same as {@link #map(CheckedFunction)} except that {@code fn} is expected to never throw.
+     */
+    default <T> ActionListener<T> safeMap(Function<T, Response> fn) {
+        return new ActionListenerImplementations.SafeMappedActionListener<>(fn, this);
     }
 
     /**
@@ -137,15 +146,6 @@ public interface ActionListener<Response> {
     }
 
     /**
-     * @deprecated in favour of {@link #running(Runnable)} because this implementation doesn't "wrap" exceptions from {@link #onResponse}
-     * into {@link #onFailure}.
-     */
-    @Deprecated(forRemoval = true)
-    static <Response> ActionListener<Response> wrap(Runnable runnable) {
-        return running(runnable);
-    }
-
-    /**
      * Creates a listener that executes the appropriate consumer when the response (or failure) is received. This listener is "wrapped" in
      * the sense that an exception from the {@code onResponse} consumer is passed into the {@code onFailure} consumer.
      * <p>
@@ -180,29 +180,6 @@ public interface ActionListener<Response> {
             @Override
             public String toString() {
                 return "WrappedActionListener{" + onResponse + "}{" + onFailure + "}";
-            }
-        };
-    }
-
-    /**
-     * Adds a wrapper around a listener which catches exceptions thrown by its {@link #onResponse} method and feeds them to its
-     * {@link #onFailure} method.
-     */
-    static <DelegateResponse, Response extends DelegateResponse> ActionListener<Response> wrap(ActionListener<DelegateResponse> delegate) {
-        return new ActionListener<>() {
-            @Override
-            public void onResponse(Response response) {
-                ActionListener.run(delegate, l -> l.onResponse(response));
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                safeOnFailure(delegate, e);
-            }
-
-            @Override
-            public String toString() {
-                return "wrapped{" + delegate + "}";
             }
         };
     }
@@ -275,29 +252,7 @@ public interface ActionListener<Response> {
      * and {@link #onFailure(Exception)} of the provided listener will be called at most once.
      */
     static <Response> ActionListener<Response> notifyOnce(ActionListener<Response> delegate) {
-        final var delegateRef = new AtomicReference<>(delegate);
-        return new ActionListener<>() {
-            @Override
-            public void onResponse(Response response) {
-                final var acquired = delegateRef.getAndSet(null);
-                if (acquired != null) {
-                    acquired.onResponse(response);
-                }
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                final var acquired = delegateRef.getAndSet(null);
-                if (acquired != null) {
-                    safeOnFailure(acquired, e);
-                }
-            }
-
-            @Override
-            public String toString() {
-                return "notifyOnce[" + delegateRef.get() + "]";
-            }
-        };
+        return new ActionListenerImplementations.NotifyOnceActionListener<>(delegate);
     }
 
     /**
@@ -324,6 +279,18 @@ public interface ActionListener<Response> {
     }
 
     /**
+     * Shorthand for resolving given {@code listener} with given {@code response} and decrementing the response's ref count by one
+     * afterwards.
+     */
+    static <R extends RefCounted> void respondAndRelease(ActionListener<R> listener, R response) {
+        try {
+            listener.onResponse(response);
+        } finally {
+            response.decRef();
+        }
+    }
+
+    /**
      * @return A listener which (if assertions are enabled) wraps around the given delegate and asserts that it is only called once.
      */
     static <Response> ActionListener<Response> assertOnce(ActionListener<Response> delegate) {
@@ -341,7 +308,12 @@ public interface ActionListener<Response> {
                 @Override
                 public void onResponse(Response response) {
                     assertFirstRun();
-                    delegate.onResponse(response);
+                    try {
+                        delegate.onResponse(response);
+                    } catch (Exception e) {
+                        assert false : new AssertionError("listener [" + delegate + "] must handle its own exceptions", e);
+                        throw e;
+                    }
                 }
 
                 @Override
@@ -377,12 +349,32 @@ public interface ActionListener<Response> {
     /**
      * Execute the given action in a {@code try/catch} block which feeds all exceptions to the given listener's {@link #onFailure} method.
      */
-    static <T, L extends ActionListener<T>> void run(L listener, CheckedConsumer<L, Exception> action) {
+    static <T, L extends ActionListener<T>> void run(L listener, CheckedConsumer<L, ? extends Exception> action) {
         try {
             action.accept(listener);
         } catch (Exception e) {
             safeOnFailure(listener, e);
         }
+    }
+
+    /**
+     * Execute the given action in an (async equivalent of a) try-with-resources block which closes the supplied resource on completion, and
+     * feeds all exceptions to the given listener's {@link #onFailure} method.
+     */
+    static <T, R extends AutoCloseable> void runWithResource(
+        ActionListener<T> listener,
+        CheckedSupplier<R, ? extends Exception> resourceSupplier,
+        CheckedBiConsumer<ActionListener<T>, R, ? extends Exception> action
+    ) {
+        R resource;
+        try {
+            resource = resourceSupplier.get();
+        } catch (Exception e) {
+            safeOnFailure(listener, e);
+            return;
+        }
+
+        ActionListener.run(ActionListener.runBefore(listener, resource::close), l -> action.accept(l, resource));
     }
 
 }

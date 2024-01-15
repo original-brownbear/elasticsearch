@@ -21,7 +21,7 @@ import static org.elasticsearch.rest.RestRequest.Method.DELETE;
 
 public class RestDeleteLicenseAction extends BaseRestHandler {
 
-    RestDeleteLicenseAction() {}
+    public RestDeleteLicenseAction() {}
 
     @Override
     public List<Route> routes() {
@@ -41,6 +41,6 @@ public class RestDeleteLicenseAction extends BaseRestHandler {
 
         return channel -> client.admin()
             .cluster()
-            .execute(DeleteLicenseAction.INSTANCE, deleteLicenseRequest, new RestToXContentListener<>(channel));
+            .execute(TransportDeleteLicenseAction.TYPE, deleteLicenseRequest, new RestToXContentListener<>(channel));
     }
 }

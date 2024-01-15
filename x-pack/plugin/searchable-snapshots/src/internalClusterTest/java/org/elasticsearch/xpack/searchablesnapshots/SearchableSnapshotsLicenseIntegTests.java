@@ -17,7 +17,6 @@ import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.license.DeleteLicenseAction;
 import org.elasticsearch.license.License;
 import org.elasticsearch.license.LicensesMetadata;
 import org.elasticsearch.license.PostStartBasicAction;
@@ -25,6 +24,7 @@ import org.elasticsearch.license.PostStartBasicRequest;
 import org.elasticsearch.license.PostStartTrialAction;
 import org.elasticsearch.license.PostStartTrialRequest;
 import org.elasticsearch.license.PostStartTrialResponse;
+import org.elasticsearch.license.TransportDeleteLicenseAction;
 import org.elasticsearch.protocol.xpack.license.DeleteLicenseRequest;
 import org.elasticsearch.test.ESIntegTestCase;
 import org.elasticsearch.xpack.core.searchablesnapshots.MountSearchableSnapshotAction;
@@ -61,7 +61,7 @@ public class SearchableSnapshotsLicenseIntegTests extends BaseFrozenSearchableSn
         createIndex(indexName);
         createFullSnapshot(repoName, snapshotName);
 
-        assertAcked(client().admin().indices().prepareDelete(indexName));
+        assertAcked(indicesAdmin().prepareDelete(indexName));
 
         final MountSearchableSnapshotRequest req = new MountSearchableSnapshotRequest(
             indexName,
@@ -78,7 +78,7 @@ public class SearchableSnapshotsLicenseIntegTests extends BaseFrozenSearchableSn
         assertThat(restoreSnapshotResponse.getRestoreInfo().failedShards(), equalTo(0));
         ensureGreen(indexName);
 
-        assertAcked(client().execute(DeleteLicenseAction.INSTANCE, new DeleteLicenseRequest()).get());
+        assertAcked(client().execute(TransportDeleteLicenseAction.TYPE, new DeleteLicenseRequest()).get());
         assertAcked(client().execute(PostStartBasicAction.INSTANCE, new PostStartBasicRequest()).get());
 
         ensureClusterSizeConsistency();
@@ -141,7 +141,7 @@ public class SearchableSnapshotsLicenseIntegTests extends BaseFrozenSearchableSn
         assertBusy(
             () -> assertEquals(
                 ClusterHealthStatus.RED,
-                client().admin().cluster().prepareHealth(indexName).get().getIndices().get(indexName).getStatus()
+                clusterAdmin().prepareHealth(indexName).get().getIndices().get(indexName).getStatus()
             )
         );
 

@@ -18,6 +18,7 @@ import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.node.DiscoveryNodeRole;
+import org.elasticsearch.cluster.node.VersionInformation;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -30,6 +31,8 @@ import org.elasticsearch.common.util.concurrent.ListenableFuture;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.core.Booleans;
 import org.elasticsearch.core.IOUtils;
+import org.elasticsearch.index.IndexVersion;
+import org.elasticsearch.index.IndexVersions;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.xcontent.XContentBuilder;
 
@@ -42,6 +45,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -121,6 +125,7 @@ public class SniffConnectionStrategy extends RemoteConnectionStrategy {
     private final Predicate<DiscoveryNode> nodePredicate;
     private final SetOnce<ClusterName> remoteClusterName = new SetOnce<>();
     private final String proxyAddress;
+    private final Executor managementExecutor;
 
     SniffConnectionStrategy(
         String clusterAlias,
@@ -182,6 +187,7 @@ public class SniffConnectionStrategy extends RemoteConnectionStrategy {
         this.nodePredicate = nodePredicate;
         this.configuredSeedNodes = configuredSeedNodes;
         this.seedNodes = seedNodes;
+        this.managementExecutor = transportService.getThreadPool().executor(ThreadPool.Names.MANAGEMENT);
     }
 
     static Stream<Setting.AffixSetting<?>> enablementSettings() {
@@ -306,8 +312,8 @@ public class SniffConnectionStrategy extends RemoteConnectionStrategy {
                 final AbstractSniffResponseHandler<?> sniffResponseHandler;
                 // Use different action to collect nodes information depending on the connection model
                 if (REMOTE_CLUSTER_PROFILE.equals(connectionManager.getConnectionProfile().getTransportProfile())) {
-                    action = RemoteClusterNodesAction.NAME;
-                    request = RemoteClusterNodesAction.Request.INSTANCE;
+                    action = RemoteClusterNodesAction.TYPE.name();
+                    request = RemoteClusterNodesAction.Request.REMOTE_CLUSTER_SERVER_NODES;
                     sniffResponseHandler = new RemoteClusterNodesSniffResponseHandler(connection, listener, seedNodesSuppliers);
                 } else {
                     action = ClusterStateAction.NAME;
@@ -351,7 +357,11 @@ public class SniffConnectionStrategy extends RemoteConnectionStrategy {
                 : "transport profile must be consistent between the connection manager and the actual profile";
             transportService.connectionValidator(node)
                 .validate(
-                    RemoteConnectionManager.wrapConnectionWithRemoteClusterInfo(connection, clusterAlias, profile.getTransportProfile()),
+                    RemoteConnectionManager.wrapConnectionWithRemoteClusterInfo(
+                        connection,
+                        clusterAlias,
+                        connectionManager.getCredentialsManager()
+                    ),
                     profile,
                     listener
                 );
@@ -468,8 +478,8 @@ public class SniffConnectionStrategy extends RemoteConnectionStrategy {
         }
 
         @Override
-        public String executor() {
-            return ThreadPool.Names.MANAGEMENT;
+        public Executor executor(ThreadPool threadPool) {
+            return managementExecutor;
         }
     }
 
@@ -490,6 +500,11 @@ public class SniffConnectionStrategy extends RemoteConnectionStrategy {
     }
 
     private static DiscoveryNode resolveSeedNode(String clusterAlias, String address, String proxyAddress) {
+        var seedVersion = new VersionInformation(
+            Version.CURRENT.minimumCompatibilityVersion(),
+            IndexVersions.MINIMUM_COMPATIBLE,
+            IndexVersion.current()
+        );
         if (proxyAddress == null || proxyAddress.isEmpty()) {
             TransportAddress transportAddress = new TransportAddress(parseConfiguredAddress(address));
             return new DiscoveryNode(
@@ -498,7 +513,7 @@ public class SniffConnectionStrategy extends RemoteConnectionStrategy {
                 transportAddress,
                 Collections.emptyMap(),
                 DiscoveryNodeRole.roles(),
-                Version.CURRENT.minimumCompatibilityVersion()
+                seedVersion
             );
         } else {
             TransportAddress transportAddress = new TransportAddress(parseConfiguredAddress(proxyAddress));
@@ -512,7 +527,7 @@ public class SniffConnectionStrategy extends RemoteConnectionStrategy {
                 transportAddress,
                 Collections.singletonMap("server_name", hostName),
                 DiscoveryNodeRole.roles(),
-                Version.CURRENT.minimumCompatibilityVersion()
+                seedVersion
             );
         }
     }
@@ -542,7 +557,7 @@ public class SniffConnectionStrategy extends RemoteConnectionStrategy {
                 new TransportAddress(proxyInetAddress),
                 node.getAttributes(),
                 node.getRoles(),
-                node.getVersion()
+                node.getVersionInformation()
             );
         }
     }
@@ -596,7 +611,7 @@ public class SniffConnectionStrategy extends RemoteConnectionStrategy {
 
         @Override
         public void writeTo(StreamOutput out) throws IOException {
-            out.writeStringArray(seedNodes.toArray(new String[0]));
+            out.writeStringCollection(seedNodes);
             out.writeVInt(maxConnectionsPerCluster);
             out.writeVInt(numNodesConnected);
         }
@@ -609,18 +624,6 @@ public class SniffConnectionStrategy extends RemoteConnectionStrategy {
         @Override
         public String modeName() {
             return "sniff";
-        }
-
-        public List<String> getSeedNodes() {
-            return seedNodes;
-        }
-
-        public int getMaxConnectionsPerCluster() {
-            return maxConnectionsPerCluster;
-        }
-
-        public int getNumNodesConnected() {
-            return numNodesConnected;
         }
 
         @Override
