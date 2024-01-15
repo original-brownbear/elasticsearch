@@ -77,7 +77,7 @@ public class TranslogWriter extends BaseTranslogReader implements Closeable {
 
     private List<Long> nonFsyncedSequenceNumbers = new ArrayList<>(64);
     private final int forceWriteThreshold;
-    private volatile long bufferedBytes;
+    private volatile int bufferedBytes;
     private ReleasableBytesStreamOutput buffer;
 
     private final Map<Long, Tuple<BytesReference, Exception>> seenSequenceNumbers;
@@ -217,15 +217,14 @@ public class TranslogWriter extends BaseTranslogReader implements Closeable {
     }
 
     /**
-     * Add the given bytes to the translog with the specified sequence number; returns the location the bytes were written to.
+     * Add the given operation to the translog; returns the location the bytes were written to.
      *
-     * @param data  the bytes to write
-     * @param seqNo the sequence number associated with the operation
+     * @param operation the operation to write
      * @return the location the bytes were written to
      * @throws IOException if writing to the translog resulted in an I/O exception
      */
-    public Translog.Location add(final BytesReference data, final long seqNo) throws IOException {
-        long bufferedBytesBeforeAdd = this.bufferedBytes;
+    public Translog.Location add(final Translog.Operation operation) throws IOException {
+        int bufferedBytesBeforeAdd = this.bufferedBytes;
         if (bufferedBytesBeforeAdd >= forceWriteThreshold) {
             writeBufferedOps(Long.MAX_VALUE, bufferedBytesBeforeAdd >= forceWriteThreshold * 4);
         }
@@ -238,12 +237,16 @@ public class TranslogWriter extends BaseTranslogReader implements Closeable {
             }
             assert bufferedBytes == buffer.size();
             final long offset = totalOffset;
-            totalOffset += data.length();
-            data.writeTo(buffer);
+
+            bufferedBytesBeforeAdd = this.bufferedBytes;
+            Translog.writeOperationWithSize(buffer, operation);
+            final int writtenBytes = buffer.size() - bufferedBytesBeforeAdd;
+            totalOffset += writtenBytes;
 
             assert minSeqNo != SequenceNumbers.NO_OPS_PERFORMED || operationCounter == 0;
             assert maxSeqNo != SequenceNumbers.NO_OPS_PERFORMED || operationCounter == 0;
 
+            final long seqNo = operation.seqNo;
             minSeqNo = SequenceNumbers.min(minSeqNo, seqNo);
             maxSeqNo = SequenceNumbers.max(maxSeqNo, seqNo);
 
@@ -251,9 +254,10 @@ public class TranslogWriter extends BaseTranslogReader implements Closeable {
 
             operationCounter++;
 
+            BytesReference data = buffer.bytes().slice(bufferedBytes, writtenBytes);
             assert assertNoSeqNumberConflict(seqNo, data);
 
-            location = new Translog.Location(generation, offset, data.length());
+            location = new Translog.Location(generation, offset, writtenBytes);
             operationListener.operationAdded(data, seqNo, location);
             bufferedBytes = buffer.size();
         }
