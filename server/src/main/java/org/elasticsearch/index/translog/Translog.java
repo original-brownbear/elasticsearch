@@ -575,21 +575,7 @@ public class Translog extends AbstractIndexShardComponent implements IndexShardC
             try (ReleasableLock ignored = readLock.acquire()) {
                 ensureOpen();
                 if (operation.primaryTerm() > current.getPrimaryTerm()) {
-                    assert false
-                        : "Operation term is newer than the current term; "
-                            + "current term["
-                            + current.getPrimaryTerm()
-                            + "], operation term["
-                            + operation
-                            + "]";
-                    throw new IllegalArgumentException(
-                        "Operation term is newer than the current term; "
-                            + "current term["
-                            + current.getPrimaryTerm()
-                            + "], operation term["
-                            + operation
-                            + "]"
-                    );
+                    failOnIllegalPrimaryTerm(operation);
                 }
                 return current.add(operation);
             }
@@ -600,6 +586,19 @@ public class Translog extends AbstractIndexShardComponent implements IndexShardC
             closeOnTragicEvent(ex);
             throw new TranslogException(shardId, "Failed to write operation [" + operation + "]", ex);
         }
+    }
+
+    private void failOnIllegalPrimaryTerm(Operation operation) {
+        IllegalArgumentException e = new IllegalArgumentException(
+            "Operation term is newer than the current term; "
+                + "current term["
+                + current.getPrimaryTerm()
+                + "], operation term["
+                + operation
+                + "]"
+        );
+        assert false : e;
+        throw e;
     }
 
     /**
