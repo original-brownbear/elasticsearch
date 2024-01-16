@@ -13,8 +13,6 @@ import org.elasticsearch.action.TaskOperationFailure;
 import org.elasticsearch.action.admin.cluster.node.tasks.list.ListTasksResponse;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.tasks.TaskInfo;
-import org.elasticsearch.xcontent.ConstructingObjectParser;
-import org.elasticsearch.xcontent.XContentParser;
 
 import java.io.IOException;
 import java.util.List;
@@ -23,11 +21,6 @@ import java.util.List;
  * Returns the list of tasks that were cancelled
  */
 public class CancelTasksResponse extends ListTasksResponse {
-
-    private static final ConstructingObjectParser<CancelTasksResponse, Void> PARSER = setupParser(
-        "cancel_tasks_response",
-        CancelTasksResponse::new
-    );
 
     public CancelTasksResponse(StreamInput in) throws IOException {
         super(in);
@@ -41,7 +34,4 @@ public class CancelTasksResponse extends ListTasksResponse {
         super(tasks, taskFailures, nodeFailures);
     }
 
-    public static CancelTasksResponse fromXContent(XContentParser parser) {
-        return PARSER.apply(parser, null);
-    }
 }

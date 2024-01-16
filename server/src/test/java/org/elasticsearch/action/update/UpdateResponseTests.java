@@ -9,6 +9,7 @@
 package org.elasticsearch.action.update;
 
 import org.elasticsearch.action.DocWriteResponse;
+import org.elasticsearch.action.bulk.BulkItemResponseTests;
 import org.elasticsearch.action.index.IndexResponseTests;
 import org.elasticsearch.action.support.replication.ReplicationResponse;
 import org.elasticsearch.common.Strings;
@@ -38,6 +39,7 @@ import static org.elasticsearch.action.DocWriteResponse.Result.NOT_FOUND;
 import static org.elasticsearch.action.DocWriteResponse.Result.UPDATED;
 import static org.elasticsearch.cluster.metadata.IndexMetadata.INDEX_UUID_NA_VALUE;
 import static org.elasticsearch.common.xcontent.XContentHelper.toXContent;
+import static org.elasticsearch.common.xcontent.XContentParserUtils.ensureExpectedToken;
 import static org.elasticsearch.test.XContentTestUtils.insertRandomFields;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertToXContentEquivalent;
 
@@ -174,7 +176,7 @@ public class UpdateResponseTests extends ESTestCase {
         }
         UpdateResponse parsedUpdateResponse;
         try (XContentParser parser = createParser(xContentType.xContent(), mutated)) {
-            parsedUpdateResponse = UpdateResponse.fromXContent(parser);
+            parsedUpdateResponse = parseInstance(parser);
             assertNull(parser.nextToken());
         }
 
@@ -241,5 +243,31 @@ public class UpdateResponseTests extends ESTestCase {
         expected.setForcedRefresh(forcedRefresh);
 
         return Tuple.tuple(actual, expected);
+    }
+
+    public static UpdateResponse parseInstance(XContentParser parser) throws IOException {
+        ensureExpectedToken(XContentParser.Token.START_OBJECT, parser.nextToken(), parser);
+
+        UpdateResponse.Builder context = new UpdateResponse.Builder();
+        while (parser.nextToken() != XContentParser.Token.END_OBJECT) {
+            parseInstanceFields(parser, context);
+        }
+        return context.build();
+    }
+
+    /**
+     * Parse the current token and update the parsing context appropriately.
+     */
+    public static void parseInstanceFields(XContentParser parser, UpdateResponse.Builder context) throws IOException {
+        XContentParser.Token token = parser.currentToken();
+        String currentFieldName = parser.currentName();
+
+        if (UpdateResponse.GET.equals(currentFieldName)) {
+            if (token == XContentParser.Token.START_OBJECT) {
+                context.setGetResult(GetResultTests.parseInstanceFromEmbedded(parser));
+            }
+        } else {
+            BulkItemResponseTests.parseInnerToXContent(parser, context);
+        }
     }
 }

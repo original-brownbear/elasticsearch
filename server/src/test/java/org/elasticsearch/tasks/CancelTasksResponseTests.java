@@ -15,6 +15,7 @@ import org.elasticsearch.action.admin.cluster.node.tasks.list.ListTasksResponse;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.xcontent.ChunkedToXContent;
 import org.elasticsearch.test.AbstractXContentTestCase;
+import org.elasticsearch.xcontent.ConstructingObjectParser;
 import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.ToXContentObject;
 import org.elasticsearch.xcontent.XContentBuilder;
@@ -31,6 +32,11 @@ import java.util.function.Supplier;
 import static org.hamcrest.Matchers.equalTo;
 
 public class CancelTasksResponseTests extends AbstractXContentTestCase<CancelTasksResponseTests.CancelTasksResponseWrapper> {
+
+    private static final ConstructingObjectParser<CancelTasksResponse, Void> PARSER = ListTasksResponseTests.setupParser(
+        "cancel_tasks_response",
+        CancelTasksResponse::new
+    );
 
     // CancelTasksResponse doesn't directly implement ToXContent because it has multiple XContent representations, so we must wrap here
     public record CancelTasksResponseWrapper(CancelTasksResponse in) implements ToXContentObject {
@@ -72,7 +78,7 @@ public class CancelTasksResponseTests extends AbstractXContentTestCase<CancelTas
 
     @Override
     protected CancelTasksResponseWrapper doParseInstance(XContentParser parser) {
-        return new CancelTasksResponseWrapper(CancelTasksResponse.fromXContent(parser));
+        return new CancelTasksResponseWrapper(PARSER.apply(parser, null));
     }
 
     @Override
