@@ -20,15 +20,12 @@ import org.elasticsearch.xcontent.XContentParser;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import static org.elasticsearch.rest.RestRequest.Method.PUT;
 
 @ServerlessScope(Scope.INTERNAL)
 public class RestClusterUpdateSettingsAction extends BaseRestHandler {
-    private static final String PERSISTENT = "persistent";
-    private static final String TRANSIENT = "transient";
 
     @Override
     public List<Route> routes() {
@@ -43,22 +40,15 @@ public class RestClusterUpdateSettingsAction extends BaseRestHandler {
     @Override
     @SuppressWarnings("unchecked")
     public RestChannelConsumer prepareRequest(final RestRequest request, final NodeClient client) throws IOException {
-        final ClusterUpdateSettingsRequest clusterUpdateSettingsRequest = new ClusterUpdateSettingsRequest();
+        final ClusterUpdateSettingsRequest clusterUpdateSettingsRequest;
+        try (XContentParser parser = request.contentParser()) {
+            clusterUpdateSettingsRequest = ClusterUpdateSettingsRequest.fromXContent(parser);
+        }
+
         clusterUpdateSettingsRequest.timeout(request.paramAsTime("timeout", clusterUpdateSettingsRequest.timeout()));
         clusterUpdateSettingsRequest.masterNodeTimeout(
             request.paramAsTime("master_timeout", clusterUpdateSettingsRequest.masterNodeTimeout())
         );
-        Map<String, Object> source;
-        try (XContentParser parser = request.contentParser()) {
-            source = parser.map();
-        }
-        if (source.containsKey(TRANSIENT)) {
-            clusterUpdateSettingsRequest.transientSettings((Map<String, ?>) source.get(TRANSIENT));
-        }
-        if (source.containsKey(PERSISTENT)) {
-            clusterUpdateSettingsRequest.persistentSettings((Map<String, ?>) source.get(PERSISTENT));
-        }
-
         return channel -> client.admin().cluster().updateSettings(clusterUpdateSettingsRequest, new RestToXContentListener<>(channel));
     }
 

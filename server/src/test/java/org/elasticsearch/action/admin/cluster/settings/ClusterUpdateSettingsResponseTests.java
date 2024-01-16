@@ -8,23 +8,38 @@
 
 package org.elasticsearch.action.admin.cluster.settings;
 
+import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.settings.Settings.Builder;
 import org.elasticsearch.test.AbstractXContentSerializingTestCase;
+import org.elasticsearch.xcontent.ConstructingObjectParser;
 import org.elasticsearch.xcontent.XContentParser;
 
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 
+import static org.elasticsearch.xcontent.ConstructingObjectParser.constructorArg;
+
 public class ClusterUpdateSettingsResponseTests extends AbstractXContentSerializingTestCase<ClusterUpdateSettingsResponse> {
+
+    private static final ConstructingObjectParser<ClusterUpdateSettingsResponse, Void> PARSER = new ConstructingObjectParser<>(
+        "cluster_update_settings_response",
+        true,
+        args -> new ClusterUpdateSettingsResponse((boolean) args[0], (Settings) args[1], (Settings) args[2])
+    );
+    static {
+        AcknowledgedResponse.declareAcknowledgedField(PARSER);
+        PARSER.declareObject(constructorArg(), (p, c) -> Settings.fromXContent(p), ClusterUpdateSettingsResponse.TRANSIENT);
+        PARSER.declareObject(constructorArg(), (p, c) -> Settings.fromXContent(p), ClusterUpdateSettingsResponse.PERSISTENT);
+    }
 
     @Override
     protected ClusterUpdateSettingsResponse doParseInstance(XContentParser parser) {
-        return ClusterUpdateSettingsResponse.fromXContent(parser);
+        return PARSER.apply(parser, null);
     }
 
     @Override

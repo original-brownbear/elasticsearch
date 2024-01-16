@@ -9,14 +9,10 @@
 package org.elasticsearch.action.admin.indices.flush;
 
 import org.elasticsearch.action.support.DefaultShardOperationFailedException;
-import org.elasticsearch.action.support.broadcast.BaseBroadcastResponse;
 import org.elasticsearch.action.support.broadcast.BroadcastResponse;
 import org.elasticsearch.common.io.stream.StreamInput;
-import org.elasticsearch.xcontent.ConstructingObjectParser;
-import org.elasticsearch.xcontent.XContentParser;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -24,29 +20,11 @@ import java.util.List;
  */
 public class FlushResponse extends BroadcastResponse {
 
-    private static final ConstructingObjectParser<FlushResponse, Void> PARSER = new ConstructingObjectParser<>("flush", true, arg -> {
-        BaseBroadcastResponse response = (BaseBroadcastResponse) arg[0];
-        return new FlushResponse(
-            response.getTotalShards(),
-            response.getSuccessfulShards(),
-            response.getFailedShards(),
-            Arrays.asList(response.getShardFailures())
-        );
-    });
-
-    static {
-        declareBroadcastFields(PARSER);
-    }
-
     FlushResponse(StreamInput in) throws IOException {
         super(in);
     }
 
     FlushResponse(int totalShards, int successfulShards, int failedShards, List<DefaultShardOperationFailedException> shardFailures) {
         super(totalShards, successfulShards, failedShards, shardFailures);
-    }
-
-    public static FlushResponse fromXContent(XContentParser parser) {
-        return PARSER.apply(parser, null);
     }
 }

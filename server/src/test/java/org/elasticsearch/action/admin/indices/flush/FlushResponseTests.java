@@ -9,12 +9,29 @@
 package org.elasticsearch.action.admin.indices.flush;
 
 import org.elasticsearch.action.support.DefaultShardOperationFailedException;
+import org.elasticsearch.action.support.broadcast.BaseBroadcastResponse;
 import org.elasticsearch.test.AbstractBroadcastResponseTestCase;
+import org.elasticsearch.xcontent.ConstructingObjectParser;
 import org.elasticsearch.xcontent.XContentParser;
 
+import java.util.Arrays;
 import java.util.List;
 
 public class FlushResponseTests extends AbstractBroadcastResponseTestCase<FlushResponse> {
+
+    private static final ConstructingObjectParser<FlushResponse, Void> PARSER = new ConstructingObjectParser<>("flush", true, arg -> {
+        BaseBroadcastResponse response = (BaseBroadcastResponse) arg[0];
+        return new FlushResponse(
+            response.getTotalShards(),
+            response.getSuccessfulShards(),
+            response.getFailedShards(),
+            Arrays.asList(response.getShardFailures())
+        );
+    });
+
+    static {
+        BaseBroadcastResponse.declareBroadcastFields(PARSER);
+    }
 
     @Override
     protected FlushResponse createTestInstance(
@@ -28,6 +45,6 @@ public class FlushResponseTests extends AbstractBroadcastResponseTestCase<FlushR
 
     @Override
     protected FlushResponse doParseInstance(XContentParser parser) {
-        return FlushResponse.fromXContent(parser);
+        return PARSER.apply(parser, null);
     }
 }
