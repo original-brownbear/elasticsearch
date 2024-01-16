@@ -104,12 +104,7 @@ final class DataNodeRequest extends TransportRequest implements IndicesRequest {
             assert false : "DataNodeRequest must have a parent task";
             throw new IllegalStateException("DataNodeRequest must have a parent task");
         }
-        return new CancellableTask(id, type, action, "", parentTaskId, headers) {
-            @Override
-            public String getDescription() {
-                return DataNodeRequest.this.getDescription();
-            }
-        };
+        return CancellableTask.forRequest(id, type, action, this, parentTaskId, headers);
     }
 
     String sessionId() {

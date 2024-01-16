@@ -159,12 +159,7 @@ class FieldCapabilitiesNodeRequest extends ActionRequest implements IndicesReque
 
     @Override
     public Task createTask(long id, String type, String action, TaskId parentTaskId, Map<String, String> headers) {
-        return new CancellableTask(id, type, action, "", parentTaskId, headers) {
-            @Override
-            public String getDescription() {
-                return FieldCapabilitiesNodeRequest.this.getDescription();
-            }
-        };
+        return CancellableTask.forRequest(id, type, action, this, parentTaskId, headers);
     }
 
     @Override

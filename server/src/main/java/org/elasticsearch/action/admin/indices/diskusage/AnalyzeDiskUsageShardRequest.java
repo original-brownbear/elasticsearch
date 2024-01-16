@@ -40,12 +40,7 @@ final class AnalyzeDiskUsageShardRequest extends BroadcastShardRequest {
 
     @Override
     public Task createTask(long id, String type, String action, TaskId parentTaskId, Map<String, String> headers) {
-        return new CancellableTask(id, type, action, "", parentTaskId, headers) {
-            @Override
-            public String getDescription() {
-                return AnalyzeDiskUsageShardRequest.this.getDescription();
-            }
-        };
+        return CancellableTask.forRequest(id, type, action, this, parentTaskId, headers);
     }
 
     @Override

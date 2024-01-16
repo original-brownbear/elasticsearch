@@ -55,12 +55,7 @@ public class FieldUsageStatsRequest extends BroadcastRequest<FieldUsageStatsRequ
 
     @Override
     public Task createTask(long id, String type, String action, TaskId parentTaskId, Map<String, String> headers) {
-        return new CancellableTask(id, FieldUsageStatsAction.NAME, type, "", parentTaskId, headers) {
-            @Override
-            public String getDescription() {
-                return FieldUsageStatsRequest.this.getDescription();
-            }
-        };
+        return CancellableTask.forRequest(id, FieldUsageStatsAction.NAME, type, this, parentTaskId, headers);
     }
 
     @Override

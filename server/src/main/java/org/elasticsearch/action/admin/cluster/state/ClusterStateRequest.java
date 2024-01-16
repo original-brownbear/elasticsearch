@@ -188,7 +188,7 @@ public class ClusterStateRequest extends MasterNodeReadRequest<ClusterStateReque
 
     @Override
     public Task createTask(long id, String type, String action, TaskId parentTaskId, Map<String, String> headers) {
-        return new CancellableTask(id, type, action, getDescription(), parentTaskId, headers);
+        return CancellableTask.forRequest(id, type, action, this, parentTaskId, headers);
     }
 
     @Override

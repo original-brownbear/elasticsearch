@@ -11,6 +11,7 @@ package org.elasticsearch.tasks;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.support.SubscribableListener;
 import org.elasticsearch.core.Nullable;
+import org.elasticsearch.transport.TransportRequest;
 
 import java.util.Map;
 
@@ -25,6 +26,22 @@ public class CancellableTask extends Task {
 
     public CancellableTask(long id, String type, String action, String description, TaskId parentTaskId, Map<String, String> headers) {
         super(id, type, action, description, parentTaskId, headers);
+    }
+
+    public static CancellableTask forRequest(
+        long id,
+        String type,
+        String action,
+        TransportRequest request,
+        TaskId parentTaskId,
+        Map<String, String> headers
+    ) {
+        return new CancellableTask(id, type, action, "", parentTaskId, headers) {
+            @Override
+            public String getDescription() {
+                return request.getDescription();
+            }
+        };
     }
 
     /**

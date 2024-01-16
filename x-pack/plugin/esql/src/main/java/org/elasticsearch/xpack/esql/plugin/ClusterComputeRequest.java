@@ -106,12 +106,7 @@ final class ClusterComputeRequest extends TransportRequest implements IndicesReq
             assert false : "DataNodeRequest must have a parent task";
             throw new IllegalStateException("DataNodeRequest must have a parent task");
         }
-        return new CancellableTask(id, type, action, "", parentTaskId, headers) {
-            @Override
-            public String getDescription() {
-                return ClusterComputeRequest.this.getDescription();
-            }
-        };
+        return CancellableTask.forRequest(id, type, action, this, parentTaskId, headers);
     }
 
     String clusterAlias() {

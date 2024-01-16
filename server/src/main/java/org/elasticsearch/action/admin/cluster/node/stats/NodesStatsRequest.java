@@ -162,12 +162,7 @@ public class NodesStatsRequest extends BaseNodesRequest<NodesStatsRequest> {
 
     @Override
     public Task createTask(long id, String type, String action, TaskId parentTaskId, Map<String, String> headers) {
-        return new CancellableTask(id, type, action, "", parentTaskId, headers) {
-            @Override
-            public String getDescription() {
-                return NodesStatsRequest.this.getDescription();
-            }
-        };
+        return CancellableTask.forRequest(id, type, action, this, parentTaskId, headers);
     }
 
     public boolean includeShardsStats() {
