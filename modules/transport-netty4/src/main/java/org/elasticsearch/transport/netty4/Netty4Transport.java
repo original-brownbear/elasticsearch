@@ -9,6 +9,7 @@ package org.elasticsearch.transport.netty4;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.ByteBufOutputStream;
 import io.netty.channel.AdaptiveRecvByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -28,6 +29,8 @@ import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.cluster.node.DiscoveryNode;
+import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.io.stream.BytesStream;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.recycler.Recycler;
@@ -51,6 +54,7 @@ import org.elasticsearch.transport.TcpTransport;
 import org.elasticsearch.transport.TransportSettings;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.util.Map;
 
@@ -329,6 +333,56 @@ public class Netty4Transport extends TcpTransport {
                 sharedGroup.shutdown();
             }
         }, serverBootstraps::clear, () -> clientBootstrap = null);
+    }
+
+    @Override
+    public BytesStream newNetworkBytesStream() {
+        final long maxAllocSize = NettyAllocator.suggestedMaxAllocationSize();
+        final int maxComponents = Math.toIntExact(Integer.MAX_VALUE / maxAllocSize);
+        final ByteBufOutputStream out = new ByteBufOutputStream(NettyAllocator.getAllocator().compositeBuffer(maxComponents));
+        return new BytesStream() {
+            @Override
+            public BytesReference bytes() {
+                return Netty4Utils.toBytesReference(out.buffer());
+            }
+
+            @Override
+            public void flush() {}
+
+            @Override
+            public void close() {
+                try {
+                    out.close();
+                    out.buffer().release();
+                } catch (IOException e) {
+                    assert false : e;
+                    throw new UncheckedIOException(e);
+                }
+            }
+
+            @Override
+            public void seek(long position) {
+                int pos = Math.toIntExact(position);
+                var buf = out.buffer();
+                buf.ensureWritable(pos);
+                buf.writerIndex(pos);
+            }
+
+            @Override
+            public long position() {
+                return out.buffer().writerIndex();
+            }
+
+            @Override
+            public void writeByte(byte b) throws IOException {
+                out.writeByte(b);
+            }
+
+            @Override
+            public void writeBytes(byte[] b, int offset, int length) throws IOException {
+                out.write(b, offset, length);
+            }
+        };
     }
 
     protected class ClientChannelInitializer extends ChannelInitializer<Channel> {

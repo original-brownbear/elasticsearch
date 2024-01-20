@@ -114,6 +114,7 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.cluster.service.FakeThreadPoolMasterService;
 import org.elasticsearch.cluster.service.MasterService;
 import org.elasticsearch.cluster.version.CompatibilityVersionsUtils;
+import org.elasticsearch.common.io.stream.BytesStream;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.RecyclerBytesStreamOutput;
 import org.elasticsearch.common.network.NetworkModule;
@@ -1683,7 +1684,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
                     }
 
                     @Override
-                    public RecyclerBytesStreamOutput newNetworkBytesStream() {
+                    public BytesStream newNetworkBytesStream() {
                         // skip leak checks in these tests since they do indeed leak
                         return new RecyclerBytesStreamOutput(BytesRefRecycler.NON_RECYCLING_INSTANCE);
                         // TODO fix these leaks and implement leak checking

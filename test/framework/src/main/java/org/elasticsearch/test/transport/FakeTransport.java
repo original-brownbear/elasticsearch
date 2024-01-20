@@ -12,6 +12,8 @@ import org.elasticsearch.TransportVersion;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
+import org.elasticsearch.common.io.stream.BytesStream;
+import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.transport.BoundTransportAddress;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.transport.CloseableConnection;
@@ -101,6 +103,11 @@ public class FakeTransport extends AbstractLifecycleComponent implements Transpo
     @Override
     public RequestHandlers getRequestHandlers() {
         return requestHandlers;
+    }
+
+    @Override
+    public BytesStream newNetworkBytesStream() {
+        return new BytesStreamOutput();
     }
 
     @Override

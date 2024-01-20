@@ -14,8 +14,8 @@ import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.bytes.CompositeBytesReference;
 import org.elasticsearch.common.compress.CompressorFactory;
+import org.elasticsearch.common.io.stream.BytesStream;
 import org.elasticsearch.common.io.stream.OutputStreamStreamOutput;
-import org.elasticsearch.common.io.stream.RecyclerBytesStreamOutput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
@@ -39,7 +39,7 @@ abstract class OutboundMessage extends NetworkMessage {
         this.message = message;
     }
 
-    BytesReference serialize(RecyclerBytesStreamOutput bytesStream) throws IOException {
+    BytesReference serialize(BytesStream bytesStream) throws IOException {
         bytesStream.setTransportVersion(version);
         bytesStream.skip(TcpHeader.headerSize(version));
 
@@ -93,7 +93,7 @@ abstract class OutboundMessage extends NetworkMessage {
 
     // compressed stream wrapped bytes must be no-close wrapped since we need to close the compressed wrapper below to release
     // resources and write EOS marker bytes but must not yet release the bytes themselves
-    private StreamOutput wrapCompressed(RecyclerBytesStreamOutput bytesStream) throws IOException {
+    private StreamOutput wrapCompressed(BytesStream bytesStream) throws IOException {
         if (compressionScheme == Compression.Scheme.DEFLATE) {
             return new OutputStreamStreamOutput(
                 CompressorFactory.COMPRESSOR.threadLocalOutputStream(org.elasticsearch.core.Streams.noCloseStream(bytesStream))

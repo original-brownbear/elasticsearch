@@ -20,7 +20,6 @@ import org.elasticsearch.xcontent.XContentType;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.UncheckedIOException;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -189,13 +188,7 @@ public abstract class AbstractRestChannel implements RestChannel {
     @Override
     public final void releaseOutputBuffer() {
         if (bytesOut != null) {
-            try {
-                bytesOut.close();
-            } catch (IOException e) {
-                // should never throw
-                assert false : e;
-                throw new UncheckedIOException(e);
-            }
+            bytesOut.close();
             bytesOut = null;
         }
     }

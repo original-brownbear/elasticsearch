@@ -46,6 +46,7 @@ import org.elasticsearch.cluster.version.CompatibilityVersionsUtils;
 import org.elasticsearch.common.Randomness;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.UUIDs;
+import org.elasticsearch.common.io.stream.BytesStream;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
@@ -1079,7 +1080,7 @@ public class AbstractCoordinatorTestCase extends ESTestCase {
                     }
 
                     @Override
-                    public RecyclerBytesStreamOutput newNetworkBytesStream() {
+                    public BytesStream newNetworkBytesStream() {
                         return new RecyclerBytesStreamOutput(clearableRecycler);
                     }
                 };

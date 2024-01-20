@@ -26,10 +26,10 @@ import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.common.compress.Compressor;
 import org.elasticsearch.common.compress.CompressorFactory;
 import org.elasticsearch.common.io.Streams;
+import org.elasticsearch.common.io.stream.BytesStream;
 import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.PositionTrackingOutputStreamStreamOutput;
-import org.elasticsearch.common.io.stream.RecyclerBytesStreamOutput;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.util.LazyInitializable;
@@ -231,7 +231,7 @@ public class PublicationTransportHandler {
     }
 
     private ReleasableBytesReference serializeFullClusterState(ClusterState clusterState, DiscoveryNode node, TransportVersion version) {
-        final RecyclerBytesStreamOutput bytesStream = transportService.newNetworkBytesStream();
+        final BytesStream bytesStream = transportService.newNetworkBytesStream();
         boolean success = false;
         try {
             final long uncompressedBytes;
@@ -271,7 +271,7 @@ public class PublicationTransportHandler {
         TransportVersion version
     ) {
         final long clusterStateVersion = newState.version();
-        final RecyclerBytesStreamOutput bytesStream = transportService.newNetworkBytesStream();
+        final BytesStream bytesStream = transportService.newNetworkBytesStream();
         boolean success = false;
         try {
             final long uncompressedBytes;

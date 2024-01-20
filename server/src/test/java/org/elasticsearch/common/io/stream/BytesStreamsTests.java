@@ -1003,5 +1003,15 @@ public class BytesStreamsTests extends ESTestCase {
             output.close();
             counting.close();
         }
+
+        @Override
+        public void seek(long position) {
+            output.seek(position);
+        }
+
+        @Override
+        public long position() {
+            return output.position();
+        }
     }
 }

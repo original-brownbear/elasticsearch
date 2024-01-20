@@ -221,13 +221,23 @@ public abstract class Streams {
         }
 
         @Override
-        public void flush() throws IOException {
+        public void flush() {
             delegate.flush();
         }
 
         @Override
-        public void close() throws IOException {
+        public void close() {
             flush();
+        }
+
+        @Override
+        public void seek(long position) {
+            delegate.seek(position);
+        }
+
+        @Override
+        public long position() {
+            return delegate.position();
         }
 
         @Override

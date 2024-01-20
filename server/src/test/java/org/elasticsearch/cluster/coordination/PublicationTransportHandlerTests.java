@@ -27,6 +27,7 @@ import org.elasticsearch.cluster.service.BatchSummary;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.compress.Compressor;
 import org.elasticsearch.common.compress.CompressorFactory;
+import org.elasticsearch.common.io.stream.BytesStream;
 import org.elasticsearch.common.io.stream.RecyclerBytesStreamOutput;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
@@ -206,7 +207,7 @@ public class PublicationTransportHandlerTests extends ESTestCase {
                 }
 
                 @Override
-                public RecyclerBytesStreamOutput newNetworkBytesStream() {
+                public BytesStream newNetworkBytesStream() {
                     return new RecyclerBytesStreamOutput(recycler);
                 }
             };

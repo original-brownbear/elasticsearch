@@ -13,6 +13,7 @@ import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.component.Lifecycle;
 import org.elasticsearch.common.component.LifecycleListener;
+import org.elasticsearch.common.io.stream.BytesStream;
 import org.elasticsearch.common.io.stream.RecyclerBytesStreamOutput;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.BoundTransportAddress;
@@ -347,7 +348,7 @@ public class StubbableTransport implements Transport {
     }
 
     @Override
-    public RecyclerBytesStreamOutput newNetworkBytesStream() {
+    public BytesStream newNetworkBytesStream() {
         return new RecyclerBytesStreamOutput(new BytesRefRecycler(recycler));
     }
 }

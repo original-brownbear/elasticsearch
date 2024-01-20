@@ -10,7 +10,7 @@ package org.elasticsearch.transport;
 
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.io.stream.RecyclerBytesStreamOutput;
+import org.elasticsearch.common.io.stream.BytesStream;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 
@@ -31,7 +31,7 @@ public class TestOutboundRequestMessage extends OutboundMessage.Request {
     }
 
     @Override
-    public BytesReference serialize(RecyclerBytesStreamOutput bytesStream) throws IOException {
+    public BytesReference serialize(BytesStream bytesStream) throws IOException {
         return super.serialize(bytesStream);
     }
 }
