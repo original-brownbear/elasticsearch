@@ -78,17 +78,16 @@ abstract class OutboundMessage extends NetworkMessage {
                 stream.close();
             }
         }
+
+        final int contentSize = Math.toIntExact(bytesStream.position()) + zeroCopyBuffer.length();
+        bytesStream.seek(0);
+        TcpHeader.writeHeader(bytesStream, requestId, status, version, contentSize - TcpHeader.headerSize(version), variableHeaderLength);
+        bytesStream.seek(contentSize - zeroCopyBuffer.length());
         final BytesReference message = bytesStream.bytes();
         if (zeroCopyBuffer.length() == 0) {
-            reference = message;
-        } else {
-            reference = CompositeBytesReference.of(message, zeroCopyBuffer);
+            return message;
         }
-
-        bytesStream.seek(0);
-        final int contentSize = reference.length() - TcpHeader.headerSize(version);
-        TcpHeader.writeHeader(bytesStream, requestId, status, version, contentSize, variableHeaderLength);
-        return reference;
+        return CompositeBytesReference.of(message, zeroCopyBuffer);
     }
 
     // compressed stream wrapped bytes must be no-close wrapped since we need to close the compressed wrapper below to release

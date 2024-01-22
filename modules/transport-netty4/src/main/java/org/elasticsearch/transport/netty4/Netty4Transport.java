@@ -9,7 +9,8 @@ package org.elasticsearch.transport.netty4;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.buffer.ByteBufOutputStream;
+import io.netty.buffer.CompositeByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.AdaptiveRecvByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -54,7 +55,6 @@ import org.elasticsearch.transport.TcpTransport;
 import org.elasticsearch.transport.TransportSettings;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.util.Map;
 
@@ -337,13 +337,13 @@ public class Netty4Transport extends TcpTransport {
 
     @Override
     public BytesStream newNetworkBytesStream() {
-        final long maxAllocSize = NettyAllocator.suggestedMaxAllocationSize();
-        final int maxComponents = Math.toIntExact(Integer.MAX_VALUE / maxAllocSize);
-        final ByteBufOutputStream out = new ByteBufOutputStream(NettyAllocator.getAllocator().compositeBuffer(maxComponents));
+        // We at times write fairly large messages but never do anything with them but write them out again right away,
+        // so lets not waste copying on consolidating
+        final CompositeByteBuf out = NettyAllocator.getAllocator().compositeBuffer(Integer.MAX_VALUE);
         return new BytesStream() {
             @Override
             public BytesReference bytes() {
-                return Netty4Utils.toBytesReference(out.buffer());
+                return Netty4Utils.toBytesReference(Unpooled.unreleasableBuffer(out));
             }
 
             @Override
@@ -351,36 +351,44 @@ public class Netty4Transport extends TcpTransport {
 
             @Override
             public void close() {
-                try {
-                    out.close();
-                    out.buffer().release();
-                } catch (IOException e) {
-                    assert false : e;
-                    throw new UncheckedIOException(e);
-                }
+                out.release();
             }
 
             @Override
             public void seek(long position) {
                 int pos = Math.toIntExact(position);
-                var buf = out.buffer();
-                buf.ensureWritable(pos);
-                buf.writerIndex(pos);
+                out.ensureWritable(pos);
+                out.writerIndex(pos);
             }
 
             @Override
             public long position() {
-                return out.buffer().writerIndex();
+                return out.writerIndex();
             }
 
             @Override
-            public void writeByte(byte b) throws IOException {
+            public void writeByte(byte b) {
                 out.writeByte(b);
             }
 
             @Override
-            public void writeBytes(byte[] b, int offset, int length) throws IOException {
-                out.write(b, offset, length);
+            public void writeBytes(byte[] b, int offset, int length) {
+                out.writeBytes(b, offset, length);
+            }
+
+            @Override
+            public void writeBytesReference(BytesReference bytes) throws IOException {
+                if (bytes == null) {
+                    writeVInt(0);
+                    return;
+                }
+                if (out.maxFastWritableBytes() > bytes.length()) {
+                    super.writeBytesReference(bytes);
+                    return;
+                }
+                writeVInt(bytes.length());
+                out.capacity(out.writerIndex());
+                out.addComponent(true, Netty4Utils.toByteBuf(bytes));
             }
         };
     }
