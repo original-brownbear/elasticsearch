@@ -245,6 +245,10 @@ public final class ReleasableBytesReference implements RefCounted, Releasable, B
         return delegate.arrayOffset();
     }
 
+    public BytesReference delegate() {
+        return delegate;
+    }
+
     private static final class RefCountedReleasable extends AbstractRefCounted {
 
         private final Releasable releasable;

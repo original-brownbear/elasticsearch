@@ -18,6 +18,8 @@ import org.apache.lucene.util.BytesRefIterator;
 import org.elasticsearch.common.bytes.AbstractBytesReference;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.bytes.CompositeBytesReference;
+import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.common.recycler.Recycler;
 import org.elasticsearch.common.settings.Settings;
@@ -76,14 +78,24 @@ public class Netty4Utils {
      * Turns the given BytesReference into a ByteBuf. Note: the returned ByteBuf will reference the internal
      * pages of the BytesReference. Don't free the bytes of reference before the ByteBuf goes out of scope.
      */
-    public static ByteBuf toByteBuf(final BytesReference reference) {
+    public static ByteBuf toByteBuf(BytesReference reference) {
         if (reference.length() == 0) {
             return Unpooled.EMPTY_BUFFER;
+        }
+        if (reference instanceof ReleasableBytesReference releasableBytesReference) {
+            reference = releasableBytesReference.delegate();
         }
         if (reference instanceof ByteBufBytesReference byteBufBytesReference) {
             return byteBufBytesReference.toByteBuf();
         } else if (reference.hasArray()) {
             return Unpooled.wrappedBuffer(reference.array(), reference.arrayOffset(), reference.length());
+        } else if (reference instanceof CompositeBytesReference compositeBytesReference) {
+            BytesReference[] parts = compositeBytesReference.parts();
+            CompositeByteBuf composite = Unpooled.compositeBuffer(parts.length);
+            for (BytesReference part : parts) {
+                composite.addFlattenedComponents(true, toByteBuf(part));
+            }
+            return composite;
         } else {
             final BytesRefIterator iterator = reference.iterator();
             // usually we have one, two, or three components from the header, the message, and a buffer
