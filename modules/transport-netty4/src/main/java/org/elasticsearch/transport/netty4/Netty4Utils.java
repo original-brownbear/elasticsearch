@@ -9,6 +9,7 @@
 package org.elasticsearch.transport.netty4;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.NettyRuntime;
@@ -21,11 +22,13 @@ import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.bytes.CompositeBytesReference;
 import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.common.collect.Iterators;
+import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.recycler.Recycler;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.core.Booleans;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
@@ -206,6 +209,52 @@ public class Netty4Utils {
                 }
                 var buf = buffers.next();
                 return new BytesRef(buf.array(), buf.arrayOffset() + buf.position(), buf.remaining());
+            };
+        }
+
+        @Override
+        public StreamInput streamInput() {
+            return new StreamInput() {
+
+                private final ByteBuf slice = buffer.slice();
+                private final ByteBufInputStream in = new ByteBufInputStream(slice);
+
+                @Override
+                public byte readByte() throws IOException {
+                    return in.readByte();
+                }
+
+                @Override
+                public void readBytes(byte[] b, int offset, int len) throws IOException {
+                    in.readFully(b, offset, len);
+                }
+
+                @Override
+                public void close() throws IOException {
+
+                }
+
+                @Override
+                public int available() throws IOException {
+                    return in.available();
+                }
+
+                @Override
+                protected void ensureCanReadBytes(int length) throws EOFException {
+
+                }
+
+                @Override
+                public int read() throws IOException {
+                    return in.read();
+                }
+
+                @Override
+                public ReleasableBytesReference readReleasableBytesReference() throws IOException {
+                    int len = readVInt();
+                    ByteBuf s = slice.readRetainedSlice(len);
+                    return new ReleasableBytesReference(Netty4Utils.toBytesReference(buffer.readRetainedSlice(len)), s::release);
+                }
             };
         }
 
