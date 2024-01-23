@@ -225,13 +225,23 @@ public class Netty4Utils {
                 }
 
                 @Override
+                public int readInt() throws IOException {
+                    return in.readInt();
+                }
+
+                @Override
+                public long readLong() throws IOException {
+                    return in.readLong();
+                }
+
+                @Override
                 public void readBytes(byte[] b, int offset, int len) throws IOException {
                     in.readFully(b, offset, len);
                 }
 
                 @Override
                 public void close() throws IOException {
-
+                    in.close();
                 }
 
                 @Override
@@ -241,7 +251,9 @@ public class Netty4Utils {
 
                 @Override
                 protected void ensureCanReadBytes(int length) throws EOFException {
-
+                    if (slice.readableBytes() < length) {
+                        throw new EOFException();
+                    }
                 }
 
                 @Override
@@ -253,7 +265,27 @@ public class Netty4Utils {
                 public ReleasableBytesReference readReleasableBytesReference() throws IOException {
                     int len = readVInt();
                     ByteBuf s = slice.readRetainedSlice(len);
-                    return new ReleasableBytesReference(Netty4Utils.toBytesReference(buffer.readRetainedSlice(len)), s::release);
+                    return new ReleasableBytesReference(Netty4Utils.toBytesReference(s), s::release);
+                }
+
+                @Override
+                public void mark(int readlimit) {
+                    in.mark(readlimit);
+                }
+
+                @Override
+                public void reset() throws IOException {
+                    in.reset();
+                }
+
+                @Override
+                public boolean markSupported() {
+                    return in.markSupported();
+                }
+
+                @Override
+                public long skip(long n) throws IOException {
+                    return in.skip(n);
                 }
             };
         }
