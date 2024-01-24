@@ -98,10 +98,10 @@ public class LuceneDocument implements Iterable<IndexableField> {
     public void onlyAddKey(Object key, IndexableField field) {
         if (keyedFields == null) {
             keyedFields = new HashMap<>();
-        } else if (keyedFields.containsKey(key)) {
+        }
+        if (keyedFields.putIfAbsent(key, field) != null) {
             throw new IllegalStateException("Only one field can be stored per key");
         }
-        keyedFields.put(key, field);
     }
 
     /**
