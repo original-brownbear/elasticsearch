@@ -140,7 +140,7 @@ public class InboundHandlerTests extends ESTestCase {
 
         long requestId = responseHandlers.add(new TransportResponseHandler<TestResponse>() {
             @Override
-            public Executor executor(ThreadPool threadPool) {
+            public Executor executor() {
                 return TransportResponseHandler.TRANSPORT_WORKER;
             }
 
