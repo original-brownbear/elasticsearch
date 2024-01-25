@@ -10,7 +10,6 @@ import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.common.bytes.BytesArray;
-import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.core.CharArrays;
@@ -33,7 +32,7 @@ public class ChangePasswordRequest extends ActionRequest implements UserRequest,
     public ChangePasswordRequest(StreamInput in) throws IOException {
         super(in);
         username = in.readString();
-        passwordHash = CharArrays.utf8BytesToChars(BytesReference.toBytes(in.readBytesReference()));
+        passwordHash = CharArrays.utf8BytesToChars(in.readByteArray());
         refreshPolicy = RefreshPolicy.readFrom(in);
     }
 

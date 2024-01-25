@@ -22,11 +22,6 @@ import org.elasticsearch.action.search.TransportOpenPointInTimeAction;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.client.internal.ParentTaskAssigningClient;
 import org.elasticsearch.common.Strings;
-import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
-import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
-import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.logging.HeaderWarning;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.search.aggregations.Aggregation;
@@ -238,29 +233,6 @@ public class Querier {
             response.getTook(),
             response.isTimedOut()
         );
-    }
-
-    /**
-     * Deserializes the search source from a byte array.
-     */
-    public static SearchSourceBuilder deserializeQuery(NamedWriteableRegistry registry, byte[] source) throws IOException {
-        try (NamedWriteableAwareStreamInput in = new NamedWriteableAwareStreamInput(StreamInput.wrap(source), registry)) {
-            return new SearchSourceBuilder(in);
-        }
-    }
-
-    /**
-     * Serializes the search source to a byte array.
-     */
-    public static byte[] serializeQuery(SearchSourceBuilder source) throws IOException {
-        if (source == null) {
-            return new byte[0];
-        }
-
-        try (BytesStreamOutput out = new BytesStreamOutput()) {
-            source.writeTo(out);
-            return BytesReference.toBytes(out.bytes());
-        }
     }
 
     /**

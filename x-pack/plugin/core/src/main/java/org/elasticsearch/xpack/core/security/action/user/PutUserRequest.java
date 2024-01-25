@@ -163,11 +163,11 @@ public class PutUserRequest extends ActionRequest implements UserRequest, WriteR
     }
 
     private static char[] readCharArrayFromStream(StreamInput in) throws IOException {
-        BytesReference charBytesRef = in.readBytesReference();
-        if (charBytesRef == BytesArray.EMPTY) {
+        byte[] charBytesRef = in.readByteArray();
+        if (charBytesRef.length == 0) {
             return null;
         } else {
-            return CharArrays.utf8BytesToChars(BytesReference.toBytes(charBytesRef));
+            return CharArrays.utf8BytesToChars(charBytesRef);
         }
     }
 
