@@ -10,6 +10,7 @@ package org.elasticsearch.search.fetch;
 
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.search.SearchPhaseResult;
 import org.elasticsearch.search.SearchShardTarget;
 import org.elasticsearch.search.query.QuerySearchResult;
@@ -18,9 +19,11 @@ import java.io.IOException;
 
 public final class ScrollQueryFetchSearchResult extends SearchPhaseResult {
 
+    public static final Writeable.Reader<ScrollQueryFetchSearchResult> READER = ScrollQueryFetchSearchResult::new;
+
     private final QueryFetchSearchResult result;
 
-    public ScrollQueryFetchSearchResult(StreamInput in) throws IOException {
+    private ScrollQueryFetchSearchResult(StreamInput in) throws IOException {
         super(in);
         SearchShardTarget searchShardTarget = new SearchShardTarget(in);
         result = new QueryFetchSearchResult(in);

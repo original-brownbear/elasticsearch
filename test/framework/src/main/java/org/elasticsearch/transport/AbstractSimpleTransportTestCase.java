@@ -3269,11 +3269,7 @@ public abstract class AbstractSimpleTransportTestCase extends ESTestCase {
                 serviceA.getLocalNode(),
                 ACTION,
                 TransportRequest.Empty.INSTANCE,
-                new ActionListenerResponseHandler<>(
-                    f,
-                    ignored -> TransportResponse.Empty.INSTANCE,
-                    TransportResponseHandler.TRANSPORT_WORKER
-                )
+                new ActionListenerResponseHandler<>(f, TransportResponse.Empty.READER, TransportResponseHandler.TRANSPORT_WORKER)
             ),
             10,
             TimeUnit.SECONDS

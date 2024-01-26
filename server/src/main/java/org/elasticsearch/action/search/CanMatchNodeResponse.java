@@ -20,9 +20,11 @@ import java.util.List;
 
 public class CanMatchNodeResponse extends TransportResponse {
 
+    public static final Writeable.Reader<CanMatchNodeResponse> READER = CanMatchNodeResponse::new;
+
     private final List<ResponseOrFailure> responses;
 
-    public CanMatchNodeResponse(StreamInput in) throws IOException {
+    private CanMatchNodeResponse(StreamInput in) throws IOException {
         super(in);
         responses = in.readCollectionAsList(ResponseOrFailure::new);
     }

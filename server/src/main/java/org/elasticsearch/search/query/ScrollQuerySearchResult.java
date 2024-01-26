@@ -10,6 +10,7 @@ package org.elasticsearch.search.query;
 
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.search.SearchPhaseResult;
 import org.elasticsearch.search.SearchShardTarget;
 
@@ -17,9 +18,11 @@ import java.io.IOException;
 
 public final class ScrollQuerySearchResult extends SearchPhaseResult {
 
+    public static final Writeable.Reader<ScrollQuerySearchResult> READER = ScrollQuerySearchResult::new;
+
     private final QuerySearchResult result;
 
-    public ScrollQuerySearchResult(StreamInput in) throws IOException {
+    private ScrollQuerySearchResult(StreamInput in) throws IOException {
         super(in);
         SearchShardTarget shardTarget = new SearchShardTarget(in);
         // This was created with refCount = 1, doesn't need to be incRef'd

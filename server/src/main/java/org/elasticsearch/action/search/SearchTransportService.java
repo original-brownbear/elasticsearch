@@ -133,7 +133,7 @@ public class SearchTransportService {
             // no need to respond if it was freed or not
             new ActionListenerResponseHandler<>(
                 ActionListener.noop(),
-                SearchFreeContextResponse::new,
+                SearchFreeContextResponse::readFrom,
                 TransportResponseHandler.TRANSPORT_WORKER
             )
         );
@@ -149,7 +149,7 @@ public class SearchTransportService {
             FREE_CONTEXT_SCROLL_ACTION_NAME,
             new ScrollFreeContextRequest(contextId),
             TransportRequestOptions.EMPTY,
-            new ActionListenerResponseHandler<>(listener, SearchFreeContextResponse::new, TransportResponseHandler.TRANSPORT_WORKER)
+            new ActionListenerResponseHandler<>(listener, SearchFreeContextResponse::readFrom, TransportResponseHandler.TRANSPORT_WORKER)
         );
     }
 
@@ -165,7 +165,7 @@ public class SearchTransportService {
             request,
             task,
             TransportRequestOptions.EMPTY,
-            new ActionListenerResponseHandler<>(listener, CanMatchNodeResponse::new, TransportResponseHandler.TRANSPORT_WORKER)
+            new ActionListenerResponseHandler<>(listener, CanMatchNodeResponse.READER, TransportResponseHandler.TRANSPORT_WORKER)
         );
     }
 
@@ -175,11 +175,7 @@ public class SearchTransportService {
             CLEAR_SCROLL_CONTEXTS_ACTION_NAME,
             TransportRequest.Empty.INSTANCE,
             TransportRequestOptions.EMPTY,
-            new ActionListenerResponseHandler<>(
-                listener,
-                (in) -> TransportResponse.Empty.INSTANCE,
-                TransportResponseHandler.TRANSPORT_WORKER
-            )
+            new ActionListenerResponseHandler<>(listener, TransportResponse.Empty.READER, TransportResponseHandler.TRANSPORT_WORKER)
         );
     }
 
@@ -246,7 +242,7 @@ public class SearchTransportService {
             QUERY_SCROLL_ACTION_NAME,
             request,
             task,
-            new ConnectionCountingHandler<>(listener, ScrollQuerySearchResult::new, clientConnections, connection.getNode().getId())
+            new ConnectionCountingHandler<>(listener, ScrollQuerySearchResult.READER, clientConnections, connection.getNode().getId())
         );
     }
 
@@ -261,7 +257,7 @@ public class SearchTransportService {
             QUERY_FETCH_SCROLL_ACTION_NAME,
             request,
             task,
-            new ConnectionCountingHandler<>(listener, ScrollQueryFetchSearchResult::new, clientConnections, connection.getNode().getId())
+            new ConnectionCountingHandler<>(listener, ScrollQueryFetchSearchResult.READER, clientConnections, connection.getNode().getId())
         );
     }
 
@@ -388,13 +384,20 @@ public class SearchTransportService {
 
     public static class SearchFreeContextResponse extends TransportResponse {
 
+        private static final SearchFreeContextResponse FREED = new SearchFreeContextResponse(true);
+        private static final SearchFreeContextResponse NOT_FREED = new SearchFreeContextResponse(false);
+
         private final boolean freed;
 
-        SearchFreeContextResponse(StreamInput in) throws IOException {
-            freed = in.readBoolean();
+        static SearchFreeContextResponse readFrom(StreamInput in) throws IOException {
+            return in.readBoolean() ? FREED : NOT_FREED;
         }
 
-        SearchFreeContextResponse(boolean freed) {
+        static SearchFreeContextResponse of(boolean freed) {
+            return freed ? FREED : NOT_FREED;
+        }
+
+        private SearchFreeContextResponse(boolean freed) {
             this.freed = freed;
         }
 
@@ -413,27 +416,30 @@ public class SearchTransportService {
         SearchService searchService,
         SearchTransportAPMMetrics searchTransportMetrics
     ) {
+        TransportRequestHandler<ScrollFreeContextRequest> freeContextHandler = (request, channel, task) -> {
+            boolean freed = searchService.freeReaderContext(request.id());
+            channel.sendResponse(SearchFreeContextResponse.of(freed));
+        };
         transportService.registerRequestHandler(
             FREE_CONTEXT_SCROLL_ACTION_NAME,
             EsExecutors.DIRECT_EXECUTOR_SERVICE,
             ScrollFreeContextRequest::new,
-            instrumentedHandler(FREE_CONTEXT_SCROLL_ACTION_METRIC, transportService, searchTransportMetrics, (request, channel, task) -> {
-                boolean freed = searchService.freeReaderContext(request.id());
-                channel.sendResponse(new SearchFreeContextResponse(freed));
-            })
+            instrumentedHandler(FREE_CONTEXT_SCROLL_ACTION_METRIC, transportService, searchTransportMetrics, freeContextHandler)
         );
-        TransportActionProxy.registerProxyAction(transportService, FREE_CONTEXT_SCROLL_ACTION_NAME, false, SearchFreeContextResponse::new);
+        TransportActionProxy.registerProxyAction(
+            transportService,
+            FREE_CONTEXT_SCROLL_ACTION_NAME,
+            false,
+            SearchFreeContextResponse::readFrom
+        );
 
         transportService.registerRequestHandler(
             FREE_CONTEXT_ACTION_NAME,
             EsExecutors.DIRECT_EXECUTOR_SERVICE,
             SearchFreeContextRequest::new,
-            instrumentedHandler(FREE_CONTEXT_ACTION_METRIC, transportService, searchTransportMetrics, (request, channel, task) -> {
-                boolean freed = searchService.freeReaderContext(request.id());
-                channel.sendResponse(new SearchFreeContextResponse(freed));
-            })
+            instrumentedHandler(FREE_CONTEXT_ACTION_METRIC, transportService, searchTransportMetrics, freeContextHandler)
         );
-        TransportActionProxy.registerProxyAction(transportService, FREE_CONTEXT_ACTION_NAME, false, SearchFreeContextResponse::new);
+        TransportActionProxy.registerProxyAction(transportService, FREE_CONTEXT_ACTION_NAME, false, SearchFreeContextResponse::readFrom);
 
         transportService.registerRequestHandler(
             CLEAR_SCROLL_CONTEXTS_ACTION_NAME,
@@ -448,7 +454,7 @@ public class SearchTransportService {
             transportService,
             CLEAR_SCROLL_CONTEXTS_ACTION_NAME,
             false,
-            (in) -> TransportResponse.Empty.INSTANCE
+            TransportResponse.Empty.READER
         );
 
         transportService.registerRequestHandler(
@@ -522,7 +528,7 @@ public class SearchTransportService {
                 )
             )
         );
-        TransportActionProxy.registerProxyAction(transportService, QUERY_SCROLL_ACTION_NAME, true, ScrollQuerySearchResult::new);
+        TransportActionProxy.registerProxyAction(transportService, QUERY_SCROLL_ACTION_NAME, true, ScrollQuerySearchResult.READER);
 
         transportService.registerRequestHandler(
             QUERY_FETCH_SCROLL_ACTION_NAME,
@@ -539,22 +545,23 @@ public class SearchTransportService {
                 )
             )
         );
-        TransportActionProxy.registerProxyAction(transportService, QUERY_FETCH_SCROLL_ACTION_NAME, true, ScrollQueryFetchSearchResult::new);
+        TransportActionProxy.registerProxyAction(
+            transportService,
+            QUERY_FETCH_SCROLL_ACTION_NAME,
+            true,
+            ScrollQueryFetchSearchResult.READER
+        );
 
+        TransportRequestHandler<ShardFetchRequest> shardFetchHandler = (request, channel, task) -> searchService.executeFetchPhase(
+            request,
+            (SearchShardTask) task,
+            new ChannelActionListener<>(channel)
+        );
         transportService.registerRequestHandler(
             FETCH_ID_SCROLL_ACTION_NAME,
             EsExecutors.DIRECT_EXECUTOR_SERVICE,
             ShardFetchRequest::new,
-            instrumentedHandler(
-                FETCH_ID_SCROLL_ACTION_METRIC,
-                transportService,
-                searchTransportMetrics,
-                (request, channel, task) -> searchService.executeFetchPhase(
-                    request,
-                    (SearchShardTask) task,
-                    new ChannelActionListener<>(channel)
-                )
-            )
+            instrumentedHandler(FETCH_ID_SCROLL_ACTION_METRIC, transportService, searchTransportMetrics, shardFetchHandler)
         );
         TransportActionProxy.registerProxyAction(transportService, FETCH_ID_SCROLL_ACTION_NAME, true, FetchSearchResult::new);
 
@@ -564,16 +571,7 @@ public class SearchTransportService {
             true,
             true,
             ShardFetchSearchRequest::new,
-            instrumentedHandler(
-                FETCH_ID_ACTION_METRIC,
-                transportService,
-                searchTransportMetrics,
-                (request, channel, task) -> searchService.executeFetchPhase(
-                    request,
-                    (SearchShardTask) task,
-                    new ChannelActionListener<>(channel)
-                )
-            )
+            instrumentedHandler(FETCH_ID_ACTION_METRIC, transportService, searchTransportMetrics, shardFetchHandler)
         );
         TransportActionProxy.registerProxyAction(transportService, FETCH_ID_ACTION_NAME, true, FetchSearchResult::new);
 
@@ -588,7 +586,7 @@ public class SearchTransportService {
                 (request, channel, task) -> searchService.canMatch(request, new ChannelActionListener<>(channel))
             )
         );
-        TransportActionProxy.registerProxyAction(transportService, QUERY_CAN_MATCH_NODE_NAME, true, CanMatchNodeResponse::new);
+        TransportActionProxy.registerProxyAction(transportService, QUERY_CAN_MATCH_NODE_NAME, true, CanMatchNodeResponse.READER);
     }
 
     private static <Request extends TransportRequest> TransportRequestHandler<Request> instrumentedHandler(
@@ -644,27 +642,26 @@ public class SearchTransportService {
         @Override
         public void handleResponse(Response response) {
             super.handleResponse(response);
-            // Decrement the number of connections or remove it entirely if there are no more connections
-            // We need to remove the entry here so we don't leak when nodes go away forever
-            assert assertNodePresent();
-            clientConnections.computeIfPresent(nodeId, (id, conns) -> conns.longValue() == 1 ? null : conns - 1);
+            decrementConnectionCount();
         }
 
         @Override
         public void handleException(TransportException e) {
             super.handleException(e);
+            decrementConnectionCount();
+        }
+
+        private void decrementConnectionCount() {
             // Decrement the number of connections or remove it entirely if there are no more connections
             // We need to remove the entry here so we don't leak when nodes go away forever
             assert assertNodePresent();
-            clientConnections.computeIfPresent(nodeId, (id, conns) -> conns.longValue() == 1 ? null : conns - 1);
+            clientConnections.computeIfPresent(nodeId, (id, conns) -> conns == 1 ? null : conns - 1);
         }
 
         private boolean assertNodePresent() {
-            clientConnections.compute(nodeId, (id, conns) -> {
-                assert conns != null : "number of connections for " + id + " is null, but should be an integer";
-                assert conns >= 1 : "number of connections for " + id + " should be >= 1 but was " + conns;
-                return conns;
-            });
+            var conns = clientConnections.get(nodeId);
+            assert conns != null : "number of connections for " + nodeId + " is null, but should be an integer";
+            assert conns >= 1 : "number of connections for " + nodeId + " should be >= 1 but was " + conns;
             // Always return true, there is additional asserting here, the boolean is just so this
             // can be skipped when assertions are not enabled
             return true;

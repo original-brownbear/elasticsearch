@@ -392,7 +392,7 @@ public class JoinValidationServiceTests extends ESTestCase {
             localNode,
             JoinValidationService.JOIN_VALIDATE_ACTION_NAME,
             new ValidateJoinRequest(otherClusterState),
-            new ActionListenerResponseHandler<>(future, in -> TransportResponse.Empty.INSTANCE, TransportResponseHandler.TRANSPORT_WORKER)
+            new ActionListenerResponseHandler<>(future, TransportResponse.Empty.READER, TransportResponseHandler.TRANSPORT_WORKER)
         );
         deterministicTaskQueue.runAllTasks();
 
@@ -443,7 +443,7 @@ public class JoinValidationServiceTests extends ESTestCase {
             localNode,
             JoinValidationService.JOIN_VALIDATE_ACTION_NAME,
             new ValidateJoinRequest(stateForValidation),
-            new ActionListenerResponseHandler<>(future, in -> TransportResponse.Empty.INSTANCE, TransportResponseHandler.TRANSPORT_WORKER)
+            new ActionListenerResponseHandler<>(future, TransportResponse.Empty.READER, TransportResponseHandler.TRANSPORT_WORKER)
         );
         deterministicTaskQueue.runAllTasks();
 

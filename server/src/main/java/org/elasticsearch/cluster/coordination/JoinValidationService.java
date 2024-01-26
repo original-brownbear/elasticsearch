@@ -371,7 +371,7 @@ public class JoinValidationService {
                 REQUEST_OPTIONS,
                 new CleanableResponseHandler<>(
                     listener.map(ignored -> null),
-                    in -> TransportResponse.Empty.INSTANCE,
+                    TransportResponse.Empty.READER,
                     responseExecutor,
                     bytes::decRef
                 )

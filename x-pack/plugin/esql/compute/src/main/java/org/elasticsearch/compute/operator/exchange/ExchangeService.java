@@ -138,7 +138,7 @@ public final class ExchangeService extends AbstractLifecycleComponent {
             OPEN_EXCHANGE_ACTION_NAME,
             new OpenExchangeRequest(sessionId, exchangeBuffer),
             TransportRequestOptions.EMPTY,
-            new ActionListenerResponseHandler<>(listener.map(unused -> null), in -> TransportResponse.Empty.INSTANCE, responseExecutor)
+            new ActionListenerResponseHandler<>(listener.map(unused -> null), TransportResponse.Empty.READER, responseExecutor)
         );
     }
 

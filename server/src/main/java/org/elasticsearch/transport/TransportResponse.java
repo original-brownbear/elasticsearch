@@ -10,6 +10,7 @@ package org.elasticsearch.transport;
 
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.Writeable;
 
 import java.io.IOException;
 
@@ -31,6 +32,7 @@ public abstract class TransportResponse extends TransportMessage {
 
     public static class Empty extends TransportResponse {
         public static final Empty INSTANCE = new Empty();
+        public static final Writeable.Reader<Empty> READER = in -> INSTANCE;
 
         private Empty() {/* singleton */}
 
