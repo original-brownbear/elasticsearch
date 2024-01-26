@@ -28,6 +28,7 @@ import io.netty.util.AttributeKey;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.util.BytesRef;
+import org.apache.lucene.util.UnicodeUtil;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.cluster.node.DiscoveryNode;
@@ -419,6 +420,26 @@ public class Netty4Transport extends TcpTransport {
             @Override
             public void sizeHint(int hint) {
                 out.ensureWritable(hint);
+            }
+
+            @Override
+            public void writeString(String str) {
+                final int charCount = str.length();
+                writeVInt(charCount);
+                out.ensureWritable(UnicodeUtil.maxUTF8Length(charCount));
+                for (int i = 0; i < charCount; i++) {
+                    final int c = str.charAt(i);
+                    if (c <= 0x007F) {
+                        out.writeByte((byte) c);
+                    } else if (c > 0x07FF) {
+                        out.writeByte((byte) (0xE0 | c >> 12 & 0x0F));
+                        out.writeByte((byte) (0x80 | c >> 6 & 0x3F));
+                        out.writeByte((byte) (0x80 | c >> 0 & 0x3F));
+                    } else {
+                        out.writeByte((byte) (0xC0 | c >> 6 & 0x1F));
+                        out.writeByte((byte) (0x80 | c >> 0 & 0x3F));
+                    }
+                }
             }
         };
     }
