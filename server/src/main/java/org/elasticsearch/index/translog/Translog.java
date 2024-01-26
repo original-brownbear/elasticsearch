@@ -9,6 +9,8 @@
 package org.elasticsearch.index.translog;
 
 import org.apache.lucene.store.AlreadyClosedException;
+import org.apache.lucene.store.BufferedChecksum;
+import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.TransportVersions;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.UUIDs;
@@ -60,6 +62,8 @@ import java.util.function.LongSupplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import java.util.zip.CRC32;
+import java.util.zip.Checksum;
 
 import static org.elasticsearch.core.Strings.format;
 import static org.elasticsearch.index.translog.TranslogConfig.EMPTY_TRANSLOG_BUFFER_SIZE;
@@ -1576,7 +1580,7 @@ public class Translog extends AbstractIndexShardComponent implements IndexShardC
         }
     }
 
-    public static void writeOperationNoSize(BufferedChecksumStreamOutput out, Translog.Operation op) throws IOException {
+    private static void writeOperationNoSize(BufferedChecksumStreamOutput out, Translog.Operation op) throws IOException {
         // This BufferedChecksumStreamOutput remains unclosed on purpose,
         // because closing it closes the underlying stream, which we don't
         // want to do here.
@@ -1589,12 +1593,24 @@ public class Translog extends AbstractIndexShardComponent implements IndexShardC
     public static void writeOperationWithSize(BytesStreamOutput out, Translog.Operation op) throws IOException {
         final long start = out.position();
         out.skip(Integer.BYTES);
-        writeOperationNoSize(new BufferedChecksumStreamOutput(out), op);
+        op.writeTo(out);
         final long end = out.position();
         final int operationSize = (int) (end - Integer.BYTES - start);
+        CRC32 crc32 = new CRC32();
+        var opBytes = out.bytes().slice((int) start + Integer.BYTES, operationSize);
+        if (opBytes.hasArray()) {
+            crc32.update(opBytes.array(), opBytes.arrayOffset(), operationSize);
+        } else {
+            BytesRef chunk;
+            var iter = opBytes.iterator();
+            while ((chunk = iter.next()) != null) {
+                crc32.update(chunk.bytes, chunk.offset, chunk.length);
+            }
+        }
+        out.writeInt((int) crc32.getValue());
         out.seek(start);
-        out.writeInt(operationSize);
-        out.seek(end);
+        out.writeInt(operationSize + Integer.BYTES);
+        out.seek(end + Integer.BYTES);
     }
 
     /**
@@ -1937,5 +1953,49 @@ public class Translog extends AbstractIndexShardComponent implements IndexShardC
         );
         writer.close();
         return uuid;
+    }
+
+    /**
+     * Similar to Lucene's BufferedChecksumIndexOutput, however this wraps a
+     * {@link StreamOutput} so anything written will update the checksum
+     */
+    private static final class BufferedChecksumStreamOutput extends StreamOutput {
+        private final StreamOutput out;
+        private final Checksum digest;
+
+        BufferedChecksumStreamOutput(StreamOutput out) {
+            this.out = out;
+            this.digest = new BufferedChecksum(new CRC32());
+        }
+
+        public long getChecksum() {
+            return this.digest.getValue();
+        }
+
+        @Override
+        public void writeByte(byte b) throws IOException {
+            out.writeByte(b);
+            digest.update(b);
+        }
+
+        @Override
+        public void writeBytes(byte[] b, int offset, int length) throws IOException {
+            out.writeBytes(b, offset, length);
+            digest.update(b, offset, length);
+        }
+
+        @Override
+        public void flush() throws IOException {
+            out.flush();
+        }
+
+        @Override
+        public void close() throws IOException {
+            out.close();
+        }
+
+        public void resetDigest() {
+            digest.reset();
+        }
     }
 }
