@@ -441,6 +441,16 @@ public class Netty4Transport extends TcpTransport {
                     }
                 }
             }
+
+            @Override
+            public void writeOptionalString(String str) throws IOException {
+                if (str == null) {
+                    writeBoolean(false);
+                } else {
+                    writeBoolean(true);
+                    writeString(str);
+                }
+            }
         };
     }
 
