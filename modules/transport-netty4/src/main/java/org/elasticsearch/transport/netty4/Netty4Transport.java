@@ -9,6 +9,7 @@ package org.elasticsearch.transport.netty4;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.AdaptiveRecvByteBufAllocator;
@@ -343,7 +344,12 @@ public class Netty4Transport extends TcpTransport {
         return new BytesStream() {
             @Override
             public BytesReference bytes() {
-                return Netty4Utils.toBytesReference(Unpooled.unreleasableBuffer(out));
+                out.capacity(out.writerIndex());
+                ByteBuf unwrapped = out;
+                while (unwrapped.unwrap() != null) {
+                    unwrapped = unwrapped.unwrap();
+                }
+                return Netty4Utils.toBytesReference(Unpooled.unreleasableBuffer(unwrapped));
             }
 
             @Override
@@ -377,6 +383,25 @@ public class Netty4Transport extends TcpTransport {
             }
 
             @Override
+            public void writeInt(int i) {
+                out.writeInt(i);
+            }
+
+            @Override
+            public void writeLong(long i) {
+                out.writeLong(i);
+            }
+
+            @Override
+            public void writeVInt(int i) {
+                do {
+                    out.writeByte((byte) ((i & 0x7f) | 0x80));
+                    i >>>= 7;
+                } while ((i & ~0x7F) != 0);
+                out.writeByte((byte) i);
+            }
+
+            @Override
             public void writeBytesReference(BytesReference bytes) throws IOException {
                 if (bytes == null) {
                     writeVInt(0);
@@ -389,6 +414,11 @@ public class Netty4Transport extends TcpTransport {
                 writeVInt(bytes.length());
                 out.capacity(out.writerIndex());
                 out.addComponent(true, Netty4Utils.toByteBuf(bytes));
+            }
+
+            @Override
+            public void sizeHint(int hint) {
+                out.ensureWritable(hint);
             }
         };
     }

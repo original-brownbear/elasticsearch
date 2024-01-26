@@ -44,7 +44,6 @@ abstract class OutboundMessage extends NetworkMessage {
         bytesStream.skip(TcpHeader.headerSize(version));
 
         // The compressible bytes stream will not close the underlying bytes stream
-        BytesReference reference;
         int variableHeaderLength = -1;
         final long preHeaderPosition = bytesStream.position();
 

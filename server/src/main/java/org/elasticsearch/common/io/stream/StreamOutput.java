@@ -84,6 +84,8 @@ public abstract class StreamOutput extends OutputStream {
         throw new UnsupportedOperationException();
     }
 
+    public void sizeHint(int hint) {}
+
     /**
      * Writes a single byte.
      */
@@ -399,6 +401,7 @@ public abstract class StreamOutput extends OutputStream {
      * @throws IOException on failure
      */
     private void writeString(String str, byte[] buffer, int off) throws IOException {
+        this.sizeHint(1 + str.length());
         final int charCount = str.length();
         int offset = off + putVInt(buffer, charCount, off);
         for (int i = 0; i < charCount; i++) {
