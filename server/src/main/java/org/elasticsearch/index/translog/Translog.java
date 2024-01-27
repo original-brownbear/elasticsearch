@@ -27,7 +27,6 @@ import org.elasticsearch.common.util.concurrent.ReleasableLock;
 import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.Releasable;
-import org.elasticsearch.core.Releasables;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.engine.Engine;
 import org.elasticsearch.index.mapper.IdFieldMapper;
@@ -577,8 +576,7 @@ public class Translog extends AbstractIndexShardComponent implements IndexShardC
      * @throws IOException if adding the operation to the translog resulted in an I/O exception
      */
     public Location add(final Operation operation) throws IOException {
-        final ReleasableBytesStreamOutput out = new ReleasableBytesStreamOutput(bigArrays);
-        try {
+        try (ReleasableBytesStreamOutput out = new ReleasableBytesStreamOutput(bigArrays)) {
             writeOperationWithSize(out, operation);
             final BytesReference bytes = out.bytes();
             try (ReleasableLock ignored = readLock.acquire()) {
@@ -608,8 +606,6 @@ public class Translog extends AbstractIndexShardComponent implements IndexShardC
         } catch (final Exception ex) {
             closeOnTragicEvent(ex);
             throw new TranslogException(shardId, "Failed to write operation [" + operation + "]", ex);
-        } finally {
-            Releasables.close(out);
         }
     }
 

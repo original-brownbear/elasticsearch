@@ -14,6 +14,7 @@ import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.util.ByteArray;
+import org.elasticsearch.common.util.ByteUtils;
 import org.elasticsearch.common.util.PageCacheRecycler;
 import org.elasticsearch.core.Nullable;
 
@@ -88,6 +89,28 @@ public class BytesStreamOutput extends BytesStream {
 
         // advance
         count += length;
+    }
+
+    @Override
+    public void writeLong(long i) throws IOException {
+        ensureCapacity(((long) count) + Long.BYTES);
+        if (bytes.hasArray() && bytes.size() >= count + Long.BYTES) {
+            ByteUtils.writeLongBE(i, bytes.array(), count);
+            count += Long.BYTES;
+        } else {
+            super.writeLong(i);
+        }
+    }
+
+    @Override
+    public void writeInt(int i) throws IOException {
+        ensureCapacity(((long) count) + Integer.BYTES);
+        if (bytes.hasArray() && bytes.size() >= count + Integer.BYTES) {
+            ByteUtils.writeIntBE(i, bytes.array(), count);
+            count += Integer.BYTES;
+        } else {
+            super.writeInt(i);
+        }
     }
 
     public void reset() {
