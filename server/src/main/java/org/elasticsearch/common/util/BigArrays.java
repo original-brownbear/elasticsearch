@@ -134,6 +134,18 @@ public class BigArrays {
         }
 
         @Override
+        public long setVInt(long index, int value) {
+            assert indexIsInt(index);
+            int idx = (int) index;
+            while ((value & ~0x7F) != 0) {
+                set(idx++, (byte) ((value & 0x7F) | 0x80));
+                value >>>= 7;
+            }
+            set(idx++, (byte) value);
+            return idx;
+        }
+
+        @Override
         public boolean get(long index, int len, BytesRef ref) {
             assert indexIsInt(index);
             ref.bytes = array;

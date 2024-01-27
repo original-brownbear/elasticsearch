@@ -75,6 +75,16 @@ final class BigByteArray extends AbstractBigArray implements ByteArray {
     }
 
     @Override
+    public long setVInt(long index, int value) {
+        while ((value & ~0x7F) != 0) {
+            set(index++, (byte) ((value & 0x7F) | 0x80));
+            value >>>= 7;
+        }
+        set(index++, (byte) value);
+        return index;
+    }
+
+    @Override
     public void set(long index, int value) {
         final int indexInPage = indexInPage(index);
         if (indexInPage + Integer.BYTES <= pageSize()) {
