@@ -122,6 +122,18 @@ public class BigArrays {
         }
 
         @Override
+        public void set(long index, long value) {
+            assert indexIsInt(index);
+            ByteUtils.writeLongBE(value, array, (int) index);
+        }
+
+        @Override
+        public void set(long index, int value) {
+            assert indexIsInt(index);
+            ByteUtils.writeIntBE(value, array, (int) index);
+        }
+
+        @Override
         public boolean get(long index, int len, BytesRef ref) {
             assert indexIsInt(index);
             ref.bytes = array;

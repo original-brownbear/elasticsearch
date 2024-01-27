@@ -62,6 +62,34 @@ final class BigByteArray extends AbstractBigArray implements ByteArray {
     }
 
     @Override
+    public void set(long index, long value) {
+        final int indexInPage = indexInPage(index);
+        if (indexInPage + Long.BYTES <= pageSize()) {
+            final int pageIndex = pageIndex(index);
+            final byte[] page = pages[pageIndex];
+            ByteUtils.writeLongBE(value, page, indexInPage);
+        } else {
+            set(index, (int) (value >> 32));
+            set(index + Integer.BYTES, (int) value);
+        }
+    }
+
+    @Override
+    public void set(long index, int value) {
+        final int indexInPage = indexInPage(index);
+        if (indexInPage + Integer.BYTES <= pageSize()) {
+            final int pageIndex = pageIndex(index);
+            final byte[] page = pages[pageIndex];
+            ByteUtils.writeIntBE(value, page, indexInPage);
+        } else {
+            set(index, (byte) (value >> 24));
+            set(index + 1, (byte) (value >> 16));
+            set(index + 2, (byte) (value >> 8));
+            set(index + 3, (byte) value);
+        }
+    }
+
+    @Override
     public boolean get(long index, int len, BytesRef ref) {
         assert index + len <= size();
         if (len == 0) {

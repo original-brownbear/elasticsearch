@@ -65,6 +65,16 @@ public class ReleasableByteArray implements ByteArray {
     }
 
     @Override
+    public void set(long index, long value) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void set(long index, int value) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void set(long index, byte[] buf, int offset, int len) {
         throw new UnsupportedOperationException();
     }

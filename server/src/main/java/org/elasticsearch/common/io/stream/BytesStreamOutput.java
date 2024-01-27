@@ -90,6 +90,20 @@ public class BytesStreamOutput extends BytesStream {
         count += length;
     }
 
+    @Override
+    public void writeLong(long i) throws IOException {
+        ensureCapacity(((long) count) + Long.BYTES);
+        bytes.set(count, i);
+        count += Long.BYTES;
+    }
+
+    @Override
+    public void writeInt(int i) throws IOException {
+        ensureCapacity(((long) count) + Integer.BYTES);
+        bytes.set(count, i);
+        count += Integer.BYTES;
+    }
+
     public void reset() {
         // shrink list of pages
         if (bytes != null && bytes.size() > PageCacheRecycler.PAGE_SIZE_IN_BYTES) {

@@ -34,6 +34,10 @@ public interface ByteArray extends BigArray, Writeable {
      */
     byte set(long index, byte value);
 
+    void set(long index, long value);
+
+    void set(long index, int value);
+
     /**
      * Get a reference to a slice.
      *
