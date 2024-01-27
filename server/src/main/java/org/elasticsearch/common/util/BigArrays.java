@@ -138,10 +138,10 @@ public class BigArrays {
             assert indexIsInt(index);
             int idx = (int) index;
             while ((value & ~0x7F) != 0) {
-                set(idx++, (byte) ((value & 0x7F) | 0x80));
+                array[idx++] = (byte) ((value & 0x7F) | 0x80);
                 value >>>= 7;
             }
-            set(idx++, (byte) value);
+            array[idx++] = (byte) value;
             return idx;
         }
 

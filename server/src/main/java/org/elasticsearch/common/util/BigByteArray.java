@@ -76,6 +76,23 @@ final class BigByteArray extends AbstractBigArray implements ByteArray {
 
     @Override
     public long setVInt(long index, int value) {
+        final int startingIndex = indexInPage(index);
+        if (startingIndex + 5 <= pageSize()) {
+            final int pageIndex = pageIndex(index);
+            int indexInPage = startingIndex;
+            final byte[] page = pages[pageIndex];
+            while ((value & ~0x7F) != 0) {
+                page[indexInPage++] = (byte) ((value & 0x7F) | 0x80);
+                value >>>= 7;
+            }
+            page[indexInPage++] = (byte) value;
+            return index + (indexInPage - startingIndex);
+        } else {
+            return writeVIntSlow(index, value);
+        }
+    }
+
+    private long writeVIntSlow(long index, int value) {
         while ((value & ~0x7F) != 0) {
             set(index++, (byte) ((value & 0x7F) | 0x80));
             value >>>= 7;
