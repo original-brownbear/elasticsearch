@@ -110,6 +110,22 @@ public class BytesStreamOutput extends BytesStream {
         count = (int) bytes.setVInt(count, i);
     }
 
+    @Override
+    public void writeOptionalString(String str) throws IOException {
+        if (str == null) {
+            writeBoolean(false);
+            return;
+        }
+        writeBoolean(true);
+        writeString(str);
+    }
+
+    @Override
+    public void writeString(String str) throws IOException {
+        ensureCapacity(count + (long) str.length() * 3 + 5);
+        count = (int) bytes.setString(count, str);
+    }
+
     public void reset() {
         // shrink list of pages
         if (bytes != null && bytes.size() > PageCacheRecycler.PAGE_SIZE_IN_BYTES) {

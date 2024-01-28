@@ -117,6 +117,51 @@ final class BigByteArray extends AbstractBigArray implements ByteArray {
     }
 
     @Override
+    public long setString(long index, String value) {
+        final int charCount = value.length();
+        index = setVInt(index, charCount);
+        final int startingIndex = indexInPage(index);
+        if (startingIndex + charCount * 3 <= pageSize()) {
+            final int pageIndex = pageIndex(index);
+            final byte[] page = pages[pageIndex];
+            int indexInPage = startingIndex;
+            for (int i = 0; i < charCount; i++) {
+                final int c = value.charAt(i);
+                if (c <= 0x007F) {
+                    page[indexInPage++] = ((byte) c);
+                } else if (c > 0x07FF) {
+                    page[indexInPage++] = ((byte) (0xE0 | c >> 12 & 0x0F));
+                    page[indexInPage++] = ((byte) (0x80 | c >> 6 & 0x3F));
+                    page[indexInPage++] = ((byte) (0x80 | c >> 0 & 0x3F));
+                } else {
+                    page[indexInPage++] = ((byte) (0xC0 | c >> 6 & 0x1F));
+                    page[indexInPage++] = ((byte) (0x80 | c >> 0 & 0x3F));
+                }
+            }
+            return index + (indexInPage - startingIndex);
+        } else {
+            return setStringSlow(index, value, charCount);
+        }
+    }
+
+    private long setStringSlow(long index, String value, int charCount) {
+        for (int i = 0; i < charCount; i++) {
+            final int c = value.charAt(i);
+            if (c <= 0x007F) {
+                set(index++, (byte) c);
+            } else if (c > 0x07FF) {
+                set(index++, (byte) (0xE0 | c >> 12 & 0x0F));
+                set(index++, (byte) (0x80 | c >> 6 & 0x3F));
+                set(index++, (byte) (0x80 | c >> 0 & 0x3F));
+            } else {
+                set(index++, (byte) (0xC0 | c >> 6 & 0x1F));
+                set(index++, (byte) (0x80 | c >> 0 & 0x3F));
+            }
+        }
+        return index;
+    }
+
+    @Override
     public boolean get(long index, int len, BytesRef ref) {
         assert index + len <= size();
         if (len == 0) {

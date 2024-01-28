@@ -40,6 +40,8 @@ public interface ByteArray extends BigArray, Writeable {
 
     long setVInt(long index, int value);
 
+    long setString(long index, String value);
+
     /**
      * Get a reference to a slice.
      *
