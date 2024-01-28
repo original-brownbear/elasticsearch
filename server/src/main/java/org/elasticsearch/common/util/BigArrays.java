@@ -150,20 +150,7 @@ public class BigArrays {
             assert indexIsInt(index);
             final int charCount = value.length();
             int idx = (int) setVInt(index, charCount);
-            for (int i = 0; i < charCount; i++) {
-                final int c = value.charAt(i);
-                if (c <= 0x007F) {
-                    array[idx++] = ((byte) c);
-                } else if (c > 0x07FF) {
-                    array[idx++] = ((byte) (0xE0 | c >> 12 & 0x0F));
-                    array[idx++] = ((byte) (0x80 | c >> 6 & 0x3F));
-                    array[idx++] = ((byte) (0x80 | c >> 0 & 0x3F));
-                } else {
-                    array[idx++] = ((byte) (0xC0 | c >> 6 & 0x1F));
-                    array[idx++] = ((byte) (0x80 | c >> 0 & 0x3F));
-                }
-            }
-            return idx;
+            return BigByteArray.stringToBytes(value, array, idx);
         }
 
         @Override

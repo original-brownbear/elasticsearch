@@ -88,11 +88,11 @@ final class BigByteArray extends AbstractBigArray implements ByteArray {
             page[indexInPage++] = (byte) value;
             return index + (indexInPage - startingIndex);
         } else {
-            return writeVIntSlow(index, value);
+            return setVIntSlow(index, value);
         }
     }
 
-    private long writeVIntSlow(long index, int value) {
+    private long setVIntSlow(long index, int value) {
         while ((value & ~0x7F) != 0) {
             set(index++, (byte) ((value & 0x7F) | 0x80));
             value >>>= 7;
@@ -124,24 +124,29 @@ final class BigByteArray extends AbstractBigArray implements ByteArray {
         if (startingIndex + charCount * 3 <= pageSize()) {
             final int pageIndex = pageIndex(index);
             final byte[] page = pages[pageIndex];
-            int indexInPage = startingIndex;
-            for (int i = 0; i < charCount; i++) {
-                final int c = value.charAt(i);
-                if (c <= 0x007F) {
-                    page[indexInPage++] = ((byte) c);
-                } else if (c > 0x07FF) {
-                    page[indexInPage++] = ((byte) (0xE0 | c >> 12 & 0x0F));
-                    page[indexInPage++] = ((byte) (0x80 | c >> 6 & 0x3F));
-                    page[indexInPage++] = ((byte) (0x80 | c >> 0 & 0x3F));
-                } else {
-                    page[indexInPage++] = ((byte) (0xC0 | c >> 6 & 0x1F));
-                    page[indexInPage++] = ((byte) (0x80 | c >> 0 & 0x3F));
-                }
-            }
-            return index + (indexInPage - startingIndex);
+            final int newIndex = stringToBytes(value, page, startingIndex);
+            return index + (newIndex - startingIndex);
         } else {
             return setStringSlow(index, value, charCount);
         }
+    }
+
+    static int stringToBytes(String value, byte[] page, int offset) {
+        int charCount = value.length();
+        for (int i = 0; i < charCount; i++) {
+            final int c = value.charAt(i);
+            if (c <= 0x007F) {
+                page[offset++] = ((byte) c);
+            } else if (c > 0x07FF) {
+                page[offset++] = ((byte) (0xE0 | c >> 12 & 0x0F));
+                page[offset++] = ((byte) (0x80 | c >> 6 & 0x3F));
+                page[offset++] = ((byte) (0x80 | c >> 0 & 0x3F));
+            } else {
+                page[offset++] = ((byte) (0xC0 | c >> 6 & 0x1F));
+                page[offset++] = ((byte) (0x80 | c >> 0 & 0x3F));
+            }
+        }
+        return offset;
     }
 
     private long setStringSlow(long index, String value, int charCount) {
