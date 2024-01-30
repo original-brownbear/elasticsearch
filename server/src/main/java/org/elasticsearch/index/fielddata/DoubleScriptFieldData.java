@@ -97,7 +97,6 @@ public final class DoubleScriptFieldData extends IndexNumericFieldData {
             DoubleScriptDocValues doubleScriptDocValues,
             ToScriptFieldFactory<SortedNumericDoubleValues> toScriptFieldFactory
         ) {
-            super(0);
             this.doubleScriptDocValues = doubleScriptDocValues;
             this.toScriptFieldFactory = toScriptFieldFactory;
         }

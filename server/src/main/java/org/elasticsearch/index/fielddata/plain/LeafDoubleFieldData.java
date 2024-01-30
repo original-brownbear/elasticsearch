@@ -25,15 +25,9 @@ import java.io.IOException;
  */
 public abstract class LeafDoubleFieldData implements LeafNumericFieldData {
 
-    private final long ramBytesUsed;
-
-    protected LeafDoubleFieldData(long ramBytesUsed) {
-        this.ramBytesUsed = ramBytesUsed;
-    }
-
     @Override
     public long ramBytesUsed() {
-        return ramBytesUsed;
+        return 0;
     }
 
     @Override
@@ -46,8 +40,8 @@ public abstract class LeafDoubleFieldData implements LeafNumericFieldData {
         return FieldData.castToLong(getDoubleValues());
     }
 
-    public static LeafNumericFieldData empty(final int maxDoc, ToScriptFieldFactory<SortedNumericDoubleValues> toScriptFieldFactory) {
-        return new LeafDoubleFieldData(0) {
+    public static LeafNumericFieldData empty(ToScriptFieldFactory<SortedNumericDoubleValues> toScriptFieldFactory) {
+        return new LeafDoubleFieldData() {
 
             @Override
             public SortedNumericDoubleValues getDoubleValues() {
@@ -71,7 +65,7 @@ public abstract class LeafDoubleFieldData implements LeafNumericFieldData {
             }
 
             @Override
-            public int docValueCount() throws IOException {
+            public int docValueCount() {
                 return values.docValueCount();
             }
 

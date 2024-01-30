@@ -89,6 +89,19 @@ public class NumberFieldMapper extends FieldMapper {
 
     private static final IndexVersion MINIMUM_COMPATIBILITY_VERSION = IndexVersion.fromId(5000099);
 
+    static void indexLongValue(LuceneDocument document, String name, boolean indexed, boolean docValued, boolean stored, long l) {
+        if (indexed && docValued) {
+            document.add(new LongField(name, l));
+        } else if (docValued) {
+            document.add(new SortedNumericDocValuesField(name, l));
+        } else if (indexed) {
+            document.add(new LongPoint(name, l));
+        }
+        if (stored) {
+            document.add(new StoredField(name, l));
+        }
+    }
+
     public static final class Builder extends FieldMapper.Builder {
 
         private final Parameter<Boolean> indexed;
@@ -1207,17 +1220,7 @@ public class NumberFieldMapper extends FieldMapper {
 
             @Override
             public void addFields(LuceneDocument document, String name, Number value, boolean indexed, boolean docValued, boolean stored) {
-                final long l = value.longValue();
-                if (indexed && docValued) {
-                    document.add(new LongField(name, l));
-                } else if (docValued) {
-                    document.add(new SortedNumericDocValuesField(name, l));
-                } else if (indexed) {
-                    document.add(new LongPoint(name, l));
-                }
-                if (stored) {
-                    document.add(new StoredField(name, l));
-                }
+                indexLongValue(document, name, indexed, docValued, stored, value.longValue());
             }
 
             @Override
