@@ -10,11 +10,10 @@ package org.elasticsearch.xpack.core.security.authz.store;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.hash.MessageDigests;
+import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.xpack.core.security.authc.CrossClusterAccessSubjectInfo;
 import org.elasticsearch.xpack.core.security.authz.RoleDescriptor;
 
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -56,14 +55,13 @@ public interface RoleReference {
         public RoleKey id() {
             if (roleNames.length == 0) {
                 return RoleKey.ROLE_KEY_EMPTY;
-            } else {
-                final Set<String> distinctRoles = new HashSet<>(List.of(roleNames));
-                if (distinctRoles.size() == 1 && distinctRoles.contains(ReservedRolesStore.SUPERUSER_ROLE_DESCRIPTOR.getName())) {
-                    return RoleKey.ROLE_KEY_SUPERUSER;
-                } else {
-                    return new RoleKey(Set.copyOf(distinctRoles), RoleKey.ROLES_STORE_SOURCE);
+            }
+            for (String roleName : roleNames) {
+                if (roleName.equals(ReservedRolesStore.SUPERUSER_ROLE_DESCRIPTOR.getName()) == false) {
+                    return new RoleKey(Sets.newImmutableSet(roleNames), RoleKey.ROLES_STORE_SOURCE);
                 }
             }
+            return RoleKey.ROLE_KEY_SUPERUSER;
         }
 
         @Override

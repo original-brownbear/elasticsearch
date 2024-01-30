@@ -15,6 +15,7 @@ import org.elasticsearch.common.cache.Cache;
 import org.elasticsearch.common.logging.DeprecationCategory;
 import org.elasticsearch.common.logging.DeprecationLogger;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
+import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.license.XPackLicenseState;
 import org.elasticsearch.xpack.core.common.IteratingActionListener;
 import org.elasticsearch.xpack.core.security.authz.RoleDescriptor;
@@ -29,7 +30,6 @@ import org.elasticsearch.xpack.security.authc.service.ServiceAccountService;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -80,7 +80,7 @@ public class RoleDescriptorStore implements RoleReferenceResolver {
         RoleReference.NamedRoleReference namedRoleReference,
         ActionListener<RolesRetrievalResult> listener
     ) {
-        final Set<String> roleNames = Set.copyOf(new HashSet<>(List.of(namedRoleReference.getRoleNames())));
+        final Set<String> roleNames = Sets.newImmutableSet(namedRoleReference.getRoleNames());
         if (roleNames.isEmpty()) {
             listener.onResponse(RolesRetrievalResult.EMPTY);
         } else if (roleNames.equals(Set.of(ReservedRolesStore.SUPERUSER_ROLE_DESCRIPTOR.getName()))) {

@@ -12,6 +12,7 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.util.CollectionUtils;
+import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
 import org.elasticsearch.xcontent.XContent;
@@ -23,7 +24,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 
 /**
@@ -86,8 +86,8 @@ public final class SourceFilter {
             return this::filterMap;
         }
         final XContentParserConfiguration parserConfig = XContentParserConfiguration.EMPTY.withFiltering(
-            Set.copyOf(Arrays.asList(includes)),
-            Set.copyOf(Arrays.asList(excludes)),
+            Sets.newImmutableSet(includes),
+            Sets.newImmutableSet(excludes),
             true
         );
         return in -> {

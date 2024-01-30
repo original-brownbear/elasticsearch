@@ -14,13 +14,12 @@ import org.apache.lucene.util.automaton.Automaton;
 import org.apache.lucene.util.automaton.CharacterRunAutomaton;
 import org.apache.lucene.util.automaton.Operations;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.util.set.Sets;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
@@ -79,13 +78,8 @@ public class Regex {
             }
         }
         if (false == simpleStrings.isEmpty()) {
-            Automaton simpleStringsAutomaton;
-            if (simpleStrings.size() > 0) {
-                Collections.sort(simpleStrings);
-                simpleStringsAutomaton = Automata.makeStringUnion(simpleStrings);
-            } else {
-                simpleStringsAutomaton = Automata.makeString(simpleStrings.get(0).utf8ToString());
-            }
+            Collections.sort(simpleStrings);
+            Automaton simpleStringsAutomaton = Automata.makeStringUnion(simpleStrings);
             if (automata.isEmpty()) {
                 return simpleStringsAutomaton;
             }
@@ -121,7 +115,7 @@ public class Regex {
                 return patterns[0]::equals;
             }
         } else if (hasWildcard == false) {
-            return Set.copyOf(Arrays.asList(patterns))::contains;
+            return Sets.newImmutableSet(patterns)::contains;
         } else {
             Automaton automaton = simpleMatchToAutomaton(patterns);
             return new CharacterRunAutomaton(automaton)::run;

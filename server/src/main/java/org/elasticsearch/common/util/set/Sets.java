@@ -44,6 +44,18 @@ public final class Sets {
         return new HashSet<>(capacity(expectedSize));
     }
 
+    @SafeVarargs
+    @SuppressWarnings("varargs")
+    public static <E> Set<E> newImmutableSet(E... elements) {
+        if (elements.length == 0) {
+            return Set.of();
+        } else if (elements.length == 1) {
+            return Set.of(elements[0]);
+        } else {
+            return Set.copyOf(Arrays.asList(elements));
+        }
+    }
+
     public static <E> LinkedHashSet<E> newLinkedHashSetWithExpectedSize(int expectedSize) {
         return new LinkedHashSet<>(capacity(expectedSize));
     }
