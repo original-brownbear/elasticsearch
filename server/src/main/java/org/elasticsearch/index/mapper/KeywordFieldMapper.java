@@ -901,12 +901,13 @@ public final class KeywordFieldMapper extends FieldMapper {
         if (value == null) {
             return;
         }
+        var mappedFieldType = fieldType();
         // if field is disabled, skip indexing
-        if ((fieldType.indexOptions() == IndexOptions.NONE) && (fieldType.stored() == false) && (fieldType().hasDocValues() == false)) {
+        if ((fieldType.indexOptions() == IndexOptions.NONE) && (fieldType.stored() == false) && (mappedFieldType.hasDocValues() == false)) {
             return;
         }
 
-        if (value.length() > fieldType().ignoreAbove()) {
+        if (value.length() > mappedFieldType.ignoreAbove()) {
             context.addIgnoredField(name());
             if (storeIgnored) {
                 // Save a copy of the field so synthetic source can load it
@@ -915,13 +916,13 @@ public final class KeywordFieldMapper extends FieldMapper {
             return;
         }
 
-        value = normalizeValue(fieldType().normalizer(), name(), value);
+        value = normalizeValue(mappedFieldType.normalizer(), name(), value);
 
         // convert to utf8 only once before feeding postings/dv/stored fields
         final BytesRef binaryValue = new BytesRef(value);
 
-        if (fieldType().isDimension()) {
-            context.getDimensions().addString(fieldType().name(), binaryValue);
+        if (mappedFieldType.isDimension()) {
+            context.getDimensions().addString(mappedFieldType.name(), binaryValue);
         }
 
         // If the UTF8 encoding of the field value is bigger than the max length 32766, Lucene fill fail the indexing request and, to
@@ -944,11 +945,11 @@ public final class KeywordFieldMapper extends FieldMapper {
             throw new IllegalArgumentException(msg);
         }
 
-        Field field = new KeywordField(fieldType().name(), binaryValue, fieldType);
+        Field field = new KeywordField(mappedFieldType.name(), binaryValue, fieldType);
         context.doc().add(field);
 
         if (fieldType().hasDocValues() == false && fieldType.omitNorms()) {
-            context.addToFieldNames(fieldType().name());
+            context.addToFieldNames(mappedFieldType.name());
         }
     }
 

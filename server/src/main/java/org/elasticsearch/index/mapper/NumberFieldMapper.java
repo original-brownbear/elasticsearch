@@ -1832,14 +1832,15 @@ public class NumberFieldMapper extends FieldMapper {
     @Override
     protected void parseCreateField(DocumentParserContext context) throws IOException {
         Number value;
+        var parser = context.parser();
         try {
-            value = value(context.parser());
+            value = value(parser);
         } catch (IllegalArgumentException e) {
-            if (ignoreMalformed.value() && context.parser().currentToken().isValue()) {
+            if (ignoreMalformed.value() && parser.currentToken().isValue()) {
                 context.addIgnoredField(mappedFieldType.name());
                 if (storeMalformedFields) {
                     // Save a copy of the field so synthetic source can load it
-                    context.doc().add(IgnoreMalformedStoredValues.storedField(name(), context.parser()));
+                    context.doc().add(IgnoreMalformedStoredValues.storedField(name(), parser));
                 }
                 return;
             } else {

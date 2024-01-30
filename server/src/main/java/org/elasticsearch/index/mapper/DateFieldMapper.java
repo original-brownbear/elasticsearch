@@ -925,19 +925,21 @@ public final class DateFieldMapper extends FieldMapper {
     }
 
     private void indexValue(DocumentParserContext context, long timestamp) {
+        var doc = context.doc();
+        final String name = fieldType().name();
         if (indexed && hasDocValues) {
-            context.doc().add(new LongField(fieldType().name(), timestamp));
+            doc.add(new LongField(name, timestamp));
         } else if (hasDocValues) {
-            context.doc().add(new SortedNumericDocValuesField(fieldType().name(), timestamp));
+            doc.add(new SortedNumericDocValuesField(name, timestamp));
         } else if (indexed) {
-            context.doc().add(new LongPoint(fieldType().name(), timestamp));
+            doc.add(new LongPoint(name, timestamp));
         }
         if (store) {
-            context.doc().add(new StoredField(fieldType().name(), timestamp));
+            doc.add(new StoredField(name, timestamp));
         }
         if (hasDocValues == false && (indexed || store)) {
             // When the field doesn't have doc values so that we can run exists queries, we also need to index the field name separately.
-            context.addToFieldNames(fieldType().name());
+            context.addToFieldNames(name);
         }
     }
 

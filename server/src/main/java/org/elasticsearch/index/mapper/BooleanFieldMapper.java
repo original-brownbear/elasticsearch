@@ -417,20 +417,21 @@ public class BooleanFieldMapper extends FieldMapper {
         }
 
         Boolean value = null;
-        XContentParser.Token token = context.parser().currentToken();
+        var parser = context.parser();
+        XContentParser.Token token = parser.currentToken();
         if (token == XContentParser.Token.VALUE_NULL) {
             if (nullValue != null) {
                 value = nullValue;
             }
         } else {
             try {
-                value = context.parser().booleanValue();
+                value = parser.booleanValue();
             } catch (IllegalArgumentException e) {
-                if (ignoreMalformed.value() && context.parser().currentToken().isValue()) {
+                if (ignoreMalformed.value() && parser.currentToken().isValue()) {
                     context.addIgnoredField(mappedFieldType.name());
                     if (storeMalformedFields) {
                         // Save a copy of the field so synthetic source can load it
-                        context.doc().add(IgnoreMalformedStoredValues.storedField(name(), context.parser()));
+                        context.doc().add(IgnoreMalformedStoredValues.storedField(name(), parser));
                     }
                 } else {
                     throw e;
@@ -444,14 +445,15 @@ public class BooleanFieldMapper extends FieldMapper {
         if (value == null) {
             return;
         }
+        var doc = context.doc();
         if (indexed) {
-            context.doc().add(new StringField(fieldType().name(), value ? Values.TRUE : Values.FALSE, Field.Store.NO));
+            doc.add(new StringField(fieldType().name(), value ? Values.TRUE : Values.FALSE, Field.Store.NO));
         }
         if (stored) {
-            context.doc().add(new StoredField(fieldType().name(), value ? "T" : "F"));
+            doc.add(new StoredField(fieldType().name(), value ? "T" : "F"));
         }
         if (hasDocValues) {
-            context.doc().add(new SortedNumericDocValuesField(fieldType().name(), value ? 1 : 0));
+            doc.add(new SortedNumericDocValuesField(fieldType().name(), value ? 1 : 0));
         } else {
             context.addToFieldNames(fieldType().name());
         }

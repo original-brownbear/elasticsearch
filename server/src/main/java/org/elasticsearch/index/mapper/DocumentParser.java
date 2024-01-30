@@ -91,10 +91,11 @@ public final class DocumentParser {
             )
         ) {
             context = new RootDocumentParserContext(mappingLookup, mappingParserContext, source, parser);
-            validateStart(context.parser());
+            var rootParser = context.parser();
+            validateStart(rootParser);
             MetadataFieldMapper[] metadataFieldsMappers = mappingLookup.getMapping().getSortedMetadataMappers();
             internalParseDocument(metadataFieldsMappers, context);
-            validateEnd(context.parser());
+            validateEnd(rootParser);
         } catch (XContentParseException e) {
             throw new DocumentParsingException(e.getLocation(), e.getMessage(), e);
         } catch (IOException e) {
@@ -129,9 +130,9 @@ public final class DocumentParser {
     }
 
     private static void internalParseDocument(MetadataFieldMapper[] metadataFieldsMappers, DocumentParserContext context) {
-
+        var parser = context.parser();
         try {
-            final boolean emptyDoc = isEmptyDoc(context.root(), context.parser());
+            final boolean emptyDoc = isEmptyDoc(context.root(), parser);
 
             for (MetadataFieldMapper metadataMapper : metadataFieldsMappers) {
                 metadataMapper.preParse(context);
@@ -139,7 +140,7 @@ public final class DocumentParser {
 
             if (context.root().isEnabled() == false) {
                 // entire type is disabled
-                context.parser().skipChildren();
+                parser.skipChildren();
             } else if (emptyDoc == false) {
                 parseObjectOrNested(context);
             }
@@ -261,11 +262,11 @@ public final class DocumentParser {
     }
 
     static void parseObjectOrNested(DocumentParserContext context) throws IOException {
+        final XContentParser parser = context.parser();
         if (context.parent().isEnabled() == false) {
-            context.parser().skipChildren();
+            parser.skipChildren();
             return;
         }
-        XContentParser parser = context.parser();
         XContentParser.Token token = parser.currentToken();
         if (token == XContentParser.Token.VALUE_NULL) {
             // the object is null ("obj1" : null), simply bail
