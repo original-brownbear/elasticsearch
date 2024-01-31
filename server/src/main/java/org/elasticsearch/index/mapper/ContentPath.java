@@ -8,21 +8,21 @@
 
 package org.elasticsearch.index.mapper;
 
+import org.elasticsearch.common.Strings;
+
 public final class ContentPath {
 
     private static final char DELIMITER = '.';
 
-    private final StringBuilder sb;
+    private StringBuilder sb;
 
     private int index = 0;
 
-    private String[] path = new String[10];
+    private String[] path = Strings.EMPTY_ARRAY;
 
     private boolean withinLeafObject = false;
 
-    public ContentPath() {
-        this.sb = new StringBuilder();
-    }
+    public ContentPath() {}
 
     String[] getPath() {
         // used for testing
@@ -30,10 +30,10 @@ public final class ContentPath {
     }
 
     public void add(String name) {
-        path[index++] = name;
         if (index == path.length) { // expand if needed
             expand();
         }
+        path[index++] = name;
     }
 
     private void expand() {
@@ -55,7 +55,17 @@ public final class ContentPath {
     }
 
     public String pathAsText(String name) {
-        sb.setLength(0);
+        if (index == 0) {
+            return name;
+        }
+        if (index == 1 && name.isEmpty()) {
+            return path[0];
+        }
+        if (sb == null) {
+            sb = new StringBuilder();
+        } else {
+            sb.setLength(0);
+        }
         for (int i = 0; i < index; i++) {
             sb.append(path[i]).append(DELIMITER);
         }
