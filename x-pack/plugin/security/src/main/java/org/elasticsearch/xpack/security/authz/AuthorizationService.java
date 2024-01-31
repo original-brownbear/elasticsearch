@@ -765,7 +765,7 @@ public class AuthorizationService {
         final Map<String, Set<String>> actionToIndicesMap = new HashMap<>(4);
         final AuditTrail auditTrail = auditTrailService.get();
 
-        resolvedIndicesAsyncSupplier.getAsync(ActionListener.wrap(overallResolvedIndices -> {
+        resolvedIndicesAsyncSupplier.getAsync(listener.delegateFailureAndWrap((delegate, overallResolvedIndices) -> {
             final Set<String> localIndices = new HashSet<>(overallResolvedIndices.getLocal());
             for (BulkItemRequest item : request.items()) {
                 final String itemAction = getAction(item);
@@ -781,8 +781,8 @@ public class AuthorizationService {
                 actionToIndicesMap.computeIfAbsent(itemAction, k -> new HashSet<>()).add(resolvedIndex);
             }
 
-            final ActionListener<Collection<Tuple<String, IndexAuthorizationResult>>> bulkAuthzListener = ActionListener.wrap(
-                collection -> {
+            final ActionListener<Collection<Tuple<String, IndexAuthorizationResult>>> bulkAuthzListener = delegate.delegateFailureAndWrap(
+                (delegate2, collection) -> {
                     final Map<String, IndicesAccessControl> actionToIndicesAccessControl = new HashMap<>(4);
                     collection.forEach(tuple -> {
                         final IndicesAccessControl existing = actionToIndicesAccessControl.putIfAbsent(
@@ -816,8 +816,8 @@ public class AuthorizationService {
                             );
                         }
                     }
-                    actionToDeniedIndicesMap.forEach((action, resolvedIndicesSet) -> {
-                        auditTrail.explicitIndexAccessEvent(
+                    actionToDeniedIndicesMap.forEach(
+                        (action, resolvedIndicesSet) -> auditTrail.explicitIndexAccessEvent(
                             requestId,
                             AuditLevel.ACCESS_DENIED,
                             authentication,
@@ -826,10 +826,10 @@ public class AuthorizationService {
                             BulkItemRequest.class.getSimpleName(),
                             request.remoteAddress(),
                             authzInfo
-                        );
-                    });
-                    actionToGrantedIndicesMap.forEach((action, resolvedIndicesSet) -> {
-                        auditTrail.explicitIndexAccessEvent(
+                        )
+                    );
+                    actionToGrantedIndicesMap.forEach(
+                        (action, resolvedIndicesSet) -> auditTrail.explicitIndexAccessEvent(
                             requestId,
                             AuditLevel.ACCESS_GRANTED,
                             authentication,
@@ -838,11 +838,10 @@ public class AuthorizationService {
                             BulkItemRequest.class.getSimpleName(),
                             request.remoteAddress(),
                             authzInfo
-                        );
-                    });
-                    listener.onResponse(null);
-                },
-                listener::onFailure
+                        )
+                    );
+                    delegate2.onResponse(null);
+                }
             );
             final ActionListener<Tuple<String, IndexAuthorizationResult>> groupedActionListener = wrapPreservingContext(
                 new GroupedActionListener<>(actionToIndicesMap.size(), bulkAuthzListener),
@@ -867,7 +866,7 @@ public class AuthorizationService {
                     )
                 );
             });
-        }, listener::onFailure));
+        }));
     }
 
     private static String resolveIndexNameDateMath(BulkItemRequest bulkItemRequest) {
