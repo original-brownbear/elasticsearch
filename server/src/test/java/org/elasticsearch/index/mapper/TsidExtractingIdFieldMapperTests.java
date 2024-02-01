@@ -515,7 +515,7 @@ public class TsidExtractingIdFieldMapperTests extends MetadataMapperTestCase {
             source.accept(builder);
             builder.endObject();
             SourceToParse sourceToParse = new SourceToParse(id, BytesReference.bytes(builder), builder.contentType());
-            return mapperService.documentParser().parseDocument(sourceToParse, mapperService.mappingLookup());
+            return mapperService.documentParser().parseDocument(sourceToParse, mapperService.mappingLookup(), true);
         }
     }
 

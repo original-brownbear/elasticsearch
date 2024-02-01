@@ -88,8 +88,12 @@ public class DocumentMapper {
         return this.mappingLookup;
     }
 
+    public ParsedDocument parseWithoutValidations(SourceToParse source) throws DocumentParsingException {
+        return documentParser.parseDocument(source, mappingLookup, false);
+    }
+
     public ParsedDocument parse(SourceToParse source) throws DocumentParsingException {
-        return documentParser.parseDocument(source, mappingLookup);
+        return documentParser.parseDocument(source, mappingLookup, true);
     }
 
     public void validate(IndexSettings settings, boolean checkLimits) {

@@ -74,7 +74,8 @@ public final class DocumentParser {
      * @return the parsed document
      * @throws DocumentParsingException whenever there's a problem parsing the document
      */
-    public ParsedDocument parseDocument(SourceToParse source, MappingLookup mappingLookup) throws DocumentParsingException {
+    public ParsedDocument parseDocument(SourceToParse source, MappingLookup mappingLookup, boolean onPrimary)
+        throws DocumentParsingException {
         if (source.source() != null && source.source().length() == 0) {
             throw new DocumentParsingException(new XContentLocation(0, 0), "failed to parse, document is empty");
         }
@@ -85,16 +86,17 @@ public final class DocumentParser {
         DocumentParsingObserver documentParsingObserver = source.toBeReported()
             ? documentParsingObserverSupplier.get()
             : DocumentParsingObserver.EMPTY_INSTANCE;
-        try (
-            XContentParser parser = documentParsingObserver.wrapParser(
-                XContentHelper.createParser(parserConfiguration, source.source(), xContentType)
-            )
-        ) {
-            context = new RootDocumentParserContext(mappingLookup, mappingParserContext, source, parser);
-            validateStart(context.parser());
-            MetadataFieldMapper[] metadataFieldsMappers = mappingLookup.getMapping().getSortedMetadataMappers();
-            internalParseDocument(metadataFieldsMappers, context);
-            validateEnd(context.parser());
+        try (var rawParser = XContentHelper.createParser(parserConfiguration, source.source(), xContentType)) {
+            if (onPrimary == false && xContentType == XContentType.JSON || xContentType == XContentType.YAML) {
+                rawParser.allowDuplicateKeys(true);
+            }
+            try (XContentParser parser = documentParsingObserver.wrapParser(rawParser)) {
+                context = new RootDocumentParserContext(mappingLookup, mappingParserContext, source, parser);
+                validateStart(context.parser());
+                MetadataFieldMapper[] metadataFieldsMappers = mappingLookup.getMapping().getSortedMetadataMappers();
+                internalParseDocument(metadataFieldsMappers, context);
+                validateEnd(context.parser());
+            }
         } catch (XContentParseException e) {
             throw new DocumentParsingException(e.getLocation(), e.getMessage(), e);
         } catch (IOException e) {

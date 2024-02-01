@@ -1009,7 +1009,9 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
             documentMapper = DocumentMapper.createEmpty(mapperService);
             mapping = documentMapper.mapping();
         }
-        ParsedDocument doc = documentMapper.parse(source);
+        ParsedDocument doc = origin == Engine.Operation.Origin.PRIMARY
+            ? documentMapper.parse(source)
+            : documentMapper.parseWithoutValidations(source);
         if (mapping != null) {
             // If we are indexing but there is no mapping we create one. This is to ensure that whenever at least a document is indexed
             // some mappings do exist. It covers for the case of indexing an empty doc (`{}`).
