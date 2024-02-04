@@ -117,16 +117,26 @@ public final class BytesArray extends AbstractBytesReference {
         if (length == 0) {
             return BytesRefIterator.EMPTY;
         }
-        return new BytesRefIterator() {
-            BytesRef ref = toBytesRef();
+        return new Iter(this);
+    }
 
-            @Override
-            public BytesRef next() {
-                BytesRef r = ref;
-                ref = null; // only return it once...
-                return r;
+    private static final class Iter implements BytesRefIterator {
+
+        private BytesReference bytesReference;
+
+        Iter(BytesReference bytesReference) {
+            this.bytesReference = bytesReference;
+        }
+
+        @Override
+        public BytesRef next() {
+            if (bytesReference == null) {
+                return null;
             }
-        };
+            BytesRef r = bytesReference.toBytesRef();
+            bytesReference = null;
+            return r;
+        }
     }
 
     @Override
