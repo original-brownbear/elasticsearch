@@ -184,6 +184,7 @@ public class TransportShardBulkAction extends TransportWriteAction<BulkShardRequ
         ThreadPool threadPool,
         String executorName
     ) {
+        request.mustIncRef();
         performOnPrimary(
             request,
             primary,
@@ -191,7 +192,7 @@ public class TransportShardBulkAction extends TransportWriteAction<BulkShardRequ
             nowInMillisSupplier,
             mappingUpdater,
             waitForMappingUpdate,
-            listener,
+            ActionListener.runBefore(listener, request::decRef),
             threadPool,
             executorName,
             null,

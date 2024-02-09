@@ -15,6 +15,7 @@ import org.elasticsearch.core.AbstractRefCounted;
 import org.elasticsearch.core.RefCounted;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.Releasables;
+import org.elasticsearch.transport.LeakTracker;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -170,6 +171,12 @@ public final class ReleasableBytesReference implements RefCounted, Releasable, B
             @Override
             public boolean supportReadAllToReleasableBytesReference() {
                 return true;
+            }
+
+            @Override
+            public RefCounted acquireReference() {
+                refCounted.mustIncRef();
+                return LeakTracker.wrap(AbstractRefCounted.of(refCounted::decRef));
             }
         };
     }

@@ -1264,7 +1264,7 @@ public abstract class TransportReplicationAction<
                 maxSeqNoOfUpdatesOrDeletes
             );
             final ActionListenerResponseHandler<ReplicaResponse> handler = new ActionListenerResponseHandler<>(
-                listener,
+                ActionListener.runBefore(listener, replicaRequest::decRef),
                 ReplicaResponse::new,
                 TransportResponseHandler.TRANSPORT_WORKER
             );
@@ -1333,6 +1333,7 @@ public abstract class TransportReplicationAction<
             Objects.requireNonNull(request);
             Objects.requireNonNull(targetAllocationID);
             this.request = request;
+            request.incRef();
             this.targetAllocationID = targetAllocationID;
             this.primaryTerm = primaryTerm;
             this.sentFromLocalReroute = sentFromLocalReroute;
@@ -1417,6 +1418,26 @@ public abstract class TransportReplicationAction<
         @Override
         public String toString() {
             return "request: " + request + ", target allocation id: " + targetAllocationID + ", primary term: " + primaryTerm;
+        }
+
+        @Override
+        public void incRef() {
+            request.incRef();
+        }
+
+        @Override
+        public boolean tryIncRef() {
+            return request.tryIncRef();
+        }
+
+        @Override
+        public boolean decRef() {
+            return request.decRef();
+        }
+
+        @Override
+        public boolean hasReferences() {
+            return request.hasReferences();
         }
     }
 
