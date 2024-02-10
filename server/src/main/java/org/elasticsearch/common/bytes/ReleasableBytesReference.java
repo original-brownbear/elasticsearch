@@ -84,6 +84,14 @@ public final class ReleasableBytesReference implements RefCounted, Releasable, B
         return new ReleasableBytesReference(slice, refCounted);
     }
 
+    public ReleasableBytesReference unretainedSlice(int from, int length) {
+        if (from == 0 && length() == length) {
+            return this;
+        }
+        final BytesReference slice = delegate.slice(from, length);
+        return new ReleasableBytesReference(slice, refCounted);
+    }
+
     @Override
     public void close() {
         refCounted.decRef();

@@ -8,10 +8,6 @@
 
 package org.elasticsearch.transport;
 
-import org.apache.lucene.util.BytesRef;
-import org.elasticsearch.TransportVersion;
-import org.elasticsearch.common.breaker.CircuitBreaker;
-import org.elasticsearch.common.bytes.CompositeBytesReference;
 import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.Releasables;
@@ -78,8 +74,7 @@ public class InboundPipeline implements Releasable {
             while (continueDecoding) {
                 final int bytesDecoded = decoder.decode(reference, fragments::add);
                 if (bytesDecoded != 0) {
-                    reference = reference.retainedSlice(bytesDecoded, reference.length() - bytesDecoded);
-                    reference.decRef();
+                    reference = reference.unretainedSlice(bytesDecoded, reference.length() - bytesDecoded);
                     if (fragments.isEmpty() == false && endOfMessage(fragments.get(fragments.size() - 1))) {
                         continueDecoding = false;
                     }
