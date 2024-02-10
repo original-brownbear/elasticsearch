@@ -79,7 +79,7 @@ public class InboundAggregator implements Releasable {
         assert isAggregating();
         if (isShortCircuited() == false) {
             if (isFirstContent()) {
-                firstContent = content.retain();
+                firstContent = content;
             } else {
                 if (contentAggregation == null) {
                     contentAggregation = new ArrayList<>(4);
