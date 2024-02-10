@@ -7,6 +7,7 @@
  */
 
 import org.elasticsearch.gradle.util.Pair
+import org.elasticsearch.gradle.util.GradleUtils
 import org.elasticsearch.gradle.internal.info.BuildParams
 import org.jetbrains.gradle.ext.JUnit
 
@@ -109,14 +110,26 @@ if (providers.systemProperty('idea.active').getOrNull() == 'true') {
     }
   }
 
+  // aggregate task so dependency artifacts below can can use one task name
+  tasks.register("generateProviderImpls").configure {
+    group = 'ide'
+    description = 'Builds all embedded provider impls'
+
+    dependsOn subprojects
+      .collect { GradleUtils.findByName(it.tasks, 'generateProviderImpls') }
+      .findAll { it != null }
+  }
+
   tasks.register('buildDependencyArtifacts') {
     group = 'ide'
     description = 'Builds artifacts needed as dependency for IDE modules'
     dependsOn([':client:rest-high-level:shadowJar',
       ':plugins:repository-hdfs:hadoop-client-api:shadowJar',
-      ':libs:elasticsearch-x-content:generateProviderImpl',
+      ':x-pack:plugin:esql:compute:ann:jar',
+      ':x-pack:plugin:esql:compute:gen:jar',
       ':server:generateModulesList',
-      ':server:generatePluginsList'].collect { elasticsearchProject.right()?.task(it) ?: it })
+      ':server:generatePluginsList',
+      ':generateProviderImpls'].collect { elasticsearchProject.right()?.task(it) ?: it })
   }
 
   idea {
@@ -245,20 +258,20 @@ Node parseXml(Object path) {
   return xml
 }
 
-Pair<File, IncludedBuild> locateElasticsearchWorkspace(Gradle project) {
-  if (project.parent == null) {
-    // See if any of these included builds is the Elasticsearch project
-    for (IncludedBuild includedBuild : project.includedBuilds) {
+Pair<File, IncludedBuild> locateElasticsearchWorkspace(Gradle gradle) {
+  if (gradle.parent == null) {
+    // See if any of these included builds is the Elasticsearch gradle
+    for (IncludedBuild includedBuild : gradle.includedBuilds) {
       File versionProperties = new File(includedBuild.projectDir, 'build-tools-internal/version.properties')
       if (versionProperties.exists()) {
         return Pair.of(includedBuild.projectDir, includedBuild)
       }
     }
 
-    // Otherwise assume this project is the root elasticsearch workspace
-    return Pair.of(project.getRootProject().getRootDir(), null)
+    // Otherwise assume this gradle is the root elasticsearch workspace
+    return Pair.of(gradle.getRootProject().getRootDir(), null)
   } else {
     // We're an included build, so keep looking
-    return locateElasticsearchWorkspace(project.parent)
+    return locateElasticsearchWorkspace(gradle.parent)
   }
 }

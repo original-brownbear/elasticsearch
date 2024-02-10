@@ -21,6 +21,7 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -64,7 +65,7 @@ public class TransportGetTrainedModelPackageConfigAction extends TransportMaster
             GetTrainedModelPackageConfigAction.Request::new,
             indexNameExpressionResolver,
             GetTrainedModelPackageConfigAction.Response::new,
-            ThreadPool.Names.SAME
+            EsExecutors.DIRECT_EXECUTOR_SERVICE
         );
         this.settings = settings;
     }
@@ -74,7 +75,7 @@ public class TransportGetTrainedModelPackageConfigAction extends TransportMaster
         String repository = MachineLearningPackageLoader.MODEL_REPOSITORY.get(settings);
 
         String packagedModelId = request.getPackagedModelId();
-        logger.trace(() -> format("Fetch package manifest for [%s] from [%s]", packagedModelId, repository));
+        logger.debug(() -> format("Fetch package manifest for [%s] from [%s]", packagedModelId, repository));
 
         threadPool.executor(MachineLearningPackageLoader.UTILITY_THREAD_POOL_NAME).execute(() -> {
             try {
@@ -89,7 +90,7 @@ public class TransportGetTrainedModelPackageConfigAction extends TransportMaster
 
                     if (packagedModelId.equals(packageConfig.getPackagedModelId()) == false) {
                         // the package is somehow broken
-                        listener.onFailure(new ElasticsearchStatusException("Invalid package", RestStatus.INTERNAL_SERVER_ERROR));
+                        listener.onFailure(new ElasticsearchStatusException("Invalid package name", RestStatus.INTERNAL_SERVER_ERROR));
                         return;
                     }
 

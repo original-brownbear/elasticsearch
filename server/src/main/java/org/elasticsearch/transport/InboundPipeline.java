@@ -11,17 +11,15 @@ package org.elasticsearch.transport;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.common.breaker.CircuitBreaker;
+import org.elasticsearch.common.bytes.CompositeBytesReference;
 import org.elasticsearch.common.bytes.ReleasableBytesReference;
-import org.elasticsearch.common.recycler.Recycler;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.Releasables;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.function.BiConsumer;
-import java.util.function.Function;
 import java.util.function.LongSupplier;
-import java.util.function.Supplier;
 
 public class InboundPipeline implements Releasable {
 
@@ -35,25 +33,6 @@ public class InboundPipeline implements Releasable {
     private final BiConsumer<TcpChannel, InboundMessage> messageHandler;
     private Exception uncaughtException;
     private boolean isClosed = false;
-
-    public InboundPipeline(
-        TransportVersion version,
-        StatsTracker statsTracker,
-        Recycler<BytesRef> recycler,
-        LongSupplier relativeTimeInMillis,
-        Supplier<CircuitBreaker> circuitBreaker,
-        Function<String, RequestHandlerRegistry<TransportRequest>> registryFunction,
-        BiConsumer<TcpChannel, InboundMessage> messageHandler,
-        boolean ignoreDeserializationErrors
-    ) {
-        this(
-            statsTracker,
-            relativeTimeInMillis,
-            new InboundDecoder(version, recycler),
-            new InboundAggregator(circuitBreaker, registryFunction, ignoreDeserializationErrors),
-            messageHandler
-        );
-    }
 
     public InboundPipeline(
         StatsTracker statsTracker,
@@ -129,8 +108,7 @@ public class InboundPipeline implements Releasable {
     private void forwardFragments(TcpChannel channel, ArrayList<Object> fragments) throws IOException {
         for (Object fragment : fragments) {
             if (fragment instanceof Header) {
-                assert aggregator.isAggregating() == false;
-                aggregator.headerReceived((Header) fragment);
+                headerReceived((Header) fragment);
             } else if (fragment instanceof Compression.Scheme) {
                 assert aggregator.isAggregating();
                 aggregator.updateCompressionScheme((Compression.Scheme) fragment);
@@ -152,6 +130,11 @@ public class InboundPipeline implements Releasable {
                 aggregator.aggregate((ReleasableBytesReference) fragment);
             }
         }
+    }
+
+    protected void headerReceived(Header header) {
+        assert aggregator.isAggregating() == false;
+        aggregator.headerReceived(header);
     }
 
     private static boolean endOfMessage(Object fragment) {

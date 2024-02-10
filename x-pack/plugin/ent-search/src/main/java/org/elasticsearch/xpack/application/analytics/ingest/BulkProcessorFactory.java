@@ -12,13 +12,17 @@ import org.elasticsearch.action.bulk.BulkProcessor2;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.client.internal.Client;
+import org.elasticsearch.client.internal.OriginSettingClient;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.logging.LogManager;
 import org.elasticsearch.logging.Logger;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
+import static org.elasticsearch.xpack.core.ClientHelper.ENT_SEARCH_ORIGIN;
 
 /**
  * Event ingest is done through a {@link BulkProcessor2}. This class is responsible for instantiating the bulk processor.
@@ -28,13 +32,22 @@ public class BulkProcessorFactory {
 
     private final AnalyticsEventIngestConfig config;
 
+    private final Supplier<BulkProcessor2.Builder> builderSupplier;
+
     @Inject
-    public BulkProcessorFactory(AnalyticsEventIngestConfig config) {
+    public BulkProcessorFactory(Client client, AnalyticsEventIngestConfig config) {
+        Client originClient = new OriginSettingClient(client, ENT_SEARCH_ORIGIN);
+        this.builderSupplier = () -> BulkProcessor2.builder(originClient::bulk, new BulkProcessorListener(), originClient.threadPool());
         this.config = config;
     }
 
-    public BulkProcessor2 create(Client client) {
-        return BulkProcessor2.builder(client::bulk, new BulkProcessorListener(), client.threadPool())
+    protected BulkProcessorFactory(AnalyticsEventIngestConfig config, Supplier<BulkProcessor2.Builder> builderSupplier) {
+        this.builderSupplier = builderSupplier;
+        this.config = config;
+    }
+
+    public BulkProcessor2 create() {
+        return builderSupplier.get()
             .setMaxNumberOfRetries(config.maxNumberOfRetries())
             .setBulkActions(config.maxNumberOfEventsPerBulk())
             .setFlushInterval(config.flushDelay())

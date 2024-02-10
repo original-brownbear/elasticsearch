@@ -19,6 +19,7 @@ import org.elasticsearch.common.settings.SecureString;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
+import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.test.rest.ESRestTestCase;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xpack.core.transform.TransformField;
@@ -379,7 +380,7 @@ public abstract class TransformRestTestCase extends ESRestTestCase {
         createReviewsTransform(transformId, null, null, config);
     }
 
-    private void createReviewsTransform(String transformId, String authHeader, String secondaryAuthHeader, String config)
+    protected void createReviewsTransform(String transformId, String authHeader, String secondaryAuthHeader, String config)
         throws IOException {
         final Request createTransformRequest = createRequestWithSecondaryAuth(
             "PUT",
@@ -398,13 +399,16 @@ public abstract class TransformRestTestCase extends ESRestTestCase {
         createPivotReviewsTransform(transformId, transformIndex, query, pipeline, null, null, authHeader, null, REVIEWS_INDEX_NAME);
     }
 
-    protected void updateTransform(String transformId, String update) throws IOException {
+    protected void updateTransform(String transformId, String update, boolean deferValidation) throws IOException {
         final Request updateTransformRequest = createRequestWithSecondaryAuth(
             "POST",
             getTransformEndpoint() + transformId + "/_update",
             null,
             null
         );
+        if (deferValidation) {
+            updateTransformRequest.addParameter("defer_validation", String.valueOf(deferValidation));
+        }
         updateTransformRequest.setJsonEntity(update);
 
         client().performRequest(updateTransformRequest);
@@ -473,10 +477,17 @@ public abstract class TransformRestTestCase extends ESRestTestCase {
         // start the transform
         startTransform(transformId, authHeader, secondaryAuthHeader, null, warnings);
         assertTrue(indexExists(transformIndex));
-        // wait until the transform has been created and all data is available
-        waitForTransformCheckpoint(transformId);
-
-        waitForTransformStopped(transformId);
+        assertBusy(() -> {
+            Map<?, ?> transformStatsAsMap = getTransformStateAndStats(transformId);
+            // wait until the transform has been created and all data is available
+            assertEquals(
+                "Stats were: " + transformStatsAsMap,
+                1,
+                XContentMapValues.extractValue("checkpointing.last.checkpoint", transformStatsAsMap)
+            );
+            // wait until the transform is stopped
+            assertEquals("Stats were: " + transformStatsAsMap, "stopped", XContentMapValues.extractValue("state", transformStatsAsMap));
+        }, 30, TimeUnit.SECONDS);
         refreshIndex(transformIndex);
     }
 
@@ -539,16 +550,16 @@ public abstract class TransformRestTestCase extends ESRestTestCase {
         return createRequestWithSecondaryAuth(method, endpoint, authHeader, null);
     }
 
-    void waitForTransformStopped(String transformId) throws Exception {
-        assertBusy(() -> { assertEquals("stopped", getTransformState(transformId)); }, 15, TimeUnit.SECONDS);
-    }
-
-    void waitForTransformCheckpoint(String transformId) throws Exception {
-        waitForTransformCheckpoint(transformId, 1L);
-    }
-
     void waitForTransformCheckpoint(String transformId, long checkpoint) throws Exception {
-        assertBusy(() -> assertEquals(checkpoint, getTransformCheckpoint(transformId)), 30, TimeUnit.SECONDS);
+        assertBusy(() -> {
+            Map<?, ?> transformStatsAsMap = getTransformStateAndStats(transformId);
+            assertNotEquals("Stats were: " + transformStatsAsMap, "failed", XContentMapValues.extractValue("state", transformStatsAsMap));
+            assertEquals(
+                "Stats were: " + transformStatsAsMap,
+                (int) checkpoint,
+                XContentMapValues.extractValue("checkpointing.last.checkpoint", transformStatsAsMap)
+            );
+        }, 30, TimeUnit.SECONDS);
     }
 
     void refreshIndex(String index) throws IOException {
@@ -604,12 +615,15 @@ public abstract class TransformRestTestCase extends ESRestTestCase {
     }
 
     protected static void deleteTransform(String transformId) throws IOException {
-        deleteTransform(transformId, false);
+        // Ignore 404s because they imply someone was racing us to delete this transform.
+        deleteTransform(transformId, true, false);
     }
 
-    protected static void deleteTransform(String transformId, boolean deleteDestIndex) throws IOException {
+    protected static void deleteTransform(String transformId, boolean ignoreNotFound, boolean deleteDestIndex) throws IOException {
         Request request = new Request("DELETE", getTransformEndpoint() + transformId);
-        request.addParameter("ignore", "404"); // Ignore 404s because they imply someone was racing us to delete this
+        if (ignoreNotFound) {
+            setIgnoredErrorResponseCodes(request, RestStatus.NOT_FOUND);
+        }
         if (deleteDestIndex) {
             request.addParameter(TransformField.DELETE_DEST_INDEX.getPreferredName(), Boolean.TRUE.toString());
         }
@@ -630,16 +644,6 @@ public abstract class TransformRestTestCase extends ESRestTestCase {
         // we might have disabled wiping indices, but now its time to get rid of them
         // note: can not use super.cleanUpCluster() as this method must be static
         wipeAllIndices();
-    }
-
-    static int getTransformCheckpoint(String transformId) throws IOException {
-        Response statsResponse = client().performRequest(new Request("GET", getTransformEndpoint() + transformId + "/_stats"));
-
-        Map<?, ?> transformStatsAsMap = (Map<?, ?>) ((List<?>) entityAsMap(statsResponse).get("transforms")).get(0);
-
-        // assert that the transform did not fail
-        assertNotEquals("Stats were: " + transformStatsAsMap, "failed", XContentMapValues.extractValue("state", transformStatsAsMap));
-        return (int) XContentMapValues.extractValue("checkpointing.last.checkpoint", transformStatsAsMap);
     }
 
     protected void setupDataAccessRole(String role, String... indices) throws IOException {

@@ -32,7 +32,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toSet;
@@ -421,8 +420,8 @@ public class TransformInsufficientPermissionsIT extends TransformRestTestCase {
 
         startTransform(config.getId(), RequestOptions.DEFAULT);
 
-        // transform is red with one issue
-        assertBusy(() -> assertRed(transformId, authIssue), 10, TimeUnit.SECONDS);
+        // transform is red due to lacking permissions
+        assertRed(transformId, authIssue);
 
         // update transform's credentials so that the transform has permission to access source/dest indices
         updateConfig(transformId, "{}", RequestOptions.DEFAULT.toBuilder().addHeader(AUTH_KEY, Users.SENIOR.header).build());
@@ -463,8 +462,8 @@ public class TransformInsufficientPermissionsIT extends TransformRestTestCase {
 
         startTransform(config.getId(), RequestOptions.DEFAULT);
 
-        // transform is red with one issue
-        assertBusy(() -> assertRed(transformId, authIssue), 10, TimeUnit.SECONDS);
+        // transform's auth state status is still RED, but the health status is GREEN (because dest index exists)
+        assertRed(transformId, authIssue);
 
         // update transform's credentials so that the transform has permission to access source/dest indices
         updateConfig(transformId, "{}", RequestOptions.DEFAULT.toBuilder().addHeader(AUTH_KEY, Users.SENIOR.header).build());
@@ -572,14 +571,14 @@ public class TransformInsufficientPermissionsIT extends TransformRestTestCase {
     }
 
     private void assertGreen(String transformId) throws IOException {
-        Map<String, Object> stats = getTransformStats(transformId);
+        Map<String, Object> stats = getBasicTransformStats(transformId);
         assertThat("Stats were: " + stats, extractValue(stats, "health", "status"), is(equalTo(GREEN)));
         assertThat("Stats were: " + stats, extractValue(stats, "health", "issues"), is(nullValue()));
     }
 
     @SuppressWarnings("unchecked")
     private void assertRed(String transformId, String... expectedHealthIssueDetails) throws IOException {
-        Map<String, Object> stats = getTransformStats(transformId);
+        Map<String, Object> stats = getBasicTransformStats(transformId);
         assertThat("Stats were: " + stats, extractValue(stats, "health", "status"), is(equalTo(RED)));
         List<Object> issues = (List<Object>) extractValue(stats, "health", "issues");
         assertThat("Stats were: " + stats, issues, hasSize(expectedHealthIssueDetails.length));
