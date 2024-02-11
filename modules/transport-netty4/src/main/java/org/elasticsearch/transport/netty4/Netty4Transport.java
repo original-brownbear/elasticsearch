@@ -9,6 +9,7 @@ package org.elasticsearch.transport.netty4;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.AdaptiveRecvByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -20,6 +21,7 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.FixedRecvByteBufAllocator;
 import io.netty.channel.RecvByteBufAllocator;
 import io.netty.channel.socket.nio.NioChannelOption;
+import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.util.AttributeKey;
 
 import org.apache.logging.log4j.LogManager;
@@ -52,6 +54,7 @@ import org.elasticsearch.transport.TransportSettings;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.ByteOrder;
 import java.util.Map;
 
 import static org.elasticsearch.common.settings.Setting.byteSizeSetting;
@@ -378,7 +381,7 @@ public class Netty4Transport extends TcpTransport {
 
     private void setupPipeline(Channel ch, boolean isRemoteClusterServerChannel) {
         final var pipeline = ch.pipeline();
-        pipeline.addLast("byte_buf_sizer", NettyByteBufSizer.INSTANCE);
+        pipeline.addLast("frame_decoder", new FrameDecoder());
         if (NetworkTraceFlag.TRACE_ENABLED) {
             pipeline.addLast("logging", ESLoggingHandler.INSTANCE);
         }
@@ -416,6 +419,22 @@ public class Netty4Transport extends TcpTransport {
             } else {
                 onServerException(serverChannel, (Exception) cause);
             }
+        }
+    }
+
+    private static final class FrameDecoder extends LengthFieldBasedFrameDecoder {
+        FrameDecoder() {
+            super(Integer.MAX_VALUE, 2, 4);
+            setCumulator(COMPOSITE_CUMULATOR);
+        }
+
+        @Override
+        protected long getUnadjustedFrameLength(ByteBuf buf, int offset, int length, ByteOrder order) {
+            int read = buf.getInt(offset);
+            if (read == -1) {
+                read = 0;
+            }
+            return read;
         }
     }
 }
