@@ -11,7 +11,6 @@ package org.elasticsearch.action.admin.indices.settings.get;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.action.support.master.MasterNodeReadOperationRequestBuilder;
 import org.elasticsearch.client.internal.ElasticsearchClient;
-import org.elasticsearch.common.util.ArrayUtils;
 
 public class GetSettingsRequestBuilder extends MasterNodeReadOperationRequestBuilder<
     GetSettingsRequest,
@@ -24,11 +23,6 @@ public class GetSettingsRequestBuilder extends MasterNodeReadOperationRequestBui
 
     public GetSettingsRequestBuilder setIndices(String... indices) {
         request.indices(indices);
-        return this;
-    }
-
-    public GetSettingsRequestBuilder addIndices(String... indices) {
-        request.indices(ArrayUtils.concat(request.indices(), indices));
         return this;
     }
 

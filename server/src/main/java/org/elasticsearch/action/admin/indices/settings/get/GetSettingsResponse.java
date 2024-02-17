@@ -50,14 +50,6 @@ public class GetSettingsResponse extends ActionResponse implements ChunkedToXCon
     }
 
     /**
-     * Returns a map of index name to {@link Settings} object.  The returned {@link Settings}
-     * objects contain only the default settings
-     */
-    public Map<String, Settings> getIndexToDefaultSettings() {
-        return indexToDefaultSettings;
-    }
-
-    /**
      * Returns the string value for the specified index and setting.  If the includeDefaults
      * flag was not set or set to false on the GetSettingsRequest, this method will only
      * return a value where the setting was explicitly set on the index.  If the includeDefaults
@@ -65,6 +57,15 @@ public class GetSettingsResponse extends ActionResponse implements ChunkedToXCon
      * value if the setting was not explicitly set.
      */
     public String getSetting(String index, String setting) {
+        return getIndexSettingOrDefault(index, setting, indexToSettings, indexToDefaultSettings);
+    }
+
+    public static String getIndexSettingOrDefault(
+        String index,
+        String setting,
+        Map<String, Settings> indexToSettings,
+        Map<String, Settings> indexToDefaultSettings
+    ) {
         Settings settings = indexToSettings.get(index);
         if (setting != null) {
             if (settings != null && settings.hasValue(setting)) {

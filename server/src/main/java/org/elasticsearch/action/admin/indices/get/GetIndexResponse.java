@@ -10,6 +10,7 @@ package org.elasticsearch.action.admin.indices.get;
 
 import org.elasticsearch.TransportVersions;
 import org.elasticsearch.action.ActionResponse;
+import org.elasticsearch.action.admin.indices.settings.get.GetSettingsResponse;
 import org.elasticsearch.cluster.metadata.AliasMetadata;
 import org.elasticsearch.cluster.metadata.MappingMetadata;
 import org.elasticsearch.common.Strings;
@@ -121,26 +122,6 @@ public class GetIndexResponse extends ActionResponse implements ChunkedToXConten
         return settings;
     }
 
-    public Map<String, String> dataStreams() {
-        return dataStreams;
-    }
-
-    public Map<String, String> getDataStreams() {
-        return dataStreams();
-    }
-
-    /**
-     * If the originating {@link GetIndexRequest} object was configured to include
-     * defaults, this will contain a mapping of index name to {@link Settings} objects.
-     * The returned {@link Settings} objects will contain only those settings taking
-     * effect as defaults.  Any settings explicitly set on the index will be available
-     * via {@link #settings()}.
-     * See also {@link GetIndexRequest#includeDefaults(boolean)}
-     */
-    public Map<String, Settings> defaultSettings() {
-        return defaultSettings;
-    }
-
     public Map<String, Settings> getSettings() {
         return settings();
     }
@@ -152,21 +133,7 @@ public class GetIndexResponse extends ActionResponse implements ChunkedToXConten
      * back to return the default value if the setting was not explicitly set.
      */
     public String getSetting(String index, String setting) {
-        Settings indexSettings = settings.get(index);
-        if (setting != null) {
-            if (indexSettings != null && indexSettings.hasValue(setting)) {
-                return indexSettings.get(setting);
-            } else {
-                Settings defaultIndexSettings = defaultSettings.get(index);
-                if (defaultIndexSettings != null) {
-                    return defaultIndexSettings.get(setting);
-                } else {
-                    return null;
-                }
-            }
-        } else {
-            return null;
-        }
+        return GetSettingsResponse.getIndexSettingOrDefault(index, setting, settings, defaultSettings);
     }
 
     @Override

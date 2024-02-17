@@ -54,7 +54,7 @@ public class LocalIndicesCleanerTests extends AbstractIndicesCleanerTestCase {
             // so when es core gets the request with the explicit index name, it throws an index not found exception as that index
             // doesn't exist anymore. If we ignore unavailable instead no error will be thrown.
             GetSettingsResponse getSettingsResponse = indicesAdmin().prepareGetSettings()
-                .addIndices(".monitoring-*")
+                .setIndices(".monitoring-*")
                 .setIndicesOptions(IndicesOptions.fromOptions(true, true, true, true, true))
                 .get();
             Iterator<String> indices = getSettingsResponse.getIndexToSettings().keySet().iterator();
