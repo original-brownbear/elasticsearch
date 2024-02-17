@@ -19,6 +19,7 @@ import org.elasticsearch.common.hash.Murmur3Hasher;
 import org.elasticsearch.common.hash.MurmurHash3;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.network.NetworkAddress;
 import org.elasticsearch.common.util.ByteUtils;
 import org.elasticsearch.core.Nullable;
@@ -227,7 +228,7 @@ public class TimeSeriesIdFieldMapper extends MetadataFieldMapper {
 
             tsidHasher.reset();
             for (final Dimension dimension : dimensions) {
-                tsidHasher.update(dimension.name.bytes);
+                tsidHasher.update(dimension.name.bytes, dimension.name.offset, dimension.name.length);
             }
             tsidHashIndex = writeHash128(tsidHasher.digestHash(), tsidHash, tsidHashIndex);
 
@@ -254,7 +255,8 @@ public class TimeSeriesIdFieldMapper extends MetadataFieldMapper {
             // NOTE: hash all dimension field allValues
             tsidHasher.reset();
             for (final Dimension dimension : dimensions) {
-                tsidHasher.update(dimension.value.toBytesRef().bytes);
+                var bytesRef = dimension.value.toBytesRef();
+                tsidHasher.update(bytesRef.bytes, bytesRef.offset, bytesRef.length);
             }
             tsidHashIndex = writeHash128(tsidHasher.digestHash(), tsidHash, tsidHashIndex);
 
@@ -275,21 +277,20 @@ public class TimeSeriesIdFieldMapper extends MetadataFieldMapper {
 
         @Override
         public DocumentDimensions addString(String fieldName, BytesRef utf8Value) {
-            try (BytesStreamOutput out = new BytesStreamOutput()) {
-                out.write((byte) 's');
-                /*
-                 * Write in utf8 instead of StreamOutput#writeString which is utf-16-ish
-                 * so it's easier for folks to reason about the space taken up. Mostly
-                 * it'll be smaller too.
-                 */
-                out.writeBytesRef(utf8Value);
-                add(fieldName, out.bytes());
-
-                if (routingBuilder != null) {
-                    routingBuilder.addMatching(fieldName, utf8Value);
-                }
-            } catch (IOException e) {
-                throw new IllegalArgumentException("Dimension field cannot be serialized.", e);
+            // 1 byte for the 's' + max 5 bytes for the vint length (technically 2 would suffice probably but 5 is 100% safe in all cases)
+            // + the utf8 bytes
+            final byte[] out = new byte[1 + 5 + utf8Value.length];
+            out[0] = (byte) 's';
+            /*
+             * Write in utf8 instead of StreamOutput#writeString which is utf-16-ish
+             * so it's easier for folks to reason about the space taken up. Mostly
+             * it'll be smaller too.
+             */
+            int offset = 1 + StreamOutput.putVInt(out, utf8Value.length, 1);
+            System.arraycopy(utf8Value.bytes, utf8Value.offset, out, offset, utf8Value.length);
+            add(fieldName, new BytesArray(out, 0, offset + utf8Value.length));
+            if (routingBuilder != null) {
+                routingBuilder.addMatching(fieldName, utf8Value);
             }
             return this;
         }
@@ -301,32 +302,25 @@ public class TimeSeriesIdFieldMapper extends MetadataFieldMapper {
 
         @Override
         public DocumentDimensions addLong(String fieldName, long value) {
-            try (BytesStreamOutput out = new BytesStreamOutput()) {
-                out.write((byte) 'l');
-                out.writeLong(value);
-                add(fieldName, out.bytes());
-            } catch (IOException e) {
-                throw new IllegalArgumentException("Dimension field cannot be serialized.", e);
-            }
+            byte[] out = new byte[1 + Long.BYTES];
+            out[0] = 'l';
+            ByteUtils.writeLongBE(value, out, 1);
+            add(fieldName, new BytesArray(out));
             return this;
         }
 
         @Override
         public DocumentDimensions addUnsignedLong(String fieldName, long value) {
-            try (BytesStreamOutput out = new BytesStreamOutput()) {
-                Object ul = DocValueFormat.UNSIGNED_LONG_SHIFTED.format(value);
-                if (ul instanceof Long l) {
-                    out.write((byte) 'l');
-                    out.writeLong(l);
-                } else {
-                    out.write((byte) 'u');
-                    out.writeLong(value);
-                }
-                add(fieldName, out.bytes());
-                return this;
-            } catch (IOException e) {
-                throw new IllegalArgumentException("Dimension field cannot be serialized.", e);
+            Object ul = DocValueFormat.UNSIGNED_LONG_SHIFTED.format(value);
+            if (ul instanceof Long l) {
+                addLong(fieldName, l);
+            } else {
+                byte[] out = new byte[1 + Long.BYTES];
+                out[0] = 'u';
+                ByteUtils.writeLongBE(value, out, 1);
+                add(fieldName, new BytesArray(out));
             }
+            return this;
         }
 
         @Override
@@ -344,7 +338,7 @@ public class TimeSeriesIdFieldMapper extends MetadataFieldMapper {
             return this;
         }
 
-        private void add(String fieldName, BytesReference encoded) throws IOException {
+        private void add(String fieldName, BytesReference encoded) {
             if (dimensions.add(new Dimension(new BytesRef(fieldName), encoded)) == false) {
                 throw new IllegalArgumentException("Dimension field [" + fieldName + "] cannot be a multi-valued field.");
             }

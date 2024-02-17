@@ -39,7 +39,7 @@ public class Murmur3Hasher {
         update(inputBytes, 0, inputBytes.length);
     }
 
-    private void update(byte[] inputBytes, int offset, int length) {
+    public void update(byte[] inputBytes, int offset, int length) {
         if (remainderLength + length >= remainder.length) {
             if (remainderLength > 0) {
                 // fill rest of remainder from inputBytes and hash remainder
