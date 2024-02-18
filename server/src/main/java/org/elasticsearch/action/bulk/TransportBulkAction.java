@@ -65,6 +65,7 @@ import org.elasticsearch.threadpool.ThreadPool.Names;
 import org.elasticsearch.transport.TransportService;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -340,9 +341,23 @@ public class TransportBulkAction extends HandledTransportAction<BulkRequest, Bul
             return;
         }
 
+        final ClusterState state = clusterService.state();
+        // We should only auto create if we are not requiring it to be an alias
+        final Map<String, Boolean> indicesToAutoCreate = new HashMap<>();
+        final boolean hasLazyRollover = featureService.clusterHasFeature(state, LazyRolloverAction.DATA_STREAM_LAZY_ROLLOVER);
+        final Map<String, DataStream> dataStreamMetadata = state.metadata().dataStreams();
+        final Set<String> dataStreamsToBeRolledOver;
+        if (hasLazyRollover) {
+            dataStreamsToBeRolledOver = new HashSet<>();
+        } else {
+            dataStreamsToBeRolledOver = Set.of();
+        }
+
+        final byte IS_REQUIRE_ALIAS = 1;
+        final byte IS_REQUIRE_DATA_STREAM = 2;
         // Attempt to create all the indices that we're going to need during the bulk before we start.
-        // Step 1: collect all the indices in the request
-        final Map<String, ReducedRequestInfo> indices = bulkRequest.requests.stream()
+        // collect all the indices in the request
+        bulkRequest.requests.stream()
             // delete requests should not attempt to create the index (if the index does not
             // exist), unless an external versioning is used
             .filter(
@@ -353,30 +368,27 @@ public class TransportBulkAction extends HandledTransportAction<BulkRequest, Bul
             .collect(
                 Collectors.toMap(
                     DocWriteRequest::index,
-                    request -> new ReducedRequestInfo(request.isRequireAlias(), request.isRequireDataStream()),
-                    ReducedRequestInfo::merge
+                    request -> ((request.isRequireAlias() ? IS_REQUIRE_ALIAS : 0) | (request.isRequireDataStream()
+                        ? IS_REQUIRE_DATA_STREAM
+                        : 0)),
+                    (a, b) -> a | b
                 )
-            );
+            )
+            // filter the list of indices to find those that don't currently exist as well as any data-streams that require rollover before
+            // writing
+            .forEach((name, flags) -> {
+                if ((flags & IS_REQUIRE_ALIAS) == 0 && indexNameExpressionResolver.hasIndexAbstraction(name, state) == false) {
+                    indicesToAutoCreate.put(name, (flags & IS_REQUIRE_DATA_STREAM) != 0);
+                }
+                if (hasLazyRollover) {
+                    final DataStream dataStream = dataStreamMetadata.get(name);
+                    if (dataStream != null && dataStream.rolloverOnWrite()) {
+                        dataStreamsToBeRolledOver.add(name);
+                    }
+                }
+            });
 
-        // Step 2: filter the list of indices to find those that don't currently exist.
-        final Map<String, IndexNotFoundException> indicesThatCannotBeCreated = new HashMap<>();
-        final ClusterState state = clusterService.state();
-        Map<String, Boolean> indicesToAutoCreate = indices.entrySet()
-            .stream()
-            .filter(entry -> indexNameExpressionResolver.hasIndexAbstraction(entry.getKey(), state) == false)
-            // We should only auto create if we are not requiring it to be an alias
-            .filter(entry -> entry.getValue().isRequireAlias == false)
-            .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().isRequireDataStream));
-
-        // Step 3: Collect all the data streams that need to be rolled over before writing
-        Set<String> dataStreamsToBeRolledOver = featureService.clusterHasFeature(state, LazyRolloverAction.DATA_STREAM_LAZY_ROLLOVER)
-            ? indices.keySet().stream().filter(target -> {
-                DataStream dataStream = state.metadata().dataStreams().get(target);
-                return dataStream != null && dataStream.rolloverOnWrite();
-            }).collect(Collectors.toSet())
-            : Set.of();
-
-        // Step 4: create all the indices that are missing, if there are any missing. start the bulk after all the creates come back.
+        // create all the indices that are missing, if there are any missing. start the bulk after all the creates come back.
         createMissingIndicesAndIndexData(
             task,
             bulkRequest,
@@ -384,7 +396,6 @@ public class TransportBulkAction extends HandledTransportAction<BulkRequest, Bul
             listener,
             indicesToAutoCreate,
             dataStreamsToBeRolledOver,
-            indicesThatCannotBeCreated,
             startTime
         );
     }
@@ -400,10 +411,10 @@ public class TransportBulkAction extends HandledTransportAction<BulkRequest, Bul
         ActionListener<BulkResponse> listener,
         Map<String, Boolean> indicesToAutoCreate,
         Set<String> dataStreamsToBeRolledOver,
-        Map<String, IndexNotFoundException> indicesThatCannotBeCreated,
         long startTime
     ) {
         final AtomicArray<BulkItemResponse> responses = new AtomicArray<>(bulkRequest.requests.size());
+        final Map<String, IndexNotFoundException> indicesThatCannotBeCreated = new HashMap<>();
         // Optimizing when there are no prerequisite actions
         if (indicesToAutoCreate.isEmpty() && dataStreamsToBeRolledOver.isEmpty()) {
             executeBulk(task, bulkRequest, startTime, listener, executorName, responses, indicesThatCannotBeCreated);
@@ -599,15 +610,6 @@ public class TransportBulkAction extends HandledTransportAction<BulkRequest, Bul
 
     protected long buildTookInMillis(long startTimeNanos) {
         return TimeUnit.NANOSECONDS.toMillis(relativeTime() - startTimeNanos);
-    }
-
-    private record ReducedRequestInfo(boolean isRequireAlias, boolean isRequireDataStream) {
-        private ReducedRequestInfo merge(ReducedRequestInfo other) {
-            return new ReducedRequestInfo(
-                this.isRequireAlias || other.isRequireAlias,
-                this.isRequireDataStream || other.isRequireDataStream
-            );
-        }
     }
 
     void executeBulk(
