@@ -97,11 +97,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
-import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.function.LongSupplier;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 import static org.elasticsearch.action.search.SearchType.DFS_QUERY_THEN_FETCH;
 import static org.elasticsearch.action.search.SearchType.QUERY_THEN_FETCH;
@@ -183,43 +181,6 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
         this.defaultPreFilterShardSize = DEFAULT_PRE_FILTER_SHARD_SIZE.get(clusterService.getSettings());
         this.ccsCheckCompatibility = SearchService.CCS_VERSION_CHECK_SETTING.get(clusterService.getSettings());
         this.searchResponseMetrics = searchResponseMetrics;
-    }
-
-    private Map<String, OriginalIndices> buildPerIndexOriginalIndices(
-        ClusterState clusterState,
-        Set<String> indicesAndAliases,
-        String[] indices,
-        IndicesOptions indicesOptions
-    ) {
-        Map<String, OriginalIndices> res = new HashMap<>();
-        for (String index : indices) {
-            clusterState.blocks().indexBlockedRaiseException(ClusterBlockLevel.READ, index);
-
-            String[] aliases = indexNameExpressionResolver.indexAliases(
-                clusterState,
-                index,
-                aliasMetadata -> true,
-                dataStreamAlias -> true,
-                true,
-                indicesAndAliases
-            );
-            BooleanSupplier hasDataStreamRef = () -> {
-                IndexAbstraction ret = clusterState.getMetadata().getIndicesLookup().get(index);
-                if (ret == null || ret.getParentDataStream() == null) {
-                    return false;
-                }
-                return indicesAndAliases.contains(ret.getParentDataStream().getName());
-            };
-            List<String> finalIndices = new ArrayList<>();
-            if (aliases == null || aliases.length == 0 || indicesAndAliases.contains(index) || hasDataStreamRef.getAsBoolean()) {
-                finalIndices.add(index);
-            }
-            if (aliases != null) {
-                finalIndices.addAll(Arrays.asList(aliases));
-            }
-            res.put(index, new OriginalIndices(finalIndices.toArray(String[]::new), indicesOptions));
-        }
-        return Collections.unmodifiableMap(res);
     }
 
     Map<String, AliasFilter> buildIndexAliasFilters(ClusterState clusterState, Set<String> indicesAndAliases, Index[] concreteIndices) {
@@ -1648,26 +1609,72 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
         Set<String> indicesAndAliases,
         String[] concreteIndices
     ) {
-        var routingMap = indexNameExpressionResolver.resolveSearchRouting(clusterState, searchRequest.routing(), searchRequest.indices());
-        GroupShardsIterator<ShardIterator> shardRoutings = clusterService.operationRouting()
+        IndicesOptions indicesOptions = searchRequest.indicesOptions();
+        final Function<String, OriginalIndices> computeOriginalIndices = idx -> buildOriginalIndices(
+            clusterState,
+            indicesAndAliases,
+            indicesOptions,
+            idx
+        );
+        List<SearchShardIterator> list = new ArrayList<>();
+        Map<String, OriginalIndices> originalIndices = Maps.newHashMapWithExpectedSize(concreteIndices.length);
+        for (ShardIterator shardRouting : clusterService.operationRouting()
             .searchShards(
                 clusterState,
                 concreteIndices,
-                routingMap,
+                indexNameExpressionResolver.resolveSearchRouting(clusterState, searchRequest.routing(), searchRequest.indices()),
                 searchRequest.preference(),
                 searchService.getResponseCollectorService(),
                 searchTransportService.getPendingSearchRequests()
+            )) {
+            list.add(
+                new SearchShardIterator(
+                    clusterAlias,
+                    shardRouting.shardId(),
+                    shardRouting.getShardRoutings(),
+                    originalIndices.computeIfAbsent(shardRouting.shardId().getIndex().getName(), computeOriginalIndices)
+                )
             );
-        final Map<String, OriginalIndices> originalIndices = buildPerIndexOriginalIndices(
+        }
+        return list;
+    }
+
+    private OriginalIndices buildOriginalIndices(
+        ClusterState clusterState,
+        Set<String> indicesAndAliases,
+        IndicesOptions indicesOptions,
+        String index
+    ) {
+        clusterState.blocks().indexBlockedRaiseException(ClusterBlockLevel.READ, index);
+
+        String[] aliases = indexNameExpressionResolver.indexAliases(
             clusterState,
-            indicesAndAliases,
-            concreteIndices,
-            searchRequest.indicesOptions()
+            index,
+            aliasMetadata -> true,
+            dataStreamAlias -> true,
+            true,
+            indicesAndAliases
         );
-        return StreamSupport.stream(shardRoutings.spliterator(), false).map(it -> {
-            OriginalIndices finalIndices = originalIndices.get(it.shardId().getIndex().getName());
-            assert finalIndices != null;
-            return new SearchShardIterator(clusterAlias, it.shardId(), it.getShardRoutings(), finalIndices);
-        }).toList();
+        final String[] finalIndices;
+        if (aliases == null
+            || aliases.length == 0
+            || indicesAndAliases.contains(index)
+            || hasDataStreamRef(clusterState, indicesAndAliases, index)) {
+            if (aliases == null) {
+                finalIndices = new String[] { index };
+            } else {
+                finalIndices = new String[1 + aliases.length];
+                finalIndices[0] = index;
+                System.arraycopy(aliases, 0, finalIndices, 1, aliases.length);
+            }
+        } else {
+            finalIndices = aliases;
+        }
+        return new OriginalIndices(finalIndices, indicesOptions);
+    }
+
+    private static boolean hasDataStreamRef(ClusterState clusterState, Set<String> indicesAndAliases, String index) {
+        IndexAbstraction ret = clusterState.getMetadata().getIndicesLookup().get(index);
+        return ret != null && ret.getParentDataStream() != null && indicesAndAliases.contains(ret.getParentDataStream().getName());
     }
 }

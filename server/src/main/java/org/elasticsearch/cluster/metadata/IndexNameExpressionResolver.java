@@ -725,6 +725,7 @@ public class IndexNameExpressionResolver {
 
         IndexAbstraction ia = state.metadata().getIndicesLookup().get(index);
         DataStream dataStream = ia.getParentDataStream();
+        List<String> aliases = null;
         if (dataStream != null) {
             if (skipIdentity == false && resolvedExpressions.contains(dataStream.getName())) {
                 // skip the filters when the request targets the data stream name
@@ -745,22 +746,17 @@ public class IndexNameExpressionResolver {
                     .toList();
             }
 
-            List<String> requiredAliases = null;
             for (DataStreamAlias dataStreamAlias : aliasesForDataStream) {
                 if (requiredDataStreamAlias.test(dataStreamAlias)) {
-                    if (requiredAliases == null) {
-                        requiredAliases = new ArrayList<>(aliasesForDataStream.size());
+                    if (aliases == null) {
+                        aliases = new ArrayList<>(aliasesForDataStream.size());
                     }
-                    requiredAliases.add(dataStreamAlias.getName());
+                    aliases.add(dataStreamAlias.getName());
                 } else {
                     // we have a non-required alias for this data stream so no need to check further
                     return null;
                 }
             }
-            if (requiredAliases == null) {
-                return null;
-            }
-            return requiredAliases.toArray(Strings.EMPTY_ARRAY);
         } else {
             final Map<String, AliasMetadata> indexAliases = indexMetadata.getAliases();
             final AliasMetadata[] aliasCandidates;
@@ -777,7 +773,6 @@ public class IndexNameExpressionResolver {
                     .filter(Objects::nonNull)
                     .toArray(AliasMetadata[]::new);
             }
-            List<String> aliases = null;
             for (AliasMetadata aliasMetadata : aliasCandidates) {
                 if (requiredAlias.test(aliasMetadata)) {
                     // If required - add it to the list of aliases
@@ -790,11 +785,8 @@ public class IndexNameExpressionResolver {
                     return null;
                 }
             }
-            if (aliases == null) {
-                return null;
-            }
-            return aliases.toArray(Strings.EMPTY_ARRAY);
         }
+        return aliases == null ? null : aliases.toArray(Strings.EMPTY_ARRAY);
     }
 
     /**
