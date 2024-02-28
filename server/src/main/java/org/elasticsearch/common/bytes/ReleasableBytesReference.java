@@ -15,10 +15,12 @@ import org.elasticsearch.core.AbstractRefCounted;
 import org.elasticsearch.core.RefCounted;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.Releasables;
+import org.elasticsearch.transport.LeakTracker;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.ref.Cleaner;
 
 /**
  * An extension to {@link BytesReference} that requires releasing its content. This
@@ -247,15 +249,15 @@ public final class ReleasableBytesReference implements RefCounted, Releasable, B
 
     private static final class RefCountedReleasable extends AbstractRefCounted {
 
-        private final Releasable releasable;
+        private final Cleaner.Cleanable cleanable;
 
         RefCountedReleasable(Releasable releasable) {
-            this.releasable = releasable;
+            cleanable = LeakTracker.cleaner.register(this, () -> { releasable.close(); });
         }
 
         @Override
         protected void closeInternal() {
-            Releasables.closeExpectNoException(releasable);
+            Releasables.closeExpectNoException(cleanable::clean);
         }
     }
 }

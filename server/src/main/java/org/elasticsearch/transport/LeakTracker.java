@@ -32,7 +32,7 @@ public final class LeakTracker {
 
     private static final Logger logger = LogManager.getLogger(LeakTracker.class);
 
-    private static final Cleaner cleaner = Cleaner.create();
+    public static final Cleaner cleaner = Cleaner.create();
 
     private static final int TARGET_RECORDS = 25;
 
