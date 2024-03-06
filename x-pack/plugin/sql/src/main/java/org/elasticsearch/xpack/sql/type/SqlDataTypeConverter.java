@@ -393,7 +393,7 @@ public final class SqlDataTypeConverter {
         DATE_TO_TIME(fromDatetimeToTime()),
         DATETIME_TO_TIME(fromDatetimeToTime()),
 
-        DATE_TO_DATETIME(value -> value),
+        DATE_TO_DATETIME(Function.identity()),
 
         DATE_TO_BOOLEAN(delegate(DATETIME_TO_BOOLEAN)),
         TIME_TO_BOOLEAN(fromTime(value -> value != 0));

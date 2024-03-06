@@ -12,6 +12,7 @@ import org.elasticsearch.search.sort.SortOrder;
 import java.util.Comparator;
 import java.util.List;
 import java.util.TreeSet;
+import java.util.function.Function;
 
 import static org.elasticsearch.search.sort.SortOrder.DESC;
 
@@ -232,7 +233,10 @@ abstract class MergedGeoLines {
         }
 
         private void mergeAndSimplify(TreeSet<InternalGeoLine> sorted) {
-            TimeSeriesGeoLineBuckets.Simplifier simplifier = new TimeSeriesGeoLineBuckets.Simplifier(this.finalSortValues.length, v -> v);
+            TimeSeriesGeoLineBuckets.Simplifier simplifier = new TimeSeriesGeoLineBuckets.Simplifier(
+                this.finalSortValues.length,
+                Function.identity()
+            );
             int index = 0;
             for (InternalGeoLine geoLine : sorted) {
                 double[] values = geoLine.sortVals();

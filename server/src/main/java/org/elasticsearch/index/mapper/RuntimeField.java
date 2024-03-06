@@ -214,7 +214,7 @@ public interface RuntimeField extends ToXContentFragment {
                 throw new IllegalStateException("Found sub-fields with name not belonging to the parent field they are part of " + names);
             }
             return runtimeField.asMappedFieldTypes();
-        }).collect(Collectors.toUnmodifiableMap(MappedFieldType::name, mappedFieldType -> mappedFieldType, (t, t2) -> {
+        }).collect(Collectors.toUnmodifiableMap(MappedFieldType::name, Function.identity(), (t, t2) -> {
             throw new IllegalArgumentException("Found two runtime fields with same name [" + t.name() + "]");
         }));
     }

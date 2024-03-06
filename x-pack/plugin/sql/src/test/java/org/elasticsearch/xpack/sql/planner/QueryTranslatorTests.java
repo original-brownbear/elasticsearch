@@ -1325,7 +1325,7 @@ public class QueryTranslatorTests extends ESTestCase {
         assertThat(fieldCount, greaterThanOrEqualTo(ee.queryContainer().aggs().asAggBuilder().getSubAggregations().size()));
         Map<String, AggregationBuilder> aggsByName = aggregationBuilder.getSubAggregations()
             .stream()
-            .collect(Collectors.toMap(AggregationBuilder::getName, ab -> ab));
+            .collect(Collectors.toMap(AggregationBuilder::getName, Function.identity()));
         return IntStream.range(0, fieldCount).mapToObj(i -> {
             String percentileAggName = ((MetricAggRef) ee.queryContainer().fields().get(i).extraction()).name();
             return (AbstractPercentilesAggregationBuilder) aggsByName.get(percentileAggName);

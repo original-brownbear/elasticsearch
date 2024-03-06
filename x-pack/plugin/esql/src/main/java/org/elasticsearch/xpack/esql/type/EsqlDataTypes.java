@@ -15,6 +15,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toMap;
@@ -79,12 +80,13 @@ public final class EsqlDataTypes {
         GEO_SHAPE
     ).sorted(Comparator.comparing(DataType::typeName)).toList();
 
-    private static final Map<String, DataType> NAME_TO_TYPE = TYPES.stream().collect(toUnmodifiableMap(DataType::typeName, t -> t));
+    private static final Map<String, DataType> NAME_TO_TYPE = TYPES.stream()
+        .collect(toUnmodifiableMap(DataType::typeName, Function.identity()));
 
     private static final Map<String, DataType> ES_TO_TYPE;
 
     static {
-        Map<String, DataType> map = TYPES.stream().filter(e -> e.esType() != null).collect(toMap(DataType::esType, t -> t));
+        Map<String, DataType> map = TYPES.stream().filter(e -> e.esType() != null).collect(toMap(DataType::esType, Function.identity()));
         // ES calls this 'point', but ESQL calls it 'cartesian_point'
         map.put("point", CARTESIAN_POINT);
         map.put("shape", CARTESIAN_SHAPE);

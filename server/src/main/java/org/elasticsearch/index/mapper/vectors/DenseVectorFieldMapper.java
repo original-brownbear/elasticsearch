@@ -269,7 +269,7 @@ public class DenseVectorFieldMapper extends FieldMapper {
                     this,
                     denseVectorFieldType.dims,
                     denseVectorFieldType.indexed,
-                    r -> r
+                    Function.identity()
                 );
             }
 
@@ -489,7 +489,7 @@ public class DenseVectorFieldMapper extends FieldMapper {
                                     in.getNumericDocValues(fieldName + COSINE_MAGNITUDE_FIELD_SUFFIX)
                                 );
                             }
-                        } : r -> r
+                        } : Function.identity()
                 );
             }
 

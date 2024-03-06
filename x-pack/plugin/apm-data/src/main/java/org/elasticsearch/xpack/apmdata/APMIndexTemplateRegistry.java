@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.elasticsearch.xpack.apmdata.ResourceUtils.APM_TEMPLATE_VERSION_VARIABLE;
@@ -70,10 +71,10 @@ public class APMIndexTemplateRegistry extends IndexTemplateRegistry {
 
             componentTemplates = componentTemplateNames.stream()
                 .map(o -> (String) o)
-                .collect(Collectors.toMap(name -> name, name -> loadComponentTemplate(name, version)));
+                .collect(Collectors.toMap(Function.identity(), name -> loadComponentTemplate(name, version)));
             composableIndexTemplates = indexTemplateNames.stream()
                 .map(o -> (String) o)
-                .collect(Collectors.toMap(name -> name, name -> loadIndexTemplate(name, version)));
+                .collect(Collectors.toMap(Function.identity(), name -> loadIndexTemplate(name, version)));
             ingestPipelines = ingestPipelineConfigs.stream().map(o -> (Map<String, Map<String, Object>>) o).map(map -> {
                 Map.Entry<String, Map<String, Object>> pipelineConfig = map.entrySet().iterator().next();
                 return loadIngestPipeline(pipelineConfig.getKey(), version, (List<String>) pipelineConfig.getValue().get("dependencies"));

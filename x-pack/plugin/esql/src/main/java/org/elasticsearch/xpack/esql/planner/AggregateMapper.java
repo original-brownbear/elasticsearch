@@ -84,7 +84,7 @@ public class AggregateMapper {
         mapper = aggregateFunctionClasses.stream()
             .flatMap(AggregateMapper::typeAndNames)
             .flatMap(AggregateMapper::groupingAndNonGrouping)
-            .collect(Collectors.toUnmodifiableMap(aggDef -> aggDef, AggregateMapper::lookupIntermediateState));
+            .collect(Collectors.toUnmodifiableMap(java.util.function.Function.identity(), AggregateMapper::lookupIntermediateState));
     }
 
     public List<? extends NamedExpression> mapNonGrouping(List<? extends Expression> aggregates) {
