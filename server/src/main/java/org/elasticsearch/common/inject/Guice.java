@@ -16,8 +16,6 @@
 
 package org.elasticsearch.common.inject;
 
-import java.util.Arrays;
-
 /**
  * The entry point to the Guice framework. Creates {@link Injector}s from
  * {@link Module}s.
@@ -48,16 +46,6 @@ import java.util.Arrays;
 public final class Guice {
 
     private Guice() {}
-
-    /**
-     * Creates an injector for the given set of modules.
-     *
-     * @throws CreationException if one or more errors occur during Injector
-     *                           construction
-     */
-    public static Injector createInjector(Module... modules) {
-        return createInjector(Arrays.asList(modules));
-    }
 
     /**
      * Creates an injector for the given set of modules.

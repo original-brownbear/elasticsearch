@@ -16,6 +16,7 @@
 
 package org.elasticsearch.common.inject.spi;
 
+import org.elasticsearch.common.inject.AbstractProcessor;
 import org.elasticsearch.common.inject.internal.Errors;
 import org.elasticsearch.common.inject.internal.SourceProvider;
 
@@ -84,7 +85,7 @@ public final class Message implements Element {
      * @since 2.0
      */
     @Override
-    public <T> T acceptVisitor(ElementVisitor<T> visitor) {
+    public Boolean acceptVisitor(AbstractProcessor visitor) {
         return visitor.visit(this);
     }
 

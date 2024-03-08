@@ -16,11 +16,11 @@
 
 package org.elasticsearch.common.inject.internal;
 
+import org.elasticsearch.common.inject.AbstractProcessor;
 import org.elasticsearch.common.inject.Binding;
 import org.elasticsearch.common.inject.Injector;
 import org.elasticsearch.common.inject.Key;
 import org.elasticsearch.common.inject.Provider;
-import org.elasticsearch.common.inject.spi.ElementVisitor;
 import org.elasticsearch.common.inject.spi.InstanceBinding;
 
 /**
@@ -91,11 +91,11 @@ public abstract class BindingImpl<T> implements Binding<T> {
     }
 
     @Override
-    public <V> V acceptVisitor(ElementVisitor<V> visitor) {
+    public Boolean acceptVisitor(AbstractProcessor visitor) {
         return visitor.visit(this);
     }
 
-    protected BindingImpl<T> withScoping(Scoping scoping) {
+    protected BindingImpl<T> withScoping() {
         throw new AssertionError();
     }
 

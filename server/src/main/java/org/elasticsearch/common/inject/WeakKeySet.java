@@ -35,8 +35,8 @@ final class WeakKeySet {
      */
     private final Set<String> backingSet = new HashSet<>();
 
-    public boolean add(Key<?> key) {
-        return backingSet.add(key.toString());
+    public void add(Key<?> key) {
+        backingSet.add(key.toString());
     }
 
     public boolean contains(Object o) {

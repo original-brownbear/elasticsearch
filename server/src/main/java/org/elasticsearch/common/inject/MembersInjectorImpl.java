@@ -19,7 +19,6 @@ package org.elasticsearch.common.inject;
 import org.elasticsearch.common.inject.internal.Errors;
 import org.elasticsearch.common.inject.internal.ErrorsException;
 import org.elasticsearch.common.inject.internal.InternalContext;
-import org.elasticsearch.common.inject.spi.InjectionListener;
 
 import java.util.List;
 
@@ -32,27 +31,11 @@ class MembersInjectorImpl<T> implements MembersInjector<T> {
     private final TypeLiteral<T> typeLiteral;
     private final InjectorImpl injector;
     private final List<SingleMemberInjector> memberInjectors;
-    private final List<MembersInjector<? super T>> userMembersInjectors;
-    private final List<InjectionListener<? super T>> injectionListeners;
 
     MembersInjectorImpl(InjectorImpl injector, TypeLiteral<T> typeLiteral, List<SingleMemberInjector> memberInjectors) {
         this.injector = injector;
         this.typeLiteral = typeLiteral;
         this.memberInjectors = memberInjectors;
-        this.userMembersInjectors = List.of();
-        this.injectionListeners = List.of();
-    }
-
-    @Override
-    public void injectMembers(T instance) {
-        Errors errors = new Errors(typeLiteral);
-        try {
-            injectAndNotify(instance, errors);
-        } catch (ErrorsException e) {
-            errors.merge(e.getErrors());
-        }
-
-        errors.throwProvisionExceptionIfErrorsExist();
     }
 
     void injectAndNotify(final T instance, final Errors errors) throws ErrorsException {
@@ -65,18 +48,11 @@ class MembersInjectorImpl<T> implements MembersInjector<T> {
             return null;
         });
 
-        notifyListeners(instance, errors);
+        notifyListeners(errors);
     }
 
-    void notifyListeners(T instance, Errors errors) throws ErrorsException {
+    void notifyListeners(Errors errors) throws ErrorsException {
         int numErrorsBefore = errors.size();
-        for (InjectionListener<? super T> injectionListener : injectionListeners) {
-            try {
-                injectionListener.afterInjection(instance);
-            } catch (RuntimeException e) {
-                errors.errorNotifyingInjectionListener(injectionListener, typeLiteral, e);
-            }
-        }
         errors.throwIfNewErrors(numErrorsBefore);
     }
 
@@ -84,16 +60,6 @@ class MembersInjectorImpl<T> implements MembersInjector<T> {
         // optimization: use manual for/each to save allocating an iterator here
         for (int i = 0, size = memberInjectors.size(); i < size; i++) {
             memberInjectors.get(i).inject(errors, context, t);
-        }
-
-        // optimization: use manual for/each to save allocating an iterator here
-        for (int i = 0, size = userMembersInjectors.size(); i < size; i++) {
-            MembersInjector<? super T> userMembersInjector = userMembersInjectors.get(i);
-            try {
-                userMembersInjector.injectMembers(t);
-            } catch (RuntimeException e) {
-                errors.errorInUserInjector(userMembersInjector, typeLiteral, e);
-            }
         }
     }
 

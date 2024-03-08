@@ -10,10 +10,9 @@ package org.elasticsearch.common.inject;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
-public class ModulesBuilder implements Iterable<Module> {
+public class ModulesBuilder {
 
     private final List<Module> modules = new ArrayList<>();
 
@@ -25,11 +24,6 @@ public class ModulesBuilder implements Iterable<Module> {
     public <T> T bindToInstance(Class<T> cls, T instance) {
         modules.add(b -> b.bind(cls).toInstance(instance));
         return instance;
-    }
-
-    @Override
-    public Iterator<Module> iterator() {
-        return modules.iterator();
     }
 
     public Injector createInjector() {

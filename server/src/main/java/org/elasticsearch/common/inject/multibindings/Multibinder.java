@@ -192,10 +192,6 @@ public abstract class Multibinder<T> {
             return Collections.unmodifiableSet(result);
         }
 
-        static String getSetName() {
-            return "";
-        }
-
         Key<Set<T>> getSetKey() {
             return setKey;
         }

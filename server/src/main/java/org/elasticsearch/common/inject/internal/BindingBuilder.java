@@ -77,7 +77,7 @@ public class BindingBuilder<T> extends AbstractBindingBuilder<T> implements Anno
     }
 
     @Override
-    public BindingBuilder<T> toProvider(Provider<? extends T> provider) {
+    public void toProvider(Provider<? extends T> provider) {
         Objects.requireNonNull(provider, "provider");
         checkNotTargetted();
 
@@ -94,7 +94,6 @@ public class BindingBuilder<T> extends AbstractBindingBuilder<T> implements Anno
 
         BindingImpl<T> base = getBinding();
         setBinding(new ProviderInstanceBindingImpl<>(base.getSource(), base.getKey(), base.getScoping(), injectionPoints, provider));
-        return this;
     }
 
     @Override

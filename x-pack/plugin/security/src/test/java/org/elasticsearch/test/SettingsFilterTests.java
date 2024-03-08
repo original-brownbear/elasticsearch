@@ -142,7 +142,7 @@ public class SettingsFilterTests extends ESTestCase {
         // custom settings, potentially added by a plugin
         SettingsModule settingsModule = new SettingsModule(settings, settingList, settingsFilterList);
 
-        Injector injector = Guice.createInjector(settingsModule);
+        Injector injector = Guice.createInjector(List.of(settingsModule));
         SettingsFilter settingsFilter = injector.getInstance(SettingsFilter.class);
 
         Settings filteredSettings = settingsFilter.filter(settings);

@@ -21,7 +21,6 @@ import org.elasticsearch.common.inject.internal.ErrorsException;
 import org.elasticsearch.common.inject.internal.FailableCache;
 import org.elasticsearch.common.inject.spi.InjectionPoint;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -81,9 +80,7 @@ class MembersInjectorStore {
         for (InjectionPoint injectionPoint : injectionPoints) {
             try {
                 Errors errorsForMember = injectionPoint.isOptional() ? new Errors(injectionPoint) : errors.withSource(injectionPoint);
-                SingleMemberInjector injector = injectionPoint.getMember() instanceof Field
-                    ? new SingleFieldInjector(this.injector, injectionPoint, errorsForMember)
-                    : new SingleMethodInjector(this.injector, injectionPoint, errorsForMember);
+                SingleMemberInjector injector = new SingleMethodInjector(this.injector, injectionPoint, errorsForMember);
                 injectors.add(injector);
             } catch (ErrorsException ignoredForNow) {
                 // ignored for now

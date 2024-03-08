@@ -41,7 +41,7 @@ public abstract class ModuleTestCase extends ESTestCase {
         Predicate<T> tester,
         Class<? extends Annotation> annotation
     ) {
-        List<Element> elements = Elements.getElements(module);
+        List<Element> elements = Elements.getElements(List.of(module));
         for (Element element : elements) {
             if (element instanceof InstanceBinding<?> binding) {
                 if (to.equals(binding.getKey().getTypeLiteral().getType())) {

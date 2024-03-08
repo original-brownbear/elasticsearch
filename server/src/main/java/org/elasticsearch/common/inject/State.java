@@ -16,12 +16,9 @@
 
 package org.elasticsearch.common.inject;
 
-import org.elasticsearch.common.inject.internal.BindingImpl;
-import org.elasticsearch.common.inject.internal.Errors;
 import org.elasticsearch.common.inject.internal.MatcherAndConverter;
 
 import java.lang.annotation.Annotation;
-import java.util.Map;
 
 import static java.util.Collections.emptySet;
 
@@ -40,38 +37,8 @@ interface State {
         }
 
         @Override
-        public <T> BindingImpl<T> getExplicitBinding(Key<T> key) {
-            return null;
-        }
-
-        @Override
-        public Map<Key<?>, Binding<?>> getExplicitBindingsThisLevel() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void putBinding(Key<?> key, BindingImpl<?> binding) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public Scope getScope(Class<? extends Annotation> scopingAnnotation) {
             return null;
-        }
-
-        @Override
-        public void putAnnotation(Class<? extends Annotation> annotationType, Scope scope) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void addConverter(MatcherAndConverter matcherAndConverter) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public MatcherAndConverter getConverter(String stringValue, TypeLiteral<?> type, Errors errors, Object source) {
-            throw new UnsupportedOperationException();
         }
 
         @Override
@@ -83,17 +50,6 @@ interface State {
         public void blacklist(Key<?> key) {}
 
         @Override
-        public boolean isBlacklisted(Key<?> key) {
-            return true;
-        }
-
-        @Override
-        public void clearBlacklisted() {}
-
-        @Override
-        public void makeAllBindingsToEagerSingletons(Injector injector) {}
-
-        @Override
         public Object lock() {
             throw new UnsupportedOperationException();
         }
@@ -102,30 +58,9 @@ interface State {
     State parent();
 
     /**
-     * Gets a binding which was specified explicitly in a module, or null.
-     */
-    <T> BindingImpl<T> getExplicitBinding(Key<T> key);
-
-    /**
-     * Returns the explicit bindings at this level only.
-     */
-    Map<Key<?>, Binding<?>> getExplicitBindingsThisLevel();
-
-    void putBinding(Key<?> key, BindingImpl<?> binding);
-
-    /**
      * Returns the matching scope, or null.
      */
     Scope getScope(Class<? extends Annotation> scopingAnnotation);
-
-    void putAnnotation(Class<? extends Annotation> annotationType, Scope scope);
-
-    void addConverter(MatcherAndConverter matcherAndConverter);
-
-    /**
-     * Returns the matching converter for {@code type}, or null if none match.
-     */
-    MatcherAndConverter getConverter(String stringValue, TypeLiteral<?> type, Errors errors, Object source);
 
     /**
      * Returns all converters at this level only.
@@ -140,19 +75,9 @@ interface State {
     void blacklist(Key<?> key);
 
     /**
-     * Returns true if {@code key} is forbidden from being bound in this injector. This indicates that
-     * one of this injector's descendent's has bound the key.
-     */
-    boolean isBlacklisted(Key<?> key);
-
-    /**
      * Returns the shared lock for all injector data. This is a low-granularity, high-contention lock
      * to be used when reading mutable data (ie. just-in-time bindings, and binding blacklists).
      */
     Object lock();
 
-    // ES_GUICE: clean blacklist keys
-    void clearBlacklisted();
-
-    void makeAllBindingsToEagerSingletons(Injector injector);
 }

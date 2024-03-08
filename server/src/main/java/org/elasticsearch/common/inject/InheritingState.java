@@ -55,19 +55,16 @@ class InheritingState implements State {
         return State.NONE;
     }
 
-    @Override
     @SuppressWarnings("unchecked") // we only put in BindingImpls that match their key types
     public <T> BindingImpl<T> getExplicitBinding(Key<T> key) {
         Binding<?> binding = explicitBindings.get(key);
-        return binding != null ? (BindingImpl<T>) binding : State.NONE.getExplicitBinding(key);
+        return binding != null ? (BindingImpl<T>) binding : null;
     }
 
-    @Override
     public Map<Key<?>, Binding<?>> getExplicitBindingsThisLevel() {
         return explicitBindings;
     }
 
-    @Override
     public void putBinding(Key<?> key, BindingImpl<?> binding) {
         explicitBindingsMutable.put(key, binding);
     }
@@ -78,7 +75,6 @@ class InheritingState implements State {
         return scope != null ? scope : State.NONE.getScope(annotationType);
     }
 
-    @Override
     public void putAnnotation(Class<? extends Annotation> annotationType, Scope scope) {
         scopes.put(annotationType, scope);
     }
@@ -88,12 +84,10 @@ class InheritingState implements State {
         return converters;
     }
 
-    @Override
     public void addConverter(MatcherAndConverter matcherAndConverter) {
         converters.add(matcherAndConverter);
     }
 
-    @Override
     public MatcherAndConverter getConverter(String stringValue, TypeLiteral<?> type, Errors errors, Object source) {
         MatcherAndConverter matchingConverter = null;
         for (State s = this; s != State.NONE; s = s.parent()) {
@@ -111,21 +105,17 @@ class InheritingState implements State {
 
     @Override
     public void blacklist(Key<?> key) {
-        State.NONE.blacklist(key);
         blacklistedKeys.add(key);
     }
 
-    @Override
     public boolean isBlacklisted(Key<?> key) {
         return blacklistedKeys.contains(key);
     }
 
-    @Override
     public void clearBlacklisted() {
         blacklistedKeys = new WeakKeySet();
     }
 
-    @Override
     public void makeAllBindingsToEagerSingletons(Injector injector) {
         Map<Key<?>, Binding<?>> x = new LinkedHashMap<>();
         for (Map.Entry<Key<?>, Binding<?>> entry : this.explicitBindingsMutable.entrySet()) {

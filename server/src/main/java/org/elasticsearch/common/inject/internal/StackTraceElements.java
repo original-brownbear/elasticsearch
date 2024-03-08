@@ -41,9 +41,6 @@ public class StackTraceElements {
     }
 
     public static Object forType(Class<?> implementation) {
-        String fileName = null;
-        int lineNumber = -1;
-
-        return new StackTraceElement(implementation.getName(), "class", fileName, lineNumber);
+        return new StackTraceElement(implementation.getName(), "class", null, -1);
     }
 }

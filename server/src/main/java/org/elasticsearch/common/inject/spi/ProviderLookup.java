@@ -16,6 +16,7 @@
 
 package org.elasticsearch.common.inject.spi;
 
+import org.elasticsearch.common.inject.AbstractProcessor;
 import org.elasticsearch.common.inject.Key;
 import org.elasticsearch.common.inject.Provider;
 
@@ -74,7 +75,7 @@ public final class ProviderLookup<T> implements Element {
     }
 
     @Override
-    public <T> T acceptVisitor(ElementVisitor<T> visitor) {
+    public Boolean acceptVisitor(AbstractProcessor visitor) {
         return visitor.visit(this);
     }
 

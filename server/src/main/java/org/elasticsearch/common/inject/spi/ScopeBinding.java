@@ -16,6 +16,7 @@
 
 package org.elasticsearch.common.inject.spi;
 
+import org.elasticsearch.common.inject.AbstractProcessor;
 import org.elasticsearch.common.inject.Scope;
 
 import java.lang.annotation.Annotation;
@@ -57,7 +58,7 @@ public final class ScopeBinding implements Element {
     }
 
     @Override
-    public <T> T acceptVisitor(ElementVisitor<T> visitor) {
+    public Boolean acceptVisitor(AbstractProcessor visitor) {
         return visitor.visit(this);
     }
 

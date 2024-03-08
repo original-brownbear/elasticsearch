@@ -38,6 +38,6 @@ public interface LinkedBindingBuilder<T> extends ScopedBindingBuilder {
     /**
      * See the EDSL examples at {@link org.elasticsearch.common.inject.Binder}.
      */
-    ScopedBindingBuilder toProvider(Provider<? extends T> provider);
+    void toProvider(Provider<? extends T> provider);
 
 }

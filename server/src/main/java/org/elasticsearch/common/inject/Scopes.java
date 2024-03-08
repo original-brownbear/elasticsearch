@@ -16,11 +16,9 @@
 
 package org.elasticsearch.common.inject;
 
-import org.elasticsearch.common.inject.internal.Errors;
 import org.elasticsearch.common.inject.internal.InternalFactory;
 import org.elasticsearch.common.inject.internal.Scoping;
 
-import java.lang.annotation.Annotation;
 import java.util.Locale;
 
 /**
@@ -115,23 +113,4 @@ public class Scopes {
         return new InternalFactoryToProviderAdapter<>(Initializables.of(scoped));
     }
 
-    /**
-     * Replaces annotation scopes with instance scopes using the Injector's annotation-to-instance
-     * map. If the scope annotation has no corresponding instance, an error will be added and unscoped
-     * will be retuned.
-     */
-    static Scoping makeInjectable(Scoping scoping, InjectorImpl injector, Errors errors) {
-        Class<? extends Annotation> scopeAnnotation = scoping.getScopeAnnotation();
-        if (scopeAnnotation == null) {
-            return scoping;
-        }
-
-        Scope scope = injector.state.getScope(scopeAnnotation);
-        if (scope != null) {
-            return Scoping.forInstance(scope);
-        }
-
-        errors.scopeNotFound(scopeAnnotation);
-        return Scoping.UNSCOPED;
-    }
 }

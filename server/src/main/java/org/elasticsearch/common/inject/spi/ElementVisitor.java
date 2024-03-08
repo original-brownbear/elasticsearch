@@ -28,12 +28,6 @@ import org.elasticsearch.common.inject.Binding;
 public interface ElementVisitor<V> {
 
     /**
-     * Visit a mapping from a key (type and optional annotation) to the strategy for getting
-     * instances of the type.
-     */
-    <T> V visit(Binding<T> binding);
-
-    /**
      * Visit a registration of a scope annotation with the scope that implements it.
      */
     V visit(ScopeBinding binding);

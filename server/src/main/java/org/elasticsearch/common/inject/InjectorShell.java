@@ -30,7 +30,6 @@ import org.elasticsearch.common.inject.spi.InjectionPoint;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.logging.Logger;
 
 import static java.util.Collections.emptySet;
@@ -67,9 +66,7 @@ class InjectorShell {
         /**
          * lazily constructed
          */
-        private State state;
-
-        private final Stage stage = Stage.DEVELOPMENT;
+        private InheritingState state;
 
         void addModules(Iterable<? extends Module> modules) {
             for (Module module : modules) {
@@ -95,10 +92,10 @@ class InjectorShell {
             InjectorImpl injector = new InjectorImpl(state);
 
             // bind Stage and Singleton if this is a top-level injector
-            modules.add(0, new RootModule(stage));
+            modules.add(0, new RootModule());
             new TypeConverterBindingProcessor(errors).prepareBuiltInConverters(injector);
 
-            elements.addAll(Elements.getElements(stage, modules));
+            elements.addAll(Elements.getElements(modules));
             stopwatch.resetAndLog("Module execution");
 
             new MessageProcessor(errors).process(injector, elements);
@@ -219,16 +216,12 @@ class InjectorShell {
     }
 
     private static class RootModule implements Module {
-        final Stage stage;
 
-        private RootModule(Stage stage) {
-            this.stage = Objects.requireNonNull(stage, "stage");
-        }
+        private RootModule() {}
 
         @Override
         public void configure(Binder binder) {
             binder = binder.withSource(SourceProvider.UNKNOWN_SOURCE);
-            binder.bind(Stage.class).toInstance(stage);
             binder.bindScope(Singleton.class, SINGLETON);
         }
     }

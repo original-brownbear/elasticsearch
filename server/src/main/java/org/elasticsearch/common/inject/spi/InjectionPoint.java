@@ -29,7 +29,6 @@ import org.elasticsearch.common.inject.internal.Nullability;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -73,26 +72,6 @@ public final class InjectionPoint {
         this.member = constructor;
         this.optional = false;
         this.dependencies = forMember(constructor, type, constructor.getParameterAnnotations());
-    }
-
-    InjectionPoint(TypeLiteral<?> type, Field field) {
-        this.member = field;
-
-        Inject inject = field.getAnnotation(Inject.class);
-        this.optional = inject.optional();
-
-        Annotation[] annotations = field.getAnnotations();
-
-        Errors errors = new Errors(field);
-        Key<?> key = null;
-        try {
-            key = Annotations.getKey(type.getFieldType(field), field, annotations, errors);
-        } catch (ErrorsException e) {
-            errors.merge(e.getErrors());
-        }
-        errors.throwConfigurationExceptionIfErrorsExist();
-
-        this.dependencies = Collections.singletonList(newDependency(key, Nullability.allowsNull(annotations), -1));
     }
 
     private List<Dependency<?>> forMember(Member member, TypeLiteral<?> type, Annotation[][] parameterAnnotations) {
@@ -142,9 +121,8 @@ public final class InjectionPoint {
 
     /**
      * Returns true if this injection point shall be skipped if the injector cannot resolve bindings
-     * for all required dependencies. Both explicit bindings (as specified in a module), and implicit
-     * bindings ({@literal @}{@link org.elasticsearch.common.inject.ImplementedBy ImplementedBy}, default
-     * constructors etc.) may be used to satisfy optional injection points.
+     * for all required dependencies. Both explicit bindings (as specified in a module), default
+     * constructors etc. may be used to satisfy optional injection points.
      */
     public boolean isOptional() {
         return optional;
@@ -235,7 +213,6 @@ public final class InjectionPoint {
         Errors errors = new Errors();
 
         // TODO (crazybob): Filter out overridden members.
-        addInjectionPoints(type, Factory.FIELDS, false, result, errors);
         addInjectionPoints(type, Factory.METHODS, false, result, errors);
 
         result = unmodifiableSet(result);
@@ -334,17 +311,6 @@ public final class InjectionPoint {
     }
 
     private interface Factory<M extends Member & AnnotatedElement> {
-        Factory<Field> FIELDS = new Factory<>() {
-            @Override
-            public Field[] getMembers(Class<?> type) {
-                return type.getFields();
-            }
-
-            @Override
-            public InjectionPoint create(TypeLiteral<?> typeLiteral, Field member, Errors errors) {
-                return new InjectionPoint(typeLiteral, member);
-            }
-        };
 
         Factory<Method> METHODS = new Factory<>() {
             @Override

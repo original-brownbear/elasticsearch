@@ -25,7 +25,6 @@ import org.elasticsearch.common.inject.Module;
 import org.elasticsearch.common.inject.PrivateBinder;
 import org.elasticsearch.common.inject.Provider;
 import org.elasticsearch.common.inject.Scope;
-import org.elasticsearch.common.inject.Stage;
 import org.elasticsearch.common.inject.TypeLiteral;
 import org.elasticsearch.common.inject.binder.AnnotatedBindingBuilder;
 import org.elasticsearch.common.inject.internal.AbstractBindingBuilder;
@@ -36,7 +35,6 @@ import org.elasticsearch.common.inject.internal.SourceProvider;
 
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -54,15 +52,8 @@ public final class Elements {
     /**
      * Records the elements executed by {@code modules}.
      */
-    public static List<Element> getElements(Module... modules) {
-        return getElements(Stage.DEVELOPMENT, Arrays.asList(modules));
-    }
-
-    /**
-     * Records the elements executed by {@code modules}.
-     */
-    public static List<Element> getElements(Stage stage, Iterable<? extends Module> modules) {
-        RecordingBinder binder = new RecordingBinder(stage);
+    public static List<Element> getElements(Iterable<? extends Module> modules) {
+        RecordingBinder binder = new RecordingBinder();
         for (Module module : modules) {
             binder.install(module);
         }
@@ -70,7 +61,6 @@ public final class Elements {
     }
 
     private static class RecordingBinder implements Binder, PrivateBinder {
-        private final Stage stage;
         private final Set<Module> modules;
         private final List<Element> elements;
         private final Object source;
@@ -81,8 +71,7 @@ public final class Elements {
          */
         private final RecordingBinder parent;
 
-        private RecordingBinder(Stage stage) {
-            this.stage = stage;
+        private RecordingBinder() {
             this.modules = new HashSet<>();
             this.elements = new ArrayList<>();
             this.source = null;
@@ -104,7 +93,6 @@ public final class Elements {
                 throw new IllegalArgumentException();
             }
 
-            this.stage = prototype.stage;
             this.modules = prototype.modules;
             this.elements = prototype.elements;
             this.source = source;
@@ -190,12 +178,6 @@ public final class Elements {
 
             SourceProvider newSourceProvider = sourceProvider.plusSkippedClasses(classesToSkip);
             return new RecordingBinder(this, null, newSourceProvider);
-        }
-
-        @Override
-        public void expose(Key<?> key) {
-            addError("Cannot expose %s on a standard binder. " + "Exposed bindings are only applicable to private binders.", key);
-
         }
 
         private static final Logger logger = LogManager.getLogger(Elements.class);

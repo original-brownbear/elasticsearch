@@ -35,7 +35,7 @@ import java.util.List;
  *
  * @author jessewilson@google.com (Jesse Wilson)
  */
-abstract class AbstractProcessor implements ElementVisitor<Boolean> {
+public abstract class AbstractProcessor implements ElementVisitor<Boolean> {
 
     protected Errors errors;
     protected InjectorImpl injector;
@@ -44,13 +44,13 @@ abstract class AbstractProcessor implements ElementVisitor<Boolean> {
         this.errors = errors;
     }
 
-    public void process(Iterable<InjectorShell> isolatedInjectorBuilders) {
+    void process(Iterable<InjectorShell> isolatedInjectorBuilders) {
         for (InjectorShell injectorShell : isolatedInjectorBuilders) {
             process(injectorShell.getInjector(), injectorShell.getElements());
         }
     }
 
-    public void process(InjectorImpl injector, List<Element> elements) {
+    void process(InjectorImpl injector, List<Element> elements) {
         Errors errorsAnyElement = this.errors;
         this.injector = injector;
         try {
@@ -78,7 +78,6 @@ abstract class AbstractProcessor implements ElementVisitor<Boolean> {
         return false;
     }
 
-    @Override
     public <T> Boolean visit(Binding<T> binding) {
         return false;
     }

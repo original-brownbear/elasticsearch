@@ -19,46 +19,44 @@ package org.elasticsearch.common.inject.spi;
 /**
  * Visits each of the strategies used to find an instance to satisfy an injection.
  *
- * @param <V> any type to be returned by the visit method. Use {@link Void} with
- *            {@code return null} if no return type is needed.
  * @since 2.0
  */
-public interface BindingTargetVisitor<T, V> {
+public interface BindingTargetVisitor<T> {
 
     /**
      * Visit a instance binding. The same instance is returned for every injection. This target is
      * found in both module and injector bindings.
      */
-    V visit(InstanceBinding<? extends T> binding);
+    void visit(InstanceBinding<? extends T> binding);
 
     /**
      * Visit a provider instance binding. The provider's {@code get} method is invoked to resolve
      * injections. This target is found in both module and injector bindings.
      */
-    V visit(ProviderInstanceBinding<? extends T> binding);
+    void visit(ProviderInstanceBinding<? extends T> binding);
 
     /**
      * Visit a provider key binding. To resolve injections, the provider key is first resolved, then
      * that provider's {@code get} method is invoked. This target is found in both module and injector
      * bindings.
      */
-    V visit(ProviderKeyBinding<? extends T> binding);
+    void visit(ProviderKeyBinding<? extends T> binding);
 
     /**
      * Visit a linked key binding. The other key's binding is used to resolve injections. This
      * target is found in both module and injector bindings.
      */
-    V visit(LinkedKeyBinding<? extends T> binding);
+    void visit(LinkedKeyBinding<? extends T> binding);
 
     /**
      * Visit an untargetted binding. This target is found only on module bindings. It indicates
      * that the injector should use its implicit binding strategies to resolve injections.
      */
-    V visit(UntargettedBinding<? extends T> binding);
+    void visit(UntargettedBinding<? extends T> binding);
 
     /**
      * Visit a constructor binding. To resolve injections, an instance is instantiated by invoking
      * {@code constructor}. This target is found only on injector bindings.
      */
-    V visit();
+    void visit();
 }
