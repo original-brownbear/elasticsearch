@@ -8,7 +8,15 @@
 
 package org.elasticsearch.painless.spi;
 
-import org.elasticsearch.painless.spi.annotation.WhitelistAnnotationParser;
+import org.elasticsearch.common.TriFunction;
+import org.elasticsearch.painless.spi.annotation.AliasAnnotation;
+import org.elasticsearch.painless.spi.annotation.AugmentedAnnotation;
+import org.elasticsearch.painless.spi.annotation.CompileTimeOnlyAnnotation;
+import org.elasticsearch.painless.spi.annotation.DeprecatedAnnotation;
+import org.elasticsearch.painless.spi.annotation.DynamicTypeAnnotation;
+import org.elasticsearch.painless.spi.annotation.InjectConstantAnnotation;
+import org.elasticsearch.painless.spi.annotation.NoImportAnnotation;
+import org.elasticsearch.painless.spi.annotation.NonDeterministicAnnotation;
 
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
@@ -30,11 +38,97 @@ public final class WhitelistLoader {
 
     /**
      * Loads and creates a {@link Whitelist} from one to many text files using only the base annotation parsers.
-     * See {@link #loadFromResourceFiles(Class, Map, String...)} for information on how to structure a whitelist
+     * See {@link #loadFromResourceFiles(Class, TriFunction, String...)} for information on how to structure a whitelist
      * text file.
      */
     public static Whitelist loadFromResourceFiles(Class<?> resource, String... filepaths) {
-        return loadFromResourceFiles(resource, WhitelistAnnotationParser.BASE_ANNOTATION_PARSERS, filepaths);
+        return loadFromResourceFiles(resource, WhitelistLoader::parseAnnotation, filepaths);
+    }
+
+    public static Object parseAnnotation(String line, String name, Map<String, String> arguments) {
+        return switch (name) {
+            case NoImportAnnotation.NAME -> {
+                if (arguments.isEmpty() == false) {
+                    throw new IllegalArgumentException("unexpected parameters for [@no_import] annotation, found " + arguments);
+                }
+                yield NoImportAnnotation.INSTANCE;
+            }
+            case DeprecatedAnnotation.NAME -> {
+                final String messageName = "message";
+                String message = arguments.getOrDefault(messageName, "");
+                if ((arguments.isEmpty() || arguments.size() == 1 && arguments.containsKey(messageName)) == false) {
+                    throw new IllegalArgumentException("unexpected parameters for [@deprecation] annotation, found " + arguments);
+                }
+                yield new DeprecatedAnnotation(message);
+            }
+            case InjectConstantAnnotation.NAME -> {
+                if (arguments.isEmpty()) {
+                    throw new IllegalArgumentException("[@inject_constant] requires at least one name to inject");
+                }
+                ArrayList<String> argList = new ArrayList<>(arguments.size());
+                for (int i = 1; i <= arguments.size(); i++) {
+                    String argNum = Integer.toString(i);
+                    if (arguments.containsKey(argNum) == false) {
+                        throw new IllegalArgumentException("[@inject_constant] missing argument number [" + argNum + "]");
+                    }
+                    argList.add(arguments.get(argNum));
+                }
+                yield new InjectConstantAnnotation(argList);
+            }
+            case NonDeterministicAnnotation.NAME -> {
+                if (arguments.isEmpty() == false) {
+                    throw new IllegalArgumentException(
+                        "unexpected parameters for [@" + NonDeterministicAnnotation.NAME + "] annotation, found " + arguments
+                    );
+                }
+                yield NonDeterministicAnnotation.INSTANCE;
+            }
+            case CompileTimeOnlyAnnotation.NAME -> {
+                if (arguments.isEmpty() == false) {
+                    throw new IllegalArgumentException(
+                        "unexpected parameters for [@" + CompileTimeOnlyAnnotation.NAME + "] annotation, found " + arguments
+                    );
+                }
+                yield CompileTimeOnlyAnnotation.INSTANCE;
+            }
+            case AugmentedAnnotation.NAME -> {
+                String augmentedCanonicalClassName = "augmented_canonical_class_name";
+                String javaClassName = arguments.get(augmentedCanonicalClassName);
+                if (javaClassName == null) {
+                    throw new IllegalArgumentException("augmented_canonical_class_name cannot be null for [@augmented] annotation");
+                }
+                if ((arguments.isEmpty() || arguments.size() == 1 && arguments.containsKey(augmentedCanonicalClassName)) == false) {
+                    throw new IllegalArgumentException("unexpected parameters for [@augmented] annotation, found " + arguments);
+                }
+                yield new AugmentedAnnotation(javaClassName);
+            }
+            case DynamicTypeAnnotation.NAME -> {
+                if (arguments.isEmpty() == false) {
+                    throw new IllegalArgumentException(
+                        "unexpected parameters for [@" + DynamicTypeAnnotation.NAME + "] annotation, found " + arguments
+                    );
+                }
+                yield DynamicTypeAnnotation.INSTANCE;
+            }
+            case AliasAnnotation.NAME -> {
+                if (arguments.size() != 1) {
+                    throw new IllegalArgumentException("[@alias] requires one alias");
+                }
+                AliasAnnotation annotation = null;
+                for (Map.Entry<String, String> entry : arguments.entrySet()) {
+                    if ("class".equals(entry.getKey()) == false) {
+                        throw new IllegalArgumentException("[@alias] only supports class aliases");
+                    }
+                    String alias = entry.getValue();
+                    if (alias == null || alias.isBlank()) {
+                        throw new IllegalArgumentException("[@alias] must be non-empty");
+                    }
+                    annotation = new AliasAnnotation(alias);
+                }
+                yield annotation;
+            }
+            default -> throw new IllegalArgumentException("invalid annotation: parser not found for [" + name + "] [" + line + "]");
+        };
     }
 
     /**
@@ -139,7 +233,11 @@ public final class WhitelistLoader {
      * }
      * }
      */
-    public static Whitelist loadFromResourceFiles(Class<?> resource, Map<String, WhitelistAnnotationParser> parsers, String... filepaths) {
+    public static Whitelist loadFromResourceFiles(
+        Class<?> resource,
+        TriFunction<String, String, Map<String, String>, Object> parser,
+        String... filepaths
+    ) {
         List<WhitelistClass> whitelistClasses = new ArrayList<>();
         List<WhitelistMethod> whitelistStatics = new ArrayList<>();
         List<WhitelistClassBinding> whitelistClassBindings = new ArrayList<>();
@@ -194,7 +292,7 @@ public final class WhitelistLoader {
                             annotationIndex = line.length() - 1;
                             classAnnotations = Collections.emptyList();
                         } else {
-                            classAnnotations = parseWhitelistAnnotations(parsers, line.substring(annotationIndex, line.length() - 1));
+                            classAnnotations = parseWhitelistAnnotations(parser, line.substring(annotationIndex, line.length() - 1));
                         }
 
                         parseType = "class";
@@ -306,7 +404,7 @@ public final class WhitelistLoader {
                             annotationIndex = line.length();
                             annotations = Collections.emptyList();
                         } else {
-                            annotations = parseWhitelistAnnotations(parsers, line.substring(annotationIndex));
+                            annotations = parseWhitelistAnnotations(parser, line.substring(annotationIndex));
                         }
 
                         // Parse the static import type and class.
@@ -386,7 +484,7 @@ public final class WhitelistLoader {
                             int annotationIndex = line.indexOf('@');
                             annotations = annotationIndex == -1
                                 ? Collections.emptyList()
-                                : parseWhitelistAnnotations(parsers, line.substring(annotationIndex));
+                                : parseWhitelistAnnotations(parser, line.substring(annotationIndex));
 
                             whitelistConstructors.add(new WhitelistConstructor(origin, List.of(canonicalTypeNameParameters), annotations));
 
@@ -436,7 +534,7 @@ public final class WhitelistLoader {
                             int annotationIndex = line.indexOf('@');
                             annotations = annotationIndex == -1
                                 ? Collections.emptyList()
-                                : parseWhitelistAnnotations(parsers, line.substring(annotationIndex));
+                                : parseWhitelistAnnotations(parser, line.substring(annotationIndex));
 
                             whitelistMethods.add(
                                 new WhitelistMethod(
@@ -460,7 +558,7 @@ public final class WhitelistLoader {
                                 annotationIndex = line.length();
                                 annotations = Collections.emptyList();
                             } else {
-                                annotations = parseWhitelistAnnotations(parsers, line.substring(annotationIndex));
+                                annotations = parseWhitelistAnnotations(parser, line.substring(annotationIndex));
                             }
 
                             // Parse the field tokens.
@@ -492,7 +590,7 @@ public final class WhitelistLoader {
         return new Whitelist(loader, whitelistClasses, whitelistStatics, whitelistClassBindings, Collections.emptyList());
     }
 
-    private static List<Object> parseWhitelistAnnotations(Map<String, WhitelistAnnotationParser> parsers, String line) {
+    private static List<Object> parseWhitelistAnnotations(TriFunction<String, String, Map<String, String>, Object> parser, String line) {
 
         List<Object> annotations;
 
@@ -559,13 +657,7 @@ public final class WhitelistLoader {
                     }
                 }
 
-                WhitelistAnnotationParser parser = parsers.get(name);
-
-                if (parser == null) {
-                    throw new IllegalArgumentException("invalid annotation: parser not found for [" + name + "] [" + line + "]");
-                }
-
-                annotations.add(parser.parse(arguments));
+                annotations.add(parser.apply(line, name, arguments));
             }
         }
 

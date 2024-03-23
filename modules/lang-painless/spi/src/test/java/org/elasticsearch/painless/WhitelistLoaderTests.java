@@ -14,26 +14,23 @@ import org.elasticsearch.painless.spi.WhitelistLoader;
 import org.elasticsearch.painless.spi.WhitelistMethod;
 import org.elasticsearch.painless.spi.annotation.DeprecatedAnnotation;
 import org.elasticsearch.painless.spi.annotation.NoImportAnnotation;
-import org.elasticsearch.painless.spi.annotation.WhitelistAnnotationParser;
 import org.elasticsearch.test.ESTestCase;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class WhitelistLoaderTests extends ESTestCase {
 
     public void testUnknownAnnotations() {
-        Map<String, WhitelistAnnotationParser> parsers = new HashMap<>(WhitelistAnnotationParser.BASE_ANNOTATION_PARSERS);
 
-        RuntimeException expected = expectThrows(RuntimeException.class, () -> {
-            WhitelistLoader.loadFromResourceFiles(Whitelist.class, parsers, "org.elasticsearch.painless.annotation.unknown");
-        });
+        RuntimeException expected = expectThrows(
+            RuntimeException.class,
+            () -> WhitelistLoader.loadFromResourceFiles(Whitelist.class, "org.elasticsearch.painless.annotation.unknown")
+        );
         assertEquals("invalid annotation: parser not found for [unknownAnnotation] [@unknownAnnotation]", expected.getCause().getMessage());
         assertEquals(IllegalArgumentException.class, expected.getCause().getClass());
 
-        expected = expectThrows(RuntimeException.class, () -> {
-            WhitelistLoader.loadFromResourceFiles(Whitelist.class, parsers, "org.elasticsearch.painless.annotation.unknown_with_options");
-        });
+        expected = expectThrows(
+            RuntimeException.class,
+            () -> WhitelistLoader.loadFromResourceFiles(Whitelist.class, "org.elasticsearch.painless.annotation.unknown_with_options")
+        );
         assertEquals(
             "invalid annotation: parser not found for [unknownAnnotationWithMessage] [@unknownAnnotationWithMessage[arg=\"arg value\"]]",
             expected.getCause().getMessage()
@@ -42,9 +39,34 @@ public class WhitelistLoaderTests extends ESTestCase {
     }
 
     public void testAnnotations() {
-        Map<String, WhitelistAnnotationParser> parsers = new HashMap<>(WhitelistAnnotationParser.BASE_ANNOTATION_PARSERS);
-        parsers.put(AnnotationTestObject.TestAnnotation.NAME, AnnotationTestObject.TestAnnotationParser.INSTANCE);
-        Whitelist whitelist = WhitelistLoader.loadFromResourceFiles(Whitelist.class, parsers, "org.elasticsearch.painless.annotation");
+        Whitelist whitelist = WhitelistLoader.loadFromResourceFiles(Whitelist.class, (line, name, arguments) -> {
+            if (AnnotationTestObject.TestAnnotation.NAME.equals(name)) {
+                if (arguments.size() != 3) {
+                    throw new IllegalArgumentException("expected three arguments");
+                }
+
+                String one = arguments.get("one");
+
+                if (one == null) {
+                    throw new IllegalArgumentException("missing one");
+                }
+
+                String two = arguments.get("two");
+
+                if (two == null) {
+                    throw new IllegalArgumentException("missing two");
+                }
+
+                String three = arguments.get("three");
+
+                if (three == null) {
+                    throw new IllegalArgumentException("missing three");
+                }
+
+                return new AnnotationTestObject.TestAnnotation(one, two, three);
+            }
+            return WhitelistLoader.parseAnnotation(line, name, arguments);
+        }, "org.elasticsearch.painless.annotation");
 
         assertEquals(1, whitelist.whitelistClasses.size());
 

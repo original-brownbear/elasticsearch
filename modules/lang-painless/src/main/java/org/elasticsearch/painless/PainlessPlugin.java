@@ -26,7 +26,6 @@ import org.elasticsearch.painless.spi.PainlessExtension;
 import org.elasticsearch.painless.spi.PainlessTestScript;
 import org.elasticsearch.painless.spi.Whitelist;
 import org.elasticsearch.painless.spi.WhitelistLoader;
-import org.elasticsearch.painless.spi.annotation.WhitelistAnnotationParser;
 import org.elasticsearch.plugins.ActionPlugin;
 import org.elasticsearch.plugins.ExtensiblePlugin;
 import org.elasticsearch.plugins.Plugin;
@@ -71,7 +70,7 @@ public final class PainlessPlugin extends Plugin implements ScriptPlugin, Extens
         "java.util.stream.txt",
         "java.nio.txt" };
     public static final List<Whitelist> BASE_WHITELISTS = Collections.singletonList(
-        WhitelistLoader.loadFromResourceFiles(PainlessPlugin.class, WhitelistAnnotationParser.BASE_ANNOTATION_PARSERS, BASE_WHITELIST_FILES)
+        WhitelistLoader.loadFromResourceFiles(PainlessPlugin.class, BASE_WHITELIST_FILES)
     );
 
     /*
