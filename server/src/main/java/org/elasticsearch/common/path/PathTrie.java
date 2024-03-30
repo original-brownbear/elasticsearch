@@ -64,14 +64,12 @@ public class PathTrie<T> {
     }
 
     public class TrieNode {
-        private transient String key;
         private transient T value;
         private transient String namedWildcard;
 
         private Map<String, TrieNode> children;
 
         private TrieNode(String key, T value) {
-            this.key = key.intern();
             this.value = value;
             this.children = Map.of();
             if (isNamedWildcard(key)) {
@@ -82,7 +80,6 @@ public class PathTrie<T> {
         }
 
         private void updateKeyWithNamedWildcard(String key) {
-            this.key = key.intern();
             String newNamedWildcard = key.substring(key.indexOf('{') + 1, key.indexOf('}'));
             if (namedWildcard != null && newNamedWildcard.equals(namedWildcard) == false) {
                 throw new IllegalArgumentException(
@@ -268,11 +265,6 @@ public class PathTrie<T> {
             } else {
                 return Iterators.concat(Iterators.single(value), childrenIterator);
             }
-        }
-
-        @Override
-        public String toString() {
-            return key;
         }
     }
 
