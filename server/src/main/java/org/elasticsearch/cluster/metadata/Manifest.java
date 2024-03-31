@@ -116,10 +116,21 @@ public record Manifest(long currentTerm, long clusterStateVersion, long globalGe
     );
 
     static {
+        final ConstructingObjectParser<IndexEntry, Void> indexEntryParser = new ConstructingObjectParser<>(
+            "indexEntry",
+            indexAndGeneration -> new IndexEntry((Index) indexAndGeneration[0], (long) indexAndGeneration[1])
+        );
+        indexEntryParser.declareField(
+            ConstructingObjectParser.constructorArg(),
+            Index::fromXContent,
+            IndexEntry.INDEX_PARSE_FIELD,
+            ObjectParser.ValueType.OBJECT
+        );
+        indexEntryParser.declareLong(ConstructingObjectParser.constructorArg(), new ParseField("generation"));
         PARSER.declareLong(ConstructingObjectParser.constructorArg(), CURRENT_TERM_PARSE_FIELD);
         PARSER.declareLong(ConstructingObjectParser.constructorArg(), CLUSTER_STATE_VERSION_PARSE_FIELD);
         PARSER.declareLong(ConstructingObjectParser.constructorArg(), GENERATION_PARSE_FIELD);
-        PARSER.declareObjectArray(ConstructingObjectParser.constructorArg(), IndexEntry.INDEX_ENTRY_PARSER, INDEX_GENERATIONS_PARSE_FIELD);
+        PARSER.declareObjectArray(ConstructingObjectParser.constructorArg(), indexEntryParser, INDEX_GENERATIONS_PARSE_FIELD);
     }
 
     public static Manifest fromXContent(XContentParser parser) throws IOException {
@@ -142,23 +153,7 @@ public record Manifest(long currentTerm, long clusterStateVersion, long globalGe
     }
 
     private record IndexEntry(Index index, long generation) implements ToXContentFragment {
-        private static final ParseField INDEX_GENERATION_PARSE_FIELD = new ParseField("generation");
         private static final ParseField INDEX_PARSE_FIELD = new ParseField("index");
-
-        static final ConstructingObjectParser<IndexEntry, Void> INDEX_ENTRY_PARSER = new ConstructingObjectParser<>(
-            "indexEntry",
-            indexAndGeneration -> new IndexEntry((Index) indexAndGeneration[0], (long) indexAndGeneration[1])
-        );
-
-        static {
-            INDEX_ENTRY_PARSER.declareField(
-                ConstructingObjectParser.constructorArg(),
-                Index::fromXContent,
-                INDEX_PARSE_FIELD,
-                ObjectParser.ValueType.OBJECT
-            );
-            INDEX_ENTRY_PARSER.declareLong(ConstructingObjectParser.constructorArg(), INDEX_GENERATION_PARSE_FIELD);
-        }
 
         @Override
         public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {

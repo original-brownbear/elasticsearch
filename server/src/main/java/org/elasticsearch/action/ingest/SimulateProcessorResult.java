@@ -58,30 +58,6 @@ public class SimulateProcessorResult implements Writeable, ToXContentObject {
     private final WriteableIngestDocument ingestDocument;
     private final Exception failure;
     private final Tuple<String, Boolean> conditionalWithResult;
-
-    private static final ConstructingObjectParser<ElasticsearchException, Void> IGNORED_ERROR_PARSER = new ConstructingObjectParser<>(
-        "ignored_error_parser",
-        true,
-        a -> (ElasticsearchException) a[0]
-    );
-    static {
-        IGNORED_ERROR_PARSER.declareObject(constructorArg(), (p, c) -> ElasticsearchException.fromXContent(p), new ParseField("error"));
-    }
-
-    private static final ConstructingObjectParser<Tuple<String, Boolean>, Void> IF_CONDITION_PARSER = new ConstructingObjectParser<>(
-        "if_condition_parser",
-        true,
-        a -> {
-            String condition = a[0] == null ? null : (String) a[0];
-            Boolean result = a[1] == null ? null : (Boolean) a[1];
-            return new Tuple<>(condition, result);
-        }
-    );
-    static {
-        IF_CONDITION_PARSER.declareString(optionalConstructorArg(), new ParseField(CONDITION_FIELD));
-        IF_CONDITION_PARSER.declareBoolean(optionalConstructorArg(), new ParseField(RESULT_FIELD));
-    }
-
     @SuppressWarnings("unchecked")
     public static final ConstructingObjectParser<SimulateProcessorResult, Void> PARSER = new ConstructingObjectParser<>(
         "simulate_processor_result",
@@ -106,13 +82,31 @@ public class SimulateProcessorResult implements Writeable, ToXContentObject {
         PARSER.declareString(optionalConstructorArg(), new ParseField(TYPE_FIELD));
         PARSER.declareString(optionalConstructorArg(), new ParseField(ConfigurationUtils.TAG_KEY));
         PARSER.declareString(optionalConstructorArg(), new ParseField(ConfigurationUtils.DESCRIPTION_KEY));
-        PARSER.declareObject(optionalConstructorArg(), IF_CONDITION_PARSER, new ParseField("if"));
+
+        final ConstructingObjectParser<Tuple<String, Boolean>, Void> ifConditionParser = new ConstructingObjectParser<>(
+            "if_condition_parser",
+            true,
+            a -> {
+                String condition = a[0] == null ? null : (String) a[0];
+                Boolean result = a[1] == null ? null : (Boolean) a[1];
+                return new Tuple<>(condition, result);
+            }
+        );
+        ifConditionParser.declareString(optionalConstructorArg(), new ParseField(CONDITION_FIELD));
+        ifConditionParser.declareBoolean(optionalConstructorArg(), new ParseField(RESULT_FIELD));
+        PARSER.declareObject(optionalConstructorArg(), ifConditionParser, new ParseField("if"));
         PARSER.declareObject(
             optionalConstructorArg(),
             WriteableIngestDocument.INGEST_DOC_PARSER,
             new ParseField(WriteableIngestDocument.DOC_FIELD)
         );
-        PARSER.declareObject(optionalConstructorArg(), IGNORED_ERROR_PARSER, new ParseField(IGNORED_ERROR_FIELD));
+        final ConstructingObjectParser<ElasticsearchException, Void> ignoredErrorParser = new ConstructingObjectParser<>(
+            "ignored_error_parser",
+            true,
+            a -> (ElasticsearchException) a[0]
+        );
+        ignoredErrorParser.declareObject(constructorArg(), (p, c) -> ElasticsearchException.fromXContent(p), new ParseField("error"));
+        PARSER.declareObject(optionalConstructorArg(), ignoredErrorParser, new ParseField(IGNORED_ERROR_FIELD));
         PARSER.declareObject(optionalConstructorArg(), (p, c) -> ElasticsearchException.fromXContent(p), new ParseField("error"));
     }
 

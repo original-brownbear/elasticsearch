@@ -44,7 +44,19 @@ public class JobUpdate implements Writeable, ToXContentObject {
         PARSER.declareString(ConstructingObjectParser.optionalConstructorArg(), Job.ID);
         PARSER.declareStringArray(Builder::setGroups, Job.GROUPS);
         PARSER.declareStringOrNull(Builder::setDescription, Job.DESCRIPTION);
-        PARSER.declareObjectArray(Builder::setDetectorUpdates, DetectorUpdate.PARSER, DETECTORS);
+        @SuppressWarnings("unchecked")
+        final ConstructingObjectParser<DetectorUpdate, Void> detectorUpdateParser = new ConstructingObjectParser<>(
+            "detector_update",
+            a -> new DetectorUpdate((int) a[0], (String) a[1], (List<DetectionRule>) a[2])
+        );
+        detectorUpdateParser.declareInt(ConstructingObjectParser.optionalConstructorArg(), Detector.DETECTOR_INDEX);
+        detectorUpdateParser.declareStringOrNull(ConstructingObjectParser.optionalConstructorArg(), Job.DESCRIPTION);
+        detectorUpdateParser.declareObjectArray(
+            ConstructingObjectParser.optionalConstructorArg(),
+            (p, parseFieldMatcher) -> DetectionRule.STRICT_PARSER.apply(p, parseFieldMatcher).build(),
+            Detector.CUSTOM_RULES_FIELD
+        );
+        PARSER.declareObjectArray(Builder::setDetectorUpdates, detectorUpdateParser, DETECTORS);
         PARSER.declareObject(Builder::setModelPlotConfig, ModelPlotConfig.STRICT_PARSER, Job.MODEL_PLOT_CONFIG);
         PARSER.declareObject(Builder::setAnalysisLimits, AnalysisLimits.STRICT_PARSER, Job.ANALYSIS_LIMITS);
         PARSER.declareString(
@@ -657,21 +669,6 @@ public class JobUpdate implements Writeable, ToXContentObject {
     }
 
     public static class DetectorUpdate implements Writeable, ToXContentObject {
-        @SuppressWarnings("unchecked")
-        public static final ConstructingObjectParser<DetectorUpdate, Void> PARSER = new ConstructingObjectParser<>(
-            "detector_update",
-            a -> new DetectorUpdate((int) a[0], (String) a[1], (List<DetectionRule>) a[2])
-        );
-
-        static {
-            PARSER.declareInt(ConstructingObjectParser.optionalConstructorArg(), Detector.DETECTOR_INDEX);
-            PARSER.declareStringOrNull(ConstructingObjectParser.optionalConstructorArg(), Job.DESCRIPTION);
-            PARSER.declareObjectArray(
-                ConstructingObjectParser.optionalConstructorArg(),
-                (parser, parseFieldMatcher) -> DetectionRule.STRICT_PARSER.apply(parser, parseFieldMatcher).build(),
-                Detector.CUSTOM_RULES_FIELD
-            );
-        }
 
         private final int detectorIndex;
         private final String description;

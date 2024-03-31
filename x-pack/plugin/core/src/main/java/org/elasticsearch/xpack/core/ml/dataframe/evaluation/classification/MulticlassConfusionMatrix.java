@@ -267,7 +267,24 @@ public class MulticlassConfusionMatrix implements EvaluationMetric {
         );
 
         static {
-            PARSER.declareObjectArray(constructorArg(), ActualClass.PARSER, CONFUSION_MATRIX);
+            @SuppressWarnings("unchecked")
+            final ConstructingObjectParser<ActualClass, Void> actualClassParser = new ConstructingObjectParser<>(
+                "multiclass_confusion_matrix_actual_class",
+                true,
+                a -> new ActualClass((String) a[0], (long) a[1], (List<PredictedClass>) a[2], (long) a[3])
+            );
+            actualClassParser.declareString(constructorArg(), ActualClass.ACTUAL_CLASS);
+            actualClassParser.declareLong(constructorArg(), ActualClass.ACTUAL_CLASS_DOC_COUNT);
+            final ConstructingObjectParser<PredictedClass, Void> predictedClassParser = new ConstructingObjectParser<>(
+                "multiclass_confusion_matrix_predicted_class",
+                true,
+                a -> new PredictedClass((String) a[0], (long) a[1])
+            );
+            predictedClassParser.declareString(constructorArg(), PredictedClass.PREDICTED_CLASS);
+            predictedClassParser.declareLong(constructorArg(), PredictedClass.COUNT);
+            actualClassParser.declareObjectArray(constructorArg(), predictedClassParser, ActualClass.PREDICTED_CLASSES);
+            actualClassParser.declareLong(constructorArg(), ActualClass.OTHER_PREDICTED_CLASS_DOC_COUNT);
+            PARSER.declareObjectArray(constructorArg(), actualClassParser, CONFUSION_MATRIX);
             PARSER.declareLong(constructorArg(), OTHER_ACTUAL_CLASS_COUNT);
         }
 
@@ -343,20 +360,6 @@ public class MulticlassConfusionMatrix implements EvaluationMetric {
         private static final ParseField ACTUAL_CLASS_DOC_COUNT = new ParseField("actual_class_doc_count");
         private static final ParseField PREDICTED_CLASSES = new ParseField("predicted_classes");
         private static final ParseField OTHER_PREDICTED_CLASS_DOC_COUNT = new ParseField("other_predicted_class_doc_count");
-
-        @SuppressWarnings("unchecked")
-        private static final ConstructingObjectParser<ActualClass, Void> PARSER = new ConstructingObjectParser<>(
-            "multiclass_confusion_matrix_actual_class",
-            true,
-            a -> new ActualClass((String) a[0], (long) a[1], (List<PredictedClass>) a[2], (long) a[3])
-        );
-
-        static {
-            PARSER.declareString(constructorArg(), ACTUAL_CLASS);
-            PARSER.declareLong(constructorArg(), ACTUAL_CLASS_DOC_COUNT);
-            PARSER.declareObjectArray(constructorArg(), PredictedClass.PARSER, PREDICTED_CLASSES);
-            PARSER.declareLong(constructorArg(), OTHER_PREDICTED_CLASS_DOC_COUNT);
-        }
 
         /** Name of the actual class. */
         private final String actualClass;
@@ -442,18 +445,6 @@ public class MulticlassConfusionMatrix implements EvaluationMetric {
 
         private static final ParseField PREDICTED_CLASS = new ParseField("predicted_class");
         private static final ParseField COUNT = new ParseField("count");
-
-        @SuppressWarnings("unchecked")
-        private static final ConstructingObjectParser<PredictedClass, Void> PARSER = new ConstructingObjectParser<>(
-            "multiclass_confusion_matrix_predicted_class",
-            true,
-            a -> new PredictedClass((String) a[0], (long) a[1])
-        );
-
-        static {
-            PARSER.declareString(constructorArg(), PREDICTED_CLASS);
-            PARSER.declareLong(constructorArg(), COUNT);
-        }
 
         private final String predictedClass;
         private final long count;

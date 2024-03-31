@@ -75,7 +75,25 @@ public class SnapshotLifecycleStats implements Writeable, ToXContentObject {
         PARSER.declareLong(ConstructingObjectParser.constructorArg(), RETENTION_FAILED);
         PARSER.declareLong(ConstructingObjectParser.constructorArg(), RETENTION_TIMED_OUT);
         PARSER.declareLong(ConstructingObjectParser.constructorArg(), RETENTION_TIME_MILLIS);
-        PARSER.declareObjectArray(ConstructingObjectParser.constructorArg(), SnapshotPolicyStats.PARSER, POLICY_STATS);
+        final ConstructingObjectParser<SnapshotPolicyStats, Void> snapshotPolicyStatsParser = new ConstructingObjectParser<>(
+            "snapshot_policy_stats",
+            true,
+            a -> {
+                String id = (String) a[0];
+                long taken = (long) a[1];
+                long failed = (long) a[2];
+                long deleted = (long) a[3];
+                long deleteFailed = (long) a[4];
+                return new SnapshotPolicyStats(id, taken, failed, deleted, deleteFailed);
+            }
+        );
+
+        snapshotPolicyStatsParser.declareString(ConstructingObjectParser.constructorArg(), SnapshotPolicyStats.POLICY_ID);
+        snapshotPolicyStatsParser.declareLong(ConstructingObjectParser.constructorArg(), SnapshotPolicyStats.SNAPSHOTS_TAKEN);
+        snapshotPolicyStatsParser.declareLong(ConstructingObjectParser.constructorArg(), SnapshotPolicyStats.SNAPSHOTS_FAILED);
+        snapshotPolicyStatsParser.declareLong(ConstructingObjectParser.constructorArg(), SnapshotPolicyStats.SNAPSHOTS_DELETED);
+        snapshotPolicyStatsParser.declareLong(ConstructingObjectParser.constructorArg(), SnapshotPolicyStats.SNAPSHOT_DELETION_FAILURES);
+        PARSER.declareObjectArray(ConstructingObjectParser.constructorArg(), snapshotPolicyStatsParser, POLICY_STATS);
     }
 
     public SnapshotLifecycleStats() {
@@ -295,27 +313,6 @@ public class SnapshotLifecycleStats implements Writeable, ToXContentObject {
         public static final ParseField SNAPSHOTS_FAILED = new ParseField("snapshots_failed");
         public static final ParseField SNAPSHOTS_DELETED = new ParseField("snapshots_deleted");
         public static final ParseField SNAPSHOT_DELETION_FAILURES = new ParseField("snapshot_deletion_failures");
-
-        static final ConstructingObjectParser<SnapshotPolicyStats, Void> PARSER = new ConstructingObjectParser<>(
-            "snapshot_policy_stats",
-            true,
-            a -> {
-                String id = (String) a[0];
-                long taken = (long) a[1];
-                long failed = (long) a[2];
-                long deleted = (long) a[3];
-                long deleteFailed = (long) a[4];
-                return new SnapshotPolicyStats(id, taken, failed, deleted, deleteFailed);
-            }
-        );
-
-        static {
-            PARSER.declareString(ConstructingObjectParser.constructorArg(), POLICY_ID);
-            PARSER.declareLong(ConstructingObjectParser.constructorArg(), SNAPSHOTS_TAKEN);
-            PARSER.declareLong(ConstructingObjectParser.constructorArg(), SNAPSHOTS_FAILED);
-            PARSER.declareLong(ConstructingObjectParser.constructorArg(), SNAPSHOTS_DELETED);
-            PARSER.declareLong(ConstructingObjectParser.constructorArg(), SNAPSHOT_DELETION_FAILURES);
-        }
 
         public SnapshotPolicyStats(String slmPolicy) {
             this.policyId = slmPolicy;
