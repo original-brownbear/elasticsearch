@@ -97,7 +97,7 @@ public class BestDocsDeferringCollector extends DeferringBucketCollector impleme
 
     // Designed to be overridden by subclasses that may score docs by criteria
     // other than Lucene score
-    protected TopDocsCollector<? extends ScoreDoc> createTopDocsCollector(int size) throws IOException {
+    protected TopDocsCollector<? extends ScoreDoc> createTopDocsCollector(int size) {
         return TopScoreDocCollector.create(size, Integer.MAX_VALUE);
     }
 
@@ -119,7 +119,7 @@ public class BestDocsDeferringCollector extends DeferringBucketCollector impleme
     }
 
     @Override
-    public void prepareSelectedBuckets(long... selectedBuckets) throws IOException {
+    public void prepareSelectedBuckets(long... selectedBuckets) {
         // no-op - deferred aggs processed in postCollection call
     }
 
@@ -271,7 +271,7 @@ public class BestDocsDeferringCollector extends DeferringBucketCollector impleme
         }
 
         @Override
-        public float score() throws IOException {
+        public float score() {
             return currentScore;
         }
 

@@ -572,7 +572,7 @@ public enum MultiValueMode implements Writeable {
         final BitSet parentDocs,
         final DocIdSetIterator childDocs,
         int maxChildren
-    ) throws IOException {
+    ) {
         if (parentDocs == null || childDocs == null) {
             return FieldData.replaceMissing(DocValues.emptyNumeric(), missingValue);
         }
@@ -682,7 +682,7 @@ public enum MultiValueMode implements Writeable {
         final BitSet parentDocs,
         final DocIdSetIterator childDocs,
         int maxChildren
-    ) throws IOException {
+    ) {
         if (parentDocs == null || childDocs == null) {
             return FieldData.replaceMissing(FieldData.emptyNumericDouble(), missingValue);
         }
@@ -712,7 +712,7 @@ public enum MultiValueMode implements Writeable {
             }
 
             @Override
-            public double doubleValue() throws IOException {
+            public double doubleValue() {
                 return lastEmittedValue;
             }
         };
@@ -753,7 +753,7 @@ public enum MultiValueMode implements Writeable {
                 }
 
                 @Override
-                public BytesRef binaryValue() throws IOException {
+                public BytesRef binaryValue() {
                     return this.value;
                 }
             };
@@ -774,7 +774,7 @@ public enum MultiValueMode implements Writeable {
                 }
 
                 @Override
-                public BytesRef binaryValue() throws IOException {
+                public BytesRef binaryValue() {
                     return value;
                 }
             };
@@ -803,7 +803,7 @@ public enum MultiValueMode implements Writeable {
         final BitSet parentDocs,
         final DocIdSetIterator childDocs,
         int maxChildren
-    ) throws IOException {
+    ) {
         if (parentDocs == null || childDocs == null) {
             return select(FieldData.emptySortedBinary(), missingValue);
         }
@@ -840,7 +840,7 @@ public enum MultiValueMode implements Writeable {
             }
 
             @Override
-            public BytesRef binaryValue() throws IOException {
+            public BytesRef binaryValue() {
                 return lastEmittedValue;
             }
         };
@@ -933,7 +933,7 @@ public enum MultiValueMode implements Writeable {
         final BitSet parentDocs,
         final DocIdSetIterator childDocs,
         int maxChildren
-    ) throws IOException {
+    ) {
         if (parentDocs == null || childDocs == null) {
             return select(DocValues.emptySortedSet());
         }

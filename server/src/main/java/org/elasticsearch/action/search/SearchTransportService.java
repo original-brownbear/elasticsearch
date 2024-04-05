@@ -107,7 +107,7 @@ public class SearchTransportService {
     private final NodeClient client;
     private final BiFunction<
         Transport.Connection,
-        SearchActionListener<? super SearchPhaseResult>,
+        ActionListener<? super SearchPhaseResult>,
         ActionListener<? super SearchPhaseResult>> responseWrapper;
     private final Map<String, Long> clientConnections = ConcurrentCollections.newConcurrentMapWithAggressiveConcurrency();
 
@@ -116,7 +116,7 @@ public class SearchTransportService {
         NodeClient client,
         BiFunction<
             Transport.Connection,
-            SearchActionListener<? super SearchPhaseResult>,
+            ActionListener<? super SearchPhaseResult>,
             ActionListener<? super SearchPhaseResult>> responseWrapper
     ) {
         this.transportService = transportService;

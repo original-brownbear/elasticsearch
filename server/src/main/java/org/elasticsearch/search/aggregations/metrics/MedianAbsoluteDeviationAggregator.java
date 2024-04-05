@@ -108,7 +108,7 @@ public class MedianAbsoluteDeviationAggregator extends NumericMetricsAggregator.
     }
 
     @Override
-    public InternalAggregation buildAggregation(long bucket) throws IOException {
+    public InternalAggregation buildAggregation(long bucket) {
         if (hasDataForBucket(bucket)) {
             final TDigestState valueSketch = valueSketches.get(bucket);
             return new InternalMedianAbsoluteDeviation(name, metadata(), format, valueSketch);

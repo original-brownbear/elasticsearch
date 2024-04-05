@@ -13,7 +13,6 @@ import org.elasticsearch.index.fielddata.SortingNumericDoubleValues;
 import org.elasticsearch.script.AggregationScript;
 import org.elasticsearch.search.aggregations.AggregationErrors;
 
-import java.io.IOException;
 import java.lang.reflect.Array;
 import java.time.ZonedDateTime;
 import java.util.Collection;
@@ -31,7 +30,7 @@ public class ScriptDoubleValues extends SortingNumericDoubleValues implements Sc
     }
 
     @Override
-    public boolean advanceExact(int target) throws IOException {
+    public boolean advanceExact(int target) {
         script.setDocument(target);
         final Object value = script.execute();
 

@@ -180,7 +180,7 @@ public class TransportOpenPointInTimeAction extends HandledTransportAction<OpenP
             }
         }
 
-        SearchPhase openPointInTimePhase(
+        private SearchPhase openPointInTimePhase(
             SearchTask task,
             SearchRequest searchRequest,
             Executor executor,

@@ -35,7 +35,7 @@ public class RestClosePointInTimeAction extends BaseRestHandler {
     }
 
     @Override
-    public RestChannelConsumer prepareRequest(final RestRequest request, final NodeClient client) throws IOException {
+    protected RestChannelConsumer prepareRequest(final RestRequest request, final NodeClient client) throws IOException {
         final ClosePointInTimeRequest clearRequest;
         try (XContentParser parser = request.contentOrSourceParamParser()) {
             clearRequest = ClosePointInTimeRequest.fromXContent(parser);

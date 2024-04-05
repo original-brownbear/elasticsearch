@@ -52,7 +52,7 @@ public class GlobalAggregationBuilder extends AbstractAggregationBuilder<GlobalA
     }
 
     @Override
-    protected void doWriteTo(StreamOutput out) throws IOException {
+    protected void doWriteTo(StreamOutput out) {
         // Nothing to write
     }
 

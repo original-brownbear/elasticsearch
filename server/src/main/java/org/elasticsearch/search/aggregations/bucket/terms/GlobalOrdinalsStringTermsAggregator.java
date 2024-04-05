@@ -240,12 +240,12 @@ public class GlobalOrdinalsStringTermsAggregator extends AbstractStringTermsAggr
         }
 
         @Override
-        protected void writeTermTo(StreamOutput out) throws IOException {
+        protected void writeTermTo(StreamOutput out) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        protected final XContentBuilder keyToXContent(XContentBuilder builder) throws IOException {
+        protected final XContentBuilder keyToXContent(XContentBuilder builder) {
             throw new UnsupportedOperationException();
         }
     }
@@ -358,7 +358,7 @@ public class GlobalOrdinalsStringTermsAggregator extends AbstractStringTermsAggr
         }
 
         @Override
-        protected void doPostCollection() throws IOException {
+        protected void doPostCollection() {
             if (mapping != null) {
                 mapSegmentCountsToGlobalCounts(mapping);
                 mapping = null;
@@ -376,7 +376,7 @@ public class GlobalOrdinalsStringTermsAggregator extends AbstractStringTermsAggr
             Releasables.close(resultStrategy, segmentDocCounts, collectionStrategy);
         }
 
-        private void mapSegmentCountsToGlobalCounts(LongUnaryOperator mapping) throws IOException {
+        private void mapSegmentCountsToGlobalCounts(LongUnaryOperator mapping) {
             for (long i = 1; i < segmentDocCounts.size(); i++) {
                 // We use set(...) here, because we need to reset the slow to 0.
                 // segmentDocCounts get reused over the segments and otherwise counts would be too high.
@@ -769,7 +769,7 @@ public class GlobalOrdinalsStringTermsAggregator extends AbstractStringTermsAggr
          * Update fields in {@code spare} to reflect information collected for
          * this bucket ordinal.
          */
-        abstract BucketUpdater<TB> bucketUpdater(long owningBucketOrd, GlobalOrdLookupFunction lookupGlobalOrd) throws IOException;
+        abstract BucketUpdater<TB> bucketUpdater(long owningBucketOrd, GlobalOrdLookupFunction lookupGlobalOrd);
 
         /**
          * Build a {@link PriorityQueue} to sort the buckets. After we've
@@ -851,7 +851,7 @@ public class GlobalOrdinalsStringTermsAggregator extends AbstractStringTermsAggr
         }
 
         @Override
-        BucketUpdater<OrdBucket> bucketUpdater(long owningBucketOrd, GlobalOrdLookupFunction lookupGlobalOrd) throws IOException {
+        BucketUpdater<OrdBucket> bucketUpdater(long owningBucketOrd, GlobalOrdLookupFunction lookupGlobalOrd) {
             return (spare, globalOrd, bucketOrd, docCount) -> {
                 spare.globalOrd = globalOrd;
                 spare.bucketOrd = bucketOrd;
@@ -988,8 +988,7 @@ public class GlobalOrdinalsStringTermsAggregator extends AbstractStringTermsAggr
         }
 
         @Override
-        BucketUpdater<SignificantStringTerms.Bucket> bucketUpdater(long owningBucketOrd, GlobalOrdLookupFunction lookupGlobalOrd)
-            throws IOException {
+        BucketUpdater<SignificantStringTerms.Bucket> bucketUpdater(long owningBucketOrd, GlobalOrdLookupFunction lookupGlobalOrd) {
             long subsetSize = subsetSize(owningBucketOrd);
             return (spare, globalOrd, bucketOrd, docCount) -> {
                 spare.bucketOrd = bucketOrd;
@@ -1016,7 +1015,7 @@ public class GlobalOrdinalsStringTermsAggregator extends AbstractStringTermsAggr
         SignificantStringTerms.Bucket convertTempBucketToRealBucket(
             SignificantStringTerms.Bucket temp,
             GlobalOrdLookupFunction lookupGlobalOrd
-        ) throws IOException {
+        ) {
             return temp;
         }
 

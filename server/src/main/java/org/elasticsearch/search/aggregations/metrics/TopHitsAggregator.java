@@ -98,7 +98,7 @@ class TopHitsAggregator extends MetricsAggregator {
     }
 
     @Override
-    public LeafBucketCollector getLeafCollector(AggregationExecutionContext aggCtx, LeafBucketCollector sub) throws IOException {
+    public LeafBucketCollector getLeafCollector(AggregationExecutionContext aggCtx, LeafBucketCollector sub) {
         // Create leaf collectors here instead of at the aggregator level. Otherwise in case this collector get invoked
         // when post collecting then we have already replaced the leaf readers on the aggregator level have already been
         // replaced with the next leaf readers and then post collection pushes docids of the previous segment, which

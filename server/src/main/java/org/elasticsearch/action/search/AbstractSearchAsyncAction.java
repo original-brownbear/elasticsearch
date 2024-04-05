@@ -769,7 +769,6 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
         listener.onFailure(e);
     }
 
-    @Override
     public final ShardSearchRequest buildShardSearchRequest(SearchShardIterator shardIt, int shardIndex) {
         AliasFilter filter = aliasFilter.get(shardIt.shardId().getIndex().getUUID());
         assert filter != null;

@@ -120,7 +120,7 @@ public class WeightedAvgAggregationBuilder extends MultiValuesSourceAggregationB
     }
 
     @Override
-    public XContentBuilder doXContentBody(XContentBuilder builder, ToXContent.Params params) throws IOException {
+    public XContentBuilder doXContentBody(XContentBuilder builder, ToXContent.Params params) {
         return builder;
     }
 

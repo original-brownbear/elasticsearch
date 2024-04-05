@@ -503,7 +503,7 @@ class TopMetricsAggregator extends NumericMetricsAggregator.MultiValue {
         public void swap(long lhs, long rhs) {}
 
         @Override
-        public Loader loader(LeafReaderContext ctx) throws IOException {
+        public Loader loader(LeafReaderContext ctx) {
             return (index, doc) -> {};
         }
 

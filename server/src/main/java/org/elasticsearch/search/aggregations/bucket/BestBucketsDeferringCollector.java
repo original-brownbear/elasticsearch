@@ -110,7 +110,7 @@ public class BestBucketsDeferringCollector extends DeferringBucketCollector {
     }
 
     @Override
-    public LeafBucketCollector getLeafCollector(AggregationExecutionContext context) throws IOException {
+    public LeafBucketCollector getLeafCollector(AggregationExecutionContext context) {
         finishLeaf();
 
         return new LeafBucketCollector() {
@@ -136,7 +136,7 @@ public class BestBucketsDeferringCollector extends DeferringBucketCollector {
     }
 
     @Override
-    public void postCollection() throws IOException {
+    public void postCollection() {
         finishLeaf();
         finished = true;
     }

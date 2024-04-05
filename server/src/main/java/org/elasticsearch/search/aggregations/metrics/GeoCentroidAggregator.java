@@ -51,7 +51,7 @@ final class GeoCentroidAggregator extends MetricsAggregator {
     }
 
     @Override
-    public LeafBucketCollector getLeafCollector(AggregationExecutionContext aggCtx, LeafBucketCollector sub) throws IOException {
+    public LeafBucketCollector getLeafCollector(AggregationExecutionContext aggCtx, LeafBucketCollector sub) {
         final MultiGeoPointValues values = valuesSource.geoPointValues(aggCtx.getLeafReaderContext());
         final CompensatedSum compensatedSumLat = new CompensatedSum(0, 0);
         final CompensatedSum compensatedSumLon = new CompensatedSum(0, 0);

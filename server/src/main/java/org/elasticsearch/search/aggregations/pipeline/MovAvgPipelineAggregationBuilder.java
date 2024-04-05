@@ -51,7 +51,7 @@ public class MovAvgPipelineAggregationBuilder extends AbstractPipelineAggregatio
     }
 
     @Override
-    protected void doWriteTo(StreamOutput out) throws IOException {
+    protected void doWriteTo(StreamOutput out) {
         throw new UnsupportedOperationException("moving_avg is not meant to be used.");
     }
 
@@ -61,7 +61,7 @@ public class MovAvgPipelineAggregationBuilder extends AbstractPipelineAggregatio
     }
 
     @Override
-    protected XContentBuilder internalXContent(XContentBuilder builder, Params params) throws IOException {
+    protected XContentBuilder internalXContent(XContentBuilder builder, Params params) {
         throw new UnsupportedOperationException("moving_avg is not meant to be used.");
     }
 

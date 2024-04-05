@@ -26,7 +26,7 @@ public class PercentageScore extends SignificanceHeuristic {
     }
 
     @Override
-    public void writeTo(StreamOutput out) throws IOException {}
+    public void writeTo(StreamOutput out) {}
 
     @Override
     public String getWriteableName() {

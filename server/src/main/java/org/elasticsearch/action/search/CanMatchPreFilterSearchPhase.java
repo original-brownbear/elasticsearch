@@ -416,7 +416,7 @@ final class CanMatchPreFilterSearchPhase extends SearchPhase {
         listener.onFailure(new SearchPhaseExecutionException(getName(), msg, cause, ShardSearchFailure.EMPTY_ARRAY));
     }
 
-    public Transport.Connection getConnection(SendingTarget sendingTarget) {
+    private Transport.Connection getConnection(SendingTarget sendingTarget) {
         Transport.Connection conn = nodeIdToConnection.apply(sendingTarget.clusterAlias, sendingTarget.nodeId);
         Version minVersion = request.minCompatibleShardNode();
         if (minVersion != null && conn != null && conn.getNode().getVersion().before(minVersion)) {

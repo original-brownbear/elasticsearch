@@ -396,7 +396,7 @@ public abstract class FiltersAggregator extends BucketsAggregator {
         }
 
         @Override
-        public DocIdSetIterator competitiveIterator() throws IOException {
+        public DocIdSetIterator competitiveIterator() {
             if (usesCompetitiveIterator) {
                 return filterWrapper.approximation;
             }
@@ -452,7 +452,7 @@ public abstract class FiltersAggregator extends BucketsAggregator {
         }
 
         @Override
-        public DocIdSetIterator competitiveIterator() throws IOException {
+        public DocIdSetIterator competitiveIterator() {
             if (usesCompetitiveIterator) {
                 // A DocIdSetIterator view of the filterIterators heap
                 assert filterIterators != null;
@@ -525,6 +525,6 @@ public abstract class FiltersAggregator extends BucketsAggregator {
         }
 
         @Override
-        public void setScorer(Scorable scorer) throws IOException {}
+        public void setScorer(Scorable scorer) {}
     }
 }
