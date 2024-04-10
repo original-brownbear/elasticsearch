@@ -190,7 +190,7 @@ public class ModelSnapshotRetentionIT extends MlNativeAutodetectIntegTestCase {
     private List<String> getDocIdsFromSearch(SearchRequest searchRequest) throws Exception {
         List<String> docIds = new ArrayList<>();
         assertResponse(client().execute(TransportSearchAction.TYPE, searchRequest), searchResponse -> {
-            for (SearchHit searchHit : searchResponse.getHits()) {
+            for (SearchHit searchHit : searchResponse.getHits().getHits()) {
                 docIds.add(searchHit.getId());
             }
         });

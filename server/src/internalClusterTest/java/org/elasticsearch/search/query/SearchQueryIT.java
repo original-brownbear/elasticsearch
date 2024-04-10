@@ -265,7 +265,7 @@ public class SearchQueryIT extends ESIntegTestCase {
             assertResponse(prepareSearch("test_1").setQuery(constantScoreQuery(matchQuery)).setSize(num), response -> {
                 constantScoreTotalHits[0] = response.getHits().getTotalHits().value;
                 SearchHits hits = response.getHits();
-                for (SearchHit searchHit : hits) {
+                for (SearchHit searchHit : hits.getHits()) {
                     assertThat(searchHit, hasScore(1.0f));
                 }
             });
@@ -279,7 +279,7 @@ public class SearchQueryIT extends ESIntegTestCase {
                     assertThat(hits.getTotalHits().value, equalTo(constantScoreTotalHits[0]));
                     if (constantScoreTotalHits[0] > 1) {
                         float expected = hits.getAt(0).getScore();
-                        for (SearchHit searchHit : hits) {
+                        for (SearchHit searchHit : hits.getHits()) {
                             assertThat(searchHit, hasScore(expected));
                         }
                     }

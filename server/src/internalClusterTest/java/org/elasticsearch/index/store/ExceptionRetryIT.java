@@ -116,7 +116,7 @@ public class ExceptionRetryIT extends ESIntegTestCase {
                             dupIdResponse -> {
                                 assertThat(dupIdResponse.getHits().getTotalHits().value, greaterThan(1L));
                                 logger.info("found a duplicate id:");
-                                for (SearchHit hit : dupIdResponse.getHits()) {
+                                for (SearchHit hit : dupIdResponse.getHits().getHits()) {
                                     logger.info("Doc {} was found on shard {}", hit.getId(), hit.getShard().getShardId());
                                 }
                                 logger.info("will not print anymore in case more duplicates are found.");

@@ -1708,7 +1708,7 @@ public class FieldLevelSecurityTests extends SecurityIntegTestCase {
                 .highlighter(new HighlightBuilder().field("field1")),
             response -> {
                 assertHitCount(response, 1);
-                SearchHit hit = response.getHits().iterator().next();
+                SearchHit hit = response.getHits().getAt(0);
                 assertEquals(hit.getHighlightFields().size(), 1);
             }
         );
@@ -1721,7 +1721,7 @@ public class FieldLevelSecurityTests extends SecurityIntegTestCase {
                 .highlighter(new HighlightBuilder().field("field1")),
             response -> {
                 assertHitCount(response, 1);
-                var hit = response.getHits().iterator().next();
+                var hit = response.getHits().getAt(0);
                 assertEquals(hit.getHighlightFields().size(), 0);
             }
         );
@@ -1734,7 +1734,7 @@ public class FieldLevelSecurityTests extends SecurityIntegTestCase {
                 .highlighter(new HighlightBuilder().field("alias")),
             response -> {
                 assertHitCount(response, 1);
-                var hit = response.getHits().iterator().next();
+                var hit = response.getHits().getAt(0);
                 assertEquals(hit.getHighlightFields().size(), 1);
             }
         );
@@ -1747,7 +1747,7 @@ public class FieldLevelSecurityTests extends SecurityIntegTestCase {
                 .highlighter(new HighlightBuilder().field("alias")),
             response -> {
                 assertHitCount(response, 1);
-                var hit = response.getHits().iterator().next();
+                var hit = response.getHits().getAt(0);
                 assertEquals(hit.getHighlightFields().size(), 0);
             }
         );

@@ -324,7 +324,7 @@ abstract class MlNativeAutodetectIntegTestCase extends MlNativeIntegTestCase {
                 ),
             searchResponse -> {
                 SearchHits hits = searchResponse.getHits();
-                for (SearchHit hit : hits) {
+                for (SearchHit hit : hits.getHits()) {
                     try (
                         XContentParser parser = XContentFactory.xContent(XContentType.JSON)
                             .createParser(
@@ -369,7 +369,7 @@ abstract class MlNativeAutodetectIntegTestCase extends MlNativeIntegTestCase {
                 .addSort(SortBuilders.fieldSort(Result.TIMESTAMP.getPreferredName()).order(SortOrder.ASC)),
             searchResponse -> {
                 SearchHits hits = searchResponse.getHits();
-                for (SearchHit hit : hits) {
+                for (SearchHit hit : hits.getHits()) {
                     try (
                         XContentParser parser = XContentFactory.xContent(XContentType.JSON)
                             .createParser(

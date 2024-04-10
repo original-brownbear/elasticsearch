@@ -31,7 +31,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Objects;
 
-public final class SearchHits implements Writeable, ChunkedToXContent, RefCounted, Iterable<SearchHit> {
+public final class SearchHits implements Writeable, ChunkedToXContent, RefCounted {
 
     public static final SearchHit[] EMPTY = new SearchHit[0];
     public static final SearchHits EMPTY_WITH_TOTAL_HITS = SearchHits.empty(new TotalHits(0, Relation.EQUAL_TO), 0);
@@ -223,12 +223,6 @@ public final class SearchHits implements Writeable, ChunkedToXContent, RefCounte
     @Nullable
     public Object[] getCollapseValues() {
         return collapseValues;
-    }
-
-    @Override
-    public Iterator<SearchHit> iterator() {
-        assert hasReferences();
-        return Iterators.forArray(getHits());
     }
 
     @Override

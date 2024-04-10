@@ -36,6 +36,7 @@ import org.elasticsearch.cluster.block.ClusterBlockException;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.IndexTemplateMetadata;
 import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.core.CheckedConsumer;
 import org.elasticsearch.core.Nullable;
@@ -71,7 +72,6 @@ import java.util.function.Consumer;
 
 import static org.apache.lucene.tests.util.LuceneTestCase.expectThrows;
 import static org.apache.lucene.tests.util.LuceneTestCase.expectThrowsAnyOf;
-import static org.elasticsearch.test.ESIntegTestCase.client;
 import static org.elasticsearch.test.LambdaMatchers.transformedArrayItemsMatch;
 import static org.elasticsearch.test.LambdaMatchers.transformedItemsMatch;
 import static org.elasticsearch.test.LambdaMatchers.transformedMatch;
@@ -255,7 +255,7 @@ public class ElasticsearchAssertions {
     public static void assertSearchHits(SearchResponse searchResponse, String... ids) {
         assertThat(
             "Incorrect SearchHit ids. " + formatShardStatus(searchResponse),
-            searchResponse.getHits(),
+            () -> Iterators.forArray(searchResponse.getHits().getHits()),
             transformedItemsMatch(SearchHit::getId, containsInAnyOrder(ids))
         );
     }

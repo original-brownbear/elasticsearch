@@ -120,7 +120,7 @@ public class RegressionIT extends MlNativeDataFrameAnalyticsIntegTestCase {
         assertResponse(prepareSearch(sourceIndex).setTrackTotalHits(true).setSize(1000), sourceData -> {
             int trainingDocsWithEmptyFeatureImportance = 0;
             int testDocsWithEmptyFeatureImportance = 0;
-            for (SearchHit hit : sourceData.getHits()) {
+            for (SearchHit hit : sourceData.getHits().getHits()) {
                 Map<String, Object> destDoc = getDestDoc(config, hit);
                 Map<String, Object> resultsObject = getMlResultsObjectFromDestDoc(destDoc);
 
@@ -207,7 +207,7 @@ public class RegressionIT extends MlNativeDataFrameAnalyticsIntegTestCase {
         startAnalytics(jobId);
         waitUntilAnalyticsIsStopped(jobId);
         assertResponse(prepareSearch(sourceIndex).setTrackTotalHits(true).setSize(1000), sourceData -> {
-            for (SearchHit hit : sourceData.getHits()) {
+            for (SearchHit hit : sourceData.getHits().getHits()) {
                 Map<String, Object> resultsObject = getMlResultsObjectFromDestDoc(getDestDoc(config, hit));
 
                 assertThat(resultsObject.containsKey(predictedClassField), is(true));
@@ -267,7 +267,7 @@ public class RegressionIT extends MlNativeDataFrameAnalyticsIntegTestCase {
         assertResponse(prepareSearch(sourceIndex).setTrackTotalHits(true).setSize(1000), sourceData -> {
             int trainingRowsCount = 0;
             int nonTrainingRowsCount = 0;
-            for (SearchHit hit : sourceData.getHits()) {
+            for (SearchHit hit : sourceData.getHits().getHits()) {
                 Map<String, Object> resultsObject = getMlResultsObjectFromDestDoc(getDestDoc(config, hit));
 
                 assertThat(resultsObject.containsKey(predictedClassField), is(true));
@@ -346,7 +346,7 @@ public class RegressionIT extends MlNativeDataFrameAnalyticsIntegTestCase {
         waitUntilAnalyticsIsStopped(jobId);
 
         assertResponse(prepareSearch(sourceIndex).setTrackTotalHits(true).setSize(1000), sourceData -> {
-            for (SearchHit hit : sourceData.getHits()) {
+            for (SearchHit hit : sourceData.getHits().getHits()) {
                 Map<String, Object> resultsObject = getMlResultsObjectFromDestDoc(getDestDoc(config, hit));
 
                 assertThat(resultsObject.containsKey(predictedClassField), is(true));
@@ -499,7 +499,7 @@ public class RegressionIT extends MlNativeDataFrameAnalyticsIntegTestCase {
         waitUntilAnalyticsIsStopped(jobId);
 
         assertResponse(prepareSearch(sourceIndex).setTrackTotalHits(true).setSize(1000), sourceData -> {
-            for (SearchHit hit : sourceData.getHits()) {
+            for (SearchHit hit : sourceData.getHits().getHits()) {
                 Map<String, Object> destDoc = getDestDoc(config, hit);
                 Map<String, Object> resultsObject = getMlResultsObjectFromDestDoc(destDoc);
 
@@ -619,7 +619,7 @@ public class RegressionIT extends MlNativeDataFrameAnalyticsIntegTestCase {
         StringBuilder targetsPredictions = new StringBuilder(); // used to investigate #90599
         assertResponse(prepareSearch(sourceIndex).setSize(totalDocCount), sourceData -> {
             double predictionErrorSum = 0.0;
-            for (SearchHit hit : sourceData.getHits()) {
+            for (SearchHit hit : sourceData.getHits().getHits()) {
                 Map<String, Object> destDoc = getDestDoc(config, hit);
                 Map<String, Object> resultsObject = getMlResultsObjectFromDestDoc(destDoc);
 
@@ -703,7 +703,7 @@ public class RegressionIT extends MlNativeDataFrameAnalyticsIntegTestCase {
 
         // for debugging
         assertResponse(prepareSearch(sourceIndex).setTrackTotalHits(true).setSize(1000), sourceData -> {
-            for (SearchHit hit : sourceData.getHits()) {
+            for (SearchHit hit : sourceData.getHits().getHits()) {
                 Map<String, Object> destDoc = getDestDoc(config, hit);
                 Map<String, Object> resultsObject = getMlResultsObjectFromDestDoc(destDoc);
 
@@ -794,7 +794,7 @@ public class RegressionIT extends MlNativeDataFrameAnalyticsIntegTestCase {
         startAnalytics(jobId);
         waitUntilAnalyticsIsStopped(jobId);
         assertResponse(prepareSearch(destIndex).setTrackTotalHits(true).setSize(1000), destData -> {
-            for (SearchHit hit : destData.getHits()) {
+            for (SearchHit hit : destData.getHits().getHits()) {
                 Map<String, Object> destDoc = hit.getSourceAsMap();
                 Map<String, Object> resultsObject = getMlResultsObjectFromDestDoc(destDoc);
 

@@ -2467,7 +2467,7 @@ public class HighlighterSearchIT extends ESIntegTestCase {
         assertResponse(client().search(new SearchRequest("test").source(source)), response -> {
             assertHitCount(response, 2L);
 
-            for (SearchHit searchHit : response.getHits()) {
+            for (SearchHit searchHit : response.getHits().getHits()) {
                 if ("1".equals(searchHit.getId())) {
                     assertHighlight(
                         searchHit,
@@ -3105,7 +3105,7 @@ public class HighlighterSearchIT extends ESIntegTestCase {
         assertResponse(searchRequestBuilder, response -> {
             assertHitCount(response, COUNT);
             assertThat(response.getHits().getHits().length, equalTo(COUNT));
-            for (SearchHit hit : response.getHits()) {
+            for (SearchHit hit : response.getHits().getHits()) {
                 String prefix = prefixes.get(hit.getId());
                 assertHighlight(hit, "field1", 0, 1, equalTo("Sentence " + prefix + " <em>test</em>. Sentence two."));
             }

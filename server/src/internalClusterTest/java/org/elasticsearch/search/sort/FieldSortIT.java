@@ -226,14 +226,14 @@ public class FieldSortIT extends ESIntegTestCase {
 
         assertResponse(prepareSearch().setQuery(matchAllQuery()).addSort("svalue", SortOrder.ASC), response -> {
             assertThat(response.getHits().getMaxScore(), equalTo(Float.NaN));
-            for (SearchHit hit : response.getHits()) {
+            for (SearchHit hit : response.getHits().getHits()) {
                 assertThat(hit.getScore(), equalTo(Float.NaN));
             }
         });
         // now check with score tracking
         assertResponse(prepareSearch().setQuery(matchAllQuery()).addSort("svalue", SortOrder.ASC).setTrackScores(true), response -> {
             assertThat(response.getHits().getMaxScore(), not(equalTo(Float.NaN)));
-            for (SearchHit hit : response.getHits()) {
+            for (SearchHit hit : response.getHits().getHits()) {
                 assertThat(hit.getScore(), not(equalTo(Float.NaN)));
             }
         });
@@ -477,7 +477,7 @@ public class FieldSortIT extends ESIntegTestCase {
         prepareIndex("test").setId("3").setSource("{\"field1\":\"value3\"}", XContentType.JSON).get();
         refresh();
         assertResponse(prepareSearch("test").setQuery(matchAllQuery()).setTrackScores(true).addSort("field1", SortOrder.ASC), response -> {
-            for (SearchHit hit : response.getHits()) {
+            for (SearchHit hit : response.getHits().getHits()) {
                 assertFalse(Float.isNaN(hit.getScore()));
             }
         });
@@ -1782,7 +1782,7 @@ public class FieldSortIT extends ESIntegTestCase {
                     .addSort(SortBuilders.scoreSort()),
                 response -> {
                     double expectedValue = 0;
-                    for (SearchHit hit : response.getHits()) {
+                    for (SearchHit hit : response.getHits().getHits()) {
                         assertThat(hit.getSortValues().length, equalTo(2));
                         assertThat(hit.getSortValues()[0], equalTo(expectedValue++));
                         assertThat(hit.getSortValues()[1], equalTo(1f));
@@ -1800,7 +1800,7 @@ public class FieldSortIT extends ESIntegTestCase {
                     .addSort(SortBuilders.scoreSort()),
                 response -> {
                     int expectedValue = 0;
-                    for (SearchHit hit : response.getHits()) {
+                    for (SearchHit hit : response.getHits().getHits()) {
                         assertThat(hit.getSortValues().length, equalTo(2));
                         assertThat(hit.getSortValues()[0], equalTo(keywords.get(expectedValue++)));
                         assertThat(hit.getSortValues()[1], equalTo(1f));

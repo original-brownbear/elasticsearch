@@ -76,7 +76,7 @@ public abstract class GeoShapeIntegTestCase extends BaseShapeIntegTestCase<GeoSh
             response -> {
                 assertHitCount(response, 5L);
                 GeoPoint point = new GeoPoint();
-                for (SearchHit hit : response.getHits()) {
+                for (SearchHit hit : response.getHits().getHits()) {
                     String name = hit.getId();
                     point.resetFromString(hit.getFields().get("pin").getValue());
                     double dist = distance(point.getLat(), point.getLon(), 51.11, 9.851);

@@ -1065,7 +1065,7 @@ public class TopHitsIT extends ESIntegTestCase {
                     SearchHits hits = topHits.getHits();
                     assertThat(hits.getTotalHits().value, equalTo(10L));
                     assertThat(hits.getHits().length, equalTo(3));
-                    for (SearchHit hit : hits) {
+                    for (SearchHit hit : hits.getHits()) {
                         assertThat(hit.getSourceAsMap(), nullValue());
                         assertThat(hit.getId(), nullValue());
                     }

@@ -141,7 +141,7 @@ public class GeoPolygonIT extends ESIntegTestCase {
             response -> {
                 assertHitCount(response, 4);
                 assertThat(response.getHits().getHits().length, equalTo(4));
-                for (SearchHit hit : response.getHits()) {
+                for (SearchHit hit : response.getHits().getHits()) {
                     assertThat(hit.getId(), anyOf(equalTo("1"), equalTo("3"), equalTo("4"), equalTo("5")));
                 }
             }
@@ -160,7 +160,7 @@ public class GeoPolygonIT extends ESIntegTestCase {
             response -> {
                 assertHitCount(response, 4);
                 assertThat(response.getHits().getHits().length, equalTo(4));
-                for (SearchHit hit : response.getHits()) {
+                for (SearchHit hit : response.getHits().getHits()) {
                     assertThat(hit.getId(), anyOf(equalTo("1"), equalTo("3"), equalTo("4"), equalTo("5")));
                 }
             }

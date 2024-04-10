@@ -222,7 +222,7 @@ public class MonitoringIT extends ESSingleNodeTestCase {
                             greaterThanOrEqualTo(6)
                         );
 
-                        for (final SearchHit hit : response.getHits()) {
+                        for (final SearchHit hit : response.getHits().getHits()) {
                             final Map<String, Object> searchHit = toMap(hit);
                             assertMonitoringDoc(searchHit, MonitoredSystem.ES, MonitoringService.MIN_INTERVAL);
                         }

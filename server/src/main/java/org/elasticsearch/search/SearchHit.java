@@ -635,7 +635,7 @@ public final class SearchHit implements Writeable, ToXContentObject, RefCounted 
     public void shard(SearchShardTarget target) {
         if (innerHits != null) {
             for (SearchHits innerHits : innerHits.values()) {
-                for (SearchHit innerHit : innerHits) {
+                for (SearchHit innerHit : innerHits.getHits()) {
                     innerHit.shard(target);
                 }
             }

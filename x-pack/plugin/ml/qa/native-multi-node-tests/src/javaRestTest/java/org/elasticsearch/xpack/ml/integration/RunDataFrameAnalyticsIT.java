@@ -107,7 +107,7 @@ public class RunDataFrameAnalyticsIT extends MlNativeDataFrameAnalyticsIntegTest
         assertResponse(prepareSearch(sourceIndex), sourceData -> {
             double scoreOfOutlier = 0.0;
             double scoreOfNonOutlier = -1.0;
-            for (SearchHit hit : sourceData.getHits()) {
+            for (SearchHit hit : sourceData.getHits().getHits()) {
                 GetResponse destDocGetResponse = client().prepareGet().setIndex(config.getDest().getIndex()).setId(hit.getId()).get();
                 assertThat(destDocGetResponse.isExists(), is(true));
                 Map<String, Object> sourceDoc = hit.getSourceAsMap();
@@ -315,7 +315,7 @@ public class RunDataFrameAnalyticsIT extends MlNativeDataFrameAnalyticsIntegTest
         waitUntilAnalyticsIsStopped(id);
 
         assertResponse(prepareSearch(sourceIndex), sourceData -> {
-            for (SearchHit hit : sourceData.getHits()) {
+            for (SearchHit hit : sourceData.getHits().getHits()) {
                 GetResponse destDocGetResponse = client().prepareGet().setIndex(config.getDest().getIndex()).setId(hit.getId()).get();
                 assertThat(destDocGetResponse.isExists(), is(true));
                 Map<String, Object> sourceDoc = hit.getSourceAsMap();
@@ -751,7 +751,7 @@ public class RunDataFrameAnalyticsIT extends MlNativeDataFrameAnalyticsIntegTest
         assertResponse(prepareSearch(sourceIndex), sourceData -> {
             double scoreOfOutlier = 0.0;
             double scoreOfNonOutlier = -1.0;
-            for (SearchHit hit : sourceData.getHits()) {
+            for (SearchHit hit : sourceData.getHits().getHits()) {
                 GetResponse destDocGetResponse = client().prepareGet().setIndex(config.getDest().getIndex()).setId(hit.getId()).get();
                 assertThat(destDocGetResponse.isExists(), is(true));
                 Map<String, Object> sourceDoc = hit.getSourceAsMap();
@@ -861,7 +861,7 @@ public class RunDataFrameAnalyticsIT extends MlNativeDataFrameAnalyticsIntegTest
         assertResponse(prepareSearch(sourceIndex), sourceData -> {
             double scoreOfOutlier = 0.0;
             double scoreOfNonOutlier = -1.0;
-            for (SearchHit hit : sourceData.getHits()) {
+            for (SearchHit hit : sourceData.getHits().getHits()) {
                 GetResponse destDocGetResponse = client().prepareGet().setIndex(config.getDest().getIndex()).setId(hit.getId()).get();
                 assertThat(destDocGetResponse.isExists(), is(true));
                 Map<String, Object> sourceDoc = hit.getSourceAsMap();
@@ -967,7 +967,7 @@ public class RunDataFrameAnalyticsIT extends MlNativeDataFrameAnalyticsIntegTest
         assertResponse(prepareSearch(sourceIndex), sourceData -> {
             double scoreOfOutlier = 0.0;
             double scoreOfNonOutlier = -1.0;
-            for (SearchHit hit : sourceData.getHits()) {
+            for (SearchHit hit : sourceData.getHits().getHits()) {
                 GetResponse destDocGetResponse = client().prepareGet().setIndex(config.getDest().getIndex()).setId(hit.getId()).get();
                 assertThat(destDocGetResponse.isExists(), is(true));
                 Map<String, Object> sourceDoc = hit.getSourceAsMap();

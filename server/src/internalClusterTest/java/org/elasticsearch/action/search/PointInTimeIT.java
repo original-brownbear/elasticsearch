@@ -191,7 +191,7 @@ public class PointInTimeIT extends ESIntegTestCase {
                     assertHitCount(resp, numDocs);
                     assertNotNull(resp.pointInTimeId());
                     assertThat(resp.pointInTimeId(), equalTo(pitId));
-                    for (SearchHit hit : resp.getHits()) {
+                    for (SearchHit hit : resp.getHits().getHits()) {
                         assertEquals("index-3", hit.getIndex());
                     }
                 });

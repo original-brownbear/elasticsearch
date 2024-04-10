@@ -257,7 +257,7 @@ public class SourceOnlySnapshotIT extends AbstractSnapshotIntegTestCase {
         BiConsumer<SearchResponse, Boolean> assertConsumer = (res, allowHoles) -> {
             SearchHits hits = res.getHits();
             long i = 0;
-            for (SearchHit hit : hits) {
+            for (SearchHit hit : hits.getHits()) {
                 String id = hit.getId();
                 Map<String, Object> sourceAsMap = hit.getSourceAsMap();
                 assertTrue(sourceAsMap.containsKey("field1"));

@@ -18,7 +18,6 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
-import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.aggregations.AggregationExecutionException;
 import org.elasticsearch.search.aggregations.AggregationTestScriptsPlugin;
 import org.elasticsearch.search.aggregations.Aggregator;
@@ -1421,9 +1420,7 @@ public class StringTermsIT extends AbstractTermsTestCase {
                 MultiBucketsAggregation.Bucket subBucket = subTerms.getBuckets().get(0);
                 InternalTopHits topHits = subBucket.getAggregations().get("top_hits");
                 assertThat(topHits.getHits().getHits().length, equalTo(1));
-                for (SearchHit hit : topHits.getHits()) {
-                    assertThat(hit.getScore(), greaterThan(0f));
-                }
+                assertThat(topHits.getHits().getAt(0).getScore(), greaterThan(0f));
             }
         });
     }

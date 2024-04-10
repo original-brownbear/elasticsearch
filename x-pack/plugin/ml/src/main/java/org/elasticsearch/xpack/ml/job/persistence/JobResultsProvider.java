@@ -767,7 +767,7 @@ public class JobResultsProvider {
                         SearchRequest searchRequest = msearch.request().requests().get(i);
                         LOGGER.debug("Found 0 hits for [{}]", new Object[] { searchRequest.indices() });
                     }
-                    for (SearchHit hit : hits) {
+                    for (SearchHit hit : hits.getHits()) {
                         try {
                             parseAutodetectParamSearchHit(jobId, paramsBuilder, hit);
                         } catch (Exception e) {

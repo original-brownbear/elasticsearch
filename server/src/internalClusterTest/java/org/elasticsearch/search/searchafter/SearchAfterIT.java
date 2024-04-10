@@ -326,7 +326,7 @@ public class SearchAfterIT extends ESIntegTestCase {
             }
             SearchResponse searchResponse = req.get();
             try {
-                for (SearchHit hit : searchResponse.getHits()) {
+                for (SearchHit hit : searchResponse.getHits().getHits()) {
                     List<Object> toCompare = convertSortValues(documents.get(offset++));
                     assertThat(LST_COMPARATOR.compare(toCompare, Arrays.asList(hit.getSortValues())), equalTo(0));
                 }

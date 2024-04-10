@@ -90,7 +90,7 @@ public class SearchScrollIT extends ESIntegTestCase {
 
             assertThat(searchResponse.getHits().getTotalHits().value, equalTo(100L));
             assertThat(searchResponse.getHits().getHits().length, equalTo(35));
-            for (SearchHit hit : searchResponse.getHits()) {
+            for (SearchHit hit : searchResponse.getHits().getHits()) {
                 assertThat(((Number) hit.getSortValues()[0]).longValue(), equalTo(counter++));
             }
 
@@ -99,7 +99,7 @@ public class SearchScrollIT extends ESIntegTestCase {
 
             assertThat(searchResponse.getHits().getTotalHits().value, equalTo(100L));
             assertThat(searchResponse.getHits().getHits().length, equalTo(35));
-            for (SearchHit hit : searchResponse.getHits()) {
+            for (SearchHit hit : searchResponse.getHits().getHits()) {
                 assertThat(((Number) hit.getSortValues()[0]).longValue(), equalTo(counter++));
             }
 
@@ -108,7 +108,7 @@ public class SearchScrollIT extends ESIntegTestCase {
 
             assertThat(searchResponse.getHits().getTotalHits().value, equalTo(100L));
             assertThat(searchResponse.getHits().getHits().length, equalTo(30));
-            for (SearchHit hit : searchResponse.getHits()) {
+            for (SearchHit hit : searchResponse.getHits().getHits()) {
                 assertThat(((Number) hit.getSortValues()[0]).longValue(), equalTo(counter++));
             }
         } finally {
@@ -146,7 +146,7 @@ public class SearchScrollIT extends ESIntegTestCase {
 
             assertThat(searchResponse.getHits().getTotalHits().value, equalTo(100L));
             assertThat(searchResponse.getHits().getHits().length, equalTo(3));
-            for (SearchHit hit : searchResponse.getHits()) {
+            for (SearchHit hit : searchResponse.getHits().getHits()) {
                 assertThat(((Number) hit.getSortValues()[0]).longValue(), equalTo(counter++));
             }
 
@@ -156,7 +156,7 @@ public class SearchScrollIT extends ESIntegTestCase {
 
                 assertThat(searchResponse.getHits().getTotalHits().value, equalTo(100L));
                 assertThat(searchResponse.getHits().getHits().length, equalTo(3));
-                for (SearchHit hit : searchResponse.getHits()) {
+                for (SearchHit hit : searchResponse.getHits().getHits()) {
                     assertThat(((Number) hit.getSortValues()[0]).longValue(), equalTo(counter++));
                 }
             }
@@ -167,7 +167,7 @@ public class SearchScrollIT extends ESIntegTestCase {
 
             assertThat(searchResponse.getHits().getTotalHits().value, equalTo(100L));
             assertThat(searchResponse.getHits().getHits().length, equalTo(1));
-            for (SearchHit hit : searchResponse.getHits()) {
+            for (SearchHit hit : searchResponse.getHits().getHits()) {
                 assertThat(((Number) hit.getSortValues()[0]).longValue(), equalTo(counter++));
             }
 
@@ -177,7 +177,7 @@ public class SearchScrollIT extends ESIntegTestCase {
 
             assertThat(searchResponse.getHits().getTotalHits().value, equalTo(100L));
             assertThat(searchResponse.getHits().getHits().length, equalTo(0));
-            for (SearchHit hit : searchResponse.getHits()) {
+            for (SearchHit hit : searchResponse.getHits().getHits()) {
                 assertThat(((Number) hit.getSortValues()[0]).longValue(), equalTo(counter++));
             }
 
@@ -263,7 +263,7 @@ public class SearchScrollIT extends ESIntegTestCase {
         try {
             assertThat(searchResponse1.getHits().getTotalHits().value, equalTo(100L));
             assertThat(searchResponse1.getHits().getHits().length, equalTo(35));
-            for (SearchHit hit : searchResponse1.getHits()) {
+            for (SearchHit hit : searchResponse1.getHits().getHits()) {
                 assertThat(((Number) hit.getSortValues()[0]).longValue(), equalTo(counter1++));
             }
         } finally {
@@ -279,7 +279,7 @@ public class SearchScrollIT extends ESIntegTestCase {
         try {
             assertThat(searchResponse2.getHits().getTotalHits().value, equalTo(100L));
             assertThat(searchResponse2.getHits().getHits().length, equalTo(35));
-            for (SearchHit hit : searchResponse2.getHits()) {
+            for (SearchHit hit : searchResponse2.getHits().getHits()) {
                 assertThat(((Number) hit.getSortValues()[0]).longValue(), equalTo(counter2++));
             }
         } finally {
@@ -290,7 +290,7 @@ public class SearchScrollIT extends ESIntegTestCase {
         try {
             assertThat(searchResponse1.getHits().getTotalHits().value, equalTo(100L));
             assertThat(searchResponse1.getHits().getHits().length, equalTo(35));
-            for (SearchHit hit : searchResponse1.getHits()) {
+            for (SearchHit hit : searchResponse1.getHits().getHits()) {
                 assertThat(((Number) hit.getSortValues()[0]).longValue(), equalTo(counter1++));
             }
         } finally {
@@ -301,7 +301,7 @@ public class SearchScrollIT extends ESIntegTestCase {
         try {
             assertThat(searchResponse2.getHits().getTotalHits().value, equalTo(100L));
             assertThat(searchResponse2.getHits().getHits().length, equalTo(35));
-            for (SearchHit hit : searchResponse2.getHits()) {
+            for (SearchHit hit : searchResponse2.getHits().getHits()) {
                 assertThat(((Number) hit.getSortValues()[0]).longValue(), equalTo(counter2++));
             }
         } finally {
@@ -382,7 +382,7 @@ public class SearchScrollIT extends ESIntegTestCase {
         try {
             assertThat(searchResponse1.getHits().getTotalHits().value, equalTo(100L));
             assertThat(searchResponse1.getHits().getHits().length, equalTo(35));
-            for (SearchHit hit : searchResponse1.getHits()) {
+            for (SearchHit hit : searchResponse1.getHits().getHits()) {
                 assertThat(((Number) hit.getSortValues()[0]).longValue(), equalTo(counter1++));
             }
         } finally {
@@ -398,7 +398,7 @@ public class SearchScrollIT extends ESIntegTestCase {
         try {
             assertThat(searchResponse2.getHits().getTotalHits().value, equalTo(100L));
             assertThat(searchResponse2.getHits().getHits().length, equalTo(35));
-            for (SearchHit hit : searchResponse2.getHits()) {
+            for (SearchHit hit : searchResponse2.getHits().getHits()) {
                 assertThat(((Number) hit.getSortValues()[0]).longValue(), equalTo(counter2++));
             }
         } finally {
@@ -409,7 +409,7 @@ public class SearchScrollIT extends ESIntegTestCase {
         try {
             assertThat(searchResponse1.getHits().getTotalHits().value, equalTo(100L));
             assertThat(searchResponse1.getHits().getHits().length, equalTo(35));
-            for (SearchHit hit : searchResponse1.getHits()) {
+            for (SearchHit hit : searchResponse1.getHits().getHits()) {
                 assertThat(((Number) hit.getSortValues()[0]).longValue(), equalTo(counter1++));
             }
         } finally {
@@ -420,7 +420,7 @@ public class SearchScrollIT extends ESIntegTestCase {
         try {
             assertThat(searchResponse2.getHits().getTotalHits().value, equalTo(100L));
             assertThat(searchResponse2.getHits().getHits().length, equalTo(35));
-            for (SearchHit hit : searchResponse2.getHits()) {
+            for (SearchHit hit : searchResponse2.getHits().getHits()) {
                 assertThat(((Number) hit.getSortValues()[0]).longValue(), equalTo(counter2++));
             }
         } finally {
@@ -534,7 +534,7 @@ public class SearchScrollIT extends ESIntegTestCase {
                 long counter = 0;
                 assertThat(searchResponse.getHits().getTotalHits().value, equalTo(100L));
                 assertThat(searchResponse.getHits().getHits().length, equalTo(35));
-                for (SearchHit hit : searchResponse.getHits()) {
+                for (SearchHit hit : searchResponse.getHits().getHits()) {
                     assertThat(((Number) hit.getSortValues()[0]).longValue(), equalTo(counter++));
                 }
             }

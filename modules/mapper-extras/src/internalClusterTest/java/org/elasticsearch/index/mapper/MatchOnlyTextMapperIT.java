@@ -71,7 +71,7 @@ public class MatchOnlyTextMapperIT extends ESIntegTestCase {
                 .setSize(500)
                 .highlighter(new HighlightBuilder().field("message")),
             searchResponse -> {
-                for (SearchHit searchHit : searchResponse.getHits()) {
+                for (SearchHit searchHit : searchResponse.getHits().getHits()) {
                     assertThat(
                         searchHit.getHighlightFields().get("message").fragments()[0].string(),
                         containsString("<em>marking and sending shard</em>")
@@ -120,7 +120,7 @@ public class MatchOnlyTextMapperIT extends ESIntegTestCase {
                 .setSize(500)
                 .highlighter(new HighlightBuilder().field("message")),
             searchResponse -> {
-                for (SearchHit searchHit : searchResponse.getHits()) {
+                for (SearchHit searchHit : searchResponse.getHits().getHits()) {
                     assertThat(
                         searchHit.getHighlightFields().get("message").fragments()[0].string(),
                         containsString("<em>marking and sending shard</em>")

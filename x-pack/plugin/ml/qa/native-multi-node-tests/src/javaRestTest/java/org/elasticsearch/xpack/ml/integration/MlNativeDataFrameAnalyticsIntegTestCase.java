@@ -380,7 +380,7 @@ abstract class MlNativeDataFrameAnalyticsIntegTestCase extends MlNativeIntegTest
     protected static Set<String> getTrainingRowsIds(String index) {
         Set<String> trainingRowsIds = new HashSet<>();
         assertResponse(prepareSearch(index).setSize(10000), hits -> {
-            for (SearchHit hit : hits.getHits()) {
+            for (SearchHit hit : hits.getHits().getHits()) {
                 Map<String, Object> sourceAsMap = hit.getSourceAsMap();
                 assertThat(sourceAsMap.containsKey("ml"), is(true));
                 @SuppressWarnings("unchecked")

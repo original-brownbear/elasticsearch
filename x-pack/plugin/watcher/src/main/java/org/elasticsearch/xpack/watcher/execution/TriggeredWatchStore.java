@@ -158,7 +158,7 @@ public class TriggeredWatchStore {
             response = client.search(searchRequest).actionGet(defaultSearchTimeout);
             logger.debug("trying to find triggered watches for ids {}: found [{}] docs", ids, response.getHits().getTotalHits().value);
             while (response.getHits().getHits().length != 0) {
-                for (SearchHit hit : response.getHits()) {
+                for (SearchHit hit : response.getHits().getHits()) {
                     Wid wid = new Wid(hit.getId());
                     if (ids.contains(wid.watchId())) {
                         TriggeredWatch triggeredWatch = triggeredWatchParser.parse(hit.getId(), hit.getVersion(), hit.getSourceRef());

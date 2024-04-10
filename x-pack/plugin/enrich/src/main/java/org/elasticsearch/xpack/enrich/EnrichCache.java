@@ -97,7 +97,7 @@ public final class EnrichCache {
 
     static List<Map<?, ?>> toCacheValue(SearchResponse response) {
         List<Map<?, ?>> result = new ArrayList<>(response.getHits().getHits().length);
-        for (SearchHit hit : response.getHits()) {
+        for (SearchHit hit : response.getHits().getHits()) {
             result.add(deepCopy(hit.getSourceAsMap(), true));
         }
         return Collections.unmodifiableList(result);

@@ -68,7 +68,7 @@ class SearchHitRowSet extends ResultRowSet<HitExtractor> {
             maxDepth = 1;
 
             sz = 0;
-            for (SearchHit hit : hits) {
+            for (SearchHit hit : hits.getHits()) {
                 Map<String, SearchHit[]> innerHitsPerPath = new HashMap<>(innerHits.size());
                 for (String ih : innerHits) {
                     SearchHit[] sh = getAllInnerHits(hit, ih);

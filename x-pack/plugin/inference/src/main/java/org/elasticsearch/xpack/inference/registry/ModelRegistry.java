@@ -211,7 +211,7 @@ public class ModelRegistry {
 
     private List<ModelConfigMap> parseHitsAsModels(SearchHits hits) {
         var modelConfigs = new ArrayList<ModelConfigMap>();
-        for (var hit : hits) {
+        for (var hit : hits.getHits()) {
             modelConfigs.add(new ModelConfigMap(hit.getSourceAsMap(), Map.of()));
         }
         return modelConfigs;

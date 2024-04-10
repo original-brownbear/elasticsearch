@@ -12,7 +12,6 @@ import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.aggregations.InternalMultiBucketAggregation;
 import org.elasticsearch.search.aggregations.bucket.MultiBucketsAggregation;
 import org.elasticsearch.search.aggregations.bucket.global.GlobalAggregationBuilder;
@@ -97,9 +96,7 @@ public class RareTermsIT extends ESSingleNodeTestCase {
                 MultiBucketsAggregation.Bucket subBucket = subTerms.getBuckets().get(0);
                 InternalTopHits topHits = subBucket.getAggregations().get("top_hits");
                 assertThat(topHits.getHits().getHits().length, equalTo(1));
-                for (SearchHit hit : topHits.getHits()) {
-                    assertThat(hit.getScore(), greaterThan(0f));
-                }
+                assertThat(topHits.getHits().getAt(0).getScore(), greaterThan(0f));
             }
         });
     }

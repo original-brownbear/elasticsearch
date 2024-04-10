@@ -14,6 +14,7 @@ import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.settings.IndexScopedSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.test.ESIntegTestCase;
 import org.mockito.internal.util.collections.Sets;
 
@@ -165,7 +166,9 @@ public class PartitionedRoutingIT extends ESIntegTestCase {
                     assertEquals(expectedDocuments, response.getHits().getTotalHits().value);
 
                     Set<String> found = new HashSet<>();
-                    response.getHits().forEach(h -> found.add(h.getId()));
+                    for (SearchHit h : response.getHits().getHits()) {
+                        found.add(h.getId());
+                    }
 
                     assertEquals(routingEntry.getValue(), found);
                 }
@@ -185,7 +188,9 @@ public class PartitionedRoutingIT extends ESIntegTestCase {
                     assertEquals(expectedDocuments, response.getHits().getTotalHits().value);
 
                     Set<String> found = new HashSet<>();
-                    response.getHits().forEach(h -> found.add(h.getId()));
+                    for (SearchHit h : response.getHits().getHits()) {
+                        found.add(h.getId());
+                    }
 
                     assertEquals(routingEntry.getValue(), found);
                 }

@@ -104,7 +104,7 @@ final class FetchLookupFieldsPhase extends SearchPhase {
                             failure = ExceptionsHelper.useOrSuppress(failure, item.getFailure());
                         } else if (failure == null) {
                             final List<Object> fetchedValues = new ArrayList<>();
-                            for (SearchHit rightHit : item.getResponse().getHits()) {
+                            for (SearchHit rightHit : item.getResponse().getHits().getHits()) {
                                 final Map<String, List<Object>> fetchedFields = rightHit.getDocumentFields()
                                     .values()
                                     .stream()

@@ -135,7 +135,7 @@ public class ExistsIT extends ESIntegTestCase {
                             response.getHits().getTotalHits().value
                         );
                     } catch (AssertionError e) {
-                        for (SearchHit searchHit : allDocs.getHits()) {
+                        for (SearchHit searchHit : allDocs.getHits().getHits()) {
                             final String index = searchHit.getIndex();
                             final String id = searchHit.getId();
                             final ExplainResponse explanation = client().prepareExplain(index, id)

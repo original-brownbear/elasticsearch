@@ -24,7 +24,7 @@ public class EventPayload extends AbstractPayload {
 
         SearchHits hits = response.getHits();
         values = new ArrayList<>(hits.getHits().length);
-        for (SearchHit hit : hits) {
+        for (SearchHit hit : hits.getHits()) {
             // TODO: remove unpooled usage
             values.add(new Event(hit.asUnpooled()));
         }

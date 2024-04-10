@@ -205,11 +205,11 @@ public class TokenCountFieldMapperIntegrationIT extends ESIntegTestCase {
         assertThat(result.getHits().getTotalHits().value, equalTo((long) ids.length));
         assertThat(result.getHits().getHits().length, equalTo(ids.length));
         List<String> foundIds = new ArrayList<>();
-        for (SearchHit hit : result.getHits()) {
+        for (SearchHit hit : result.getHits().getHits()) {
             foundIds.add(hit.getId());
         }
         assertThat(foundIds, containsInAnyOrder(ids));
-        for (SearchHit hit : result.getHits()) {
+        for (SearchHit hit : result.getHits().getHits()) {
             String id = hit.getId();
             if (id.equals("single")) {
                 assertSearchHit(hit, new int[] { 4 }, new int[] { 4 });

@@ -292,11 +292,11 @@ public class SearchHitTests extends AbstractWireSerializingTestCase<SearchHit> {
                 assertThat(results.getAt(0).getInnerHits().get("1").getAt(0).getInnerHits().get("1").getAt(0).getShard(), notNullValue());
                 assertThat(results.getAt(0).getInnerHits().get("1").getAt(1).getShard(), notNullValue());
                 assertThat(results.getAt(0).getInnerHits().get("2").getAt(0).getShard(), notNullValue());
-                for (SearchHit hit : results) {
+                for (SearchHit hit : results.getHits()) {
                     assertEquals(clusterAlias, hit.getClusterAlias());
                     if (hit.getInnerHits() != null) {
                         for (SearchHits innerhits : hit.getInnerHits().values()) {
-                            for (SearchHit innerHit : innerhits) {
+                            for (SearchHit innerHit : innerhits.getHits()) {
                                 assertEquals(clusterAlias, innerHit.getClusterAlias());
                             }
                         }

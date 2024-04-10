@@ -1278,7 +1278,7 @@ public class TrainedModelProvider {
         }
         List<T> results = new ArrayList<>(hits.getHits().length);
         String initialIndex = hits.getAt(0).getIndex();
-        for (SearchHit hit : hits) {
+        for (SearchHit hit : hits.getHits()) {
             // We don't want to spread across multiple backing indices
             if (hit.getIndex().equals(initialIndex)) {
                 results.add(parseLeniently.apply(hit.getSourceRef(), resourceId));

@@ -359,7 +359,7 @@ public class WatcherService {
             }
 
             while (response.getHits().getHits().length != 0) {
-                for (SearchHit hit : response.getHits()) {
+                for (SearchHit hit : response.getHits().getHits()) {
                     // find out if this hit should be processed locally
                     Optional<ShardRouting> correspondingShardOptional = localShards.stream()
                         .filter(sr -> sr.shardId().equals(hit.getShard().getShardId()))

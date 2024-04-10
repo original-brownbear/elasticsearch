@@ -57,7 +57,7 @@ public class DuelScrollIT extends ESIntegTestCase {
                     assertThat(searchScrollResponse.getHits().getHits().length, equalTo(context.scrollRequestSize));
 
                     int counter = 0;
-                    for (SearchHit hit : searchScrollResponse.getHits()) {
+                    for (SearchHit hit : searchScrollResponse.getHits().getHits()) {
                         assertThat(hit.getSortValues()[0], equalTo(sh.getAt(counter++).getSortValues()[0]));
                     }
 
@@ -80,7 +80,7 @@ public class DuelScrollIT extends ESIntegTestCase {
                             expectedLength = context.scrollRequestSize - (scrollSlice - context.numDocs);
                         }
                         assertThat(searchScrollResponse.getHits().getHits().length, equalTo(expectedLength));
-                        for (SearchHit hit : searchScrollResponse.getHits()) {
+                        for (SearchHit hit : searchScrollResponse.getHits().getHits()) {
                             assertThat(hit.getSortValues()[0], equalTo(sh.getAt(counter++).getSortValues()[0]));
                         }
                         scrollId = searchScrollResponse.getScrollId();

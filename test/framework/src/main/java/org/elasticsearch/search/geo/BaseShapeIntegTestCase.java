@@ -446,7 +446,7 @@ public abstract class BaseShapeIntegTestCase<T extends AbstractGeometryQueryBuil
 
         assertResponse(client().prepareSearch().setQuery(matchQuery("_id", key)), response -> {
             assertHitCount(response, 1);
-            for (SearchHit hit : response.getHits()) {
+            for (SearchHit hit : response.getHits().getHits()) {
                 assertThat(hit.getId(), equalTo(key));
             }
         });

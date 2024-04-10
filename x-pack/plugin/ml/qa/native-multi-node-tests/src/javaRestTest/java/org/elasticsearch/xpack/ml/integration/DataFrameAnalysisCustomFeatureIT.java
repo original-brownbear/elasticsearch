@@ -135,7 +135,7 @@ public class DataFrameAnalysisCustomFeatureIT extends MlNativeDataFrameAnalytics
 
         client().admin().indices().refresh(new RefreshRequest(destIndex));
         assertResponse(prepareSearch(sourceIndex).setTrackTotalHits(true).setSize(1000), sourceData -> {
-            for (SearchHit hit : sourceData.getHits()) {
+            for (SearchHit hit : sourceData.getHits().getHits()) {
                 Map<String, Object> destDoc = getDestDoc(config, hit);
                 Map<String, Object> resultsObject = getFieldValue(destDoc, "ml");
                 @SuppressWarnings("unchecked")

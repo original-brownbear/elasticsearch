@@ -254,7 +254,7 @@ public class DataFrameDataExtractor {
 
         SearchHits hits = searchResponse.getHits();
         List<Row> rows = new ArrayList<>(hits.getHits().length);
-        for (SearchHit hit : hits) {
+        for (SearchHit hit : hits.getHits()) {
             if (isCancelled) {
                 hasNext = false;
                 break;

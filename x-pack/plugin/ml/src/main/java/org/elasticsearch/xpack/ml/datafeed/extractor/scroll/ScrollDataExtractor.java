@@ -205,7 +205,7 @@ class ScrollDataExtractor implements DataExtractor {
         SearchHit lastHit = hits.getAt(hits.getHits().length - 1);
         lastTimestamp = context.extractedFields.timeFieldValue(lastHit);
         try (SearchHitToJsonProcessor hitProcessor = new SearchHitToJsonProcessor(context.extractedFields, outputStream)) {
-            for (SearchHit hit : hits) {
+            for (SearchHit hit : hits.getHits()) {
                 if (isCancelled) {
                     Long timestamp = context.extractedFields.timeFieldValue(hit);
                     if (timestamp != null) {

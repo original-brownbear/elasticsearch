@@ -147,7 +147,7 @@ public class ClassificationIT extends MlNativeDataFrameAnalyticsIntegTestCase {
 
         client().admin().indices().refresh(new RefreshRequest(destIndex));
         assertResponse(prepareSearch(sourceIndex).setTrackTotalHits(true).setSize(1000), sourceData -> {
-            for (SearchHit hit : sourceData.getHits()) {
+            for (SearchHit hit : sourceData.getHits().getHits()) {
                 Map<String, Object> destDoc = getDestDoc(config, hit);
                 Map<String, Object> resultsObject = getFieldValue(destDoc, "ml");
                 assertThat(getFieldValue(resultsObject, predictedClassField), is(in(KEYWORD_FIELD_VALUES)));
@@ -213,7 +213,7 @@ public class ClassificationIT extends MlNativeDataFrameAnalyticsIntegTestCase {
 
         client().admin().indices().refresh(new RefreshRequest(destIndex));
         assertResponse(prepareSearch(sourceIndex).setTrackTotalHits(true).setSize(1000), sourceData -> {
-            for (SearchHit hit : sourceData.getHits()) {
+            for (SearchHit hit : sourceData.getHits().getHits()) {
                 Map<String, Object> destDoc = getDestDoc(config, hit);
                 Map<String, Object> resultsObject = getFieldValue(destDoc, "ml");
                 assertThat(getFieldValue(resultsObject, predictedClassField), is(in(KEYWORD_FIELD_VALUES)));
@@ -263,7 +263,7 @@ public class ClassificationIT extends MlNativeDataFrameAnalyticsIntegTestCase {
 
         client().admin().indices().refresh(new RefreshRequest(destIndex));
         assertResponse(prepareSearch(sourceIndex).setTrackTotalHits(true).setSize(1000), sourceData -> {
-            for (SearchHit hit : sourceData.getHits()) {
+            for (SearchHit hit : sourceData.getHits().getHits()) {
                 Map<String, Object> destDoc = getDestDoc(config, hit);
                 Map<String, Object> resultsObject = getFieldValue(destDoc, "ml");
                 assertThat(getFieldValue(resultsObject, predictedClassField), is(in(KEYWORD_FIELD_VALUES)));
@@ -352,7 +352,7 @@ public class ClassificationIT extends MlNativeDataFrameAnalyticsIntegTestCase {
         waitUntilAnalyticsIsStopped(jobId);
 
         assertResponse(prepareSearch(sourceIndex).setTrackTotalHits(true).setSize(1000), sourceData -> {
-            for (SearchHit hit : sourceData.getHits()) {
+            for (SearchHit hit : sourceData.getHits().getHits()) {
                 Map<String, Object> destDoc = getDestDoc(config, hit);
                 Map<String, Object> resultsObject = getFieldValue(destDoc, "ml");
                 assertThat(getFieldValue(resultsObject, predictedClassField), is(in(KEYWORD_FIELD_VALUES)));
@@ -431,7 +431,7 @@ public class ClassificationIT extends MlNativeDataFrameAnalyticsIntegTestCase {
         assertResponse(prepareSearch(sourceIndex).setTrackTotalHits(true).setSize(1000), sourceData -> {
             int trainingRowsCount = 0;
             int nonTrainingRowsCount = 0;
-            for (SearchHit hit : sourceData.getHits()) {
+            for (SearchHit hit : sourceData.getHits().getHits()) {
                 Map<String, Object> destDoc = getDestDoc(config, hit);
                 Map<String, Object> resultsObject = getFieldValue(destDoc, "ml");
                 assertThat(getFieldValue(resultsObject, predictedClassField), is(in(dependentVariableValues)));
@@ -574,7 +574,7 @@ public class ClassificationIT extends MlNativeDataFrameAnalyticsIntegTestCase {
 
         waitUntilAnalyticsIsStopped(jobId);
         assertResponse(prepareSearch(sourceIndex).setTrackTotalHits(true).setSize(1000), sourceData -> {
-            for (SearchHit hit : sourceData.getHits()) {
+            for (SearchHit hit : sourceData.getHits().getHits()) {
                 Map<String, Object> destDoc = getDestDoc(config, hit);
                 Map<String, Object> resultsObject = getFieldValue(destDoc, "ml");
                 assertThat(getFieldValue(resultsObject, predictedClassField), is(in(KEYWORD_FIELD_VALUES)));
@@ -932,7 +932,7 @@ public class ClassificationIT extends MlNativeDataFrameAnalyticsIntegTestCase {
 
         client().admin().indices().refresh(new RefreshRequest(destIndex));
         assertResponse(prepareSearch(destIndex).setTrackTotalHits(true).setSize(1000), destData -> {
-            for (SearchHit hit : destData.getHits()) {
+            for (SearchHit hit : destData.getHits().getHits()) {
                 Map<String, Object> destDoc = hit.getSourceAsMap();
                 Map<String, Object> resultsObject = getFieldValue(destDoc, "ml");
                 assertThat(getFieldValue(resultsObject, predictedClassField), is(in(KEYWORD_FIELD_VALUES)));

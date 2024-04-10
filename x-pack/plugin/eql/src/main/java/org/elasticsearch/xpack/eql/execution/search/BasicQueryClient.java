@@ -160,7 +160,7 @@ public class BasicQueryClient implements QueryClient {
                 }
                 // otherwise proceed
                 // for each doc, find its reference and its position inside the matrix
-                for (SearchHit doc : item.getResponse().getHits()) {
+                for (SearchHit doc : item.getResponse().getHits().getHits()) {
                     HitReference docRef = new HitReference(doc);
                     List<Integer> positions = referenceToPosition.get(docRef);
                     positions.forEach(pos -> {
