@@ -93,7 +93,6 @@ public class TransportProfileHasPrivilegesActionTests extends ESTestCase {
             authorizationService,
             nativePrivilegeStore,
             profileService,
-            securityContext,
             threadPool
         );
     }
