@@ -426,7 +426,7 @@ public class Watcher extends Plugin implements SystemIndexPlugin, ScriptPlugin, 
             new SearchInputFactory(settings, client, xContentRegistry, clusterSupportsFeature, scriptService)
         );
         inputFactories.put(SimpleInput.TYPE, new SimpleInputFactory());
-        inputFactories.put(HttpInput.TYPE, new HttpInputFactory(settings, httpClient, templateEngine));
+        inputFactories.put(HttpInput.TYPE, new HttpInputFactory(httpClient, templateEngine));
         inputFactories.put(NoneInput.TYPE, new NoneInputFactory());
         inputFactories.put(TransformInput.TYPE, new TransformInputFactory(transformRegistry));
         final InputRegistry inputRegistry = new InputRegistry(inputFactories);

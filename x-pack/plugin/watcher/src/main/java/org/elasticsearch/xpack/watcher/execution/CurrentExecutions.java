@@ -6,8 +6,6 @@
  */
 package org.elasticsearch.xpack.watcher.execution;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.lucene.util.SetOnce;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.xpack.core.watcher.WatcherState;
@@ -23,7 +21,6 @@ import static org.elasticsearch.xpack.core.watcher.support.Exceptions.illegalSta
 
 public final class CurrentExecutions implements Iterable<ExecutionService.WatchExecution> {
 
-    private static final Logger logger = LogManager.getLogger(CurrentExecutions.class);
     private final ConcurrentMap<String, ExecutionService.WatchExecution> currentExecutions = new ConcurrentHashMap<>();
     // the condition of the lock is used to wait and signal the finishing of all executions on shutdown
     private final ReentrantLock lock = new ReentrantLock();

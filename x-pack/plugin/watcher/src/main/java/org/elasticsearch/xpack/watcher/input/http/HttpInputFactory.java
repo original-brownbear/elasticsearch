@@ -6,7 +6,6 @@
  */
 package org.elasticsearch.xpack.watcher.input.http;
 
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.xcontent.XContentParser;
 import org.elasticsearch.xpack.watcher.common.http.HttpClient;
 import org.elasticsearch.xpack.watcher.common.text.TextTemplateEngine;
@@ -19,7 +18,7 @@ public final class HttpInputFactory extends InputFactory<HttpInput, HttpInput.Re
     private final HttpClient httpClient;
     private final TextTemplateEngine templateEngine;
 
-    public HttpInputFactory(Settings settings, HttpClient httpClient, TextTemplateEngine templateEngine) {
+    public HttpInputFactory(HttpClient httpClient, TextTemplateEngine templateEngine) {
         this.templateEngine = templateEngine;
         this.httpClient = httpClient;
     }

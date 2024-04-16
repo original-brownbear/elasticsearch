@@ -9,7 +9,6 @@
 package org.elasticsearch.reindex;
 
 import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
 import org.elasticsearch.index.reindex.ScrollableHitSource.Hit;
 import org.elasticsearch.index.reindex.UpdateByQueryRequest;
@@ -43,7 +42,6 @@ public class UpdateByQueryMetadataTests extends AbstractAsyncBulkByScrollActionM
                 UpdateByQueryMetadataTests.this.threadPool,
                 null,
                 request(),
-                ClusterState.EMPTY_STATE,
                 listener()
             );
         }

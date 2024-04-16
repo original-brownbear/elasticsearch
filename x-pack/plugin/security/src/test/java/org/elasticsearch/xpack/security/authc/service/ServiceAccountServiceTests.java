@@ -17,7 +17,6 @@ import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.SecureString;
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.SuppressForbidden;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.test.MockLogAppender;
@@ -82,7 +81,6 @@ public class ServiceAccountServiceTests extends ESTestCase {
         indexServiceAccountTokenStore = mock(IndexServiceAccountTokenStore.class);
         when(fileServiceAccountTokenStore.getTokenSource()).thenReturn(TokenInfo.TokenSource.FILE);
         when(indexServiceAccountTokenStore.getTokenSource()).thenReturn(TokenInfo.TokenSource.INDEX);
-        final Settings.Builder builder = Settings.builder().put("xpack.security.enabled", true);
         client = mock(Client.class);
         when(client.threadPool()).thenReturn(threadPool);
         serviceAccountService = new ServiceAccountService(client, fileServiceAccountTokenStore, indexServiceAccountTokenStore);

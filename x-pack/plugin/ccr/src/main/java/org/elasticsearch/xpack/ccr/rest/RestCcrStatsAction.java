@@ -7,8 +7,6 @@
 
 package org.elasticsearch.xpack.ccr.rest;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.support.ThreadedActionListener;
 import org.elasticsearch.client.internal.node.NodeClient;
 import org.elasticsearch.rest.BaseRestHandler;
@@ -22,8 +20,6 @@ import java.util.List;
 import static org.elasticsearch.rest.RestRequest.Method.GET;
 
 public class RestCcrStatsAction extends BaseRestHandler {
-
-    private static final Logger logger = LogManager.getLogger(RestCcrStatsAction.class);
 
     @Override
     public List<Route> routes() {

@@ -47,15 +47,12 @@ public class MetadataDeleteIndexService {
 
     private static final Logger logger = LogManager.getLogger(MetadataDeleteIndexService.class);
 
-    private final Settings settings;
-
     // package private for tests
     final ClusterStateTaskExecutor<DeleteIndexClusterStateUpdateRequest> executor;
     private final MasterServiceTaskQueue<DeleteIndexClusterStateUpdateRequest> taskQueue;
 
     @Inject
     public MetadataDeleteIndexService(Settings settings, ClusterService clusterService, AllocationService allocationService) {
-        this.settings = settings;
         executor = new SimpleBatchedAckListenerTaskExecutor<>() {
             @Override
             public Tuple<ClusterState, ClusterStateAckListener> executeTask(

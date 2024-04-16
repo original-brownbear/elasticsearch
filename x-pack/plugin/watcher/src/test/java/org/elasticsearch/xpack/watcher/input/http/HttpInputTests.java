@@ -9,7 +9,6 @@ package org.elasticsearch.xpack.watcher.input.http;
 import io.netty.handler.codec.http.HttpHeaders;
 
 import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.xcontent.ObjectPath;
@@ -72,7 +71,7 @@ public class HttpInputTests extends ESTestCase {
     public void init() throws Exception {
         httpClient = mock(HttpClient.class);
         templateEngine = mock(TextTemplateEngine.class);
-        httpParser = new HttpInputFactory(Settings.EMPTY, httpClient, templateEngine);
+        httpParser = new HttpInputFactory(httpClient, templateEngine);
     }
 
     public void testExecute() throws Exception {

@@ -15,7 +15,6 @@ import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.HandledTransportAction;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.client.internal.ParentTaskAssigningClient;
-import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
@@ -72,13 +71,12 @@ public class TransportUpdateByQueryAction extends HandledTransportAction<UpdateB
             client,
             clusterService.localNode(),
             () -> {
-                ClusterState state = clusterService.state();
                 ParentTaskAssigningClient assigningClient = new ParentTaskAssigningClient(
                     client,
                     clusterService.localNode(),
                     bulkByScrollTask
                 );
-                new AsyncIndexBySearchAction(bulkByScrollTask, logger, assigningClient, threadPool, scriptService, request, state, listener)
+                new AsyncIndexBySearchAction(bulkByScrollTask, logger, assigningClient, threadPool, scriptService, request, listener)
                     .start();
             }
         );
@@ -96,7 +94,6 @@ public class TransportUpdateByQueryAction extends HandledTransportAction<UpdateB
             ThreadPool threadPool,
             ScriptService scriptService,
             UpdateByQueryRequest request,
-            ClusterState clusterState,
             ActionListener<BulkByScrollResponse> listener
         ) {
             super(
