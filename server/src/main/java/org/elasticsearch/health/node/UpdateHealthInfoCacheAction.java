@@ -211,7 +211,6 @@ public class UpdateHealthInfoCacheAction extends ActionType<AcknowledgedResponse
                 UpdateHealthInfoCacheAction.NAME,
                 transportService,
                 clusterService,
-                threadPool,
                 actionFilters,
                 UpdateHealthInfoCacheAction.Request::new,
                 AcknowledgedResponse::readFrom,

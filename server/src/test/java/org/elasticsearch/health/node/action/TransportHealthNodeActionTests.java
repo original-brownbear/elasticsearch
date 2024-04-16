@@ -173,8 +173,7 @@ public class TransportHealthNodeActionTests extends ESTestCase {
                 actionName,
                 transportService,
                 clusterService,
-                threadPool,
-                new ActionFilters(new HashSet<>()),
+                    new ActionFilters(new HashSet<>()),
                 Request::new,
                 Response::new,
                 executor

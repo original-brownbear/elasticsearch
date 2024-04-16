@@ -26,7 +26,6 @@ import org.elasticsearch.health.node.selection.HealthNode;
 import org.elasticsearch.tasks.CancellableTask;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.tasks.TaskCancelledException;
-import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportException;
 import org.elasticsearch.transport.TransportRequestOptions;
 import org.elasticsearch.transport.TransportResponseHandler;
@@ -58,7 +57,6 @@ public abstract class TransportHealthNodeAction<Request extends HealthNodeReques
 
     protected final TransportService transportService;
     protected final ClusterService clusterService;
-    protected final ThreadPool threadPool;
     protected final Executor executor;
     private TimeValue healthNodeTransportActionTimeout;
 
@@ -68,7 +66,6 @@ public abstract class TransportHealthNodeAction<Request extends HealthNodeReques
         String actionName,
         TransportService transportService,
         ClusterService clusterService,
-        ThreadPool threadPool,
         ActionFilters actionFilters,
         Writeable.Reader<Request> request,
         Writeable.Reader<Response> response,
@@ -77,7 +74,6 @@ public abstract class TransportHealthNodeAction<Request extends HealthNodeReques
         super(actionName, false, transportService, actionFilters, request, EsExecutors.DIRECT_EXECUTOR_SERVICE);
         this.transportService = transportService;
         this.clusterService = clusterService;
-        this.threadPool = threadPool;
         this.executor = executor;
         this.responseReader = response;
         this.healthNodeTransportActionTimeout = HEALTH_NODE_TRANSPORT_ACTION_TIMEOUT.get(clusterService.getSettings());

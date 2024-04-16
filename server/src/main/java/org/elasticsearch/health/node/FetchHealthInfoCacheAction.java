@@ -109,7 +109,6 @@ public class FetchHealthInfoCacheAction extends ActionType<FetchHealthInfoCacheA
                 FetchHealthInfoCacheAction.NAME,
                 transportService,
                 clusterService,
-                threadPool,
                 actionFilters,
                 FetchHealthInfoCacheAction.Request::new,
                 FetchHealthInfoCacheAction.Response::new,

@@ -526,7 +526,6 @@ public class SecurityServerTransportInterceptor implements TransportInterceptor 
         private final Map<String, ServerTransportFilter> profileFilters;
         private final ThreadContext threadContext;
         private final Executor executor;
-        private final ThreadPool threadPool;
         private final boolean forceExecution;
         private final Logger logger;
 
@@ -545,7 +544,6 @@ public class SecurityServerTransportInterceptor implements TransportInterceptor 
             this.handler = handler;
             this.profileFilters = profileFilters;
             this.threadContext = threadPool.getThreadContext();
-            this.threadPool = threadPool;
             this.forceExecution = forceExecution;
         }
 

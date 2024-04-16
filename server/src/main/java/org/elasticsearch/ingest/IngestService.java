@@ -114,7 +114,6 @@ public class IngestService implements ClusterStateApplier, ReportingService<Inge
     // processor factories rely on other node services. Custom metadata is statically registered when classes
     // are loaded, so in the cluster state we just save the pipeline config and here we keep the actual pipelines around.
     private volatile Map<String, PipelineHolder> pipelines = Map.of();
-    private final ThreadPool threadPool;
     private final IngestMetric totalMetrics = new IngestMetric();
     private final List<Consumer<ClusterState>> ingestClusterStateListeners = new CopyOnWriteArrayList<>();
     private volatile ClusterState state;
@@ -204,7 +203,6 @@ public class IngestService implements ClusterStateApplier, ReportingService<Inge
                 matcherWatchdog
             )
         );
-        this.threadPool = threadPool;
         this.taskQueue = clusterService.createTaskQueue("ingest-pipelines", Priority.NORMAL, PIPELINE_TASK_EXECUTOR);
     }
 
@@ -218,7 +216,6 @@ public class IngestService implements ClusterStateApplier, ReportingService<Inge
         this.scriptService = ingestService.scriptService;
         this.documentParsingProvider = ingestService.documentParsingProvider;
         this.processorFactories = ingestService.processorFactories;
-        this.threadPool = ingestService.threadPool;
         this.taskQueue = ingestService.taskQueue;
         this.pipelines = ingestService.pipelines;
         this.state = ingestService.state;
