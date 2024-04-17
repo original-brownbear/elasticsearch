@@ -43,7 +43,6 @@ import org.elasticsearch.common.lucene.uid.Versions;
 import org.elasticsearch.common.lucene.uid.VersionsAndSeqNoResolver;
 import org.elasticsearch.common.lucene.uid.VersionsAndSeqNoResolver.DocIdAndVersion;
 import org.elasticsearch.common.metrics.CounterMetric;
-import org.elasticsearch.common.util.concurrent.ReleasableLock;
 import org.elasticsearch.common.util.concurrent.UncategorizedExecutionException;
 import org.elasticsearch.core.AbstractRefCounted;
 import org.elasticsearch.core.CheckedRunnable;
@@ -323,12 +322,38 @@ public abstract class Engine implements Closeable {
     protected static final class IndexThrottle {
         private final CounterMetric throttleTimeMillisMetric = new CounterMetric();
         private volatile long startOfThrottleNS;
-        private static final ReleasableLock NOOP_LOCK = new ReleasableLock(new NoOpLock());
-        private final ReleasableLock lockReference = new ReleasableLock(new ReentrantLock());
-        private volatile ReleasableLock lock = NOOP_LOCK;
+        private static final Lock NOOP_LOCK = new Lock() {
+            @Override
+            public void lock() {}
+
+            @Override
+            public void lockInterruptibly() {}
+
+            @Override
+            public boolean tryLock() {
+                return true;
+            }
+
+            @Override
+            public boolean tryLock(long time, TimeUnit unit) {
+                return true;
+            }
+
+            @Override
+            public void unlock() {}
+
+            @Override
+            public Condition newCondition() {
+                throw new UnsupportedOperationException("NoOpLock can't provide a condition");
+            }
+        };
+        private final Lock lockReference = new ReentrantLock();
+        private volatile Lock lock = NOOP_LOCK;
 
         public Releasable acquireThrottle() {
-            return lock.acquire();
+            Lock l = lock;
+            l.lock();
+            return l::unlock;
         }
 
         /** Activate throttling, which switches the lock to be a real lock */
@@ -370,7 +395,7 @@ public abstract class Engine implements Closeable {
 
         boolean throttleLockIsHeldByCurrentThread() { // to be used in assertions and tests only
             if (isThrottled()) {
-                return lock.isHeldByCurrentThread();
+                return lock instanceof ReentrantLock r && r.isHeldByCurrentThread();
             }
             return false;
         }
@@ -400,34 +425,6 @@ public abstract class Engine implements Closeable {
      */
     public long getTotalFlushTimeExcludingWaitingOnLockInMillis() {
         return 0;
-    }
-
-    /** A Lock implementation that always allows the lock to be acquired */
-    protected static final class NoOpLock implements Lock {
-
-        @Override
-        public void lock() {}
-
-        @Override
-        public void lockInterruptibly() throws InterruptedException {}
-
-        @Override
-        public boolean tryLock() {
-            return true;
-        }
-
-        @Override
-        public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
-            return true;
-        }
-
-        @Override
-        public void unlock() {}
-
-        @Override
-        public Condition newCondition() {
-            throw new UnsupportedOperationException("NoOpLock can't provide a condition");
-        }
     }
 
     /**
