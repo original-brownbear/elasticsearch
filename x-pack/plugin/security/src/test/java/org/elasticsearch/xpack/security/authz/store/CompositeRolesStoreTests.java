@@ -103,7 +103,6 @@ import org.elasticsearch.xpack.core.watcher.transport.actions.get.GetWatchAction
 import org.elasticsearch.xpack.security.Security;
 import org.elasticsearch.xpack.security.audit.AuditUtil;
 import org.elasticsearch.xpack.security.authc.ApiKeyService;
-import org.elasticsearch.xpack.security.authc.service.ServiceAccountService;
 import org.elasticsearch.xpack.security.authz.restriction.WorkflowService;
 import org.elasticsearch.xpack.security.authz.restriction.WorkflowServiceTests.TestBaseRestHandler;
 import org.elasticsearch.xpack.security.support.CacheInvalidatorRegistry;
@@ -238,7 +237,6 @@ public class CompositeRolesStoreTests extends ESTestCase {
             licenseState,
             null,
             null,
-            null,
             effectiveRoleDescriptors::set
         );
 
@@ -290,7 +288,6 @@ public class CompositeRolesStoreTests extends ESTestCase {
             null,
             null,
             licenseState,
-            null,
             null,
             null,
             effectiveRoleDescriptors::set
@@ -371,7 +368,6 @@ public class CompositeRolesStoreTests extends ESTestCase {
             null,
             null,
             licenseState,
-            null,
             null,
             null,
             rds -> effectiveRoleDescriptors.set(rds)
@@ -514,7 +510,6 @@ public class CompositeRolesStoreTests extends ESTestCase {
             null,
             null,
             null,
-            null,
             null
         );
         return compositeRolesStore;
@@ -597,7 +592,6 @@ public class CompositeRolesStoreTests extends ESTestCase {
             null,
             null,
             null,
-            null,
             rds -> effectiveRoleDescriptors.set(rds)
         );
         verify(fileRolesStore).addListener(anyConsumer()); // adds a listener in ctor
@@ -670,7 +664,6 @@ public class CompositeRolesStoreTests extends ESTestCase {
             null,
             null,
             null,
-            null,
             rds -> effectiveRoleDescriptors.set(rds)
         );
         verify(fileRolesStore).addListener(anyConsumer()); // adds a listener in ctor
@@ -718,11 +711,9 @@ public class CompositeRolesStoreTests extends ESTestCase {
             licenseState,
             cache,
             mock(ApiKeyService.class),
-            mock(ServiceAccountService.class),
             documentSubsetBitsetCache,
             TestRestrictedIndices.RESTRICTED_INDICES,
-            effectiveRoleDescriptors::set,
-            new WorkflowService()
+            effectiveRoleDescriptors::set
         );
         verify(fileRolesStore).addListener(anyConsumer()); // adds a listener in ctor
 
@@ -827,9 +818,7 @@ public class CompositeRolesStoreTests extends ESTestCase {
             null,
             null,
             null,
-            null,
             rds -> effectiveRoleDescriptors.set(rds),
-            null,
             null
         );
 
@@ -1408,9 +1397,7 @@ public class CompositeRolesStoreTests extends ESTestCase {
             null,
             null,
             null,
-            null,
             rds -> effectiveRoleDescriptors.set(rds),
-            null,
             null
         );
 
@@ -1474,9 +1461,7 @@ public class CompositeRolesStoreTests extends ESTestCase {
             xPackLicenseState,
             null,
             null,
-            null,
             rds -> effectiveRoleDescriptors.set(rds),
-            null,
             null
         );
 
@@ -1558,9 +1543,7 @@ public class CompositeRolesStoreTests extends ESTestCase {
             null,
             null,
             null,
-            null,
-            store -> numInvalidation.incrementAndGet(),
-            null
+            store -> numInvalidation.incrementAndGet()
         );
 
         int expectedInvalidation = 0;
@@ -1617,9 +1600,7 @@ public class CompositeRolesStoreTests extends ESTestCase {
             null,
             null,
             null,
-            null,
-            store -> numInvalidation.incrementAndGet(),
-            null
+            store -> numInvalidation.incrementAndGet()
         );
 
         compositeRolesStore.onSecurityIndexStateChange(dummyIndexState(false, null), dummyIndexState(true, null));
@@ -1651,7 +1632,6 @@ public class CompositeRolesStoreTests extends ESTestCase {
             mock(NativePrivilegeStore.class),
             null,
             mock(ApiKeyService.class),
-            mock(ServiceAccountService.class),
             null,
             null
         );
@@ -1698,7 +1678,6 @@ public class CompositeRolesStoreTests extends ESTestCase {
             mock(NativePrivilegeStore.class),
             null,
             mock(ApiKeyService.class),
-            mock(ServiceAccountService.class),
             null,
             null
         );
@@ -1732,7 +1711,6 @@ public class CompositeRolesStoreTests extends ESTestCase {
             fileRolesStore,
             nativeRolesStore,
             reservedRolesStore,
-            null,
             null,
             null,
             null,
@@ -1817,7 +1795,6 @@ public class CompositeRolesStoreTests extends ESTestCase {
             null,
             null,
             null,
-            null,
             rds -> effectiveRoleDescriptors.set(rds)
         );
         verify(fileRolesStore).addListener(anyConsumer()); // adds a listener in ctor
@@ -1879,7 +1856,6 @@ public class CompositeRolesStoreTests extends ESTestCase {
             nativePrivStore,
             null,
             apiKeyService,
-            null,
             null,
             rds -> effectiveRoleDescriptors.set(rds)
         );
@@ -1962,7 +1938,6 @@ public class CompositeRolesStoreTests extends ESTestCase {
             nativePrivStore,
             null,
             apiKeyService,
-            null,
             null,
             rds -> effectiveRoleDescriptors.set(rds)
         );
@@ -2063,7 +2038,6 @@ public class CompositeRolesStoreTests extends ESTestCase {
             null,
             apiKeyService,
             null,
-            null,
             effectiveRoleDescriptors::set
         );
         AuditUtil.getOrGenerateRequestId(threadContext);
@@ -2145,7 +2119,6 @@ public class CompositeRolesStoreTests extends ESTestCase {
 
     public void testGetRolesForRunAs() {
         final ApiKeyService apiKeyService = mock(ApiKeyService.class);
-        final ServiceAccountService serviceAccountService = mock(ServiceAccountService.class);
         final CompositeRolesStore compositeRolesStore = buildCompositeRolesStore(
             Settings.EMPTY,
             null,
@@ -2154,7 +2127,6 @@ public class CompositeRolesStoreTests extends ESTestCase {
             null,
             null,
             apiKeyService,
-            serviceAccountService,
             null,
             null
         );
@@ -2164,7 +2136,6 @@ public class CompositeRolesStoreTests extends ESTestCase {
         final BytesReference roleDescriptorBytes = new BytesArray("{}");
         final BytesReference limitedByRoleDescriptorBytes = new BytesArray("{\"a\":{\"cluster\":[\"all\"]}}");
 
-        final User authenticatedUser1 = new User("authenticated_user");
         final Authentication authentication1 = AuthenticationTestHelper.builder()
             .apiKey(apiKeyId)
             .metadata(
@@ -2207,7 +2178,6 @@ public class CompositeRolesStoreTests extends ESTestCase {
             callback.onResponse(Collections.emptyList());
             return null;
         }).when(privilegeStore).getPrivileges(isASet(), isASet(), anyActionListener());
-        final WorkflowService workflowService = new WorkflowService();
         final ThreadContext threadContext = new ThreadContext(settings);
         final XPackLicenseState licenseState = new XPackLicenseState(() -> 0);
         final CompositeRolesStore compositeRolesStore = new CompositeRolesStore(
@@ -2218,11 +2188,9 @@ public class CompositeRolesStoreTests extends ESTestCase {
             licenseState,
             cache,
             apiKeyService,
-            mock(ServiceAccountService.class),
             buildBitsetCache(),
             TestRestrictedIndices.RESTRICTED_INDICES,
-            rds -> {},
-            workflowService
+            rds -> {}
         );
 
         final Workflow workflow = randomFrom(WorkflowResolver.allWorkflows());
@@ -2321,7 +2289,6 @@ public class CompositeRolesStoreTests extends ESTestCase {
             callback.onResponse(Collections.emptyList());
             return null;
         }).when(privilegeStore).getPrivileges(isASet(), isASet(), anyActionListener());
-        final WorkflowService workflowService = new WorkflowService();
         final ThreadContext threadContext = new ThreadContext(settings);
         final XPackLicenseState licenseState = new XPackLicenseState(() -> 0);
         final CompositeRolesStore compositeRolesStore = new CompositeRolesStore(
@@ -2332,11 +2299,9 @@ public class CompositeRolesStoreTests extends ESTestCase {
             licenseState,
             cache,
             apiKeyService,
-            mock(ServiceAccountService.class),
             buildBitsetCache(),
             TestRestrictedIndices.RESTRICTED_INDICES,
-            rds -> {},
-            workflowService
+            rds -> {}
         );
 
         final String apiKeyId = randomAlphaOfLength(20);
@@ -2425,7 +2390,6 @@ public class CompositeRolesStoreTests extends ESTestCase {
             null,
             null,
             mock(ApiKeyService.class),
-            mock(ServiceAccountService.class),
             documentSubsetBitsetCache,
             null
         );
@@ -2486,7 +2450,6 @@ public class CompositeRolesStoreTests extends ESTestCase {
             null,
             null,
             null,
-            mock(ServiceAccountService.class),
             null,
             null
         );
@@ -2543,7 +2506,6 @@ public class CompositeRolesStoreTests extends ESTestCase {
             nativePrivStore,
             null,
             apiKeyService,
-            null,
             null,
             rds -> effectiveRoleDescriptors.set(rds)
         );
@@ -2752,7 +2714,6 @@ public class CompositeRolesStoreTests extends ESTestCase {
             null,
             null,
             null,
-            mock(ServiceAccountService.class),
             null,
             null
         );
@@ -2827,7 +2788,6 @@ public class CompositeRolesStoreTests extends ESTestCase {
             null,
             null,
             null,
-            null,
             null
         );
         final Subject subject = new Subject(internalUser, new RealmRef("__attach", "__attach", randomAlphaOfLength(8)));
@@ -2844,7 +2804,6 @@ public class CompositeRolesStoreTests extends ESTestCase {
         @Nullable NativePrivilegeStore privilegeStore,
         @Nullable XPackLicenseState licenseState,
         @Nullable ApiKeyService apiKeyService,
-        @Nullable ServiceAccountService serviceAccountService,
         @Nullable DocumentSubsetBitsetCache documentSubsetBitsetCache,
         @Nullable Consumer<Collection<RoleDescriptor>> roleConsumer
     ) {
@@ -2857,10 +2816,8 @@ public class CompositeRolesStoreTests extends ESTestCase {
             privilegeStore,
             licenseState,
             apiKeyService,
-            serviceAccountService,
             documentSubsetBitsetCache,
             roleConsumer,
-            null,
             null
         );
     }
@@ -2874,11 +2831,9 @@ public class CompositeRolesStoreTests extends ESTestCase {
         @Nullable NativePrivilegeStore privilegeStore,
         @Nullable XPackLicenseState licenseState,
         @Nullable ApiKeyService apiKeyService,
-        @Nullable ServiceAccountService serviceAccountService,
         @Nullable DocumentSubsetBitsetCache documentSubsetBitsetCache,
         @Nullable Consumer<Collection<RoleDescriptor>> roleConsumer,
-        @Nullable Consumer<CompositeRolesStore> onInvalidation,
-        @Nullable WorkflowService workflowService
+        @Nullable Consumer<CompositeRolesStore> onInvalidation
     ) {
         if (licenseState == null) {
             licenseState = new XPackLicenseState(() -> 0);
@@ -2905,17 +2860,11 @@ public class CompositeRolesStoreTests extends ESTestCase {
         if (apiKeyService == null) {
             apiKeyService = mock(ApiKeyService.class);
         }
-        if (serviceAccountService == null) {
-            serviceAccountService = mock(ServiceAccountService.class);
-        }
         if (documentSubsetBitsetCache == null) {
             documentSubsetBitsetCache = buildBitsetCache();
         }
         if (roleConsumer == null) {
             roleConsumer = rds -> {};
-        }
-        if (workflowService == null) {
-            workflowService = mock(WorkflowService.class);
         }
 
         return new CompositeRolesStore(
@@ -2926,11 +2875,9 @@ public class CompositeRolesStoreTests extends ESTestCase {
             licenseState,
             cache,
             apiKeyService,
-            serviceAccountService,
             documentSubsetBitsetCache,
             TestRestrictedIndices.RESTRICTED_INDICES,
-            roleConsumer,
-            workflowService
+            roleConsumer
         ) {
             @Override
             public void invalidateAll() {

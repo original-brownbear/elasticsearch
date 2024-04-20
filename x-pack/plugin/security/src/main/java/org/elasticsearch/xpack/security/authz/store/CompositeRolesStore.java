@@ -49,7 +49,6 @@ import org.elasticsearch.xpack.core.security.user.InternalUser;
 import org.elasticsearch.xpack.core.security.user.InternalUsers;
 import org.elasticsearch.xpack.core.security.user.User;
 import org.elasticsearch.xpack.security.authc.ApiKeyService;
-import org.elasticsearch.xpack.security.authc.service.ServiceAccountService;
 import org.elasticsearch.xpack.security.authz.restriction.WorkflowService;
 import org.elasticsearch.xpack.security.support.SecurityIndexManager;
 
@@ -103,7 +102,6 @@ public class CompositeRolesStore {
     private final Role superuserRole;
     private final Map<String, Role> internalUserRoles;
     private final RestrictedIndices restrictedIndices;
-    private final WorkflowService workflowService;
     private final ThreadContext threadContext;
 
     public CompositeRolesStore(
@@ -114,11 +112,9 @@ public class CompositeRolesStore {
         XPackLicenseState licenseState,
         FieldPermissionsCache fieldPermissionsCache,
         ApiKeyService apiKeyService,
-        ServiceAccountService serviceAccountService,
         DocumentSubsetBitsetCache dlsBitsetCache,
         RestrictedIndices restrictedIndices,
-        Consumer<Collection<RoleDescriptor>> effectiveRoleDescriptorsConsumer,
-        WorkflowService workflowService
+        Consumer<Collection<RoleDescriptor>> effectiveRoleDescriptorsConsumer
     ) {
         this.roleProviders = roleProviders;
         roleProviders.addChangeListener(new RoleProviders.ChangeListener() {
@@ -171,14 +167,12 @@ public class CompositeRolesStore {
         this.roleReferenceResolver = new RoleDescriptorStore(
             roleProviders,
             apiKeyService,
-            serviceAccountService,
             negativeLookupCache,
             licenseState,
             threadContext,
             effectiveRoleDescriptorsConsumer
         );
         this.anonymousUser = new AnonymousUser(settings);
-        this.workflowService = workflowService;
         this.threadContext = threadContext;
     }
 

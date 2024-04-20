@@ -51,7 +51,6 @@ public class RoleDescriptorStore implements RoleReferenceResolver {
 
     private final RoleProviders roleProviders;
     private final ApiKeyService apiKeyService;
-    private final ServiceAccountService serviceAccountService;
     private final XPackLicenseState licenseState;
     private final ThreadContext threadContext;
     private final Consumer<Collection<RoleDescriptor>> effectiveRoleDescriptorsConsumer;
@@ -60,7 +59,6 @@ public class RoleDescriptorStore implements RoleReferenceResolver {
     public RoleDescriptorStore(
         RoleProviders roleProviders,
         ApiKeyService apiKeyService,
-        ServiceAccountService serviceAccountService,
         Cache<String, Boolean> negativeLookupCache,
         XPackLicenseState licenseState,
         ThreadContext threadContext,
@@ -68,7 +66,6 @@ public class RoleDescriptorStore implements RoleReferenceResolver {
     ) {
         this.roleProviders = roleProviders;
         this.apiKeyService = Objects.requireNonNull(apiKeyService);
-        this.serviceAccountService = Objects.requireNonNull(serviceAccountService);
         this.licenseState = Objects.requireNonNull(licenseState);
         this.threadContext = threadContext;
         this.effectiveRoleDescriptorsConsumer = Objects.requireNonNull(effectiveRoleDescriptorsConsumer);
