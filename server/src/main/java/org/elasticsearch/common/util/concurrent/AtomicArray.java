@@ -39,8 +39,9 @@ public class AtomicArray<E> {
      * @return the number of non-null elements
      */
     public int nonNullLength() {
-        if (nonNullList != null) {
-            return nonNullList.size();
+        var list = nonNullList;
+        if (list != null) {
+            return list.size();
         }
         int count = 0;
         for (int i = 0; i < array.length(); i++) {
@@ -58,7 +59,8 @@ public class AtomicArray<E> {
      * @param value the new value
      */
     public void set(int i, E value) {
-        array.set(i, value);
+        E existing = array.getAndSet(i, value);
+        assert existing == null : existing;
         if (nonNullList != null) { // read first, lighter, and most times it will be null...
             nonNullList = null;
         }
@@ -87,21 +89,22 @@ public class AtomicArray<E> {
      * Returns the it as a non null list.
      */
     public List<E> asList() {
-        if (nonNullList == null) {
-            if (array == null || array.length() == 0) {
-                nonNullList = Collections.emptyList();
+        var list = nonNullList;
+        if (list == null) {
+            if (array.length() == 0) {
+                list = Collections.emptyList();
             } else {
-                List<E> list = new ArrayList<>(array.length());
+                list = new ArrayList<>(array.length());
                 for (int i = 0; i < array.length(); i++) {
                     E e = array.get(i);
                     if (e != null) {
                         list.add(e);
                     }
                 }
-                nonNullList = list;
             }
+            nonNullList = list;
         }
-        return nonNullList;
+        return list;
     }
 
     /**
