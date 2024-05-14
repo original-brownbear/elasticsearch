@@ -284,8 +284,8 @@ public abstract class BaseSearchableSnapshotsIntegTestCase extends AbstractSnaps
 
     protected void assertTotalHits(String indexName, TotalHits originalAllHits, TotalHits originalBarHits) throws Exception {
         final Thread[] threads = new Thread[between(1, 5)];
-        final AtomicArray<TotalHits> allHits = new AtomicArray<>(threads.length);
-        final AtomicArray<TotalHits> barHits = new AtomicArray<>(threads.length);
+        final AtomicArray<TotalHits> allHits = AtomicArray.ofSize(threads.length);
+        final AtomicArray<TotalHits> barHits = AtomicArray.ofSize(threads.length);
 
         final CountDownLatch latch = new CountDownLatch(1);
         for (int i = 0; i < threads.length; i++) {

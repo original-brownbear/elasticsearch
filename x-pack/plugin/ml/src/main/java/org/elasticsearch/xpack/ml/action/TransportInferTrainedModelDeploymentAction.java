@@ -98,7 +98,7 @@ public class TransportInferTrainedModelDeploymentAction extends TransportTasksAc
         // Multiple documents to infer on, wait for all results
         // and return order the results to match the request order
         AtomicInteger count = new AtomicInteger();
-        AtomicArray<InferenceResults> results = new AtomicArray<>(nlpInputs.size());
+        AtomicArray<InferenceResults> results = AtomicArray.ofSize(nlpInputs.size());
         int slot = 0;
         for (var input : nlpInputs) {
             task.infer(

@@ -51,7 +51,7 @@ public class SearchScrollAsyncActionTests extends ESTestCase {
             .add(DiscoveryNodeUtils.create("node3"))
             .build();
 
-        AtomicArray<SearchAsyncActionTests.TestSearchPhaseResult> results = new AtomicArray<>(scrollId.getContext().length);
+        AtomicArray<SearchAsyncActionTests.TestSearchPhaseResult> results = AtomicArray.ofSize(scrollId.getContext().length);
         SearchScrollRequest request = new SearchScrollRequest();
         request.scroll(new Scroll(TimeValue.timeValueMinutes(1)));
         CountDownLatch latch = new CountDownLatch(1);
@@ -125,7 +125,7 @@ public class SearchScrollAsyncActionTests extends ESTestCase {
             .add(DiscoveryNodeUtils.create("node3"))
             .build();
 
-        AtomicArray<SearchAsyncActionTests.TestSearchPhaseResult> results = new AtomicArray<>(scrollId.getContext().length);
+        AtomicArray<SearchAsyncActionTests.TestSearchPhaseResult> results = AtomicArray.ofSize(scrollId.getContext().length);
         SearchScrollRequest request = new SearchScrollRequest();
         request.scroll(new Scroll(TimeValue.timeValueMinutes(1)));
         CountDownLatch latch = new CountDownLatch(1);
@@ -221,7 +221,7 @@ public class SearchScrollAsyncActionTests extends ESTestCase {
             .add(DiscoveryNodeUtils.create("node3"))
             .build();
 
-        AtomicArray<SearchAsyncActionTests.TestSearchPhaseResult> results = new AtomicArray<>(scrollId.getContext().length);
+        AtomicArray<SearchAsyncActionTests.TestSearchPhaseResult> results = AtomicArray.ofSize(scrollId.getContext().length);
         SearchScrollRequest request = new SearchScrollRequest();
         request.scroll(new Scroll(TimeValue.timeValueMinutes(1)));
         CountDownLatch latch = new CountDownLatch(1);
@@ -306,7 +306,7 @@ public class SearchScrollAsyncActionTests extends ESTestCase {
             .add(DiscoveryNodeUtils.create("node3"))
             .build();
 
-        AtomicArray<SearchAsyncActionTests.TestSearchPhaseResult> results = new AtomicArray<>(scrollId.getContext().length);
+        AtomicArray<SearchAsyncActionTests.TestSearchPhaseResult> results = AtomicArray.ofSize(scrollId.getContext().length);
         SearchScrollRequest request = new SearchScrollRequest();
         request.scroll(new Scroll(TimeValue.timeValueMinutes(1)));
         CountDownLatch latch = new CountDownLatch(1);
@@ -387,7 +387,7 @@ public class SearchScrollAsyncActionTests extends ESTestCase {
             .add(DiscoveryNodeUtils.create("node3"))
             .build();
 
-        AtomicArray<SearchAsyncActionTests.TestSearchPhaseResult> results = new AtomicArray<>(scrollId.getContext().length);
+        AtomicArray<SearchAsyncActionTests.TestSearchPhaseResult> results = AtomicArray.ofSize(scrollId.getContext().length);
         SearchScrollRequest request = new SearchScrollRequest();
         request.scroll(new Scroll(TimeValue.timeValueMinutes(1)));
         CountDownLatch latch = new CountDownLatch(1);

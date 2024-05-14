@@ -511,7 +511,7 @@ public class TransportCloseJobAction extends TransportTasksAction<
 
         final int numberOfJobs = jobIdsToForceClose.size();
         final AtomicInteger counter = new AtomicInteger();
-        final AtomicArray<Exception> failures = new AtomicArray<>(numberOfJobs);
+        final AtomicArray<Exception> failures = AtomicArray.ofSize(numberOfJobs);
 
         for (String jobId : jobIdsToForceClose) {
             PersistentTasksCustomMetadata.PersistentTask<?> jobTask = MlTasks.getJobTask(jobId, tasks);

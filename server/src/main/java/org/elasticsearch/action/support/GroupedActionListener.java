@@ -41,7 +41,7 @@ public final class GroupedActionListener<T> extends DelegatingActionListener<T, 
             assert false : "illegal group size [" + groupSize + "]";
             throw new IllegalArgumentException("groupSize must be greater than 0 but was " + groupSize);
         }
-        results = new AtomicArray<>(groupSize);
+        results = AtomicArray.ofSize(groupSize);
         countDown = new CountDown(groupSize);
     }
 

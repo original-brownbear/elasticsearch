@@ -33,7 +33,7 @@ public class ProgressListenableActionFutureTests extends ESTestCase {
     public void testOnResponseCallsListeners() {
         final ProgressListenableActionFuture future = randomFuture();
 
-        final AtomicArray<Long> listenersResponses = new AtomicArray<>(between(0, 50));
+        final AtomicArray<Long> listenersResponses = AtomicArray.ofSize(between(0, 50));
         for (int i = 0; i < listenersResponses.length(); i++) {
             final int listenerIndex = i;
             future.addListener(
@@ -56,7 +56,7 @@ public class ProgressListenableActionFutureTests extends ESTestCase {
     public void testOnFailureCallsListeners() {
         final ProgressListenableActionFuture future = randomFuture();
 
-        final AtomicArray<Exception> listenersResponses = new AtomicArray<>(between(0, 50));
+        final AtomicArray<Exception> listenersResponses = AtomicArray.ofSize(between(0, 50));
         for (int i = 0; i < listenersResponses.length(); i++) {
             final int listenerIndex = i;
             future.addListener(

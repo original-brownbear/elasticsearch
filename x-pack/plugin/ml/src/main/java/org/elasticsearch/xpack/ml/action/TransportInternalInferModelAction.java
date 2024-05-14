@@ -264,7 +264,7 @@ public class TransportInternalInferModelAction extends HandledTransportAction<Re
             : "mismatch; sum of node requests does not match number of documents in request";
 
         AtomicInteger count = new AtomicInteger();
-        AtomicArray<List<InferenceResults>> results = new AtomicArray<>(nodes.size());
+        AtomicArray<List<InferenceResults>> results = AtomicArray.ofSize(nodes.size());
         AtomicReference<Exception> failure = new AtomicReference<>();
 
         int startPos = 0;

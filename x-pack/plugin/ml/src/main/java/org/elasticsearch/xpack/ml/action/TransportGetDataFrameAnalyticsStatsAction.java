@@ -211,7 +211,7 @@ public class TransportGetDataFrameAnalyticsStatsAction extends TransportTasksAct
         }
 
         AtomicInteger counter = new AtomicInteger(stoppedConfigs.size());
-        AtomicArray<Stats> jobStats = new AtomicArray<>(stoppedConfigs.size());
+        AtomicArray<Stats> jobStats = AtomicArray.ofSize(stoppedConfigs.size());
         AtomicReference<Exception> searchException = new AtomicReference<>();
         for (int i = 0; i < stoppedConfigs.size(); i++) {
             final int slot = i;

@@ -485,7 +485,7 @@ public class AutoFollowCoordinator extends AbstractLifecycleComponent implements
             }
 
             this.autoFollowPatternsCountDown = new CountDown(patterns.size());
-            this.autoFollowResults = new AtomicArray<>(patterns.size());
+            this.autoFollowResults = AtomicArray.ofSize(patterns.size());
 
             // keep the list of the last known active patterns for this auto-follower
             // if the list changed, we explicitly retrieve the last cluster state in

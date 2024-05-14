@@ -191,7 +191,7 @@ public class TransportGetJobsStatsAction extends TransportTasksAction<
 
         AtomicInteger counter = new AtomicInteger(closedJobIds.size());
         AtomicReference<Exception> searchException = new AtomicReference<>();
-        AtomicArray<GetJobsStatsAction.Response.JobStats> jobStats = new AtomicArray<>(closedJobIds.size());
+        AtomicArray<GetJobsStatsAction.Response.JobStats> jobStats = AtomicArray.ofSize(closedJobIds.size());
 
         Consumer<Exception> errorHandler = e -> {
             // take the first error

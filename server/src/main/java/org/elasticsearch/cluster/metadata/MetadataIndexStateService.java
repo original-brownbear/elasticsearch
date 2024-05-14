@@ -613,7 +613,7 @@ public class MetadataIndexStateService {
                 return;
             }
 
-            final AtomicArray<ShardResult> results = new AtomicArray<>(indexRoutingTable.size());
+            final AtomicArray<ShardResult> results = AtomicArray.ofSize(indexRoutingTable.size());
             final CountDown countDown = new CountDown(indexRoutingTable.size());
 
             for (int i = 0; i < indexRoutingTable.size(); i++) {
@@ -743,7 +743,7 @@ public class MetadataIndexStateService {
                 return;
             }
 
-            final AtomicArray<AddBlockShardResult> results = new AtomicArray<>(indexRoutingTable.size());
+            final AtomicArray<AddBlockShardResult> results = AtomicArray.ofSize(indexRoutingTable.size());
             final CountDown countDown = new CountDown(indexRoutingTable.size());
 
             for (int i = 0; i < indexRoutingTable.size(); i++) {

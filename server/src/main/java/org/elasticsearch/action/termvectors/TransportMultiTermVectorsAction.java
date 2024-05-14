@@ -60,7 +60,7 @@ public class TransportMultiTermVectorsAction extends HandledTransportAction<Mult
 
         clusterState.blocks().globalBlockedRaiseException(ClusterBlockLevel.READ);
 
-        final AtomicArray<MultiTermVectorsItemResponse> responses = new AtomicArray<>(request.requests.size());
+        final AtomicArray<MultiTermVectorsItemResponse> responses = AtomicArray.ofSize(request.requests.size());
 
         Map<ShardId, MultiTermVectorsShardRequest> shardRequests = new HashMap<>();
         for (int i = 0; i < request.requests.size(); i++) {

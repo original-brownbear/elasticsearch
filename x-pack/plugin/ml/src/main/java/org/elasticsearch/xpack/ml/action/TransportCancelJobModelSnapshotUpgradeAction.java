@@ -100,7 +100,7 @@ public class TransportCancelJobModelSnapshotUpgradeAction extends HandledTranspo
         }
 
         final AtomicInteger counter = new AtomicInteger();
-        final AtomicArray<Exception> failures = new AtomicArray<>(numberOfTasks);
+        final AtomicArray<Exception> failures = AtomicArray.ofSize(numberOfTasks);
 
         for (PersistentTasksCustomMetadata.PersistentTask<?> task : upgradeTasksToCancel) {
             persistentTasksService.sendRemoveRequest(task.getId(), null, new ActionListener<>() {

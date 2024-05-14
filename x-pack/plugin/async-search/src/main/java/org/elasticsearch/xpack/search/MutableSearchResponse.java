@@ -92,7 +92,7 @@ class MutableSearchResponse implements Releasable {
         this.skippedShards = skippedShards;
 
         this.clusters = clusters;
-        this.queryFailures = totalShards == -1 ? null : new AtomicArray<>(totalShards - skippedShards);
+        this.queryFailures = totalShards == -1 ? null : AtomicArray.ofSize(totalShards - skippedShards);
         this.isPartial = true;
         this.threadContext = threadContext;
         this.totalHits = EMPTY_TOTAL_HITS;

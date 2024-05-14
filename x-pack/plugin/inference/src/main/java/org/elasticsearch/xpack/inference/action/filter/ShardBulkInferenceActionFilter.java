@@ -182,7 +182,7 @@ public class ShardBulkInferenceActionFilter implements MappedActionFilter {
         ) {
             this.fieldInferenceMap = fieldInferenceMap;
             this.bulkShardRequest = bulkShardRequest;
-            this.inferenceResults = new AtomicArray<>(bulkShardRequest.items().length);
+            this.inferenceResults = AtomicArray.ofSize(bulkShardRequest.items().length);
             this.onCompletion = onCompletion;
         }
 

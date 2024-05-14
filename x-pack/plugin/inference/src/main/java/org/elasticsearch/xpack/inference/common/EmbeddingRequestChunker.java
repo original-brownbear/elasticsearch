@@ -67,13 +67,13 @@ public class EmbeddingRequestChunker {
         var chunker = new WordBoundaryChunker();
         chunkedInputs = new ArrayList<>(inputs.size());
         results = new ArrayList<>(inputs.size());
-        errors = new AtomicArray<>(inputs.size());
+        errors = AtomicArray.ofSize(inputs.size());
 
         for (int i = 0; i < inputs.size(); i++) {
             var chunks = chunker.chunk(inputs.get(i), wordsPerChunk, chunkOverlap);
             int numberOfSubBatches = addToBatches(chunks, i);
             // size the results array with the expected number of request/responses
-            results.add(new AtomicArray<>(numberOfSubBatches));
+            results.add(AtomicArray.ofSize(numberOfSubBatches));
             chunkedInputs.add(chunks);
         }
     }

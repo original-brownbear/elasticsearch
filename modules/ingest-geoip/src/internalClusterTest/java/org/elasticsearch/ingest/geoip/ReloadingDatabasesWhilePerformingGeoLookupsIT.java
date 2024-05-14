@@ -87,7 +87,7 @@ public class ReloadingDatabasesWhilePerformingGeoLookupsIT extends ESTestCase {
         final AtomicInteger numberOfIngestRuns = new AtomicInteger();
         final int numberOfIngestThreads = randomIntBetween(16, 32);
         final Thread[] ingestThreads = new Thread[numberOfIngestThreads];
-        final AtomicArray<Throwable> ingestFailures = new AtomicArray<>(numberOfIngestThreads);
+        final AtomicArray<Throwable> ingestFailures = AtomicArray.ofSize(numberOfIngestThreads);
         for (int i = 0; i < numberOfIngestThreads; i++) {
             final int id = i;
             ingestThreads[id] = new Thread(() -> {

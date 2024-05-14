@@ -32,7 +32,7 @@ public class TransportInferTrainedModelDeploymentActionTests extends ESTestCase 
     public void testOrderedListener() {
         int totalNumberOfResponses = 10;
         var count = new AtomicInteger();
-        var results = new AtomicArray<InferenceResults>(totalNumberOfResponses);
+        var results = AtomicArray.<InferenceResults>ofSize(totalNumberOfResponses);
 
         var exceptionHolder = new AtomicReference<Exception>();
         var resultsHolder = new AtomicReference<InferTrainedModelDeploymentAction.Response>();
@@ -74,7 +74,7 @@ public class TransportInferTrainedModelDeploymentActionTests extends ESTestCase 
     public void testOrderedListenerWithFailures() {
         int totalNumberOfResponses = 5;
         var count = new AtomicInteger();
-        var results = new AtomicArray<InferenceResults>(totalNumberOfResponses);
+        var results = AtomicArray.<InferenceResults>ofSize(totalNumberOfResponses);
 
         var exceptionHolder = new AtomicReference<Exception>();
         var resultsHolder = new AtomicReference<InferTrainedModelDeploymentAction.Response>();

@@ -21,7 +21,7 @@ import static org.hamcrest.Matchers.equalTo;
 public class TransportSearchHelperTests extends ESTestCase {
 
     public static AtomicArray<SearchPhaseResult> generateQueryResults() {
-        AtomicArray<SearchPhaseResult> array = new AtomicArray<>(3);
+        AtomicArray<SearchPhaseResult> array = AtomicArray.ofSize(3);
         DiscoveryNode node1 = DiscoveryNodeUtils.create("node_1");
         DiscoveryNode node2 = DiscoveryNodeUtils.create("node_2");
         DiscoveryNode node3 = DiscoveryNodeUtils.create("node_3");

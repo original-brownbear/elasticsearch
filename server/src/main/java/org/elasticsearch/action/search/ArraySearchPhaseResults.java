@@ -32,7 +32,7 @@ class ArraySearchPhaseResults<Result extends SearchPhaseResult> extends SearchPh
 
     ArraySearchPhaseResults(int size) {
         super(size);
-        this.results = new AtomicArray<>(size);
+        this.results = AtomicArray.ofSize(size);
     }
 
     Stream<Result> getSuccessfulResults() {

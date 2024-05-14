@@ -243,7 +243,7 @@ public class Exporters extends AbstractLifecycleComponent {
             return;
         }
 
-        final AtomicArray<ExportBulk> accumulatedBulks = new AtomicArray<>(exporterMap.size());
+        final AtomicArray<ExportBulk> accumulatedBulks = AtomicArray.ofSize(exporterMap.size());
         final CountDown countDown = new CountDown(exporterMap.size());
 
         int i = 0;

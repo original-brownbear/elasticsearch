@@ -194,7 +194,7 @@ public class SearchableSnapshotsPrewarmingIntegTests extends ESSingleNodeTestCas
         logger.debug("--> mounting indices");
         final List<String> mountedIndices = new ArrayList<>(nbIndices);
         final Thread[] threads = new Thread[nbIndices];
-        final AtomicArray<Throwable> throwables = new AtomicArray<>(nbIndices);
+        final AtomicArray<Throwable> throwables = AtomicArray.ofSize(nbIndices);
         final CountDownLatch startMounting = new CountDownLatch(1);
 
         for (int i = 0; i < threads.length; i++) {

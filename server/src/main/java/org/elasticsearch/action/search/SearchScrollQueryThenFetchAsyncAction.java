@@ -43,8 +43,8 @@ final class SearchScrollQueryThenFetchAsyncAction extends SearchScrollAsyncActio
     ) {
         super(scrollId, logger, clusterService.state().nodes(), listener, request, searchTransportService);
         this.task = task;
-        this.fetchResults = new AtomicArray<>(scrollId.getContext().length);
-        this.queryResults = new AtomicArray<>(scrollId.getContext().length);
+        this.fetchResults = AtomicArray.ofSize(scrollId.getContext().length);
+        this.queryResults = AtomicArray.ofSize(scrollId.getContext().length);
     }
 
     protected void onFirstPhaseResult(int shardId, ScrollQuerySearchResult result) {

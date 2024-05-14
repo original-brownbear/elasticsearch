@@ -377,7 +377,7 @@ public class TransportStopDatafeedAction extends TransportTasksAction<
         final List<String> notStoppedDatafeeds
     ) {
         final AtomicInteger counter = new AtomicInteger();
-        final AtomicArray<Exception> failures = new AtomicArray<>(notStoppedDatafeeds.size());
+        final AtomicArray<Exception> failures = AtomicArray.ofSize(notStoppedDatafeeds.size());
 
         for (String datafeedId : notStoppedDatafeeds) {
             PersistentTasksCustomMetadata.PersistentTask<?> datafeedTask = MlTasks.getDatafeedTask(datafeedId, tasks);

@@ -254,7 +254,7 @@ public class TransportStopDataFrameAnalyticsAction extends TransportTasksAction<
     ) {
 
         final AtomicInteger counter = new AtomicInteger();
-        final AtomicArray<Exception> failures = new AtomicArray<>(nonStoppedAnalytics.size());
+        final AtomicArray<Exception> failures = AtomicArray.ofSize(nonStoppedAnalytics.size());
 
         for (String analyticsId : nonStoppedAnalytics) {
             PersistentTasksCustomMetadata.PersistentTask<?> analyticsTask = MlTasks.getDataFrameAnalyticsTask(analyticsId, tasks);

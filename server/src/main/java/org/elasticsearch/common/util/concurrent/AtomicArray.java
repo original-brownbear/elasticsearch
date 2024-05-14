@@ -20,10 +20,26 @@ import java.util.concurrent.atomic.AtomicReferenceArray;
  * to get the concrete values as a list using {@link #asList()}.
  */
 public class AtomicArray<E> {
+
+    @SuppressWarnings("rawtypes")
+    private static final AtomicArray EMPTY_ARRAY = new AtomicArray(0);
+
     private final AtomicReferenceArray<E> array;
     private volatile List<E> nonNullList;
 
-    public AtomicArray(int size) {
+    public static <T> AtomicArray<T> ofSize(int size) {
+        if (size == 0) {
+            return empty();
+        }
+        return new AtomicArray<>(size);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> AtomicArray<T> empty() {
+        return (AtomicArray<T>) EMPTY_ARRAY;
+    }
+
+    private AtomicArray(int size) {
         array = new AtomicReferenceArray<>(size);
     }
 
@@ -87,21 +103,21 @@ public class AtomicArray<E> {
      * Returns the it as a non null list.
      */
     public List<E> asList() {
-        if (nonNullList == null) {
-            if (array == null || array.length() == 0) {
-                nonNullList = Collections.emptyList();
-            } else {
-                List<E> list = new ArrayList<>(array.length());
-                for (int i = 0; i < array.length(); i++) {
-                    E e = array.get(i);
-                    if (e != null) {
-                        list.add(e);
-                    }
-                }
-                nonNullList = list;
-            }
+        if (array.length() == 0) {
+            return Collections.emptyList();
         }
-        return nonNullList;
+        var list = nonNullList;
+        if (list == null) {
+            list = new ArrayList<>(array.length());
+            for (int i = 0; i < array.length(); i++) {
+                E e = array.get(i);
+                if (e != null) {
+                    list.add(e);
+                }
+            }
+            nonNullList = list;
+        }
+        return list;
     }
 
     /**

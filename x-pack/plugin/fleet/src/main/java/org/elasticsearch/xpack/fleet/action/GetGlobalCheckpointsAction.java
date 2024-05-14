@@ -338,7 +338,7 @@ public class GetGlobalCheckpointsAction extends ActionType<GetGlobalCheckpointsA
                     }
                 }
 
-                final AtomicArray<GetGlobalCheckpointsShardAction.Response> responses = new AtomicArray<>(numberOfShards);
+                final AtomicArray<GetGlobalCheckpointsShardAction.Response> responses = AtomicArray.ofSize(numberOfShards);
                 final AtomicBoolean timedOut = new AtomicBoolean(false);
                 final CountDown countDown = new CountDown(numberOfShards);
                 for (int i = 0; i < numberOfShards; ++i) {

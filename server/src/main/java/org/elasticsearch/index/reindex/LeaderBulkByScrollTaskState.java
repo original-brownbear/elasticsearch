@@ -38,7 +38,7 @@ public class LeaderBulkByScrollTaskState {
     public LeaderBulkByScrollTaskState(BulkByScrollTask task, int slices) {
         this.task = task;
         this.slices = slices;
-        results = new AtomicArray<>(slices);
+        results = AtomicArray.ofSize(slices);
         runningSubtasks = new AtomicInteger(slices);
     }
 
