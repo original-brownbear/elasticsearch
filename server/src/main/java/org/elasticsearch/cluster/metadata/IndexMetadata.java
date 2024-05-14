@@ -1714,8 +1714,7 @@ public class IndexMetadata implements Diffable<IndexMetadata>, ToXContentFragmen
             }
         }
         if (in.getTransportVersion().onOrAfter(TransportVersions.INFERENCE_FIELDS_METADATA)) {
-            var fields = in.readCollectionAsImmutableList(InferenceFieldMetadata::new);
-            fields.stream().forEach(f -> builder.putInferenceField(f));
+            in.consumeCollection(InferenceFieldMetadata::new, builder::putInferenceField);
         }
         int aliasesSize = in.readVInt();
         for (int i = 0; i < aliasesSize; i++) {

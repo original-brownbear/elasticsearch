@@ -55,6 +55,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 
@@ -1182,6 +1183,13 @@ public abstract class StreamInput extends InputStream {
                 yield List.of(typedEntries);
             }
         };
+    }
+
+    public <T> void consumeCollection(final Writeable.Reader<T> reader, Consumer<T> consumer) throws IOException {
+        int count = readArraySize();
+        for (int i = 0; i < count; i++) {
+            consumer.accept(reader.read(this));
+        }
     }
 
     /**

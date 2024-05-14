@@ -23,7 +23,6 @@ import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 import static org.elasticsearch.cluster.node.DiscoveryNode.DISCOVERY_NODE_COMPARATOR;
 
@@ -61,9 +60,8 @@ public class AutoscalingDeciderResults implements ToXContentObject, Writeable {
 
     public AutoscalingDeciderResults(final StreamInput in) throws IOException {
         this.currentCapacity = new AutoscalingCapacity(in);
-        this.currentNodes = in.readCollectionAsSet(DiscoveryNode::new)
-            .stream()
-            .collect(Collectors.toCollection(() -> new TreeSet<>(DISCOVERY_NODE_COMPARATOR)));
+        this.currentNodes = new TreeSet<>(DISCOVERY_NODE_COMPARATOR);
+        in.consumeCollection(DiscoveryNode::new, currentNodes::add);
         this.results = new TreeMap<>(in.readMap(AutoscalingDeciderResult::new));
     }
 
