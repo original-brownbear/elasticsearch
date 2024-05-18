@@ -59,8 +59,7 @@ public abstract class AbstractSearchTestCase extends ESTestCase {
         namedWriteables.addAll(searchModule.getNamedWriteables());
         namedWriteables.add(new NamedWriteableRegistry.Entry(RankBuilder.class, TestRankBuilder.NAME, TestRankBuilder::new));
         namedWriteableRegistry = new NamedWriteableRegistry(namedWriteables);
-        List<NamedXContentRegistry.Entry> namedXContents = new ArrayList<>();
-        namedXContents.addAll(searchModule.getNamedXContents());
+        List<NamedXContentRegistry.Entry> namedXContents = new ArrayList<>(searchModule.getNamedXContents());
         namedXContents.add(
             new NamedXContentRegistry.Entry(RankBuilder.class, new ParseField(TestRankBuilder.NAME), TestRankBuilder::fromXContent)
         );

@@ -16,7 +16,6 @@ import org.elasticsearch.xpack.core.ml.inference.MlInferenceNamedXContentProvide
 import org.elasticsearch.xpack.core.ml.inference.TrainedModelPrefixStrings;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -47,9 +46,7 @@ public class CoordinatedInferenceActionRequestTests extends AbstractBWCWireSeria
 
     @Override
     protected NamedWriteableRegistry getNamedWriteableRegistry() {
-        List<NamedWriteableRegistry.Entry> entries = new ArrayList<>();
-        entries.addAll(new MlInferenceNamedXContentProvider().getNamedWriteables());
-        return new NamedWriteableRegistry(entries);
+        return new NamedWriteableRegistry(new MlInferenceNamedXContentProvider().getNamedWriteables());
     }
 
     @Override

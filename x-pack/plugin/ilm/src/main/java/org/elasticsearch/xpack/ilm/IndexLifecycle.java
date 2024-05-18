@@ -260,25 +260,20 @@ public class IndexLifecycle extends Plugin implements ActionPlugin, HealthPlugin
         Supplier<DiscoveryNodes> nodesInCluster,
         Predicate<NodeFeature> clusterSupportsFeature
     ) {
-        List<RestHandler> handlers = new ArrayList<>();
-
-        handlers.addAll(
-            Arrays.asList(
-                // add ILM rest handlers
-                new RestPutLifecycleAction(),
-                new RestGetLifecycleAction(),
-                new RestDeleteLifecycleAction(),
-                new RestExplainLifecycleAction(),
-                new RestRemoveIndexLifecyclePolicyAction(),
-                new RestMoveToStepAction(),
-                new RestRetryAction(),
-                new RestStopAction(),
-                new RestStartILMAction(),
-                new RestGetStatusAction(),
-                new RestMigrateToDataTiersAction()
-            )
+        return List.of(
+            // add ILM rest handlers
+            new RestPutLifecycleAction(),
+            new RestGetLifecycleAction(),
+            new RestDeleteLifecycleAction(),
+            new RestExplainLifecycleAction(),
+            new RestRemoveIndexLifecyclePolicyAction(),
+            new RestMoveToStepAction(),
+            new RestRetryAction(),
+            new RestStopAction(),
+            new RestStartILMAction(),
+            new RestGetStatusAction(),
+            new RestMigrateToDataTiersAction()
         );
-        return handlers;
     }
 
     @Override

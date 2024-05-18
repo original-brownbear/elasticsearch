@@ -402,8 +402,7 @@ public class MultivalueDedupeTests extends ESTestCase {
         Set<? extends Object> previousValues,
         LongFunction<Object> valueLookup
     ) {
-        Set<Object> allValues = new HashSet<>();
-        allValues.addAll(previousValues);
+        Set<Object> allValues = new HashSet<>(previousValues);
         for (int p = 0; p < b.block().getPositionCount(); p++) {
             assertThat(hashes.isNull(p), equalTo(false));
             int count = hashes.getValueCount(p);
@@ -470,8 +469,7 @@ public class MultivalueDedupeTests extends ESTestCase {
             expected.add(null);
             // BatchEncoder encodes null as a special empty value, but it counts as a value
         } else {
-            NavigableSet<Object> set = new TreeSet<>();
-            set.addAll(expected);
+            NavigableSet<Object> set = new TreeSet<>(expected);
             expected = new ArrayList<>(set);
         }
 

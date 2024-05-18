@@ -16,8 +16,6 @@ import org.elasticsearch.xcontent.XContentParser;
 import org.elasticsearch.xcontent.XContentType;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -40,9 +38,7 @@ public class ModelSizeInfoTests extends AbstractXContentTestCase<ModelSizeInfo> 
 
     @Override
     protected NamedXContentRegistry xContentRegistry() {
-        List<NamedXContentRegistry.Entry> namedXContent = new ArrayList<>();
-        namedXContent.addAll(new MlModelSizeNamedXContentProvider().getNamedXContentParsers());
-        return new NamedXContentRegistry(namedXContent);
+        return new NamedXContentRegistry(new MlModelSizeNamedXContentProvider().getNamedXContentParsers());
     }
 
     @Override

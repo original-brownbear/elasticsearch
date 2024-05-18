@@ -198,8 +198,7 @@ public class BlockHashRandomizedTests extends ESTestCase {
                 }
 
                 if (false == keys.equals(oracle.keys)) {
-                    List<List<Object>> keyList = new ArrayList<>();
-                    keyList.addAll(keys);
+                    List<List<Object>> keyList = new ArrayList<>(keys);
                     ListMatcher keyMatcher = matchesList();
                     for (List<Object> k : oracle.keys) {
                         keyMatcher = keyMatcher.item(k);

@@ -67,8 +67,7 @@ public class HttpSettings {
     private static final SSLConfigurationSettings SSL = SSLConfigurationSettings.withPrefix(SSL_KEY_PREFIX, true);
 
     public static List<? extends Setting<?>> getSettings() {
-        final ArrayList<Setting<?>> settings = new ArrayList<>();
-        settings.addAll(SSL.getEnabledSettings());
+        final ArrayList<Setting<?>> settings = new ArrayList<>(SSL.getEnabledSettings());
         settings.add(READ_TIMEOUT);
         settings.add(CONNECTION_TIMEOUT);
         settings.add(TCP_KEEPALIVE);

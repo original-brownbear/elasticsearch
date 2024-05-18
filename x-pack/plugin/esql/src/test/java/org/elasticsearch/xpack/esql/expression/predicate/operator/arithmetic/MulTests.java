@@ -31,8 +31,7 @@ public class MulTests extends AbstractFunctionTestCase {
 
     @ParametersFactory
     public static Iterable<Object[]> parameters() {
-        List<TestCaseSupplier> suppliers = new ArrayList<>();
-        suppliers.addAll(
+        List<TestCaseSupplier> suppliers = new ArrayList<>(
             TestCaseSupplier.forBinaryWithWidening(
                 new TestCaseSupplier.NumericTypeTestConfigs<Number>(
                     new TestCaseSupplier.NumericTypeTestConfig<>(-255, 255, (l, r) -> l.intValue() * r.intValue(), "MulIntsEvaluator"),

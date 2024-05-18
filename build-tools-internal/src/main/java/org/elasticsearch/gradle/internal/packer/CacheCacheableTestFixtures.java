@@ -102,8 +102,7 @@ public abstract class CacheCacheableTestFixtures extends DefaultTask {
                 throw new InvalidUserDataException("Missing 'classesDirs' or 'classpath' property.");
             }
 
-            final Set<File> cpElements = new LinkedHashSet<>();
-            cpElements.addAll(classpath.getFiles());
+            final Set<File> cpElements = new LinkedHashSet<>(classpath.getFiles());
             final URL[] urls = new URL[cpElements.size()];
             try {
                 int i = 0;

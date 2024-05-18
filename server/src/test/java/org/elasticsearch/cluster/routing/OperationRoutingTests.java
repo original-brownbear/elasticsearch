@@ -70,8 +70,7 @@ public class OperationRoutingTests extends ESTestCase {
             while ((shard = it.nextOrNull()) != null) {
                 all.add(shard);
             }
-            final Set<ShardRouting> preferred = new HashSet<>();
-            preferred.addAll(all.subList(0, expected.size()));
+            final Set<ShardRouting> preferred = new HashSet<>(all.subList(0, expected.size()));
             // the preferred shards should be at the front of the list
             assertThat(preferred, containsInAnyOrder(expected.toArray()));
             // verify all the shards are there

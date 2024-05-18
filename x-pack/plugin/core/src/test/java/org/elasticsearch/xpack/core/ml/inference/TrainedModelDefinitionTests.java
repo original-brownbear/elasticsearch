@@ -334,9 +334,7 @@ public class TrainedModelDefinitionTests extends AbstractXContentSerializingTest
 
     @Override
     protected NamedWriteableRegistry getNamedWriteableRegistry() {
-        List<NamedWriteableRegistry.Entry> entries = new ArrayList<>();
-        entries.addAll(new MlInferenceNamedXContentProvider().getNamedWriteables());
-        return new NamedWriteableRegistry(entries);
+        return new NamedWriteableRegistry(new MlInferenceNamedXContentProvider().getNamedWriteables());
     }
 
     public void testRamUsageEstimation() {

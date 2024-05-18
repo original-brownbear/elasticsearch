@@ -295,8 +295,7 @@ public abstract class ESIndexLevelReplicationTestCase extends IndexShardTestCase
         public void startPrimary() throws IOException {
             recoverPrimary(primary);
             computeReplicationTargets();
-            HashSet<String> activeIds = new HashSet<>();
-            activeIds.addAll(activeIds());
+            HashSet<String> activeIds = new HashSet<>(activeIds());
             activeIds.add(primary.routingEntry().allocationId().getId());
             ShardRouting startedRoutingEntry = ShardRoutingHelper.moveToStarted(primary.routingEntry());
             IndexShardRoutingTable routingTable = routingTable(shr -> shr == primary.routingEntry() ? startedRoutingEntry : shr);

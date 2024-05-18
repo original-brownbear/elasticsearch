@@ -137,8 +137,7 @@ public class SettingsFilterTests extends ESTestCase {
         settingList.add(Setting.simpleString("bar.baz", Setting.Property.NodeScope));
         settingList.add(Setting.simpleString("baz.foo", Setting.Property.NodeScope));
         settingList.addAll(securityPlugin.getSettings());
-        List<String> settingsFilterList = new ArrayList<>();
-        settingsFilterList.addAll(securityPlugin.getSettingsFilter());
+        List<String> settingsFilterList = new ArrayList<>(securityPlugin.getSettingsFilter());
         // custom settings, potentially added by a plugin
         SettingsModule settingsModule = new SettingsModule(settings, settingList, settingsFilterList);
 

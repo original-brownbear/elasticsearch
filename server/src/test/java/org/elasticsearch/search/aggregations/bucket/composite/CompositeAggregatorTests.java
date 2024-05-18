@@ -171,8 +171,7 @@ public class CompositeAggregatorTests extends AggregatorTestCase {
 
     public void testUnmappedFieldWithTerms() throws Exception {
 
-        final List<Map<String, List<Object>>> dataset = new ArrayList<>();
-        dataset.addAll(
+        final List<Map<String, List<Object>>> dataset = new ArrayList<>(
             Arrays.asList(
                 createDocument("keyword", "a"),
                 createDocument("keyword", "c"),
@@ -329,8 +328,7 @@ public class CompositeAggregatorTests extends AggregatorTestCase {
     }
 
     public void testUnmappedTermsLongAfter() throws Exception {
-        final List<Map<String, List<Object>>> dataset = new ArrayList<>();
-        dataset.addAll(
+        final List<Map<String, List<Object>>> dataset = new ArrayList<>(
             Arrays.asList(
                 createDocument("keyword", "a"),
                 createDocument("keyword", "c"),
@@ -353,9 +351,8 @@ public class CompositeAggregatorTests extends AggregatorTestCase {
     }
 
     public void testUnmappedFieldWithGeopoint() throws Exception {
-        final List<Map<String, List<Object>>> dataset = new ArrayList<>();
         final String mappedFieldName = "geo_point";
-        dataset.addAll(
+        final List<Map<String, List<Object>>> dataset = new ArrayList<>(
             Arrays.asList(
                 createDocument(mappedFieldName, new GeoPoint(48.934059, 41.610741)),
                 createDocument(mappedFieldName, new GeoPoint(-23.065941, 113.610741)),
@@ -427,9 +424,8 @@ public class CompositeAggregatorTests extends AggregatorTestCase {
     }
 
     public void testUnmappedFieldWithHistogram() throws Exception {
-        final List<Map<String, List<Object>>> dataset = new ArrayList<>();
         final String mappedFieldName = "price";
-        dataset.addAll(
+        final List<Map<String, List<Object>>> dataset = new ArrayList<>(
             Arrays.asList(
                 createDocument(mappedFieldName, 103),
                 createDocument(mappedFieldName, 51),
@@ -505,8 +501,7 @@ public class CompositeAggregatorTests extends AggregatorTestCase {
 
     public void testUnmappedFieldWithDateHistogram() throws Exception {
         String mappedFieldName = "date";
-        final List<Map<String, List<Object>>> dataset = new ArrayList<>();
-        dataset.addAll(
+        final List<Map<String, List<Object>>> dataset = new ArrayList<>(
             Arrays.asList(
                 createDocument(mappedFieldName, asLong("2017-10-20T03:08:45")),
                 createDocument(mappedFieldName, asLong("2016-09-20T09:00:34")),
@@ -589,8 +584,7 @@ public class CompositeAggregatorTests extends AggregatorTestCase {
     }
 
     public void testUnmappedFieldWithLongs() throws Exception {
-        final List<Map<String, List<Object>>> dataset = new ArrayList<>();
-        dataset.addAll(
+        final List<Map<String, List<Object>>> dataset = new ArrayList<>(
             Arrays.asList(
                 createDocument("long", 1L),
                 createDocument("long", 3L),
@@ -695,8 +689,7 @@ public class CompositeAggregatorTests extends AggregatorTestCase {
     }
 
     public void testWithKeyword() throws Exception {
-        final List<Map<String, List<Object>>> dataset = new ArrayList<>();
-        dataset.addAll(
+        final List<Map<String, List<Object>>> dataset = new ArrayList<>(
             Arrays.asList(
                 createDocument("keyword", "a"),
                 createDocument("keyword", "c"),
@@ -739,8 +732,7 @@ public class CompositeAggregatorTests extends AggregatorTestCase {
      */
     public void testUsingTestCase() throws Exception {
         TermsValuesSourceBuilder terms = new TermsValuesSourceBuilder("keyword").field("keyword");
-        final List<Map<String, List<Object>>> dataset = new ArrayList<>();
-        dataset.addAll(
+        final List<Map<String, List<Object>>> dataset = new ArrayList<>(
             Arrays.asList(
                 createDocument("keyword", "a"),
                 createDocument("keyword", "c"),
@@ -883,8 +875,7 @@ public class CompositeAggregatorTests extends AggregatorTestCase {
     }
 
     public void testWithKeywordAndMissingBucket() throws Exception {
-        final List<Map<String, List<Object>>> dataset = new ArrayList<>();
-        dataset.addAll(
+        final List<Map<String, List<Object>>> dataset = new ArrayList<>(
             Arrays.asList(
                 createDocument("keyword", "a"),
                 createDocument("long", 0L),
@@ -962,8 +953,7 @@ public class CompositeAggregatorTests extends AggregatorTestCase {
     }
 
     public void testWithKeywordMissingAfter() throws Exception {
-        final List<Map<String, List<Object>>> dataset = new ArrayList<>();
-        dataset.addAll(
+        final List<Map<String, List<Object>>> dataset = new ArrayList<>(
             Arrays.asList(
                 createDocument("keyword", "foo"),
                 createDocument("keyword", "bar"),
@@ -1023,8 +1013,7 @@ public class CompositeAggregatorTests extends AggregatorTestCase {
     }
 
     public void testWithKeywordDesc() throws Exception {
-        final List<Map<String, List<Object>>> dataset = new ArrayList<>();
-        dataset.addAll(
+        final List<Map<String, List<Object>>> dataset = new ArrayList<>(
             Arrays.asList(
                 createDocument("keyword", "a"),
                 createDocument("keyword", "c"),
@@ -1063,8 +1052,7 @@ public class CompositeAggregatorTests extends AggregatorTestCase {
     }
 
     public void testMultiValuedWithKeyword() throws Exception {
-        final List<Map<String, List<Object>>> dataset = new ArrayList<>();
-        dataset.addAll(
+        final List<Map<String, List<Object>>> dataset = new ArrayList<>(
             Arrays.asList(
                 createDocument("keyword", Arrays.asList("a", "b")),
                 createDocument("keyword", Arrays.asList("c", "a")),
@@ -1112,8 +1100,7 @@ public class CompositeAggregatorTests extends AggregatorTestCase {
     }
 
     public void testMultiValuedWithKeywordDesc() throws Exception {
-        final List<Map<String, List<Object>>> dataset = new ArrayList<>();
-        dataset.addAll(
+        final List<Map<String, List<Object>>> dataset = new ArrayList<>(
             Arrays.asList(
                 createDocument("keyword", Arrays.asList("a", "b")),
                 createDocument("keyword", Arrays.asList("c", "a")),
@@ -1159,8 +1146,7 @@ public class CompositeAggregatorTests extends AggregatorTestCase {
     }
 
     public void testMultiValuedWithLong() throws Exception {
-        final List<Map<String, List<Object>>> dataset = new ArrayList<>();
-        dataset.addAll(Arrays.asList(Map.of("long", List.of(10L, 10L))));
+        final List<Map<String, List<Object>>> dataset = new ArrayList<>(Arrays.asList(Map.of("long", List.of(10L, 10L))));
         testSearchCase(
             Arrays.asList(new MatchAllDocsQuery(), new FieldExistsQuery("long")),
             dataset,
@@ -1180,8 +1166,7 @@ public class CompositeAggregatorTests extends AggregatorTestCase {
     }
 
     public void testMultiValuedWithDouble() throws Exception {
-        final List<Map<String, List<Object>>> dataset = new ArrayList<>();
-        dataset.addAll(Arrays.asList(Map.of("double", List.of(10.0d, 10.0d))));
+        final List<Map<String, List<Object>>> dataset = new ArrayList<>(Arrays.asList(Map.of("double", List.of(10.0d, 10.0d))));
         testSearchCase(
             Arrays.asList(new MatchAllDocsQuery(), new FieldExistsQuery("double")),
             dataset,
@@ -1200,8 +1185,7 @@ public class CompositeAggregatorTests extends AggregatorTestCase {
     }
 
     public void testWithKeywordAndLong() throws Exception {
-        final List<Map<String, List<Object>>> dataset = new ArrayList<>();
-        dataset.addAll(
+        final List<Map<String, List<Object>>> dataset = new ArrayList<>(
             Arrays.asList(
                 createDocument("keyword", "a", "long", 100L),
                 createDocument("keyword", "c", "long", 100L),
@@ -1275,8 +1259,7 @@ public class CompositeAggregatorTests extends AggregatorTestCase {
     }
 
     public void testWithKeywordAndLongDesc() throws Exception {
-        final List<Map<String, List<Object>>> dataset = new ArrayList<>();
-        dataset.addAll(
+        final List<Map<String, List<Object>>> dataset = new ArrayList<>(
             Arrays.asList(
                 createDocument("keyword", "a", "long", 100L),
                 createDocument("keyword", "c", "long", 100L),
@@ -1335,8 +1318,7 @@ public class CompositeAggregatorTests extends AggregatorTestCase {
     }
 
     public void testWithKeywordLongAndMissingBucket() throws Exception {
-        final List<Map<String, List<Object>>> dataset = new ArrayList<>();
-        dataset.addAll(
+        final List<Map<String, List<Object>>> dataset = new ArrayList<>(
             Arrays.asList(
                 createDocument("keyword", "a", "long", 100L),
                 createDocument("double", 0d),
@@ -1740,8 +1722,7 @@ public class CompositeAggregatorTests extends AggregatorTestCase {
     }
 
     public void testMultiValuedWithKeywordAndLong() throws Exception {
-        final List<Map<String, List<Object>>> dataset = new ArrayList<>();
-        dataset.addAll(
+        final List<Map<String, List<Object>>> dataset = new ArrayList<>(
             Arrays.asList(
                 createDocument("keyword", Arrays.asList("a", "b", "c"), "long", 100L),
                 createDocument("keyword", "c", "long", Arrays.asList(100L, 0L, 10L)),
@@ -1812,8 +1793,7 @@ public class CompositeAggregatorTests extends AggregatorTestCase {
     }
 
     public void testMultiValuedWithKeywordAndLongDesc() throws Exception {
-        final List<Map<String, List<Object>>> dataset = new ArrayList<>();
-        dataset.addAll(
+        final List<Map<String, List<Object>>> dataset = new ArrayList<>(
             Arrays.asList(
                 createDocument("keyword", Arrays.asList("a", "b", "c"), "long", 100L),
                 createDocument("keyword", "c", "long", Arrays.asList(100L, 0L, 10L)),
@@ -1882,8 +1862,7 @@ public class CompositeAggregatorTests extends AggregatorTestCase {
     }
 
     public void testMultiValuedWithKeywordLongAndDouble() throws Exception {
-        final List<Map<String, List<Object>>> dataset = new ArrayList<>();
-        dataset.addAll(
+        final List<Map<String, List<Object>>> dataset = new ArrayList<>(
             Arrays.asList(
                 createDocument("keyword", Arrays.asList("a", "b", "c"), "long", 100L, "double", 0.4d),
                 createDocument("keyword", "c", "long", Arrays.asList(100L, 0L, 10L), "double", 0.09d),
@@ -1994,8 +1973,7 @@ public class CompositeAggregatorTests extends AggregatorTestCase {
     }
 
     public void testWithDateHistogram() throws IOException {
-        final List<Map<String, List<Object>>> dataset = new ArrayList<>();
-        dataset.addAll(
+        final List<Map<String, List<Object>>> dataset = new ArrayList<>(
             Arrays.asList(
                 createDocument("date", asLong("2017-10-20T03:08:45")),
                 createDocument("date", asLong("2016-09-20T09:00:34")),
@@ -2153,8 +2131,7 @@ public class CompositeAggregatorTests extends AggregatorTestCase {
     }
 
     public void testWithDateTerms() throws IOException {
-        final List<Map<String, List<Object>>> dataset = new ArrayList<>();
-        dataset.addAll(
+        final List<Map<String, List<Object>>> dataset = new ArrayList<>(
             Arrays.asList(
                 createDocument("date", asLong("2017-10-20T03:08:45")),
                 createDocument("date", asLong("2016-09-20T09:00:34")),
@@ -2194,8 +2171,7 @@ public class CompositeAggregatorTests extends AggregatorTestCase {
     }
 
     public void testWithDateHistogramAndFormat() throws IOException {
-        final List<Map<String, List<Object>>> dataset = new ArrayList<>();
-        dataset.addAll(
+        final List<Map<String, List<Object>>> dataset = new ArrayList<>(
             Arrays.asList(
                 createDocument("date", asLong("2017-10-20T03:08:45")),
                 createDocument("date", asLong("2016-09-20T09:00:34")),
@@ -2269,8 +2245,7 @@ public class CompositeAggregatorTests extends AggregatorTestCase {
     }
 
     public void testWithDateHistogramAndKeyword() throws IOException {
-        final List<Map<String, List<Object>>> dataset = new ArrayList<>();
-        dataset.addAll(
+        final List<Map<String, List<Object>>> dataset = new ArrayList<>(
             Arrays.asList(
                 createDocument("date", asLong("2017-10-20T03:08:45"), "keyword", Arrays.asList("a", "c")),
                 createDocument("date", asLong("2016-09-20T09:00:34"), "keyword", Arrays.asList("b", "c")),
@@ -2342,8 +2317,7 @@ public class CompositeAggregatorTests extends AggregatorTestCase {
     }
 
     public void testWithKeywordAndHistogram() throws IOException {
-        final List<Map<String, List<Object>>> dataset = new ArrayList<>();
-        dataset.addAll(
+        final List<Map<String, List<Object>>> dataset = new ArrayList<>(
             Arrays.asList(
                 createDocument("price", 103L, "keyword", Arrays.asList("a", "c")),
                 createDocument("price", 51L, "keyword", Arrays.asList("b", "c")),
@@ -2409,8 +2383,7 @@ public class CompositeAggregatorTests extends AggregatorTestCase {
     }
 
     public void testWithHistogramAndKeyword() throws IOException {
-        final List<Map<String, List<Object>>> dataset = new ArrayList<>();
-        dataset.addAll(
+        final List<Map<String, List<Object>>> dataset = new ArrayList<>(
             Arrays.asList(
                 createDocument("double", 0.4d, "keyword", Arrays.asList("a", "c")),
                 createDocument("double", 0.45d, "keyword", Arrays.asList("b", "c")),
@@ -2481,8 +2454,7 @@ public class CompositeAggregatorTests extends AggregatorTestCase {
     }
 
     public void testWithKeywordAndDateHistogram() throws IOException {
-        final List<Map<String, List<Object>>> dataset = new ArrayList<>();
-        dataset.addAll(
+        final List<Map<String, List<Object>>> dataset = new ArrayList<>(
             Arrays.asList(
                 createDocument("date", asLong("2017-10-20T03:08:45"), "keyword", Arrays.asList("a", "c")),
                 createDocument("date", asLong("2016-09-20T09:00:34"), "keyword", Arrays.asList("b", "c")),
@@ -2548,8 +2520,7 @@ public class CompositeAggregatorTests extends AggregatorTestCase {
     }
 
     public void testWithKeywordAndTopHits() throws Exception {
-        final List<Map<String, List<Object>>> dataset = new ArrayList<>();
-        dataset.addAll(
+        final List<Map<String, List<Object>>> dataset = new ArrayList<>(
             Arrays.asList(
                 createDocument("keyword", "a"),
                 createDocument("keyword", "c"),
@@ -2626,8 +2597,7 @@ public class CompositeAggregatorTests extends AggregatorTestCase {
             );
         }
 
-        final List<Map<String, List<Object>>> dataset = new ArrayList<>();
-        dataset.addAll(
+        final List<Map<String, List<Object>>> dataset = new ArrayList<>(
             Arrays.asList(
                 createDocument("keyword", "a", "terms", "a", "long", 50L),
                 createDocument("keyword", "c", "terms", "d", "long", 78L),
@@ -2784,8 +2754,7 @@ public class CompositeAggregatorTests extends AggregatorTestCase {
     }
 
     public void testWithIP() throws Exception {
-        final List<Map<String, List<Object>>> dataset = new ArrayList<>();
-        dataset.addAll(
+        final List<Map<String, List<Object>>> dataset = new ArrayList<>(
             Arrays.asList(
                 createDocument("ip", InetAddress.getByName("127.0.0.1")),
                 createDocument("ip", InetAddress.getByName("192.168.0.1")),
@@ -2824,8 +2793,7 @@ public class CompositeAggregatorTests extends AggregatorTestCase {
     }
 
     public void testWithGeoPoint() throws Exception {
-        final List<Map<String, List<Object>>> dataset = new ArrayList<>();
-        dataset.addAll(
+        final List<Map<String, List<Object>>> dataset = new ArrayList<>(
             Arrays.asList(
                 createDocument("geo_point", new GeoPoint(48.934059, 41.610741)),
                 createDocument("geo_point", new GeoPoint(-23.065941, 113.610741)),
@@ -2860,8 +2828,7 @@ public class CompositeAggregatorTests extends AggregatorTestCase {
     }
 
     public void testWithTsid() throws Exception {
-        final List<Map<String, List<Object>>> dataset = new ArrayList<>();
-        dataset.addAll(
+        final List<Map<String, List<Object>>> dataset = new ArrayList<>(
             Arrays.asList(
                 createDocument("_tsid", createTsid(Map.of("dim1", "foo", "dim2", 200))),
                 createDocument("_tsid", createTsid(Map.of("dim1", "foo", "dim2", 100))),
@@ -2906,8 +2873,7 @@ public class CompositeAggregatorTests extends AggregatorTestCase {
     }
 
     public void testWithTsidAndDateHistogram() throws IOException {
-        final List<Map<String, List<Object>>> dataset = new ArrayList<>();
-        dataset.addAll(
+        final List<Map<String, List<Object>>> dataset = new ArrayList<>(
             Arrays.asList(
                 createDocument("date", asLong("2021-10-20T03:08:45"), "_tsid", createTsid(Map.of("dim1", "foo", "dim2", 200))),
                 createDocument("date", asLong("2021-09-20T09:00:34"), "_tsid", createTsid(Map.of("dim1", "foo", "dim2", 200))),
@@ -2968,8 +2934,7 @@ public class CompositeAggregatorTests extends AggregatorTestCase {
     }
 
     public void testEarlyTermination() throws Exception {
-        final List<Map<String, List<Object>>> dataset = new ArrayList<>();
-        dataset.addAll(
+        final List<Map<String, List<Object>>> dataset = new ArrayList<>(
             Arrays.asList(
                 createDocument("keyword", "a", "long", 100L, "foo", "bar"),
                 createDocument("keyword", "c", "long", 100L, "foo", "bar"),
@@ -3029,8 +2994,7 @@ public class CompositeAggregatorTests extends AggregatorTestCase {
     }
 
     public void testIndexSortWithDuplicate() throws Exception {
-        final List<Map<String, List<Object>>> dataset = new ArrayList<>();
-        dataset.addAll(
+        final List<Map<String, List<Object>>> dataset = new ArrayList<>(
             Arrays.asList(
                 createDocument("date", asLong("2020-06-03T00:53:10"), "keyword", "37640"),
                 createDocument("date", asLong("2020-06-03T00:55:10"), "keyword", "90640"),

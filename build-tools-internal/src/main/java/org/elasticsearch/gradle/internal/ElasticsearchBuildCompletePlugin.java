@@ -73,8 +73,7 @@ public abstract class ElasticsearchBuildCompletePlugin implements Plugin<Project
                 spec.getParameters().getProjectDir().set(projectDir);
                 spec.getParameters().getFilteredFiles().addAll(getFlowProviders().getBuildWorkResult().map((result) -> {
                     System.out.println("Build Finished Action: Collecting archive files...");
-                    List<File> files = new ArrayList<>();
-                    files.addAll(resolveProjectLogs(projectDir));
+                    List<File> files = new ArrayList<>(resolveProjectLogs(projectDir));
                     if (files.isEmpty() == false) {
                         files.addAll(resolveDaemonLogs(daemonsLogDir));
                         files.addAll(getFileOperations().fileTree(gradleWorkersDir).getFiles());

@@ -62,8 +62,7 @@ public final class SessionFactorySettings {
     private SessionFactorySettings() {}
 
     public static Set<Setting.AffixSetting<?>> getSettings(String realmType) {
-        Set<Setting.AffixSetting<?>> settings = new HashSet<>();
-        settings.addAll(LdapLoadBalancingSettings.getSettings(realmType));
+        Set<Setting.AffixSetting<?>> settings = new HashSet<>(LdapLoadBalancingSettings.getSettings(realmType));
         settings.add(URLS_SETTING.apply(realmType));
         settings.add(TIMEOUT_TCP_CONNECTION_SETTING.apply(realmType));
         settings.add(TIMEOUT_TCP_READ_SETTING.apply(realmType));

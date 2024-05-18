@@ -229,8 +229,7 @@ public abstract class InternalAggregationTestCase<T extends InternalAggregation>
         int size = between(1, 200);
         BuilderAndToReduce<T> inputs = randomResultsToReduce(name, size);
         assertThat(inputs.toReduce(), hasSize(size));
-        List<InternalAggregation> toReduce = new ArrayList<>();
-        toReduce.addAll(inputs.toReduce());
+        List<InternalAggregation> toReduce = new ArrayList<>(inputs.toReduce());
         ScriptService mockScriptService = mockScriptService();
         MockBigArrays bigArrays = new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), new NoneCircuitBreakerService());
         if (randomBoolean() && toReduce.size() > 1) {

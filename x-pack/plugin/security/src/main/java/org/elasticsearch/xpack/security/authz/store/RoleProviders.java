@@ -83,8 +83,7 @@ public class RoleProviders {
             return builtInRoleProviders;
         }
 
-        final List<BiConsumer<Set<String>, ActionListener<RoleRetrievalResult>>> providers = new ArrayList<>();
-        providers.addAll(builtInRoleProviders);
+        final List<BiConsumer<Set<String>, ActionListener<RoleRetrievalResult>>> providers = new ArrayList<>(builtInRoleProviders);
 
         final XPackLicenseState fixedLicenseState = this.licenseState.copyCurrentLicenseState();
         this.customRoleProviders.forEach((name, customProviders) -> {

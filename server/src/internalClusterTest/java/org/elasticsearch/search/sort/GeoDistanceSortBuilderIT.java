@@ -199,8 +199,7 @@ public class GeoDistanceSortBuilderIT extends ESIntegTestCase {
     }
 
     protected void createShuffeldJSONArray(XContentBuilder builder, GeoPoint[] pointsArray) throws IOException {
-        List<GeoPoint> points = new ArrayList<>();
-        points.addAll(Arrays.asList(pointsArray));
+        List<GeoPoint> points = new ArrayList<>(Arrays.asList(pointsArray));
         builder.startObject();
         builder.startArray(LOCATION_FIELD);
         int numPoints = points.size();

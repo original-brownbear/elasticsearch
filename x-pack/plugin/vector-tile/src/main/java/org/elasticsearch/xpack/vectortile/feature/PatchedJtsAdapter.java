@@ -137,7 +137,6 @@ final class PatchedJtsAdapter {
             for (int i = 0; i < geom.getNumGeometries(); ++i) {
 
                 final Polygon nextPoly = (Polygon) geom.getGeometryN(i);
-                final List<Integer> nextPolyGeom = new ArrayList<>();
                 boolean valid = true;
 
                 // Add exterior ring
@@ -158,7 +157,7 @@ final class PatchedJtsAdapter {
                     CoordinateArrays.reverse(exteriorRing.getCoordinates());
                 }
 
-                nextPolyGeom.addAll(linesToGeomCmds(exteriorRing, mvtClosePath, cursor, 2));
+                final List<Integer> nextPolyGeom = new ArrayList<>(linesToGeomCmds(exteriorRing, mvtClosePath, cursor, 2));
 
                 // Add interior rings
                 for (int ringIndex = 0; ringIndex < nextPoly.getNumInteriorRing(); ++ringIndex) {

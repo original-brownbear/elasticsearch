@@ -596,8 +596,7 @@ public class PkiRealmTests extends ESTestCase {
             .put("xpack.security.authc.realms.pki.pki1.truststore.path", "/foo/bar")
             .put("xpack.security.authc.realms.pki.pki1.truststore.password", "supersecret")
             .build();
-        List<Setting<?>> settingList = new ArrayList<>();
-        settingList.addAll(InternalRealmsSettings.getSettings());
+        List<Setting<?>> settingList = new ArrayList<>(InternalRealmsSettings.getSettings());
         ClusterSettings clusterSettings = new ClusterSettings(settings, new HashSet<>(settingList));
         clusterSettings.validate(settings, true);
 

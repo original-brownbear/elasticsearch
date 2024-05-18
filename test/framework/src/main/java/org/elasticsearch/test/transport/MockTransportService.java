@@ -303,9 +303,8 @@ public class MockTransportService extends TransportService {
     }
 
     private static TransportAddress[] extractTransportAddresses(TransportService transportService) {
-        HashSet<TransportAddress> transportAddresses = new HashSet<>();
         BoundTransportAddress boundTransportAddress = transportService.boundAddress();
-        transportAddresses.addAll(Arrays.asList(boundTransportAddress.boundAddresses()));
+        HashSet<TransportAddress> transportAddresses = new HashSet<>(Arrays.asList(boundTransportAddress.boundAddresses()));
         transportAddresses.add(boundTransportAddress.publishAddress());
         return transportAddresses.toArray(new TransportAddress[transportAddresses.size()]);
     }

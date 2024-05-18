@@ -24,8 +24,7 @@ public final class HttpResponse {
 
     public HttpResponse(final int httpStatus, final Map<String, Object> responseBody) {
         this.httpStatus = httpStatus;
-        Map<String, Object> response = new HashMap<>();
-        response.putAll(responseBody);
+        Map<String, Object> response = new HashMap<>(responseBody);
         this.responseBody = Collections.unmodifiableMap(response);
     }
 

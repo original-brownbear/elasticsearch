@@ -214,8 +214,7 @@ public class RandomExceptionCircuitBreakerIT extends ESIntegTestCase {
         public static class TestPlugin extends MockEngineFactoryPlugin {
             @Override
             public List<Setting<?>> getSettings() {
-                List<Setting<?>> settings = new ArrayList<>();
-                settings.addAll(super.getSettings());
+                List<Setting<?>> settings = new ArrayList<>(super.getSettings());
                 settings.add(EXCEPTION_TOP_LEVEL_RATIO_SETTING);
                 settings.add(EXCEPTION_LOW_LEVEL_RATIO_SETTING);
                 return settings;

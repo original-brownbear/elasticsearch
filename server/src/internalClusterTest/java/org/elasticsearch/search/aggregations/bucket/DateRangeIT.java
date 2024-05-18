@@ -84,8 +84,7 @@ public class DateRangeIT extends ESIntegTestCase {
 
         numDocs = randomIntBetween(7, 20);
 
-        List<IndexRequestBuilder> docs = new ArrayList<>();
-        docs.addAll(
+        List<IndexRequestBuilder> docs = new ArrayList<>(
             Arrays.asList(
                 indexDoc(1, 2, 1),  // Jan 2
                 indexDoc(2, 2, 2),  // Feb 2

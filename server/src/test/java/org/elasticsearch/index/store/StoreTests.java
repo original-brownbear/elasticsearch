@@ -952,8 +952,7 @@ public class StoreTests extends ESTestCase {
         InputStreamStreamInput in = new InputStreamStreamInput(inBuffer);
         in.setTransportVersion(targetVersion);
         Store.MetadataSnapshot inMetadataSnapshot = Store.MetadataSnapshot.readFrom(in);
-        Map<String, StoreFileMetadata> origEntries = new HashMap<>();
-        origEntries.putAll(outMetadataSnapshot.fileMetadataMap());
+        Map<String, StoreFileMetadata> origEntries = new HashMap<>(outMetadataSnapshot.fileMetadataMap());
         for (Map.Entry<String, StoreFileMetadata> entry : inMetadataSnapshot.fileMetadataMap().entrySet()) {
             assertThat(entry.getValue().name(), equalTo(origEntries.remove(entry.getKey()).name()));
         }

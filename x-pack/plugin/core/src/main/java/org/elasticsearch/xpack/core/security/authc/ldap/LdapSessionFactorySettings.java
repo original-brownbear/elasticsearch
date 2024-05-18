@@ -25,8 +25,7 @@ public final class LdapSessionFactorySettings {
     );
 
     public static Set<Setting.AffixSetting<?>> getSettings() {
-        Set<Setting.AffixSetting<?>> settings = new HashSet<>();
-        settings.addAll(SessionFactorySettings.getSettings(LDAP_TYPE));
+        Set<Setting.AffixSetting<?>> settings = new HashSet<>(SessionFactorySettings.getSettings(LDAP_TYPE));
         settings.add(USER_DN_TEMPLATES_SETTING);
         return settings;
     }

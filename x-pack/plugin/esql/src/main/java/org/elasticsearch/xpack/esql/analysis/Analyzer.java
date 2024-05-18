@@ -515,13 +515,13 @@ public class Analyzer extends ParameterizedRuleExecutor<LogicalPlan, AnalyzerCon
          * row foo = 1, bar = 2 | keep bar*, foo, *   ->  bar, foo
          */
         private LogicalPlan resolveKeep(Project p, List<Attribute> childOutput) {
-            List<NamedExpression> resolvedProjections = new ArrayList<>();
+            List<NamedExpression> resolvedProjections;
             var projections = p.projections();
             // start with projections
 
             // no projection specified or just *
             if (projections.isEmpty() || (projections.size() == 1 && projections.get(0) instanceof UnresolvedStar)) {
-                resolvedProjections.addAll(childOutput);
+                resolvedProjections = new ArrayList<>(childOutput);
             }
             // otherwise resolve them
             else {

@@ -54,8 +54,7 @@ public class Headers {
             if (v == null) {
                 return Collections.singletonList(value);
             } else {
-                List<String> list = new ArrayList<>();
-                list.addAll(v);
+                List<String> list = new ArrayList<>(v);
                 list.add(value);
                 return list;
             }

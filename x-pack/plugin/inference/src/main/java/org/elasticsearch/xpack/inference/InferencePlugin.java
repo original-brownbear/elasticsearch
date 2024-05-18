@@ -198,9 +198,7 @@ public class InferencePlugin extends Plugin implements ActionPlugin, ExtensibleP
 
     @Override
     public List<NamedWriteableRegistry.Entry> getNamedWriteables() {
-        var entries = new ArrayList<NamedWriteableRegistry.Entry>();
-        entries.addAll(InferenceNamedWriteablesProvider.getNamedWriteables());
-        return entries;
+        return new ArrayList<>(InferenceNamedWriteablesProvider.getNamedWriteables());
     }
 
     @Override

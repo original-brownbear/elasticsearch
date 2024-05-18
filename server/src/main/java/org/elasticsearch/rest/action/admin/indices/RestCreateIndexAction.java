@@ -91,8 +91,7 @@ public class RestCreateIndexAction extends BaseRestHandler {
         Map<String, Object> mappings = (Map<String, Object>) source.get("mappings");
 
         if (includeTypeName && mappings != null && mappings.size() == 1) {
-            Map<String, Object> newSource = new HashMap<>();
-            newSource.putAll(source); // mappings will be overridden. Aliases, settings stay the same
+            Map<String, Object> newSource = new HashMap<>(source); // mappings will be overridden. Aliases, settings stay the same
             String typeName = mappings.keySet().iterator().next();
             if (Strings.hasText(typeName) == false) {
                 throw new IllegalArgumentException("name cannot be empty string");

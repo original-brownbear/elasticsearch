@@ -277,20 +277,15 @@ public abstract class AnalysisFactoryTestCase extends ESTestCase {
     }
 
     public void testTokenizers() {
-        Set<String> missing = new TreeSet<String>();
-        missing.addAll(
-            org.apache.lucene.analysis.TokenizerFactory.availableTokenizers()
-                .stream()
-                .map(key -> key.toLowerCase(Locale.ROOT))
-                .collect(Collectors.toSet())
+        Set<String> missing = new TreeSet<String>(
+            TokenizerFactory.availableTokenizers().stream().map(key -> key.toLowerCase(Locale.ROOT)).collect(Collectors.toSet())
         );
         missing.removeAll(getTokenizers().keySet());
         assertTrue("new tokenizers found, please update KNOWN_TOKENIZERS: " + missing.toString(), missing.isEmpty());
     }
 
     public void testCharFilters() {
-        Set<String> missing = new TreeSet<String>();
-        missing.addAll(
+        Set<String> missing = new TreeSet<String>(
             org.apache.lucene.analysis.CharFilterFactory.availableCharFilters()
                 .stream()
                 .map(key -> key.toLowerCase(Locale.ROOT))
@@ -301,12 +296,8 @@ public abstract class AnalysisFactoryTestCase extends ESTestCase {
     }
 
     public void testTokenFilters() {
-        Set<String> missing = new TreeSet<>();
-        missing.addAll(
-            org.apache.lucene.analysis.TokenFilterFactory.availableTokenFilters()
-                .stream()
-                .map(key -> key.toLowerCase(Locale.ROOT))
-                .collect(Collectors.toSet())
+        Set<String> missing = new TreeSet<>(
+            TokenFilterFactory.availableTokenFilters().stream().map(key -> key.toLowerCase(Locale.ROOT)).collect(Collectors.toSet())
         );
         missing.removeAll(getTokenFilters().keySet());
         assertTrue("new tokenfilters found, please update KNOWN_TOKENFILTERS: " + missing, missing.isEmpty());

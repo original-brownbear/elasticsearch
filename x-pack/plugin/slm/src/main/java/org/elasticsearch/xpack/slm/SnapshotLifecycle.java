@@ -185,23 +185,19 @@ public class SnapshotLifecycle extends Plugin implements ActionPlugin, HealthPlu
         Supplier<DiscoveryNodes> nodesInCluster,
         Predicate<NodeFeature> clusterSupportsFeature
     ) {
-        List<RestHandler> handlers = new ArrayList<>();
 
-        handlers.addAll(
-            Arrays.asList(
-                // add SLM rest headers
-                new RestPutSnapshotLifecycleAction(),
-                new RestDeleteSnapshotLifecycleAction(),
-                new RestGetSnapshotLifecycleAction(),
-                new RestExecuteSnapshotLifecycleAction(),
-                new RestGetSnapshotLifecycleStatsAction(),
-                new RestExecuteSnapshotRetentionAction(),
-                new RestStopSLMAction(),
-                new RestStartSLMAction(),
-                new RestGetSLMStatusAction()
-            )
+        return List.of(
+            // add SLM rest headers
+            new RestPutSnapshotLifecycleAction(),
+            new RestDeleteSnapshotLifecycleAction(),
+            new RestGetSnapshotLifecycleAction(),
+            new RestExecuteSnapshotLifecycleAction(),
+            new RestGetSnapshotLifecycleStatsAction(),
+            new RestExecuteSnapshotRetentionAction(),
+            new RestStopSLMAction(),
+            new RestStartSLMAction(),
+            new RestGetSLMStatusAction()
         );
-        return handlers;
     }
 
     @Override

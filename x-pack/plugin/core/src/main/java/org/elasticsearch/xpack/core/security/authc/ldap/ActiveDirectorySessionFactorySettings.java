@@ -109,8 +109,7 @@ public final class ActiveDirectorySessionFactorySettings {
     private ActiveDirectorySessionFactorySettings() {}
 
     public static Set<Setting.AffixSetting<?>> getSettings() {
-        Set<Setting.AffixSetting<?>> settings = new HashSet<>();
-        settings.addAll(SessionFactorySettings.getSettings(AD_TYPE));
+        Set<Setting.AffixSetting<?>> settings = new HashSet<>(SessionFactorySettings.getSettings(AD_TYPE));
         settings.add(AD_DOMAIN_NAME_SETTING.apply(AD_TYPE));
         settings.add(RealmSettings.simpleString(AD_TYPE, AD_GROUP_SEARCH_BASEDN_SETTING, Setting.Property.NodeScope));
         settings.add(RealmSettings.simpleString(AD_TYPE, AD_GROUP_SEARCH_SCOPE_SETTING, Setting.Property.NodeScope));

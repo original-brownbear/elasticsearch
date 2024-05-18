@@ -311,8 +311,7 @@ public final class TermsSetQueryBuilder extends AbstractQueryBuilder<TermsSetQue
             longValuesSource = new FieldValuesSource(fieldData);
         } else if (minimumShouldMatchScript != null) {
             TermsSetQueryScript.Factory factory = context.compile(minimumShouldMatchScript, TermsSetQueryScript.CONTEXT);
-            Map<String, Object> params = new HashMap<>();
-            params.putAll(minimumShouldMatchScript.getParams());
+            Map<String, Object> params = new HashMap<>(minimumShouldMatchScript.getParams());
             params.put("num_terms", values.size());
             longValuesSource = new ScriptLongValueSource(minimumShouldMatchScript, factory.newFactory(params, context.lookup()));
         } else {

@@ -26,8 +26,7 @@ public class SearchSortValuesAndFormatsTests extends AbstractWireSerializingTest
     @Before
     public void initRegistry() {
         SearchModule searchModule = new SearchModule(Settings.EMPTY, Collections.emptyList());
-        List<NamedWriteableRegistry.Entry> entries = new ArrayList<>();
-        entries.addAll(searchModule.getNamedWriteables());
+        List<NamedWriteableRegistry.Entry> entries = new ArrayList<>(searchModule.getNamedWriteables());
         namedWriteableRegistry = new NamedWriteableRegistry(entries);
     }
 

@@ -754,8 +754,7 @@ public class TopNOperatorTests extends OperatorTestCase {
     }
 
     public void testTopNWithSortingOnSameField_DESC_then_ASC_long() {
-        List<Object> expectedValues = new ArrayList<>();
-        expectedValues.addAll(
+        List<Object> expectedValues = new ArrayList<>(
             List.of(
                 List.of(5000L, 1000L, 7000L),
                 List.of(17L, -1L, -5L, 0L, 4L),
@@ -778,8 +777,7 @@ public class TopNOperatorTests extends OperatorTestCase {
     }
 
     public void testTopNWithSortingOnSameField_DESC_then_ASC_double() {
-        List<Object> expectedValues = new ArrayList<>();
-        expectedValues.addAll(
+        List<Object> expectedValues = new ArrayList<>(
             List.of(
                 100d,
                 List.of(63d, -61d, -62.123d),
@@ -841,8 +839,7 @@ public class TopNOperatorTests extends OperatorTestCase {
     }
 
     public void testTopNWithSortingOnSameField_ASC_then_DESC_long() {
-        List<Object> expectedValues = new ArrayList<>();
-        expectedValues.addAll(
+        List<Object> expectedValues = new ArrayList<>(
             List.of(
                 -10000L,
                 List.of(17L, -1L, -5L, 0L, 4L),
@@ -865,8 +862,7 @@ public class TopNOperatorTests extends OperatorTestCase {
     }
 
     public void testTopNWithSortingOnSameField_ASC_then_DESC_double() {
-        List<Object> expectedValues = new ArrayList<>();
-        expectedValues.addAll(
+        List<Object> expectedValues = new ArrayList<>(
             List.of(
                 List.of(63d, -61d, -62.123d),
                 List.of(1d, 5d, -1d, -0.01d, -5d),

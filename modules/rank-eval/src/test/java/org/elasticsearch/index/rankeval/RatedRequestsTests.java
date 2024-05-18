@@ -176,8 +176,7 @@ public class RatedRequestsTests extends ESTestCase {
                     evaluationRequest.query(new MatchAllQueryBuilder());
                 } else {
                     if (randomBoolean()) {
-                        Map<String, Object> mutated = new HashMap<>();
-                        mutated.putAll(params);
+                        Map<String, Object> mutated = new HashMap<>(params);
                         mutated.put("one_more_key", "one_more_value");
                         params = mutated;
                     } else {

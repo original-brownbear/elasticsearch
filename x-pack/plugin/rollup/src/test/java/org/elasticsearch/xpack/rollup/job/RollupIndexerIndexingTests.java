@@ -98,8 +98,9 @@ public class RollupIndexerIndexingTests extends AggregatorTestCase {
         String field = "the_histo";
         DateHistogramGroupConfig dateHistoConfig = new FixedInterval(field, new DateHistogramInterval("1ms"));
         RollupJobConfig job = createJob(rollupIndex, new GroupConfig(dateHistoConfig), Collections.emptyList());
-        final List<Map<String, Object>> dataset = new ArrayList<>();
-        dataset.addAll(Arrays.asList(asMap("the_histo", 7L), asMap("the_histo", 3L), asMap("the_histo", 3L)));
+        final List<Map<String, Object>> dataset = new ArrayList<>(
+            Arrays.asList(asMap("the_histo", 7L), asMap("the_histo", 3L), asMap("the_histo", 3L))
+        );
         executeTestCase(dataset, job, System.currentTimeMillis(), (resp) -> {
             assertThat(resp.size(), equalTo(2));
             IndexRequest request = resp.get(0);
@@ -153,8 +154,7 @@ public class RollupIndexerIndexingTests extends AggregatorTestCase {
         DateHistogramGroupConfig dateHistoConfig = new CalendarInterval(field, new DateHistogramInterval("1h"));
         MetricConfig config = new MetricConfig("counter", Arrays.asList("avg", "sum", "max", "min"));
         RollupJobConfig job = createJob(rollupIndex, new GroupConfig(dateHistoConfig), Collections.singletonList(config));
-        final List<Map<String, Object>> dataset = new ArrayList<>();
-        dataset.addAll(
+        final List<Map<String, Object>> dataset = new ArrayList<>(
             Arrays.asList(
                 asMap("the_histo", asLong("2015-03-31T03:00:00.000Z"), "counter", 10),
                 asMap("the_histo", asLong("2015-03-31T03:20:00.000Z"), "counter", 20),
@@ -344,9 +344,8 @@ public class RollupIndexerIndexingTests extends AggregatorTestCase {
             null
         );
         RollupJobConfig job = createJob(rollupIndex, new GroupConfig(dateHistoConfig), Collections.emptyList());
-        final List<Map<String, Object>> dataset = new ArrayList<>();
         long now = System.currentTimeMillis();
-        dataset.addAll(
+        final List<Map<String, Object>> dataset = new ArrayList<>(
             Arrays.asList(
                 asMap("the_histo", now - TimeValue.timeValueHours(5).getMillis()),
                 asMap("the_histo", now - TimeValue.timeValueHours(5).getMillis()),
@@ -439,9 +438,8 @@ public class RollupIndexerIndexingTests extends AggregatorTestCase {
             null
         );
         RollupJobConfig job = createJob(rollupIndex, new GroupConfig(dateHistoConfig), Collections.emptyList());
-        final List<Map<String, Object>> dataset = new ArrayList<>();
         long now = asLong("2015-04-01T10:30:00.000Z");
-        dataset.addAll(
+        final List<Map<String, Object>> dataset = new ArrayList<>(
             Arrays.asList(
                 asMap("the_histo", now - TimeValue.timeValueMinutes(135).getMillis()),
                 asMap("the_histo", now - TimeValue.timeValueMinutes(120).getMillis()),
@@ -504,9 +502,8 @@ public class RollupIndexerIndexingTests extends AggregatorTestCase {
     }
 
     public void testSimpleDateHistoWithTimeZone() throws Exception {
-        final List<Map<String, Object>> dataset = new ArrayList<>();
         long now = asLong("2015-04-01T10:00:00.000Z");
-        dataset.addAll(
+        final List<Map<String, Object>> dataset = new ArrayList<>(
             Arrays.asList(
                 asMap("the_histo", now - TimeValue.timeValueHours(10).getMillis()),
                 asMap("the_histo", now - TimeValue.timeValueHours(8).getMillis()),

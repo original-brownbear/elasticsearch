@@ -78,8 +78,7 @@ public class WatcherUtilsTests extends ESTestCase {
         expected.put("key2", 1);
         expected.put("key3", 1.4);
         expected.put("key4", Arrays.asList("a", "b", "c"));
-        Map<String, Object> otherMap = new HashMap<>();
-        otherMap.putAll(expected);
+        Map<String, Object> otherMap = new HashMap<>(expected);
         expected.put("key5", otherMap);
         ToXContentObject content = (builder, params) -> {
             builder.startObject();

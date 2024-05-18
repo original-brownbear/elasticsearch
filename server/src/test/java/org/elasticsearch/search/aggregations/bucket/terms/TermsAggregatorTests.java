@@ -912,8 +912,7 @@ public class TermsAggregatorTests extends AggregatorTestCase {
                 }
                 try (DirectoryReader indexReader = maybeWrapReaderEs(indexWriter.getReader())) {
                     boolean order = randomBoolean();
-                    List<Map.Entry<T, Integer>> expectedBuckets = new ArrayList<>();
-                    expectedBuckets.addAll(counts.entrySet());
+                    List<Map.Entry<T, Integer>> expectedBuckets = new ArrayList<>(counts.entrySet());
                     BucketOrder bucketOrder;
                     Comparator<Map.Entry<T, Integer>> comparator;
                     if (randomBoolean()) {
@@ -1007,15 +1006,13 @@ public class TermsAggregatorTests extends AggregatorTestCase {
         try (Directory directory = newDirectory()) {
             try (RandomIndexWriter indexWriter = new RandomIndexWriter(random(), directory)) {
                 for (Map.Entry<T, Long> entry : counts.entrySet()) {
-                    List<IndexableField> document = new ArrayList<>();
-                    document.addAll(luceneFieldFactory.apply(entry.getKey()));
+                    List<IndexableField> document = new ArrayList<>(luceneFieldFactory.apply(entry.getKey()));
                     document.add(new NumericDocValuesField("value", entry.getValue()));
                     indexWriter.addDocument(document);
                 }
                 try (DirectoryReader indexReader = maybeWrapReaderEs(indexWriter.getReader())) {
                     boolean order = randomBoolean();
-                    List<Map.Entry<T, Long>> expectedBuckets = new ArrayList<>();
-                    expectedBuckets.addAll(counts.entrySet());
+                    List<Map.Entry<T, Long>> expectedBuckets = new ArrayList<>(counts.entrySet());
                     BucketOrder bucketOrder = BucketOrder.aggregation("_max", order);
                     Comparator<Map.Entry<T, Long>> comparator = Comparator.comparing(Map.Entry::getValue, Long::compareTo);
                     if (order == false) {

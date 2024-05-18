@@ -471,8 +471,7 @@ public class TransportGetUsersActionTests extends ESTestCase {
             }
         });
 
-        final List<User> expectedList = new ArrayList<>();
-        expectedList.addAll(storeUsers);
+        final List<User> expectedList = new ArrayList<>(storeUsers);
 
         assertThat(throwableRef.get(), is(nullValue()));
         assertThat(responseRef.get(), is(notNullValue()));

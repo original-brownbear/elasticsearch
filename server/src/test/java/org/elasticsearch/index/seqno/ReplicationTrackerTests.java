@@ -83,10 +83,9 @@ public class ReplicationTrackerTests extends ReplicationTrackerTestCase {
 
     public void testGlobalCheckpointUpdate() {
         final long initialClusterStateVersion = randomNonNegativeLong();
-        Map<AllocationId, Long> allocations = new HashMap<>();
         Map<AllocationId, Long> activeWithCheckpoints = randomAllocationsWithLocalCheckpoints(1, 5);
         Set<AllocationId> active = new HashSet<>(activeWithCheckpoints.keySet());
-        allocations.putAll(activeWithCheckpoints);
+        Map<AllocationId, Long> allocations = new HashMap<>(activeWithCheckpoints);
         Map<AllocationId, Long> initializingWithCheckpoints = randomAllocationsWithLocalCheckpoints(0, 5);
         Set<AllocationId> initializing = new HashSet<>(initializingWithCheckpoints.keySet());
         allocations.putAll(initializingWithCheckpoints);
@@ -297,12 +296,11 @@ public class ReplicationTrackerTests extends ReplicationTrackerTestCase {
         final Map<AllocationId, Long> initializingToBeRemoved = randomAllocationsWithLocalCheckpoints(1, 5);
         final Set<AllocationId> active = Sets.union(activeToStay.keySet(), activeToBeRemoved.keySet());
         final Set<AllocationId> initializing = Sets.union(initializingToStay.keySet(), initializingToBeRemoved.keySet());
-        final Map<AllocationId, Long> allocations = new HashMap<>();
         final AllocationId primaryId = active.iterator().next();
         if (activeToBeRemoved.containsKey(primaryId)) {
             activeToStay.put(primaryId, activeToBeRemoved.remove(primaryId));
         }
-        allocations.putAll(activeToStay);
+        final Map<AllocationId, Long> allocations = new HashMap<>(activeToStay);
         if (randomBoolean()) {
             allocations.putAll(activeToBeRemoved);
         }

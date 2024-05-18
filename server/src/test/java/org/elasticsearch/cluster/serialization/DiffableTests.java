@@ -231,8 +231,7 @@ public class DiffableTests extends ESTestCase {
             T beforeMap = createMap(before);
 
             logger.debug("--> creating 'after' map");
-            Map<Integer, V> after = new HashMap<>();
-            after.putAll(before);
+            Map<Integer, V> after = new HashMap<>(before);
             for (Integer key : keysToRemove) {
                 after.remove(key);
             }

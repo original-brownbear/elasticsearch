@@ -29,8 +29,7 @@ public class IndicesStoreTests extends ESTestCase {
     private static final ShardRoutingState[] NOT_STARTED_STATES;
 
     static {
-        Set<ShardRoutingState> set = new HashSet<>();
-        set.addAll(Arrays.asList(ShardRoutingState.values()));
+        Set<ShardRoutingState> set = new HashSet<>(Arrays.asList(ShardRoutingState.values()));
         set.remove(ShardRoutingState.STARTED);
         NOT_STARTED_STATES = set.toArray(new ShardRoutingState[set.size()]);
     }

@@ -73,8 +73,7 @@ public class OldElasticsearch {
         Path bin = esDir.resolve("bin").resolve("elasticsearch" + (Constants.WINDOWS ? ".bat" : ""));
         Path config = esDir.resolve("config").resolve("elasticsearch.yml");
 
-        List<String> configOptions = new ArrayList<>();
-        configOptions.addAll(Arrays.asList("http.port: 0", "transport.tcp.port: 0", "network.host: 127.0.0.1"));
+        List<String> configOptions = new ArrayList<>(Arrays.asList("http.port: 0", "transport.tcp.port: 0", "network.host: 127.0.0.1"));
         if (args.length > 3) {
             for (int i = 3; i < args.length; i++) {
                 configOptions.add(args[i]);

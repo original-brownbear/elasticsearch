@@ -77,8 +77,7 @@ public class GeoDistanceIT extends ESIntegTestCase {
 
         createIndex("idx_unmapped");
 
-        List<IndexRequestBuilder> cities = new ArrayList<>();
-        cities.addAll(
+        List<IndexRequestBuilder> cities = new ArrayList<>(
             Arrays.asList(
                 // below 500km
                 indexCity("idx", "utrecht", "52.0945, 5.116"),

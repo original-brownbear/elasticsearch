@@ -260,12 +260,10 @@ public class EsqlSession {
                     }
 
                     private void assertSameMappings(String prefix, Map<String, EsField> fromQl, Map<String, EsField> fromEsql) {
-                        List<String> qlFields = new ArrayList<>();
-                        qlFields.addAll(fromQl.keySet());
+                        List<String> qlFields = new ArrayList<>(fromQl.keySet());
                         Collections.sort(qlFields);
 
-                        List<String> esqlFields = new ArrayList<>();
-                        esqlFields.addAll(fromEsql.keySet());
+                        List<String> esqlFields = new ArrayList<>(fromEsql.keySet());
                         Collections.sort(esqlFields);
                         if (qlFields.equals(esqlFields) == false) {
                             throw new IllegalArgumentException(

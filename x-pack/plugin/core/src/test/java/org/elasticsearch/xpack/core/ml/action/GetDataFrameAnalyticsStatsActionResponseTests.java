@@ -41,9 +41,7 @@ public class GetDataFrameAnalyticsStatsActionResponseTests extends AbstractWireS
 
     @Override
     protected NamedWriteableRegistry getNamedWriteableRegistry() {
-        List<NamedWriteableRegistry.Entry> namedWriteables = new ArrayList<>();
-        namedWriteables.addAll(new AnalysisStatsNamedWriteablesProvider().getNamedWriteables());
-        return new NamedWriteableRegistry(namedWriteables);
+        return new NamedWriteableRegistry(new AnalysisStatsNamedWriteablesProvider().getNamedWriteables());
     }
 
     public static Response randomResponse(int listSize) {

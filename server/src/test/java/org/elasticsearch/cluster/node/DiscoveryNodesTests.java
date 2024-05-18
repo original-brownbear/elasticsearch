@@ -222,10 +222,8 @@ public class DiscoveryNodesTests extends ESTestCase {
     }
 
     public void testDeltas() {
-        Set<DiscoveryNode> nodesA = new HashSet<>();
-        nodesA.addAll(randomNodes(1 + randomInt(10)));
-        Set<DiscoveryNode> nodesB = new HashSet<>();
-        nodesB.addAll(randomNodes(1 + randomInt(5)));
+        Set<DiscoveryNode> nodesA = new HashSet<>(randomNodes(1 + randomInt(10)));
+        Set<DiscoveryNode> nodesB = new HashSet<>(randomNodes(1 + randomInt(5)));
         for (DiscoveryNode node : randomSubsetOf(nodesA)) {
             if (randomBoolean()) {
                 // change an attribute
