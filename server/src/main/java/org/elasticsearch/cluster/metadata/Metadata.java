@@ -28,6 +28,8 @@ import org.elasticsearch.cluster.metadata.IndexAbstraction.ConcreteIndex;
 import org.elasticsearch.cluster.routing.RoutingTable;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.UUIDs;
+import org.elasticsearch.common.bytes.BytesArray;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -1096,7 +1098,7 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, Ch
      * Returns indexing routing for the given <code>aliasOrIndex</code>. Resolves routing from the alias metadata used
      * in the write index.
      */
-    public String resolveWriteIndexRouting(@Nullable String routing, String aliasOrIndex) {
+    public BytesReference resolveWriteIndexRouting(@Nullable BytesReference routing, String aliasOrIndex) {
         if (aliasOrIndex == null) {
             return routing;
         }
@@ -1122,7 +1124,7 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, Ch
      */
     // TODO: This can be moved to IndexNameExpressionResolver too, but this means that we will support wildcards and other expressions
     // in the index,bulk,update and delete apis.
-    public String resolveIndexRouting(@Nullable String routing, String aliasOrIndex) {
+    public BytesReference resolveIndexRouting(@Nullable BytesReference routing, String aliasOrIndex) {
         if (aliasOrIndex == null) {
             return routing;
         }
@@ -1137,7 +1139,7 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, Ch
         return resolveRouting(routing, aliasOrIndex, AliasMetadata.getFirstAliasMetadata(this, result));
     }
 
-    private static String resolveRouting(@Nullable String routing, String aliasOrIndex, AliasMetadata aliasMd) {
+    private static BytesReference resolveRouting(@Nullable BytesReference routing, String aliasOrIndex, AliasMetadata aliasMd) {
         if (aliasMd.indexRouting() != null) {
             if (aliasMd.indexRouting().indexOf(',') != -1) {
                 throw new IllegalArgumentException(
@@ -1149,7 +1151,7 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, Ch
                 );
             }
             if (routing != null) {
-                if (routing.equals(aliasMd.indexRouting()) == false) {
+                if (routing.utf8ToString().equals(aliasMd.indexRouting()) == false) {
                     throw new IllegalArgumentException(
                         "Alias ["
                             + aliasOrIndex
@@ -1162,7 +1164,7 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, Ch
                 }
             }
             // Alias routing overrides the parent routing (if any).
-            return aliasMd.indexRouting();
+            return new BytesArray(aliasMd.indexRouting());
         }
         return routing;
     }

@@ -15,7 +15,7 @@ import org.elasticsearch.action.CompositeIndicesRequest;
 import org.elasticsearch.action.DocWriteRequest;
 import org.elasticsearch.action.support.replication.ReplicatedWriteRequest;
 import org.elasticsearch.cluster.routing.IndexRouting;
-import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.lucene.uid.Versions;
@@ -33,7 +33,7 @@ import static org.elasticsearch.index.seqno.SequenceNumbers.UNASSIGNED_SEQ_NO;
 /**
  * A request to delete a document from an index based on its type and id.
  * <p>
- * The operation requires the {@link #index()} and {@link #id(String)} to
+ * The operation requires the {@link #index()} and {@link #id(BytesReference)} to
  * be set.
  *
  * @see DeleteResponse
@@ -48,9 +48,9 @@ public class DeleteRequest extends ReplicatedWriteRequest<DeleteRequest>
 
     private static final ShardId NO_SHARD_ID = null;
 
-    private String id;
+    private BytesReference id;
     @Nullable
-    private String routing;
+    private BytesReference routing;
     private long version = Versions.MATCH_ANY;
     private VersionType versionType = VersionType.INTERNAL;
     private long ifSeqNo = UNASSIGNED_SEQ_NO;
@@ -66,8 +66,8 @@ public class DeleteRequest extends ReplicatedWriteRequest<DeleteRequest>
             String type = in.readString();
             assert MapperService.SINGLE_MAPPING_NAME.equals(type) : "Expected [_doc] but received [" + type + "]";
         }
-        id = in.readString();
-        routing = in.readOptionalString();
+        id = in.readBytesReference();
+        routing = in.readOptionalBytesReference();
         version = in.readLong();
         versionType = VersionType.fromValue(in.readByte());
         ifSeqNo = in.readZLong();
@@ -79,7 +79,7 @@ public class DeleteRequest extends ReplicatedWriteRequest<DeleteRequest>
     }
 
     /**
-     * Constructs a new delete request against the specified index. The {@link #id(String)}
+     * Constructs a new delete request against the specified index. The {@link #id(BytesReference)}
      * must be set.
      */
     public DeleteRequest(String index) {
@@ -93,7 +93,7 @@ public class DeleteRequest extends ReplicatedWriteRequest<DeleteRequest>
      * @param index The index to get the document from
      * @param id    The id of the document
      */
-    public DeleteRequest(String index, String id) {
+    public DeleteRequest(String index, BytesReference id) {
         super(NO_SHARD_ID);
         this.index = index;
         this.id = id;
@@ -102,7 +102,7 @@ public class DeleteRequest extends ReplicatedWriteRequest<DeleteRequest>
     @Override
     public ActionRequestValidationException validate() {
         ActionRequestValidationException validationException = super.validate();
-        if (Strings.isEmpty(id)) {
+        if (id == null || id.length() == 0) {
             validationException = addValidationError("id is missing", validationException);
         }
 
@@ -115,14 +115,14 @@ public class DeleteRequest extends ReplicatedWriteRequest<DeleteRequest>
      * The id of the document to delete.
      */
     @Override
-    public String id() {
+    public BytesReference id() {
         return id;
     }
 
     /**
      * Sets the id of the document to delete.
      */
-    public DeleteRequest id(String id) {
+    public DeleteRequest id(BytesReference id) {
         this.id = id;
         return this;
     }
@@ -132,7 +132,7 @@ public class DeleteRequest extends ReplicatedWriteRequest<DeleteRequest>
      * and not the id.
      */
     @Override
-    public DeleteRequest routing(String routing) {
+    public DeleteRequest routing(BytesReference routing) {
         if (routing != null && routing.length() == 0) {
             this.routing = null;
         } else {
@@ -146,7 +146,7 @@ public class DeleteRequest extends ReplicatedWriteRequest<DeleteRequest>
      * and not the id.
      */
     @Override
-    public String routing() {
+    public BytesReference routing() {
         return this.routing;
     }
 
@@ -262,8 +262,8 @@ public class DeleteRequest extends ReplicatedWriteRequest<DeleteRequest>
         if (out.getTransportVersion().before(TransportVersions.V_8_0_0)) {
             out.writeString(MapperService.SINGLE_MAPPING_NAME);
         }
-        out.writeString(id);
-        out.writeOptionalString(routing());
+        out.writeBytesReference(id);
+        out.writeOptionalBytesReference(routing());
         out.writeLong(version);
         out.writeByte(versionType.getValue());
         out.writeZLong(ifSeqNo);
@@ -277,6 +277,6 @@ public class DeleteRequest extends ReplicatedWriteRequest<DeleteRequest>
 
     @Override
     public long ramBytesUsed() {
-        return SHALLOW_SIZE + RamUsageEstimator.sizeOf(id);
+        return SHALLOW_SIZE + (id == null ? 0 : id.length());
     }
 }

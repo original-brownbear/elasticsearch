@@ -909,6 +909,10 @@ public abstract class ESTestCase extends LuceneTestCase {
         return CompositeBytesReference.of(slices.toArray(BytesReference[]::new));
     }
 
+    public static BytesReference randomAlphaBytesReference(int length) {
+        return new BytesArray(randomAlphaOfLength(length));
+    }
+
     public static short randomShort() {
         return (short) random().nextInt();
     }

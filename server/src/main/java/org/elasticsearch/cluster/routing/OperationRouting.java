@@ -13,6 +13,7 @@ import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
@@ -63,8 +64,8 @@ public class OperationRouting {
     public ShardIterator getShards(
         ClusterState clusterState,
         String index,
-        String id,
-        @Nullable String routing,
+        BytesReference id,
+        @Nullable BytesReference routing,
         @Nullable String preference
     ) {
         IndexRouting indexRouting = IndexRouting.fromIndexMetadata(indexMetadata(clusterState, index));
@@ -100,7 +101,7 @@ public class OperationRouting {
     public GroupShardsIterator<ShardIterator> searchShards(
         ClusterState clusterState,
         String[] concreteIndices,
-        @Nullable Map<String, Set<String>> routing,
+        @Nullable Map<String, Set<BytesReference>> routing,
         @Nullable String preference
     ) {
         return searchShards(clusterState, concreteIndices, routing, preference, null, null);
@@ -109,7 +110,7 @@ public class OperationRouting {
     public GroupShardsIterator<ShardIterator> searchShards(
         ClusterState clusterState,
         String[] concreteIndices,
-        @Nullable Map<String, Set<String>> routing,
+        @Nullable Map<String, Set<BytesReference>> routing,
         @Nullable String preference,
         @Nullable ResponseCollectorService collectorService,
         @Nullable Map<String, Long> nodeCounts
@@ -160,7 +161,7 @@ public class OperationRouting {
     private static Set<IndexShardRoutingTable> computeTargetedShards(
         ClusterState clusterState,
         String[] concreteIndices,
-        @Nullable Map<String, Set<String>> routing
+        @Nullable Map<String, Set<BytesReference>> routing
     ) {
         // we use set here and not list since we might get duplicates
         final Set<IndexShardRoutingTable> set = new HashSet<>();
@@ -175,15 +176,15 @@ public class OperationRouting {
     private static void collectTargetShardsWithRouting(
         ClusterState clusterState,
         String[] concreteIndices,
-        Map<String, Set<String>> routing,
+        Map<String, Set<BytesReference>> routing,
         Set<IndexShardRoutingTable> set
     ) {
         for (String index : concreteIndices) {
             final IndexRoutingTable indexRoutingTable = indexRoutingTable(clusterState, index);
-            final Set<String> indexSearchRouting = routing.get(index);
+            final Set<BytesReference> indexSearchRouting = routing.get(index);
             if (indexSearchRouting != null) {
                 IndexRouting indexRouting = IndexRouting.fromIndexMetadata(indexMetadata(clusterState, index));
-                for (String r : indexSearchRouting) {
+                for (BytesReference r : indexSearchRouting) {
                     indexRouting.collectSearchShards(r, s -> set.add(RoutingTable.shardRoutingTable(indexRoutingTable, s)));
                 }
             } else {
@@ -298,7 +299,7 @@ public class OperationRouting {
         return indexMetadata;
     }
 
-    public ShardId shardId(ClusterState clusterState, String index, String id, @Nullable String routing) {
+    public ShardId shardId(ClusterState clusterState, String index, BytesReference id, @Nullable BytesReference routing) {
         IndexMetadata indexMetadata = indexMetadata(clusterState, index);
         return new ShardId(indexMetadata.getIndex(), IndexRouting.fromIndexMetadata(indexMetadata).getShard(id, routing));
     }

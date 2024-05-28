@@ -15,6 +15,7 @@ import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.cluster.metadata.IndexAbstraction;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.cluster.routing.IndexRouting;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.lucene.uid.Versions;
@@ -24,7 +25,6 @@ import org.elasticsearch.index.VersionType;
 import org.elasticsearch.index.shard.ShardId;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 
 import static org.elasticsearch.action.ValidateActions.addValidationError;
@@ -63,7 +63,7 @@ public interface DocWriteRequest<T> extends IndicesRequest, Accountable {
      * Get the id of the document for this request
      * @return the id
      */
-    String id();
+    BytesReference id();
 
     /**
      * Get the options for this request
@@ -76,13 +76,13 @@ public interface DocWriteRequest<T> extends IndicesRequest, Accountable {
      * Set the routing for this request
      * @return the Request
      */
-    T routing(String routing);
+    T routing(BytesReference routing);
 
     /**
      * Get the routing for this request
      * @return the Routing
      */
-    String routing();
+    BytesReference routing();
 
     /**
      * Get the document version for this request
@@ -326,15 +326,15 @@ public interface DocWriteRequest<T> extends IndicesRequest, Accountable {
         return validationException;
     }
 
-    static ActionRequestValidationException validateDocIdLength(String id, ActionRequestValidationException validationException) {
-        if (id != null && id.getBytes(StandardCharsets.UTF_8).length > MAX_DOCUMENT_ID_LENGTH_IN_BYTES) {
+    static ActionRequestValidationException validateDocIdLength(BytesReference id, ActionRequestValidationException validationException) {
+        if (id != null && id.length() > MAX_DOCUMENT_ID_LENGTH_IN_BYTES) {
             validationException = addValidationError(
                 "id ["
                     + id
                     + "] is too long, must be no longer than "
                     + MAX_DOCUMENT_ID_LENGTH_IN_BYTES
                     + " bytes but was: "
-                    + id.getBytes(StandardCharsets.UTF_8).length,
+                    + id.length(),
                 validationException
             );
         }

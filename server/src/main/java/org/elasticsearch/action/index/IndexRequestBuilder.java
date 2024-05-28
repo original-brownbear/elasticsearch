@@ -33,7 +33,7 @@ import java.util.Map;
 public class IndexRequestBuilder extends ReplicationRequestBuilder<IndexRequest, DocWriteResponse, IndexRequestBuilder>
     implements
         WriteRequestBuilder<IndexRequestBuilder> {
-    private String id = null;
+    private BytesReference id = null;
 
     private BytesReference sourceBytesReference;
     private XContentType sourceContentType;
@@ -41,7 +41,7 @@ public class IndexRequestBuilder extends ReplicationRequestBuilder<IndexRequest,
     private String pipeline;
     private Boolean requireAlias;
     private Boolean requireDataStream;
-    private String routing;
+    private BytesReference routing;
     private WriteRequest.RefreshPolicy refreshPolicy;
     private Long ifSeqNo;
     private Long ifPrimaryTerm;
@@ -63,7 +63,7 @@ public class IndexRequestBuilder extends ReplicationRequestBuilder<IndexRequest,
      * Sets the id to index the document under. Optional, and if not set, one will be automatically
      * generated.
      */
-    public IndexRequestBuilder setId(String id) {
+    public IndexRequestBuilder setId(BytesReference id) {
         this.id = id;
         return this;
     }
@@ -72,7 +72,7 @@ public class IndexRequestBuilder extends ReplicationRequestBuilder<IndexRequest,
      * Controls the shard routing of the request. Using this value to hash the shard
      * and not the id.
      */
-    public IndexRequestBuilder setRouting(String routing) {
+    public IndexRequestBuilder setRouting(BytesReference routing) {
         this.routing = routing;
         return this;
     }

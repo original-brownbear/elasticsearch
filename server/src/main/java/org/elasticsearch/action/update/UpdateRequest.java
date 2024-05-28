@@ -100,9 +100,9 @@ public class UpdateRequest extends InstanceShardOperationRequest<UpdateRequest>
         PARSER.declareLong(UpdateRequest::setIfPrimaryTerm, IF_PRIMARY_TERM);
     }
 
-    private String id;
+    private BytesReference id;
     @Nullable
-    private String routing;
+    private BytesReference routing;
 
     @Nullable
     Script script;
@@ -140,8 +140,8 @@ public class UpdateRequest extends InstanceShardOperationRequest<UpdateRequest>
             String type = in.readString();
             assert MapperService.SINGLE_MAPPING_NAME.equals(type) : "Expected [_doc] but received [" + type + "]";
         }
-        id = in.readString();
-        routing = in.readOptionalString();
+        id = in.readBytesReference();
+        routing = in.readOptionalBytesReference();
         if (in.readBoolean()) {
             script = new Script(in);
         }
@@ -166,7 +166,7 @@ public class UpdateRequest extends InstanceShardOperationRequest<UpdateRequest>
         }
     }
 
-    public UpdateRequest(String index, String id) {
+    public UpdateRequest(String index, BytesReference id) {
         super(index);
         this.id = id;
     }
@@ -177,7 +177,7 @@ public class UpdateRequest extends InstanceShardOperationRequest<UpdateRequest>
         if (upsertRequest != null && upsertRequest.version() != Versions.MATCH_ANY) {
             validationException = addValidationError("can't provide version in upsert request", validationException);
         }
-        if (Strings.isEmpty(id)) {
+        if (id == null || id.length() == 0) {
             validationException = addValidationError("id is missing", validationException);
         }
 
@@ -217,14 +217,14 @@ public class UpdateRequest extends InstanceShardOperationRequest<UpdateRequest>
      * The id of the indexed document.
      */
     @Override
-    public String id() {
+    public BytesReference id() {
         return id;
     }
 
     /**
      * Sets the id of the indexed document.
      */
-    public UpdateRequest id(String id) {
+    public UpdateRequest id(BytesReference id) {
         this.id = id;
         return this;
     }
@@ -234,7 +234,7 @@ public class UpdateRequest extends InstanceShardOperationRequest<UpdateRequest>
      * and not the id.
      */
     @Override
-    public UpdateRequest routing(String routing) {
+    public UpdateRequest routing(BytesReference routing) {
         if (routing != null && routing.length() == 0) {
             this.routing = null;
         } else {
@@ -248,7 +248,7 @@ public class UpdateRequest extends InstanceShardOperationRequest<UpdateRequest>
      * and not the id.
      */
     @Override
-    public String routing() {
+    public BytesReference routing() {
         return this.routing;
     }
 
@@ -879,8 +879,8 @@ public class UpdateRequest extends InstanceShardOperationRequest<UpdateRequest>
         if (out.getTransportVersion().before(TransportVersions.V_8_0_0)) {
             out.writeString(MapperService.SINGLE_MAPPING_NAME);
         }
-        out.writeString(id);
-        out.writeOptionalString(routing);
+        out.writeBytesReference(id);
+        out.writeOptionalBytesReference(routing);
 
         boolean hasScript = script != null;
         out.writeBoolean(hasScript);
@@ -1009,6 +1009,6 @@ public class UpdateRequest extends InstanceShardOperationRequest<UpdateRequest>
         if (upsertRequest != null) {
             childRequestBytes += upsertRequest.ramBytesUsed();
         }
-        return SHALLOW_SIZE + RamUsageEstimator.sizeOf(id) + childRequestBytes;
+        return SHALLOW_SIZE + (id == null ? 0 : id.length()) + childRequestBytes;
     }
 }

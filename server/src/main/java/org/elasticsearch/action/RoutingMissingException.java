@@ -10,6 +10,7 @@ package org.elasticsearch.action;
 
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.TransportVersions;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.index.mapper.MapperService;
@@ -20,9 +21,9 @@ import java.util.Objects;
 
 public final class RoutingMissingException extends ElasticsearchException {
 
-    private final String id;
+    private final BytesReference id;
 
-    public RoutingMissingException(String index, String id) {
+    public RoutingMissingException(String index, BytesReference id) {
         super("routing is required for [" + index + "]/[" + id + "]");
         Objects.requireNonNull(index, "index must not be null");
         Objects.requireNonNull(id, "id must not be null");
@@ -30,7 +31,7 @@ public final class RoutingMissingException extends ElasticsearchException {
         this.id = id;
     }
 
-    public String getId() {
+    public BytesReference getId() {
         return id;
     }
 
@@ -44,7 +45,7 @@ public final class RoutingMissingException extends ElasticsearchException {
         if (in.getTransportVersion().before(TransportVersions.V_8_0_0)) {
             in.readString();
         }
-        id = in.readString();
+        id = in.readBytesReference();
     }
 
     @Override
@@ -53,6 +54,6 @@ public final class RoutingMissingException extends ElasticsearchException {
         if (out.getTransportVersion().before(TransportVersions.V_8_0_0)) {
             out.writeString(MapperService.SINGLE_MAPPING_NAME);
         }
-        out.writeString(id);
+        out.writeBytesReference(id);
     }
 }

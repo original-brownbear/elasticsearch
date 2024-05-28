@@ -78,30 +78,30 @@ public abstract class IndexRouting {
      * a document with the provided parameters.
      */
     public abstract int indexShard(
-        String id,
-        @Nullable String routing,
+        BytesReference id,
+        @Nullable BytesReference routing,
         XContentType sourceType,
         BytesReference source,
-        Consumer<String> routingHashSetter
+        Consumer<BytesReference> routingHashSetter
     );
 
     /**
      * Called when updating a document to generate the shard id that should contain
      * a document with the provided {@code _id} and (optional) {@code _routing}.
      */
-    public abstract int updateShard(String id, @Nullable String routing);
+    public abstract int updateShard(BytesReference id, @Nullable BytesReference routing);
 
     /**
      * Called when deleting a document to generate the shard id that should contain
      * a document with the provided {@code _id} and (optional) {@code _routing}.
      */
-    public abstract int deleteShard(String id, @Nullable String routing);
+    public abstract int deleteShard(BytesReference id, @Nullable BytesReference routing);
 
     /**
      * Called when getting a document to generate the shard id that should contain
      * a document with the provided {@code _id} and (optional) {@code _routing}.
      */
-    public abstract int getShard(String id, @Nullable String routing);
+    public abstract int getShard(BytesReference id, @Nullable BytesReference routing);
 
     /**
      * Collect all of the shard ids that *may* contain documents with the
@@ -115,7 +115,7 @@ public abstract class IndexRouting {
      * specified. If they do not have a routing they just use all shards
      * in the index.
      */
-    public abstract void collectSearchShards(String routing, IntConsumer consumer);
+    public abstract void collectSearchShards(BytesReference routing, IntConsumer consumer);
 
     /**
      * Convert a hash generated from an {@code (id, routing}) pair into a
@@ -128,8 +128,8 @@ public abstract class IndexRouting {
     /**
      * Convert a routing value into a hash.
      */
-    private static int effectiveRoutingToHash(String effectiveRouting) {
-        return Murmur3HashFunction.hash(effectiveRouting);
+    private static int effectiveRoutingToHash(BytesReference effectiveRouting) {
+        return Murmur3HashFunction.hash(effectiveRouting.utf8ToString());
     }
 
     /**
@@ -147,7 +147,7 @@ public abstract class IndexRouting {
             this.routingRequired = mapping == null ? false : mapping.routingRequired();
         }
 
-        protected abstract int shardId(String id, @Nullable String routing);
+        protected abstract int shardId(BytesReference id, @Nullable BytesReference routing);
 
         @Override
         public void process(IndexRequest indexRequest) {
@@ -163,11 +163,11 @@ public abstract class IndexRouting {
 
         @Override
         public int indexShard(
-            String id,
-            @Nullable String routing,
+            BytesReference id,
+            @Nullable BytesReference routing,
             XContentType sourceType,
             BytesReference source,
-            Consumer<String> routingHashSetter
+            Consumer<BytesReference> routingHashSetter
         ) {
             if (id == null) {
                 throw new IllegalStateException("id is required and should have been set by process");
@@ -177,24 +177,24 @@ public abstract class IndexRouting {
         }
 
         @Override
-        public int updateShard(String id, @Nullable String routing) {
+        public int updateShard(BytesReference id, @Nullable BytesReference routing) {
             checkRoutingRequired(id, routing);
             return shardId(id, routing);
         }
 
         @Override
-        public int deleteShard(String id, @Nullable String routing) {
+        public int deleteShard(BytesReference id, @Nullable BytesReference routing) {
             checkRoutingRequired(id, routing);
             return shardId(id, routing);
         }
 
         @Override
-        public int getShard(String id, @Nullable String routing) {
+        public int getShard(BytesReference id, @Nullable BytesReference routing) {
             checkRoutingRequired(id, routing);
             return shardId(id, routing);
         }
 
-        private void checkRoutingRequired(String id, @Nullable String routing) {
+        private void checkRoutingRequired(BytesReference id, @Nullable BytesReference routing) {
             if (routingRequired && routing == null) {
                 throw new RoutingMissingException(indexName, id);
             }
@@ -210,12 +210,12 @@ public abstract class IndexRouting {
         }
 
         @Override
-        protected int shardId(String id, @Nullable String routing) {
+        protected int shardId(BytesReference id, @Nullable BytesReference routing) {
             return hashToShardId(effectiveRoutingToHash(routing == null ? id : routing));
         }
 
         @Override
-        public void collectSearchShards(String routing, IntConsumer consumer) {
+        public void collectSearchShards(BytesReference routing, IntConsumer consumer) {
             consumer.accept(hashToShardId(effectiveRoutingToHash(routing)));
         }
     }
@@ -232,7 +232,7 @@ public abstract class IndexRouting {
         }
 
         @Override
-        protected int shardId(String id, @Nullable String routing) {
+        protected int shardId(BytesReference id, @Nullable BytesReference routing) {
             if (routing == null) {
                 throw new IllegalArgumentException("A routing value is required for gets from a partitioned index");
             }
@@ -241,7 +241,7 @@ public abstract class IndexRouting {
         }
 
         @Override
-        public void collectSearchShards(String routing, IntConsumer consumer) {
+        public void collectSearchShards(BytesReference routing, IntConsumer consumer) {
             int hash = effectiveRoutingToHash(routing);
             for (int i = 0; i < routingPartitionSize; i++) {
                 consumer.accept(hashToShardId(hash + i));
@@ -274,11 +274,11 @@ public abstract class IndexRouting {
 
         @Override
         public int indexShard(
-            String id,
-            @Nullable String routing,
+            BytesReference id,
+            @Nullable BytesReference routing,
             XContentType sourceType,
             BytesReference source,
-            Consumer<String> routingHashSetter
+            Consumer<BytesReference> routingHashSetter
         ) {
             assert Transports.assertNotTransportThread("parsing the _source can get slow");
             checkNoRouting(routing);
@@ -403,32 +403,32 @@ public abstract class IndexRouting {
         }
 
         @Override
-        public int updateShard(String id, @Nullable String routing) {
+        public int updateShard(BytesReference id, @Nullable BytesReference routing) {
             throw new IllegalArgumentException(error("update"));
         }
 
         @Override
-        public int deleteShard(String id, @Nullable String routing) {
+        public int deleteShard(BytesReference id, @Nullable BytesReference routing) {
             checkNoRouting(routing);
             return idToHash(id);
         }
 
         @Override
-        public int getShard(String id, @Nullable String routing) {
+        public int getShard(BytesReference id, @Nullable BytesReference routing) {
             checkNoRouting(routing);
             return idToHash(id);
         }
 
-        private void checkNoRouting(@Nullable String routing) {
+        private void checkNoRouting(@Nullable BytesReference routing) {
             if (routing != null) {
                 throw new IllegalArgumentException(error("specifying routing"));
             }
         }
 
-        private int idToHash(String id) {
+        private int idToHash(BytesReference id) {
             byte[] idBytes;
             try {
-                idBytes = Base64.getUrlDecoder().decode(id);
+                idBytes = Base64.getUrlDecoder().decode(id.utf8ToString());
             } catch (IllegalArgumentException e) {
                 throw new ResourceNotFoundException("invalid id [{}] for index [{}] in time series mode", id, indexName);
             }
@@ -444,7 +444,7 @@ public abstract class IndexRouting {
         }
 
         @Override
-        public void collectSearchShards(String routing, IntConsumer consumer) {
+        public void collectSearchShards(BytesReference routing, IntConsumer consumer) {
             throw new IllegalArgumentException(error("searching with a specified routing"));
         }
 

@@ -11,6 +11,8 @@ package org.elasticsearch.index.mapper;
 import org.apache.lucene.document.SortedDocValuesField;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.util.BytesRef;
+import org.elasticsearch.common.bytes.BytesArray;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.util.ByteUtils;
 import org.elasticsearch.index.IndexMode;
@@ -133,13 +135,13 @@ public class TimeSeriesRoutingHashFieldMapper extends MetadataFieldMapper {
         return SourceLoader.SyntheticFieldLoader.NOTHING;
     }
 
-    public static String encode(int routingId) {
+    public static BytesReference encode(int routingId) {
         byte[] bytes = new byte[4];
         ByteUtils.writeIntLE(routingId, bytes, 0);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+        return new BytesArray(Base64.getUrlEncoder().withoutPadding().encodeToString(bytes));
     }
 
-    public static final String DUMMY_ENCODED_VALUE = encode(0);
+    public static final BytesReference DUMMY_ENCODED_VALUE = encode(0);
 
     public static int decode(String routingId) {
         byte[] bytes = Base64.getUrlDecoder().decode(routingId);

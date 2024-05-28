@@ -16,6 +16,8 @@ import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexAbstraction.Type;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.bytes.BytesArray;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.logging.DeprecationCategory;
 import org.elasticsearch.common.logging.DeprecationLogger;
 import org.elasticsearch.common.regex.Regex;
@@ -900,7 +902,7 @@ public class IndexNameExpressionResolver {
      *
      * @return routing values grouped by concrete index
      */
-    public Map<String, Set<String>> resolveSearchRouting(ClusterState state, @Nullable String routing, String... expressions) {
+    public Map<String, Set<BytesReference>> resolveSearchRouting(ClusterState state, @Nullable String routing, String... expressions) {
         Context context = new Context(
             state,
             IndicesOptions.lenientExpandOpen(),
@@ -918,12 +920,12 @@ public class IndexNameExpressionResolver {
             return resolveSearchRoutingAllIndices(state.metadata(), routing);
         }
 
-        Map<String, Set<String>> routings = null;
-        Set<String> paramRouting = null;
+        Map<String, Set<BytesReference>> routings = null;
+        Set<BytesReference> paramRouting = null;
         // List of indices that don't require any routing
         Set<String> norouting = new HashSet<>();
         if (routing != null) {
-            paramRouting = Sets.newHashSet(Strings.splitStringByCommaToArray(routing));
+            paramRouting = Arrays.stream(Strings.splitStringByCommaToArray(routing)).map(BytesArray::new).collect(Collectors.toSet());
         }
 
         for (String expression : resolvedExpressions) {
@@ -938,8 +940,8 @@ public class IndexNameExpressionResolver {
                             if (routings == null) {
                                 routings = new HashMap<>();
                             }
-                            Set<String> r = routings.computeIfAbsent(concreteIndex, k -> new HashSet<>());
-                            r.addAll(aliasMetadata.searchRoutingValues());
+                            Set<BytesReference> r = routings.computeIfAbsent(concreteIndex, k -> new HashSet<>());
+                            aliasMetadata.searchRoutingValues().stream().map(BytesArray::new).forEach(r::add);
                             if (paramRouting != null) {
                                 r.retainAll(paramRouting);
                             }
@@ -976,9 +978,9 @@ public class IndexNameExpressionResolver {
     }
 
     @Nullable
-    private static Map<String, Set<String>> collectRoutings(
-        @Nullable Map<String, Set<String>> routings,
-        @Nullable Set<String> paramRouting,
+    private static Map<String, Set<BytesReference>> collectRoutings(
+        @Nullable Map<String, Set<BytesReference>> routings,
+        @Nullable Set<BytesReference> paramRouting,
         Set<String> noRouting,
         String concreteIndex
     ) {
@@ -998,10 +1000,12 @@ public class IndexNameExpressionResolver {
     /**
      * Sets the same routing for all indices
      */
-    public static Map<String, Set<String>> resolveSearchRoutingAllIndices(Metadata metadata, String routing) {
+    public static Map<String, Set<BytesReference>> resolveSearchRoutingAllIndices(Metadata metadata, String routing) {
         if (routing != null) {
-            Set<String> r = Sets.newHashSet(Strings.splitStringByCommaToArray(routing));
-            Map<String, Set<String>> routings = new HashMap<>();
+            Set<BytesReference> r = Arrays.stream(Strings.splitStringByCommaToArray(routing))
+                .map(BytesArray::new)
+                .collect(Collectors.toSet());
+            Map<String, Set<BytesReference>> routings = new HashMap<>();
             String[] concreteIndices = metadata.getConcreteAllIndices();
             for (String index : concreteIndices) {
                 routings.put(index, r);
