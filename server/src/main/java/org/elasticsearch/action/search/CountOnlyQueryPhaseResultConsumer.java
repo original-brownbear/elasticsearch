@@ -104,5 +104,5 @@ class CountOnlyQueryPhaseResultConsumer extends SearchPhaseResults<SearchPhaseRe
     }
 
     @Override
-    public void close() {}
+    protected void doClose() {}
 }

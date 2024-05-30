@@ -15,6 +15,7 @@ import org.elasticsearch.common.util.concurrent.AbstractRunnable;
 import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.Releasable;
+import org.elasticsearch.core.ReleaseOnce;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.shard.IndexShard;
 import org.elasticsearch.index.shard.IndexShardClosedException;
@@ -25,7 +26,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This class holds a collection of all on going recoveries on the current node (i.e., the node is the target node
@@ -261,10 +261,9 @@ public class RecoveriesCollection {
      * causes {@link RecoveryTarget#decRef()} to be called. This makes sure that the underlying resources
      * will not be freed until {@link RecoveryRef#close()} is called.
      */
-    public static class RecoveryRef implements Releasable {
+    public static class RecoveryRef extends ReleaseOnce {
 
         private final RecoveryTarget status;
-        private final AtomicBoolean closed = new AtomicBoolean(false);
 
         /**
          * Important: {@link RecoveryTarget#tryIncRef()} should
@@ -275,15 +274,13 @@ public class RecoveriesCollection {
             this.status.setLastAccessTime();
         }
 
-        @Override
-        public void close() {
-            if (closed.compareAndSet(false, true)) {
-                status.decRef();
-            }
-        }
-
         public RecoveryTarget target() {
             return status;
+        }
+
+        @Override
+        protected void doClose() {
+            status.decRef();
         }
     }
 

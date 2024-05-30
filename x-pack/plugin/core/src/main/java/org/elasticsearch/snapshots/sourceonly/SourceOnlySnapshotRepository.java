@@ -170,7 +170,7 @@ public final class SourceOnlySnapshotRepository extends FilterRepository {
             toClose.add(overlayDir);
             Store tempStore = new Store(store.shardId(), store.indexSettings(), overlayDir, new ShardLock(store.shardId()) {
                 @Override
-                protected void closeInternal() {
+                protected void doClose() {
                     // do nothing;
                 }
             }, Store.OnClose.EMPTY);

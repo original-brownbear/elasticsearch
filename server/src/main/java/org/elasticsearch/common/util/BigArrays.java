@@ -92,7 +92,11 @@ public class BigArrays {
 
         @Override
         protected final void doClose() {
-            Releasables.close(releasable);
+            try {
+                super.doClose();
+            } finally {
+                Releasables.close(releasable);
+            }
         }
 
     }

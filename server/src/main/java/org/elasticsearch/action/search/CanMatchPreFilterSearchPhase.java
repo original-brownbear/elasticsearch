@@ -482,7 +482,7 @@ final class CanMatchPreFilterSearchPhase extends SearchPhase {
         }
 
         @Override
-        public void close() {}
+        protected void doClose() {}
     }
 
     private GroupShardsIterator<SearchShardIterator> getIterator(

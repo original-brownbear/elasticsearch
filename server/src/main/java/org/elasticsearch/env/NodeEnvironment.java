@@ -905,7 +905,7 @@ public final class NodeEnvironment implements Closeable {
         logger.trace("successfully acquired shardlock for [{}]", shardId);
         return new ShardLock(shardId) { // new instance prevents double closing
             @Override
-            protected void closeInternal() {
+            protected void doClose() {
                 shardLock.release();
                 logger.trace("released shard lock for [{}]", shardId);
             }

@@ -16,6 +16,7 @@ import org.elasticsearch.core.Assertions;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.Releasables;
+import org.elasticsearch.core.ReleaseOnce;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.cache.bitset.BitsetFilterCache;
 import org.elasticsearch.index.mapper.IdLoader;
@@ -53,14 +54,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This class encapsulates the state needed to execute a search. It holds a reference to the
  * shards point in time snapshot (IndexReader / ContextIndexSearcher) and allows passing on
  * state from one query / fetch phase to another.
  */
-public abstract class SearchContext implements Releasable {
+public abstract class SearchContext extends ReleaseOnce {
 
     public static final int DEFAULT_TERMINATE_AFTER = 0;
     public static final int TRACK_TOTAL_HITS_ACCURATE = Integer.MAX_VALUE;
@@ -69,11 +69,9 @@ public abstract class SearchContext implements Releasable {
 
     protected final List<Releasable> releasables = new CopyOnWriteArrayList<>();
 
-    private final AtomicBoolean closed = new AtomicBoolean(false);
-
     {
         if (Assertions.ENABLED) {
-            releasables.add(LeakTracker.wrap(() -> { assert closed.get(); }));
+            releasables.add(LeakTracker.wrap(() -> { assert isClosed(); }));
         }
     }
     private InnerHitsContext innerHitsContext;
@@ -89,10 +87,8 @@ public abstract class SearchContext implements Releasable {
     public abstract boolean isCancelled();
 
     @Override
-    public final void close() {
-        if (closed.compareAndSet(false, true)) {
-            Releasables.close(releasables);
-        }
+    protected void doClose() {
+        Releasables.close(releasables);
     }
 
     /**
@@ -351,7 +347,7 @@ public abstract class SearchContext implements Releasable {
      * Adds a releasable that will be freed when this context is closed.
      */
     public void addReleasable(Releasable releasable) {   // TODO most Releasables are managed by their callers. We probably don't need this.
-        assert closed.get() == false;
+        assert isClosed() == false;
         releasables.add(releasable);
     }
 

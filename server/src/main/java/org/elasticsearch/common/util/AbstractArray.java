@@ -8,13 +8,12 @@
 
 package org.elasticsearch.common.util;
 
-import java.util.concurrent.atomic.AtomicBoolean;
+import org.elasticsearch.core.ReleaseOnce;
 
-abstract class AbstractArray implements BigArray {
+abstract class AbstractArray extends ReleaseOnce implements BigArray {
 
     private final BigArrays bigArrays;
     public final boolean clearOnResize;
-    private final AtomicBoolean closed = new AtomicBoolean(false);
 
     AbstractArray(BigArrays bigArrays, boolean clearOnResize) {
         this.bigArrays = bigArrays;
@@ -22,15 +21,7 @@ abstract class AbstractArray implements BigArray {
     }
 
     @Override
-    public final void close() {
-        if (closed.compareAndSet(false, true)) {
-            try {
-                bigArrays.adjustBreaker(-ramBytesUsed(), true);
-            } finally {
-                doClose();
-            }
-        }
+    protected void doClose() {
+        bigArrays.adjustBreaker(-ramBytesUsed(), true);
     }
-
-    protected abstract void doClose();
 }
