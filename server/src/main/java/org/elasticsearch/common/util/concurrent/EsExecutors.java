@@ -296,11 +296,12 @@ public class EsExecutors {
         return new EsThreadFactory(namePrefix);
     }
 
-    static class EsThreadFactory implements ThreadFactory {
+    public static class EsThreadFactory implements ThreadFactory {
 
         final ThreadGroup group;
         final AtomicInteger threadNumber = new AtomicInteger(1);
         final String namePrefix;
+        public volatile TaskExecutionTimeTrackingEsThreadPoolExecutor executor;
 
         EsThreadFactory(String namePrefix) {
             this.namePrefix = namePrefix;
@@ -311,12 +312,37 @@ public class EsExecutors {
         @Override
         public Thread newThread(Runnable r) {
             return AccessController.doPrivileged((PrivilegedAction<Thread>) () -> {
-                Thread t = new Thread(group, r, namePrefix + "[T#" + threadNumber.getAndIncrement() + "]", 0);
+                Thread t = new EsDaemonThread(group, r, namePrefix + "[T#" + threadNumber.getAndIncrement() + "]") {
+                    @Override
+                    public void beforeIOBlock() {
+                        if (executor != null) {
+                            executor.setMaximumPoolSize(executor.getMaximumPoolSize() + 1);
+                        }
+                    }
+
+                    @Override
+                    public void afterIOBlock() {
+                        if (executor != null) {
+                            executor.setMaximumPoolSize(executor.getMaximumPoolSize() - 1);
+                        }
+                    }
+                };
                 t.setDaemon(true);
                 return t;
             });
         }
 
+    }
+
+    public static class EsDaemonThread extends Thread {
+
+        private EsDaemonThread(ThreadGroup group, Runnable r, String name) {
+            super(group, r, name, 0);
+        }
+
+        public void beforeIOBlock() {}
+
+        public void afterIOBlock() {}
     }
 
     /**

@@ -13,6 +13,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.SizeValue;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.common.util.concurrent.EsExecutors.TaskTrackingConfig;
+import org.elasticsearch.common.util.concurrent.TaskExecutionTimeTrackingEsThreadPoolExecutor;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.node.Node;
 
@@ -110,6 +111,11 @@ public final class FixedExecutorBuilder extends ExecutorBuilder<FixedExecutorBui
             threadContext,
             taskTrackingConfig
         );
+        if (executor instanceof TaskExecutionTimeTrackingEsThreadPoolExecutor e && name().equals(ThreadPool.Names.SEARCH)) {
+            if (threadFactory instanceof EsExecutors.EsThreadFactory esThreadFactory) {
+                esThreadFactory.executor = e;
+            }
+        }
         final ThreadPool.Info info = new ThreadPool.Info(
             name(),
             ThreadPool.ThreadPoolType.FIXED,

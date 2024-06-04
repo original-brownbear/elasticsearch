@@ -29,6 +29,7 @@ import org.elasticsearch.common.settings.SettingsException;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.RelativeByteSizeValue;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
+import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.core.AbstractRefCounted;
 import org.elasticsearch.core.Assertions;
 import org.elasticsearch.core.Releasable;
@@ -1115,7 +1116,19 @@ public class SharedBlobCacheService<KeyType> implements Releasable {
                 ioExecutor,
                 readFuture
             );
-            return readFuture.get();
+            if (Thread.currentThread() instanceof EsExecutors.EsDaemonThread esDaemonThread) {
+                if (readFuture.isDone()) {
+                    return readFuture.result();
+                }
+                esDaemonThread.beforeIOBlock();
+                try {
+                    return readFuture.get();
+                } finally {
+                    esDaemonThread.afterIOBlock();
+                }
+            } else {
+                return readFuture.get();
+            }
         }
 
         private int readMultiRegions(
