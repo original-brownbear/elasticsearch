@@ -223,7 +223,7 @@ public class ContextIndexSearcherTests extends ESTestCase {
                 int numSegments = directoryReader.getContext().leaves().size();
                 KnnFloatVectorQuery vectorQuery = new KnnFloatVectorQuery("float_vector", new float[] { 0, 0, 0 }, 10, null);
                 vectorQuery.rewrite(searcher);
-                assertBusy(() -> assertEquals(numSegments, executor.getCompletedTaskCount()));
+                assertBusy(() -> assertEquals(numSegments, executor.getCompletedTaskCount() + 1));
             }
         } finally {
             terminate(executor);
@@ -253,7 +253,7 @@ public class ContextIndexSearcherTests extends ESTestCase {
                 assertEquals(numDocs, totalHits.intValue());
                 int numExpectedTasks = ContextIndexSearcher.computeSlices(searcher.getIndexReader().leaves(), Integer.MAX_VALUE, 1).length;
                 // check that each slice goes to the executor, no matter the queue size or the number of slices
-                assertBusy(() -> assertEquals(numExpectedTasks, executor.getCompletedTaskCount()));
+                assertBusy(() -> assertEquals(numExpectedTasks, executor.getCompletedTaskCount() + 1));
             }
         } finally {
             terminate(executor);

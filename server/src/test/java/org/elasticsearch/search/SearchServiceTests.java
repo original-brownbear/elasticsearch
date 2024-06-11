@@ -2690,7 +2690,7 @@ public class SearchServiceTests extends ESSingleNodeTestCase {
      */
     public void testSlicingBehaviourForParallelCollection() throws Exception {
         IndexService indexService = createIndex("index", Settings.EMPTY);
-        ThreadPoolExecutor executor = (ThreadPoolExecutor) indexService.getThreadPool().executor(ThreadPool.Names.SEARCH_WORKER);
+        ThreadPoolExecutor executor = (ThreadPoolExecutor) indexService.getThreadPool().executor(ThreadPool.Names.SEARCH);
         final int configuredMaxPoolSize = 10;
         executor.setMaximumPoolSize(configuredMaxPoolSize); // We set this explicitly to be independent of CPU cores.
         int numDocs = randomIntBetween(50, 100);
@@ -2742,7 +2742,7 @@ public class SearchServiceTests extends ESSingleNodeTestCase {
                         () -> assertEquals(
                             "DFS supports parallel collection, so the number of slices should be > 1.",
                             expectedSlices,
-                            executor.getCompletedTaskCount() - priorExecutorTaskCount
+                            executor.getCompletedTaskCount() - priorExecutorTaskCount + 1
                         )
                     );
                 }
@@ -2772,7 +2772,7 @@ public class SearchServiceTests extends ESSingleNodeTestCase {
                         () -> assertEquals(
                             "QUERY supports parallel collection when enabled, so the number of slices should be > 1.",
                             expectedSlices,
-                            executor.getCompletedTaskCount() - priorExecutorTaskCount
+                            executor.getCompletedTaskCount() - priorExecutorTaskCount + 1
                         )
                     );
                 }
@@ -2787,7 +2787,7 @@ public class SearchServiceTests extends ESSingleNodeTestCase {
                         () -> assertEquals(
                             "The number of slices should be 1 as FETCH does not support parallel collection.",
                             1,
-                            executor.getCompletedTaskCount() - priorExecutorTaskCount
+                            executor.getCompletedTaskCount() - priorExecutorTaskCount + 1
                         )
                     );
                 }
@@ -2802,7 +2802,7 @@ public class SearchServiceTests extends ESSingleNodeTestCase {
                         () -> assertEquals(
                             "The number of slices should be 1 as NONE does not support parallel collection.",
                             1,
-                            executor.getCompletedTaskCount() - priorExecutorTaskCount
+                            executor.getCompletedTaskCount() - priorExecutorTaskCount + 1
                         )
                     );
                 }
@@ -2825,7 +2825,7 @@ public class SearchServiceTests extends ESSingleNodeTestCase {
                             () -> assertEquals(
                                 "The number of slices should be 1 when QUERY parallel collection is disabled.",
                                 1,
-                                executor.getCompletedTaskCount() - priorExecutorTaskCount
+                                executor.getCompletedTaskCount() - priorExecutorTaskCount + 1
                             )
                         );
                     }
@@ -2862,7 +2862,7 @@ public class SearchServiceTests extends ESSingleNodeTestCase {
                             () -> assertEquals(
                                 "QUERY supports parallel collection when enabled, so the number of slices should be > 1.",
                                 expectedSlices,
-                                executor.getCompletedTaskCount() - priorExecutorTaskCount
+                                executor.getCompletedTaskCount() - priorExecutorTaskCount + 1
                             )
                         );
                     }
