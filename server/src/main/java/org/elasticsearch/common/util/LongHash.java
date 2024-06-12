@@ -61,16 +61,18 @@ public final class LongHash extends AbstractHash {
     }
 
     private long set(long key, long id) {
-        assert size < maxSize;
         final long slot = slot(hash(key), mask);
-        for (long index = slot;; index = nextSlot(index, mask)) {
-            final long curId = id(index);
+        final var keysRef = keys;
+        final var idsRef = ids;
+        final long maskRef = mask;
+        for (long index = slot;; index = nextSlot(index, maskRef)) {
+            final long curId = idsRef.get(index) - 1;
             if (curId == -1) { // means unset
                 id(index, id);
                 append(id, key);
                 ++size;
                 return id;
-            } else if (keys.get(curId) == key) {
+            } else if (keysRef.get(curId) == key) {
                 return -1 - curId;
             }
         }
@@ -99,10 +101,8 @@ public final class LongHash extends AbstractHash {
      */
     public long add(long key) {
         if (size >= maxSize) {
-            assert size == maxSize;
             grow();
         }
-        assert size < maxSize;
         return set(key, size);
     }
 

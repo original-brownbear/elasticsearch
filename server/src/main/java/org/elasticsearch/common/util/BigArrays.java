@@ -267,7 +267,6 @@ public class BigArrays {
 
         @Override
         public long get(long index) {
-            assert index >= 0 && index < size();
             return (long) VH_PLATFORM_NATIVE_LONG.get(array, (int) index << 3);
         }
 
@@ -281,7 +280,6 @@ public class BigArrays {
 
         @Override
         public long increment(long index, long inc) {
-            assert index >= 0 && index < size();
             final long ret = (long) VH_PLATFORM_NATIVE_LONG.get(array, (int) index << 3) + inc;
             VH_PLATFORM_NATIVE_LONG.set(array, (int) index << 3, ret);
             return ret;
