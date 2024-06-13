@@ -221,7 +221,6 @@ public abstract class LongKeyedBucketOrds implements Releasable {
         @Override
         public long add(long owningBucketOrd, long value) {
             // This is in the critical path for collecting most aggs. Be careful of performance.
-            assert owningBucketOrd == 0;
             return ords.add(value);
         }
 

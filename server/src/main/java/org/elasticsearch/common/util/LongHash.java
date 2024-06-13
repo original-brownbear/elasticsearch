@@ -61,21 +61,25 @@ public final class LongHash extends AbstractHash {
     }
 
     private long set(long key, long id) {
-        final long slot = slot(hash(key), mask);
+        final long maskRef = mask;
         final var keysRef = keys;
         final var idsRef = ids;
-        final long maskRef = mask;
-        for (long index = slot;; index = nextSlot(index, maskRef)) {
-            final long curId = idsRef.get(index) - 1;
-            if (curId == -1) { // means unset
-                id(index, id);
-                append(id, key);
-                ++size;
-                return id;
-            } else if (keysRef.get(curId) == key) {
-                return -1 - curId;
+        for (long index = slot(hash(key), maskRef);; index = nextSlot(index, maskRef)) {
+            final long curId = idsRef.get(index);
+            if (curId == 0) { // means unset
+                return setOverUnset(key, id, index);
+            }
+            if (keysRef.get(curId - 1) == key) {
+                return -curId;
             }
         }
+    }
+
+    private long setOverUnset(long key, long id, long index) {
+        id(index, id);
+        append(id, key);
+        ++size;
+        return id;
     }
 
     private void append(long id, long key) {

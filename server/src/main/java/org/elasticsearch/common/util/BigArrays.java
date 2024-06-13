@@ -280,8 +280,10 @@ public class BigArrays {
 
         @Override
         public long increment(long index, long inc) {
-            final long ret = (long) VH_PLATFORM_NATIVE_LONG.get(array, (int) index << 3) + inc;
-            VH_PLATFORM_NATIVE_LONG.set(array, (int) index << 3, ret);
+            byte[] arr = array;
+            int idx = (int) index << 3;
+            final long ret = (long) VH_PLATFORM_NATIVE_LONG.get(arr, idx) + inc;
+            VH_PLATFORM_NATIVE_LONG.set(arr, idx, ret);
             return ret;
         }
 

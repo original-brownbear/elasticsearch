@@ -324,7 +324,8 @@ class DateHistogramAggregator extends BucketsAggregator implements SizedBucketAg
     }
 
     private void addRoundedValue(long rounded, int doc, long owningBucketOrd, LeafBucketCollector sub) throws IOException {
-        if (hardBounds == null || hardBounds.contain(rounded)) {
+        var hb = hardBounds;
+        if (hb == null || hb.contain(rounded)) {
             long bucketOrd = bucketOrds.add(owningBucketOrd, rounded);
             if (bucketOrd < 0) { // already seen
                 bucketOrd = -1 - bucketOrd;
