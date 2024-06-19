@@ -61,19 +61,26 @@ public final class LongHash extends AbstractHash {
     }
 
     private long set(long key, long id) {
-        assert size < maxSize;
-        final long slot = slot(hash(key), mask);
-        for (long index = slot;; index = nextSlot(index, mask)) {
-            final long curId = id(index);
+        // cache object fields in this critical method (even when final this is a valid optimization, see https://openjdk.org/jeps/8132243)
+        final long maskRef = mask;
+        final var idsRef = ids;
+        final var keysRef = keys;
+        final long slot = slot(hash(key), maskRef);
+        for (long index = slot;; index = nextSlot(index, maskRef)) {
+            final long curId = idsRef.get(index) - 1;
             if (curId == -1) { // means unset
-                id(index, id);
-                append(id, key);
-                ++size;
-                return id;
-            } else if (keys.get(curId) == key) {
+                return setOverUnsed(key, id, index);
+            } else if (keysRef.get(curId) == key) {
                 return -1 - curId;
             }
         }
+    }
+
+    private long setOverUnsed(long key, long id, long index) {
+        id(index, id);
+        append(id, key);
+        ++size;
+        return id;
     }
 
     private void append(long id, long key) {
