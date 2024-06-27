@@ -101,9 +101,9 @@ public class InferencePipelineAggregator extends PipelineAggregator {
                     inference = new WarningInferenceResults(e.getMessage());
                 }
 
-                final List<InternalAggregation> aggs = new ArrayList<>(bucket.getAggregations().asList());
-                InternalInferenceAggregation aggResult = new InternalInferenceAggregation(name(), metadata(), inference);
-                aggs.add(aggResult);
+                final List<InternalAggregation> aggs = new ArrayList<>(bucket.getAggregations().size() + 1);
+                bucket.getAggregations().iterator().forEachRemaining(aggs::add);
+                aggs.add(new InternalInferenceAggregation(name(), metadata(), inference));
                 InternalMultiBucketAggregation.InternalBucket newBucket = originalAgg.createBucket(InternalAggregations.from(aggs), bucket);
                 newBuckets.add(newBucket);
             }

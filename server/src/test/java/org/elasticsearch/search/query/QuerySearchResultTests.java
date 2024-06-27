@@ -119,7 +119,7 @@ public class QuerySearchResultTests extends ESTestCase {
                     querySearchResult.releaseAggs();
                     InternalAggregations deserializedAggs = deserialized.getAggs().expand();
                     deserialized.releaseAggs();
-                    assertEquals(aggs.asList(), deserializedAggs.asList());
+                    assertEquals(aggs.stream().toList(), deserializedAggs.stream().toList());
                     assertThat(deserialized.aggregations(), is(nullValue()));
                 }
                 assertEquals(querySearchResult.terminatedEarly(), deserialized.terminatedEarly());

@@ -9,11 +9,12 @@ package org.elasticsearch.search.aggregations;
 
 import org.apache.lucene.util.SetOnce;
 import org.elasticsearch.common.ParsingException;
+import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.common.io.stream.DelayableWriteable;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
-import org.elasticsearch.common.util.Maps;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.search.aggregations.pipeline.PipelineAggregator;
 import org.elasticsearch.search.aggregations.pipeline.SiblingPipelineAggregator;
 import org.elasticsearch.search.aggregations.support.AggregationPath;
@@ -26,15 +27,15 @@ import org.elasticsearch.xcontent.XContentParser;
 import java.io.IOException;
 import java.util.AbstractList;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import static java.util.Collections.unmodifiableMap;
 import static org.elasticsearch.common.xcontent.XContentParserUtils.parseTypedKeysObject;
 
 /**
@@ -44,18 +45,14 @@ public final class InternalAggregations implements Iterable<InternalAggregation>
 
     public static final String AGGREGATIONS_FIELD = "aggregations";
 
-    public static final InternalAggregations EMPTY = new InternalAggregations(List.of());
-    private final List<InternalAggregation> aggregations;
-    private Map<String, InternalAggregation> aggregationsAsMap;
+    public static final InternalAggregations EMPTY = new InternalAggregations(new InternalAggregation[0]);
+    private final InternalAggregation[] aggregations;
 
     /**
      * Constructs a new aggregation.
      */
-    private InternalAggregations(List<InternalAggregation> aggregations) {
+    private InternalAggregations(InternalAggregation[] aggregations) {
         this.aggregations = aggregations;
-        if (aggregations.isEmpty()) {
-            aggregationsAsMap = Map.of();
-        }
     }
 
     /**
@@ -63,35 +60,15 @@ public final class InternalAggregations implements Iterable<InternalAggregation>
      */
     @Override
     public Iterator<InternalAggregation> iterator() {
-        return aggregations.iterator();
+        return Iterators.forArray(aggregations);
     }
 
-    /**
-     * The list of {@link InternalAggregation}s.
-     */
-    public List<InternalAggregation> asList() {
-        return aggregations;
+    public int size() {
+        return aggregations.length;
     }
 
-    /**
-     * Returns the {@link InternalAggregation}s keyed by aggregation name.
-     */
-    public Map<String, InternalAggregation> asMap() {
-        return getAsMap();
-    }
-
-    /**
-     * Returns the {@link InternalAggregation}s keyed by aggregation name.
-     */
-    public Map<String, InternalAggregation> getAsMap() {
-        if (aggregationsAsMap == null) {
-            Map<String, InternalAggregation> newAggregationsAsMap = Maps.newMapWithExpectedSize(aggregations.size());
-            for (InternalAggregation aggregation : aggregations) {
-                newAggregationsAsMap.put(aggregation.getName(), aggregation);
-            }
-            this.aggregationsAsMap = unmodifiableMap(newAggregationsAsMap);
-        }
-        return aggregationsAsMap;
+    public Stream<InternalAggregation> stream() {
+        return Arrays.stream(aggregations);
     }
 
     /**
@@ -99,7 +76,12 @@ public final class InternalAggregations implements Iterable<InternalAggregation>
      */
     @SuppressWarnings("unchecked")
     public <A extends InternalAggregation> A get(String name) {
-        return (A) asMap().get(name);
+        for (InternalAggregation aggregation : aggregations) {
+            if (aggregation.getName().equals(name)) {
+                return (A) aggregation;
+            }
+        }
+        return null;
     }
 
     @Override
@@ -107,17 +89,17 @@ public final class InternalAggregations implements Iterable<InternalAggregation>
         if (obj == null || getClass() != obj.getClass()) {
             return false;
         }
-        return aggregations.equals(((InternalAggregations) obj).aggregations);
+        return Arrays.equals(aggregations, ((InternalAggregations) obj).aggregations);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getClass(), aggregations);
+        return Objects.hash(getClass(), Arrays.hashCode(aggregations));
     }
 
     @Override
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
-        if (aggregations.isEmpty()) {
+        if (aggregations.length == 0) {
             return builder;
         }
         builder.startObject(AGGREGATIONS_FIELD);
@@ -153,14 +135,14 @@ public final class InternalAggregations implements Iterable<InternalAggregation>
                 }
             }
         }
-        return new InternalAggregations(aggregations);
+        return new InternalAggregations(aggregations.toArray(EMPTY.aggregations));
     }
 
     public static InternalAggregations from(List<InternalAggregation> aggregations) {
         if (aggregations.isEmpty()) {
             return EMPTY;
         }
-        return new InternalAggregations(aggregations);
+        return new InternalAggregations(aggregations.toArray(EMPTY.aggregations));
     }
 
     public static InternalAggregations readFrom(StreamInput in) throws IOException {
@@ -169,18 +151,14 @@ public final class InternalAggregations implements Iterable<InternalAggregation>
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
-        out.writeNamedWriteableCollection(getInternalAggregations());
+        out.writeNamedWriteableCollection(Arrays.asList(aggregations));
     }
 
     /**
      * Make a mutable copy of the aggregation results.
      */
     public List<InternalAggregation> copyResults() {
-        return new ArrayList<>(getInternalAggregations());
-    }
-
-    private List<InternalAggregation> getInternalAggregations() {
-        return aggregations;
+        return CollectionUtils.arrayAsArrayList(aggregations);
     }
 
     /**
@@ -235,8 +213,7 @@ public final class InternalAggregations implements Iterable<InternalAggregation>
             return null;
         }
         if (context.isFinalReduce()) {
-            List<InternalAggregation> reducedInternalAggs = reduced.getInternalAggregations();
-            reducedInternalAggs = reducedInternalAggs.stream()
+            List<InternalAggregation> reducedInternalAggs = reduced.stream()
                 .map(agg -> agg.reducePipelines(agg, context, context.pipelineTreeRoot().subTree(agg.getName())))
                 .collect(Collectors.toCollection(ArrayList::new));
 
@@ -262,7 +239,7 @@ public final class InternalAggregations implements Iterable<InternalAggregation>
         }
         // handle special case when there is just one aggregation
         if (aggregationsList.size() == 1) {
-            final List<InternalAggregation> internalAggregations = aggregationsList.get(0).asList();
+            final InternalAggregations internalAggregations = aggregationsList.get(0);
             final List<InternalAggregation> reduced = new ArrayList<>(internalAggregations.size());
             for (InternalAggregation aggregation : internalAggregations) {
                 if (aggregation.mustReduceOnSingleInternalAgg()) {
@@ -291,8 +268,6 @@ public final class InternalAggregations implements Iterable<InternalAggregation>
      * @return the finalized aggregations
      */
     public static InternalAggregations finalizeSampling(InternalAggregations internalAggregations, SamplingContext samplingContext) {
-        return from(
-            internalAggregations.aggregations.stream().map(agg -> agg.finalizeSampling(samplingContext)).collect(Collectors.toList())
-        );
+        return from(internalAggregations.stream().map(agg -> agg.finalizeSampling(samplingContext)).collect(Collectors.toList()));
     }
 }

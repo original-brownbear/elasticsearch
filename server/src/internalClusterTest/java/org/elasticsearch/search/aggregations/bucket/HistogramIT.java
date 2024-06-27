@@ -55,6 +55,7 @@ import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNoFa
 import static org.elasticsearch.xcontent.XContentFactory.jsonBuilder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
@@ -452,7 +453,7 @@ public class HistogramIT extends ESIntegTestCase {
                     assertThat(bucket, notNullValue());
                     assertThat(((Number) bucket.getKey()).longValue(), equalTo((long) i * interval));
                     assertThat(bucket.getDocCount(), equalTo(valueCounts[i]));
-                    assertThat(bucket.getAggregations().asList().isEmpty(), is(false));
+                    assertThat(bucket.getAggregations().size(), greaterThan(0));
                     Sum sum = bucket.getAggregations().get("sum");
                     assertThat(sum, notNullValue());
                     long s = 0;
@@ -494,7 +495,7 @@ public class HistogramIT extends ESIntegTestCase {
                     assertTrue(visited.add(key));
                     int b = (int) (key / interval);
                     assertThat(bucket.getDocCount(), equalTo(valueCounts[b]));
-                    assertThat(bucket.getAggregations().asList().isEmpty(), is(false));
+                    assertThat(bucket.getAggregations().size(), greaterThan(0));
                     Sum sum = bucket.getAggregations().get("sum");
                     assertThat(sum, notNullValue());
                     long s = 0;
@@ -535,7 +536,7 @@ public class HistogramIT extends ESIntegTestCase {
                     assertTrue(visited.add(key));
                     int b = (int) (key / interval);
                     assertThat(bucket.getDocCount(), equalTo(valueCounts[b]));
-                    assertThat(bucket.getAggregations().asList().isEmpty(), is(false));
+                    assertThat(bucket.getAggregations().size(), greaterThan(0));
                     Sum sum = bucket.getAggregations().get("sum");
                     assertThat(sum, notNullValue());
                     long s = 0;
@@ -577,7 +578,7 @@ public class HistogramIT extends ESIntegTestCase {
                     assertTrue(visited.add(key));
                     int b = (int) (key / interval);
                     assertThat(bucket.getDocCount(), equalTo(valueCounts[b]));
-                    assertThat(bucket.getAggregations().asList().isEmpty(), is(false));
+                    assertThat(bucket.getAggregations().size(), greaterThan(0));
                     Stats stats = bucket.getAggregations().get("stats");
                     assertThat(stats, notNullValue());
                     long s = 0;
@@ -619,7 +620,7 @@ public class HistogramIT extends ESIntegTestCase {
                     assertTrue(visited.add(key));
                     int b = (int) (key / interval);
                     assertThat(bucket.getDocCount(), equalTo(valueCounts[b]));
-                    assertThat(bucket.getAggregations().asList().isEmpty(), is(false));
+                    assertThat(bucket.getAggregations().size(), greaterThan(0));
                     Filter filter = bucket.getAggregations().get("filter");
                     assertThat(filter, notNullValue());
                     assertThat(bucket.getDocCount(), equalTo(filter.getDocCount()));

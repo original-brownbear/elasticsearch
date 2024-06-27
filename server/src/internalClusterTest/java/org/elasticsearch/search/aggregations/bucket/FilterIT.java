@@ -30,6 +30,7 @@ import static org.elasticsearch.search.aggregations.AggregationBuilders.histogra
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNoFailuresAndResponse;
 import static org.elasticsearch.xcontent.XContentFactory.jsonBuilder;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.core.IsNull.notNullValue;
@@ -108,7 +109,7 @@ public class FilterIT extends ESIntegTestCase {
                 for (int i = 0; i < numTag1Docs; ++i) {
                     sum += i + 1;
                 }
-                assertThat(filter.getAggregations().asList().isEmpty(), is(false));
+                assertThat(filter.getAggregations().size(), greaterThan(0));
                 Avg avgValue = filter.getAggregations().get("avg_value");
                 assertThat(avgValue, notNullValue());
                 assertThat(avgValue.getName(), equalTo("avg_value"));

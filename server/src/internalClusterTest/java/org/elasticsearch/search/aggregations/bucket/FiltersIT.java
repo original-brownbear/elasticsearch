@@ -36,6 +36,7 @@ import static org.elasticsearch.search.aggregations.AggregationBuilders.histogra
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNoFailuresAndResponse;
 import static org.elasticsearch.xcontent.XContentFactory.jsonBuilder;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.core.IsNull.notNullValue;
@@ -167,7 +168,7 @@ public class FiltersIT extends ESIntegTestCase {
                 for (int i = 0; i < numTag1Docs; ++i) {
                     sum += i + 1;
                 }
-                assertThat(bucket.getAggregations().asList().isEmpty(), is(false));
+                assertThat(bucket.getAggregations().size(), greaterThan(0));
                 Avg avgValue = bucket.getAggregations().get("avg_value");
                 assertThat(avgValue, notNullValue());
                 assertThat(avgValue.getName(), equalTo("avg_value"));
@@ -183,7 +184,7 @@ public class FiltersIT extends ESIntegTestCase {
                 for (int i = numTag1Docs; i < (numTag1Docs + numTag2Docs); ++i) {
                     sum += i;
                 }
-                assertThat(bucket.getAggregations().asList().isEmpty(), is(false));
+                assertThat(bucket.getAggregations().size(), greaterThan(0));
                 avgValue = bucket.getAggregations().get("avg_value");
                 assertThat(avgValue, notNullValue());
                 assertThat(avgValue.getName(), equalTo("avg_value"));
@@ -400,7 +401,7 @@ public class FiltersIT extends ESIntegTestCase {
                 for (int i = 0; i < numTag1Docs; ++i) {
                     sum += i + 1;
                 }
-                assertThat(bucket.getAggregations().asList().isEmpty(), is(false));
+                assertThat(bucket.getAggregations().size(), greaterThan(0));
                 Avg avgValue = bucket.getAggregations().get("avg_value");
                 assertThat(avgValue, notNullValue());
                 assertThat(avgValue.getName(), equalTo("avg_value"));
@@ -416,7 +417,7 @@ public class FiltersIT extends ESIntegTestCase {
                 for (int i = numTag1Docs; i < (numTag1Docs + numTag2Docs); ++i) {
                     sum += i;
                 }
-                assertThat(bucket.getAggregations().asList().isEmpty(), is(false));
+                assertThat(bucket.getAggregations().size(), greaterThan(0));
                 avgValue = bucket.getAggregations().get("avg_value");
                 assertThat(avgValue, notNullValue());
                 assertThat(avgValue.getName(), equalTo("avg_value"));
@@ -432,7 +433,7 @@ public class FiltersIT extends ESIntegTestCase {
                 for (int i = numTag1Docs + numTag2Docs; i < numDocs; ++i) {
                     sum += i;
                 }
-                assertThat(bucket.getAggregations().asList().isEmpty(), is(false));
+                assertThat(bucket.getAggregations().size(), greaterThan(0));
                 avgValue = bucket.getAggregations().get("avg_value");
                 assertThat(avgValue, notNullValue());
                 assertThat(avgValue.getName(), equalTo("avg_value"));

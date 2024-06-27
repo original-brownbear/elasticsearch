@@ -149,7 +149,7 @@ public class TimeSeriesAggregationsUnlimitedDimensionsIT extends AggregationInte
         final TimeSeriesAggregationBuilder timeSeries = new TimeSeriesAggregationBuilder("ts");
         final SearchResponse aggregationResponse = client().prepareSearch("index").addAggregation(timeSeries).setSize(0).get();
         try {
-            assertTimeSeriesAggregation((InternalTimeSeries) aggregationResponse.getAggregations().asList().get(0));
+            assertTimeSeriesAggregation((InternalTimeSeries) aggregationResponse.getAggregations().iterator().next());
         } finally {
             aggregationResponse.decRef();
         }
@@ -163,7 +163,7 @@ public class TimeSeriesAggregationsUnlimitedDimensionsIT extends AggregationInte
         assertNotEquals(numberOfDocuments, searchResponse.getHits().getHits().length);
         final SearchResponse aggregationResponse = client().prepareSearch("index").addAggregation(timeSeries).setSize(0).get();
         try {
-            assertTimeSeriesAggregation((InternalTimeSeries) aggregationResponse.getAggregations().asList().get(0));
+            assertTimeSeriesAggregation((InternalTimeSeries) aggregationResponse.getAggregations().iterator().next());
         } finally {
             searchResponse.decRef();
             aggregationResponse.decRef();
@@ -176,7 +176,7 @@ public class TimeSeriesAggregationsUnlimitedDimensionsIT extends AggregationInte
         );
         final SearchResponse aggregationResponse = client().prepareSearch("index").addAggregation(timeSeries).setSize(0).get();
         try {
-            assertTimeSeriesAggregation((InternalTimeSeries) aggregationResponse.getAggregations().asList().get(0));
+            assertTimeSeriesAggregation((InternalTimeSeries) aggregationResponse.getAggregations().iterator().next());
         } finally {
             aggregationResponse.decRef();
         }
@@ -188,7 +188,7 @@ public class TimeSeriesAggregationsUnlimitedDimensionsIT extends AggregationInte
         );
         final SearchResponse aggregationResponse = client().prepareSearch("index").addAggregation(timeSeries).setSize(0).get();
         try {
-            assertTimeSeriesAggregation((InternalTimeSeries) aggregationResponse.getAggregations().asList().get(0));
+            assertTimeSeriesAggregation((InternalTimeSeries) aggregationResponse.getAggregations().iterator().next());
         } finally {
             aggregationResponse.decRef();
         }

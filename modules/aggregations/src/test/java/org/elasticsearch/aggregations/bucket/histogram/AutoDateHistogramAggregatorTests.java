@@ -912,8 +912,8 @@ public class AutoDateHistogramAggregatorTests extends DateHistogramAggregatorTes
                 Histogram.Bucket bucket = buckets.get(0);
                 assertEquals("2010-01-01T00:00:00.000Z", bucket.getKeyAsString());
                 assertEquals(10, bucket.getDocCount());
-                assertThat(bucket.getAggregations().asList().size(), equalTo(1));
-                InternalHistogram histo = (InternalHistogram) bucket.getAggregations().asList().get(0);
+                assertThat(bucket.getAggregations().size(), equalTo(1));
+                InternalHistogram histo = (InternalHistogram) bucket.getAggregations().iterator().next();
                 assertThat(histo.getBuckets().size(), equalTo(10));
                 for (int i = 0; i < 10; i++) {
                     assertThat(histo.getBuckets().get(i).getKey(), equalTo((double) i));

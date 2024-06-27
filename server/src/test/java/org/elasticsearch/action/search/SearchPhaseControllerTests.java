@@ -720,7 +720,7 @@ public class SearchPhaseControllerTests extends ESTestCase {
             assertEquals(numTotalReducePhases, reduce.numReducePhases());
             assertEquals(numTotalReducePhases, reductions.size());
             assertAggReduction(request);
-            Max max = (Max) reduce.aggregations().asList().get(0);
+            Max max = (Max) reduce.aggregations().iterator().next();
             assertEquals(3.0D, max.value(), 0.0D);
             assertFalse(reduce.sortedTopDocs().isSortedByField());
             assertNull(reduce.sortedTopDocs().sortFields());
@@ -789,7 +789,7 @@ public class SearchPhaseControllerTests extends ESTestCase {
 
             SearchPhaseController.ReducedQueryPhase reduce = consumer.reduce();
             assertAggReduction(request);
-            Max internalMax = (Max) reduce.aggregations().asList().get(0);
+            Max internalMax = (Max) reduce.aggregations().iterator().next();
             assertEquals(max.get(), internalMax.value(), 0.0D);
             assertEquals(1, reduce.sortedTopDocs().scoreDocs().length);
             assertEquals(max.get(), reduce.maxScore(), 0.0f);
@@ -849,7 +849,7 @@ public class SearchPhaseControllerTests extends ESTestCase {
 
             SearchPhaseController.ReducedQueryPhase reduce = consumer.reduce();
             assertAggReduction(request);
-            Max internalMax = (Max) reduce.aggregations().asList().get(0);
+            Max internalMax = (Max) reduce.aggregations().iterator().next();
             assertEquals(max.get(), internalMax.value(), 0.0D);
             assertEquals(0, reduce.sortedTopDocs().scoreDocs().length);
             assertEquals(max.get(), reduce.maxScore(), 0.0f);
@@ -1303,7 +1303,7 @@ public class SearchPhaseControllerTests extends ESTestCase {
                 latch.await();
                 SearchPhaseController.ReducedQueryPhase reduce = consumer.reduce();
                 assertAggReduction(request);
-                Max internalMax = (Max) reduce.aggregations().asList().get(0);
+                Max internalMax = (Max) reduce.aggregations().iterator().next();
                 assertEquals(max.get(), internalMax.value(), 0.0D);
                 assertEquals(1, reduce.sortedTopDocs().scoreDocs().length);
                 assertEquals(max.get(), reduce.maxScore(), 0.0f);

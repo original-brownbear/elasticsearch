@@ -11,7 +11,6 @@ import org.apache.logging.log4j.Logger;
 import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.search.aggregations.Aggregation;
-import org.elasticsearch.search.aggregations.InternalAggregation;
 import org.elasticsearch.search.aggregations.InternalAggregations;
 import org.elasticsearch.search.aggregations.bucket.MultiBucketsAggregation;
 import org.elasticsearch.search.aggregations.bucket.SingleBucketAggregation;
@@ -32,7 +31,6 @@ import java.io.OutputStream;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -91,7 +89,7 @@ class AggregationToJsonProcessor {
     }
 
     public void process(InternalAggregations aggs) throws IOException {
-        processAggs(0, aggs.asList());
+        processAggs(0, aggs);
     }
 
     /**
@@ -103,8 +101,8 @@ class AggregationToJsonProcessor {
      *       <li>{@link Percentiles}</li>
      *   </ul>
      */
-    private void processAggs(long docCount, List<InternalAggregation> aggregations) throws IOException {
-        if (aggregations.isEmpty()) {
+    private void processAggs(long docCount, InternalAggregations aggregations) throws IOException {
+        if (aggregations.size() == 0) {
             // This means we reached a bucket aggregation without sub-aggs. Thus, we can flush the path written so far.
             queueDocToWrite(keyValuePairs, docCount);
             return;
@@ -141,7 +139,7 @@ class AggregationToJsonProcessor {
         int bucketAggLevelCount = Math.max(
             bucketAggregations.size(),
             (int) singleBucketAggregations.stream()
-                .flatMap(s -> asList(s.getAggregations()).stream())
+                .flatMap(s -> s.getAggregations().stream())
                 .filter(MultiBucketsAggregation.class::isInstance)
                 .count()
         );
@@ -189,11 +187,15 @@ class AggregationToJsonProcessor {
         for (SingleBucketAggregation singleBucketAggregation : singleBucketAggregations) {
             processAggs(
                 singleBucketAggregation.getDocCount(),
-                asList(singleBucketAggregation.getAggregations()).stream()
-                    .filter(
-                        aggregation -> (aggregation instanceof MultiBucketsAggregation || aggregation instanceof SingleBucketAggregation)
-                    )
-                    .collect(Collectors.toList())
+                InternalAggregations.from(
+                    singleBucketAggregation.getAggregations()
+                        .stream()
+                        .filter(
+                            aggregation -> (aggregation instanceof MultiBucketsAggregation
+                                || aggregation instanceof SingleBucketAggregation)
+                        )
+                        .collect(Collectors.toList())
+                )
             );
         }
 
@@ -231,8 +233,7 @@ class AggregationToJsonProcessor {
                 }
             }
 
-            List<InternalAggregation> childAggs = bucket.getAggregations().asList();
-            processAggs(bucket.getDocCount(), childAggs);
+            processAggs(bucket.getDocCount(), bucket.getAggregations());
             keyValuePairs.remove(timeField);
         }
     }
@@ -270,8 +271,7 @@ class AggregationToJsonProcessor {
             }
 
             Collection<String> addedFields = processCompositeAggBucketKeys(bucket.getKey());
-            List<InternalAggregation> childAggs = bucket.getAggregations().asList();
-            processAggs(bucket.getDocCount(), childAggs);
+            processAggs(bucket.getDocCount(), bucket.getAggregations());
             keyValuePairs.remove(timeField);
             for (String fieldName : addedFields) {
                 keyValuePairs.remove(fieldName);
@@ -336,8 +336,7 @@ class AggregationToJsonProcessor {
         }
 
         boolean foundRequiredAgg = false;
-        List<InternalAggregation> aggs = asList(aggregation.getBuckets().get(0).getAggregations());
-        for (Aggregation agg : aggs) {
+        for (Aggregation agg : aggregation.getBuckets().get(0).getAggregations()) {
             if (fields.contains(agg.getName())) {
                 foundRequiredAgg = true;
                 break;
@@ -364,7 +363,7 @@ class AggregationToJsonProcessor {
             if (bucket instanceof CompositeAggregation.Bucket) {
                 addedFields.addAll(processCompositeAggBucketKeys(((CompositeAggregation.Bucket) bucket).getKey()));
             }
-            processAggs(bucket.getDocCount(), asList(bucket.getAggregations()));
+            processAggs(bucket.getDocCount(), bucket.getAggregations());
             for (String fieldName : addedFields) {
                 keyValuePairs.remove(fieldName);
             }
@@ -485,7 +484,4 @@ class AggregationToJsonProcessor {
         return keyValueWrittenCount;
     }
 
-    private static List<InternalAggregation> asList(@Nullable InternalAggregations aggs) {
-        return aggs == null ? Collections.emptyList() : aggs.asList();
-    }
 }

@@ -593,7 +593,7 @@ public class DateRangeIT extends ESIntegTestCase {
                 assertThat(((ZonedDateTime) buckets.get(0).getFrom()).toInstant().toEpochMilli(), equalTo(0L));
                 assertThat(((ZonedDateTime) buckets.get(0).getTo()).toInstant().toEpochMilli(), equalTo(1L));
                 assertThat(buckets.get(0).getDocCount(), equalTo(0L));
-                assertThat(buckets.get(0).getAggregations().asList().isEmpty(), is(true));
+                assertThat(buckets.get(0).getAggregations().size(), equalTo(0));
             }
         );
     }
@@ -862,6 +862,6 @@ public class DateRangeIT extends ESIntegTestCase {
         assertThat((String) bucket.getKey(), equalTo(expectedKey));
         assertThat(((ZonedDateTime) bucket.getFrom()).toInstant().toEpochMilli(), equalTo(expectedFrom));
         assertThat(((ZonedDateTime) bucket.getTo()).toInstant().toEpochMilli(), equalTo(expectedTo));
-        assertThat(bucket.getAggregations().asList().isEmpty(), is(true));
+        assertThat(bucket.getAggregations().size(), equalTo(0));
     }
 }

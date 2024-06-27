@@ -175,9 +175,9 @@ public class RareTermsAggregatorTests extends AggregatorTestCase {
             assertThat(bucket.getDocCount(), equalTo(1L));
 
             InternalAggregations children = bucket.getAggregations();
-            assertThat(children.asList().size(), equalTo(1));
-            assertThat(children.asList().get(0).getName(), equalTo("the_max"));
-            assertThat(((Max) (children.asList().get(0))).value(), equalTo(1.0));
+            assertThat(children.size(), equalTo(1));
+            assertThat(children.iterator().next().getName(), equalTo("the_max"));
+            assertThat(((Max) (children.iterator().next())).value(), equalTo(1.0));
         });
         testSearchCase(query, dataset, aggregation -> {
             MaxAggregationBuilder max = new MaxAggregationBuilder("the_max").field(LONG_FIELD);
@@ -189,9 +189,9 @@ public class RareTermsAggregatorTests extends AggregatorTestCase {
             assertThat(bucket.getDocCount(), equalTo(1L));
 
             InternalAggregations children = bucket.getAggregations();
-            assertThat(children.asList().size(), equalTo(1));
-            assertThat(children.asList().get(0).getName(), equalTo("the_max"));
-            assertThat(((Max) (children.asList().get(0))).value(), equalTo(1.0));
+            assertThat(children.size(), equalTo(1));
+            assertThat(children.iterator().next().getName(), equalTo("the_max"));
+            assertThat(((Max) (children.iterator().next())).value(), equalTo(1.0));
         });
     }
 
@@ -289,10 +289,10 @@ public class RareTermsAggregatorTests extends AggregatorTestCase {
             assertThat(bucket.getDocCount(), equalTo(1L));
 
             InternalAggregations children = bucket.getAggregations();
-            assertThat(children.asList().size(), equalTo(1));
-            assertThat(children.asList().get(0).getName(), equalTo("the_terms"));
-            assertThat(((Terms) (children.asList().get(0))).getBuckets().size(), equalTo(1));
-            assertThat(((Terms) (children.asList().get(0))).getBuckets().get(0).getKeyAsString(), equalTo("1"));
+            assertThat(children.size(), equalTo(1));
+            assertThat(children.iterator().next().getName(), equalTo("the_terms"));
+            assertThat(((Terms) (children.iterator().next())).getBuckets().size(), equalTo(1));
+            assertThat(((Terms) (children.iterator().next())).getBuckets().get(0).getKeyAsString(), equalTo("1"));
         });
 
         testSearchCase(query, dataset, aggregation -> {
@@ -305,10 +305,10 @@ public class RareTermsAggregatorTests extends AggregatorTestCase {
             assertThat(bucket.getDocCount(), equalTo(1L));
 
             InternalAggregations children = bucket.getAggregations();
-            assertThat(children.asList().size(), equalTo(1));
-            assertThat(children.asList().get(0).getName(), equalTo("the_terms"));
-            assertThat(((Terms) (children.asList().get(0))).getBuckets().size(), equalTo(1));
-            assertThat(((Terms) (children.asList().get(0))).getBuckets().get(0).getKeyAsString(), equalTo("1"));
+            assertThat(children.size(), equalTo(1));
+            assertThat(children.iterator().next().getName(), equalTo("the_terms"));
+            assertThat(((Terms) (children.iterator().next())).getBuckets().size(), equalTo(1));
+            assertThat(((Terms) (children.iterator().next())).getBuckets().get(0).getKeyAsString(), equalTo("1"));
         });
     }
 

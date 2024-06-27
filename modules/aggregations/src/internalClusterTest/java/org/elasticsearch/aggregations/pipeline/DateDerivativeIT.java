@@ -42,6 +42,7 @@ import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNoFa
 import static org.elasticsearch.xcontent.XContentFactory.jsonBuilder;
 import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
@@ -425,7 +426,7 @@ public class DateDerivativeIT extends ESIntegTestCase {
                 assertThat(bucket, notNullValue());
                 assertThat((ZonedDateTime) bucket.getKey(), equalTo(key));
                 assertThat(bucket.getDocCount(), equalTo(1L));
-                assertThat(bucket.getAggregations().asList().isEmpty(), is(false));
+                assertThat(bucket.getAggregations().size(), greaterThan(0));
                 Sum sum = bucket.getAggregations().get("sum");
                 assertThat(sum, notNullValue());
                 assertThat(sum.value(), equalTo(1.0));
@@ -440,7 +441,7 @@ public class DateDerivativeIT extends ESIntegTestCase {
                 assertThat(bucket, notNullValue());
                 assertThat((ZonedDateTime) bucket.getKey(), equalTo(key));
                 assertThat(bucket.getDocCount(), equalTo(2L));
-                assertThat(bucket.getAggregations().asList().isEmpty(), is(false));
+                assertThat(bucket.getAggregations().size(), greaterThan(0));
                 sum = bucket.getAggregations().get("sum");
                 assertThat(sum, notNullValue());
                 assertThat(sum.value(), equalTo(5.0));
@@ -463,7 +464,7 @@ public class DateDerivativeIT extends ESIntegTestCase {
                 assertThat(bucket, notNullValue());
                 assertThat((ZonedDateTime) bucket.getKey(), equalTo(key));
                 assertThat(bucket.getDocCount(), equalTo(3L));
-                assertThat(bucket.getAggregations().asList().isEmpty(), is(false));
+                assertThat(bucket.getAggregations().size(), greaterThan(0));
                 sum = bucket.getAggregations().get("sum");
                 assertThat(sum, notNullValue());
                 assertThat(sum.value(), equalTo(15.0));
@@ -504,7 +505,7 @@ public class DateDerivativeIT extends ESIntegTestCase {
                 assertThat(bucket, notNullValue());
                 assertThat((ZonedDateTime) bucket.getKey(), equalTo(key));
                 assertThat(bucket.getDocCount(), equalTo(1L));
-                assertThat(bucket.getAggregations().asList().isEmpty(), is(true));
+                assertThat(bucket.getAggregations().size(), is(0));
                 SimpleValue docCountDeriv = bucket.getAggregations().get("deriv");
                 assertThat(docCountDeriv, nullValue());
 
@@ -513,7 +514,7 @@ public class DateDerivativeIT extends ESIntegTestCase {
                 assertThat(bucket, notNullValue());
                 assertThat((ZonedDateTime) bucket.getKey(), equalTo(key));
                 assertThat(bucket.getDocCount(), equalTo(3L));
-                assertThat(bucket.getAggregations().asList().isEmpty(), is(false));
+                assertThat(bucket.getAggregations().size(), greaterThan(0));
                 docCountDeriv = bucket.getAggregations().get("deriv");
                 assertThat(docCountDeriv, notNullValue());
                 assertThat(docCountDeriv.value(), equalTo(2.0));
@@ -523,7 +524,7 @@ public class DateDerivativeIT extends ESIntegTestCase {
                 assertThat(bucket, notNullValue());
                 assertThat((ZonedDateTime) bucket.getKey(), equalTo(key));
                 assertThat(bucket.getDocCount(), equalTo(5L));
-                assertThat(bucket.getAggregations().asList().isEmpty(), is(false));
+                assertThat(bucket.getAggregations().size(), greaterThan(0));
                 docCountDeriv = bucket.getAggregations().get("deriv");
                 assertThat(docCountDeriv, notNullValue());
                 assertThat(docCountDeriv.value(), equalTo(2.0));
@@ -533,7 +534,7 @@ public class DateDerivativeIT extends ESIntegTestCase {
                 assertThat(bucket, notNullValue());
                 assertThat((ZonedDateTime) bucket.getKey(), equalTo(key));
                 assertThat(bucket.getDocCount(), equalTo(3L));
-                assertThat(bucket.getAggregations().asList().isEmpty(), is(false));
+                assertThat(bucket.getAggregations().size(), greaterThan(0));
                 docCountDeriv = bucket.getAggregations().get("deriv");
                 assertThat(docCountDeriv, notNullValue());
                 assertThat(docCountDeriv.value(), equalTo(-2.0));
@@ -578,7 +579,7 @@ public class DateDerivativeIT extends ESIntegTestCase {
                 assertThat(bucket, notNullValue());
                 assertThat((ZonedDateTime) bucket.getKey(), equalTo(key));
                 assertThat(bucket.getDocCount(), equalTo(1L));
-                assertThat(bucket.getAggregations().asList().isEmpty(), is(true));
+                assertThat(bucket.getAggregations().size(), is(0));
                 SimpleValue docCountDeriv = bucket.getAggregations().get("deriv");
                 assertThat(docCountDeriv, nullValue());
 
@@ -587,7 +588,7 @@ public class DateDerivativeIT extends ESIntegTestCase {
                 assertThat(bucket, notNullValue());
                 assertThat((ZonedDateTime) bucket.getKey(), equalTo(key));
                 assertThat(bucket.getDocCount(), equalTo(2L));
-                assertThat(bucket.getAggregations().asList().isEmpty(), is(false));
+                assertThat(bucket.getAggregations().size(), greaterThan(0));
                 docCountDeriv = bucket.getAggregations().get("deriv");
                 assertThat(docCountDeriv, notNullValue());
                 assertThat(docCountDeriv.value(), equalTo(1.0));
@@ -597,7 +598,7 @@ public class DateDerivativeIT extends ESIntegTestCase {
                 assertThat(bucket, notNullValue());
                 assertThat((ZonedDateTime) bucket.getKey(), equalTo(key));
                 assertThat(bucket.getDocCount(), equalTo(3L));
-                assertThat(bucket.getAggregations().asList().isEmpty(), is(false));
+                assertThat(bucket.getAggregations().size(), greaterThan(0));
                 docCountDeriv = bucket.getAggregations().get("deriv");
                 assertThat(docCountDeriv, notNullValue());
                 assertThat(docCountDeriv.value(), equalTo(1.0));

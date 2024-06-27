@@ -440,7 +440,7 @@ public class MaxAggregatorTests extends AggregatorTestCase {
         assertEquals("global", global.getName());
         assertEquals(10L, global.getDocCount());
         assertNotNull(global.getAggregations());
-        assertEquals(1, global.getAggregations().asMap().size());
+        assertEquals(1, global.getAggregations().size());
 
         Max max = global.getAggregations().get("max");
         assertNotNull(max);
@@ -448,7 +448,7 @@ public class MaxAggregatorTests extends AggregatorTestCase {
         assertEquals(10.0, max.value(), 0);
         assertEquals(max, ((InternalAggregation) global).getProperty("max"));
         assertEquals(10.0, (double) ((InternalAggregation) global).getProperty("max.value"), 0);
-        assertEquals(10.0, (double) ((InternalAggregation) max).getProperty("value"), 0);
+        assertEquals(10.0, (double) max.getProperty("value"), 0);
 
         indexReader.close();
         directory.close();
@@ -651,7 +651,7 @@ public class MaxAggregatorTests extends AggregatorTestCase {
         assertEquals("global", global.getName());
         assertEquals(0L, global.getDocCount());
         assertNotNull(global.getAggregations());
-        assertEquals(1, global.getAggregations().asMap().size());
+        assertEquals(1, global.getAggregations().size());
 
         Max max = global.getAggregations().get("max");
         assertNotNull(max);

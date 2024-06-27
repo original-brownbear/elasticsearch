@@ -53,6 +53,7 @@ import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertResp
 import static org.elasticsearch.xcontent.XContentFactory.jsonBuilder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.core.IsNull.notNullValue;
@@ -200,7 +201,7 @@ public class NestedIT extends ESIntegTestCase {
                 assertThat(nested, notNullValue());
                 assertThat(nested.getName(), equalTo("nested"));
                 assertThat(nested.getDocCount(), equalTo(count));
-                assertThat(nested.getAggregations().asList().isEmpty(), is(false));
+                assertThat(nested.getAggregations().size(), greaterThan(0));
 
                 Stats stats = nested.getAggregations().get("nested_value_stats");
                 assertThat(stats, notNullValue());
@@ -254,7 +255,7 @@ public class NestedIT extends ESIntegTestCase {
                 assertThat(nested.getName(), equalTo("nested"));
                 assertThat(nested.getDocCount(), equalTo(docCount));
                 assertThat(((InternalAggregation) nested).getProperty("_count"), equalTo(docCount));
-                assertThat(nested.getAggregations().asList().isEmpty(), is(false));
+                assertThat(nested.getAggregations().size(), greaterThan(0));
 
                 LongTerms values = nested.getAggregations().get("values");
                 assertThat(values, notNullValue());

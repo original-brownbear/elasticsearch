@@ -40,6 +40,7 @@ import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertResp
 import static org.elasticsearch.xcontent.XContentFactory.jsonBuilder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.core.IsNull.notNullValue;
@@ -223,7 +224,7 @@ public class AdjacencyMatrixIT extends AggregationIntegTestCase {
                 for (int i = numSingleTag1Docs + numSingleTag2Docs; i < numDocs; i++) {
                     sum += i + 1;
                 }
-                assertThat(tag1Bucket.getAggregations().asList().isEmpty(), is(false));
+                assertThat(tag1Bucket.getAggregations().size(), greaterThan(0));
                 Avg avgBucket1Value = tag1Bucket.getAggregations().get("avg_value");
                 assertThat(avgBucket1Value, notNullValue());
                 assertThat(avgBucket1Value.getName(), equalTo("avg_value"));
@@ -236,7 +237,7 @@ public class AdjacencyMatrixIT extends AggregationIntegTestCase {
                 for (int i = numSingleTag1Docs; i < numDocs; i++) {
                     sum += i + 1;
                 }
-                assertThat(tag2Bucket.getAggregations().asList().isEmpty(), is(false));
+                assertThat(tag2Bucket.getAggregations().size(), greaterThan(0));
                 Avg avgBucket2Value = tag2Bucket.getAggregations().get("avg_value");
                 assertThat(avgBucket2Value, notNullValue());
                 assertThat(avgBucket2Value.getName(), equalTo("avg_value"));

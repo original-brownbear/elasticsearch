@@ -808,7 +808,7 @@ public class CompositeAggregatorTests extends AggregatorTestCase {
             documents.add(root);
             iw.addDocuments(documents);
         }, (InternalSingleBucketAggregation parent) -> {
-            assertEquals(1, parent.getAggregations().asList().size());
+            assertEquals(1, parent.getAggregations().size());
             InternalComposite result = (InternalComposite) parent.getProperty("compositeAggName");
             assertEquals(3, result.getBuckets().size());
             assertEquals("{keyword=Stationary}", result.afterKey().toString());
@@ -867,7 +867,7 @@ public class CompositeAggregatorTests extends AggregatorTestCase {
             documents.add(root);
             iw.addDocuments(documents);
         }, (InternalSingleBucketAggregation parent) -> {
-            assertEquals(1, parent.getAggregations().asList().size());
+            assertEquals(1, parent.getAggregations().size());
             InternalComposite result = (InternalComposite) parent.getProperty("compositeAggName");
             assertEquals(1, result.getBuckets().size());
             assertEquals("{keyword=Stationary}", result.afterKey().toString());

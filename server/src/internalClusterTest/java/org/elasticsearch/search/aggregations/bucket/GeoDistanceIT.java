@@ -41,6 +41,7 @@ import static org.elasticsearch.search.aggregations.AggregationBuilders.terms;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNoFailuresAndResponse;
 import static org.elasticsearch.xcontent.XContentFactory.jsonBuilder;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.sameInstance;
@@ -345,7 +346,7 @@ public class GeoDistanceIT extends ESIntegTestCase {
                 assertThat(bucket.getFromAsString(), equalTo("0.0"));
                 assertThat(bucket.getToAsString(), equalTo("500.0"));
                 assertThat(bucket.getDocCount(), equalTo(2L));
-                assertThat(bucket.getAggregations().asList().isEmpty(), is(false));
+                assertThat(bucket.getAggregations().size(), greaterThan(0));
                 Terms cities = bucket.getAggregations().get("cities");
                 assertThat(cities, Matchers.notNullValue());
                 Set<String> names = new HashSet<>();
@@ -365,7 +366,7 @@ public class GeoDistanceIT extends ESIntegTestCase {
                 assertThat(bucket.getFromAsString(), equalTo("500.0"));
                 assertThat(bucket.getToAsString(), equalTo("1000.0"));
                 assertThat(bucket.getDocCount(), equalTo(2L));
-                assertThat(bucket.getAggregations().asList().isEmpty(), is(false));
+                assertThat(bucket.getAggregations().size(), greaterThan(0));
                 cities = bucket.getAggregations().get("cities");
                 assertThat(cities, Matchers.notNullValue());
                 names = new HashSet<>();
@@ -385,7 +386,7 @@ public class GeoDistanceIT extends ESIntegTestCase {
                 assertThat(bucket.getFromAsString(), equalTo("1000.0"));
                 assertThat(bucket.getToAsString(), nullValue());
                 assertThat(bucket.getDocCount(), equalTo(1L));
-                assertThat(bucket.getAggregations().asList().isEmpty(), is(false));
+                assertThat(bucket.getAggregations().size(), greaterThan(0));
                 cities = bucket.getAggregations().get("cities");
                 assertThat(cities, Matchers.notNullValue());
                 names = new HashSet<>();

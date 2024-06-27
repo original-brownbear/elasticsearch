@@ -260,9 +260,7 @@ public class RollupResponseTranslator {
         final InternalAggregations liveAggs = liveResponse != null ? liveResponse.getAggregations() : InternalAggregations.EMPTY;
 
         int missingRollupAggs = rolledResponses.stream().mapToInt(searchResponse -> {
-            if (searchResponse == null
-                || searchResponse.getAggregations() == null
-                || searchResponse.getAggregations().asList().size() == 0) {
+            if (searchResponse == null || searchResponse.getAggregations() == null || searchResponse.getAggregations().size() == 0) {
                 return 1;
             }
             return 0;
@@ -283,7 +281,7 @@ public class RollupResponseTranslator {
         InternalAggregations currentTree = InternalAggregations.EMPTY;
         AggregationReduceContext finalReduceContext = reduceContextBuilder.forFinalReduction();
         for (SearchResponse rolledResponse : rolledResponses) {
-            List<InternalAggregation> unrolledAggs = new ArrayList<>(rolledResponse.getAggregations().asList().size());
+            List<InternalAggregation> unrolledAggs = new ArrayList<>(rolledResponse.getAggregations().size());
             for (Aggregation agg : rolledResponse.getAggregations()) {
                 // We expect a filter agg here because the rollup convention is that all translated aggs
                 // will start with a filter, containing various agg-specific predicates. If there
@@ -303,7 +301,7 @@ public class RollupResponseTranslator {
         }
 
         // Add in the live aggregations if they exist
-        if (liveAggs.asList().size() != 0) {
+        if (liveAggs.size() != 0) {
             // TODO it looks like this passes the "final" reduce context more than once.
             // Once here and once in the for above. That is bound to cause trouble.
             currentTree = InternalAggregations.reduce(Arrays.asList(currentTree, liveAggs), finalReduceContext);
@@ -370,7 +368,7 @@ public class RollupResponseTranslator {
         InternalAggregations original,
         InternalAggregations currentTree
     ) {
-        return rolled.asList().stream().filter(subAgg -> subAgg.getName().endsWith("." + RollupField.COUNT_FIELD) == false).map(agg -> {
+        return rolled.stream().filter(subAgg -> subAgg.getName().endsWith("." + RollupField.COUNT_FIELD) == false).map(agg -> {
             // During the translation process, some aggregations' doc_counts are stored in accessory
             // `sum` metric aggs, so we may need to extract that. Unfortunately, structure of multibucket vs
             // leaf metric is slightly different; multibucket count is stored per-bucket in a sub-agg, while
@@ -381,7 +379,7 @@ public class RollupResponseTranslator {
             //
             long count = -1;
             if (agg instanceof InternalMultiBucketAggregation == false) {
-                count = getAggCount(agg, rolled.getAsMap());
+                count = getAggCount(agg, rolled);
             }
 
             return unrollAgg(agg, original.get(agg.getName()), currentTree.get(agg.getName()), count);
@@ -522,7 +520,7 @@ public class RollupResponseTranslator {
             .map(bucket -> {
 
                 // Grab the value from the count agg (if it exists), which represents this bucket's doc_count
-                long bucketCount = getAggCount(source, bucket.getAggregations().getAsMap());
+                long bucketCount = getAggCount(source, bucket.getAggregations());
 
                 // Don't generate buckets if the doc count is zero
                 if (bucketCount == 0) {
@@ -559,14 +557,13 @@ public class RollupResponseTranslator {
         // Iterate over the subAggs in each bucket
         return InternalAggregations.from(
             bucket.getAggregations()
-                .asList()
                 .stream()
                 // Avoid any rollup count metrics, as that's not a true "sub-agg" but rather agg
                 // added by the rollup for accounting purposes (e.g. doc_count)
                 .filter(subAgg -> subAgg.getName().endsWith("." + RollupField.COUNT_FIELD) == false)
                 .map(subAgg -> {
 
-                    long count = getAggCount(subAgg, bucket.getAggregations().asMap());
+                    long count = getAggCount(subAgg, bucket.getAggregations());
 
                     InternalAggregation originalSubAgg = null;
                     if (original != null && original.getAggregations() != null) {
@@ -617,7 +614,7 @@ public class RollupResponseTranslator {
         }
     }
 
-    private static long getAggCount(Aggregation agg, Map<String, InternalAggregation> aggMap) {
+    private static long getAggCount(Aggregation agg, InternalAggregations internalAggregations) {
         String countPath = null;
 
         if (agg.getType().equals(DateHistogramAggregationBuilder.NAME)
@@ -630,10 +627,9 @@ public class RollupResponseTranslator {
             countPath = RollupField.formatCountAggName(agg.getName().replace("." + RollupField.VALUE, ""));
         }
 
-        if (countPath != null && aggMap.get(countPath) != null) {
+        if (countPath != null && internalAggregations.get(countPath) instanceof Sum s) {
             // we always set the count fields to Sum aggs, so this is safe
-            assert aggMap.get(countPath) instanceof Sum;
-            return (long) ((Sum) aggMap.get(countPath)).value();
+            return (long) s.value();
         }
 
         return -1;

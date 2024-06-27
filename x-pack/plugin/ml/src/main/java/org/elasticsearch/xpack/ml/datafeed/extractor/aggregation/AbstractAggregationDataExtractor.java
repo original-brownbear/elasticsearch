@@ -14,7 +14,6 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.search.aggregations.Aggregation;
-import org.elasticsearch.search.aggregations.InternalAggregation;
 import org.elasticsearch.search.aggregations.InternalAggregations;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.xpack.core.ClientHelper;
@@ -28,7 +27,6 @@ import org.elasticsearch.xpack.ml.datafeed.extractor.DataExtractorUtils;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
@@ -199,13 +197,13 @@ abstract class AbstractAggregationDataExtractor implements DataExtractor {
         if (aggs == null) {
             return null;
         }
-        List<InternalAggregation> aggsAsList = aggs.asList();
-        if (aggsAsList.isEmpty()) {
+        final int size = aggs.size();
+        if (size == 0) {
             return null;
         }
-        if (aggsAsList.size() > 1) {
+        if (size > 1) {
             throw new IllegalArgumentException(
-                "Multiple top level aggregations not supported; found: " + aggsAsList.stream().map(Aggregation::getName).toList()
+                "Multiple top level aggregations not supported; found: " + aggs.stream().map(Aggregation::getName).toList()
             );
         }
 

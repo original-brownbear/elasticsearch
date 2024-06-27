@@ -81,7 +81,7 @@ public class InternalAggregationsTests extends ESTestCase {
         );
         assertThat(f1Reduced.get(), equalTo(1L));
         assertThat(f2Reduced.get(), equalTo(2L));
-        assertThat(reduced.asList(), equalTo(reduced(7, 12, 2, 3, 2, 1).asList()));
+        assertThat(reduced.stream().toList(), equalTo(reduced(7, 12, 2, 3, 2, 1).stream().toList()));
     }
 
     InternalAggregations toReduce(AtomicLong f1Reduced, AtomicLong f2Reduced, int k1, int k2, int k1k1, int k1k2, int k2k1, int k2k2) {
@@ -249,7 +249,7 @@ public class InternalAggregationsTests extends ESTestCase {
         );
         List<InternalAggregations> aggs = singletonList(InternalAggregations.from(Collections.singletonList(terms)));
         InternalAggregations reducedAggs = InternalAggregations.topLevelReduce(aggs, maxBucketReduceContext().forPartialReduction());
-        assertEquals(1, reducedAggs.asList().size());
+        assertEquals(1, reducedAggs.size());
     }
 
     public void testFinalReduceTopLevelPipelineAggs() {
@@ -270,7 +270,7 @@ public class InternalAggregationsTests extends ESTestCase {
 
         InternalAggregations aggs = InternalAggregations.from(Collections.singletonList(terms));
         InternalAggregations reducedAggs = InternalAggregations.topLevelReduce(List.of(aggs), maxBucketReduceContext().forFinalReduction());
-        assertEquals(2, reducedAggs.asList().size());
+        assertEquals(2, reducedAggs.size());
     }
 
     private AggregationReduceContext.Builder maxBucketReduceContext() {
@@ -319,7 +319,7 @@ public class InternalAggregationsTests extends ESTestCase {
         try (StreamInput in = new NamedWriteableAwareStreamInput(StreamInput.wrap(serializedAggs.bytes), registry)) {
             in.setTransportVersion(version);
             InternalAggregations deserialized = InternalAggregations.readFrom(in);
-            assertEquals(aggregations.asList(), deserialized.asList());
+            assertEquals(aggregations.stream().toList(), deserialized.stream().toList());
             if (iteration < 2) {
                 writeToAndReadFrom(deserialized, version, iteration + 1);
             }

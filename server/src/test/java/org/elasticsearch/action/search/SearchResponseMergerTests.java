@@ -678,7 +678,7 @@ public class SearchResponseMergerTests extends ESTestCase {
                 assertEquals(0, mergedResponse.getFailedShards());
                 assertEquals(0, mergedResponse.getShardFailures().length);
                 assertEquals(0, mergedResponse.getHits().getHits().length);
-                assertEquals(2, mergedResponse.getAggregations().asList().size());
+                assertEquals(2, mergedResponse.getAggregations().size());
                 Max max = mergedResponse.getAggregations().get(maxAggName);
                 assertEquals(maxValue, max.value(), 0d);
                 Range range = mergedResponse.getAggregations().get(rangeAggName);

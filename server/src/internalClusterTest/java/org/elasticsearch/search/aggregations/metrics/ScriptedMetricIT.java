@@ -722,7 +722,7 @@ public class ScriptedMetricIT extends ESIntegTestCase {
                 assertThat(global.getName(), equalTo("global"));
                 assertThat(global.getDocCount(), equalTo(numDocs));
                 assertThat(global.getAggregations(), notNullValue());
-                assertThat(global.getAggregations().asMap().size(), equalTo(1));
+                assertThat(global.getAggregations().size(), equalTo(1));
 
                 ScriptedMetric scriptedMetricAggregation = global.getAggregations().get("scripted");
                 assertThat(scriptedMetricAggregation, notNullValue());
@@ -1039,7 +1039,7 @@ public class ScriptedMetricIT extends ESIntegTestCase {
                     assertThat(b.getDocCount(), equalTo(1L));
                     InternalAggregations subAggs = b.getAggregations();
                     assertThat(subAggs, notNullValue());
-                    assertThat(subAggs.asList().size(), equalTo(1));
+                    assertThat(subAggs.size(), equalTo(1));
                     Aggregation subAgg = subAggs.get("scripted");
                     assertThat(subAgg, notNullValue());
                     assertThat(subAgg, instanceOf(ScriptedMetric.class));

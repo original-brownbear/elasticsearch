@@ -59,11 +59,11 @@ public class TimeSeriesRateAggregatorTests extends AggregatorTestCase {
         Consumer<InternalTimeSeries> verifier = r -> {
             assertThat(r.getBuckets(), hasSize(2));
             assertThat(
-                ((Rate) r.getBucketByKey("{dim=1}").getAggregations().asList().get(0)).getValue(),
+                ((Rate) r.getBucketByKey("{dim=1}").getAggregations().iterator().next()).getValue(),
                 closeTo(59.0 / 3000.0 * MILLIS_IN_SECOND, 0.00001)
             );
             assertThat(
-                ((Rate) r.getBucketByKey("{dim=2}").getAggregations().asList().get(0)).getValue(),
+                ((Rate) r.getBucketByKey("{dim=2}").getAggregations().iterator().next()).getValue(),
                 closeTo(206.0 / 4000.0 * MILLIS_IN_SECOND, 0.00001)
             );
         };

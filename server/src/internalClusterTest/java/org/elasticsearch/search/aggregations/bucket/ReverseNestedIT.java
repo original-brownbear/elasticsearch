@@ -36,6 +36,7 @@ import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHitC
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNoFailuresAndResponse;
 import static org.elasticsearch.xcontent.XContentFactory.jsonBuilder;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.core.IsNull.notNullValue;
@@ -158,7 +159,7 @@ public class ReverseNestedIT extends ESIntegTestCase {
                 assertThat(nested, notNullValue());
                 assertThat(nested.getName(), equalTo("nested1"));
                 assertThat(nested.getDocCount(), equalTo(25L));
-                assertThat(nested.getAggregations().asList().isEmpty(), is(false));
+                assertThat(nested.getAggregations().size(), greaterThan(0));
 
                 Terms usernames = nested.getAggregations().get("field2");
                 assertThat(usernames, notNullValue());
@@ -371,7 +372,7 @@ public class ReverseNestedIT extends ESIntegTestCase {
                 assertThat(nested, notNullValue());
                 assertThat(nested.getName(), equalTo("nested1"));
                 assertThat(nested.getDocCount(), equalTo(27L));
-                assertThat(nested.getAggregations().asList().isEmpty(), is(false));
+                assertThat(nested.getAggregations().size(), greaterThan(0));
 
                 Terms usernames = nested.getAggregations().get("field2");
                 assertThat(usernames, notNullValue());

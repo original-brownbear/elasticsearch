@@ -140,7 +140,6 @@ public class RestVectorTileAction extends BaseRestHandler {
                         ? null
                         : InternalAggregations.from(
                             searchResponse.getAggregations()
-                                .asList()
                                 .stream()
                                 .filter(a -> GRID_FIELD.equals(a.getName()) == false && BOUNDS_FIELD.equals(a.getName()) == false)
                                 .collect(Collectors.toList())

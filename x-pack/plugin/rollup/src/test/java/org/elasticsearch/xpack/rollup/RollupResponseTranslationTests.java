@@ -230,7 +230,7 @@ public class RollupResponseTranslationTests extends AggregatorTestCase {
             try {
                 assertNotNull(response);
                 InternalAggregations responseAggs = response.getAggregations();
-                assertThat(responseAggs.asList().size(), equalTo(0));
+                assertThat(responseAggs.size(), equalTo(0));
             } finally {
                 // this SearchResponse is not a mock, so must be decRef'd
                 response.decRef();

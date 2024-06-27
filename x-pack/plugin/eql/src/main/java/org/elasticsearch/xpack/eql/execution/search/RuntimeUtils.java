@@ -18,7 +18,7 @@ import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.aggregations.InternalAggregation;
+import org.elasticsearch.search.aggregations.InternalAggregations;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.xpack.eql.EqlClientException;
 import org.elasticsearch.xpack.eql.EqlIllegalArgumentException;
@@ -95,13 +95,14 @@ public final class RuntimeUtils {
     }
 
     private static void logSearchResponse(SearchResponse response, Logger logger) {
-        List<InternalAggregation> aggs = Collections.emptyList();
+        InternalAggregations aggs = InternalAggregations.EMPTY;
         if (response.getAggregations() != null) {
-            aggs = response.getAggregations().asList();
+            aggs = response.getAggregations();
         }
         StringBuilder aggsNames = new StringBuilder();
+        var iter = aggs.iterator();
         for (int i = 0; i < aggs.size(); i++) {
-            aggsNames.append(aggs.get(i).getName() + (i + 1 == aggs.size() ? "" : ", "));
+            aggsNames.append(iter.next().getName()).append(i + 1 == aggs.size() ? "" : ", ");
         }
 
         SearchHit[] hits = response.getHits().getHits();

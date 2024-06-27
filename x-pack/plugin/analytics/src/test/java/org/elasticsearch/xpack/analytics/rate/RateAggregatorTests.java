@@ -117,13 +117,13 @@ public class RateAggregatorTests extends AggregatorTestCase {
             iw.addDocument(doc("2010-04-27T03:43:34", new NumericDocValuesField("wrong_val", 103)));
         }, dh -> {
             assertThat(dh.getBuckets(), hasSize(2));
-            assertThat(dh.getBuckets().get(0).getAggregations().asList(), hasSize(1));
-            assertThat(dh.getBuckets().get(0).getAggregations().asList().get(0), instanceOf(InternalRate.class));
-            assertThat(((InternalRate) dh.getBuckets().get(0).getAggregations().asList().get(0)).value(), closeTo(0.0, 0.000001));
+            assertThat(dh.getBuckets().get(0).getAggregations().size(), equalTo(1));
+            assertThat(dh.getBuckets().get(0).getAggregations().iterator().next(), instanceOf(InternalRate.class));
+            assertThat(((InternalRate) dh.getBuckets().get(0).getAggregations().iterator().next()).value(), closeTo(0.0, 0.000001));
 
-            assertThat(dh.getBuckets().get(1).getAggregations().asList(), hasSize(1));
-            assertThat(dh.getBuckets().get(1).getAggregations().asList().get(0), instanceOf(InternalRate.class));
-            assertThat(((InternalRate) dh.getBuckets().get(1).getAggregations().asList().get(0)).value(), closeTo(0.0, 0.000001));
+            assertThat(dh.getBuckets().get(1).getAggregations().size(), equalTo(1));
+            assertThat(dh.getBuckets().get(1).getAggregations().iterator().next(), instanceOf(InternalRate.class));
+            assertThat(((InternalRate) dh.getBuckets().get(1).getAggregations().iterator().next()).value(), closeTo(0.0, 0.000001));
         });
     }
 
@@ -138,8 +138,8 @@ public class RateAggregatorTests extends AggregatorTestCase {
             );
         }, dh -> {
             assertThat(dh.getBuckets(), hasSize(2));
-            assertThat(((InternalRate) dh.getBuckets().get(0).getAggregations().asList().get(0)).value(), closeTo(3.0, 0.000001));
-            assertThat(((InternalRate) dh.getBuckets().get(1).getAggregations().asList().get(0)).value(), closeTo(12.0, 0.000001));
+            assertThat(((InternalRate) dh.getBuckets().get(0).getAggregations().iterator().next()).value(), closeTo(3.0, 0.000001));
+            assertThat(((InternalRate) dh.getBuckets().get(1).getAggregations().iterator().next()).value(), closeTo(12.0, 0.000001));
         });
     }
 
@@ -150,8 +150,8 @@ public class RateAggregatorTests extends AggregatorTestCase {
             iw.addDocument(doc("2010-04-27T03:43:34", new NumericDocValuesField("val", 4)));
         }, dh -> {
             assertThat(dh.getBuckets(), hasSize(2));
-            assertThat(((InternalRate) dh.getBuckets().get(0).getAggregations().asList().get(0)).value(), closeTo(1.0, 0.000001));
-            assertThat(((InternalRate) dh.getBuckets().get(1).getAggregations().asList().get(0)).value(), closeTo(7.0, 0.000001));
+            assertThat(((InternalRate) dh.getBuckets().get(0).getAggregations().iterator().next()).value(), closeTo(1.0, 0.000001));
+            assertThat(((InternalRate) dh.getBuckets().get(1).getAggregations().iterator().next()).value(), closeTo(7.0, 0.000001));
         });
     }
 
@@ -174,8 +174,8 @@ public class RateAggregatorTests extends AggregatorTestCase {
             );
         }, (Consumer<InternalMultiBucketAggregation<?, ?>>) dh -> {
             assertThat(dh.getBuckets(), hasSize(2));
-            assertThat(((InternalRate) dh.getBuckets().get(0).getAggregations().asList().get(0)).value(), closeTo(1.0, 0.000001));
-            assertThat(((InternalRate) dh.getBuckets().get(1).getAggregations().asList().get(0)).value(), closeTo(3.0, 0.000001));
+            assertThat(((InternalRate) dh.getBuckets().get(0).getAggregations().iterator().next()).value(), closeTo(1.0, 0.000001));
+            assertThat(((InternalRate) dh.getBuckets().get(1).getAggregations().iterator().next()).value(), closeTo(3.0, 0.000001));
         }, new AggTestConfig(dateHistogramAggregationBuilder, dateType, numType));
     }
 
@@ -186,8 +186,8 @@ public class RateAggregatorTests extends AggregatorTestCase {
             iw.addDocument(doc("2010-04-27T03:43:34", new NumericDocValuesField("val", 4)));
         }, dh -> {
             assertThat(dh.getBuckets(), hasSize(2));
-            assertThat(((InternalRate) dh.getBuckets().get(0).getAggregations().asList().get(0)).value(), closeTo(1.0, 0.000001));
-            assertThat(((InternalRate) dh.getBuckets().get(1).getAggregations().asList().get(0)).value(), closeTo(7.0, 0.000001));
+            assertThat(((InternalRate) dh.getBuckets().get(0).getAggregations().iterator().next()).value(), closeTo(1.0, 0.000001));
+            assertThat(((InternalRate) dh.getBuckets().get(1).getAggregations().iterator().next()).value(), closeTo(7.0, 0.000001));
         });
     }
 
@@ -198,7 +198,7 @@ public class RateAggregatorTests extends AggregatorTestCase {
             iw.addDocument(doc("2010-04-27T03:43:34", new NumericDocValuesField("val", 8)));
         }, dh -> {
             assertThat(dh.getBuckets(), hasSize(1));
-            assertThat(((InternalRate) dh.getBuckets().get(0).getAggregations().asList().get(0)).value(), closeTo(1.0, 0.000001));
+            assertThat(((InternalRate) dh.getBuckets().get(0).getAggregations().iterator().next()).value(), closeTo(1.0, 0.000001));
         });
     }
 
@@ -209,8 +209,8 @@ public class RateAggregatorTests extends AggregatorTestCase {
             iw.addDocument(doc("2010-04-27T03:43:34", new NumericDocValuesField("val", 8)));
         }, dh -> {
             assertThat(dh.getBuckets(), hasSize(2));
-            assertThat(((InternalRate) dh.getBuckets().get(0).getAggregations().asList().get(0)).value(), closeTo(12.0, 0.000001));
-            assertThat(((InternalRate) dh.getBuckets().get(1).getAggregations().asList().get(0)).value(), closeTo(132.0, 0.000001));
+            assertThat(((InternalRate) dh.getBuckets().get(0).getAggregations().iterator().next()).value(), closeTo(12.0, 0.000001));
+            assertThat(((InternalRate) dh.getBuckets().get(1).getAggregations().iterator().next()).value(), closeTo(132.0, 0.000001));
         });
     }
 
@@ -221,8 +221,8 @@ public class RateAggregatorTests extends AggregatorTestCase {
             iw.addDocument(doc("2010-04-27T03:43:34", new NumericDocValuesField("val", 8)));
         }, dh -> {
             assertThat(dh.getBuckets(), hasSize(2));
-            assertThat(((InternalRate) dh.getBuckets().get(0).getAggregations().asList().get(0)).value(), closeTo(0.02, 0.000001));
-            assertThat(((InternalRate) dh.getBuckets().get(1).getAggregations().asList().get(0)).value(), closeTo(0.22, 0.000001));
+            assertThat(((InternalRate) dh.getBuckets().get(0).getAggregations().iterator().next()).value(), closeTo(0.02, 0.000001));
+            assertThat(((InternalRate) dh.getBuckets().get(1).getAggregations().iterator().next()).value(), closeTo(0.22, 0.000001));
         });
     }
 
@@ -273,8 +273,8 @@ public class RateAggregatorTests extends AggregatorTestCase {
             iw.addDocument(doc("2010-04-27T03:43:34", new NumericDocValuesField("val", 4)));
         }, dh -> {
             assertThat(dh.getBuckets(), hasSize(2));
-            assertThat(((InternalRate) dh.getBuckets().get(0).getAggregations().asList().get(0)).value(), closeTo(1 / 31.0, 0.000001));
-            assertThat(((InternalRate) dh.getBuckets().get(1).getAggregations().asList().get(0)).value(), closeTo(2 / 30.0, 0.000001));
+            assertThat(((InternalRate) dh.getBuckets().get(0).getAggregations().iterator().next()).value(), closeTo(1 / 31.0, 0.000001));
+            assertThat(((InternalRate) dh.getBuckets().get(1).getAggregations().iterator().next()).value(), closeTo(2 / 30.0, 0.000001));
         });
     }
 
@@ -342,14 +342,14 @@ public class RateAggregatorTests extends AggregatorTestCase {
             iw.addDocument(doc("2010-04-27T03:43:34", new NumericDocValuesField("val", 4)));
         }, (Consumer<InternalDateHistogram>) tdh -> {
             assertThat(tdh.getBuckets(), hasSize(2));
-            InternalDateHistogram dh1 = (InternalDateHistogram) tdh.getBuckets().get(0).getAggregations().asList().get(0);
+            InternalDateHistogram dh1 = (InternalDateHistogram) tdh.getBuckets().get(0).getAggregations().iterator().next();
             assertThat(dh1.getBuckets(), hasSize(1));
-            assertThat(((InternalRate) dh1.getBuckets().get(0).getAggregations().asList().get(0)).value(), closeTo(1.0, 0.000001));
+            assertThat(((InternalRate) dh1.getBuckets().get(0).getAggregations().iterator().next()).value(), closeTo(1.0, 0.000001));
 
-            InternalDateHistogram dh2 = (InternalDateHistogram) tdh.getBuckets().get(1).getAggregations().asList().get(0);
+            InternalDateHistogram dh2 = (InternalDateHistogram) tdh.getBuckets().get(1).getAggregations().iterator().next();
             assertThat(dh2.getBuckets(), hasSize(2));
-            assertThat(((InternalRate) dh2.getBuckets().get(0).getAggregations().asList().get(0)).value(), closeTo(2.0, 0.000001));
-            assertThat(((InternalRate) dh2.getBuckets().get(1).getAggregations().asList().get(0)).value(), closeTo(7.0, 0.000001));
+            assertThat(((InternalRate) dh2.getBuckets().get(0).getAggregations().iterator().next()).value(), closeTo(2.0, 0.000001));
+            assertThat(((InternalRate) dh2.getBuckets().get(1).getAggregations().iterator().next()).value(), closeTo(7.0, 0.000001));
         }, new AggTestConfig(topDateHistogramAggregationBuilder, dateType, numType));
     }
 
@@ -402,14 +402,14 @@ public class RateAggregatorTests extends AggregatorTestCase {
             );
         }, (Consumer<InternalDateHistogram>) dh -> {
             assertThat(dh.getBuckets(), hasSize(2));
-            StringTerms st1 = (StringTerms) dh.getBuckets().get(0).getAggregations().asList().get(0);
+            StringTerms st1 = (StringTerms) dh.getBuckets().get(0).getAggregations().iterator().next();
             assertThat(st1.getBuckets(), hasSize(1));
-            assertThat(((InternalRate) st1.getBuckets().get(0).getAggregations().asList().get(0)).value(), closeTo(3.0, 0.000001));
+            assertThat(((InternalRate) st1.getBuckets().get(0).getAggregations().iterator().next()).value(), closeTo(3.0, 0.000001));
 
-            StringTerms st2 = (StringTerms) dh.getBuckets().get(1).getAggregations().asList().get(0);
+            StringTerms st2 = (StringTerms) dh.getBuckets().get(1).getAggregations().iterator().next();
             assertThat(st2.getBuckets(), hasSize(2));
-            assertThat(((InternalRate) st2.getBuckets().get(0).getAggregations().asList().get(0)).value(), closeTo(3.0, 0.000001));
-            assertThat(((InternalRate) st2.getBuckets().get(1).getAggregations().asList().get(0)).value(), closeTo(4.0, 0.000001));
+            assertThat(((InternalRate) st2.getBuckets().get(0).getAggregations().iterator().next()).value(), closeTo(3.0, 0.000001));
+            assertThat(((InternalRate) st2.getBuckets().get(1).getAggregations().iterator().next()).value(), closeTo(4.0, 0.000001));
         }, new AggTestConfig(dateHistogramAggregationBuilder, dateType, numType, keywordType));
     }
 
@@ -469,17 +469,17 @@ public class RateAggregatorTests extends AggregatorTestCase {
             assertThat(composite.getBuckets(), hasSize(3));
             // Monthly rate of term a in the first month
             assertThat(
-                ((InternalRate) composite.getBuckets().get(0).getAggregations().asList().get(0)).getValue(),
+                ((InternalRate) composite.getBuckets().get(0).getAggregations().iterator().next()).getValue(),
                 closeTo(3.0, 0.0000001)
             );
             // Monthly rate of term a in the second month
             assertThat(
-                ((InternalRate) composite.getBuckets().get(1).getAggregations().asList().get(0)).getValue(),
+                ((InternalRate) composite.getBuckets().get(1).getAggregations().iterator().next()).getValue(),
                 closeTo(3.0, 0.0000001)
             );
             // Monthly rate of term b in the second month
             assertThat(
-                ((InternalRate) composite.getBuckets().get(2).getAggregations().asList().get(0)).getValue(),
+                ((InternalRate) composite.getBuckets().get(2).getAggregations().iterator().next()).getValue(),
                 closeTo(4.0, 0.0000001)
             );
         }, new AggTestConfig(compositeAggregationBuilder, dateType, numType, keywordType));
@@ -610,33 +610,33 @@ public class RateAggregatorTests extends AggregatorTestCase {
         }, (Consumer<InternalDateHistogram>) dh -> {
             assertThat(dh.getBuckets(), hasSize(2));
             if (useSum) {
-                StringTerms st1 = (StringTerms) dh.getBuckets().get(0).getAggregations().asList().get(0);
+                StringTerms st1 = (StringTerms) dh.getBuckets().get(0).getAggregations().iterator().next();
                 assertThat(st1.getBuckets(), hasSize(2));
                 assertThat(st1.getBuckets().get(0).getKeyAsString(), equalTo("b"));
-                assertThat(((InternalRate) st1.getBuckets().get(0).getAggregations().asList().get(0)).value(), closeTo(4.0, 0.000001));
+                assertThat(((InternalRate) st1.getBuckets().get(0).getAggregations().iterator().next()).value(), closeTo(4.0, 0.000001));
                 assertThat(st1.getBuckets().get(1).getKeyAsString(), equalTo("a"));
-                assertThat(((InternalRate) st1.getBuckets().get(1).getAggregations().asList().get(0)).value(), closeTo(3.0, 0.000001));
+                assertThat(((InternalRate) st1.getBuckets().get(1).getAggregations().iterator().next()).value(), closeTo(3.0, 0.000001));
 
-                StringTerms st2 = (StringTerms) dh.getBuckets().get(1).getAggregations().asList().get(0);
+                StringTerms st2 = (StringTerms) dh.getBuckets().get(1).getAggregations().iterator().next();
                 assertThat(st2.getBuckets(), hasSize(2));
                 assertThat(st2.getBuckets().get(0).getKeyAsString(), equalTo("a"));
-                assertThat(((InternalRate) st2.getBuckets().get(0).getAggregations().asList().get(0)).value(), closeTo(30.0, 0.000001));
+                assertThat(((InternalRate) st2.getBuckets().get(0).getAggregations().iterator().next()).value(), closeTo(30.0, 0.000001));
                 assertThat(st2.getBuckets().get(1).getKeyAsString(), equalTo("b"));
-                assertThat(((InternalRate) st2.getBuckets().get(1).getAggregations().asList().get(0)).value(), closeTo(8.0, 0.000001));
+                assertThat(((InternalRate) st2.getBuckets().get(1).getAggregations().iterator().next()).value(), closeTo(8.0, 0.000001));
             } else {
-                StringTerms st1 = (StringTerms) dh.getBuckets().get(0).getAggregations().asList().get(0);
+                StringTerms st1 = (StringTerms) dh.getBuckets().get(0).getAggregations().iterator().next();
                 assertThat(st1.getBuckets(), hasSize(2));
                 assertThat(st1.getBuckets().get(0).getKeyAsString(), equalTo("a"));
-                assertThat(((InternalRate) st1.getBuckets().get(0).getAggregations().asList().get(0)).value(), closeTo(2.0, 0.000001));
+                assertThat(((InternalRate) st1.getBuckets().get(0).getAggregations().iterator().next()).value(), closeTo(2.0, 0.000001));
                 assertThat(st1.getBuckets().get(1).getKeyAsString(), equalTo("b"));
-                assertThat(((InternalRate) st1.getBuckets().get(1).getAggregations().asList().get(0)).value(), closeTo(1.0, 0.000001));
+                assertThat(((InternalRate) st1.getBuckets().get(1).getAggregations().iterator().next()).value(), closeTo(1.0, 0.000001));
 
-                StringTerms st2 = (StringTerms) dh.getBuckets().get(1).getAggregations().asList().get(0);
+                StringTerms st2 = (StringTerms) dh.getBuckets().get(1).getAggregations().iterator().next();
                 assertThat(st2.getBuckets(), hasSize(2));
                 assertThat(st2.getBuckets().get(0).getKeyAsString(), equalTo("b"));
-                assertThat(((InternalRate) st2.getBuckets().get(0).getAggregations().asList().get(0)).value(), closeTo(2.0, 0.000001));
+                assertThat(((InternalRate) st2.getBuckets().get(0).getAggregations().iterator().next()).value(), closeTo(2.0, 0.000001));
                 assertThat(st2.getBuckets().get(1).getKeyAsString(), equalTo("a"));
-                assertThat(((InternalRate) st2.getBuckets().get(1).getAggregations().asList().get(0)).value(), closeTo(1.0, 0.000001));
+                assertThat(((InternalRate) st2.getBuckets().get(1).getAggregations().iterator().next()).value(), closeTo(1.0, 0.000001));
 
             }
         }, new AggTestConfig(dateHistogramAggregationBuilder, dateType, numType, keywordType));
@@ -656,8 +656,14 @@ public class RateAggregatorTests extends AggregatorTestCase {
             },
             dh -> {
                 assertThat(dh.getBuckets(), hasSize(2));
-                assertThat(((InternalRate) dh.getBuckets().get(0).getAggregations().asList().get(0)).value(), closeTo(2 / 31.0, 0.000001));
-                assertThat(((InternalRate) dh.getBuckets().get(1).getAggregations().asList().get(0)).value(), closeTo(9 / 30.0, 0.000001));
+                assertThat(
+                    ((InternalRate) dh.getBuckets().get(0).getAggregations().iterator().next()).value(),
+                    closeTo(2 / 31.0, 0.000001)
+                );
+                assertThat(
+                    ((InternalRate) dh.getBuckets().get(1).getAggregations().iterator().next()).value(),
+                    closeTo(9 / 30.0, 0.000001)
+                );
             }
         );
     }
@@ -682,8 +688,8 @@ public class RateAggregatorTests extends AggregatorTestCase {
             iw.addDocument(doc("2010-04-27T03:43:34", new NumericDocValuesField("val", 4), new StringField("term", "b", Field.Store.NO)));
         }, (Consumer<InternalMultiBucketAggregation<?, ?>>) dh -> {
             assertThat(dh.getBuckets(), hasSize(2));
-            assertThat(((InternalRate) dh.getBuckets().get(0).getAggregations().asList().get(0)).value(), closeTo(3.0, 0.000001));
-            assertThat(((InternalRate) dh.getBuckets().get(1).getAggregations().asList().get(0)).value(), closeTo(3.0, 0.000001));
+            assertThat(((InternalRate) dh.getBuckets().get(0).getAggregations().iterator().next()).value(), closeTo(3.0, 0.000001));
+            assertThat(((InternalRate) dh.getBuckets().get(1).getAggregations().iterator().next()).value(), closeTo(3.0, 0.000001));
         },
             new AggTestConfig(dateHistogramAggregationBuilder, dateType, numType, keywordType).withQuery(
                 new TermQuery(new Term("term", "a"))
@@ -713,8 +719,8 @@ public class RateAggregatorTests extends AggregatorTestCase {
             iw.addDocument(doc("2010-04-27T03:43:34", new NumericDocValuesField("val", 4)));
         }, (Consumer<InternalMultiBucketAggregation<?, ?>>) dh -> {
             assertThat(dh.getBuckets(), hasSize(2));
-            assertThat(((InternalRate) dh.getBuckets().get(0).getAggregations().asList().get(0)).getValueAsString(), equalTo("03.0/M"));
-            assertThat(((InternalRate) dh.getBuckets().get(1).getAggregations().asList().get(0)).getValueAsString(), equalTo("07.0/M"));
+            assertThat(((InternalRate) dh.getBuckets().get(0).getAggregations().iterator().next()).getValueAsString(), equalTo("03.0/M"));
+            assertThat(((InternalRate) dh.getBuckets().get(1).getAggregations().iterator().next()).getValueAsString(), equalTo("07.0/M"));
         }, new AggTestConfig(dateHistogramAggregationBuilder, dateType, numType));
     }
 
@@ -736,8 +742,8 @@ public class RateAggregatorTests extends AggregatorTestCase {
             iw.addDocument(doc("2010-04-01T00:00:00", histogramFieldDocValues("val", new double[] { 3, 4 })));
         }, (Consumer<InternalMultiBucketAggregation<?, ?>>) dh -> {
             assertThat(dh.getBuckets(), hasSize(2));
-            assertThat(((InternalRate) dh.getBuckets().get(0).getAggregations().asList().get(0)).getValue(), closeTo(3.0, 0.000001));
-            assertThat(((InternalRate) dh.getBuckets().get(1).getAggregations().asList().get(0)).getValue(), closeTo(7.0, 0.000001));
+            assertThat(((InternalRate) dh.getBuckets().get(0).getAggregations().iterator().next()).getValue(), closeTo(3.0, 0.000001));
+            assertThat(((InternalRate) dh.getBuckets().get(1).getAggregations().iterator().next()).getValue(), closeTo(7.0, 0.000001));
         }, new AggTestConfig(dateHistogramAggregationBuilder, dateType, histType));
     }
 
@@ -757,7 +763,10 @@ public class RateAggregatorTests extends AggregatorTestCase {
             iw.addDocument(doc("2010-04-01T00:00:00", histogramFieldDocValues("val", new double[] { 3, 4 })));
         }, (Consumer<InternalMultiBucketAggregation<?, ?>>) dh -> {
             assertThat(dh.getBuckets(), hasSize(1));
-            assertThat(((InternalRate) dh.getBuckets().get(0).getAggregations().asList().get(0)).getValue(), closeTo(10.0 / 12, 0.000001));
+            assertThat(
+                ((InternalRate) dh.getBuckets().get(0).getAggregations().iterator().next()).getValue(),
+                closeTo(10.0 / 12, 0.000001)
+            );
         }, new AggTestConfig(dateHistogramAggregationBuilder, dateType, histType));
     }
 
@@ -778,8 +787,8 @@ public class RateAggregatorTests extends AggregatorTestCase {
             iw.addDocument(doc("2010-04-01T00:00:00", histogramFieldDocValues("val", new double[] { 3, 4, 5 })));
         }, (Consumer<InternalMultiBucketAggregation<?, ?>>) dh -> {
             assertThat(dh.getBuckets(), hasSize(2));
-            assertThat(((InternalRate) dh.getBuckets().get(0).getAggregations().asList().get(0)).getValue(), closeTo(2.0, 0.000001));
-            assertThat(((InternalRate) dh.getBuckets().get(1).getAggregations().asList().get(0)).getValue(), closeTo(3.0, 0.000001));
+            assertThat(((InternalRate) dh.getBuckets().get(0).getAggregations().iterator().next()).getValue(), closeTo(2.0, 0.000001));
+            assertThat(((InternalRate) dh.getBuckets().get(1).getAggregations().iterator().next()).getValue(), closeTo(3.0, 0.000001));
         }, new AggTestConfig(dateHistogramAggregationBuilder, dateType, histType));
     }
 
@@ -800,7 +809,7 @@ public class RateAggregatorTests extends AggregatorTestCase {
             iw.addDocument(doc("2010-04-01T00:00:00", histogramFieldDocValues("val", new double[] { 3, 4, 5 })));
         }, (Consumer<InternalMultiBucketAggregation<?, ?>>) dh -> {
             assertThat(dh.getBuckets(), hasSize(1));
-            assertThat(((InternalRate) dh.getBuckets().get(0).getAggregations().asList().get(0)).getValue(), closeTo(5.0 / 12, 0.000001));
+            assertThat(((InternalRate) dh.getBuckets().get(0).getAggregations().iterator().next()).getValue(), closeTo(5.0 / 12, 0.000001));
         }, new AggTestConfig(dateHistogramAggregationBuilder, dateType, histType));
     }
 
@@ -831,8 +840,8 @@ public class RateAggregatorTests extends AggregatorTestCase {
             );
         }, (Consumer<InternalMultiBucketAggregation<?, ?>>) dh -> {
             assertThat(dh.getBuckets(), hasSize(2));
-            assertThat(((InternalRate) dh.getBuckets().get(0).getAggregations().asList().get(0)).value(), closeTo(3.0, 0.000001));
-            assertThat(((InternalRate) dh.getBuckets().get(1).getAggregations().asList().get(0)).value(), closeTo(3.0, 0.000001));
+            assertThat(((InternalRate) dh.getBuckets().get(0).getAggregations().iterator().next()).value(), closeTo(3.0, 0.000001));
+            assertThat(((InternalRate) dh.getBuckets().get(1).getAggregations().iterator().next()).value(), closeTo(3.0, 0.000001));
         },
             new AggTestConfig(dateHistogramAggregationBuilder, dateType, histType, keywordType).withQuery(
                 new TermQuery(new Term("term", "a"))
@@ -863,8 +872,8 @@ public class RateAggregatorTests extends AggregatorTestCase {
             iw.addDocument(doc("2010-04-27T03:43:34", new CustomTermFreqField("_doc_count", "_doc_count", 5)));
         }, dh -> {
             assertThat(dh.getBuckets(), hasSize(2));
-            assertThat(((InternalRate) dh.getBuckets().get(0).getAggregations().asList().get(0)).value(), closeTo(10.0, 0.000001));
-            assertThat(((InternalRate) dh.getBuckets().get(1).getAggregations().asList().get(0)).value(), closeTo(6.0, 0.000001));
+            assertThat(((InternalRate) dh.getBuckets().get(0).getAggregations().iterator().next()).value(), closeTo(10.0, 0.000001));
+            assertThat(((InternalRate) dh.getBuckets().get(1).getAggregations().iterator().next()).value(), closeTo(6.0, 0.000001));
         });
     }
 

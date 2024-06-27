@@ -23,6 +23,7 @@ import static org.elasticsearch.search.aggregations.AggregationBuilders.stats;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNoFailuresAndResponse;
 import static org.elasticsearch.xcontent.XContentFactory.jsonBuilder;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.core.IsNull.notNullValue;
@@ -66,7 +67,7 @@ public class GlobalIT extends ESIntegTestCase {
                 assertThat(global.getName(), equalTo("global"));
                 assertThat(global.getDocCount(), equalTo((long) numDocs));
                 assertThat((long) ((InternalAggregation) global).getProperty("_count"), equalTo((long) numDocs));
-                assertThat(global.getAggregations().asList().isEmpty(), is(false));
+                assertThat(global.getAggregations().size(), greaterThan(0));
 
                 Stats stats = global.getAggregations().get("value_stats");
                 assertThat((Stats) ((InternalAggregation) global).getProperty("value_stats"), sameInstance(stats));

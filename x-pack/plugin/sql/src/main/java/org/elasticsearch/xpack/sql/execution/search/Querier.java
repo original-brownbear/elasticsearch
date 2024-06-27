@@ -85,7 +85,6 @@ import org.elasticsearch.xpack.sql.session.SqlSession;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.BitSet;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -214,13 +213,14 @@ public class Querier {
     }
 
     protected static void logSearchResponse(SearchResponse response, Logger logger) {
-        List<InternalAggregation> aggs = Collections.emptyList();
+        InternalAggregations aggs = InternalAggregations.EMPTY;
         if (response.getAggregations() != null) {
-            aggs = response.getAggregations().asList();
+            aggs = response.getAggregations();
         }
         StringBuilder aggsNames = new StringBuilder();
+        var iter = aggs.iterator();
         for (int i = 0; i < aggs.size(); i++) {
-            aggsNames.append(aggs.get(i).getName() + (i + 1 == aggs.size() ? "" : ", "));
+            aggsNames.append(iter.next().getName()).append(i + 1 == aggs.size() ? "" : ", ");
         }
 
         var totalHits = response.getHits().getTotalHits();

@@ -153,7 +153,7 @@ public class TimeSeriesNestedAggregationsIT extends AggregationIntegTestCase {
     public void testTimeSeriesAggregation() {
         final TimeSeriesAggregationBuilder timeSeries = new TimeSeriesAggregationBuilder("ts");
         assertResponse(prepareSearch("index").addAggregation(timeSeries).setSize(0), response -> {
-            final InternalTimeSeries ts = (InternalTimeSeries) response.getAggregations().asList().get(0);
+            final InternalTimeSeries ts = (InternalTimeSeries) response.getAggregations().iterator().next();
             assertTimeSeriesAggregation(ts);
         });
     }
@@ -168,7 +168,7 @@ public class TimeSeriesNestedAggregationsIT extends AggregationIntegTestCase {
         );
 
         assertResponse(prepareSearch("index").addAggregation(timeSeries).setSize(0), response -> {
-            final InternalTimeSeries ts = (InternalTimeSeries) response.getAggregations().asList().get(0);
+            final InternalTimeSeries ts = (InternalTimeSeries) response.getAggregations().iterator().next();
             assertTimeSeriesAggregation(ts);
         });
     }
@@ -178,7 +178,7 @@ public class TimeSeriesNestedAggregationsIT extends AggregationIntegTestCase {
             new TermsAggregationBuilder("terms").field("dim_0")
         );
         assertResponse(prepareSearch("index").addAggregation(timeSeries).setSize(0), response -> {
-            final InternalTimeSeries ts = (InternalTimeSeries) response.getAggregations().asList().get(0);
+            final InternalTimeSeries ts = (InternalTimeSeries) response.getAggregations().iterator().next();
             assertTimeSeriesAggregation(ts);
         });
     }
@@ -188,7 +188,7 @@ public class TimeSeriesNestedAggregationsIT extends AggregationIntegTestCase {
             new DateHistogramAggregationBuilder("date_histogram").field("@timestamp").calendarInterval(DateHistogramInterval.HOUR)
         );
         assertResponse(prepareSearch("index").addAggregation(timeSeries).setSize(0), response -> {
-            final InternalTimeSeries ts = (InternalTimeSeries) response.getAggregations().asList().get(0);
+            final InternalTimeSeries ts = (InternalTimeSeries) response.getAggregations().iterator().next();
             assertTimeSeriesAggregation(ts);
         });
     }
@@ -198,7 +198,7 @@ public class TimeSeriesNestedAggregationsIT extends AggregationIntegTestCase {
             new CardinalityAggregationBuilder("dim_n_cardinality").field(formatDim(numberOfDimensions - 1))
         );
         assertResponse(prepareSearch("index").addAggregation(timeSeries).setSize(0), response -> {
-            final InternalTimeSeries ts = (InternalTimeSeries) response.getAggregations().asList().get(0);
+            final InternalTimeSeries ts = (InternalTimeSeries) response.getAggregations().iterator().next();
             assertTimeSeriesAggregation(ts);
             ts.getBuckets().forEach(bucket -> { assertCardinality(bucket.getAggregations().get("dim_n_cardinality"), 1); });
         });

@@ -106,8 +106,8 @@ public class TokenCountFieldMapperIntegrationIT extends ESIntegTestCase {
         String facetField = randomFrom(Arrays.asList("foo.token_count", "foo.token_count_unstored", "foo.token_count_with_doc_values"));
         assertResponse(searchByNumericRange(1, 10).addAggregation(AggregationBuilders.terms("facet").field(facetField)), result -> {
             assertSearchReturns(result, "single", "bulk1", "bulk2", "multi", "multibulk1", "multibulk2");
-            assertThat(result.getAggregations().asList().size(), equalTo(1));
-            Terms terms = (Terms) result.getAggregations().asList().get(0);
+            assertThat(result.getAggregations().size(), equalTo(1));
+            Terms terms = (Terms) result.getAggregations().iterator().next();
             assertThat(terms.getBuckets().size(), equalTo(9));
         });
     }

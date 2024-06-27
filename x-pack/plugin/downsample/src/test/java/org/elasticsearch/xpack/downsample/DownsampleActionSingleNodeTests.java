@@ -1272,17 +1272,20 @@ public class DownsampleActionSingleNodeTests extends ESSingleNodeTestCase {
         final AggregationBuilder aggregations = buildAggregations(config, metricFields, labelFields, config.getTimestampField());
         InternalAggregations origResp = aggregate(sourceIndex, aggregations);
         InternalAggregations downsampleResp = aggregate(downsampleIndex, aggregations);
-        assertEquals(origResp.asMap().keySet(), downsampleResp.asMap().keySet());
+        assertEquals(
+            origResp.stream().map(InternalAggregation::getName).collect(Collectors.toUnmodifiableSet()),
+            downsampleResp.stream().map(InternalAggregation::getName).collect(Collectors.toUnmodifiableSet())
+        );
 
-        StringTerms originalTsIdTermsAggregation = (StringTerms) origResp.getAsMap().values().stream().toList().get(0);
-        StringTerms downsampleTsIdTermsAggregation = (StringTerms) downsampleResp.getAsMap().values().stream().toList().get(0);
+        StringTerms originalTsIdTermsAggregation = (StringTerms) origResp.iterator().next();
+        StringTerms downsampleTsIdTermsAggregation = (StringTerms) downsampleResp.iterator().next();
         originalTsIdTermsAggregation.getBuckets().forEach(originalBucket -> {
 
             StringTerms.Bucket downsampleBucket = downsampleTsIdTermsAggregation.getBucketByKey(originalBucket.getKeyAsString());
-            assertEquals(originalBucket.getAggregations().asList().size(), downsampleBucket.getAggregations().asList().size());
+            assertEquals(originalBucket.getAggregations().size(), downsampleBucket.getAggregations().size());
 
-            InternalDateHistogram originalDateHistogram = (InternalDateHistogram) originalBucket.getAggregations().asList().get(0);
-            InternalDateHistogram downsamoleDateHistogram = (InternalDateHistogram) downsampleBucket.getAggregations().asList().get(0);
+            InternalDateHistogram originalDateHistogram = (InternalDateHistogram) originalBucket.getAggregations().iterator().next();
+            InternalDateHistogram downsamoleDateHistogram = (InternalDateHistogram) downsampleBucket.getAggregations().iterator().next();
             List<InternalDateHistogram.Bucket> originalDateHistogramBuckets = originalDateHistogram.getBuckets();
             List<InternalDateHistogram.Bucket> downsampleDateHistogramBuckets = downsamoleDateHistogram.getBuckets();
             assertEquals(originalDateHistogramBuckets.size(), downsampleDateHistogramBuckets.size());
@@ -1298,24 +1301,20 @@ public class DownsampleActionSingleNodeTests extends ESSingleNodeTestCase {
 
                 InternalAggregations originalAggregations = originalDateHistogramBucket.getAggregations();
                 InternalAggregations downsampleAggregations = downsampleDateHistogramBucket.getAggregations();
-                assertEquals(originalAggregations.asList().size(), downsampleAggregations.asList().size());
+                assertEquals(originalAggregations.size(), downsampleAggregations.size());
 
-                List<InternalAggregation> nonTopHitsOriginalAggregations = originalAggregations.asList()
-                    .stream()
+                List<InternalAggregation> nonTopHitsOriginalAggregations = originalAggregations.stream()
                     .filter(agg -> agg.getType().equals("top_hits") == false)
                     .toList();
-                List<InternalAggregation> nonTopHitsDownsampleAggregations = downsampleAggregations.asList()
-                    .stream()
+                List<InternalAggregation> nonTopHitsDownsampleAggregations = downsampleAggregations.stream()
                     .filter(agg -> agg.getType().equals("top_hits") == false)
                     .toList();
                 assertEquals(nonTopHitsOriginalAggregations, nonTopHitsDownsampleAggregations);
 
-                List<InternalAggregation> topHitsOriginalAggregations = originalAggregations.asList()
-                    .stream()
+                List<InternalAggregation> topHitsOriginalAggregations = originalAggregations.stream()
                     .filter(agg -> agg.getType().equals("top_hits"))
                     .toList();
-                List<InternalAggregation> topHitsDownsampleAggregations = downsampleAggregations.asList()
-                    .stream()
+                List<InternalAggregation> topHitsDownsampleAggregations = downsampleAggregations.stream()
                     .filter(agg -> agg.getType().equals("top_hits"))
                     .toList();
                 assertEquals(topHitsDownsampleAggregations.size(), topHitsDownsampleAggregations.size());
