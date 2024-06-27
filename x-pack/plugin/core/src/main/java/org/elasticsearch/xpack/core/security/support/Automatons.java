@@ -16,7 +16,6 @@ import org.elasticsearch.common.cache.Cache;
 import org.elasticsearch.common.cache.CacheBuilder;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.core.Predicates;
 import org.elasticsearch.core.TimeValue;
 
@@ -67,7 +66,7 @@ public final class Automatons {
 
     // these values are not final since we allow them to be set at runtime
     private static int maxDeterminizedStates = 100000;
-    private static Cache<Object, Automaton> cache = buildCache(Settings.EMPTY);
+    private static Cache<Set<String>, Automaton> cache = buildCache(Settings.EMPTY);
 
     static final char WILDCARD_STRING = '*';     // String equality with support for wildcards
     static final char WILDCARD_CHAR = '?';       // Char equality with support for wildcards
@@ -86,10 +85,13 @@ public final class Automatons {
         return patterns(Arrays.asList(patterns));
     }
 
+    public static Automaton patterns(String pattern) {
+        return pattern(pattern);
+    }
+
     /**
      * Builds and returns an automaton that will represent the union of all the given patterns.
      */
-    @SuppressWarnings("unchecked")
     public static Automaton patterns(Collection<String> patterns) {
         if (patterns.isEmpty()) {
             return EMPTY;
@@ -98,10 +100,7 @@ public final class Automatons {
             return maybeRecordPatterns(buildAutomaton(patterns), patterns);
         } else {
             try {
-                return cache.computeIfAbsent(
-                    Sets.newHashSet(patterns),
-                    p -> maybeRecordPatterns(buildAutomaton((Set<String>) p), patterns)
-                );
+                return cache.computeIfAbsent(Set.copyOf(patterns), p -> maybeRecordPatterns(buildAutomaton(p), p));
             } catch (ExecutionException e) {
                 throw unwrapCacheException(e);
             }
@@ -110,7 +109,7 @@ public final class Automatons {
 
     private static Automaton buildAutomaton(Collection<String> patterns) {
         if (patterns.size() == 1) {
-            return minimize(pattern(patterns.iterator().next()));
+            return minimize(buildAutomaton(patterns.iterator().next()));
         }
 
         final Function<Collection<String>, Automaton> build = strings -> {
@@ -197,7 +196,7 @@ public final class Automatons {
             return buildAutomaton(pattern);
         } else {
             try {
-                return cache.computeIfAbsent(pattern, p -> buildAutomaton((String) p));
+                return cache.computeIfAbsent(Set.of(pattern), Automatons::buildAutomaton);
             } catch (ExecutionException e) {
                 throw unwrapCacheException(e);
             }
@@ -304,15 +303,24 @@ public final class Automatons {
     }
 
     public static void updateConfiguration(Settings settings) {
-        maxDeterminizedStates = MAX_DETERMINIZED_STATES_SETTING.get(settings);
-        cache = buildCache(settings);
+        int newStates = MAX_DETERMINIZED_STATES_SETTING.get(settings);
+        boolean statesChanged = newStates != maxDeterminizedStates;
+        maxDeterminizedStates = newStates;
+        boolean enabled = CACHE_ENABLED.get(settings);
+        if (enabled) {
+            if (cache == null
+                || statesChanged
+                || cache.getMaximumWeight() != CACHE_SIZE.get(settings)
+                || cache.getExpireAfterAccessNanos() != CACHE_TTL.get(settings).nanos()) {
+                cache = buildCache(settings);
+            }
+        } else {
+            cache = null;
+        }
     }
 
-    private static Cache<Object, Automaton> buildCache(Settings settings) {
-        if (CACHE_ENABLED.get(settings) == false) {
-            return null;
-        }
-        return CacheBuilder.<Object, Automaton>builder()
+    private static Cache<Set<String>, Automaton> buildCache(Settings settings) {
+        return CacheBuilder.<Set<String>, Automaton>builder()
             .setExpireAfterAccess(CACHE_TTL.get(settings))
             .setMaximumWeight(CACHE_SIZE.get(settings))
             .build();
