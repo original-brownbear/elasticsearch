@@ -84,8 +84,12 @@ public abstract class AbstractHistogramAggregator extends BucketsAggregator {
             double key = roundKey * interval + offset;
             return new InternalHistogram.Bucket(key, docCount, keyed, formatter, subAggregationResults);
         }, (owningBucketOrd, buckets) -> {
-            // the contract of the histogram aggregation is that shards must return buckets ordered by key in ascending order
-            CollectionUtil.introSort(buckets, BucketOrder.key(true).comparator());
+            if (buckets.isEmpty()) {
+                return buildEmptyAggregation();
+            } else {
+                // the contract of the histogram aggregation is that shards must return buckets ordered by key in ascending order
+                CollectionUtil.introSort(buckets, BucketOrder.key(true).comparator());
+            }
 
             EmptyBucketInfo emptyBucketInfo = null;
             if (minDocCount == 0) {
@@ -101,19 +105,26 @@ public abstract class AbstractHistogramAggregator extends BucketsAggregator {
         });
     }
 
+    private InternalAggregation emptyAggregation;
+
     @Override
     public InternalAggregation buildEmptyAggregation() {
-        InternalHistogram.EmptyBucketInfo emptyBucketInfo = null;
-        if (minDocCount == 0) {
-            emptyBucketInfo = new InternalHistogram.EmptyBucketInfo(
-                interval,
-                offset,
-                getEffectiveMin(extendedBounds),
-                getEffectiveMax(extendedBounds),
-                buildEmptySubAggregations()
-            );
+        InternalAggregation empty = emptyAggregation;
+        if (empty == null) {
+            InternalHistogram.EmptyBucketInfo emptyBucketInfo = null;
+            if (minDocCount == 0) {
+                emptyBucketInfo = new InternalHistogram.EmptyBucketInfo(
+                    interval,
+                    offset,
+                    getEffectiveMin(extendedBounds),
+                    getEffectiveMax(extendedBounds),
+                    buildEmptySubAggregations()
+                );
+            }
+            empty = new InternalHistogram(name, Collections.emptyList(), order, minDocCount, emptyBucketInfo, formatter, keyed, metadata());
+            emptyAggregation = empty;
         }
-        return new InternalHistogram(name, Collections.emptyList(), order, minDocCount, emptyBucketInfo, formatter, keyed, metadata());
+        return empty;
     }
 
     @Override

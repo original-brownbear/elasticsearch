@@ -176,6 +176,9 @@ public abstract class BucketsAggregator extends AggregatorBase {
      */
     protected final IntFunction<InternalAggregations> buildSubAggsForBuckets(long[] bucketOrdsToCollect) throws IOException {
         prepareSubAggs(bucketOrdsToCollect);
+        if (subAggregators.length == 0) {
+            return ord -> InternalAggregations.EMPTY;
+        }
         InternalAggregation[][] aggregations = new InternalAggregation[subAggregators.length][];
         for (int i = 0; i < subAggregators.length; i++) {
             aggregations[i] = subAggregators[i].buildAggregations(bucketOrdsToCollect);

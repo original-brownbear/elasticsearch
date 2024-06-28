@@ -282,7 +282,19 @@ public class InternalHistogram extends InternalMultiBucketAggregation<InternalHi
 
     @Override
     public InternalHistogram create(List<Bucket> buckets) {
-        return new InternalHistogram(name, buckets, order, minDocCount, emptyBucketInfo, format, keyed, metadata);
+        if (buckets.equals(this.buckets)) {
+            return this;
+        }
+        return new InternalHistogram(
+            name,
+            buckets.isEmpty() ? List.of() : buckets,
+            order,
+            minDocCount,
+            emptyBucketInfo,
+            format,
+            keyed,
+            metadata
+        );
     }
 
     @Override
@@ -475,7 +487,7 @@ public class InternalHistogram extends InternalMultiBucketAggregation<InternalHi
                         CollectionUtil.introSort(reducedBuckets, order.comparator());
                     }
                 }
-                return new InternalHistogram(getName(), reducedBuckets, order, minDocCount, emptyBucketInfo, format, keyed, getMetadata());
+                return create(reducedBuckets);
             }
         };
     }
