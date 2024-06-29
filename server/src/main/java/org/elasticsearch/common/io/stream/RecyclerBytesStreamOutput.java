@@ -130,19 +130,10 @@ public class RecyclerBytesStreamOutput extends BytesStream implements Releasable
             // make sure any possible char can fit into the buffer in any possible iteration
             // we need at most 3 bytes so we flush the buffer once we have less than 3 bytes
             // left before we start another iteration
-            int currentOff = offset - currentPage.offset;
-            if (3 > (pageSize - currentOff)) {
-                currentPageOffset = currentOff;
-                if (c <= 0x007F) {
-                    writeByte((byte) c);
-                } else if (c > 0x07FF) {
-                    writeByte((byte) (0xE0 | c >> 12 & 0x0F));
-                    writeByte((byte) (0x80 | c >> 6 & 0x3F));
-                    writeByte((byte) (0x80 | c >> 0 & 0x3F));
-                } else {
-                    writeByte((byte) (0xC0 | c >> 6 & 0x1F));
-                    writeByte((byte) (0x80 | c >> 0 & 0x3F));
-                }
+            int currentPageOffsetRef = offset - currentPage.offset;
+            if (3 > (pageSize - currentPageOffsetRef)) {
+                currentPageOffset = currentPageOffsetRef;
+                writeSingleChar(c);
                 currentPage = pages.get(pageIndex).v();
                 offset = currentPage.offset + currentPageOffset;
                 buffer = currentPage.bytes;
@@ -160,6 +151,19 @@ public class RecyclerBytesStreamOutput extends BytesStream implements Releasable
             }
         }
         currentPageOffset = offset - currentPage.offset;
+    }
+
+    private void writeSingleChar(int c) {
+        if (c <= 0x007F) {
+            writeByte((byte) c);
+        } else if (c > 0x07FF) {
+            writeByte((byte) (0xE0 | c >> 12 & 0x0F));
+            writeByte((byte) (0x80 | c >> 6 & 0x3F));
+            writeByte((byte) (0x80 | c >> 0 & 0x3F));
+        } else {
+            writeByte((byte) (0xC0 | c >> 6 & 0x1F));
+            writeByte((byte) (0x80 | c >> 0 & 0x3F));
+        }
     }
 
     @Override
