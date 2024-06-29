@@ -55,10 +55,14 @@ public class RecyclerBytesStreamOutput extends BytesStream implements Releasable
 
     @Override
     public void writeByte(byte b) {
-        ensureCapacity(1);
+        int currentPageOffset = this.currentPageOffset;
+        if (currentPageOffset == pageSize) {
+            ensureCapacity(1);
+            currentPageOffset = this.currentPageOffset;
+        }
         BytesRef currentPage = pages.get(pageIndex).v();
         currentPage.bytes[currentPage.offset + currentPageOffset] = b;
-        currentPageOffset++;
+        this.currentPageOffset = currentPageOffset + 1;
     }
 
     @Override
@@ -98,11 +102,12 @@ public class RecyclerBytesStreamOutput extends BytesStream implements Releasable
 
     @Override
     public void writeVInt(int i) throws IOException {
+        int currentPageOffset = this.currentPageOffset;
         if (5 > (pageSize - currentPageOffset)) {
             super.writeVInt(i);
         } else {
             BytesRef currentPage = pages.get(pageIndex).v();
-            currentPageOffset += putVInt(currentPage.bytes, i, currentPage.offset + currentPageOffset);
+            this.currentPageOffset = currentPageOffset + putVInt(currentPage.bytes, i, currentPage.offset + currentPageOffset);
         }
     }
 
@@ -144,10 +149,10 @@ public class RecyclerBytesStreamOutput extends BytesStream implements Releasable
             } else if (c > 0x07FF) {
                 buffer[offset++] = ((byte) (0xE0 | c >> 12 & 0x0F));
                 buffer[offset++] = ((byte) (0x80 | c >> 6 & 0x3F));
-                buffer[offset++] = ((byte) (0x80 | c >> 0 & 0x3F));
+                buffer[offset++] = ((byte) (0x80 | c & 0x3F));
             } else {
                 buffer[offset++] = ((byte) (0xC0 | c >> 6 & 0x1F));
-                buffer[offset++] = ((byte) (0x80 | c >> 0 & 0x3F));
+                buffer[offset++] = ((byte) (0x80 | c & 0x3F));
             }
         }
         currentPageOffset = offset - currentPage.offset;
@@ -159,10 +164,10 @@ public class RecyclerBytesStreamOutput extends BytesStream implements Releasable
         } else if (c > 0x07FF) {
             writeByte((byte) (0xE0 | c >> 12 & 0x0F));
             writeByte((byte) (0x80 | c >> 6 & 0x3F));
-            writeByte((byte) (0x80 | c >> 0 & 0x3F));
+            writeByte((byte) (0x80 | c & 0x3F));
         } else {
             writeByte((byte) (0xC0 | c >> 6 & 0x1F));
-            writeByte((byte) (0x80 | c >> 0 & 0x3F));
+            writeByte((byte) (0x80 | c & 0x3F));
         }
     }
 
@@ -289,14 +294,17 @@ public class RecyclerBytesStreamOutput extends BytesStream implements Releasable
     }
 
     private void ensureCapacity(int bytesNeeded) {
+        int pageSize = this.pageSize;
+        int currentPageOffset = this.currentPageOffset;
         if (bytesNeeded > pageSize - currentPageOffset) {
-            ensureCapacityFromPosition(position() + bytesNeeded);
+            ensureCapacityFromPosition(((long) pageSize * pageIndex) + currentPageOffset + bytesNeeded);
         }
     }
 
     private void ensureCapacityFromPosition(long newPosition) {
         // Integer.MAX_VALUE is not a multiple of the page size so we can only allocate the largest multiple of the pagesize that is less
         // than Integer.MAX_VALUE
+        int pageSize = this.pageSize;
         if (newPosition > Integer.MAX_VALUE - (Integer.MAX_VALUE % pageSize)) {
             throw new IllegalArgumentException(getClass().getSimpleName() + " cannot hold more than 2GB of data");
         }

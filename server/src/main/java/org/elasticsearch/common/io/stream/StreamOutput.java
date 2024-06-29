@@ -217,11 +217,13 @@ public abstract class StreamOutput extends OutputStream {
     }
 
     public static int putVInt(byte[] buffer, int i, int off) {
-        if (Integer.numberOfLeadingZeros(i) >= 25) {
-            buffer[off] = (byte) i;
-            return 1;
+        int index = off;
+        while ((i & ~0x7F) != 0) {
+            buffer[index++] = ((byte) ((i & 0x7F) | 0x80));
+            i >>>= 7;
         }
-        return putMultiByteVInt(buffer, i, off);
+        buffer[index++] = (byte) i;
+        return index - off;
     }
 
     private static int putMultiByteVInt(byte[] buffer, int i, int off) {
