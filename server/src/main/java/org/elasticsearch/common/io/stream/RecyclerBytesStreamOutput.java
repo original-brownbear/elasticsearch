@@ -13,6 +13,7 @@ import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.bytes.CompositeBytesReference;
 import org.elasticsearch.common.recycler.Recycler;
+import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.Releasables;
 
@@ -93,6 +94,72 @@ public class RecyclerBytesStreamOutput extends BytesStream implements Releasable
 
         // advance
         pageIndex += j;
+    }
+
+    @Override
+    public void writeVInt(int i) throws IOException {
+        if (5 > (pageSize - currentPageOffset)) {
+            super.writeVInt(i);
+        } else {
+            BytesRef currentPage = pages.get(pageIndex).v();
+            currentPageOffset += putVInt(currentPage.bytes, i, currentPage.offset + currentPageOffset);
+        }
+    }
+
+    @Override
+    public void writeOptionalString(@Nullable String str) throws IOException {
+        if (str == null) {
+            writeBoolean(false);
+        } else {
+            // put the true byte into the buffer instead of writing it outright to do fewer flushes
+            writeBoolean(true);
+            writeString(str);
+        }
+    }
+
+    @Override
+    public void writeString(String str) throws IOException {
+        final int charCount = str.length();
+        writeVInt(charCount);
+        ensureCapacity(charCount);
+        BytesRef currentPage = pages.get(pageIndex).v();
+        byte[] buffer = currentPage.bytes;
+        int offset = currentPage.offset + currentPageOffset;
+        for (int i = 0; i < charCount; i++) {
+            final int c = str.charAt(i);
+            // make sure any possible char can fit into the buffer in any possible iteration
+            // we need at most 3 bytes so we flush the buffer once we have less than 3 bytes
+            // left before we start another iteration
+            int currentOff = offset - currentPage.offset;
+            if (3 > (pageSize - currentOff)) {
+                currentPageOffset = currentOff;
+                if (c <= 0x007F) {
+                    writeByte((byte) c);
+                } else if (c > 0x07FF) {
+                    writeByte((byte) (0xE0 | c >> 12 & 0x0F));
+                    writeByte((byte) (0x80 | c >> 6 & 0x3F));
+                    writeByte((byte) (0x80 | c >> 0 & 0x3F));
+                } else {
+                    writeByte((byte) (0xC0 | c >> 6 & 0x1F));
+                    writeByte((byte) (0x80 | c >> 0 & 0x3F));
+                }
+                currentPage = pages.get(pageIndex).v();
+                offset = currentPage.offset + currentPageOffset;
+                buffer = currentPage.bytes;
+                continue;
+            }
+            if (c <= 0x007F) {
+                buffer[offset++] = ((byte) c);
+            } else if (c > 0x07FF) {
+                buffer[offset++] = ((byte) (0xE0 | c >> 12 & 0x0F));
+                buffer[offset++] = ((byte) (0x80 | c >> 6 & 0x3F));
+                buffer[offset++] = ((byte) (0x80 | c >> 0 & 0x3F));
+            } else {
+                buffer[offset++] = ((byte) (0xC0 | c >> 6 & 0x1F));
+                buffer[offset++] = ((byte) (0x80 | c >> 0 & 0x3F));
+            }
+        }
+        currentPageOffset = offset - currentPage.offset;
     }
 
     @Override

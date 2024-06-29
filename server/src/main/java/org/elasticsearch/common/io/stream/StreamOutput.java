@@ -451,8 +451,8 @@ public abstract class StreamOutput extends OutputStream {
         }
     }
 
-    private static final byte ZERO = 0;
-    private static final byte ONE = 1;
+    protected static final byte ZERO = 0;
+    protected static final byte ONE = 1;
     private static final byte TWO = 2;
 
     /**
