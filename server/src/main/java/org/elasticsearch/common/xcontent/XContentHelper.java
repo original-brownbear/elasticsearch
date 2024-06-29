@@ -728,7 +728,7 @@ public class XContentHelper {
             // when sending an enumeration to <v8 node it does not have new VND_ XContentType instances
             out.writeVInt(xContentType.canonical().ordinal());
         } else {
-            out.writeVInt(xContentType.ordinal());
+            out.writeByte((byte) xContentType.ordinal());
         }
     }
 

@@ -114,10 +114,10 @@ public class RecyclerBytesStreamOutput extends BytesStream implements Releasable
     @Override
     public void writeOptionalString(@Nullable String str) throws IOException {
         if (str == null) {
-            writeBoolean(false);
+            writeByte(ZERO);
         } else {
             // put the true byte into the buffer instead of writing it outright to do fewer flushes
-            writeBoolean(true);
+            writeByte(ONE);
             writeString(str);
         }
     }
