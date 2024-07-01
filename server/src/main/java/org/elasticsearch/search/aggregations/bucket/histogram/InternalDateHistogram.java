@@ -22,7 +22,6 @@ import org.elasticsearch.search.aggregations.InternalAggregation;
 import org.elasticsearch.search.aggregations.InternalAggregations;
 import org.elasticsearch.search.aggregations.InternalMultiBucketAggregation;
 import org.elasticsearch.search.aggregations.InternalOrder;
-import org.elasticsearch.search.aggregations.KeyComparable;
 import org.elasticsearch.search.aggregations.bucket.BucketReducer;
 import org.elasticsearch.search.aggregations.bucket.IteratorAndCurrent;
 import org.elasticsearch.search.aggregations.bucket.MultiBucketsAggregation;
@@ -49,7 +48,7 @@ public final class InternalDateHistogram extends InternalMultiBucketAggregation<
         Histogram,
         HistogramFactory {
 
-    public static class Bucket extends AbstractHistogramBucket implements KeyComparable<Bucket> {
+    public static class Bucket extends AbstractHistogramBucket<Bucket> {
 
         final long key;
         private final transient boolean keyed;

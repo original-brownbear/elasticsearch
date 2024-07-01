@@ -11,11 +11,14 @@ package org.elasticsearch.search.aggregations.bucket.histogram;
 import org.elasticsearch.search.DocValueFormat;
 import org.elasticsearch.search.aggregations.InternalAggregations;
 import org.elasticsearch.search.aggregations.InternalMultiBucketAggregation;
+import org.elasticsearch.search.aggregations.KeyComparable;
 
 /**
  * A bucket in the histogram where documents fall in
  */
-public abstract class AbstractHistogramBucket extends InternalMultiBucketAggregation.InternalBucket {
+public abstract class AbstractHistogramBucket<T extends AbstractHistogramBucket<T>> extends InternalMultiBucketAggregation.InternalBucket
+    implements
+        KeyComparable<T> {
 
     protected final long docCount;
     protected final InternalAggregations aggregations;
