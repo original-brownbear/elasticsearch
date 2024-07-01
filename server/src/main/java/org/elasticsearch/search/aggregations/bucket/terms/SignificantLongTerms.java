@@ -45,7 +45,7 @@ public class SignificantLongTerms extends InternalMappedSignificantTerms<Signifi
         }
 
         Bucket(StreamInput in, long subsetSize, long supersetSize, DocValueFormat format) throws IOException {
-            super(in, subsetSize, supersetSize, format);
+            super(subsetSize, supersetSize, format);
             subsetDf = in.readVLong();
             supersetDf = in.readVLong();
             term = in.readLong();
@@ -134,9 +134,9 @@ public class SignificantLongTerms extends InternalMappedSignificantTerms<Signifi
     }
 
     @Override
-    public Bucket createBucket(InternalAggregations aggregations, SignificantLongTerms.Bucket prototype) {
+    public Bucket createBucket(InternalAggregations aggregations, long docCount, SignificantLongTerms.Bucket prototype) {
         return new Bucket(
-            prototype.subsetDf,
+            docCount,
             prototype.subsetSize,
             prototype.supersetDf,
             prototype.supersetSize,

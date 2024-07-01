@@ -43,7 +43,7 @@ public class InternalHistogram extends InternalMultiBucketAggregation<InternalHi
     implements
         Histogram,
         HistogramFactory {
-    public static class Bucket extends AbstractHistogramBucket<Bucket> {
+    public static class Bucket extends AbstractHistogramBucket<Bucket, InternalHistogram> {
 
         final double key;
         private final transient boolean keyed;
@@ -265,11 +265,11 @@ public class InternalHistogram extends InternalMultiBucketAggregation<InternalHi
     }
 
     @Override
-    public Bucket createBucket(InternalAggregations aggregations, Bucket prototype) {
-        if (prototype.aggregations.equals(aggregations)) {
+    public Bucket createBucket(InternalAggregations aggregations, long docCount, Bucket prototype) {
+        if (docCount == prototype.docCount && prototype.aggregations.equals(aggregations)) {
             return prototype;
         }
-        return new Bucket(prototype.key, prototype.docCount, prototype.keyed, prototype.format, aggregations);
+        return new Bucket(prototype.key, docCount, prototype.keyed, prototype.format, aggregations);
     }
 
     private List<Bucket> reduceBuckets(PriorityQueue<IteratorAndCurrent<Bucket>> pq, AggregationReduceContext reduceContext) {

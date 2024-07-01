@@ -250,8 +250,8 @@ public class InternalTimeSeries extends InternalMultiBucketAggregation<InternalT
     }
 
     @Override
-    public InternalBucket createBucket(InternalAggregations aggregations, InternalBucket prototype) {
-        return new InternalBucket(prototype.key, prototype.docCount, aggregations, prototype.keyed);
+    public InternalBucket createBucket(InternalAggregations aggregations, long docCount, InternalBucket prototype) {
+        return new InternalBucket(prototype.key, docCount, aggregations, prototype.keyed);
     }
 
     private InternalBucket reduceBucket(List<InternalBucket> buckets, AggregationReduceContext context) {

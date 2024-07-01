@@ -112,8 +112,8 @@ public class LongRareTerms extends InternalMappedRareTerms<LongRareTerms, LongRa
     }
 
     @Override
-    public LongRareTerms.Bucket createBucket(InternalAggregations aggregations, LongRareTerms.Bucket prototype) {
-        return new LongRareTerms.Bucket(prototype.term, prototype.getDocCount(), aggregations, prototype.format);
+    public LongRareTerms.Bucket createBucket(InternalAggregations aggregations, long docCount, LongRareTerms.Bucket prototype) {
+        return new LongRareTerms.Bucket(prototype.term, docCount, aggregations, prototype.format);
     }
 
     @Override

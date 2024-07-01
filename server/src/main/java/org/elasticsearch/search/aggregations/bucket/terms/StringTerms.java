@@ -178,10 +178,10 @@ public class StringTerms extends InternalMappedTerms<StringTerms, StringTerms.Bu
     }
 
     @Override
-    public Bucket createBucket(InternalAggregations aggregations, Bucket prototype) {
+    public Bucket createBucket(InternalAggregations aggregations, long docCount, Bucket prototype) {
         return new Bucket(
             prototype.termBytes,
-            prototype.docCount,
+            docCount,
             aggregations,
             prototype.showDocCountError,
             prototype.docCountError,

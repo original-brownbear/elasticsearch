@@ -239,8 +239,8 @@ public final class InternalBinaryRange extends InternalMultiBucketAggregation<In
     }
 
     @Override
-    public Bucket createBucket(InternalAggregations aggregations, Bucket prototype) {
-        return new Bucket(format, keyed, prototype.key, prototype.from, prototype.to, prototype.docCount, aggregations);
+    public Bucket createBucket(InternalAggregations aggregations, long docCount, Bucket prototype) {
+        return new Bucket(format, keyed, prototype.key, prototype.from, prototype.to, docCount, aggregations);
     }
 
     @Override

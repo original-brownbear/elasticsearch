@@ -153,14 +153,14 @@ public class InternalComposite extends InternalMultiBucketAggregation<InternalCo
     }
 
     @Override
-    public InternalBucket createBucket(InternalAggregations aggregations, InternalBucket prototype) {
+    public InternalBucket createBucket(InternalAggregations aggregations, long docCount, InternalBucket prototype) {
         return new InternalBucket(
             prototype.sourceNames,
             prototype.formats,
             prototype.key,
             prototype.reverseMuls,
             prototype.missingOrders,
-            prototype.docCount,
+            docCount,
             aggregations
         );
     }

@@ -84,7 +84,7 @@ public class UnmappedSignificantTerms extends InternalSignificantTerms<UnmappedS
     }
 
     @Override
-    public Bucket createBucket(InternalAggregations aggregations, Bucket prototype) {
+    public Bucket createBucket(InternalAggregations aggregations, long docCount, Bucket prototype) {
         throw new UnsupportedOperationException("not supported for UnmappedSignificantTerms");
     }
 

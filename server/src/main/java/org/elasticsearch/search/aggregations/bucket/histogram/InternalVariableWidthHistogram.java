@@ -36,7 +36,7 @@ public class InternalVariableWidthHistogram extends InternalMultiBucketAggregati
     InternalVariableWidthHistogram,
     InternalVariableWidthHistogram.Bucket> implements Histogram, HistogramFactory {
 
-    public static class Bucket extends AbstractHistogramBucket<Bucket> {
+    public static class Bucket extends AbstractHistogramBucket<Bucket, InternalVariableWidthHistogram> {
 
         public static class BucketBounds {
             public double min;
@@ -283,8 +283,8 @@ public class InternalVariableWidthHistogram extends InternalMultiBucketAggregati
     }
 
     @Override
-    public Bucket createBucket(InternalAggregations aggregations, Bucket prototype) {
-        return new Bucket(prototype.centroid, prototype.bounds, prototype.docCount, prototype.format, aggregations);
+    public Bucket createBucket(InternalAggregations aggregations, long docCount, Bucket prototype) {
+        return new Bucket(prototype.centroid, prototype.bounds, docCount, prototype.format, aggregations);
     }
 
     @Override

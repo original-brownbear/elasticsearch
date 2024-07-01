@@ -105,12 +105,12 @@ public class InternalDateRange extends InternalRange<InternalDateRange.Bucket, I
         }
 
         @Override
-        public Bucket createBucket(InternalAggregations aggregations, Bucket prototype) {
+        public Bucket createBucket(InternalAggregations aggregations, long docCount, Bucket prototype) {
             return new Bucket(
                 prototype.getKey(),
                 prototype.internalGetFrom(),
                 prototype.internalGetTo(),
-                prototype.getDocCount(),
+                docCount,
                 aggregations,
                 prototype.getKeyed(),
                 prototype.getFormat()

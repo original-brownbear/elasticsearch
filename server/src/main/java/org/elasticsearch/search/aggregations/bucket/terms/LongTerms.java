@@ -172,15 +172,8 @@ public class LongTerms extends InternalMappedTerms<LongTerms, LongTerms.Bucket> 
     }
 
     @Override
-    public Bucket createBucket(InternalAggregations aggregations, Bucket prototype) {
-        return new Bucket(
-            prototype.term,
-            prototype.docCount,
-            aggregations,
-            prototype.showDocCountError,
-            prototype.docCountError,
-            prototype.format
-        );
+    public Bucket createBucket(InternalAggregations aggregations, long docCount, Bucket prototype) {
+        return new Bucket(prototype.term, docCount, aggregations, prototype.showDocCountError, prototype.docCountError, prototype.format);
     }
 
     @Override

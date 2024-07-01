@@ -578,8 +578,8 @@ public class InternalMultiTerms extends AbstractInternalTerms<InternalMultiTerms
     }
 
     @Override
-    public Bucket createBucket(InternalAggregations aggregations, Bucket prototype) {
-        return new Bucket(prototype.terms, prototype.docCount, aggregations, showTermDocCountError, docCountError, formats, keyConverters);
+    public Bucket createBucket(InternalAggregations aggregations, long docCount, Bucket prototype) {
+        return new Bucket(prototype.terms, docCount, aggregations, showTermDocCountError, docCountError, formats, keyConverters);
     }
 
     @Override

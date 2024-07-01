@@ -441,23 +441,13 @@ public class RollupResponseTranslator {
         // {@link #unrollMultiBucket(InternalMultiBucketAggregation, InternalMultiBucketAggregation, TriFunction)}
         if (rolled instanceof InternalDateHistogram) {
             return unrollMultiBucket(rolled, original, currentTree, (bucket, bucketCount, subAggs) -> {
-                long key = ((InternalDateHistogram) rolled).getKey(bucket).longValue();
-                DocValueFormat formatter = ((InternalDateHistogram.Bucket) bucket).getFormatter();
                 assert bucketCount >= 0;
-                return new InternalDateHistogram.Bucket(
-                    key,
-                    bucketCount,
-                    ((InternalDateHistogram.Bucket) bucket).getKeyed(),
-                    formatter,
-                    subAggs
-                );
+                return rolled.createBucket(subAggs, bucketCount, bucket);
             });
         } else if (rolled instanceof InternalHistogram) {
             return unrollMultiBucket(rolled, original, currentTree, (bucket, bucketCount, subAggs) -> {
-                long key = ((InternalHistogram) rolled).getKey(bucket).longValue();
-                DocValueFormat formatter = ((InternalHistogram.Bucket) bucket).getFormatter();
                 assert bucketCount >= 0;
-                return new InternalHistogram.Bucket(key, bucketCount, ((InternalHistogram.Bucket) bucket).getKeyed(), formatter, subAggs);
+                return rolled.createBucket(subAggs, bucketCount, bucket);
             });
         } else if (rolled instanceof StringTerms) {
             return unrollMultiBucket(rolled, original, currentTree, (bucket, bucketCount, subAggs) -> {

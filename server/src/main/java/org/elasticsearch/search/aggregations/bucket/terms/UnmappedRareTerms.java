@@ -74,7 +74,7 @@ public class UnmappedRareTerms extends InternalRareTerms<UnmappedRareTerms, Unma
     }
 
     @Override
-    public UnmappedRareTerms.Bucket createBucket(InternalAggregations aggregations, UnmappedRareTerms.Bucket prototype) {
+    public UnmappedRareTerms.Bucket createBucket(InternalAggregations aggregations, long docCount, UnmappedRareTerms.Bucket prototype) {
         throw new UnsupportedOperationException("not supported for UnmappedRareTerms");
     }
 

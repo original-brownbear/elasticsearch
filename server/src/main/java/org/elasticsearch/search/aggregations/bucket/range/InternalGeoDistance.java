@@ -64,12 +64,12 @@ public class InternalGeoDistance extends InternalRange<InternalGeoDistance.Bucke
         }
 
         @Override
-        public Bucket createBucket(InternalAggregations aggregations, Bucket prototype) {
+        public Bucket createBucket(InternalAggregations aggregations, long docCount, Bucket prototype) {
             return new Bucket(
                 prototype.getKey(),
                 ((Number) prototype.getFrom()).doubleValue(),
                 ((Number) prototype.getTo()).doubleValue(),
-                prototype.getDocCount(),
+                docCount,
                 aggregations,
                 prototype.getKeyed()
             );

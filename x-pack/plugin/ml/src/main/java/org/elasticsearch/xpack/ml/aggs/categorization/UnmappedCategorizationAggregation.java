@@ -33,7 +33,7 @@ class UnmappedCategorizationAggregation extends InternalCategorizationAggregatio
     }
 
     @Override
-    public Bucket createBucket(InternalAggregations aggregations, Bucket prototype) {
+    public Bucket createBucket(InternalAggregations aggregations, long docCount, Bucket prototype) {
         throw new UnsupportedOperationException("not supported for UnmappedCategorizationAggregation");
     }
 

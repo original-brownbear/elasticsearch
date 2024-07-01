@@ -48,7 +48,7 @@ public final class InternalDateHistogram extends InternalMultiBucketAggregation<
         Histogram,
         HistogramFactory {
 
-    public static class Bucket extends AbstractHistogramBucket<Bucket> {
+    public static class Bucket extends AbstractHistogramBucket<Bucket, InternalDateHistogram> {
 
         final long key;
         private final transient boolean keyed;
@@ -298,8 +298,8 @@ public final class InternalDateHistogram extends InternalMultiBucketAggregation<
     }
 
     @Override
-    public Bucket createBucket(InternalAggregations aggregations, Bucket prototype) {
-        return new Bucket(prototype.key, prototype.docCount, prototype.keyed, prototype.format, aggregations);
+    public Bucket createBucket(InternalAggregations aggregations, long docCount, Bucket prototype) {
+        return new Bucket(prototype.key, docCount, prototype.keyed, prototype.format, aggregations);
     }
 
     private List<Bucket> reduceBuckets(final PriorityQueue<IteratorAndCurrent<Bucket>> pq, AggregationReduceContext reduceContext) {

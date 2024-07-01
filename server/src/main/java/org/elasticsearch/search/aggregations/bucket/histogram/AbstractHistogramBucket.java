@@ -16,7 +16,8 @@ import org.elasticsearch.search.aggregations.KeyComparable;
 /**
  * A bucket in the histogram where documents fall in
  */
-public abstract class AbstractHistogramBucket<T extends AbstractHistogramBucket<T>> extends InternalMultiBucketAggregation.InternalBucket
+public abstract class AbstractHistogramBucket<T extends AbstractHistogramBucket<T, A>, A extends InternalMultiBucketAggregation<A, T>>
+    extends InternalMultiBucketAggregation.InternalBucket
     implements
         KeyComparable<T> {
 
@@ -40,7 +41,4 @@ public abstract class AbstractHistogramBucket<T extends AbstractHistogramBucket<
         return aggregations;
     }
 
-    public final DocValueFormat getFormatter() {
-        return format;
-    }
 }

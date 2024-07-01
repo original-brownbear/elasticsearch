@@ -93,7 +93,7 @@ public class InternalCategorizationAggregation extends InternalMultiBucketAggreg
 
         private final SerializableTokenListCategory serializableCategory;
         private final BucketKey key;
-        private long bucketOrd;
+        private final long bucketOrd;
         private InternalAggregations aggregations;
 
         public Bucket(SerializableTokenListCategory serializableCategory, long bucketOrd) {
@@ -292,7 +292,7 @@ public class InternalCategorizationAggregation extends InternalMultiBucketAggreg
     }
 
     @Override
-    public Bucket createBucket(InternalAggregations aggregations, Bucket prototype) {
+    public Bucket createBucket(InternalAggregations aggregations, long docCount, Bucket prototype) {
         return new Bucket(prototype.serializableCategory, prototype.bucketOrd, aggregations);
     }
 

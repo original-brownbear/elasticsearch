@@ -106,8 +106,8 @@ public class StringRareTerms extends InternalMappedRareTerms<StringRareTerms, St
     }
 
     @Override
-    public StringRareTerms.Bucket createBucket(InternalAggregations aggregations, StringRareTerms.Bucket prototype) {
-        return new StringRareTerms.Bucket(prototype.termBytes, prototype.getDocCount(), aggregations, prototype.format);
+    public StringRareTerms.Bucket createBucket(InternalAggregations aggregations, long docCount, StringRareTerms.Bucket prototype) {
+        return new StringRareTerms.Bucket(prototype.termBytes, docCount, aggregations, prototype.format);
     }
 
     @Override

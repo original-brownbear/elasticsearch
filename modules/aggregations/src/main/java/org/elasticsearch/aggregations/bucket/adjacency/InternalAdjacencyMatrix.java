@@ -157,8 +157,8 @@ public class InternalAdjacencyMatrix extends InternalMultiBucketAggregation<Inte
     }
 
     @Override
-    public InternalBucket createBucket(InternalAggregations aggregations, InternalBucket prototype) {
-        return new InternalBucket(prototype.key, prototype.docCount, aggregations);
+    public InternalBucket createBucket(InternalAggregations aggregations, long docCount, InternalBucket prototype) {
+        return new InternalBucket(prototype.key, docCount, aggregations);
     }
 
     @Override

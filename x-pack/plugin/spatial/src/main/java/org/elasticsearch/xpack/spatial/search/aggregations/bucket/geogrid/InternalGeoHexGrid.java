@@ -36,8 +36,8 @@ public class InternalGeoHexGrid extends InternalGeoGrid<InternalGeoHexGridBucket
     }
 
     @Override
-    public InternalGeoGridBucket createBucket(InternalAggregations aggregations, InternalGeoGridBucket prototype) {
-        return new InternalGeoHexGridBucket(prototype.hashAsLong(), prototype.getDocCount(), aggregations);
+    public InternalGeoGridBucket createBucket(InternalAggregations aggregations, long docCount, InternalGeoGridBucket prototype) {
+        return new InternalGeoHexGridBucket(prototype.hashAsLong(), docCount, aggregations);
     }
 
     @Override

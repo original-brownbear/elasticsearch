@@ -224,12 +224,12 @@ public class InternalRange<B extends InternalRange.Bucket, R extends InternalRan
         }
 
         @SuppressWarnings("unchecked")
-        public B createBucket(InternalAggregations aggregations, B prototype) {
+        public B createBucket(InternalAggregations aggregations, long docCount, B prototype) {
             return (B) new Bucket(
                 prototype.getKey(),
                 prototype.from,
                 prototype.to,
-                prototype.getDocCount(),
+                docCount,
                 aggregations,
                 prototype.keyed,
                 prototype.format
@@ -318,8 +318,8 @@ public class InternalRange<B extends InternalRange.Bucket, R extends InternalRan
     }
 
     @Override
-    public B createBucket(InternalAggregations aggregations, B prototype) {
-        return getFactory().createBucket(aggregations, prototype);
+    public B createBucket(InternalAggregations aggregations, long docCount, B prototype) {
+        return getFactory().createBucket(aggregations, docCount, prototype);
     }
 
     @SuppressWarnings("unchecked")

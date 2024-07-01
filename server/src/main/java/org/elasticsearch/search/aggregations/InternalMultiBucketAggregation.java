@@ -13,6 +13,7 @@ import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.search.aggregations.bucket.MultiBucketsAggregation;
 import org.elasticsearch.search.aggregations.bucket.SingleBucketAggregation;
 import org.elasticsearch.search.aggregations.pipeline.PipelineAggregator.PipelineTree;
+import org.elasticsearch.xcontent.ToXContent;
 
 import java.io.IOException;
 import java.util.AbstractList;
@@ -70,7 +71,21 @@ public abstract class InternalMultiBucketAggregation<
      *            the bucket to use as a prototype
      * @return the new bucket
      */
-    public abstract B createBucket(InternalAggregations aggregations, B prototype);
+    public final B createBucket(InternalAggregations aggregations, B prototype) {
+        return createBucket(aggregations, prototype.getDocCount(), prototype);
+    }
+
+    /**
+     * Create a new {@link InternalBucket} using the provided prototype bucket, document count
+     * and aggregations.
+     *
+     * @param aggregations
+     *            the aggregations for the new bucket
+     * @param prototype
+     *            the bucket to use as a prototype
+     * @return the new bucket
+     */
+    public abstract B createBucket(InternalAggregations aggregations, long documentCount, B prototype);
 
     /** Helps to lazily construct the aggregation list for reduction */
     protected static class BucketAggregationList<B extends Bucket> extends AbstractList<InternalAggregations> {
@@ -234,7 +249,7 @@ public abstract class InternalMultiBucketAggregation<
         return reducedBuckets == null ? buckets : reducedBuckets;
     }
 
-    public abstract static class InternalBucket implements Bucket, Writeable {
+    public abstract static class InternalBucket implements Bucket, Writeable, ToXContent {
 
         public Object getProperty(String containingAggName, List<String> path) {
             if (path.isEmpty()) {

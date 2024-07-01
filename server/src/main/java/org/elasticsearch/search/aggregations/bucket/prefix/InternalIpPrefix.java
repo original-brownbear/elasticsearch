@@ -313,20 +313,7 @@ public class InternalIpPrefix extends InternalMultiBucketAggregation<InternalIpP
     }
 
     @Override
-    public Bucket createBucket(InternalAggregations aggregations, Bucket prototype) {
-        return new Bucket(
-            format,
-            prototype.key,
-            prototype.keyed,
-            prototype.isIpv6,
-            prototype.prefixLength,
-            prototype.appendPrefixLength,
-            prototype.docCount,
-            prototype.aggregations
-        );
-    }
-
-    private Bucket createBucket(Bucket prototype, InternalAggregations aggregations, long docCount) {
+    public Bucket createBucket(InternalAggregations aggregations, long docCount, Bucket prototype) {
         return new Bucket(
             format,
             prototype.key,
@@ -335,7 +322,7 @@ public class InternalIpPrefix extends InternalMultiBucketAggregation<InternalIpP
             prototype.prefixLength,
             prototype.appendPrefixLength,
             docCount,
-            aggregations
+            prototype.aggregations
         );
     }
 
@@ -345,7 +332,7 @@ public class InternalIpPrefix extends InternalMultiBucketAggregation<InternalIpP
             for (Bucket bucket : buckets) {
                 reducer.accept(bucket);
             }
-            return createBucket(reducer.getProto(), reducer.getAggregations(), reducer.getDocCount());
+            return createBucket(reducer.getAggregations(), reducer.getDocCount(), reducer.getProto());
         }
     }
 

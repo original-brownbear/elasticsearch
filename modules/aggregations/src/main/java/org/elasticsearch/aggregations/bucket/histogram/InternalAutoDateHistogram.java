@@ -48,7 +48,7 @@ public final class InternalAutoDateHistogram extends InternalMultiBucketAggregat
     InternalAutoDateHistogram,
     InternalAutoDateHistogram.Bucket> implements Histogram, HistogramFactory {
 
-    public static class Bucket extends AbstractHistogramBucket<Bucket> {
+    public static class Bucket extends AbstractHistogramBucket<Bucket, InternalAutoDateHistogram> {
 
         final long key;
 
@@ -267,8 +267,8 @@ public final class InternalAutoDateHistogram extends InternalMultiBucketAggregat
     }
 
     @Override
-    public Bucket createBucket(InternalAggregations aggregations, Bucket prototype) {
-        return new Bucket(prototype.key, prototype.getDocCount(), prototype.getFormatter(), aggregations);
+    public Bucket createBucket(InternalAggregations aggregations, long docCount, Bucket prototype) {
+        return new Bucket(prototype.key, docCount, format, aggregations);
     }
 
     /**

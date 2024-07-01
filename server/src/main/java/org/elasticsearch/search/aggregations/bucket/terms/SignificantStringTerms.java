@@ -49,7 +49,7 @@ public class SignificantStringTerms extends InternalMappedSignificantTerms<Signi
          * Read from a stream.
          */
         public Bucket(StreamInput in, long subsetSize, long supersetSize, DocValueFormat format) throws IOException {
-            super(in, subsetSize, supersetSize, format);
+            super(subsetSize, supersetSize, format);
             termBytes = in.readBytesRef();
             subsetDf = in.readVLong();
             supersetDf = in.readVLong();
@@ -138,10 +138,10 @@ public class SignificantStringTerms extends InternalMappedSignificantTerms<Signi
     }
 
     @Override
-    public Bucket createBucket(InternalAggregations aggregations, SignificantStringTerms.Bucket prototype) {
+    public Bucket createBucket(InternalAggregations aggregations, long docCount, SignificantStringTerms.Bucket prototype) {
         return new Bucket(
             prototype.termBytes,
-            prototype.subsetDf,
+            docCount,
             prototype.subsetSize,
             prototype.supersetDf,
             prototype.supersetSize,

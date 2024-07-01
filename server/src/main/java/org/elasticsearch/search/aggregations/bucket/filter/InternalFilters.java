@@ -34,7 +34,7 @@ public class InternalFilters extends InternalMultiBucketAggregation<InternalFilt
         private final boolean keyed;
         private final boolean keyedBucket;
         private final String key;
-        private long docCount;
+        private final long docCount;
         InternalAggregations aggregations;
 
         public InternalBucket(String key, long docCount, InternalAggregations aggregations, boolean keyed, boolean keyedBucket) {
@@ -180,8 +180,8 @@ public class InternalFilters extends InternalMultiBucketAggregation<InternalFilt
     }
 
     @Override
-    public InternalBucket createBucket(InternalAggregations aggregations, InternalBucket prototype) {
-        return new InternalBucket(prototype.key, prototype.docCount, aggregations, prototype.keyed, keyedBucket);
+    public InternalBucket createBucket(InternalAggregations aggregations, long docCount, InternalBucket prototype) {
+        return new InternalBucket(prototype.key, docCount, aggregations, prototype.keyed, keyedBucket);
     }
 
     @Override
