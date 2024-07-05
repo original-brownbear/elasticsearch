@@ -836,18 +836,21 @@ public final class DateFieldMapper extends FieldMapper {
 
         @Override
         public DocValueFormat docValueFormat(@Nullable String format, ZoneId timeZone) {
-            DateFormatter dateTimeFormatter = this.dateTimeFormatter;
-            if (format != null) {
-                dateTimeFormatter = DateFormatter.forPattern(format).withLocale(dateTimeFormatter.locale());
-            }
-            if (timeZone == null) {
-                timeZone = ZoneOffset.UTC;
-            }
-            // the resolution here is always set to milliseconds, as aggregations use this formatter mainly and those are always in
-            // milliseconds. The only special case here is docvalue fields, which are handled somewhere else
-            // TODO maybe aggs should force millis because lots so of other places want nanos?
-            return new DocValueFormat.DateTime(dateTimeFormatter, timeZone, Resolution.MILLISECONDS);
+            return DateFieldMapper.docValueFormat(format, timeZone, this.dateTimeFormatter);
         }
+    }
+
+    public static DocValueFormat.DateTime docValueFormat(@Nullable String format, ZoneId timeZone, DateFormatter dateTimeFormatter) {
+        if (format != null) {
+            dateTimeFormatter = DateFormatter.forPattern(format).withLocale(dateTimeFormatter.locale());
+        }
+        if (timeZone == null) {
+            timeZone = ZoneOffset.UTC;
+        }
+        // the resolution here is always set to milliseconds, as aggregations use this formatter mainly and those are always in
+        // milliseconds. The only special case here is docvalue fields, which are handled somewhere else
+        // TODO maybe aggs should force millis because lots so of other places want nanos?
+        return new DocValueFormat.DateTime(dateTimeFormatter, timeZone, Resolution.MILLISECONDS);
     }
 
     private final boolean store;

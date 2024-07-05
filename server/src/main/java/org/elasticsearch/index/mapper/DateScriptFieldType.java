@@ -169,14 +169,7 @@ public class DateScriptFieldType extends AbstractScriptFieldType<DateFieldScript
 
     @Override
     public DocValueFormat docValueFormat(@Nullable String format, ZoneId timeZone) {
-        DateFormatter dateTimeFormatter = this.dateTimeFormatter;
-        if (format != null) {
-            dateTimeFormatter = DateFormatter.forPattern(format).withLocale(dateTimeFormatter.locale());
-        }
-        if (timeZone == null) {
-            timeZone = ZoneOffset.UTC;
-        }
-        return new DocValueFormat.DateTime(dateTimeFormatter, timeZone, Resolution.MILLISECONDS);
+        return DateFieldMapper.docValueFormat(format, timeZone, this.dateTimeFormatter);
     }
 
     @Override
