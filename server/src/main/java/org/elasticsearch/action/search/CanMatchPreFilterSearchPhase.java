@@ -250,9 +250,10 @@ final class CanMatchPreFilterSearchPhase extends SearchPhase {
                     searchTransportService.sendCanMatch(getConnection(entry.getKey()), canMatchNodeRequest, task, new ActionListener<>() {
                         @Override
                         public void onResponse(CanMatchNodeResponse canMatchNodeResponse) {
-                            assert canMatchNodeResponse.getResponses().size() == canMatchNodeRequest.getShardLevelRequests().size();
-                            for (int i = 0; i < canMatchNodeResponse.getResponses().size(); i++) {
-                                CanMatchNodeResponse.ResponseOrFailure response = canMatchNodeResponse.getResponses().get(i);
+                            var responses = canMatchNodeResponse.getResponses();
+                            assert responses.size() == shardLevelRequests.size();
+                            for (int i = 0; i < responses.size(); i++) {
+                                CanMatchNodeResponse.ResponseOrFailure response = responses.get(i);
                                 if (response.getResponse() != null) {
                                     CanMatchShardResponse shardResponse = response.getResponse();
                                     shardResponse.setShardIndex(shardLevelRequests.get(i).getShardRequestIndex());
@@ -331,20 +332,16 @@ final class CanMatchPreFilterSearchPhase extends SearchPhase {
     private record SendingTarget(@Nullable String clusterAlias, @Nullable String nodeId) {}
 
     private CanMatchNodeRequest createCanMatchRequest(Map.Entry<SendingTarget, List<SearchShardIterator>> entry) {
-        final SearchShardIterator first = entry.getValue().get(0);
-        final List<CanMatchNodeRequest.Shard> shardLevelRequests = entry.getValue()
-            .stream()
-            .map(this::buildShardLevelRequest)
-            .collect(Collectors.toCollection(ArrayList::new));
-        assert entry.getValue().stream().allMatch(Objects::nonNull);
-        assert entry.getValue()
-            .stream()
+        var searchShardIterators = entry.getValue();
+        final SearchShardIterator first = searchShardIterators.get(0);
+        assert searchShardIterators.stream().allMatch(Objects::nonNull);
+        assert searchShardIterators.stream()
             .allMatch(ssi -> Objects.equals(ssi.getOriginalIndices().indicesOptions(), first.getOriginalIndices().indicesOptions()));
-        assert entry.getValue().stream().allMatch(ssi -> Objects.equals(ssi.getClusterAlias(), first.getClusterAlias()));
+        assert searchShardIterators.stream().allMatch(ssi -> Objects.equals(ssi.getClusterAlias(), first.getClusterAlias()));
         return new CanMatchNodeRequest(
             request,
             first.getOriginalIndices().indicesOptions(),
-            shardLevelRequests,
+            searchShardIterators.stream().map(this::buildShardLevelRequest).collect(Collectors.toCollection(ArrayList::new)),
             getNumShards(),
             timeProvider.absoluteStartMillis(),
             first.getClusterAlias()
@@ -416,7 +413,7 @@ final class CanMatchPreFilterSearchPhase extends SearchPhase {
         listener.onFailure(new SearchPhaseExecutionException(getName(), msg, cause, ShardSearchFailure.EMPTY_ARRAY));
     }
 
-    public Transport.Connection getConnection(SendingTarget sendingTarget) {
+    private Transport.Connection getConnection(SendingTarget sendingTarget) {
         Transport.Connection conn = nodeIdToConnection.apply(sendingTarget.clusterAlias, sendingTarget.nodeId);
         Version minVersion = request.minCompatibleShardNode();
         if (minVersion != null && conn != null && conn.getNode().getVersion().before(minVersion)) {

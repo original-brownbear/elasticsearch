@@ -34,7 +34,6 @@ import org.elasticsearch.cluster.metadata.IndexAbstraction;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.node.DiscoveryNode;
-import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.cluster.routing.GroupShardsIterator;
 import org.elasticsearch.cluster.routing.OperationRouting;
 import org.elasticsearch.cluster.routing.ShardIterator;
@@ -95,6 +94,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
@@ -338,10 +338,9 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
         ActionListener<SearchResponse> listener,
         Function<ActionListener<SearchResponse>, SearchPhaseProvider> searchPhaseProvider
     ) {
-        final long relativeStartNanos = System.nanoTime();
         final SearchTimeProvider timeProvider = new SearchTimeProvider(
             original.getOrCreateAbsoluteStartMillis(),
-            relativeStartNanos,
+            System.nanoTime(),
             System::nanoTime
         );
 
@@ -367,13 +366,10 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
             frozenIndexCheck(resolvedIndices);
         }
 
-        ActionListener<SearchRequest> rewriteListener = listener.delegateFailureAndWrap((delegate, rewritten) -> {
-            if (ccsCheckCompatibility) {
-                checkCCSVersionCompatibility(rewritten);
-            }
-
-            if (resolvedIndices.getRemoteClusterIndices().isEmpty()) {
-                executeLocalSearch(
+        final ActionListener<SearchRequest> rewriteListener;
+        if (resolvedIndices.getRemoteClusterIndices().isEmpty()) {
+            rewriteListener = listener.delegateFailureAndWrap(
+                (delegate, rewritten) -> executeLocalSearch(
                     task,
                     timeProvider,
                     rewritten,
@@ -381,115 +377,126 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                     clusterState,
                     SearchResponse.Clusters.EMPTY,
                     searchPhaseProvider.apply(delegate)
-                );
-            } else {
-                final TaskId parentTaskId = task.taskInfo(clusterService.localNode().getId(), false).taskId();
-                if (shouldMinimizeRoundtrips(rewritten)) {
-                    final AggregationReduceContext.Builder aggregationReduceContextBuilder = rewritten.source() != null
-                        && rewritten.source().aggregations() != null
-                            ? searchService.aggReduceContextBuilder(task::isCancelled, rewritten.source().aggregations())
-                            : null;
-                    SearchResponse.Clusters clusters = new SearchResponse.Clusters(
-                        resolvedIndices.getLocalIndices(),
-                        resolvedIndices.getRemoteClusterIndices(),
-                        true,
-                        remoteClusterService::isSkipUnavailable
-                    );
-                    if (resolvedIndices.getLocalIndices() == null) {
-                        // Notify the progress listener that a CCS with minimize_roundtrips is happening remote-only (no local shards)
-                        task.getProgressListener()
-                            .notifyListShards(Collections.emptyList(), Collections.emptyList(), clusters, false, timeProvider);
-                    }
-                    ccsRemoteReduce(
-                        task,
-                        parentTaskId,
-                        rewritten,
-                        resolvedIndices,
-                        clusters,
-                        timeProvider,
-                        aggregationReduceContextBuilder,
-                        remoteClusterService,
-                        threadPool,
-                        delegate,
-                        (r, l) -> executeLocalSearch(
-                            task,
-                            timeProvider,
-                            r,
-                            resolvedIndices,
-                            clusterState,
-                            clusters,
-                            searchPhaseProvider.apply(l)
-                        )
-                    );
-                } else {
-                    final SearchContextId searchContext = resolvedIndices.getSearchContextId();
-                    SearchResponse.Clusters clusters = new SearchResponse.Clusters(
-                        resolvedIndices.getLocalIndices(),
-                        resolvedIndices.getRemoteClusterIndices(),
-                        false,
-                        remoteClusterService::isSkipUnavailable
-                    );
-
-                    // TODO: pass parentTaskId
-                    collectSearchShards(
-                        rewritten.indicesOptions(),
-                        rewritten.preference(),
-                        rewritten.routing(),
-                        rewritten.source() != null ? rewritten.source().query() : null,
-                        Objects.requireNonNullElse(rewritten.allowPartialSearchResults(), searchService.defaultAllowPartialSearchResults()),
-                        searchContext,
-                        resolvedIndices.getRemoteClusterIndices(),
-                        clusters,
-                        timeProvider,
-                        transportService,
-                        delegate.delegateFailureAndWrap((finalDelegate, searchShardsResponses) -> {
-                            final BiFunction<String, String, DiscoveryNode> clusterNodeLookup = getRemoteClusterNodeLookup(
-                                searchShardsResponses
-                            );
-                            final Map<String, AliasFilter> remoteAliasFilters;
-                            final List<SearchShardIterator> remoteShardIterators;
-                            if (searchContext != null) {
-                                remoteAliasFilters = searchContext.aliasFilter();
-                                remoteShardIterators = getRemoteShardsIteratorFromPointInTime(
-                                    searchShardsResponses,
-                                    searchContext,
-                                    rewritten.pointInTimeBuilder().getKeepAlive(),
-                                    resolvedIndices.getRemoteClusterIndices()
-                                );
-                            } else {
-                                remoteAliasFilters = new HashMap<>();
-                                for (SearchShardsResponse searchShardsResponse : searchShardsResponses.values()) {
-                                    remoteAliasFilters.putAll(searchShardsResponse.getAliasFilters());
-                                }
-                                remoteShardIterators = getRemoteShardsIterator(
-                                    searchShardsResponses,
-                                    resolvedIndices.getRemoteClusterIndices(),
-                                    remoteAliasFilters
-                                );
-                            }
-                            executeSearch(
-                                task,
-                                timeProvider,
-                                rewritten,
-                                resolvedIndices,
-                                remoteShardIterators,
-                                clusterNodeLookup,
-                                clusterState,
-                                remoteAliasFilters,
-                                clusters,
-                                searchPhaseProvider.apply(finalDelegate)
-                            );
-                        })
-                    );
-                }
-            }
-        });
-
+                )
+            );
+        } else {
+            rewriteListener = remoteSearchListener(task, searchPhaseProvider, resolvedIndices, timeProvider, clusterState, listener);
+        }
         Rewriteable.rewriteAndFetch(
             original,
             searchService.getRewriteContext(timeProvider::absoluteStartMillis, resolvedIndices),
-            rewriteListener
+            ccsCheckCompatibility ? rewriteListener.map(rewritten -> {
+                checkCCSVersionCompatibility(rewritten);
+                return rewritten;
+            }) : rewriteListener
         );
+    }
+
+    private ActionListener<SearchRequest> remoteSearchListener(
+        SearchTask task,
+        Function<ActionListener<SearchResponse>, SearchPhaseProvider> searchPhaseProvider,
+        ResolvedIndices resolvedIndices,
+        SearchTimeProvider timeProvider,
+        ClusterState clusterState,
+        ActionListener<SearchResponse> listener
+    ) {
+        final ActionListener<SearchRequest> rewriteListener;
+        rewriteListener = listener.delegateFailureAndWrap((delegate, rewritten) -> {
+            if (shouldMinimizeRoundtrips(rewritten)) {
+                SearchResponse.Clusters clusters = new SearchResponse.Clusters(
+                    resolvedIndices.getLocalIndices(),
+                    resolvedIndices.getRemoteClusterIndices(),
+                    true,
+                    remoteClusterService::isSkipUnavailable
+                );
+                if (resolvedIndices.getLocalIndices() == null) {
+                    // Notify the progress listener that a CCS with minimize_roundtrips is happening remote-only (no local shards)
+                    task.getProgressListener()
+                        .notifyListShards(Collections.emptyList(), Collections.emptyList(), clusters, false, timeProvider);
+                }
+                ccsRemoteReduce(
+                    task,
+                    task.taskInfo(clusterService.localNode().getId(), false).taskId(),
+                    rewritten,
+                    resolvedIndices,
+                    clusters,
+                    timeProvider,
+                    rewritten.source() != null && rewritten.source().aggregations() != null
+                        ? searchService.aggReduceContextBuilder(task::isCancelled, rewritten.source().aggregations())
+                        : null,
+                    remoteClusterService,
+                    threadPool,
+                    delegate,
+                    (r, l) -> executeLocalSearch(
+                        task,
+                        timeProvider,
+                        r,
+                        resolvedIndices,
+                        clusterState,
+                        clusters,
+                        searchPhaseProvider.apply(l)
+                    )
+                );
+            } else {
+                final SearchContextId searchContext = resolvedIndices.getSearchContextId();
+                SearchResponse.Clusters clusters = new SearchResponse.Clusters(
+                    resolvedIndices.getLocalIndices(),
+                    resolvedIndices.getRemoteClusterIndices(),
+                    false,
+                    remoteClusterService::isSkipUnavailable
+                );
+
+                // TODO: pass parentTaskId
+                collectSearchShards(
+                    rewritten.indicesOptions(),
+                    rewritten.preference(),
+                    rewritten.routing(),
+                    rewritten.source() != null ? rewritten.source().query() : null,
+                    Objects.requireNonNullElse(rewritten.allowPartialSearchResults(), searchService.defaultAllowPartialSearchResults()),
+                    searchContext,
+                    resolvedIndices.getRemoteClusterIndices(),
+                    clusters,
+                    timeProvider,
+                    transportService,
+                    delegate.delegateFailureAndWrap((finalDelegate, searchShardsResponses) -> {
+                        final Map<String, AliasFilter> remoteAliasFilters;
+                        final List<SearchShardIterator> remoteShardIterators;
+                        if (searchContext != null) {
+                            remoteAliasFilters = searchContext.aliasFilter();
+                            remoteShardIterators = getRemoteShardsIteratorFromPointInTime(
+                                searchShardsResponses,
+                                searchContext,
+                                rewritten.pointInTimeBuilder().getKeepAlive(),
+                                resolvedIndices.getRemoteClusterIndices()
+                            );
+                        } else {
+                            remoteAliasFilters = new HashMap<>();
+                            for (SearchShardsResponse searchShardsResponse : searchShardsResponses.values()) {
+                                remoteAliasFilters.putAll(searchShardsResponse.getAliasFilters());
+                            }
+                            remoteShardIterators = getRemoteShardsIterator(
+                                searchShardsResponses,
+                                resolvedIndices.getRemoteClusterIndices(),
+                                remoteAliasFilters
+                            );
+                        }
+                        executeSearch(
+                            task,
+                            timeProvider,
+                            rewritten,
+                            resolvedIndices,
+                            remoteShardIterators,
+                            getRemoteClusterNodeLookup(searchShardsResponses),
+                            clusterState,
+                            remoteAliasFilters,
+                            clusters,
+                            searchPhaseProvider.apply(finalDelegate)
+                        );
+                    })
+                );
+            }
+        });
+        return rewriteListener;
     }
 
     static void adjustSearchType(SearchRequest searchRequest, boolean singleShard) {
@@ -554,112 +561,98 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
     ) {
         final var remoteClientResponseExecutor = threadPool.executor(ThreadPool.Names.SEARCH_COORDINATION);
         if (resolvedIndices.getLocalIndices() == null && resolvedIndices.getRemoteClusterIndices().size() == 1) {
-            // if we are searching against a single remote cluster, we simply forward the original search request to such cluster
-            // and we directly perform final reduction in the remote cluster
-            Map.Entry<String, OriginalIndices> entry = resolvedIndices.getRemoteClusterIndices().entrySet().iterator().next();
-            String clusterAlias = entry.getKey();
-            boolean skipUnavailable = remoteClusterService.isSkipUnavailable(clusterAlias);
-            OriginalIndices indices = entry.getValue();
-            SearchRequest ccsSearchRequest = SearchRequest.subSearchRequest(
+            ccsRemoteReduceSingleCluster(
                 parentTaskId,
                 searchRequest,
-                indices.indices(),
-                clusterAlias,
-                timeProvider.absoluteStartMillis(),
-                true
-            );
-            var remoteClusterClient = remoteClusterService.getRemoteClusterClient(
-                clusterAlias,
-                remoteClientResponseExecutor,
-                RemoteClusterService.DisconnectedStrategy.RECONNECT_UNLESS_SKIP_UNAVAILABLE
-            );
-            remoteClusterClient.execute(TransportSearchAction.REMOTE_TYPE, ccsSearchRequest, new ActionListener<>() {
-                @Override
-                public void onResponse(SearchResponse searchResponse) {
-                    // overwrite the existing cluster entry with the updated one
-                    ccsClusterInfoUpdate(searchResponse, clusters, clusterAlias, skipUnavailable);
-                    Map<String, SearchProfileShardResult> profileResults = searchResponse.getProfileResults();
-                    SearchProfileResults profile = profileResults == null || profileResults.isEmpty()
-                        ? null
-                        : new SearchProfileResults(profileResults);
-
-                    ActionListener.respondAndRelease(
-                        listener,
-                        new SearchResponse(
-                            searchResponse.getHits(),
-                            searchResponse.getAggregations(),
-                            searchResponse.getSuggest(),
-                            searchResponse.isTimedOut(),
-                            searchResponse.isTerminatedEarly(),
-                            profile,
-                            searchResponse.getNumReducePhases(),
-                            searchResponse.getScrollId(),
-                            searchResponse.getTotalShards(),
-                            searchResponse.getSuccessfulShards(),
-                            searchResponse.getSkippedShards(),
-                            timeProvider.buildTookInMillis(),
-                            searchResponse.getShardFailures(),
-                            clusters,
-                            searchResponse.pointInTimeId()
-                        )
-                    );
-                }
-
-                @Override
-                public void onFailure(Exception e) {
-                    ShardSearchFailure failure = new ShardSearchFailure(e);
-                    logCCSError(failure, clusterAlias, skipUnavailable);
-                    ccsClusterInfoUpdate(failure, clusters, clusterAlias, skipUnavailable);
-                    if (skipUnavailable) {
-                        ActionListener.respondAndRelease(listener, SearchResponse.empty(timeProvider::buildTookInMillis, clusters));
-                    } else {
-                        listener.onFailure(wrapRemoteClusterFailure(clusterAlias, e));
-                    }
-                }
-            });
-        } else {
-            SearchResponseMerger searchResponseMerger = createSearchResponseMerger(
-                searchRequest.source(),
+                resolvedIndices,
+                clusters,
                 timeProvider,
-                aggReduceContextBuilder
+                remoteClusterService,
+                listener,
+                remoteClientResponseExecutor
             );
-            task.setSearchResponseMergerSupplier(
-                () -> createSearchResponseMerger(searchRequest.source(), timeProvider, aggReduceContextBuilder)
+        } else {
+            ccsRemoteReduceMultipleClusters(
+                task,
+                parentTaskId,
+                searchRequest,
+                resolvedIndices,
+                clusters,
+                timeProvider,
+                aggReduceContextBuilder,
+                remoteClusterService,
+                listener,
+                localSearchConsumer,
+                remoteClientResponseExecutor
             );
-            final AtomicReference<Exception> exceptions = new AtomicReference<>();
-            int totalClusters = resolvedIndices.getRemoteClusterIndices().size() + (resolvedIndices.getLocalIndices() == null ? 0 : 1);
-            final CountDown countDown = new CountDown(totalClusters);
-            for (Map.Entry<String, OriginalIndices> entry : resolvedIndices.getRemoteClusterIndices().entrySet()) {
-                String clusterAlias = entry.getKey();
-                boolean skipUnavailable = remoteClusterService.isSkipUnavailable(clusterAlias);
-                OriginalIndices indices = entry.getValue();
-                SearchRequest ccsSearchRequest = SearchRequest.subSearchRequest(
-                    parentTaskId,
-                    searchRequest,
-                    indices.indices(),
-                    clusterAlias,
-                    timeProvider.absoluteStartMillis(),
-                    false
-                );
-                ActionListener<SearchResponse> ccsListener = createCCSListener(
-                    clusterAlias,
-                    skipUnavailable,
-                    countDown,
-                    exceptions,
-                    searchResponseMerger,
-                    clusters,
-                    task.getProgressListener(),
-                    listener
-                );
-                final var remoteClusterClient = remoteClusterService.getRemoteClusterClient(
+        }
+    }
+
+    private static void ccsRemoteReduceMultipleClusters(
+        SearchTask task,
+        TaskId parentTaskId,
+        SearchRequest searchRequest,
+        ResolvedIndices resolvedIndices,
+        SearchResponse.Clusters clusters,
+        SearchTimeProvider timeProvider,
+        AggregationReduceContext.Builder aggReduceContextBuilder,
+        RemoteClusterService remoteClusterService,
+        ActionListener<SearchResponse> listener,
+        BiConsumer<SearchRequest, ActionListener<SearchResponse>> localSearchConsumer,
+        ExecutorService remoteClientResponseExecutor
+    ) {
+        SearchResponseMerger searchResponseMerger = createSearchResponseMerger(
+            searchRequest.source(),
+            timeProvider,
+            aggReduceContextBuilder
+        );
+        task.setSearchResponseMergerSupplier(
+            () -> createSearchResponseMerger(searchRequest.source(), timeProvider, aggReduceContextBuilder)
+        );
+        final AtomicReference<Exception> exceptions = new AtomicReference<>();
+        final CountDown countDown = new CountDown(
+            resolvedIndices.getRemoteClusterIndices().size() + (resolvedIndices.getLocalIndices() == null ? 0 : 1)
+        );
+        resolvedIndices.getRemoteClusterIndices()
+            .forEach(
+                (clusterAlias, valueoriginalIndices) -> remoteClusterService.getRemoteClusterClient(
                     clusterAlias,
                     remoteClientResponseExecutor,
                     RemoteClusterService.DisconnectedStrategy.RECONNECT_UNLESS_SKIP_UNAVAILABLE
-                );
-                remoteClusterClient.execute(TransportSearchAction.REMOTE_TYPE, ccsSearchRequest, ccsListener);
-            }
-            if (resolvedIndices.getLocalIndices() != null) {
-                ActionListener<SearchResponse> ccsListener = createCCSListener(
+                )
+                    .execute(
+                        TransportSearchAction.REMOTE_TYPE,
+                        SearchRequest.subSearchRequest(
+                            parentTaskId,
+                            searchRequest,
+                            valueoriginalIndices.indices(),
+                            clusterAlias,
+                            timeProvider.absoluteStartMillis(),
+                            false
+                        ),
+                        createCCSListener(
+                            clusterAlias,
+                            remoteClusterService.isSkipUnavailable(clusterAlias),
+                            countDown,
+                            exceptions,
+                            searchResponseMerger,
+                            clusters,
+                            task.getProgressListener(),
+                            listener
+                        )
+                    )
+            );
+        if (resolvedIndices.getLocalIndices() != null) {
+            localSearchConsumer.accept(
+                SearchRequest.subSearchRequest(
+                    parentTaskId,
+                    searchRequest,
+                    resolvedIndices.getLocalIndices().indices(),
+                    RemoteClusterAware.LOCAL_CLUSTER_GROUP_KEY,
+                    timeProvider.absoluteStartMillis(),
+                    false
+                ),
+                createCCSListener(
                     RemoteClusterAware.LOCAL_CLUSTER_GROUP_KEY,
                     false,
                     countDown,
@@ -668,18 +661,87 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                     clusters,
                     task.getProgressListener(),
                     listener
-                );
-                SearchRequest ccsLocalSearchRequest = SearchRequest.subSearchRequest(
+                )
+            );
+        }
+    }
+
+    private static void ccsRemoteReduceSingleCluster(
+        TaskId parentTaskId,
+        SearchRequest searchRequest,
+        ResolvedIndices resolvedIndices,
+        SearchResponse.Clusters clusters,
+        SearchTimeProvider timeProvider,
+        RemoteClusterService remoteClusterService,
+        ActionListener<SearchResponse> listener,
+        ExecutorService remoteClientResponseExecutor
+    ) {
+        // if we are searching against a single remote cluster, we simply forward the original search request to such cluster
+        // and we directly perform final reduction in the remote cluster
+        Map.Entry<String, OriginalIndices> entry = resolvedIndices.getRemoteClusterIndices().entrySet().iterator().next();
+        String clusterAlias = entry.getKey();
+        boolean skipUnavailable = remoteClusterService.isSkipUnavailable(clusterAlias);
+        OriginalIndices indices = entry.getValue();
+        remoteClusterService.getRemoteClusterClient(
+            clusterAlias,
+            remoteClientResponseExecutor,
+            RemoteClusterService.DisconnectedStrategy.RECONNECT_UNLESS_SKIP_UNAVAILABLE
+        )
+            .execute(
+                TransportSearchAction.REMOTE_TYPE,
+                SearchRequest.subSearchRequest(
                     parentTaskId,
                     searchRequest,
-                    resolvedIndices.getLocalIndices().indices(),
-                    RemoteClusterAware.LOCAL_CLUSTER_GROUP_KEY,
+                    indices.indices(),
+                    clusterAlias,
                     timeProvider.absoluteStartMillis(),
-                    false
-                );
-                localSearchConsumer.accept(ccsLocalSearchRequest, ccsListener);
-            }
-        }
+                    true
+                ),
+                new ActionListener<>() {
+                    @Override
+                    public void onResponse(SearchResponse searchResponse) {
+                        // overwrite the existing cluster entry with the updated one
+                        ccsClusterInfoUpdate(searchResponse, clusters, clusterAlias, skipUnavailable);
+                        Map<String, SearchProfileShardResult> profileResults = searchResponse.getProfileResults();
+                        SearchProfileResults profile = profileResults == null || profileResults.isEmpty()
+                            ? null
+                            : new SearchProfileResults(profileResults);
+
+                        ActionListener.respondAndRelease(
+                            listener,
+                            new SearchResponse(
+                                searchResponse.getHits(),
+                                searchResponse.getAggregations(),
+                                searchResponse.getSuggest(),
+                                searchResponse.isTimedOut(),
+                                searchResponse.isTerminatedEarly(),
+                                profile,
+                                searchResponse.getNumReducePhases(),
+                                searchResponse.getScrollId(),
+                                searchResponse.getTotalShards(),
+                                searchResponse.getSuccessfulShards(),
+                                searchResponse.getSkippedShards(),
+                                timeProvider.buildTookInMillis(),
+                                searchResponse.getShardFailures(),
+                                clusters,
+                                searchResponse.pointInTimeId()
+                            )
+                        );
+                    }
+
+                    @Override
+                    public void onFailure(Exception e) {
+                        ShardSearchFailure failure = new ShardSearchFailure(e);
+                        logCCSError(failure, clusterAlias, skipUnavailable);
+                        ccsClusterInfoUpdate(failure, clusters, clusterAlias, skipUnavailable);
+                        if (skipUnavailable) {
+                            ActionListener.respondAndRelease(listener, SearchResponse.empty(timeProvider::buildTookInMillis, clusters));
+                        } else {
+                            listener.onFailure(wrapRemoteClusterFailure(clusterAlias, e));
+                        }
+                    }
+                }
+            );
     }
 
     static SearchResponseMerger createSearchResponseMerger(
@@ -946,7 +1008,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
     }
 
     void executeLocalSearch(
-        Task task,
+        SearchTask task,
         SearchTimeProvider timeProvider,
         SearchRequest searchRequest,
         ResolvedIndices resolvedIndices,
@@ -955,7 +1017,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
         SearchPhaseProvider searchPhaseProvider
     ) {
         executeSearch(
-            (SearchTask) task,
+            task,
             timeProvider,
             searchRequest,
             resolvedIndices,
@@ -1128,7 +1190,8 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
         if (resolvedIndices.getSearchContextId() != null) {
             assert searchRequest.pointInTimeBuilder() != null;
             aliasFilter = resolvedIndices.getSearchContextId().aliasFilter();
-            concreteLocalIndices = resolvedIndices.getLocalIndices() == null ? new String[0] : resolvedIndices.getLocalIndices().indices();
+            var localIndices = resolvedIndices.getLocalIndices();
+            concreteLocalIndices = localIndices == null ? Strings.EMPTY_ARRAY : localIndices.indices();
             localShardIterators = getLocalLocalShardsIteratorFromPointInTime(
                 clusterState,
                 searchRequest.indicesOptions(),
@@ -1163,42 +1226,37 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
             }
         }
 
-        Map<String, Float> concreteIndexBoosts = resolveIndexBoosts(searchRequest, clusterState);
-
         adjustSearchType(searchRequest, shardIterators.size() == 1);
 
-        final DiscoveryNodes nodes = clusterState.nodes();
-        BiFunction<String, String, Transport.Connection> connectionLookup = buildConnectionLookup(
-            searchRequest.getLocalClusterAlias(),
-            nodes::get,
-            remoteConnections,
-            searchTransportService::getConnection
-        );
-        final Executor asyncSearchExecutor = asyncSearchExecutor(concreteLocalIndices);
-        final boolean preFilterSearchShards = shouldPreFilterSearchShards(
-            clusterState,
-            searchRequest,
-            concreteLocalIndices,
-            localShardIterators.size() + remoteShardIterators.size(),
-            defaultPreFilterShardSize
-        );
         searchPhaseProvider.newSearchPhase(
             task,
             searchRequest,
-            asyncSearchExecutor,
+            asyncSearchExecutor(concreteLocalIndices),
             shardIterators,
             timeProvider,
-            connectionLookup,
+            buildConnectionLookup(
+                searchRequest.getLocalClusterAlias(),
+                clusterState.nodes()::get,
+                remoteConnections,
+                searchTransportService::getConnection
+            ),
             clusterState,
             Collections.unmodifiableMap(aliasFilter),
-            concreteIndexBoosts,
-            preFilterSearchShards,
+            resolveIndexBoosts(searchRequest, clusterState),
+            shouldPreFilterSearchShards(
+                clusterState,
+                searchRequest,
+                concreteLocalIndices,
+                localShardIterators.size() + remoteShardIterators.size(),
+                defaultPreFilterShardSize
+            ),
             threadPool,
             clusters
         ).start();
     }
 
-    Executor asyncSearchExecutor(final String[] indices) {
+    private Executor asyncSearchExecutor(final String[] indices) {
+        // TODO: this should be a set instead of a list?
         final List<String> executorsForIndices = Arrays.stream(indices).map(executorSelector::executorForSearch).toList();
         if (executorsForIndices.size() == 1) { // all indices have same executor
             return threadPool.executor(executorsForIndices.get(0));
@@ -1327,7 +1385,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                     true,
                     searchService.getCoordinatorRewriteContextProvider(timeProvider::absoluteStartMillis),
                     listener.delegateFailureAndWrap(
-                        (l, iters) -> newSearchPhase(
+                        (l, iters) -> newSearchPhaseWithoutPrefilter(
                             task,
                             searchRequest,
                             executor,
@@ -1337,13 +1395,37 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                             clusterState,
                             aliasFilter,
                             concreteIndexBoosts,
-                            false,
-                            threadPool,
                             clusters
                         ).start()
                     )
                 );
             }
+            return newSearchPhaseWithoutPrefilter(
+                task,
+                searchRequest,
+                executor,
+                shardIterators,
+                timeProvider,
+                connectionLookup,
+                clusterState,
+                aliasFilter,
+                concreteIndexBoosts,
+                clusters
+            );
+        }
+
+        private SearchPhase newSearchPhaseWithoutPrefilter(
+            SearchTask task,
+            SearchRequest searchRequest,
+            Executor executor,
+            GroupShardsIterator<SearchShardIterator> shardIterators,
+            SearchTimeProvider timeProvider,
+            BiFunction<String, String, Transport.Connection> connectionLookup,
+            ClusterState clusterState,
+            Map<String, AliasFilter> aliasFilter,
+            Map<String, Float> concreteIndexBoosts,
+            SearchResponse.Clusters clusters
+        ) {
             // for synchronous CCS minimize_roundtrips=false, use the CCSSingleCoordinatorSearchProgressListener
             // (AsyncSearchTask will not return SearchProgressListener.NOOP, since it uses its own progress listener
             // which delegates to CCSSingleCoordinatorSearchProgressListener when minimizing roundtrips)
@@ -1649,13 +1731,12 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                         throw e;
                     }
                 }
-                OriginalIndices finalIndices = new OriginalIndices(new String[] { shardId.getIndexName() }, indicesOptions);
                 iterators.add(
                     new SearchShardIterator(
                         localClusterAlias,
                         shardId,
                         targetNodes,
-                        finalIndices,
+                        new OriginalIndices(new String[] { shardId.getIndexName() }, indicesOptions),
                         perNode.getSearchContextId(),
                         keepAlive,
                         false,

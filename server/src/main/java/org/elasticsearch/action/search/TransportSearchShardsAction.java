@@ -134,10 +134,11 @@ public class TransportSearchShardsAction extends HandledTransportAction<SearchSh
                         concreteIndexNames
                     )
                 );
+                var allNodes = clusterState.nodes().getAllNodes();
                 if (SearchService.canRewriteToMatchNone(searchRequest.source()) == false) {
-                    delegate.onResponse(new SearchShardsResponse(toGroups(shardIts), clusterState.nodes().getAllNodes(), aliasFilters));
+                    delegate.onResponse(new SearchShardsResponse(toGroups(shardIts), allNodes, aliasFilters));
                 } else {
-                    var canMatchPhase = new CanMatchPreFilterSearchPhase(logger, searchTransportService, (clusterAlias, node) -> {
+                    new CanMatchPreFilterSearchPhase(logger, searchTransportService, (clusterAlias, node) -> {
                         assert Objects.equals(clusterAlias, searchShardsRequest.clusterAlias());
                         return transportService.getConnection(clusterState.nodes().get(node));
                     },
@@ -150,9 +151,8 @@ public class TransportSearchShardsAction extends HandledTransportAction<SearchSh
                         (SearchTask) task,
                         false,
                         searchService.getCoordinatorRewriteContextProvider(timeProvider::absoluteStartMillis),
-                        delegate.map(its -> new SearchShardsResponse(toGroups(its), clusterState.nodes().getAllNodes(), aliasFilters))
-                    );
-                    canMatchPhase.start();
+                        delegate.map(its -> new SearchShardsResponse(toGroups(its), allNodes, aliasFilters))
+                    ).start();
                 }
             })
         );
