@@ -325,7 +325,7 @@ public class DatafeedConfigProviderIT extends MlSingleNodeTestCase {
         DatafeedConfig bar2 = putDatafeedConfig(createDatafeedConfig("bar-2", "j4"), Collections.emptyMap());
         putDatafeedConfig(createDatafeedConfig("not-used", "j5"), Collections.emptyMap());
 
-        client().admin().indices().prepareRefresh(MlConfigIndex.indexName()).get();
+        indicesAdmin().prepareRefresh(MlConfigIndex.indexName()).get();
 
         // Test datafeed IDs only
         SortedSet<String> expandedIds = blockingCall(
@@ -389,7 +389,7 @@ public class DatafeedConfigProviderIT extends MlSingleNodeTestCase {
 
     public void testExpandDatafeedsWithTaskData() throws Exception {
         putDatafeedConfig(createDatafeedConfig("foo-2", "j2"), Collections.emptyMap());
-        client().admin().indices().prepareRefresh(MlConfigIndex.indexName()).get();
+        indicesAdmin().prepareRefresh(MlConfigIndex.indexName()).get();
 
         PersistentTasksCustomMetadata.Builder tasksBuilder = PersistentTasksCustomMetadata.builder();
         tasksBuilder.addTask(
@@ -423,7 +423,7 @@ public class DatafeedConfigProviderIT extends MlSingleNodeTestCase {
         putDatafeedConfig(createDatafeedConfig("foo-2", "j2"), Collections.emptyMap());
         putDatafeedConfig(createDatafeedConfig("bar-1", "j3"), Collections.emptyMap());
 
-        client().admin().indices().prepareRefresh(MlConfigIndex.indexName()).get();
+        indicesAdmin().prepareRefresh(MlConfigIndex.indexName()).get();
 
         AtomicReference<Set<String>> datafeedIdsHolder = new AtomicReference<>();
         AtomicReference<Exception> exceptionHolder = new AtomicReference<>();
@@ -462,7 +462,7 @@ public class DatafeedConfigProviderIT extends MlSingleNodeTestCase {
             jobIds.add(jobId);
         }
 
-        client().admin().indices().prepareRefresh(MlConfigIndex.indexName()).get();
+        indicesAdmin().prepareRefresh(MlConfigIndex.indexName()).get();
 
         AtomicReference<Set<String>> datafeedIdsHolder = new AtomicReference<>();
         AtomicReference<Exception> exceptionHolder = new AtomicReference<>();
@@ -480,7 +480,7 @@ public class DatafeedConfigProviderIT extends MlSingleNodeTestCase {
         putDatafeedConfig(createDatafeedConfig("foo-2", "j2"), Collections.emptyMap());
         putDatafeedConfig(createDatafeedConfig("bar-1", "j3"), Collections.emptyMap());
 
-        client().admin().indices().prepareRefresh(MlConfigIndex.indexName()).get();
+        indicesAdmin().prepareRefresh(MlConfigIndex.indexName()).get();
 
         AtomicReference<Map<String, DatafeedConfig.Builder>> datafeedMapHolder = new AtomicReference<>();
         AtomicReference<Exception> exceptionHolder = new AtomicReference<>();
@@ -520,7 +520,7 @@ public class DatafeedConfigProviderIT extends MlSingleNodeTestCase {
             jobIds.add(jobId);
         }
 
-        client().admin().indices().prepareRefresh(MlConfigIndex.indexName()).get();
+        indicesAdmin().prepareRefresh(MlConfigIndex.indexName()).get();
 
         AtomicReference<Map<String, DatafeedConfig.Builder>> datafeedMapHolder = new AtomicReference<>();
         AtomicReference<Exception> exceptionHolder = new AtomicReference<>();

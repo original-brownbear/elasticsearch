@@ -56,7 +56,7 @@ public class RareTermsIT extends ESSingleNodeTestCase {
         // Index every value 3 times
         for (int i = 0; i < 3; i++) {
             indexDocs(numDocs);
-            assertNoFailures(client().admin().indices().prepareRefresh(index).get());
+            assertNoFailures(indicesAdmin().prepareRefresh(index).get());
         }
         // There are no rare terms that only appear in one document
         assertNumRareTerms(1, 0);

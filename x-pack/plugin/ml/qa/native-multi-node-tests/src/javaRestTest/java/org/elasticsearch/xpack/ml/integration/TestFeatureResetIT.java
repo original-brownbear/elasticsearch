@@ -136,7 +136,7 @@ public class TestFeatureResetIT extends MlNativeAutodetectIntegTestCase {
         assertBusy(() -> assertThat(countInferenceProcessors(clusterAdmin().prepareState().get().getState()), equalTo(0)));
         client().execute(ResetFeatureStateAction.INSTANCE, new ResetFeatureStateRequest(TEST_REQUEST_TIMEOUT)).actionGet();
         assertBusy(() -> {
-            List<String> indices = Arrays.asList(client().admin().indices().prepareGetIndex().addIndices(".ml*").get().indices());
+            List<String> indices = Arrays.asList(indicesAdmin().prepareGetIndex().addIndices(".ml*").get().indices());
             assertThat(indices.toString(), indices, is(empty()));
         });
         assertThat(isResetMode(), is(false));
@@ -168,7 +168,7 @@ public class TestFeatureResetIT extends MlNativeAutodetectIntegTestCase {
         createModelDeployment();
         client().execute(ResetFeatureStateAction.INSTANCE, new ResetFeatureStateRequest(TEST_REQUEST_TIMEOUT)).actionGet();
         assertBusy(() -> {
-            List<String> indices = Arrays.asList(client().admin().indices().prepareGetIndex().addIndices(".ml*").get().indices());
+            List<String> indices = Arrays.asList(indicesAdmin().prepareGetIndex().addIndices(".ml*").get().indices());
             assertThat(indices.toString(), indices, is(empty()));
         });
         assertThat(isResetMode(), is(false));
@@ -266,7 +266,7 @@ public class TestFeatureResetIT extends MlNativeAutodetectIntegTestCase {
     }
 
     private void startRealtime(String jobId) throws Exception {
-        client().admin().indices().prepareCreate("data").setMapping("time", "type=date").get();
+        indicesAdmin().prepareCreate("data").setMapping("time", "type=date").get();
         long numDocs1 = randomIntBetween(32, 2048);
         long now = System.currentTimeMillis();
         long lastWeek = now - 604800000;

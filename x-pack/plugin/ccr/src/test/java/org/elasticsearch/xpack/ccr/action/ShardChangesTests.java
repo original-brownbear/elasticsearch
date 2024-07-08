@@ -47,13 +47,13 @@ public class ShardChangesTests extends ESSingleNodeTestCase {
 
     // this emulates what the CCR persistent task will do for pulling
     public void testGetOperationsBasedOnGlobalSequenceId() throws Exception {
-        client().admin().indices().prepareCreate("index").setSettings(Settings.builder().put("index.number_of_shards", 1)).get();
+        indicesAdmin().prepareCreate("index").setSettings(Settings.builder().put("index.number_of_shards", 1)).get();
 
         prepareIndex("index").setId("1").setSource("{}", XContentType.JSON).get();
         prepareIndex("index").setId("2").setSource("{}", XContentType.JSON).get();
         prepareIndex("index").setId("3").setSource("{}", XContentType.JSON).get();
 
-        ShardStats shardStats = client().admin().indices().prepareStats("index").get().getIndex("index").getShards()[0];
+        ShardStats shardStats = indicesAdmin().prepareStats("index").get().getIndex("index").getShards()[0];
         long globalCheckPoint = shardStats.getSeqNoStats().getGlobalCheckpoint();
         assertThat(globalCheckPoint, equalTo(2L));
 
@@ -79,7 +79,7 @@ public class ShardChangesTests extends ESSingleNodeTestCase {
         prepareIndex("index").setId("4").setSource("{}", XContentType.JSON).get();
         prepareIndex("index").setId("5").setSource("{}", XContentType.JSON).get();
 
-        shardStats = client().admin().indices().prepareStats("index").get().getIndex("index").getShards()[0];
+        shardStats = indicesAdmin().prepareStats("index").get().getIndex("index").getShards()[0];
         globalCheckPoint = shardStats.getSeqNoStats().getGlobalCheckpoint();
         assertThat(globalCheckPoint, equalTo(5L));
 
@@ -112,11 +112,11 @@ public class ShardChangesTests extends ESSingleNodeTestCase {
         for (int i = 0; i < 32; i++) {
             prepareIndex("index").setId("1").setSource("{}", XContentType.JSON).get();
             client().prepareDelete("index", "1").get();
-            client().admin().indices().flush(new FlushRequest("index").force(true)).actionGet();
+            indicesAdmin().flush(new FlushRequest("index").force(true)).actionGet();
         }
-        client().admin().indices().refresh(new RefreshRequest("index")).actionGet();
+        indicesAdmin().refresh(new RefreshRequest("index")).actionGet();
         assertBusy(() -> {
-            final ShardStats[] shardsStats = client().admin().indices().prepareStats("index").get().getIndex("index").getShards();
+            final ShardStats[] shardsStats = indicesAdmin().prepareStats("index").get().getIndex("index").getShards();
             for (final ShardStats shardStats : shardsStats) {
                 final long maxSeqNo = shardStats.getSeqNoStats().getMaxSeqNo();
                 assertTrue(
@@ -131,14 +131,14 @@ public class ShardChangesTests extends ESSingleNodeTestCase {
 
         ForceMergeRequest forceMergeRequest = new ForceMergeRequest("index");
         forceMergeRequest.maxNumSegments(1);
-        client().admin().indices().forceMerge(forceMergeRequest).actionGet();
+        indicesAdmin().forceMerge(forceMergeRequest).actionGet();
 
         indicesAdmin().execute(
             RetentionLeaseActions.ADD,
             new RetentionLeaseActions.AddRequest(new ShardId(resolveIndex("index"), 0), "test", RetentionLeaseActions.RETAIN_ALL, "ccr")
         ).get();
 
-        ShardStats shardStats = client().admin().indices().prepareStats("index").get().getIndex("index").getShards()[0];
+        ShardStats shardStats = indicesAdmin().prepareStats("index").get().getIndex("index").getShards()[0];
         String historyUUID = shardStats.getCommitStats().getUserData().get(Engine.HISTORY_UUID_KEY);
         Collection<RetentionLease> retentionLeases = shardStats.getRetentionLeaseStats().retentionLeases().leases();
         ShardChangesAction.Request request = new ShardChangesAction.Request(shardStats.getShardRouting().shardId(), historyUUID);

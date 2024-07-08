@@ -74,7 +74,7 @@ public class TransformProgressIT extends TransformSingleNodeTestCase {
             }
             builder.endObject();
 
-            var response = client().admin().indices().prepareCreate(REVIEWS_INDEX_NAME).setMapping(builder).get();
+            var response = indicesAdmin().prepareCreate(REVIEWS_INDEX_NAME).setMapping(builder).get();
             assertThat(response.isAcknowledged(), is(true));
         }
 
@@ -118,7 +118,7 @@ public class TransformProgressIT extends TransformSingleNodeTestCase {
         }
         BulkResponse bulkResponse = client().bulk(bulk).actionGet();
         assertFalse(bulkResponse.hasFailures());
-        client().admin().indices().prepareRefresh(REVIEWS_INDEX_NAME).get();
+        indicesAdmin().prepareRefresh(REVIEWS_INDEX_NAME).get();
     }
 
     public void testGetProgress() throws Exception {
@@ -204,7 +204,7 @@ public class TransformProgressIT extends TransformSingleNodeTestCase {
             assertThat(progress.getPercentComplete(), equalTo(100.0));
         }
 
-        var ackResponse = client().admin().indices().prepareDelete(REVIEWS_INDEX_NAME).get();
+        var ackResponse = indicesAdmin().prepareDelete(REVIEWS_INDEX_NAME).get();
         assertTrue(ackResponse.isAcknowledged());
     }
 

@@ -86,7 +86,7 @@ public class MlAutoUpdateServiceIT extends MlSingleNodeTestCase {
             exceptionHolder
         );
         assertThat(exceptionHolder.get(), is(nullValue()));
-        client().admin().indices().prepareRefresh(MlConfigIndex.indexName()).get();
+        indicesAdmin().prepareRefresh(MlConfigIndex.indexName()).get();
 
         DatafeedConfigAutoUpdater autoUpdater = new DatafeedConfigAutoUpdater(datafeedConfigProvider, indexNameExpressionResolver);
         MlAutoUpdateService mlAutoUpdateService = new MlAutoUpdateService(client().threadPool(), Collections.singletonList(autoUpdater));

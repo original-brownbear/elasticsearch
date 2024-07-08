@@ -218,9 +218,7 @@ public class Netty4ChunkedContinuationsIT extends ESNetty4IntegTestCase {
     private static final HttpRouteStats EMPTY_ROUTE_STATS = new HttpRouteStatsTracker().getStats();
 
     private long getTotalResponseSize() {
-        return client().admin()
-            .cluster()
-            .prepareNodesStats()
+        return clusterAdmin().prepareNodesStats()
             .clear()
             .setHttp(true)
             .get()

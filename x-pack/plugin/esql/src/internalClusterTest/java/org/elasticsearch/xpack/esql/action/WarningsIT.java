@@ -36,9 +36,7 @@ public class WarningsIT extends AbstractEsqlIntegTestCase {
 
         int numDocs1 = randomIntBetween(1, 15);
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("index-1")
+            indicesAdmin().prepareCreate("index-1")
                 .setSettings(
                     Settings.builder()
                         .put("index.routing.allocation.require._name", node1)
@@ -51,9 +49,7 @@ public class WarningsIT extends AbstractEsqlIntegTestCase {
         }
         int numDocs2 = randomIntBetween(1, 15);
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("index-2")
+            indicesAdmin().prepareCreate("index-2")
                 .setSettings(
                     Settings.builder()
                         .put("index.routing.allocation.require._name", node2)
@@ -66,7 +62,7 @@ public class WarningsIT extends AbstractEsqlIntegTestCase {
         }
 
         DiscoveryNode coordinator = randomFrom(clusterService().state().nodes().stream().toList());
-        client().admin().indices().prepareRefresh("index-1", "index-2").get();
+        indicesAdmin().prepareRefresh("index-1", "index-2").get();
 
         EsqlQueryRequest request = EsqlQueryRequest.syncEsqlQueryRequest();
         request.query("FROM index-* | EVAL ip = to_ip(host) | STATS s = COUNT(*) by ip | KEEP ip | LIMIT 100");

@@ -218,7 +218,7 @@ public class ILMDownsampleDisruptionIT extends ESIntegTestCase {
                     logger.info("The source index [{}] no longer exists, downsampling likely completed", sourceIndex);
                     return;
                 }
-                client().admin().indices().updateSettings(request).actionGet(TimeValue.timeValueSeconds(10));
+                indicesAdmin().updateSettings(request).actionGet(TimeValue.timeValueSeconds(10));
             } catch (Exception e) {
                 logger.warn(() -> format("encountered failure while updating [%s] index's ilm policy", sourceIndex), e);
                 throw new AssertionError(e);
@@ -226,7 +226,7 @@ public class ILMDownsampleDisruptionIT extends ESIntegTestCase {
         }, 1, TimeUnit.MINUTES);
         assertBusy(() -> {
             assertTrue("target index [" + targetIndex + "] does not exist", indexExists(targetIndex));
-            var getSettingsResponse = client().admin().indices().getSettings(new GetSettingsRequest().indices(targetIndex)).actionGet();
+            var getSettingsResponse = indicesAdmin().getSettings(new GetSettingsRequest().indices(targetIndex)).actionGet();
             assertThat(getSettingsResponse.getSetting(targetIndex, IndexMetadata.INDEX_DOWNSAMPLE_STATUS.getKey()), equalTo("success"));
         }, 60, TimeUnit.SECONDS);
         disruptionEnd.await();

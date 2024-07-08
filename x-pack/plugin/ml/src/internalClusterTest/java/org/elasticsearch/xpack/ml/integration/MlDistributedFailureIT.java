@@ -164,7 +164,7 @@ public class MlDistributedFailureIT extends BaseMlIntegTestCase {
         ensureStableCluster();
 
         // index some datafeed data
-        client().admin().indices().prepareCreate("data").setMapping("time", "type=date").get();
+        indicesAdmin().prepareCreate("data").setMapping("time", "type=date").get();
         long numDocs1 = randomIntBetween(32, 2048);
         long now = System.currentTimeMillis();
         long weekAgo = now - 604800000;
@@ -241,7 +241,7 @@ public class MlDistributedFailureIT extends BaseMlIntegTestCase {
         ensureStableCluster();
 
         // index some datafeed data
-        client().admin().indices().prepareCreate("data").setMapping("time", "type=date").get();
+        indicesAdmin().prepareCreate("data").setMapping("time", "type=date").get();
         long numDocs1 = randomIntBetween(32, 2048);
         long now = System.currentTimeMillis();
         long weekAgo = now - 604800000;
@@ -357,7 +357,7 @@ public class MlDistributedFailureIT extends BaseMlIntegTestCase {
         ensureStableCluster();
 
         // index some datafeed data
-        client().admin().indices().prepareCreate("data").setMapping("time", "type=date").get();
+        indicesAdmin().prepareCreate("data").setMapping("time", "type=date").get();
         long numDocs1 = randomIntBetween(32, 2048);
         long now = System.currentTimeMillis();
         long weekAgo = now - 604800000;
@@ -484,7 +484,7 @@ public class MlDistributedFailureIT extends BaseMlIntegTestCase {
         ensureStableCluster();
 
         // index some datafeed data
-        client().admin().indices().prepareCreate("data").setMapping("time", "type=date").get();
+        indicesAdmin().prepareCreate("data").setMapping("time", "type=date").get();
         long numDocs = 80000;
         long now = System.currentTimeMillis();
         long weekAgo = now - 604800000;
@@ -552,7 +552,7 @@ public class MlDistributedFailureIT extends BaseMlIntegTestCase {
         ensureStableCluster();
 
         // index some datafeed data
-        client().admin().indices().prepareCreate("data").setMapping("time", "type=date").get();
+        indicesAdmin().prepareCreate("data").setMapping("time", "type=date").get();
         long numDocs = 80000;
         long now = System.currentTimeMillis();
         long weekAgo = now - 604800000;
@@ -683,7 +683,7 @@ public class MlDistributedFailureIT extends BaseMlIntegTestCase {
     }
 
     private void run(String jobId, CheckedRunnable<Exception> disrupt) throws Exception {
-        client().admin().indices().prepareCreate("data").setMapping("time", "type=date").get();
+        indicesAdmin().prepareCreate("data").setMapping("time", "type=date").get();
         long numDocs1 = randomIntBetween(32, 2048);
         long now = System.currentTimeMillis();
         long weekAgo = now - 604800000;
@@ -698,7 +698,7 @@ public class MlDistributedFailureIT extends BaseMlIntegTestCase {
         // having to recover after reassignment.
         indexModelSnapshotFromCurrentJobStats(jobId);
 
-        client().admin().indices().prepareFlush().get();
+        indicesAdmin().prepareFlush().get();
 
         disrupt.run();
 

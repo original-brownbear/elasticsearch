@@ -76,7 +76,7 @@ public class ESLoggingHandlerIT extends ESNetty4IntegTestCase {
         mockLog.addExpectation(writeExpectation);
         mockLog.addExpectation(flushExpectation);
         mockLog.addExpectation(readExpectation);
-        client().admin().cluster().prepareNodesStats().get(TimeValue.timeValueSeconds(10));
+        clusterAdmin().prepareNodesStats().get(TimeValue.timeValueSeconds(10));
         mockLog.assertAllExpectationsMatched();
     }
 

@@ -48,7 +48,7 @@ public class AsyncSearchSingleNodeTests extends ESSingleNodeTestCase {
             DocWriteResponse indexResponse = client().index(new IndexRequest("boom" + i).id("boom" + i).source("text", "value")).get();
             assertEquals(RestStatus.CREATED, indexResponse.status());
         }
-        client().admin().indices().refresh(new RefreshRequest()).get();
+        indicesAdmin().refresh(new RefreshRequest()).get();
 
         TermsAggregationBuilder agg = new TermsAggregationBuilder("text").field("text.keyword");
         SearchSourceBuilder sourceBuilder = new SearchSourceBuilder().aggregation(agg);
@@ -92,7 +92,7 @@ public class AsyncSearchSingleNodeTests extends ESSingleNodeTestCase {
             DocWriteResponse indexResponse = client().index(new IndexRequest("index" + i).id("index" + i).source("text", "value")).get();
             assertEquals(RestStatus.CREATED, indexResponse.status());
         }
-        client().admin().indices().refresh(new RefreshRequest()).get();
+        indicesAdmin().refresh(new RefreshRequest()).get();
 
         TermsAggregationBuilder agg = new TermsAggregationBuilder("text").field("text.keyword");
         SearchSourceBuilder sourceBuilder = new SearchSourceBuilder().aggregation(agg);

@@ -145,7 +145,7 @@ public class MonitoringIT extends ESSingleNodeTestCase {
             assertBusy(() -> {
                 // Monitoring uses auto_expand_replicas, so it should be green even without replicas
                 ensureGreen(monitoringIndex);
-                assertThat(client().admin().indices().prepareRefresh(monitoringIndex).get().getStatus(), is(RestStatus.OK));
+                assertThat(indicesAdmin().prepareRefresh(monitoringIndex).get().getStatus(), is(RestStatus.OK));
 
                 assertResponse(client().prepareSearch(".monitoring-" + system.getSystem() + "-" + TEMPLATE_VERSION + "-*"), response -> {
                     // exactly 3 results are expected
@@ -363,7 +363,7 @@ public class MonitoringIT extends ESSingleNodeTestCase {
      */
     public void enableMonitoring() throws Exception {
         // delete anything that may happen to already exist
-        assertAcked(client().admin().indices().prepareDelete(".monitoring-*"));
+        assertAcked(indicesAdmin().prepareDelete(".monitoring-*"));
 
         assertThat("Must be no enabled exporters before enabling monitoring", getMonitoringUsageExportersDefined(), is(false));
 
@@ -380,7 +380,7 @@ public class MonitoringIT extends ESSingleNodeTestCase {
         assertBusy(() -> {
             // Monitoring uses auto_expand_replicas, so it should be green even without replicas
             ensureGreen(".monitoring-es-*");
-            assertThat(client().admin().indices().prepareRefresh(".monitoring-es-*").get().getStatus(), is(RestStatus.OK));
+            assertThat(indicesAdmin().prepareRefresh(".monitoring-es-*").get().getStatus(), is(RestStatus.OK));
 
             assertThat(
                 "No monitoring documents yet",

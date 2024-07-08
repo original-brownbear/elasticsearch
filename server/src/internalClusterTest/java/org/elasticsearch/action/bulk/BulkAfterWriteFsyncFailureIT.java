@@ -50,9 +50,7 @@ public class BulkAfterWriteFsyncFailureIT extends ESSingleNodeTestCase {
 
     public void testFsyncFailureDoesNotAdvanceLocalCheckpoints() {
         String indexName = randomIdentifier();
-        client().admin()
-            .indices()
-            .prepareCreate(indexName)
+        indicesAdmin().prepareCreate(indexName)
             .setSettings(
                 Settings.builder()
                     .put(INDEX_REFRESH_INTERVAL_SETTING.getKey(), -1)

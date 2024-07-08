@@ -45,7 +45,7 @@ public class EnrichShardMultiSearchActionTests extends ESSingleNodeTestCase {
         IndexRequest indexRequest = new IndexRequest(indexName);
         indexRequest.source(source);
         client().index(indexRequest).actionGet();
-        client().admin().indices().refresh(new RefreshRequest(indexName)).actionGet();
+        indicesAdmin().refresh(new RefreshRequest(indexName)).actionGet();
 
         int numSearches = randomIntBetween(2, 32);
         MultiSearchRequest request = new MultiSearchRequest();

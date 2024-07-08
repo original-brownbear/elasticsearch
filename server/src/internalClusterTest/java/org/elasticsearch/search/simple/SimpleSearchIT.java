@@ -494,11 +494,7 @@ public class SimpleSearchIT extends ESIntegTestCase {
         createIndex("idx");
 
         // Ensure the field `num` exists in the mapping
-        client().admin()
-            .indices()
-            .preparePutMapping("idx")
-            .setSource("{\"properties\":{\"num\":{\"type\":\"keyword\"}}}", XContentType.JSON)
-            .get();
+        indicesAdmin().preparePutMapping("idx").setSource("{\"properties\":{\"num\":{\"type\":\"keyword\"}}}", XContentType.JSON).get();
 
         // Index a simple document to ensure the field `num` is in the index
         indexRandom(true, prepareIndex("idx").setSource("{\"num\":\"test\"}", XContentType.JSON));

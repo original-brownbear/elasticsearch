@@ -47,7 +47,7 @@ public class VersionStringFieldTests extends ESSingleNodeTestCase {
         prepareIndex(indexName).setId("4").setSource(jsonBuilder().startObject().field("version", "2.1.0-alpha.beta").endObject()).get();
         prepareIndex(indexName).setId("5").setSource(jsonBuilder().startObject().field("version", "2.1.0").endObject()).get();
         prepareIndex(indexName).setId("6").setSource(jsonBuilder().startObject().field("version", "21.11.0").endObject()).get();
-        client().admin().indices().prepareRefresh(indexName).get();
+        indicesAdmin().prepareRefresh(indexName).get();
         return indexName;
     }
 
@@ -128,7 +128,7 @@ public class VersionStringFieldTests extends ESSingleNodeTestCase {
         // also adding some invalid versions that should be sorted after legal ones
         prepareIndex(indexName).setSource(jsonBuilder().startObject().field("version", "1.2.3alpha").endObject()).get();
         prepareIndex(indexName).setSource(jsonBuilder().startObject().field("version", "1.3.567#12").endObject()).get();
-        client().admin().indices().prepareRefresh(indexName).get();
+        indicesAdmin().prepareRefresh(indexName).get();
 
         // sort based on version field
         assertResponse(
@@ -176,7 +176,7 @@ public class VersionStringFieldTests extends ESSingleNodeTestCase {
         prepareIndex(indexName).setId("3").setSource(jsonBuilder().startObject().field("version", "2.1.0-alpha.beta").endObject()).get();
         prepareIndex(indexName).setId("4").setSource(jsonBuilder().startObject().field("version", "2.1.0").endObject()).get();
         prepareIndex(indexName).setId("5").setSource(jsonBuilder().startObject().field("version", "2.33.0").endObject()).get();
-        client().admin().indices().prepareRefresh(indexName).get();
+        indicesAdmin().prepareRefresh(indexName).get();
 
         assertResponse(client().prepareSearch(indexName).setQuery(QueryBuilders.regexpQuery("version", "2.*0")), response -> {
             assertEquals(2, response.getHits().getTotalHits().value);
@@ -231,7 +231,7 @@ public class VersionStringFieldTests extends ESSingleNodeTestCase {
         prepareIndex(indexName).setId("4").setSource(jsonBuilder().startObject().field("version", "2.1.0").endObject()).get();
         prepareIndex(indexName).setId("5").setSource(jsonBuilder().startObject().field("version", "2.33.0").endObject()).get();
         prepareIndex(indexName).setId("6").setSource(jsonBuilder().startObject().field("version", "2.a3.0").endObject()).get();
-        client().admin().indices().prepareRefresh(indexName).get();
+        indicesAdmin().prepareRefresh(indexName).get();
 
         assertResponse(client().prepareSearch(indexName).setQuery(QueryBuilders.fuzzyQuery("version", "2.3.0")), response -> {
             assertEquals(3, response.getHits().getTotalHits().value);
@@ -266,7 +266,7 @@ public class VersionStringFieldTests extends ESSingleNodeTestCase {
         )) {
             prepareIndex(indexName).setSource(jsonBuilder().startObject().field("version", version).endObject()).get();
         }
-        client().admin().indices().prepareRefresh(indexName).get();
+        indicesAdmin().prepareRefresh(indexName).get();
 
         checkWildcardQuery(indexName, "*alpha*", new String[] { "1.0.0-alpha.2.1.0-rc.1", "2.1.0-alpha.beta" });
         checkWildcardQuery(indexName, "*b*", new String[] { "1.3.0+build.1234567", "2.1.0-alpha.beta", "3.1.1+b" });
@@ -318,7 +318,7 @@ public class VersionStringFieldTests extends ESSingleNodeTestCase {
         prepareIndex(indexName).setId("2").setSource(jsonBuilder().startObject().field("version", "2.2.0").endObject()).get();
         prepareIndex(indexName).setId("3").setSource(jsonBuilder().startObject().field("version", "2.2.0-badchar!").endObject()).get();
         prepareIndex(indexName).setId("4").setSource(jsonBuilder().startObject().field("version", "").endObject()).get();
-        client().admin().indices().prepareRefresh(indexName).get();
+        indicesAdmin().prepareRefresh(indexName).get();
 
         assertResponse(client().prepareSearch(indexName).addDocValueField("version"), response -> {
             assertEquals(4, response.getHits().getTotalHits().value);
@@ -386,7 +386,7 @@ public class VersionStringFieldTests extends ESSingleNodeTestCase {
         prepareIndex(indexName).setId("3").setSource(jsonBuilder().startObject().field("version", "2.1.0-alpha").endObject()).get();
         prepareIndex(indexName).setId("4").setSource(jsonBuilder().startObject().field("version", "2.1.0").endObject()).get();
         prepareIndex(indexName).setId("5").setSource(jsonBuilder().startObject().field("version", "3.11.5").endObject()).get();
-        client().admin().indices().prepareRefresh(indexName).get();
+        indicesAdmin().prepareRefresh(indexName).get();
 
         // terms aggs
         assertResponse(
@@ -434,7 +434,7 @@ public class VersionStringFieldTests extends ESSingleNodeTestCase {
         prepareIndex(indexName).setId("3")
             .setSource(jsonBuilder().startObject().array("version", "2.1.0", "2.2.0", "5.99.0").endObject())
             .get();
-        client().admin().indices().prepareRefresh(indexName).get();
+        indicesAdmin().prepareRefresh(indexName).get();
 
         assertResponse(client().prepareSearch(indexName).addSort("version", SortOrder.ASC), response -> {
             assertEquals(3, response.getHits().getTotalHits().value);

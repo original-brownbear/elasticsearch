@@ -40,7 +40,7 @@ public class IndicesLifecycleListenerSingleNodeTests extends ESSingleNodeTestCas
 
     public void testStartDeleteIndexEventCallback() throws Throwable {
         IndicesService indicesService = getInstanceFromNode(IndicesService.class);
-        assertAcked(client().admin().indices().prepareCreate("test").setSettings(indexSettings(1, 0)));
+        assertAcked(indicesAdmin().prepareCreate("test").setSettings(indexSettings(1, 0)));
         ensureGreen();
         Index idx = resolveIndex("test");
         IndexMetadata metadata = indicesService.indexService(idx).getMetadata();

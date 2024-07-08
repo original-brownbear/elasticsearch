@@ -77,7 +77,7 @@ public class SearchableSnapshotsPersistentCacheIntegTests extends BaseSearchable
         final SnapshotInfo snapshotInfo = createFullSnapshot(fsRepoName, snapshotName);
         assertThat(snapshotInfo.successfulShards(), greaterThan(0));
         assertThat(snapshotInfo.successfulShards(), equalTo(snapshotInfo.totalShards()));
-        assertAcked(client().admin().indices().prepareDelete(indexName));
+        assertAcked(indicesAdmin().prepareDelete(indexName));
 
         final DiscoveryNodes discoveryNodes = clusterAdmin().prepareState().clear().setNodes(true).get().getState().nodes();
         final String dataNode = randomFrom(discoveryNodes.getDataNodes().values()).getName();
@@ -163,7 +163,7 @@ public class SearchableSnapshotsPersistentCacheIntegTests extends BaseSearchable
         cacheFiles.forEach(cacheFile -> assertTrue(cacheFile + " should have survived node restart", Files.exists(cacheFile)));
         assertThat("Cache files should be loaded in cache", persistentCacheAfterRestart.getNumDocs(), equalTo((long) cacheFiles.size()));
 
-        assertAcked(client().admin().indices().prepareDelete(restoredIndexName));
+        assertAcked(indicesAdmin().prepareDelete(restoredIndexName));
         assertBusy(() -> cacheFiles.forEach(cacheFile -> assertFalse(cacheFile + " should have been cleaned up", Files.exists(cacheFile))));
         assertEmptyPersistentCacheOnDataNodes();
     }
@@ -192,14 +192,14 @@ public class SearchableSnapshotsPersistentCacheIntegTests extends BaseSearchable
         final String snapshotName = prefix + "snapshot";
         createFullSnapshot(fsRepoName, snapshotName);
 
-        assertAcked(client().admin().indices().prepareDelete(prefix + '*'));
+        assertAcked(indicesAdmin().prepareDelete(prefix + '*'));
 
         final String mountedIndexName = mountSnapshot(fsRepoName, snapshotName, indexName, Settings.EMPTY);
 
         assertExecutorIsIdle(SearchableSnapshots.CACHE_FETCH_ASYNC_THREAD_POOL_NAME);
         assertExecutorIsIdle(SearchableSnapshots.CACHE_PREWARMING_THREAD_POOL_NAME);
 
-        RecoveryResponse recoveryResponse = client().admin().indices().prepareRecoveries(mountedIndexName).get();
+        RecoveryResponse recoveryResponse = indicesAdmin().prepareRecoveries(mountedIndexName).get();
         assertTrue(recoveryResponse.shardRecoveryStates().containsKey(mountedIndexName));
         assertTrue(
             recoveryResponse.shardRecoveryStates()
@@ -239,7 +239,7 @@ public class SearchableSnapshotsPersistentCacheIntegTests extends BaseSearchable
         assertExecutorIsIdle(SearchableSnapshots.CACHE_FETCH_ASYNC_THREAD_POOL_NAME);
         assertExecutorIsIdle(SearchableSnapshots.CACHE_PREWARMING_THREAD_POOL_NAME);
 
-        recoveryResponse = client().admin().indices().prepareRecoveries(mountedIndexName).get();
+        recoveryResponse = indicesAdmin().prepareRecoveries(mountedIndexName).get();
         assertTrue(recoveryResponse.shardRecoveryStates().containsKey(mountedIndexName));
         assertTrue(
             recoveryResponse.shardRecoveryStates()
@@ -261,7 +261,7 @@ public class SearchableSnapshotsPersistentCacheIntegTests extends BaseSearchable
         }, 30L, TimeUnit.SECONDS);
 
         logger.info("--> deleting mounted index {}", mountedIndex);
-        assertAcked(client().admin().indices().prepareDelete(mountedIndexName));
+        assertAcked(indicesAdmin().prepareDelete(mountedIndexName));
         assertEmptyPersistentCacheOnDataNodes();
     }
 

@@ -275,7 +275,7 @@ public abstract class BaseMlIntegTestCase extends ESIntegTestCase {
         deleteAllDataFrameAnalytics(client());
         waitForPendingTasks(client());
         assertBusy(() -> {
-            RecoveryResponse recoveryResponse = client().admin().indices().prepareRecoveries().setActiveOnly(true).get();
+            RecoveryResponse recoveryResponse = indicesAdmin().prepareRecoveries().setActiveOnly(true).get();
             for (List<RecoveryState> recoveryStates : recoveryResponse.shardRecoveryStates().values()) {
                 assertThat(recoveryStates.size(), equalTo(0));
             }

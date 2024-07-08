@@ -299,7 +299,7 @@ public class FieldCapsHasValueTests extends ESIntegTestCase {
         // This test should fail if in a future implementation we handle deletes.
         DocWriteResponse foo = prepareIndex(INDEX1).setSource("foo", "foo-text").get();
         client().prepareDelete().setIndex(INDEX1).setId(foo.getId()).get();
-        client().admin().indices().prepareForceMerge(INDEX1).setFlush(true).setMaxNumSegments(1).get();
+        indicesAdmin().prepareForceMerge(INDEX1).setFlush(true).setMaxNumSegments(1).get();
         refresh(INDEX1);
 
         FieldCapabilitiesResponse response = client().prepareFieldCaps().setFields("*").setincludeEmptyFields(false).get();

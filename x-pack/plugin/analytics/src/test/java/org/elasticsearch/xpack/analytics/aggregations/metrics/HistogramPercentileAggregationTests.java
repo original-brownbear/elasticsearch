@@ -53,7 +53,7 @@ public class HistogramPercentileAggregationTests extends ESSingleNodeTestCase {
             .endObject();
         createIndex("raw");
         PutMappingRequest request = new PutMappingRequest("raw").source(xContentBuilder);
-        client().admin().indices().putMapping(request).actionGet();
+        indicesAdmin().putMapping(request).actionGet();
 
         XContentBuilder xContentBuilder2 = XContentFactory.jsonBuilder()
             .startObject()
@@ -67,7 +67,7 @@ public class HistogramPercentileAggregationTests extends ESSingleNodeTestCase {
             .endObject();
         createIndex("pre_agg");
         PutMappingRequest request2 = new PutMappingRequest("pre_agg").source(xContentBuilder2);
-        client().admin().indices().putMapping(request2).actionGet();
+        indicesAdmin().putMapping(request2).actionGet();
 
         int numberOfSignificantValueDigits = TestUtil.nextInt(random(), 1, 5);
         DoubleHistogram histogram = new DoubleHistogram(numberOfSignificantValueDigits);
@@ -103,7 +103,7 @@ public class HistogramPercentileAggregationTests extends ESSingleNodeTestCase {
                 histogram.reset();
             }
         }
-        client().admin().indices().refresh(new RefreshRequest("raw", "pre_agg")).get();
+        indicesAdmin().refresh(new RefreshRequest("raw", "pre_agg")).get();
 
         assertHitCount(client().prepareSearch("raw").setTrackTotalHits(true), numDocs);
 
@@ -149,7 +149,7 @@ public class HistogramPercentileAggregationTests extends ESSingleNodeTestCase {
             .endObject();
         createIndex("raw");
         PutMappingRequest request = new PutMappingRequest("raw").source(xContentBuilder);
-        client().admin().indices().putMapping(request).actionGet();
+        indicesAdmin().putMapping(request).actionGet();
 
         XContentBuilder xContentBuilder2 = XContentFactory.jsonBuilder()
             .startObject()
@@ -167,7 +167,7 @@ public class HistogramPercentileAggregationTests extends ESSingleNodeTestCase {
             .endObject();
         createIndex("pre_agg");
         PutMappingRequest request2 = new PutMappingRequest("pre_agg").source(xContentBuilder2);
-        client().admin().indices().putMapping(request2).actionGet();
+        indicesAdmin().putMapping(request2).actionGet();
 
         TDigestState histogram = TDigestState.create(compression);
         BulkRequest bulkRequest = new BulkRequest();
@@ -208,7 +208,7 @@ public class HistogramPercentileAggregationTests extends ESSingleNodeTestCase {
                 histogram = TDigestState.create(compression);
             }
         }
-        client().admin().indices().refresh(new RefreshRequest("raw", "pre_agg")).get();
+        indicesAdmin().refresh(new RefreshRequest("raw", "pre_agg")).get();
 
         assertHitCount(client().prepareSearch("raw").setTrackTotalHits(true), numDocs);
         assertHitCount(client().prepareSearch("pre_agg"), numDocs / frq);

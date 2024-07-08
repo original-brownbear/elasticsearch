@@ -82,9 +82,7 @@ public abstract class AbstractPausableIntegTestCase extends AbstractEsqlIntegTes
             mapping.endObject();
         }
         mapping.endObject();
-        client().admin()
-            .indices()
-            .prepareCreate("test")
+        indicesAdmin().prepareCreate("test")
             .setSettings(Map.of("number_of_shards", 1, "number_of_replicas", 0))
             .setMapping(mapping.endObject())
             .get();
@@ -99,7 +97,7 @@ public abstract class AbstractPausableIntegTestCase extends AbstractEsqlIntegTes
          * segments that finish super quickly and cause us to report strange
          * statuses when we expect "starting".
          */
-        client().admin().indices().prepareForceMerge("test").setMaxNumSegments(1).get();
+        indicesAdmin().prepareForceMerge("test").setMaxNumSegments(1).get();
         /*
          * Double super extra paranoid check that force merge worked. It's
          * failed to reduce the index to a single segment and caused this test
@@ -107,7 +105,7 @@ public abstract class AbstractPausableIntegTestCase extends AbstractEsqlIntegTes
          * trip here. Or maybe it won't! And we'll learn something. Maybe
          * it's ghosts.
          */
-        SegmentsStats stats = client().admin().indices().prepareStats("test").get().getPrimaries().getSegments();
+        SegmentsStats stats = indicesAdmin().prepareStats("test").get().getPrimaries().getSegments();
         if (stats.getCount() != 1L) {
             fail(Strings.toString(stats));
         }

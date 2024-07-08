@@ -75,7 +75,7 @@ public class EnrichResiliencyTests extends ESSingleNodeTestCase {
             )
         ).actionGet();
 
-        client().admin().indices().refresh(new RefreshRequest(enrichIndexName)).actionGet();
+        indicesAdmin().refresh(new RefreshRequest(enrichIndexName)).actionGet();
 
         client().execute(
             PutEnrichPolicyAction.INSTANCE,
@@ -128,7 +128,7 @@ public class EnrichResiliencyTests extends ESSingleNodeTestCase {
             new PutPipelineRequest(enrichPipelineName, BytesReference.bytes(pipe1), XContentType.JSON)
         ).actionGet();
 
-        client().admin().indices().create(new CreateIndexRequest(enrichedIndexName)).actionGet();
+        indicesAdmin().create(new CreateIndexRequest(enrichedIndexName)).actionGet();
 
         XContentBuilder doc = JsonXContent.contentBuilder().startObject().field("custom_id", "key").endObject();
 
@@ -154,7 +154,7 @@ public class EnrichResiliencyTests extends ESSingleNodeTestCase {
         assertThat(firstFailure.getStatus().getStatus(), is(equalTo(429)));
         assertThat(firstFailure.getMessage(), containsString("Could not perform enrichment, enrich coordination queue at capacity"));
 
-        client().admin().indices().refresh(new RefreshRequest(enrichedIndexName)).actionGet();
+        indicesAdmin().refresh(new RefreshRequest(enrichedIndexName)).actionGet();
         assertHitCount(client().search(new SearchRequest(enrichedIndexName)), successfulItems);
     }
 
@@ -175,7 +175,7 @@ public class EnrichResiliencyTests extends ESSingleNodeTestCase {
             )
         ).actionGet();
 
-        client().admin().indices().refresh(new RefreshRequest(enrichIndexName)).actionGet();
+        indicesAdmin().refresh(new RefreshRequest(enrichIndexName)).actionGet();
 
         client().execute(
             PutEnrichPolicyAction.INSTANCE,
@@ -252,7 +252,7 @@ public class EnrichResiliencyTests extends ESSingleNodeTestCase {
             new PutPipelineRequest(enrichPipelineName2, BytesReference.bytes(pipe2), XContentType.JSON)
         ).actionGet();
 
-        client().admin().indices().create(new CreateIndexRequest(enrichedIndexName)).actionGet();
+        indicesAdmin().create(new CreateIndexRequest(enrichedIndexName)).actionGet();
 
         XContentBuilder doc = JsonXContent.contentBuilder().startObject().field("custom_id", "key").endObject();
 
@@ -278,7 +278,7 @@ public class EnrichResiliencyTests extends ESSingleNodeTestCase {
         assertThat(firstFailure.getStatus().getStatus(), is(equalTo(429)));
         assertThat(firstFailure.getMessage(), containsString("Could not perform enrichment, enrich coordination queue at capacity"));
 
-        client().admin().indices().refresh(new RefreshRequest(enrichedIndexName)).actionGet();
+        indicesAdmin().refresh(new RefreshRequest(enrichedIndexName)).actionGet();
         assertHitCount(client().search(new SearchRequest(enrichedIndexName)), successfulItems);
     }
 }

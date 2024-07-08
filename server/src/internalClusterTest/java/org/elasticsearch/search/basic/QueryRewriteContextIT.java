@@ -171,24 +171,9 @@ public class QueryRewriteContextIT extends ESIntegTestCase {
             assertThat(r.isValid(), is(true));
         };
 
-        assertResolvedIndices(
-            client().admin().indices().prepareValidateQuery(indices),
-            Set.of(indices),
-            Set.of(indices),
-            responseAssertions
-        );
-        assertResolvedIndices(
-            client().admin().indices().prepareValidateQuery("test*"),
-            Set.of("test*"),
-            Set.of(indices),
-            responseAssertions
-        );
-        assertResolvedIndices(
-            client().admin().indices().prepareValidateQuery("alias"),
-            Set.of("alias"),
-            Set.of(indices),
-            responseAssertions
-        );
+        assertResolvedIndices(indicesAdmin().prepareValidateQuery(indices), Set.of(indices), Set.of(indices), responseAssertions);
+        assertResolvedIndices(indicesAdmin().prepareValidateQuery("test*"), Set.of("test*"), Set.of(indices), responseAssertions);
+        assertResolvedIndices(indicesAdmin().prepareValidateQuery("alias"), Set.of("alias"), Set.of(indices), responseAssertions);
     }
 
     private BytesReference openPointInTime(String[] indices, TimeValue keepAlive) {

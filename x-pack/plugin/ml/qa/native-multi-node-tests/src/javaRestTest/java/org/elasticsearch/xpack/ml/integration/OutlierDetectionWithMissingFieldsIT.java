@@ -36,7 +36,7 @@ public class OutlierDetectionWithMissingFieldsIT extends MlNativeDataFrameAnalyt
     public void testMissingFields() throws Exception {
         String sourceIndex = "test-outlier-detection-with-missing-fields";
 
-        client().admin().indices().prepareCreate(sourceIndex).setMapping("numeric", "type=double", "categorical", "type=keyword").get();
+        indicesAdmin().prepareCreate(sourceIndex).setMapping("numeric", "type=double", "categorical", "type=keyword").get();
 
         BulkRequestBuilder bulkRequestBuilder = client().prepareBulk();
         bulkRequestBuilder.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);

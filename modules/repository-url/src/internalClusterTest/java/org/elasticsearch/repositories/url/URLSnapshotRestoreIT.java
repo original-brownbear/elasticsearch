@@ -131,9 +131,7 @@ public class URLSnapshotRestoreIT extends ESIntegTestCase {
 
     public void testUrlRepositoryPermitsShutdown() throws Exception {
         assertAcked(
-            client().admin()
-                .cluster()
-                .preparePutRepository(TEST_REQUEST_TIMEOUT, TEST_REQUEST_TIMEOUT, "url-repo")
+            clusterAdmin().preparePutRepository(TEST_REQUEST_TIMEOUT, TEST_REQUEST_TIMEOUT, "url-repo")
                 .setType(URLRepository.TYPE)
                 .setVerify(false)
                 .setSettings(Settings.builder().put(URLRepository.URL_SETTING.getKey(), "http://localhost/"))

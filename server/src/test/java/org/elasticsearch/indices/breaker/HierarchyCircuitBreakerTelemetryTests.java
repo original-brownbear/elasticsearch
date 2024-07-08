@@ -110,9 +110,7 @@ public class HierarchyCircuitBreakerTelemetryTests extends ESIntegTestCase {
             dataNodeName = internalCluster().startDataOnlyNode(Settings.EMPTY);
             assertTrue(clusterAdmin().prepareUpdateSettings().setPersistentSettings(circuitBreakerSettings).get().isAcknowledged());
             assertTrue(
-                client().admin()
-                    .indices()
-                    .prepareCreate("test")
+                indicesAdmin().prepareCreate("test")
                     .setSettings(
                         Settings.builder()
                             .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)

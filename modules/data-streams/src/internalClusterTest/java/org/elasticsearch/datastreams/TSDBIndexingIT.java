@@ -456,11 +456,11 @@ public class TSDBIndexingIT extends ESSingleNodeTestCase {
                 assertThat(bulkResponse.hasFailures(), is(false));
                 indexName = bulkResponse.getItems()[0].getIndex();
             }
-            client().admin().indices().refresh(new RefreshRequest(dataStreamName)).actionGet();
+            indicesAdmin().refresh(new RefreshRequest(dataStreamName)).actionGet();
         }
 
         // Check whether there are multiple segments:
-        var getSegmentsResponse = client().admin().indices().segments(new IndicesSegmentsRequest(dataStreamName)).actionGet();
+        var getSegmentsResponse = indicesAdmin().segments(new IndicesSegmentsRequest(dataStreamName)).actionGet();
         assertThat(
             getSegmentsResponse.getIndices().get(indexName).getShards().get(0).shards()[0].getSegments(),
             hasSize(greaterThanOrEqualTo(2))
@@ -489,7 +489,7 @@ public class TSDBIndexingIT extends ESSingleNodeTestCase {
         // Check that the minimum retaining seqno has advanced, otherwise _id (and recovery source) doesn't get trimmed away.
         var finalIndexName = indexName;
         assertBusy(() -> {
-            var r = client().admin().indices().stats(new IndicesStatsRequest().indices(dataStreamName).all()).actionGet();
+            var r = indicesAdmin().stats(new IndicesStatsRequest().indices(dataStreamName).all()).actionGet();
             var retentionLeasesStats = r.getIndices().get(finalIndexName).getIndexShards().get(0).getShards()[0].getRetentionLeaseStats();
             assertThat(retentionLeasesStats.retentionLeases().leases(), hasSize(1));
             assertThat(
@@ -499,13 +499,13 @@ public class TSDBIndexingIT extends ESSingleNodeTestCase {
         });
 
         // Force merge should trim the _id stored field away for all segments:
-        var forceMergeResponse = client().admin().indices().forceMerge(new ForceMergeRequest(dataStreamName).maxNumSegments(1)).actionGet();
+        var forceMergeResponse = indicesAdmin().forceMerge(new ForceMergeRequest(dataStreamName).maxNumSegments(1)).actionGet();
         assertThat(forceMergeResponse.getTotalShards(), equalTo(1));
         assertThat(forceMergeResponse.getSuccessfulShards(), equalTo(1));
         assertThat(forceMergeResponse.getFailedShards(), equalTo(0));
 
         // Check whether we really end up with 1 segment:
-        getSegmentsResponse = client().admin().indices().segments(new IndicesSegmentsRequest(dataStreamName)).actionGet();
+        getSegmentsResponse = indicesAdmin().segments(new IndicesSegmentsRequest(dataStreamName)).actionGet();
         assertThat(getSegmentsResponse.getIndices().get(indexName).getShards().get(0).shards()[0].getSegments(), hasSize(1));
 
         // Check the _id stored field uses no disk space:

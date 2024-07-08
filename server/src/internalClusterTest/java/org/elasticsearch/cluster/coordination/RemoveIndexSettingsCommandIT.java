@@ -98,14 +98,14 @@ public class RemoveIndexSettingsCommandIT extends ESIntegTestCase {
         Settings nodeSettings = Settings.builder().put(internalCluster().getDefaultSettings()).put(dataPathSettings).build();
         internalCluster().startNode(nodeSettings);
 
-        Map<String, Settings> getIndexSettings = client().admin().indices().prepareGetSettings("test-index-*").get().getIndexToSettings();
+        Map<String, Settings> getIndexSettings = indicesAdmin().prepareGetSettings("test-index-*").get().getIndexToSettings();
         for (int i = 0; i < numIndices; i++) {
             String index = "test-index-" + i;
             Settings indexSettings = getIndexSettings.get(index);
             assertFalse(indexSettings.hasValue("index.foo"));
             assertThat(indexSettings.get("index.bar"), equalTo(Integer.toString(barValues[i])));
         }
-        getIndexSettings = client().admin().indices().prepareGetSettings("more-index-*").get().getIndexToSettings();
+        getIndexSettings = indicesAdmin().prepareGetSettings("more-index-*").get().getIndexToSettings();
         for (int i = 0; i < moreIndices; i++) {
             assertNotNull(getIndexSettings.get("more-index-" + i));
         }

@@ -170,38 +170,25 @@ public class BlobStoreRepositoryDeleteThrottlingTests extends ESSingleNodeTestCa
         // Set up the repository contents including containing a couple of snapshots, using a regular 'fs' repo
 
         assertAcked(
-            client().admin()
-                .cluster()
-                .preparePutRepository(TEST_REQUEST_TIMEOUT, TEST_REQUEST_TIMEOUT, TEST_REPO_NAME)
+            clusterAdmin().preparePutRepository(TEST_REQUEST_TIMEOUT, TEST_REQUEST_TIMEOUT, TEST_REPO_NAME)
                 .setType(FsRepository.TYPE)
                 .setSettings(Settings.builder().put("location", repoPath))
         );
 
-        client().admin()
-            .cluster()
-            .prepareCreateSnapshot(TEST_REQUEST_TIMEOUT, TEST_REPO_NAME, "snapshot-1")
-            .setWaitForCompletion(true)
-            .get();
-        client().admin()
-            .cluster()
-            .prepareCreateSnapshot(TEST_REQUEST_TIMEOUT, TEST_REPO_NAME, "snapshot-2")
-            .setWaitForCompletion(true)
-            .get();
+        clusterAdmin().prepareCreateSnapshot(TEST_REQUEST_TIMEOUT, TEST_REPO_NAME, "snapshot-1").setWaitForCompletion(true).get();
+        clusterAdmin().prepareCreateSnapshot(TEST_REQUEST_TIMEOUT, TEST_REPO_NAME, "snapshot-2").setWaitForCompletion(true).get();
 
-        assertAcked(client().admin().cluster().prepareDeleteRepository(TEST_REQUEST_TIMEOUT, TEST_REQUEST_TIMEOUT, TEST_REPO_NAME));
+        assertAcked(clusterAdmin().prepareDeleteRepository(TEST_REQUEST_TIMEOUT, TEST_REQUEST_TIMEOUT, TEST_REPO_NAME));
 
         // Now delete one of the snapshots using the test repo implementation which verifies the throttling behaviour
 
         assertAcked(
-            client().admin()
-                .cluster()
-                .preparePutRepository(TEST_REQUEST_TIMEOUT, TEST_REQUEST_TIMEOUT, TEST_REPO_NAME)
+            clusterAdmin().preparePutRepository(TEST_REQUEST_TIMEOUT, TEST_REQUEST_TIMEOUT, TEST_REPO_NAME)
                 .setType(TEST_REPO_TYPE)
                 .setSettings(Settings.builder().put("location", repoPath))
         );
 
-        assertAcked(client().admin().cluster().prepareDeleteSnapshot(TEST_REQUEST_TIMEOUT, TEST_REPO_NAME, "snapshot-1").get());
-
-        assertAcked(client().admin().cluster().prepareDeleteRepository(TEST_REQUEST_TIMEOUT, TEST_REQUEST_TIMEOUT, TEST_REPO_NAME));
+        assertAcked(clusterAdmin().prepareDeleteSnapshot(TEST_REQUEST_TIMEOUT, TEST_REPO_NAME, "snapshot-1").get());
+        assertAcked(clusterAdmin().prepareDeleteRepository(TEST_REQUEST_TIMEOUT, TEST_REQUEST_TIMEOUT, TEST_REPO_NAME));
     }
 }

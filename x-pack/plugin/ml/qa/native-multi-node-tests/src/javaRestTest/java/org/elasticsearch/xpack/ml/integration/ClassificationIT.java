@@ -145,7 +145,7 @@ public class ClassificationIT extends MlNativeDataFrameAnalyticsIntegTestCase {
         startAnalytics(jobId);
         waitUntilAnalyticsIsStopped(jobId);
 
-        client().admin().indices().refresh(new RefreshRequest(destIndex));
+        indicesAdmin().refresh(new RefreshRequest(destIndex));
         assertResponse(prepareSearch(sourceIndex).setTrackTotalHits(true).setSize(1000), sourceData -> {
             for (SearchHit hit : sourceData.getHits()) {
                 Map<String, Object> destDoc = getDestDoc(config, hit);
@@ -211,7 +211,7 @@ public class ClassificationIT extends MlNativeDataFrameAnalyticsIntegTestCase {
         startAnalytics(jobId);
         waitUntilAnalyticsIsStopped(jobId);
 
-        client().admin().indices().refresh(new RefreshRequest(destIndex));
+        indicesAdmin().refresh(new RefreshRequest(destIndex));
         assertResponse(prepareSearch(sourceIndex).setTrackTotalHits(true).setSize(1000), sourceData -> {
             for (SearchHit hit : sourceData.getHits()) {
                 Map<String, Object> destDoc = getDestDoc(config, hit);
@@ -261,7 +261,7 @@ public class ClassificationIT extends MlNativeDataFrameAnalyticsIntegTestCase {
         startAnalytics(jobId);
         waitUntilAnalyticsIsStopped(jobId);
 
-        client().admin().indices().refresh(new RefreshRequest(destIndex));
+        indicesAdmin().refresh(new RefreshRequest(destIndex));
         assertResponse(prepareSearch(sourceIndex).setTrackTotalHits(true).setSize(1000), sourceData -> {
             for (SearchHit hit : sourceData.getHits()) {
                 Map<String, Object> destDoc = getDestDoc(config, hit);
@@ -359,7 +359,7 @@ public class ClassificationIT extends MlNativeDataFrameAnalyticsIntegTestCase {
                 assertTopClasses(resultsObject, 2, KEYWORD_FIELD, KEYWORD_FIELD_VALUES);
             }
         });
-        client().admin().indices().refresh(new RefreshRequest(destIndex));
+        indicesAdmin().refresh(new RefreshRequest(destIndex));
 
         assertProgressComplete(jobId);
         assertStoredProgressHits(jobId, 1);
@@ -427,7 +427,7 @@ public class ClassificationIT extends MlNativeDataFrameAnalyticsIntegTestCase {
         startAnalytics(jobId);
         waitUntilAnalyticsIsStopped(jobId);
 
-        client().admin().indices().refresh(new RefreshRequest(destIndex));
+        indicesAdmin().refresh(new RefreshRequest(destIndex));
         assertResponse(prepareSearch(sourceIndex).setTrackTotalHits(true).setSize(1000), sourceData -> {
             int trainingRowsCount = 0;
             int nonTrainingRowsCount = 0;
@@ -930,7 +930,7 @@ public class ClassificationIT extends MlNativeDataFrameAnalyticsIntegTestCase {
         startAnalytics(jobId);
         waitUntilAnalyticsIsStopped(jobId);
 
-        client().admin().indices().refresh(new RefreshRequest(destIndex));
+        indicesAdmin().refresh(new RefreshRequest(destIndex));
         assertResponse(prepareSearch(destIndex).setTrackTotalHits(true).setSize(1000), destData -> {
             for (SearchHit hit : destData.getHits()) {
                 Map<String, Object> destDoc = hit.getSourceAsMap();
@@ -1122,7 +1122,7 @@ public class ClassificationIT extends MlNativeDataFrameAnalyticsIntegTestCase {
                 throw new ElasticsearchException(ex);
             }
         } else {
-            client().admin().indices().prepareCreate(index).setMapping(mapping).get();
+            indicesAdmin().prepareCreate(index).setMapping(mapping).get();
         }
     }
 

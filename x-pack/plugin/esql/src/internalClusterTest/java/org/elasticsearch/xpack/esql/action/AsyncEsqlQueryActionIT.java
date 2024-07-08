@@ -200,9 +200,7 @@ public class AsyncEsqlQueryActionIT extends AbstractPausableIntegTestCase {
     private List<TaskInfo> getEsqlQueryTasks() throws Exception {
         List<TaskInfo> foundTasks = new ArrayList<>();
         assertBusy(() -> {
-            List<TaskInfo> tasks = client().admin()
-                .cluster()
-                .prepareListTasks()
+            List<TaskInfo> tasks = clusterAdmin().prepareListTasks()
                 .setActions(EsqlQueryAction.NAME + "[a]")
                 .setDetailed(true)
                 .get()

@@ -48,7 +48,7 @@ public class BulkFailureRetryIT extends MlNativeAutodetectIntegTestCase {
 
     @Before
     public void putPastDataIntoIndex() {
-        client().admin().indices().prepareCreate(index).setMapping("time", "type=date", "value", "type=long").get();
+        indicesAdmin().prepareCreate(index).setMapping("time", "type=date", "value", "type=long").get();
         long twoDaysAgo = now - DAY * 2;
         long threeDaysAgo = now - DAY * 3;
         writeData(logger, index, 250, threeDaysAgo, twoDaysAgo);
@@ -72,7 +72,7 @@ public class BulkFailureRetryIT extends MlNativeAutodetectIntegTestCase {
         AtomicReference<AcknowledgedResponse> acknowledgedResponseHolder = new AtomicReference<>();
         AtomicReference<Exception> exceptionHolder = new AtomicReference<>();
         blockingCall(
-            listener -> client().admin().indices().prepareUpdateSettings(resultsIndex).setSettings(settings).execute(listener),
+            listener -> indicesAdmin().prepareUpdateSettings(resultsIndex).setSettings(settings).execute(listener),
             acknowledgedResponseHolder,
             exceptionHolder
         );
@@ -86,7 +86,7 @@ public class BulkFailureRetryIT extends MlNativeAutodetectIntegTestCase {
         AtomicReference<AcknowledgedResponse> acknowledgedResponseHolder = new AtomicReference<>();
         AtomicReference<Exception> exceptionHolder = new AtomicReference<>();
         blockingCall(
-            listener -> client().admin().indices().prepareUpdateSettings(resultsIndex).setSettings(settings).execute(listener),
+            listener -> indicesAdmin().prepareUpdateSettings(resultsIndex).setSettings(settings).execute(listener),
             acknowledgedResponseHolder,
             exceptionHolder
         );

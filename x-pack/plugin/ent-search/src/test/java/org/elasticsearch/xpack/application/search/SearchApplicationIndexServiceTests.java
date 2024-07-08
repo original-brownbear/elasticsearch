@@ -50,7 +50,7 @@ public class SearchApplicationIndexServiceTests extends ESSingleNodeTestCase {
         BigArrays bigArrays = getInstanceFromNode(BigArrays.class);
         this.searchAppService = new SearchApplicationIndexService(client(), clusterService, writableRegistry(), bigArrays);
         for (int i = 0; i < NUM_INDICES; i++) {
-            client().admin().indices().prepareCreate("index_" + i).execute().get();
+            indicesAdmin().prepareCreate("index_" + i).execute().get();
         }
     }
 

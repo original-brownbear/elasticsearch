@@ -28,9 +28,9 @@ public class FollowInfoIT extends CcrSingleNodeTestCase {
 
     public void testFollowInfoApiFollowerIndexFiltering() throws Exception {
         final String leaderIndexSettings = getIndexSettings(1, 0, Collections.emptyMap());
-        assertAcked(client().admin().indices().prepareCreate("leader1").setSource(leaderIndexSettings, XContentType.JSON));
+        assertAcked(indicesAdmin().prepareCreate("leader1").setSource(leaderIndexSettings, XContentType.JSON));
         ensureGreen("leader1");
-        assertAcked(client().admin().indices().prepareCreate("leader2").setSource(leaderIndexSettings, XContentType.JSON));
+        assertAcked(indicesAdmin().prepareCreate("leader2").setSource(leaderIndexSettings, XContentType.JSON));
         ensureGreen("leader2");
 
         PutFollowAction.Request followRequest = getPutFollowRequest("leader1", "follower1");
@@ -115,9 +115,9 @@ public class FollowInfoIT extends CcrSingleNodeTestCase {
 
     public void testFollowInfoApiIndexMissing() throws Exception {
         final String leaderIndexSettings = getIndexSettings(1, 0, Collections.emptyMap());
-        assertAcked(client().admin().indices().prepareCreate("leader1").setSource(leaderIndexSettings, XContentType.JSON));
+        assertAcked(indicesAdmin().prepareCreate("leader1").setSource(leaderIndexSettings, XContentType.JSON));
         ensureGreen("leader1");
-        assertAcked(client().admin().indices().prepareCreate("leader2").setSource(leaderIndexSettings, XContentType.JSON));
+        assertAcked(indicesAdmin().prepareCreate("leader2").setSource(leaderIndexSettings, XContentType.JSON));
         ensureGreen("leader2");
 
         PutFollowAction.Request followRequest = getPutFollowRequest("leader1", "follower1");

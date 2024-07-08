@@ -100,14 +100,14 @@ public class ReservedRealmElasticAutoconfigIntegTests extends SecuritySingleNode
             GetIndexRequest getIndexRequest = new GetIndexRequest();
             getIndexRequest.indices(SECURITY_MAIN_ALIAS);
             getIndexRequest.indicesOptions(IndicesOptions.lenientExpandOpen());
-            GetIndexResponse getIndexResponse = client().admin().indices().getIndex(getIndexRequest).actionGet();
+            GetIndexResponse getIndexResponse = indicesAdmin().getIndex(getIndexRequest).actionGet();
             if (getIndexResponse.getIndices().length > 0) {
                 assertThat(getIndexResponse.getIndices().length, is(1));
                 assertThat(getIndexResponse.getIndices()[0], is(TestRestrictedIndices.INTERNAL_SECURITY_MAIN_INDEX_7));
                 // Security migration needs to finish before deleting the index
                 awaitSecurityMigrationRanOnce();
                 DeleteIndexRequest deleteIndexRequest = new DeleteIndexRequest(getIndexResponse.getIndices());
-                assertAcked(client().admin().indices().delete(deleteIndexRequest).actionGet());
+                assertAcked(indicesAdmin().delete(deleteIndexRequest).actionGet());
             }
 
             // elastic user gets 503 for the good password

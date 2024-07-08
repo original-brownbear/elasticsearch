@@ -100,7 +100,7 @@ public abstract class AbstractThirdPartyRepositoryTestCase extends ESSingleNodeT
             prepareIndex("test-idx-2").setId(Integer.toString(i)).setSource("foo", "bar" + i).get();
             prepareIndex("test-idx-3").setId(Integer.toString(i)).setSource("foo", "bar" + i).get();
         }
-        client().admin().indices().prepareRefresh().get();
+        indicesAdmin().prepareRefresh().get();
 
         final String snapshotName = "test-snap-" + System.currentTimeMillis();
 
@@ -179,7 +179,7 @@ public abstract class AbstractThirdPartyRepositoryTestCase extends ESSingleNodeT
             prepareIndex("test-idx-2").setId(Integer.toString(i)).setSource("foo", "bar" + i).get();
             prepareIndex("test-idx-3").setId(Integer.toString(i)).setSource("foo", "bar" + i).get();
         }
-        client().admin().indices().prepareRefresh().get();
+        indicesAdmin().prepareRefresh().get();
 
         final String snapshotName = "test-snap-" + System.currentTimeMillis();
 

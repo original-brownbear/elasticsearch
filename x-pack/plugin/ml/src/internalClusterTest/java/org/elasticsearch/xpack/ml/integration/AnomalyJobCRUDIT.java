@@ -147,26 +147,26 @@ public class AnomalyJobCRUDIT extends MlSingleNodeTestCase {
 
     public void testPutJobWithClosedResultsIndex() {
         String jobId = "job-with-closed-results-index";
-        client().admin().indices().prepareCreate(".ml-anomalies-shared").get();
-        client().admin().indices().prepareClose(".ml-anomalies-shared").get();
+        indicesAdmin().prepareCreate(".ml-anomalies-shared").get();
+        indicesAdmin().prepareClose(".ml-anomalies-shared").get();
         ElasticsearchStatusException ex = expectThrows(ElasticsearchStatusException.class, () -> createJob(jobId));
         assertThat(
             ex.getMessage(),
             containsString("Cannot create job [job-with-closed-results-index] as it requires closed index [.ml-anomalies-*]")
         );
-        client().admin().indices().prepareDelete(".ml-anomalies-shared").get();
+        indicesAdmin().prepareDelete(".ml-anomalies-shared").get();
     }
 
     public void testPutJobWithClosedStateIndex() {
         String jobId = "job-with-closed-results-index";
-        client().admin().indices().prepareCreate(".ml-state-000001").get();
-        client().admin().indices().prepareClose(".ml-state-000001").setWaitForActiveShards(0).get();
+        indicesAdmin().prepareCreate(".ml-state-000001").get();
+        indicesAdmin().prepareClose(".ml-state-000001").setWaitForActiveShards(0).get();
         ElasticsearchStatusException ex = expectThrows(ElasticsearchStatusException.class, () -> createJob(jobId));
         assertThat(
             ex.getMessage(),
             containsString("Cannot create job [job-with-closed-results-index] as it requires closed index [.ml-state*]")
         );
-        client().admin().indices().prepareDelete(".ml-state-000001").get();
+        indicesAdmin().prepareDelete(".ml-state-000001").get();
     }
 
     public void testOpenJobWithOldSnapshot() {

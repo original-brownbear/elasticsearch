@@ -308,7 +308,7 @@ public class IndicesServiceTests extends ESSingleNodeTestCase {
         Metadata meta = gwMetaState.getMetadata();
         assertNotNull(meta);
         assertNotNull(meta.index("test"));
-        assertAcked(client().admin().indices().prepareDelete("test"));
+        assertAcked(indicesAdmin().prepareDelete("test"));
         awaitIndexShardCloseAsyncTasks();
 
         assertFalse(firstPath.exists());
@@ -319,10 +319,10 @@ public class IndicesServiceTests extends ESSingleNodeTestCase {
 
         test = createIndex("test");
         prepareIndex("test").setId("1").setSource("field", "value").setRefreshPolicy(IMMEDIATE).get();
-        client().admin().indices().prepareFlush("test").get();
+        indicesAdmin().prepareFlush("test").get();
         assertHitCount(client().prepareSearch("test"), 1);
         IndexMetadata secondMetadata = clusterService.state().metadata().index("test");
-        assertAcked(client().admin().indices().prepareClose("test"));
+        assertAcked(indicesAdmin().prepareClose("test"));
         ShardPath secondPath = ShardPath.loadShardPath(
             logger,
             getNodeEnvironment(),
@@ -334,7 +334,7 @@ public class IndicesServiceTests extends ESSingleNodeTestCase {
         expectThrows(IllegalStateException.class, () -> indicesService.deleteIndexStore("boom", secondMetadata));
         assertTrue(secondPath.exists());
 
-        assertAcked(client().admin().indices().prepareOpen("test"));
+        assertAcked(indicesAdmin().prepareOpen("test"));
         ensureGreen("test");
     }
 
@@ -371,7 +371,7 @@ public class IndicesServiceTests extends ESSingleNodeTestCase {
             indicesService.addPendingDelete(index, indexSettings);
         }
 
-        assertAcked(client().admin().indices().prepareClose("test"));
+        assertAcked(indicesAdmin().prepareClose("test"));
         assertTrue(shardPath.exists());
         ensureGreen("test");
 
@@ -395,7 +395,7 @@ public class IndicesServiceTests extends ESSingleNodeTestCase {
             assertTrue(indicesService.hasUncompletedPendingDeletes());
         }
 
-        assertAcked(client().admin().indices().prepareDelete("test"));
+        assertAcked(indicesAdmin().prepareDelete("test"));
         assertBusy(() -> {
             try {
                 indicesService.processPendingDeletes(index, indexSettings, TimeValue.timeValueMillis(0));
@@ -449,7 +449,7 @@ public class IndicesServiceTests extends ESSingleNodeTestCase {
         createIndex(indexName);
 
         // create the alias for the index
-        client().admin().indices().prepareAliases().addAlias(indexName, alias).get();
+        indicesAdmin().prepareAliases().addAlias(indexName, alias).get();
         final ClusterState originalState = clusterService.state();
 
         // try to import a dangling index with the same name as the alias, it should fail
@@ -468,7 +468,7 @@ public class IndicesServiceTests extends ESSingleNodeTestCase {
         assertThat(clusterService.state(), equalTo(originalState));
 
         // remove the alias
-        client().admin().indices().prepareAliases().removeAlias(indexName, alias).get();
+        indicesAdmin().prepareAliases().removeAlias(indexName, alias).get();
 
         // now try importing a dangling index with the same name as the alias, it should succeed.
         latch = new CountDownLatch(1);

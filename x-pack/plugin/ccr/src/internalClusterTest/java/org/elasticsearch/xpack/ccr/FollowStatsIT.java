@@ -71,9 +71,9 @@ public class FollowStatsIT extends CcrSingleNodeTestCase {
 
     public void testFollowStatsApiFollowerIndexFiltering() throws Exception {
         final String leaderIndexSettings = getIndexSettings(1, 0, Collections.emptyMap());
-        assertAcked(client().admin().indices().prepareCreate("leader1").setSource(leaderIndexSettings, XContentType.JSON));
+        assertAcked(indicesAdmin().prepareCreate("leader1").setSource(leaderIndexSettings, XContentType.JSON));
         ensureGreen("leader1");
-        assertAcked(client().admin().indices().prepareCreate("leader2").setSource(leaderIndexSettings, XContentType.JSON));
+        assertAcked(indicesAdmin().prepareCreate("leader2").setSource(leaderIndexSettings, XContentType.JSON));
         ensureGreen("leader2");
 
         PutFollowAction.Request followRequest = getPutFollowRequest("leader1", "follower1");
@@ -129,7 +129,7 @@ public class FollowStatsIT extends CcrSingleNodeTestCase {
         assertThat(e.getMessage(), equalTo("No shard follow tasks for follower indices [follower1]"));
 
         final String leaderIndexSettings = getIndexSettings(1, 0, Collections.emptyMap());
-        assertAcked(client().admin().indices().prepareCreate("leader1").setSource(leaderIndexSettings, XContentType.JSON));
+        assertAcked(indicesAdmin().prepareCreate("leader1").setSource(leaderIndexSettings, XContentType.JSON));
         ensureGreen("leader1");
 
         PutFollowAction.Request followRequest = getPutFollowRequest("leader1", "follower1");
@@ -150,7 +150,7 @@ public class FollowStatsIT extends CcrSingleNodeTestCase {
 
     public void testFollowStatsApiWithDeletedFollowerIndex() throws Exception {
         final String leaderIndexSettings = getIndexSettings(1, 0, Collections.emptyMap());
-        assertAcked(client().admin().indices().prepareCreate("leader1").setSource(leaderIndexSettings, XContentType.JSON));
+        assertAcked(indicesAdmin().prepareCreate("leader1").setSource(leaderIndexSettings, XContentType.JSON));
         ensureGreen("leader1");
 
         PutFollowAction.Request followRequest = getPutFollowRequest("leader1", "follower1");
@@ -167,7 +167,7 @@ public class FollowStatsIT extends CcrSingleNodeTestCase {
         assertThat(response.getStatsResponses().size(), equalTo(1));
         assertThat(response.getStatsResponses().get(0).status().followerIndex(), equalTo("follower1"));
 
-        assertAcked(client().admin().indices().delete(new DeleteIndexRequest("follower1")).actionGet());
+        assertAcked(indicesAdmin().delete(new DeleteIndexRequest("follower1")).actionGet());
 
         assertBusy(() -> {
             FollowStatsAction.StatsRequest request = new FollowStatsAction.StatsRequest();
@@ -178,7 +178,7 @@ public class FollowStatsIT extends CcrSingleNodeTestCase {
 
     public void testFollowStatsApiIncludeShardFollowStatsWithClosedFollowerIndex() throws Exception {
         final String leaderIndexSettings = getIndexSettings(1, 0, Collections.emptyMap());
-        assertAcked(client().admin().indices().prepareCreate("leader1").setSource(leaderIndexSettings, XContentType.JSON));
+        assertAcked(indicesAdmin().prepareCreate("leader1").setSource(leaderIndexSettings, XContentType.JSON));
         ensureGreen("leader1");
 
         PutFollowAction.Request followRequest = getPutFollowRequest("leader1", "follower1");
@@ -195,7 +195,7 @@ public class FollowStatsIT extends CcrSingleNodeTestCase {
         assertThat(response.getStatsResponses().size(), equalTo(1));
         assertThat(response.getStatsResponses().get(0).status().followerIndex(), equalTo("follower1"));
 
-        assertAcked(client().admin().indices().close(new CloseIndexRequest("follower1")).actionGet());
+        assertAcked(indicesAdmin().close(new CloseIndexRequest("follower1")).actionGet());
 
         statsRequest = new FollowStatsAction.StatsRequest();
         response = client().execute(FollowStatsAction.INSTANCE, statsRequest).actionGet();

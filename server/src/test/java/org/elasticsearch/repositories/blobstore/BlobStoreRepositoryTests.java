@@ -364,9 +364,7 @@ public class BlobStoreRepositoryTests extends ESSingleNodeTestCase {
     @After
     public void removeRepo() {
         try {
-            client().admin()
-                .cluster()
-                .prepareDeleteRepository(TEST_REQUEST_TIMEOUT, TEST_REQUEST_TIMEOUT, TEST_REPO_NAME)
+            clusterAdmin().prepareDeleteRepository(TEST_REQUEST_TIMEOUT, TEST_REQUEST_TIMEOUT, TEST_REPO_NAME)
                 .get(TimeValue.timeValueSeconds(10));
         } catch (RepositoryMissingException e) {
             // ok, not all tests create the test repo

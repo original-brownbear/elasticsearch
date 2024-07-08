@@ -1561,7 +1561,7 @@ public class SnapshotBasedIndexRecoveryIT extends AbstractSnapshotIntegTestCase 
 
         // Ensure that the safe commit == latest commit
         assertBusy(() -> {
-            ClusterState clusterState = client().admin().cluster().prepareState().get().getState();
+            ClusterState clusterState = clusterAdmin().prepareState().get().getState();
             var indexShardRoutingTable = clusterState.routingTable().index(indexName).shard(0);
             assertThat(indexShardRoutingTable, is(notNullValue()));
 

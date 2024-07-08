@@ -41,17 +41,17 @@ public class IndicesSegmentsRequestTests extends ESSingleNodeTestCase {
             String id = Integer.toString(j);
             prepareIndex("test").setId(id).setSource("text", "sometext").get();
         }
-        client().admin().indices().prepareFlush("test").get();
-        client().admin().indices().prepareRefresh().get();
+        indicesAdmin().prepareFlush("test").get();
+        indicesAdmin().prepareRefresh().get();
     }
 
     /**
      * with the default IndicesOptions inherited from BroadcastOperationRequest this will raise an exception
      */
     public void testRequestOnClosedIndex() {
-        client().admin().indices().prepareClose("test").get();
+        indicesAdmin().prepareClose("test").get();
         try {
-            client().admin().indices().prepareSegments("test").get();
+            indicesAdmin().prepareSegments("test").get();
             fail("Expected IndexClosedException");
         } catch (IndexClosedException e) {
             assertThat(e.getMessage(), is("closed"));
@@ -62,10 +62,10 @@ public class IndicesSegmentsRequestTests extends ESSingleNodeTestCase {
      * setting the "ignoreUnavailable" option prevents IndexClosedException
      */
     public void testRequestOnClosedIndexIgnoreUnavailable() {
-        client().admin().indices().prepareClose("test").get();
+        indicesAdmin().prepareClose("test").get();
         IndicesOptions defaultOptions = new IndicesSegmentsRequest().indicesOptions();
         IndicesOptions testOptions = IndicesOptions.fromOptions(true, true, true, false, defaultOptions);
-        IndicesSegmentResponse rsp = client().admin().indices().prepareSegments("test").setIndicesOptions(testOptions).get();
+        IndicesSegmentResponse rsp = indicesAdmin().prepareSegments("test").setIndicesOptions(testOptions).get();
         assertEquals(0, rsp.getIndices().size());
     }
 
@@ -73,15 +73,15 @@ public class IndicesSegmentsRequestTests extends ESSingleNodeTestCase {
      * by default IndicesOptions setting IndicesSegmentsRequest should not throw exception when no index present
      */
     public void testAllowNoIndex() {
-        client().admin().indices().prepareDelete("test").get();
-        IndicesSegmentResponse rsp = client().admin().indices().prepareSegments().get();
+        indicesAdmin().prepareDelete("test").get();
+        IndicesSegmentResponse rsp = indicesAdmin().prepareSegments().get();
         assertEquals(0, rsp.getIndices().size());
     }
 
     public void testRequestOnClosedIndexWithVectorFormats() {
-        client().admin().indices().prepareClose("test").get();
+        indicesAdmin().prepareClose("test").get();
         try {
-            client().admin().indices().prepareSegments("test").includeVectorFormatInfo(true).get();
+            indicesAdmin().prepareSegments("test").includeVectorFormatInfo(true).get();
             fail("Expected IndexClosedException");
         } catch (IndexClosedException e) {
             assertThat(e.getMessage(), is("closed"));
@@ -89,18 +89,16 @@ public class IndicesSegmentsRequestTests extends ESSingleNodeTestCase {
     }
 
     public void testAllowNoIndexWithVectorFormats() {
-        client().admin().indices().prepareDelete("test").get();
-        IndicesSegmentResponse rsp = client().admin().indices().prepareSegments().includeVectorFormatInfo(true).get();
+        indicesAdmin().prepareDelete("test").get();
+        IndicesSegmentResponse rsp = indicesAdmin().prepareSegments().includeVectorFormatInfo(true).get();
         assertEquals(0, rsp.getIndices().size());
     }
 
     public void testRequestOnClosedIndexIgnoreUnavailableWithVectorFormats() {
-        client().admin().indices().prepareClose("test").get();
+        indicesAdmin().prepareClose("test").get();
         IndicesOptions defaultOptions = new IndicesSegmentsRequest().indicesOptions();
         IndicesOptions testOptions = IndicesOptions.fromOptions(true, true, true, false, defaultOptions);
-        IndicesSegmentResponse rsp = client().admin()
-            .indices()
-            .prepareSegments("test")
+        IndicesSegmentResponse rsp = indicesAdmin().prepareSegments("test")
             .includeVectorFormatInfo(true)
             .setIndicesOptions(testOptions)
             .get();

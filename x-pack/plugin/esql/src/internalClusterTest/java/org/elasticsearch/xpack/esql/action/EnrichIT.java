@@ -148,9 +148,7 @@ public class EnrichIT extends AbstractEsqlIntegTestCase {
 
     @Before
     public void setupEnrichPolicies() {
-        client().admin()
-            .indices()
-            .prepareCreate("songs")
+        indicesAdmin().prepareCreate("songs")
             .setMapping("song_id", "type=keyword", "title", "type=keyword", "artist", "type=keyword", "length", "type=double")
             .get();
         record Song(String id, String title, String artist, double length) {
@@ -165,12 +163,12 @@ public class EnrichIT extends AbstractEsqlIntegTestCase {
         for (var s : songs) {
             client().prepareIndex("songs").setSource("song_id", s.id, "title", s.title, "artist", s.artist, "length", s.length).get();
         }
-        client().admin().indices().prepareRefresh("songs").get();
+        indicesAdmin().prepareRefresh("songs").get();
         client().execute(PutEnrichPolicyAction.INSTANCE, new PutEnrichPolicyAction.Request(TEST_REQUEST_TIMEOUT, "songs", policy))
             .actionGet();
         client().execute(ExecuteEnrichPolicyAction.INSTANCE, new ExecuteEnrichPolicyAction.Request(TEST_REQUEST_TIMEOUT, "songs"))
             .actionGet();
-        assertAcked(client().admin().indices().prepareDelete("songs"));
+        assertAcked(indicesAdmin().prepareDelete("songs"));
     }
 
     @After
@@ -190,9 +188,7 @@ public class EnrichIT extends AbstractEsqlIntegTestCase {
             new Listen(6, "s1", 0.25),
             new Listen(7, "s2", 3.0)
         );
-        client().admin()
-            .indices()
-            .prepareCreate("listens")
+        indicesAdmin().prepareCreate("listens")
             .setSettings(Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1))
             .setMapping("timestamp", "type=long", "song_id", "type=keyword", "duration", "type=double")
             .get();
@@ -201,7 +197,7 @@ public class EnrichIT extends AbstractEsqlIntegTestCase {
                 .setSource("timestamp", listen.timestamp, "song_id", listen.songId, "duration", listen.duration)
                 .get();
         }
-        client().admin().indices().prepareRefresh("listens").get();
+        indicesAdmin().prepareRefresh("listens").get();
     }
 
     @Before
@@ -393,9 +389,7 @@ public class EnrichIT extends AbstractEsqlIntegTestCase {
     public void testManyDocuments() {
         int numDocs = between(200, 2000);
         var artists = Map.of("s1", "Eagles", "s2", "Linkin Park", "s3", "Linkin Park", "s4", "Disturbed");
-        client().admin()
-            .indices()
-            .prepareCreate("many_docs")
+        indicesAdmin().prepareCreate("many_docs")
             .setSettings(Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1))
             .setMapping("song_id", "type=keyword")
             .get();
@@ -405,7 +399,7 @@ public class EnrichIT extends AbstractEsqlIntegTestCase {
             client().prepareIndex("many_docs").setSource("song_id", song).get();
             songs.merge(song, 1L, Long::sum);
         }
-        client().admin().indices().prepareRefresh("many_docs").get();
+        indicesAdmin().prepareRefresh("many_docs").get();
         try (EsqlQueryResponse resp = run("FROM many_docs | ENRICH songs | STATS count(*) BY artist")) {
             List<List<Object>> values = EsqlTestUtils.getValuesList(resp);
             Map<String, Long> actual = new HashMap<>();

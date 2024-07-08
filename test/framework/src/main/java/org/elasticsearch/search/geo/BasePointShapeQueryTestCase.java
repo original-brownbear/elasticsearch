@@ -305,7 +305,7 @@ public abstract class BasePointShapeQueryTestCase<T extends AbstractGeometryQuer
                 .endObject()
                 .endObject()
         );
-        client().admin().indices().prepareCreate(indexedShapeIndex).setMapping(queryShapesMapping).get();
+        indicesAdmin().prepareCreate(indexedShapeIndex).setMapping(queryShapesMapping).get();
         ensureGreen();
 
         prepareIndex(indexedShapeIndex).setId("shape1")
@@ -586,7 +586,7 @@ public abstract class BasePointShapeQueryTestCase<T extends AbstractGeometryQuer
                 jsonBuilder().startObject().field(defaultFieldName, WellKnownText.toWKT(point)).endObject()
             ).get();
         }
-        client().admin().indices().prepareRefresh(defaultIndexName).get();
+        indicesAdmin().prepareRefresh(defaultIndexName).get();
         // all points from a line intersect with the line
         assertHitCountAndNoFailures(
             client().prepareSearch(defaultIndexName)
@@ -611,7 +611,7 @@ public abstract class BasePointShapeQueryTestCase<T extends AbstractGeometryQuer
                 jsonBuilder().startObject().field(defaultFieldName, WellKnownText.toWKT(point)).endObject()
             ).get();
         }
-        client().admin().indices().prepareRefresh(defaultIndexName).get();
+        indicesAdmin().prepareRefresh(defaultIndexName).get();
         // all points from a polygon intersect with the polygon
         assertHitCountAndNoFailures(
             client().prepareSearch(defaultIndexName)

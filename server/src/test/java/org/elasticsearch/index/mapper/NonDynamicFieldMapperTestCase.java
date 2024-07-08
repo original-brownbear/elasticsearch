@@ -40,9 +40,9 @@ public abstract class NonDynamicFieldMapperTestCase extends ESSingleNodeTestCase
               }
             }
             """, getMapping());
-        var resp = client().admin().indices().prepareCreate("test").setMapping(mapping).get();
+        var resp = indicesAdmin().prepareCreate("test").setMapping(mapping).get();
         assertTrue(resp.isAcknowledged());
-        var mappingsResp = client().admin().indices().prepareGetMappings("test").get();
+        var mappingsResp = indicesAdmin().prepareGetMappings("test").get();
         var mappingMetadata = mappingsResp.getMappings().get("test");
         var fieldType = XContentMapValues.extractValue("properties.field.type", mappingMetadata.getSourceAsMap());
         assertThat(fieldType, equalTo(getTypeName()));
@@ -65,7 +65,7 @@ public abstract class NonDynamicFieldMapperTestCase extends ESSingleNodeTestCase
                 }
             }
             """, getMapping());
-        CreateIndexRequestBuilder req = client().admin().indices().prepareCreate("test").setMapping(mapping);
+        CreateIndexRequestBuilder req = indicesAdmin().prepareCreate("test").setMapping(mapping);
         Exception exc = expectThrows(Exception.class, () -> req.get());
         assertThat(exc.getCause(), instanceOf(IllegalArgumentException.class));
         assertThat(exc.getCause().getCause(), instanceOf(MapperParsingException.class));
@@ -73,7 +73,7 @@ public abstract class NonDynamicFieldMapperTestCase extends ESSingleNodeTestCase
     }
 
     public void testUpdateDynamicMappingFails() throws Exception {
-        var resp = client().admin().indices().prepareCreate("test").get();
+        var resp = indicesAdmin().prepareCreate("test").get();
         assertTrue(resp.isAcknowledged());
         String mapping = String.format(Locale.ROOT, """
             {
@@ -91,7 +91,7 @@ public abstract class NonDynamicFieldMapperTestCase extends ESSingleNodeTestCase
                 }
             }
             """, getMapping());
-        var req = client().admin().indices().preparePutMapping("test").setSource(mapping, XContentType.JSON);
+        var req = indicesAdmin().preparePutMapping("test").setSource(mapping, XContentType.JSON);
         Exception exc = expectThrows(Exception.class, () -> req.get());
         assertThat(exc.getCause(), instanceOf(IllegalArgumentException.class));
         assertThat(exc.getCause().getCause(), instanceOf(MapperParsingException.class));
@@ -115,9 +115,7 @@ public abstract class NonDynamicFieldMapperTestCase extends ESSingleNodeTestCase
               }
             }
             """, getMapping());
-        PutIndexTemplateRequestBuilder req = client().admin()
-            .indices()
-            .preparePutTemplate("template1")
+        PutIndexTemplateRequestBuilder req = indicesAdmin().preparePutTemplate("template1")
             .setMapping(mapping, XContentType.JSON)
             .setPatterns(List.of("test*"));
         Exception exc = expectThrows(Exception.class, () -> req.get());
@@ -138,9 +136,7 @@ public abstract class NonDynamicFieldMapperTestCase extends ESSingleNodeTestCase
               }
             }
             """, getMapping());
-        PutIndexTemplateRequestBuilder req = client().admin()
-            .indices()
-            .preparePutTemplate("template1")
+        PutIndexTemplateRequestBuilder req = indicesAdmin().preparePutTemplate("template1")
             .setMapping(mapping, XContentType.JSON)
             .setPatterns(List.of("test*"));
         assertTrue(req.get().isAcknowledged());
@@ -148,7 +144,7 @@ public abstract class NonDynamicFieldMapperTestCase extends ESSingleNodeTestCase
         var resp = client().prepareIndex("test1").setSource("field", "hello world").get();
         assertThat(resp.status(), equalTo(RestStatus.CREATED));
 
-        var mappingsResp = client().admin().indices().prepareGetMappings("test1").get();
+        var mappingsResp = indicesAdmin().prepareGetMappings("test1").get();
         var mappingMetadata = mappingsResp.getMappings().get("test1");
         var fieldType = XContentMapValues.extractValue("properties.field.type", mappingMetadata.getSourceAsMap());
         assertThat(fieldType, equalTo(getTypeName()));

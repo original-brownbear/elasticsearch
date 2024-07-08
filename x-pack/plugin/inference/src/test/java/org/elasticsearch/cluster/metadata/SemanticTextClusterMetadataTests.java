@@ -35,13 +35,13 @@ public class SemanticTextClusterMetadataTests extends ESSingleNodeTestCase {
     public void testCreateIndexWithSemanticTextField() {
         final IndexService indexService = createIndex(
             "test",
-            client().admin().indices().prepareCreate("test").setMapping("field", "type=semantic_text,inference_id=test_model")
+            indicesAdmin().prepareCreate("test").setMapping("field", "type=semantic_text,inference_id=test_model")
         );
         assertEquals(indexService.getMetadata().getInferenceFields().get("field").getInferenceId(), "test_model");
     }
 
     public void testSingleSourceSemanticTextField() throws Exception {
-        final IndexService indexService = createIndex("test", client().admin().indices().prepareCreate("test"));
+        final IndexService indexService = createIndex("test", indicesAdmin().prepareCreate("test"));
         final MetadataMappingService mappingService = getInstanceFromNode(MetadataMappingService.class);
         final MetadataMappingService.PutMappingExecutor putMappingExecutor = mappingService.new PutMappingExecutor();
         final ClusterService clusterService = getInstanceFromNode(ClusterService.class);
@@ -58,7 +58,7 @@ public class SemanticTextClusterMetadataTests extends ESSingleNodeTestCase {
     }
 
     public void testCopyToSemanticTextField() throws Exception {
-        final IndexService indexService = createIndex("test", client().admin().indices().prepareCreate("test"));
+        final IndexService indexService = createIndex("test", indicesAdmin().prepareCreate("test"));
         final MetadataMappingService mappingService = getInstanceFromNode(MetadataMappingService.class);
         final MetadataMappingService.PutMappingExecutor putMappingExecutor = mappingService.new PutMappingExecutor();
         final ClusterService clusterService = getInstanceFromNode(ClusterService.class);

@@ -67,7 +67,7 @@ public class HdfsTests extends ESSingleNodeTestCase {
             prepareIndex("test-idx-2").setId(Integer.toString(i)).setSource("foo", "bar" + i).get();
             prepareIndex("test-idx-3").setId(Integer.toString(i)).setSource("foo", "bar" + i).get();
         }
-        client().admin().indices().prepareRefresh().get();
+        indicesAdmin().prepareRefresh().get();
         assertThat(count(client, "test-idx-1"), equalTo(100L));
         assertThat(count(client, "test-idx-2"), equalTo(100L));
         assertThat(count(client, "test-idx-3"), equalTo(100L));
@@ -107,7 +107,7 @@ public class HdfsTests extends ESSingleNodeTestCase {
         for (int i = 0; i < 100; i += 2) {
             client.prepareDelete("test-idx-3", Integer.toString(i)).get();
         }
-        client().admin().indices().prepareRefresh().get();
+        indicesAdmin().prepareRefresh().get();
         assertThat(count(client, "test-idx-1"), equalTo(50L));
         assertThat(count(client, "test-idx-2"), equalTo(50L));
         assertThat(count(client, "test-idx-3"), equalTo(50L));
@@ -130,7 +130,7 @@ public class HdfsTests extends ESSingleNodeTestCase {
 
         // Test restore after index deletion
         logger.info("--> delete indices");
-        client().admin().indices().prepareDelete("test-idx-1", "test-idx-2").get();
+        indicesAdmin().prepareDelete("test-idx-1", "test-idx-2").get();
         logger.info("--> restore one index after deletion");
         restoreSnapshotResponse = client.admin()
             .cluster()
@@ -215,9 +215,7 @@ public class HdfsTests extends ESSingleNodeTestCase {
 
     public void testReplicationFactorBelowOne() {
         try {
-            client().admin()
-                .cluster()
-                .preparePutRepository(TEST_REQUEST_TIMEOUT, TEST_REQUEST_TIMEOUT, "test-repo")
+            clusterAdmin().preparePutRepository(TEST_REQUEST_TIMEOUT, TEST_REQUEST_TIMEOUT, "test-repo")
                 .setType("hdfs")
                 .setSettings(Settings.builder().put("uri", "hdfs:///").put("replication_factor", "0").put("path", "foo").build())
                 .get();
@@ -230,9 +228,7 @@ public class HdfsTests extends ESSingleNodeTestCase {
 
     public void testReplicationFactorOverMaxShort() {
         try {
-            client().admin()
-                .cluster()
-                .preparePutRepository(TEST_REQUEST_TIMEOUT, TEST_REQUEST_TIMEOUT, "test-repo")
+            clusterAdmin().preparePutRepository(TEST_REQUEST_TIMEOUT, TEST_REQUEST_TIMEOUT, "test-repo")
                 .setType("hdfs")
                 .setSettings(Settings.builder().put("uri", "hdfs:///").put("replication_factor", "32768").put("path", "foo").build())
                 .get();
@@ -245,9 +241,7 @@ public class HdfsTests extends ESSingleNodeTestCase {
 
     public void testReplicationFactorBelowReplicationMin() {
         try {
-            client().admin()
-                .cluster()
-                .preparePutRepository(TEST_REQUEST_TIMEOUT, TEST_REQUEST_TIMEOUT, "test-repo")
+            clusterAdmin().preparePutRepository(TEST_REQUEST_TIMEOUT, TEST_REQUEST_TIMEOUT, "test-repo")
                 .setType("hdfs")
                 .setSettings(
                     Settings.builder()
@@ -267,9 +261,7 @@ public class HdfsTests extends ESSingleNodeTestCase {
 
     public void testReplicationFactorOverReplicationMax() {
         try {
-            client().admin()
-                .cluster()
-                .preparePutRepository(TEST_REQUEST_TIMEOUT, TEST_REQUEST_TIMEOUT, "test-repo")
+            clusterAdmin().preparePutRepository(TEST_REQUEST_TIMEOUT, TEST_REQUEST_TIMEOUT, "test-repo")
                 .setType("hdfs")
                 .setSettings(
                     Settings.builder()

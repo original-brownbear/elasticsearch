@@ -79,8 +79,8 @@ public class ValidateIndicesAliasesRequestIT extends ESSingleNodeTestCase {
         createIndex("index", settings);
         final IndicesAliasesRequest request = new IndicesAliasesRequest().origin("allowed");
         request.addAliasAction(IndicesAliasesRequest.AliasActions.add().index("index").alias("alias"));
-        assertAcked(client().admin().indices().aliases(request).actionGet());
-        final GetAliasesResponse response = client().admin().indices().getAliases(new GetAliasesRequest("alias")).actionGet();
+        assertAcked(indicesAdmin().aliases(request).actionGet());
+        final GetAliasesResponse response = indicesAdmin().getAliases(new GetAliasesRequest("alias")).actionGet();
         assertThat(response.getAliases().keySet().size(), equalTo(1));
         assertThat(response.getAliases().keySet().iterator().next(), equalTo("index"));
         final List<AliasMetadata> aliasMetadata = response.getAliases().get("index");
@@ -96,7 +96,7 @@ public class ValidateIndicesAliasesRequestIT extends ESSingleNodeTestCase {
         final String origin = randomFrom("", "not-allowed");
         final IndicesAliasesRequest request = new IndicesAliasesRequest().origin(origin);
         request.addAliasAction(IndicesAliasesRequest.AliasActions.add().index("index").alias("alias"));
-        final Exception e = expectThrows(IllegalStateException.class, client().admin().indices().aliases(request));
+        final Exception e = expectThrows(IllegalStateException.class, indicesAdmin().aliases(request));
         assertThat(e, hasToString(containsString("origin [" + origin + "] not allowed for index [index]")));
     }
 
@@ -113,9 +113,9 @@ public class ValidateIndicesAliasesRequestIT extends ESSingleNodeTestCase {
         final IndicesAliasesRequest request = new IndicesAliasesRequest().origin(origin);
         request.addAliasAction(IndicesAliasesRequest.AliasActions.add().index("foo").alias("alias"));
         request.addAliasAction(IndicesAliasesRequest.AliasActions.add().index("bar").alias("alias"));
-        final Exception e = expectThrows(IllegalStateException.class, client().admin().indices().aliases(request));
+        final Exception e = expectThrows(IllegalStateException.class, indicesAdmin().aliases(request));
         final String index = "foo_allowed".equals(origin) ? "bar" : "foo";
         assertThat(e, hasToString(containsString("origin [" + origin + "] not allowed for index [" + index + "]")));
-        assertTrue(client().admin().indices().getAliases(new GetAliasesRequest("alias")).actionGet().getAliases().isEmpty());
+        assertTrue(indicesAdmin().getAliases(new GetAliasesRequest("alias")).actionGet().getAliases().isEmpty());
     }
 }

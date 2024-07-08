@@ -325,7 +325,7 @@ public class JobConfigProviderIT extends MlSingleNodeTestCase {
         Job harry = putJob(createJob("harry", Collections.singletonList("harry-group")));
         Job harryJnr = putJob(createJob("harry-jnr", Collections.singletonList("harry-group")));
 
-        client().admin().indices().prepareRefresh(MlConfigIndex.indexName()).get();
+        indicesAdmin().prepareRefresh(MlConfigIndex.indexName()).get();
 
         // Job Ids
         SortedSet<String> expandedIds = blockingCall(
@@ -398,7 +398,7 @@ public class JobConfigProviderIT extends MlSingleNodeTestCase {
         Job bar2 = putJob(createJob("bar-2", Collections.singletonList("bar")));
         Job nbar = putJob(createJob("nbar", Collections.singletonList("bar")));
 
-        client().admin().indices().prepareRefresh(MlConfigIndex.indexName()).get();
+        indicesAdmin().prepareRefresh(MlConfigIndex.indexName()).get();
 
         // Test job IDs only
         SortedSet<String> expandedIds = blockingCall(
@@ -454,7 +454,7 @@ public class JobConfigProviderIT extends MlSingleNodeTestCase {
         );
         assertThat(marked.getResponse().getBlocked().getReason(), equalTo(Blocked.Reason.DELETE));
 
-        client().admin().indices().prepareRefresh(MlConfigIndex.indexName()).get();
+        indicesAdmin().prepareRefresh(MlConfigIndex.indexName()).get();
 
         SortedSet<String> expandedIds = blockingCall(
             actionListener -> jobConfigProvider.expandJobsIds("foo*", true, true, null, false, null, actionListener)
@@ -485,7 +485,7 @@ public class JobConfigProviderIT extends MlSingleNodeTestCase {
         putJob(createJob("foo-1", null));
         putJob(createJob("bar", null));
 
-        client().admin().indices().prepareRefresh(MlConfigIndex.indexName()).get();
+        indicesAdmin().prepareRefresh(MlConfigIndex.indexName()).get();
 
         PersistentTasksCustomMetadata.Builder tasksBuilder = PersistentTasksCustomMetadata.builder();
         tasksBuilder.addTask(
@@ -523,7 +523,7 @@ public class JobConfigProviderIT extends MlSingleNodeTestCase {
         putJob(createJob("tomato", Arrays.asList("fruit", "veg")));
         putJob(createJob("unrelated", Collections.emptyList()));
 
-        client().admin().indices().prepareRefresh(MlConfigIndex.indexName()).get();
+        indicesAdmin().prepareRefresh(MlConfigIndex.indexName()).get();
 
         SortedSet<String> expandedIds = blockingCall(
             actionListener -> jobConfigProvider.expandGroupIds(Collections.singletonList("fruit"), actionListener)
@@ -561,7 +561,7 @@ public class JobConfigProviderIT extends MlSingleNodeTestCase {
         jobWithRules2 = addCustomRule(jobWithRules2, rule);
         putJob(jobWithRules2);
 
-        client().admin().indices().prepareRefresh(MlConfigIndex.indexName()).get();
+        indicesAdmin().prepareRefresh(MlConfigIndex.indexName()).get();
 
         List<Job> foundJobs = blockingCall(listener -> jobConfigProvider.findJobsWithCustomRules(listener));
 
@@ -618,7 +618,7 @@ public class JobConfigProviderIT extends MlSingleNodeTestCase {
 
         String jobId = "update-job-blocked-reset";
         putJob(createJob(jobId, Collections.emptyList()));
-        client().admin().indices().prepareRefresh(MlConfigIndex.indexName()).get();
+        indicesAdmin().prepareRefresh(MlConfigIndex.indexName()).get();
 
         exceptionHolder.set(null);
         blockingCall(

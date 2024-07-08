@@ -41,7 +41,7 @@ public class SyntheticSourceIT extends ESIntegTestCase {
             }
             indexRequest.get();
         }
-        client().admin().indices().prepareRefresh("test").get();
+        indicesAdmin().prepareRefresh("test").get();
         assertNoFailures(client().prepareSearch("test").setQuery(QueryBuilders.rangeQuery("long_id").from(0)));
     }
 
@@ -66,6 +66,6 @@ public class SyntheticSourceIT extends ESIntegTestCase {
         }
         mapping.endObject();
 
-        assertAcked(client().admin().indices().prepareCreate("test").setMapping(mapping).get());
+        assertAcked(indicesAdmin().prepareCreate("test").setMapping(mapping).get());
     }
 }

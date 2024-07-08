@@ -42,7 +42,7 @@ public class SyntheticSourceIT extends AbstractEsqlIntegTestCase {
             }
             indexRequest.get();
         }
-        client().admin().indices().prepareRefresh("test").get();
+        indicesAdmin().prepareRefresh("test").get();
 
         try (EsqlQueryResponse resp = run("from test | sort id asc | limit 1")) {
             Iterator<Object> row = resp.values().next();
@@ -63,7 +63,7 @@ public class SyntheticSourceIT extends AbstractEsqlIntegTestCase {
             }
             indexRequest.get();
         }
-        client().admin().indices().prepareRefresh("test").get();
+        indicesAdmin().prepareRefresh("test").get();
         try (EsqlQueryResponse resp = run("from test | keep field, id | sort id asc | limit 1")) {
             Iterator<Object> row = resp.values().next();
             assertThat(row.next(), equalTo("n0"));
@@ -90,6 +90,6 @@ public class SyntheticSourceIT extends AbstractEsqlIntegTestCase {
         }
         mapping.endObject();
 
-        assertAcked(client().admin().indices().prepareCreate("test").setMapping(mapping));
+        assertAcked(indicesAdmin().prepareCreate("test").setMapping(mapping));
     }
 }

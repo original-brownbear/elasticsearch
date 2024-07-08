@@ -139,7 +139,7 @@ public class GeoPointScriptDocValuesIT extends ESSingleNodeTestCase {
             .startObject("location")
             .field("type", "geo_point");
         xContentBuilder.endObject().endObject().endObject().endObject();
-        assertAcked(client().admin().indices().prepareCreate("test").setMapping(xContentBuilder));
+        assertAcked(indicesAdmin().prepareCreate("test").setMapping(xContentBuilder));
         ensureGreen();
     }
 
@@ -150,7 +150,7 @@ public class GeoPointScriptDocValuesIT extends ESSingleNodeTestCase {
             .setSource(jsonBuilder().startObject().field("name", "TestPosition").field("location", new double[] { lon, lat }).endObject())
             .get();
 
-        client().admin().indices().prepareRefresh("test").get();
+        indicesAdmin().prepareRefresh("test").get();
         assertNoFailuresAndResponse(
             client().prepareSearch()
                 .addStoredField("_source")
@@ -194,7 +194,7 @@ public class GeoPointScriptDocValuesIT extends ESSingleNodeTestCase {
         XContentBuilder builder = jsonBuilder().startObject().field("name", "TestPosition").field("location", values).endObject();
         prepareIndex("test").setId("1").setSource(builder).get();
 
-        client().admin().indices().prepareRefresh("test").get();
+        indicesAdmin().prepareRefresh("test").get();
 
         assertNoFailuresAndResponse(
             client().prepareSearch()
@@ -235,7 +235,7 @@ public class GeoPointScriptDocValuesIT extends ESSingleNodeTestCase {
             .setSource(jsonBuilder().startObject().field("name", "TestPosition").nullField("location").endObject())
             .get();
 
-        client().admin().indices().prepareRefresh("test").get();
+        indicesAdmin().prepareRefresh("test").get();
 
         assertNoFailuresAndResponse(
             client().prepareSearch()

@@ -178,7 +178,7 @@ public class BasicEnrichTests extends ESSingleNodeTestCase {
                 )
             );
             client().index(indexRequest).actionGet();
-            client().admin().indices().refresh(new RefreshRequest(SOURCE_INDEX_NAME)).actionGet();
+            indicesAdmin().refresh(new RefreshRequest(SOURCE_INDEX_NAME)).actionGet();
         }
 
         String policyName = "my-policy";
@@ -249,7 +249,7 @@ public class BasicEnrichTests extends ESSingleNodeTestCase {
             IndexRequest indexRequest = new IndexRequest("source-" + i);
             indexRequest.source("key", "key", "value", "val" + i);
             client().index(indexRequest).actionGet();
-            client().admin().indices().refresh(new RefreshRequest("source-" + i)).actionGet();
+            indicesAdmin().refresh(new RefreshRequest("source-" + i)).actionGet();
 
             EnrichPolicy enrichPolicy = new EnrichPolicy(EnrichPolicy.MATCH_TYPE, null, List.of("source-" + i), "key", List.of("value"));
             PutEnrichPolicyAction.Request request = new PutEnrichPolicyAction.Request(TEST_REQUEST_TIMEOUT, policyName, enrichPolicy);
@@ -293,7 +293,7 @@ public class BasicEnrichTests extends ESSingleNodeTestCase {
             IndexRequest indexRequest = new IndexRequest(sourceIndexName);
             indexRequest.source("key", "key", "value", "val1");
             client().index(indexRequest).actionGet();
-            client().admin().indices().refresh(new RefreshRequest(sourceIndexName)).actionGet();
+            indicesAdmin().refresh(new RefreshRequest(sourceIndexName)).actionGet();
         }
 
         EnrichPolicy enrichPolicy = new EnrichPolicy(EnrichPolicy.MATCH_TYPE, null, List.of(sourceIndexName), "key", List.of("value"));
@@ -432,7 +432,7 @@ public class BasicEnrichTests extends ESSingleNodeTestCase {
                 client().index(indexRequest).actionGet();
             }
         }
-        client().admin().indices().refresh(new RefreshRequest(SOURCE_INDEX_NAME)).actionGet();
+        indicesAdmin().refresh(new RefreshRequest(SOURCE_INDEX_NAME)).actionGet();
         return List.copyOf(keys);
     }
 }

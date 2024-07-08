@@ -106,11 +106,11 @@ public class KibanaThreadPoolIT extends ESIntegTestCase {
     }
 
     public void testBlockedThreadPoolsRejectUserRequests() throws Exception {
-        assertAcked(client().admin().indices().prepareCreate(USER_INDEX));
+        assertAcked(indicesAdmin().prepareCreate(USER_INDEX));
 
         runWithBlockedThreadPools(this::assertThreadPoolsBlocked);
 
-        assertAcked(client().admin().indices().prepareDelete(USER_INDEX));
+        assertAcked(indicesAdmin().prepareDelete(USER_INDEX));
     }
 
     private void assertThreadPoolsBlocked() {

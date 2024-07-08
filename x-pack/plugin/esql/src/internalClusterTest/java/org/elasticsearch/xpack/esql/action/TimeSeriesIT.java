@@ -38,9 +38,7 @@ public class TimeSeriesIT extends AbstractEsqlIntegTestCase {
 
     public void testEmpty() {
         Settings settings = Settings.builder().put("mode", "time_series").putList("routing_path", List.of("host")).build();
-        client().admin()
-            .indices()
-            .prepareCreate("empty_index")
+        indicesAdmin().prepareCreate("empty_index")
             .setSettings(settings)
             .setMapping(
                 "@timestamp",
@@ -84,9 +82,7 @@ public class TimeSeriesIT extends AbstractEsqlIntegTestCase {
     public void populateIndex() {
         // this can be expensive, do one
         Settings settings = Settings.builder().put("mode", "time_series").putList("routing_path", List.of("host", "cluster")).build();
-        client().admin()
-            .indices()
-            .prepareCreate("hosts")
+        indicesAdmin().prepareCreate("hosts")
             .setSettings(settings)
             .setMapping(
                 "@timestamp",
@@ -141,12 +137,12 @@ public class TimeSeriesIT extends AbstractEsqlIntegTestCase {
                 )
                 .get();
         }
-        client().admin().indices().prepareRefresh("hosts").get();
+        indicesAdmin().prepareRefresh("hosts").get();
     }
 
     public void testSimpleMetrics() {
         List<String> sortedGroups = docs.stream().map(d -> d.host).distinct().sorted().toList();
-        client().admin().indices().prepareRefresh("hosts").get();
+        indicesAdmin().prepareRefresh("hosts").get();
         try (EsqlQueryResponse resp = run("METRICS hosts load=avg(cpu) BY host | SORT host")) {
             List<List<Object>> rows = EsqlTestUtils.getValuesList(resp);
             assertThat(rows, hasSize(sortedGroups.size()));

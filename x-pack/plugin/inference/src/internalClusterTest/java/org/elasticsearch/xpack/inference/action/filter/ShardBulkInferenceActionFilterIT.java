@@ -129,7 +129,7 @@ public class ShardBulkInferenceActionFilterIT extends ESIntegTestCase {
             assertFalse(bulkResponse.hasFailures());
         }
 
-        client().admin().indices().refresh(new RefreshRequest(INDEX_NAME)).get();
+        indicesAdmin().refresh(new RefreshRequest(INDEX_NAME)).get();
 
         SearchSourceBuilder sourceBuilder = new SearchSourceBuilder().size(0).trackTotalHits(true);
         SearchResponse searchResponse = client().search(new SearchRequest(INDEX_NAME).source(sourceBuilder)).get();

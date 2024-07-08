@@ -170,7 +170,7 @@ public class TSDBPassthroughIndexingIT extends ESSingleNodeTestCase {
             var getResponse = client().get(new GetRequest(index, id)).actionGet();
             assertThat(getResponse.isExists(), is(true));
 
-            client().admin().indices().refresh(new RefreshRequest(index)).actionGet();
+            indicesAdmin().refresh(new RefreshRequest(index)).actionGet();
             var searchRequest = new SearchRequest();
             searchRequest.source(new SearchSourceBuilder().query(new TermQueryBuilder("_id", id)));
             assertResponse(client().search(searchRequest), searchResponse -> {
@@ -185,7 +185,7 @@ public class TSDBPassthroughIndexingIT extends ESSingleNodeTestCase {
         }
 
         // validate index:
-        var getIndexResponse = client().admin().indices().getIndex(new GetIndexRequest().indices(index)).actionGet();
+        var getIndexResponse = indicesAdmin().getIndex(new GetIndexRequest().indices(index)).actionGet();
         assertThat(getIndexResponse.getSettings().get(index).get("index.routing_path"), equalTo("[attributes.*]"));
         // validate mapping
         var mapping = getIndexResponse.mappings().get(index).getSourceAsMap();
@@ -259,20 +259,17 @@ public class TSDBPassthroughIndexingIT extends ESSingleNodeTestCase {
             });
         }
 
-        var rolloverResponse = client().admin().indices().rolloverIndex(new RolloverRequest(dataStreamName, null)).actionGet();
+        var rolloverResponse = indicesAdmin().rolloverIndex(new RolloverRequest(dataStreamName, null)).actionGet();
         assertThat(rolloverResponse.isRolledOver(), is(true));
         String sourceIndex = rolloverResponse.getOldIndex();
 
-        var updateSettingsResponse = client().admin()
-            .indices()
-            .updateSettings(new UpdateSettingsRequest(sourceIndex).settings(Settings.builder().put("index.blocks.write", true)))
-            .actionGet();
+        var updateSettingsResponse = indicesAdmin().updateSettings(
+            new UpdateSettingsRequest(sourceIndex).settings(Settings.builder().put("index.blocks.write", true))
+        ).actionGet();
         assertThat(updateSettingsResponse.isAcknowledged(), is(true));
 
         String shrunkenTarget = "k8s-shrunken";
-        var shrinkIndexResponse = client().admin()
-            .indices()
-            .prepareResizeIndex(sourceIndex, shrunkenTarget)
+        var shrinkIndexResponse = indicesAdmin().prepareResizeIndex(sourceIndex, shrunkenTarget)
             .setResizeType(ResizeType.SHRINK)
             .setSettings(indexSettings(2, 0).build())
             .get();

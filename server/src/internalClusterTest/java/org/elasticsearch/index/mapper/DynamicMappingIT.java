@@ -189,7 +189,7 @@ public class DynamicMappingIT extends ESIntegTestCase {
         if (error.get() != null) {
             throw error.get();
         }
-        client().admin().indices().prepareRefresh("index").get();
+        indicesAdmin().prepareRefresh("index").get();
         for (int i = 0; i < numberOfFieldsToCreate; ++i) {
             assertTrue(client().prepareGet("index", Integer.toString(i)).get().isExists());
         }
@@ -419,9 +419,7 @@ public class DynamicMappingIT extends ESIntegTestCase {
         Map<String, Object> mapping,
         Consumer<Map<String, DocumentField>> fieldsConsumer
     ) {
-        client().admin()
-            .indices()
-            .prepareCreate("index")
+        indicesAdmin().prepareCreate("index")
             .setSettings(
                 Settings.builder()
                     .put(INDEX_MAPPING_TOTAL_FIELDS_LIMIT_SETTING.getKey(), fieldLimit)

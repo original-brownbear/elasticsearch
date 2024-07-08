@@ -530,7 +530,7 @@ public class JobResultsProviderIT extends MlSingleNodeTestCase {
     }
 
     private Set<String> getAliases(String index) {
-        GetAliasesResponse getAliasesResponse = client().admin().indices().getAliases(new GetAliasesRequest().indices(index)).actionGet();
+        GetAliasesResponse getAliasesResponse = indicesAdmin().getAliases(new GetAliasesRequest().indices(index)).actionGet();
         Map<String, List<AliasMetadata>> aliases = getAliasesResponse.getAliases();
         assertThat(aliases.containsKey(index), is(true));
         List<AliasMetadata> aliasMetadataList = aliases.get(index);
@@ -574,7 +574,7 @@ public class JobResultsProviderIT extends MlSingleNodeTestCase {
             throw exceptionHolder.get();
         }
 
-        client().admin().indices().prepareRefresh(MlMetaIndex.indexName()).get();
+        indicesAdmin().prepareRefresh(MlMetaIndex.indexName()).get();
     }
 
     private Calendar getCalendar(String calendarId) throws Exception {

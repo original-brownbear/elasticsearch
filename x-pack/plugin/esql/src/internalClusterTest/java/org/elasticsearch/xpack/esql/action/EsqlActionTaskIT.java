@@ -198,13 +198,7 @@ public class EsqlActionTaskIT extends AbstractPausableIntegTestCase {
         ActionFuture<EsqlQueryResponse> response = startEsql();
         try {
             getTasksStarting();
-            List<TaskInfo> tasks = client().admin()
-                .cluster()
-                .prepareListTasks()
-                .setActions(EsqlQueryAction.NAME)
-                .setDetailed(true)
-                .get()
-                .getTasks();
+            List<TaskInfo> tasks = clusterAdmin().prepareListTasks().setActions(EsqlQueryAction.NAME).setDetailed(true).get().getTasks();
             cancelTask(tasks.get(0).taskId());
             assertCancelled(response);
         } finally {
@@ -244,12 +238,12 @@ public class EsqlActionTaskIT extends AbstractPausableIntegTestCase {
         CancelTasksRequest request = new CancelTasksRequest().setTargetTaskId(taskId).setReason("test cancel");
         request.setWaitForCompletion(false);
         LOGGER.debug("--> cancelling task [{}] without waiting for completion", taskId);
-        client().admin().cluster().execute(TransportCancelTasksAction.TYPE, request).actionGet();
+        clusterAdmin().execute(TransportCancelTasksAction.TYPE, request).actionGet();
         scriptPermits.release(numberOfDocs());
         request = new CancelTasksRequest().setTargetTaskId(taskId).setReason("test cancel");
         request.setWaitForCompletion(true);
         LOGGER.debug("--> cancelling task [{}] with waiting for completion", taskId);
-        client().admin().cluster().execute(TransportCancelTasksAction.TYPE, request).actionGet();
+        clusterAdmin().execute(TransportCancelTasksAction.TYPE, request).actionGet();
     }
 
     /**
@@ -260,9 +254,7 @@ public class EsqlActionTaskIT extends AbstractPausableIntegTestCase {
     private List<TaskInfo> getTasksStarting() throws Exception {
         List<TaskInfo> foundTasks = new ArrayList<>();
         assertBusy(() -> {
-            List<TaskInfo> tasks = client().admin()
-                .cluster()
-                .prepareListTasks()
+            List<TaskInfo> tasks = clusterAdmin().prepareListTasks()
                 .setActions(DriverTaskRunner.ACTION_NAME)
                 .setDetailed(true)
                 .get()
@@ -292,9 +284,7 @@ public class EsqlActionTaskIT extends AbstractPausableIntegTestCase {
     private List<TaskInfo> getTasksRunning() throws Exception {
         List<TaskInfo> foundTasks = new ArrayList<>();
         assertBusy(() -> {
-            List<TaskInfo> tasks = client().admin()
-                .cluster()
-                .prepareListTasks()
+            List<TaskInfo> tasks = clusterAdmin().prepareListTasks()
                 .setActions(DriverTaskRunner.ACTION_NAME)
                 .setDetailed(true)
                 .get()
@@ -330,9 +320,7 @@ public class EsqlActionTaskIT extends AbstractPausableIntegTestCase {
         );
         assertBusy(
             () -> assertThat(
-                client().admin()
-                    .cluster()
-                    .prepareListTasks()
+                clusterAdmin().prepareListTasks()
                     .setActions(EsqlQueryAction.NAME, DriverTaskRunner.ACTION_NAME)
                     .setDetailed(true)
                     .get()
@@ -373,9 +361,7 @@ public class EsqlActionTaskIT extends AbstractPausableIntegTestCase {
             scriptPermits.release(numberOfDocs()); // do not block Lucene operators
             Client client = client(coordinator);
             EsqlQueryRequest request = EsqlQueryRequest.syncEsqlQueryRequest();
-            client().admin()
-                .indices()
-                .prepareUpdateSettings("test")
+            indicesAdmin().prepareUpdateSettings("test")
                 .setSettings(Settings.builder().put("index.routing.allocation.include._name", dataNode).build())
                 .get();
             ensureYellowAndNoInitializingShards("test");
@@ -389,9 +375,7 @@ public class EsqlActionTaskIT extends AbstractPausableIntegTestCase {
             try {
                 List<TaskInfo> foundTasks = new ArrayList<>();
                 assertBusy(() -> {
-                    List<TaskInfo> tasks = client().admin()
-                        .cluster()
-                        .prepareListTasks()
+                    List<TaskInfo> tasks = clusterAdmin().prepareListTasks()
                         .setActions(EsqlQueryAction.NAME)
                         .setDetailed(true)
                         .get()

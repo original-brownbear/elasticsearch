@@ -94,7 +94,7 @@ public class SimpleVersioningIT extends ESIntegTestCase {
             .setVersionType(VersionType.EXTERNAL_GTE);
         expectThrows(VersionConflictEngineException.class, builder1);
 
-        client().admin().indices().prepareRefresh().get();
+        indicesAdmin().prepareRefresh().get();
         if (randomBoolean()) {
             refresh();
         }
@@ -208,7 +208,7 @@ public class SimpleVersioningIT extends ESIntegTestCase {
         HashMap<String, Object> newSettings = new HashMap<>();
         newSettings.put("index.gc_deletes", "42");
         try {
-            client().admin().indices().prepareUpdateSettings("test").setSettings(newSettings).get();
+            indicesAdmin().prepareUpdateSettings("test").setSettings(newSettings).get();
             fail("did not hit expected exception");
         } catch (IllegalArgumentException iae) {
             // expected
@@ -266,7 +266,7 @@ public class SimpleVersioningIT extends ESIntegTestCase {
         RequestBuilder<?, ?> builder4 = client().prepareDelete("test", "1").setIfSeqNo(1).setIfPrimaryTerm(2);
         expectThrows(VersionConflictEngineException.class, builder4);
 
-        client().admin().indices().prepareRefresh().get();
+        indicesAdmin().prepareRefresh().get();
         for (int i = 0; i < 10; i++) {
             final GetResponse response = client().prepareGet("test", "1").get();
             assertThat(response.getSeqNo(), equalTo(1L));
@@ -314,11 +314,11 @@ public class SimpleVersioningIT extends ESIntegTestCase {
         DocWriteResponse indexResponse = prepareIndex("test").setId("1").setSource("field1", "value1_1").get();
         assertThat(indexResponse.getSeqNo(), equalTo(0L));
 
-        client().admin().indices().prepareFlush().get();
+        indicesAdmin().prepareFlush().get();
         indexResponse = prepareIndex("test").setId("1").setSource("field1", "value1_2").setIfSeqNo(0).setIfPrimaryTerm(1).get();
         assertThat(indexResponse.getSeqNo(), equalTo(1L));
 
-        client().admin().indices().prepareFlush().get();
+        indicesAdmin().prepareFlush().get();
         RequestBuilder<?, ?> builder2 = prepareIndex("test").setId("1").setSource("field1", "value1_1").setIfSeqNo(0).setIfPrimaryTerm(1);
         expectThrows(VersionConflictEngineException.class, builder2);
 
@@ -332,7 +332,7 @@ public class SimpleVersioningIT extends ESIntegTestCase {
             assertThat(client().prepareGet("test", "1").get().getVersion(), equalTo(2L));
         }
 
-        client().admin().indices().prepareRefresh().get();
+        indicesAdmin().prepareRefresh().get();
 
         for (int i = 0; i < 10; i++) {
             assertResponse(prepareSearch().setQuery(matchAllQuery()).setVersion(true).seqNoAndPrimaryTerm(true), response -> {

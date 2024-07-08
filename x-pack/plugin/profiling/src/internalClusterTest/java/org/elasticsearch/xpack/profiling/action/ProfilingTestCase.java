@@ -77,12 +77,7 @@ public abstract class ProfilingTestCase extends ESIntegTestCase {
     }
 
     protected final void createIndex(String name, String bodyFileName) throws Exception {
-        CreateIndexResponse response = client().admin()
-            .indices()
-            .prepareCreate(name)
-            .setSource(read(bodyFileName), XContentType.JSON)
-            .execute()
-            .get();
+        CreateIndexResponse response = indicesAdmin().prepareCreate(name).setSource(read(bodyFileName), XContentType.JSON).execute().get();
         assertTrue("Creation of [" + name + "] is not acknowledged.", response.isAcknowledged());
     }
 

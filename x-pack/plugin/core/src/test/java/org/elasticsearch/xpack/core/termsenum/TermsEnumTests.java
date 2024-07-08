@@ -143,7 +143,7 @@ public class TermsEnumTests extends ESSingleNodeTestCase {
         indexAndRefresh(indexName, "3", "ip_addr", "2.2.2.2");
         indexAndRefresh(indexName, "4", "ip_addr", "2001:db8::1:0:0:1");
         indexAndRefresh(indexName, "5", "ip_addr", "13.3.3.3");
-        assertAllSuccessful(client().admin().indices().prepareRefresh().get());
+        assertAllSuccessful(indicesAdmin().prepareRefresh().get());
         {
             TermsEnumResponse response = client().execute(TermsEnumAction.INSTANCE, new TermsEnumRequest(indexName).field("ip_addr")).get();
             expectMatches(response, "1.2.3.4", "2.2.2.2", "13.3.3.3", "205.0.1.2", "2001:db8::1:0:0:1");
@@ -211,7 +211,7 @@ public class TermsEnumTests extends ESSingleNodeTestCase {
             );
         }
         assertNoFailures(bulkRequestBuilder.get());
-        assertAllSuccessful(client().admin().indices().prepareRefresh().get());
+        assertAllSuccessful(indicesAdmin().prepareRefresh().get());
 
         // test for short random prefixes, max length 7 should at least include some separators but not be too long for short ipv4
         for (int prefixLength = 1; prefixLength < 7; prefixLength++) {

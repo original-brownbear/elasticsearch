@@ -193,7 +193,7 @@ public class S3BlobStoreRepositoryTests extends ESMockAPIBasedRepositoryIntegTes
             waitForDocs(nbDocs, indexer);
         }
         flushAndRefresh(index);
-        BroadcastResponse forceMerge = client().admin().indices().prepareForceMerge(index).setFlush(true).setMaxNumSegments(1).get();
+        BroadcastResponse forceMerge = indicesAdmin().prepareForceMerge(index).setFlush(true).setMaxNumSegments(1).get();
         assertThat(forceMerge.getSuccessfulShards(), equalTo(1));
         assertHitCount(prepareSearch(index).setSize(0).setTrackTotalHits(true), nbDocs);
 
@@ -237,7 +237,7 @@ public class S3BlobStoreRepositoryTests extends ESMockAPIBasedRepositoryIntegTes
             waitForDocs(nbDocs, indexer);
         }
         flushAndRefresh(index);
-        BroadcastResponse forceMerge = client().admin().indices().prepareForceMerge(index).setFlush(true).setMaxNumSegments(1).get();
+        BroadcastResponse forceMerge = indicesAdmin().prepareForceMerge(index).setFlush(true).setMaxNumSegments(1).get();
         assertThat(forceMerge.getSuccessfulShards(), equalTo(1));
         assertHitCount(prepareSearch(index).setSize(0).setTrackTotalHits(true), nbDocs);
 
@@ -245,7 +245,7 @@ public class S3BlobStoreRepositoryTests extends ESMockAPIBasedRepositoryIntegTes
         assertSuccessfulSnapshot(
             clusterAdmin().prepareCreateSnapshot(TEST_REQUEST_TIMEOUT, repository, snapshot).setWaitForCompletion(true).setIndices(index)
         );
-        assertAcked(client().admin().indices().prepareDelete(index));
+        assertAcked(indicesAdmin().prepareDelete(index));
         assertSuccessfulRestore(
             clusterAdmin().prepareRestoreSnapshot(TEST_REQUEST_TIMEOUT, repository, snapshot).setWaitForCompletion(true)
         );

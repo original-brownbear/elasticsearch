@@ -137,7 +137,7 @@ public class EnrichPolicyMaintenanceServiceTests extends ESSingleNodeTestCase {
     }
 
     private void assertEnrichIndicesExist(Set<String> activeIndices) {
-        GetIndexResponse indices = client().admin().indices().getIndex(new GetIndexRequest().indices(".enrich-*")).actionGet();
+        GetIndexResponse indices = indicesAdmin().getIndex(new GetIndexRequest().indices(".enrich-*")).actionGet();
         assertThat(indices.indices().length, is(equalTo(activeIndices.size())));
         for (String index : indices.indices()) {
             assertThat(activeIndices.contains(index), is(true));
@@ -196,21 +196,21 @@ public class EnrichPolicyMaintenanceServiceTests extends ESSingleNodeTestCase {
         source.endObject();
         String newIndexName = EnrichPolicy.getBaseName(forPolicy) + "-" + indexNameAutoIncrementingCounter++;
         CreateIndexRequest request = new CreateIndexRequest(newIndexName).mapping(source);
-        client().admin().indices().create(request).actionGet();
+        indicesAdmin().create(request).actionGet();
         promoteFakePolicyIndex(newIndexName, forPolicy);
         return newIndexName;
     }
 
     private void promoteFakePolicyIndex(String indexName, String forPolicy) {
         String enrichIndexBase = EnrichPolicy.getBaseName(forPolicy);
-        GetAliasesResponse getAliasesResponse = client().admin().indices().getAliases(new GetAliasesRequest(enrichIndexBase)).actionGet();
+        GetAliasesResponse getAliasesResponse = indicesAdmin().getAliases(new GetAliasesRequest(enrichIndexBase)).actionGet();
         IndicesAliasesRequest aliasToggleRequest = new IndicesAliasesRequest();
         String[] indices = getAliasesResponse.getAliases().keySet().toArray(new String[0]);
         if (indices.length > 0) {
             aliasToggleRequest.addAliasAction(IndicesAliasesRequest.AliasActions.remove().indices(indices).alias(enrichIndexBase));
         }
         aliasToggleRequest.addAliasAction(IndicesAliasesRequest.AliasActions.add().index(indexName).alias(enrichIndexBase));
-        client().admin().indices().aliases(aliasToggleRequest).actionGet();
+        indicesAdmin().aliases(aliasToggleRequest).actionGet();
     }
 
     private EnrichPolicyMaintenanceService createMaintenanceService() {

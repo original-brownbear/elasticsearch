@@ -95,9 +95,7 @@ public class EsqlDisruptionIT extends EsqlActionIT {
         } catch (Exception e) {
             logger.info(
                 "running tasks: {}",
-                client().admin()
-                    .cluster()
-                    .prepareListTasks()
+                clusterAdmin().prepareListTasks()
                     .get()
                     .getTasks()
                     .stream()

@@ -56,7 +56,7 @@ public abstract class ESFsBasedRepositoryIntegTestCase extends ESBlobStoreReposi
                 .setIndices(indexName)
         );
 
-        assertAcked(client().admin().indices().prepareDelete(indexName));
+        assertAcked(indicesAdmin().prepareDelete(indexName));
         assertAcked(clusterAdmin().prepareDeleteRepository(TEST_REQUEST_TIMEOUT, TEST_REQUEST_TIMEOUT, repoName));
 
         final Path deletedPath;

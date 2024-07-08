@@ -56,9 +56,7 @@ public abstract class AbstractEsqlIntegTestCase extends ESIntegTestCase {
                 assertBusy(() -> {
                     logger.info(
                         "running tasks: {}",
-                        client().admin()
-                            .cluster()
-                            .prepareListTasks()
+                        clusterAdmin().prepareListTasks()
                             .get()
                             .getTasks()
                             .stream()

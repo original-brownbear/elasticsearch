@@ -44,7 +44,7 @@ public class JobAndDatafeedResilienceIT extends MlNativeAutodetectIntegTestCase 
         openJob(job.getId());
 
         client().prepareDelete(MlConfigIndex.indexName(), Job.documentId(jobId)).get();
-        client().admin().indices().prepareRefresh(MlConfigIndex.indexName()).get();
+        indicesAdmin().prepareRefresh(MlConfigIndex.indexName()).get();
 
         ElasticsearchException ex = expectThrows(ElasticsearchException.class, () -> {
             CloseJobAction.Request request = new CloseJobAction.Request(jobId);
@@ -63,7 +63,7 @@ public class JobAndDatafeedResilienceIT extends MlNativeAutodetectIntegTestCase 
     }
 
     public void testStopStartedDatafeedWithMissingConfig() throws Exception {
-        client().admin().indices().prepareCreate(index).setMapping("time", "type=date", "value", "type=long").get();
+        indicesAdmin().prepareCreate(index).setMapping("time", "type=date", "value", "type=long").get();
         final String jobId = "job-with-missing-datafeed-with-config";
         Job.Builder job = createJob(jobId, TimeValue.timeValueMinutes(5), "count", null);
 
@@ -81,7 +81,7 @@ public class JobAndDatafeedResilienceIT extends MlNativeAutodetectIntegTestCase 
         startDatafeed(datafeedConfig.getId(), 0L, null);
 
         client().prepareDelete(MlConfigIndex.indexName(), DatafeedConfig.documentId(datafeedConfig.getId())).get();
-        client().admin().indices().prepareRefresh(MlConfigIndex.indexName()).get();
+        indicesAdmin().prepareRefresh(MlConfigIndex.indexName()).get();
 
         ElasticsearchException ex = expectThrows(ElasticsearchException.class, () -> {
             StopDatafeedAction.Request request = new StopDatafeedAction.Request(datafeedConfig.getId());
@@ -114,7 +114,7 @@ public class JobAndDatafeedResilienceIT extends MlNativeAutodetectIntegTestCase 
         openJob(job2.getId());
 
         client().prepareDelete(MlConfigIndex.indexName(), Job.documentId(jobId1)).get();
-        client().admin().indices().prepareRefresh(MlConfigIndex.indexName()).get();
+        indicesAdmin().prepareRefresh(MlConfigIndex.indexName()).get();
 
         List<GetJobsStatsAction.Response.JobStats> jobStats = client().execute(
             GetJobsStatsAction.INSTANCE,
@@ -134,7 +134,7 @@ public class JobAndDatafeedResilienceIT extends MlNativeAutodetectIntegTestCase 
     }
 
     public void testGetDatafeedStats() throws Exception {
-        client().admin().indices().prepareCreate(index).setMapping("time", "type=date", "value", "type=long").get();
+        indicesAdmin().prepareCreate(index).setMapping("time", "type=date", "value", "type=long").get();
         final String jobId1 = "job-with-datafeed-missing-config-stats";
         final String jobId2 = "job-with-datafeed-config-stats";
 
@@ -167,7 +167,7 @@ public class JobAndDatafeedResilienceIT extends MlNativeAutodetectIntegTestCase 
         startDatafeed(datafeedConfig2.getId(), 0L, null);
 
         client().prepareDelete(MlConfigIndex.indexName(), DatafeedConfig.documentId(datafeedConfig1.getId())).get();
-        client().admin().indices().prepareRefresh(MlConfigIndex.indexName()).get();
+        indicesAdmin().prepareRefresh(MlConfigIndex.indexName()).get();
 
         List<GetDatafeedsStatsAction.Response.DatafeedStats> dfStats = client().execute(
             GetDatafeedsStatsAction.INSTANCE,

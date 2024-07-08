@@ -32,7 +32,7 @@ public class FiltersAggsRewriteIT extends ESSingleNodeTestCase {
         prepareIndex("test").setId("1").setSource("title", "foo bar baz").get();
         prepareIndex("test").setId("2").setSource("title", "foo foo foo").get();
         prepareIndex("test").setId("3").setSource("title", "bar baz bax").get();
-        client().admin().indices().prepareRefresh("test").get();
+        indicesAdmin().prepareRefresh("test").get();
 
         XContentType xContentType = randomFrom(XContentType.values());
         BytesReference bytesReference;
