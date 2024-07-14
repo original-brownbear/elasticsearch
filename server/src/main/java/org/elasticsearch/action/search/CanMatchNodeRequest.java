@@ -37,6 +37,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Node-level request used during can-match phase
@@ -53,7 +54,6 @@ public class CanMatchNodeRequest extends TransportRequest implements IndicesRequ
     private final long nowInMillis;
     @Nullable
     private final String clusterAlias;
-    private final String[] indices;
     private final IndicesOptions indicesOptions;
     private final TimeValue waitForCheckpointsTimeout;
 
@@ -135,7 +135,7 @@ public class CanMatchNodeRequest extends TransportRequest implements IndicesRequ
     ) {
         this.source = getCanMatchSource(searchRequest);
         this.indicesOptions = indicesOptions;
-        this.shards = new ArrayList<>(shards);
+        this.shards = shards;
         this.searchType = searchRequest.searchType();
         this.requestCache = searchRequest.requestCache();
         // If allowPartialSearchResults is unset (ie null), the cluster-level default should have been substituted
@@ -147,7 +147,6 @@ public class CanMatchNodeRequest extends TransportRequest implements IndicesRequ
         this.nowInMillis = nowInMillis;
         this.clusterAlias = clusterAlias;
         this.waitForCheckpointsTimeout = searchRequest.getWaitForCheckpointsTimeout();
-        indices = shards.stream().map(Shard::getOriginalIndices).flatMap(Arrays::stream).distinct().toArray(String[]::new);
     }
 
     private static void collectAggregationQueries(Collection<AggregationBuilder> aggregations, List<QueryBuilder> aggregationQueries) {
@@ -165,18 +164,22 @@ public class CanMatchNodeRequest extends TransportRequest implements IndicesRequ
         // the significant terms aggregation, which also collects data over a background that
         // typically much larger than the search query. To accommodate for this, we take the union
         // of all queries to determine whether a request can match.
-        List<QueryBuilder> aggregationQueries = new ArrayList<>();
-        if (searchRequest.source() != null && searchRequest.source().aggregations() != null) {
-            collectAggregationQueries(searchRequest.source().aggregations().getAggregatorFactories(), aggregationQueries);
-        }
-        if (aggregationQueries.isEmpty()) {
-            return searchRequest.source();
-        } else {
-            List<SubSearchSourceBuilder> subSearches = new ArrayList<>(searchRequest.source().subSearches());
-            for (QueryBuilder aggregationQuery : aggregationQueries) {
-                subSearches.add(new SubSearchSourceBuilder(aggregationQuery));
+        var source = searchRequest.source();
+        final List<QueryBuilder> aggregationQueries;
+        if (source != null && source.aggregations() != null) {
+            aggregationQueries = new ArrayList<>();
+            collectAggregationQueries(source.aggregations().getAggregatorFactories(), aggregationQueries);
+            if (aggregationQueries.isEmpty()) {
+                return source;
+            } else {
+                List<SubSearchSourceBuilder> subSearches = new ArrayList<>(source.subSearches());
+                for (QueryBuilder aggregationQuery : aggregationQueries) {
+                    subSearches.add(new SubSearchSourceBuilder(aggregationQuery));
+                }
+                return source.shallowCopy().subSearches(subSearches);
             }
-            return searchRequest.source().shallowCopy().subSearches(subSearches);
+        } else {
+            return source;
         }
     }
 
@@ -201,8 +204,7 @@ public class CanMatchNodeRequest extends TransportRequest implements IndicesRequ
         nowInMillis = in.readVLong();
         clusterAlias = in.readOptionalString();
         waitForCheckpointsTimeout = in.readTimeValue();
-        shards = in.readCollectionAsList(Shard::new);
-        indices = shards.stream().map(Shard::getOriginalIndices).flatMap(Arrays::stream).distinct().toArray(String[]::new);
+        shards = in.readCollectionAsImmutableList(Shard::new);
     }
 
     @Override
@@ -227,10 +229,6 @@ public class CanMatchNodeRequest extends TransportRequest implements IndicesRequ
 
     public List<Shard> getShardLevelRequests() {
         return shards;
-    }
-
-    public List<ShardSearchRequest> createShardSearchRequests() {
-        return shards.stream().map(this::createShardSearchRequest).toList();
     }
 
     public ShardSearchRequest createShardSearchRequest(Shard r) {
@@ -258,9 +256,16 @@ public class CanMatchNodeRequest extends TransportRequest implements IndicesRequ
         return shardSearchRequest;
     }
 
+    private String[] indices;
+
     @Override
     public String[] indices() {
-        return indices;
+        String[] indicesRef = indices;
+        if (indicesRef == null) {
+            indicesRef = shards.stream().map(Shard::getOriginalIndices).flatMap(Arrays::stream).distinct().toArray(String[]::new);
+            indices = indicesRef;
+        }
+        return indicesRef;
     }
 
     @Override
@@ -276,7 +281,7 @@ public class CanMatchNodeRequest extends TransportRequest implements IndicesRequ
     @Override
     public String getDescription() {
         // Shard id is enough here, the request itself can be found by looking at the parent task description
-        return "shardIds[" + shards.stream().map(slr -> slr.shardId).toList() + "]";
+        return shards.stream().map(slr -> slr.shardId.toString()).collect(Collectors.joining(",", "shardIds[", "]"));
     }
 
 }

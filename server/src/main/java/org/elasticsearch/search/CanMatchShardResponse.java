@@ -27,7 +27,15 @@ public final class CanMatchShardResponse extends SearchPhaseResult {
         estimatedMinAndMax = in.readOptionalWriteable(MinAndMax::new);
     }
 
-    public CanMatchShardResponse(boolean canMatch, MinAndMax<?> estimatedMinAndMax) {
+    public static CanMatchShardResponse yes(MinAndMax<?> estimatedMinAndMax) {
+        return new CanMatchShardResponse(true, estimatedMinAndMax);
+    }
+
+    public static CanMatchShardResponse no() {
+        return new CanMatchShardResponse(false, null);
+    }
+
+    private CanMatchShardResponse(boolean canMatch, MinAndMax<?> estimatedMinAndMax) {
         this.canMatch = canMatch;
         this.estimatedMinAndMax = estimatedMinAndMax;
     }

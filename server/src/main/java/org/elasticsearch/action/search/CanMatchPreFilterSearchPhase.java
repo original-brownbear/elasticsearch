@@ -186,7 +186,7 @@ final class CanMatchPreFilterSearchPhase extends SearchPhase {
     }
 
     private void consumeResult(boolean canMatch, ShardSearchRequest request) {
-        CanMatchShardResponse result = new CanMatchShardResponse(canMatch, null);
+        CanMatchShardResponse result = canMatch ? CanMatchShardResponse.yes(null) : CanMatchShardResponse.no();
         result.setShardIndex(request.shardRequestIndex());
         results.consumeResult(result, () -> {});
     }
@@ -460,12 +460,18 @@ final class CanMatchPreFilterSearchPhase extends SearchPhase {
             consumeResult(shardIndex, true, null);
         }
 
-        synchronized void consumeResult(int shardIndex, boolean canMatch, MinAndMax<?> minAndMax) {
+        private void consumeResult(int shardIndex, boolean canMatch, MinAndMax<?> minAndMax) {
             if (canMatch) {
-                possibleMatches.set(shardIndex);
-                numPossibleMatches++;
+                synchronized (this) {
+                    possibleMatches.set(shardIndex);
+                    numPossibleMatches++;
+                    minAndMaxes[shardIndex] = minAndMax;
+                }
+            } else if (minAndMax != null) {
+                synchronized (this) {
+                    minAndMaxes[shardIndex] = minAndMax;
+                }
             }
-            minAndMaxes[shardIndex] = minAndMax;
         }
 
         synchronized int getNumPossibleMatches() {

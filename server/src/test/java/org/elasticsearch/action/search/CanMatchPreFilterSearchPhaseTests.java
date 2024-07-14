@@ -122,7 +122,11 @@ public class CanMatchPreFilterSearchPhaseTests extends ESTestCase {
                 numRequests.incrementAndGet();
                 final List<ResponseOrFailure> responses = new ArrayList<>();
                 for (CanMatchNodeRequest.Shard shard : request.getShardLevelRequests()) {
-                    responses.add(new ResponseOrFailure(new CanMatchShardResponse(shard.shardId().id() == 0 ? shard1 : shard2, null)));
+                    responses.add(
+                        new ResponseOrFailure(
+                            (shard.shardId().id() == 0 ? shard1 : shard2) ? CanMatchShardResponse.yes(null) : CanMatchShardResponse.no()
+                        )
+                    );
                 }
 
                 new Thread(() -> listener.onResponse(new CanMatchNodeResponse(responses))).start();
@@ -212,7 +216,7 @@ public class CanMatchPreFilterSearchPhaseTests extends ESTestCase {
                     if (throwException) {
                         responses.add(new ResponseOrFailure(new NullPointerException()));
                     } else {
-                        responses.add(new ResponseOrFailure(new CanMatchShardResponse(shard1, null)));
+                        responses.add(new ResponseOrFailure(shard1 ? CanMatchShardResponse.yes(null) : CanMatchShardResponse.no()));
                     }
                 }
 
@@ -312,7 +316,7 @@ public class CanMatchPreFilterSearchPhaseTests extends ESTestCase {
                             }
                         }
 
-                        responses.add(new ResponseOrFailure(new CanMatchShardResponse(canMatch, minMax)));
+                        responses.add(new ResponseOrFailure(canMatch ? CanMatchShardResponse.yes(minMax) : CanMatchShardResponse.no()));
                     }
 
                     new Thread(() -> listener.onResponse(new CanMatchNodeResponse(responses))).start();
@@ -414,7 +418,7 @@ public class CanMatchPreFilterSearchPhaseTests extends ESTestCase {
                                 shardToSkip.add(shard.shardId());
                             }
                         }
-                        responses.add(new ResponseOrFailure(new CanMatchShardResponse(canMatch, minMax)));
+                        responses.add(new ResponseOrFailure(canMatch ? CanMatchShardResponse.yes(minMax) : CanMatchShardResponse.no()));
                     }
 
                     new Thread(() -> listener.onResponse(new CanMatchNodeResponse(responses))).start();
@@ -1102,7 +1106,7 @@ public class CanMatchPreFilterSearchPhaseTests extends ESTestCase {
                 final List<ResponseOrFailure> responses = new ArrayList<>();
                 for (CanMatchNodeRequest.Shard shard : request.getShardLevelRequests()) {
                     requests.add(request.createShardSearchRequest(shard));
-                    responses.add(new ResponseOrFailure(new CanMatchShardResponse(true, null)));
+                    responses.add(new ResponseOrFailure(CanMatchShardResponse.yes(null)));
                 }
 
                 new Thread(() -> listener.onResponse(new CanMatchNodeResponse(responses))).start();

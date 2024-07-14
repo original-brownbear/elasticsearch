@@ -118,7 +118,6 @@ import org.elasticsearch.search.rank.feature.RankFeatureShardRequest;
 import org.elasticsearch.search.rescore.RescorerBuilder;
 import org.elasticsearch.search.searchafter.SearchAfterBuilder;
 import org.elasticsearch.search.sort.FieldSortBuilder;
-import org.elasticsearch.search.sort.MinAndMax;
 import org.elasticsearch.search.sort.SortAndFormats;
 import org.elasticsearch.search.sort.SortBuilder;
 import org.elasticsearch.search.suggest.Suggest;
@@ -1659,12 +1658,12 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
     }
 
     public void canMatch(CanMatchNodeRequest request, ActionListener<CanMatchNodeResponse> listener) {
-        final List<ShardSearchRequest> shardSearchRequests = request.createShardSearchRequests();
+        final List<CanMatchNodeRequest.Shard> shardSearchRequests = request.getShardLevelRequests();
         final List<CanMatchNodeResponse.ResponseOrFailure> responses = new ArrayList<>(shardSearchRequests.size());
-        for (ShardSearchRequest shardSearchRequest : shardSearchRequests) {
+        for (CanMatchNodeRequest.Shard shardSearchRequest : shardSearchRequests) {
             CanMatchShardResponse canMatchShardResponse;
             try {
-                canMatchShardResponse = canMatch(shardSearchRequest);
+                canMatchShardResponse = canMatch(request.createShardSearchRequest(shardSearchRequest));
                 responses.add(new CanMatchNodeResponse.ResponseOrFailure(canMatchShardResponse));
             } catch (Exception e) {
                 responses.add(new CanMatchNodeResponse.ResponseOrFailure(e));
@@ -1698,7 +1697,7 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
                     releasable = readerContext.markAsUsed(getKeepAlive(request));
                     indexService = readerContext.indexService();
                     if (canMatchAfterRewrite(request, indexService) == false) {
-                        return new CanMatchShardResponse(false, null);
+                        return CanMatchShardResponse.no();
                     }
                     searcher = readerContext.acquireSearcher(Engine.CAN_MATCH_SEARCH_SOURCE);
                 } catch (SearchContextMissingException e) {
@@ -1708,7 +1707,7 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
                     }
                     indexService = indicesService.indexServiceSafe(request.shardId().getIndex());
                     if (canMatchAfterRewrite(request, indexService) == false) {
-                        return new CanMatchShardResponse(false, null);
+                        return CanMatchShardResponse.no();
                     }
                     IndexShard indexShard = indexService.getShard(request.shardId().getId());
                     final Engine.SearcherSupplier searcherSupplier = indexShard.acquireSearcherSupplier();
@@ -1723,7 +1722,7 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
             } else {
                 indexService = indicesService.indexServiceSafe(request.shardId().getIndex());
                 if (canMatchAfterRewrite(request, indexService) == false) {
-                    return new CanMatchShardResponse(false, null);
+                    return CanMatchShardResponse.no();
                 }
                 IndexShard indexShard = indexService.getShard(request.shardId().getId());
                 boolean needsWaitForRefresh = request.waitForCheckpoint() != UNASSIGNED_SEQ_NO;
@@ -1743,14 +1742,12 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
                     request.getRuntimeMappings()
                 );
                 final boolean canMatch = queryStillMatchesAfterRewrite(request, context);
-                final MinAndMax<?> minMax;
                 if (canMatch || hasRefreshPending) {
                     FieldSortBuilder sortBuilder = FieldSortBuilder.getPrimaryFieldSortOrNull(request.source());
-                    minMax = sortBuilder != null ? FieldSortBuilder.getMinMaxOrNull(context, sortBuilder) : null;
+                    return CanMatchShardResponse.yes(sortBuilder != null ? FieldSortBuilder.getMinMaxOrNull(context, sortBuilder) : null);
                 } else {
-                    minMax = null;
+                    return CanMatchShardResponse.no();
                 }
-                return new CanMatchShardResponse(canMatch || hasRefreshPending, minMax);
             }
         } finally {
             Releasables.close(releasable);
