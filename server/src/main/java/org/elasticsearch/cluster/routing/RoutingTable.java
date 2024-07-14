@@ -105,7 +105,7 @@ public class RoutingTable implements Iterable<IndexRoutingTable>, Diffable<Routi
     }
 
     public IndexRoutingTable index(Index index) {
-        IndexRoutingTable indexRouting = index(index.getName());
+        IndexRoutingTable indexRouting = index(index.name());
         return indexRouting != null && indexRouting.getIndex().equals(index) ? indexRouting : null;
     }
 
@@ -402,7 +402,7 @@ public class RoutingTable implements Iterable<IndexRoutingTable>, Diffable<Routi
         ImmutableOpenMap.Builder<String, IndexRoutingTable> indicesRouting = ImmutableOpenMap.builder(indexRoutingTableBuilders.size());
         for (IndexRoutingTable.Builder indexBuilder : indexRoutingTableBuilders.values()) {
             IndexRoutingTable indexRoutingTable = indexBuilder.build();
-            indicesRouting.put(indexRoutingTable.getIndex().getName(), indexRoutingTable);
+            indicesRouting.put(indexRoutingTable.getIndex().name(), indexRoutingTable);
         }
         return new RoutingTable(version, indicesRouting.build());
     }
@@ -456,7 +456,7 @@ public class RoutingTable implements Iterable<IndexRoutingTable>, Diffable<Routi
             final ShardRouting shardRoutingEntry
         ) {
             Index index = shardRoutingEntry.index();
-            indexRoutingTableBuilders.computeIfAbsent(index.getName(), idxName -> IndexRoutingTable.builder(index))
+            indexRoutingTableBuilders.computeIfAbsent(index.name(), idxName -> IndexRoutingTable.builder(index))
                 .addShard(shardRoutingEntry);
         }
 
@@ -537,7 +537,7 @@ public class RoutingTable implements Iterable<IndexRoutingTable>, Diffable<Routi
                 IndexRoutingTable.Builder indexRoutingBuilder = new IndexRoutingTable.Builder(
                     shardRoutingRoleStrategy,
                     indexMetadata.getIndex()
-                ).initializeAsFromCloseToOpen(indexMetadata, indicesRouting.get(indexMetadata.getIndex().getName()));
+                ).initializeAsFromCloseToOpen(indexMetadata, indicesRouting.get(indexMetadata.getIndex().name()));
                 add(indexRoutingBuilder);
             }
             return this;
@@ -548,7 +548,7 @@ public class RoutingTable implements Iterable<IndexRoutingTable>, Diffable<Routi
             IndexRoutingTable.Builder indexRoutingBuilder = new IndexRoutingTable.Builder(
                 shardRoutingRoleStrategy,
                 indexMetadata.getIndex()
-            ).initializeAsFromOpenToClose(indexMetadata, indicesRouting.get(indexMetadata.getIndex().getName()));
+            ).initializeAsFromOpenToClose(indexMetadata, indicesRouting.get(indexMetadata.getIndex().name()));
             return add(indexRoutingBuilder);
         }
 
@@ -556,7 +556,7 @@ public class RoutingTable implements Iterable<IndexRoutingTable>, Diffable<Routi
             IndexRoutingTable.Builder indexRoutingBuilder = new IndexRoutingTable.Builder(
                 shardRoutingRoleStrategy,
                 indexMetadata.getIndex()
-            ).initializeAsRestore(indexMetadata, recoverySource, indicesRouting.get(indexMetadata.getIndex().getName()));
+            ).initializeAsRestore(indexMetadata, recoverySource, indicesRouting.get(indexMetadata.getIndex().name()));
             add(indexRoutingBuilder);
             return this;
         }
@@ -574,7 +574,7 @@ public class RoutingTable implements Iterable<IndexRoutingTable>, Diffable<Routi
             if (indicesRouting == null) {
                 throw new IllegalStateException("once build is called the builder cannot be reused");
             }
-            indicesRouting.put(indexRoutingTable.getIndex().getName(), indexRoutingTable);
+            indicesRouting.put(indexRoutingTable.getIndex().name(), indexRoutingTable);
             return this;
         }
 

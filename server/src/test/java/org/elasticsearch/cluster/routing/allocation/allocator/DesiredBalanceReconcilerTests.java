@@ -387,7 +387,7 @@ public class DesiredBalanceReconcilerTests extends ESAllocationTestCase {
         final var comparisonResult = Comparator.<IndexMetadata>comparingInt(indexMetadata -> indexMetadata.isSystem() ? 1 : 0)
             .thenComparingInt(IndexMetadata::priority)
             .thenComparingLong(IndexMetadata::getCreationDate)
-            .thenComparing(indexMetadata -> indexMetadata.getIndex().getName())
+            .thenComparing(indexMetadata -> indexMetadata.getIndex().name())
             .compare(indexMetadata0, indexMetadata1);
         assert comparisonResult != 0;
         final var higherIndex = comparisonResult > 0 ? indexMetadata0 : indexMetadata1;
@@ -420,7 +420,7 @@ public class DesiredBalanceReconcilerTests extends ESAllocationTestCase {
 
         final TriFunction<ClusterState, IndexMetadata, Integer, ShardRouting> primaryGetter = (state, indexMetadata, shardId) -> state
             .routingTable()
-            .shardRoutingTable(indexMetadata.getIndex().getName(), shardId)
+            .shardRoutingTable(indexMetadata.getIndex().name(), shardId)
             .primaryShard();
 
         final var state1 = startInitializingShardsAndReroute(allocationService, clusterState);
@@ -455,7 +455,7 @@ public class DesiredBalanceReconcilerTests extends ESAllocationTestCase {
 
         final TriFunction<ClusterState, IndexMetadata, Integer, ShardRouting> replicaGetter = (state, indexMetadata, shardId) -> state
             .routingTable()
-            .shardRoutingTable(indexMetadata.getIndex().getName(), shardId)
+            .shardRoutingTable(indexMetadata.getIndex().name(), shardId)
             .replicaShards()
             .get(0);
 

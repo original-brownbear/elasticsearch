@@ -219,7 +219,7 @@ public final class IndicesStore implements ClusterStateListener, Closeable {
 
     private void deleteShardIfExistElseWhere(ClusterState state, IndexShardRoutingTable indexShardRoutingTable) {
         List<Tuple<DiscoveryNode, ShardActiveRequest>> requests = new ArrayList<>(indexShardRoutingTable.size());
-        String indexUUID = indexShardRoutingTable.shardId().getIndex().getUUID();
+        String indexUUID = indexShardRoutingTable.shardId().getIndex().uuid();
         ClusterName clusterName = state.getClusterName();
         for (int copy = 0; copy < indexShardRoutingTable.size(); copy++) {
             ShardRouting shardRouting = indexShardRoutingTable.shard(copy);

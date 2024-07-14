@@ -135,7 +135,7 @@ public abstract class ESIndexLevelReplicationTestCase extends IndexShardTestCase
             .put(IndexSettings.INDEX_SOFT_DELETES_RETENTION_OPERATIONS_SETTING.getKey(), between(0, 1000))
             .put(indexSettings)
             .build();
-        IndexMetadata.Builder metadata = IndexMetadata.builder(index.getName())
+        IndexMetadata.Builder metadata = IndexMetadata.builder(index.name())
             .settings(settings)
             .putMapping(mappings)
             .primaryTerm(0, randomIntBetween(1, 100));
@@ -225,7 +225,7 @@ public abstract class ESIndexLevelReplicationTestCase extends IndexShardTestCase
 
         public int indexDocs(final int numOfDoc) throws Exception {
             for (int doc = 0; doc < numOfDoc; doc++) {
-                final IndexRequest indexRequest = new IndexRequest(index.getName()).id(Integer.toString(docId.incrementAndGet()))
+                final IndexRequest indexRequest = new IndexRequest(index.name()).id(Integer.toString(docId.incrementAndGet()))
                     .source("{}", XContentType.JSON);
                 final BulkItemResponse response = index(indexRequest);
                 if (response.isFailed()) {
@@ -239,7 +239,7 @@ public abstract class ESIndexLevelReplicationTestCase extends IndexShardTestCase
 
         public int appendDocs(final int numOfDoc) throws Exception {
             for (int doc = 0; doc < numOfDoc; doc++) {
-                final IndexRequest indexRequest = new IndexRequest(index.getName()).source("{}", XContentType.JSON);
+                final IndexRequest indexRequest = new IndexRequest(index.name()).source("{}", XContentType.JSON);
                 final BulkItemResponse response = index(indexRequest);
                 if (response.isFailed()) {
                     throw response.getFailure().getCause();

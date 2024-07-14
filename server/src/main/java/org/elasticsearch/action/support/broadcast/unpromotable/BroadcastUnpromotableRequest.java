@@ -45,7 +45,7 @@ public class BroadcastUnpromotableRequest extends ActionRequest implements Indic
         super(in);
         indexShardRoutingTable = null;
         shardId = new ShardId(in);
-        indices = new String[] { shardId.getIndex().getName() };
+        indices = new String[] { shardId.getIndex().name() };
         failShardOnError = in.getTransportVersion().onOrAfter(TransportVersions.V_8_9_X) && in.readBoolean();
     }
 
@@ -56,7 +56,7 @@ public class BroadcastUnpromotableRequest extends ActionRequest implements Indic
     public BroadcastUnpromotableRequest(IndexShardRoutingTable indexShardRoutingTable, boolean failShardOnError) {
         this.indexShardRoutingTable = Objects.requireNonNull(indexShardRoutingTable, "index shard routing table is null");
         this.shardId = indexShardRoutingTable.shardId();
-        this.indices = new String[] { this.shardId.getIndex().getName() };
+        this.indices = new String[] { this.shardId.getIndex().name() };
         this.failShardOnError = failShardOnError;
     }
 

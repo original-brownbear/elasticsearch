@@ -547,8 +547,8 @@ public class DesiredBalanceComputerTests extends ESAllocationTestCase {
             DesiredBalance.INITIAL,
             createInput(clusterState),
             queue(
-                new MoveAllocationCommand(index.getName(), 0, "node-1", "node-2"),
-                new MoveAllocationCommand(index.getName(), 1, "node-1", "node-2")
+                new MoveAllocationCommand(index.name(), 0, "node-1", "node-2"),
+                new MoveAllocationCommand(index.name(), 1, "node-1", "node-2")
             ),
             input -> true
         );
@@ -951,7 +951,7 @@ public class DesiredBalanceComputerTests extends ESAllocationTestCase {
                             snapshot,
                             RestoreInProgress.State.STARTED,
                             randomBoolean(),
-                            List.of(indexMetadata2.getIndex().getName(), indexMetadata3.getIndex().getName()),
+                            List.of(indexMetadata2.getIndex().name(), indexMetadata3.getIndex().name()),
                             Map.ofEntries(
                                 Map.entry(shardIdFrom(indexMetadata2, 0), new RestoreInProgress.ShardRestoreStatus(randomUUID())),
                                 Map.entry(shardIdFrom(indexMetadata3, 0), new RestoreInProgress.ShardRestoreStatus(randomUUID())),
@@ -1078,7 +1078,7 @@ public class DesiredBalanceComputerTests extends ESAllocationTestCase {
                             snapshot,
                             RestoreInProgress.State.STARTED,
                             randomBoolean(),
-                            List.of(indexMetadata2.getIndex().getName(), indexMetadata3.getIndex().getName()),
+                            List.of(indexMetadata2.getIndex().name(), indexMetadata3.getIndex().name()),
                             Map.ofEntries(
                                 Map.entry(shardIdFrom(indexMetadata2, 0), new RestoreInProgress.ShardRestoreStatus(randomUUID())),
                                 Map.entry(shardIdFrom(indexMetadata3, 0), new RestoreInProgress.ShardRestoreStatus(randomUUID())),
@@ -1173,7 +1173,7 @@ public class DesiredBalanceComputerTests extends ESAllocationTestCase {
     }
 
     private static IndexId indexIdFrom(IndexMetadata indexMetadata) {
-        return new IndexId(indexMetadata.getIndex().getName(), indexMetadata.getIndex().getUUID());
+        return new IndexId(indexMetadata.getIndex().name(), indexMetadata.getIndex().uuid());
     }
 
     private static ShardId shardIdFrom(IndexMetadata indexMetadata, int shardId) {

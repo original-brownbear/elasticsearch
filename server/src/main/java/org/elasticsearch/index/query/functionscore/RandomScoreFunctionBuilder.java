@@ -142,7 +142,7 @@ public class RandomScoreFunctionBuilder extends ScoreFunctionBuilder<RandomScore
 
     @Override
     protected ScoreFunction doToFunction(SearchExecutionContext context) {
-        final int salt = (context.index().getName().hashCode() << 10) | context.getShardId();
+        final int salt = (context.index().name().hashCode() << 10) | context.getShardId();
         if (seed == null) {
             // DocID-based random score generation
             return new RandomScoreFunction(hash(context.nowInMillis()), salt, null);

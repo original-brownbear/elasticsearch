@@ -96,7 +96,7 @@ public class ThrowingQueryBuilder extends AbstractQueryBuilder<ThrowingQueryBuil
         return new Query() {
             @Override
             public Weight createWeight(IndexSearcher searcher, ScoreMode scoreMode, float boost) throws IOException {
-                if (context.getShardId() == shardId || shardId < 0 || context.index().getName().equals(index)) {
+                if (context.getShardId() == shardId || shardId < 0 || context.index().name().equals(index)) {
                     throw failure;
                 }
                 return delegate.createWeight(searcher, scoreMode, boost);

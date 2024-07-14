@@ -53,7 +53,7 @@ public class ForceMergeStep extends AsyncActionStep {
         ClusterStateObserver observer,
         ActionListener<Void> listener
     ) {
-        String indexName = indexMetadata.getIndex().getName();
+        String indexName = indexMetadata.getIndex().name();
         ForceMergeRequest request = new ForceMergeRequest(indexName);
         request.maxNumSegments(maxNumSegments);
         getClient().admin().indices().forceMerge(request, listener.delegateFailureAndWrap((l, response) -> {

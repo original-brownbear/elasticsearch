@@ -70,12 +70,12 @@ public class CopyExecutionStateStep extends ClusterStateActionStep {
         IndexMetadata indexMetadata = clusterState.metadata().index(index);
         if (indexMetadata == null) {
             // Index must have been since deleted, ignore it
-            logger.debug("[{}] lifecycle action for index [{}] executed but index no longer exists", getKey().action(), index.getName());
+            logger.debug("[{}] lifecycle action for index [{}] executed but index no longer exists", getKey().action(), index.name());
             return clusterState;
         }
         // get target index
         LifecycleExecutionState lifecycleState = indexMetadata.getLifecycleExecutionState();
-        String targetIndexName = targetIndexNameSupplier.apply(index.getName(), lifecycleState);
+        String targetIndexName = targetIndexNameSupplier.apply(index.name(), lifecycleState);
         calculatedTargetIndexName.set(targetIndexName);
         IndexMetadata targetIndexMetadata = clusterState.metadata().index(targetIndexName);
 
@@ -83,11 +83,11 @@ public class CopyExecutionStateStep extends ClusterStateActionStep {
             logger.warn(
                 "[{}] index [{}] unable to copy execution state to target index [{}] as target index does not exist",
                 getKey().action(),
-                index.getName(),
+                index.name(),
                 targetIndexName
             );
             throw new IllegalStateException(
-                "unable to copy execution state from [" + index.getName() + "] to [" + targetIndexName + "] as target index does not exist"
+                "unable to copy execution state from [" + index.name() + "] to [" + targetIndexName + "] as target index does not exist"
             );
         }
 

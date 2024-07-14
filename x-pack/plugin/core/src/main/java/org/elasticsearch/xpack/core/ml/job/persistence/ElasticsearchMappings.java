@@ -171,7 +171,7 @@ public class ElasticsearchMappings {
         final var mappingCheck = new ActionRunnable<>(listener) {
             @Override
             protected void doRun() throws Exception {
-                String[] concreteIndices = indexAbstraction.getIndices().stream().map(Index::getName).toArray(String[]::new);
+                String[] concreteIndices = indexAbstraction.getIndices().stream().map(Index::name).toArray(String[]::new);
 
                 final String[] indicesThatRequireAnUpdate = mappingRequiresUpdate(state, concreteIndices, minVersion);
                 if (indicesThatRequireAnUpdate.length > 0) {

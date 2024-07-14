@@ -53,7 +53,7 @@ public class SnapshotShardFailureSerializationTests extends AbstractXContentTest
                         mutatedShardId = new ShardId(
                             new Index(
                                 originalShardId.getIndexName(),
-                                randomValueOtherThan(originalShardId.getIndex().getUUID(), () -> UUIDs.randomBase64UUID(random()))
+                                randomValueOtherThan(originalShardId.getIndex().uuid(), () -> UUIDs.randomBase64UUID(random()))
                             ),
                             originalShardId.id()
                         );

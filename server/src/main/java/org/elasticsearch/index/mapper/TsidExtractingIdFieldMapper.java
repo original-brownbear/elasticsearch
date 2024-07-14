@@ -71,7 +71,7 @@ public class TsidExtractingIdFieldMapper extends IdFieldMapper {
             if (context.sourceToParse().id() == null) {
                 throw new IllegalArgumentException(
                     "_ts_routing_hash was null but must be set because index ["
-                        + context.indexSettings().getIndexMetadata().getIndex().getName()
+                        + context.indexSettings().getIndexMetadata().getIndex().name()
                         + "] is in time_series mode"
                 );
             }
@@ -85,7 +85,7 @@ public class TsidExtractingIdFieldMapper extends IdFieldMapper {
                     "_id must be unset or set to [%s] but was [%s] because [%s] is in time_series mode",
                     id,
                     context.sourceToParse().id(),
-                    context.indexSettings().getIndexMetadata().getIndex().getName()
+                    context.indexSettings().getIndexMetadata().getIndex().name()
                 )
             );
         }

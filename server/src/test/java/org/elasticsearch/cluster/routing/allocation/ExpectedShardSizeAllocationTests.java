@@ -115,7 +115,7 @@ public class ExpectedShardSizeAllocationTests extends ESAllocationTestCase {
                             snapshot,
                             RestoreInProgress.State.STARTED,
                             false,
-                            List.of(indexMetadata.getIndex().getName()),
+                            List.of(indexMetadata.getIndex().name()),
                             Map.of(new ShardId(indexMetadata.getIndex(), 0), new RestoreInProgress.ShardRestoreStatus(randomIdentifier()))
                         )
                     ).build()

@@ -259,7 +259,7 @@ public class DownsampleConfig implements NamedWriteable, ToXContentObject {
             // bwc for downsample indices created pre 8.10 which didn't configure the origin
             sourceIndexName = IndexMetadata.INDEX_DOWNSAMPLE_SOURCE_NAME.get(sourceIndexMetadata.getSettings());
         } else {
-            sourceIndexName = sourceIndexMetadata.getIndex().getName();
+            sourceIndexName = sourceIndexMetadata.getIndex().name();
         }
         return prefix + fixedInterval + "-" + sourceIndexName;
     }

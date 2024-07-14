@@ -99,7 +99,7 @@ public class SlowRunningQueryBuilder extends AbstractQueryBuilder<SlowRunningQue
         return new Query() {
             @Override
             public Weight createWeight(IndexSearcher searcher, ScoreMode scoreMode, float boost) throws IOException {
-                if (index == null || context.index().getName().equals(index)) {
+                if (index == null || context.index().name().equals(index)) {
                     sleep();
                 }
                 return delegate.createWeight(searcher, scoreMode, boost);

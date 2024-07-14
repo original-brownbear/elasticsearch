@@ -36,7 +36,7 @@ public final class InitializePolicyContextStep extends ClusterStateActionStep {
     public ClusterState performAction(Index index, ClusterState clusterState) {
         IndexMetadata indexMetadata = clusterState.getMetadata().index(index);
         if (indexMetadata == null) {
-            logger.debug("[{}] lifecycle action for index [{}] executed but index no longer exists", getKey().action(), index.getName());
+            logger.debug("[{}] lifecycle action for index [{}] executed but index no longer exists", getKey().action(), index.name());
             // Index must have been since deleted, ignore it
             return clusterState;
         }
@@ -53,12 +53,12 @@ public final class InitializePolicyContextStep extends ClusterStateActionStep {
         Long parsedOriginationDate = null;
         try {
             if (shouldParseIndexName(indexMetadata.getSettings())) {
-                long parsedDate = parseIndexNameAndExtractDate(index.getName()); // can't return null
+                long parsedDate = parseIndexNameAndExtractDate(index.name()); // can't return null
                 parsedOriginationDate = parsedDate;
             }
         } catch (Exception e) {
             String policyName = indexMetadata.getLifecyclePolicyName();
-            throw new InitializePolicyException(policyName, index.getName(), e);
+            throw new InitializePolicyException(policyName, index.name(), e);
         }
 
         if (parsedOriginationDate == null) {

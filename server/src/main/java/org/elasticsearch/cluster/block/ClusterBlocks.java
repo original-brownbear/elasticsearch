@@ -334,7 +334,7 @@ public class ClusterBlocks implements SimpleDiffable<ClusterBlocks> {
         }
 
         public Builder addBlocks(IndexMetadata indexMetadata) {
-            String indexName = indexMetadata.getIndex().getName();
+            String indexName = indexMetadata.getIndex().name();
             if (indexMetadata.getState() == IndexMetadata.State.CLOSE) {
                 addIndexBlock(indexName, MetadataIndexStateService.INDEX_CLOSED_BLOCK);
             }
@@ -358,7 +358,7 @@ public class ClusterBlocks implements SimpleDiffable<ClusterBlocks> {
 
         public Builder updateBlocks(IndexMetadata indexMetadata) {
             // let's remove all blocks for this index and add them back -- no need to remove all individual blocks....
-            indices.remove(indexMetadata.getIndex().getName());
+            indices.remove(indexMetadata.getIndex().name());
             return addBlocks(indexMetadata);
         }
 

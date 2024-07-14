@@ -144,7 +144,7 @@ public abstract class TransportInstanceSingleOperationAction<
                     }
                 }
                 try {
-                    request.concreteIndex(indexNameExpressionResolver.concreteWriteIndex(clusterState, request).getName());
+                    request.concreteIndex(indexNameExpressionResolver.concreteWriteIndex(clusterState, request).name());
                 } catch (IndexNotFoundException e) {
                     if (request.includeDataStreams() == false && e.getMetadataKeys().contains(EXCLUDED_DATA_STREAMS_KEY)) {
                         throw new IllegalArgumentException("only write ops with an op_type of create are allowed in data streams");

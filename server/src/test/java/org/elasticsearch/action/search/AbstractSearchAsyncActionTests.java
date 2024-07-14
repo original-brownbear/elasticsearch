@@ -82,7 +82,11 @@ public class AbstractSearchAsyncActionTests extends ESTestCase {
             null,
             request,
             listener,
-            new GroupShardsIterator<>(Collections.singletonList(new SearchShardIterator(null, null, Collections.emptyList(), null))),
+            new GroupShardsIterator<>(
+                Collections.singletonList(
+                    new SearchShardIterator(null, new ShardId(new Index("idx", "_na_"), 0), Collections.emptyList(), null)
+                )
+            ),
             timeProvider,
             ClusterState.EMPTY_STATE,
             null,

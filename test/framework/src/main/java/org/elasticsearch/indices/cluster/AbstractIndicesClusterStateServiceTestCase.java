@@ -225,7 +225,7 @@ public abstract class AbstractIndicesClusterStateServiceTestCase extends ESTestC
         ) {
             if (hasIndex(index)) {
                 Map<String, MockIndexService> newIndices = new HashMap<>(indices);
-                newIndices.remove(index.getUUID());
+                newIndices.remove(index.uuid());
                 indices = unmodifiableMap(newIndices);
             }
             shardsClosedListener.onResponse(null);
@@ -234,7 +234,7 @@ public abstract class AbstractIndicesClusterStateServiceTestCase extends ESTestC
         @Override
         @Nullable
         public MockIndexService indexService(Index index) {
-            return indices.get(index.getUUID());
+            return indices.get(index.uuid());
         }
 
         @Override
@@ -261,7 +261,7 @@ public abstract class AbstractIndicesClusterStateServiceTestCase extends ESTestC
         public void processPendingDeletes(Index index, IndexSettings indexSettings, TimeValue timeValue) {}
 
         private boolean hasIndex(Index index) {
-            return indices.containsKey(index.getUUID());
+            return indices.containsKey(index.uuid());
         }
 
         @Override

@@ -159,12 +159,12 @@ public class DownsampleAction implements LifecycleAction {
             checkNotWriteIndex,
             (index, clusterState) -> {
                 IndexMetadata indexMetadata = clusterState.metadata().index(index);
-                assert indexMetadata != null : "invalid cluster metadata. index [" + index.getName() + "] metadata not found";
+                assert indexMetadata != null : "invalid cluster metadata. index [" + index.name() + "] metadata not found";
                 if (IndexSettings.MODE.get(indexMetadata.getSettings()) != IndexMode.TIME_SERIES) {
                     return false;
                 }
 
-                if (index.getName().equals(generateDownsampleIndexName(DOWNSAMPLED_INDEX_PREFIX, indexMetadata, fixedInterval))) {
+                if (index.name().equals(generateDownsampleIndexName(DOWNSAMPLED_INDEX_PREFIX, indexMetadata, fixedInterval))) {
                     var downsampleStatus = IndexMetadata.INDEX_DOWNSAMPLE_STATUS.get(indexMetadata.getSettings());
                     if (downsampleStatus == IndexMetadata.DownsampleTaskStatus.UNKNOWN) {
                         // This isn't a downsample index, but it has the name of our target downsample index - very bad, we'll skip the
@@ -174,7 +174,7 @@ public class DownsampleAction implements LifecycleAction {
                             "index [{}] as part of policy [{}] cannot be downsampled at interval [{}] in phase [{}] because it has"
                                 + " the name of the target downsample index and is itself not a downsampled index. Skipping the downsample "
                                 + "action.",
-                            index.getName(),
+                            index.name(),
                             indexMetadata.getLifecyclePolicyName(),
                             fixedInterval,
                             phase
@@ -260,8 +260,8 @@ public class DownsampleAction implements LifecycleAction {
             swapAliasesKey,
             replaceDataStreamIndexKey,
             (index, clusterState) -> {
-                IndexAbstraction indexAbstraction = clusterState.metadata().getIndicesLookup().get(index.getName());
-                assert indexAbstraction != null : "invalid cluster metadata. index [" + index.getName() + "] was not found";
+                IndexAbstraction indexAbstraction = clusterState.metadata().getIndicesLookup().get(index.name());
+                assert indexAbstraction != null : "invalid cluster metadata. index [" + index.name() + "] was not found";
                 return indexAbstraction.getParentDataStream() != null;
             }
         );

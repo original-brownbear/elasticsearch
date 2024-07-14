@@ -215,7 +215,7 @@ public class TermQueryBuilderTests extends AbstractTermQueryTestCase<TermQueryBu
     }
 
     public void testRewriteIndexQueryToNotMatchNone() throws IOException {
-        TermQueryBuilder query = QueryBuilders.termQuery("_index", getIndex().getName());
+        TermQueryBuilder query = QueryBuilders.termQuery("_index", getIndex().name());
         for (QueryRewriteContext context : new QueryRewriteContext[] { createSearchExecutionContext(), createQueryRewriteContext() }) {
             QueryBuilder rewritten = query.rewrite(context);
             assertThat(rewritten, instanceOf(MatchAllQueryBuilder.class));

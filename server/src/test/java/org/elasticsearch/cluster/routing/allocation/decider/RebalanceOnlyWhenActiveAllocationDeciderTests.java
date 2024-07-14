@@ -41,7 +41,7 @@ public class RebalanceOnlyWhenActiveAllocationDeciderTests extends ESAllocationT
         var replica = newShardRouting(new ShardId(index, 0), "node-2", false, STARTED);
 
         var state = ClusterState.builder(ClusterName.DEFAULT)
-            .metadata(Metadata.builder().put(IndexMetadata.builder(index.getName()).settings(indexSettings(IndexVersion.current(), 1, 1))))
+            .metadata(Metadata.builder().put(IndexMetadata.builder(index.name()).settings(indexSettings(IndexVersion.current(), 1, 1))))
             .nodes(DiscoveryNodes.builder().add(newNode("node-1")).add(newNode("node-2")).add(newNode("node-3")))
             .routingTable(RoutingTable.builder().add(IndexRoutingTable.builder(index).addShard(primary).addShard(replica)))
             .build();
@@ -62,7 +62,7 @@ public class RebalanceOnlyWhenActiveAllocationDeciderTests extends ESAllocationT
             : newShardRouting(new ShardId(index, 0), "node-2", false, INITIALIZING);
 
         var state = ClusterState.builder(ClusterName.DEFAULT)
-            .metadata(Metadata.builder().put(IndexMetadata.builder(index.getName()).settings(indexSettings(IndexVersion.current(), 1, 1))))
+            .metadata(Metadata.builder().put(IndexMetadata.builder(index.name()).settings(indexSettings(IndexVersion.current(), 1, 1))))
             .nodes(DiscoveryNodes.builder().add(newNode("node-1")).add(newNode("node-2")).add(newNode("node-3")))
             .routingTable(RoutingTable.builder().add(IndexRoutingTable.builder(index).addShard(primary).addShard(replica)))
             .build();
@@ -81,7 +81,7 @@ public class RebalanceOnlyWhenActiveAllocationDeciderTests extends ESAllocationT
         var replica2 = newShardRouting(new ShardId(index, 0), null, false, UNASSIGNED);
 
         var state = ClusterState.builder(ClusterName.DEFAULT)
-            .metadata(Metadata.builder().put(IndexMetadata.builder(index.getName()).settings(indexSettings(IndexVersion.current(), 1, 2))))
+            .metadata(Metadata.builder().put(IndexMetadata.builder(index.name()).settings(indexSettings(IndexVersion.current(), 1, 2))))
             .nodes(DiscoveryNodes.builder().add(newNode("node-1")).add(newNode("node-2")).add(newNode("node-3")))
             .routingTable(
                 RoutingTable.builder().add(IndexRoutingTable.builder(index).addShard(primary).addShard(replica1).addShard(replica2))
@@ -101,7 +101,7 @@ public class RebalanceOnlyWhenActiveAllocationDeciderTests extends ESAllocationT
         var replica = newShardRouting(new ShardId(index, 0), "node-2", "node-3", false, RELOCATING);
 
         var state = ClusterState.builder(ClusterName.DEFAULT)
-            .metadata(Metadata.builder().put(IndexMetadata.builder(index.getName()).settings(indexSettings(IndexVersion.current(), 1, 1))))
+            .metadata(Metadata.builder().put(IndexMetadata.builder(index.name()).settings(indexSettings(IndexVersion.current(), 1, 1))))
             .nodes(DiscoveryNodes.builder().add(newNode("node-1")).add(newNode("node-2")).add(newNode("node-3")))
             .routingTable(RoutingTable.builder().add(IndexRoutingTable.builder(index).addShard(primary).addShard(replica)))
             .build();

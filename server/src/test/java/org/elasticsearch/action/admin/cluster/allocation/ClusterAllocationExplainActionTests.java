@@ -154,7 +154,7 @@ public class ClusterAllocationExplainActionTests extends ESTestCase {
                 final IndexShardRoutingTable.Builder shardBuilder = new IndexShardRoutingTable.Builder(indexShardRoutingTable.shardId());
                 for (int copy = 0; copy < indexShardRoutingTable.size(); copy++) {
                     ShardRouting shardRouting = indexShardRoutingTable.shard(copy);
-                    if (shardRouting.primary() == false || indexRoutingTable.getIndex().getName().equals(redIndex)) {
+                    if (shardRouting.primary() == false || indexRoutingTable.getIndex().name().equals(redIndex)) {
                         // move all replicas and one primary to unassigned
                         shardBuilder.addShard(
                             shardRouting.moveToUnassigned(new UnassignedInfo(UnassignedInfo.Reason.ALLOCATION_FAILED, "test"))

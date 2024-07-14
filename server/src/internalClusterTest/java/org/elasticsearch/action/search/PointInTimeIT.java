@@ -242,7 +242,7 @@ public class PointInTimeIT extends ESIntegTestCase {
                 final Set<String> assignedNodes = clusterService().state()
                     .routingTable()
                     .allShards()
-                    .filter(shr -> shr.index().getName().equals("test") && shr.assignedToNode())
+                    .filter(shr -> shr.index().name().equals("test") && shr.assignedToNode())
                     .map(ShardRouting::currentNodeId)
                     .collect(Collectors.toSet());
                 assertThat(assignedNodes, everyItem(not(in(excludedNodes))));

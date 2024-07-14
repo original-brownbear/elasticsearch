@@ -57,13 +57,13 @@ public class SegmentCountStep extends AsyncWaitStep {
 
     @Override
     public void evaluateCondition(Metadata metadata, Index index, Listener listener, TimeValue masterTimeout) {
-        getClient().admin().indices().segments(new IndicesSegmentsRequest(index.getName()), ActionListener.wrap(response -> {
-            IndexSegments idxSegments = response.getIndices().get(index.getName());
+        getClient().admin().indices().segments(new IndicesSegmentsRequest(index.name()), ActionListener.wrap(response -> {
+            IndexSegments idxSegments = response.getIndices().get(index.name());
             if (idxSegments == null || (response.getShardFailures() != null && response.getShardFailures().length > 0)) {
                 final DefaultShardOperationFailedException[] failures = response.getShardFailures();
                 logger.info(
                     "[{}] retrieval of segment counts after force merge did not succeed, " + "there were {} shard failures. failures: {}",
-                    index.getName(),
+                    index.name(),
                     response.getFailedShards(),
                     failures == null
                         ? "n/a"
@@ -85,7 +85,7 @@ public class SegmentCountStep extends AsyncWaitStep {
                         .collect(Collectors.toMap(ShardSegments::getShardRouting, ss -> ss.getSegments().size()));
                     logger.info(
                         "[{}] best effort force merge to [{}] segments did not succeed for {} shards: {}",
-                        index.getName(),
+                        index.name(),
                         maxNumSegments,
                         unmergedShards.size(),
                         unmergedShardCounts

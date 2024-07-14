@@ -396,13 +396,13 @@ public final class RestoreService implements ClusterStateApplier {
         {
             Map<Boolean, Set<String>> backingIndices = dataStreamsToRestore.values()
                 .stream()
-                .flatMap(ds -> ds.getIndices().stream().map(idx -> new Tuple<>(ds.isSystem(), idx.getName())))
+                .flatMap(ds -> ds.getIndices().stream().map(idx -> new Tuple<>(ds.isSystem(), idx.name())))
                 .collect(Collectors.partitioningBy(Tuple::v1, Collectors.mapping(Tuple::v2, Collectors.toSet())));
             Map<Boolean, Set<String>> failureIndices = Map.of();
             if (DataStream.isFailureStoreFeatureFlagEnabled()) {
                 failureIndices = dataStreamsToRestore.values()
                     .stream()
-                    .flatMap(ds -> ds.getFailureIndices().getIndices().stream().map(idx -> new Tuple<>(ds.isSystem(), idx.getName())))
+                    .flatMap(ds -> ds.getFailureIndices().getIndices().stream().map(idx -> new Tuple<>(ds.isSystem(), idx.name())))
                     .collect(Collectors.partitioningBy(Tuple::v1, Collectors.mapping(Tuple::v2, Collectors.toSet())));
             }
             systemDataStreamIndices = Sets.union(backingIndices.getOrDefault(true, Set.of()), failureIndices.getOrDefault(true, Set.of()));
@@ -550,7 +550,7 @@ public final class RestoreService implements ClusterStateApplier {
     }
 
     private boolean isSystemIndex(IndexMetadata indexMetadata) {
-        return indexMetadata.isSystem() || systemIndices.isSystemName(indexMetadata.getIndex().getName());
+        return indexMetadata.isSystem() || systemIndices.isSystemName(indexMetadata.getIndex().name());
     }
 
     private static Tuple<Map<String, DataStream>, Map<String, DataStreamAlias>> getDataStreamsToRestore(
@@ -714,13 +714,13 @@ public final class RestoreService implements ClusterStateApplier {
         }
         List<Index> updatedIndices = dataStream.getIndices()
             .stream()
-            .map(i -> metadata.get(renameIndex(i.getName(), request, true, false)).getIndex())
+            .map(i -> metadata.get(renameIndex(i.name(), request, true, false)).getIndex())
             .toList();
         List<Index> updatedFailureIndices = DataStream.isFailureStoreFeatureFlagEnabled()
             ? dataStream.getFailureIndices()
                 .getIndices()
                 .stream()
-                .map(i -> metadata.get(renameIndex(i.getName(), request, false, true)).getIndex())
+                .map(i -> metadata.get(renameIndex(i.name(), request, false, true)).getIndex())
                 .toList()
             : List.of();
         return dataStream.copy()
@@ -1581,7 +1581,7 @@ public final class RestoreService implements ClusterStateApplier {
                         + "] with ["
                         + currentIndexMetadata.getNumberOfShards()
                         + "] shards from a snapshot of index ["
-                        + snapshotIndexMetadata.getIndex().getName()
+                        + snapshotIndexMetadata.getIndex().name()
                         + "] with ["
                         + snapshotIndexMetadata.getNumberOfShards()
                         + "] shards"
@@ -1713,7 +1713,7 @@ public final class RestoreService implements ClusterStateApplier {
                 }
             } catch (Exception e) {
                 final var metadata = snapshotIndexMetadata;
-                logger.warn(() -> "could not import mappings for legacy index " + metadata.getIndex().getName(), e);
+                logger.warn(() -> "could not import mappings for legacy index " + metadata.getIndex().name(), e);
                 // put mapping into _meta/legacy_mappings instead without adding anything else
                 convertedIndexMetadataBuilder = IndexMetadata.builder(snapshotIndexMetadata);
 
@@ -1762,7 +1762,7 @@ public final class RestoreService implements ClusterStateApplier {
             .aliasesVersion(Math.max(snapshotIndexMetadata.getAliasesVersion(), 1 + currentIndexMetadata.getAliasesVersion()))
             .timestampRange(IndexLongFieldRange.NO_SHARDS)
             .eventIngestedRange(IndexLongFieldRange.NO_SHARDS, minTransportVersion)
-            .index(currentIndexMetadata.getIndex().getName())
+            .index(currentIndexMetadata.getIndex().name())
             .settings(
                 Settings.builder()
                     .put(snapshotIndexMetadata.getSettings())
@@ -1807,7 +1807,7 @@ public final class RestoreService implements ClusterStateApplier {
                         repositoryName,
                         repositoryUuid,
                         snapshotInfo.snapshotId().getName(),
-                        index.getName(),
+                        index.name(),
                         snapshotInfo.indices().size()
                     )
                 );
@@ -1841,7 +1841,7 @@ public final class RestoreService implements ClusterStateApplier {
                             repositoryName,
                             repositoryUuid,
                             snapshotInfo.snapshotId().getName(),
-                            index.getName(),
+                            index.name(),
                             deleteSnapshot,
                             other.getIndex(),
                             otherDeleteSnap

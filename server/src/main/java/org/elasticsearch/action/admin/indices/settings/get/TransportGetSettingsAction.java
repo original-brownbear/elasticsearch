@@ -102,13 +102,13 @@ public class TransportGetSettingsAction extends TransportMasterNodeReadAction<Ge
                 indexSettings = indexSettings.filter(k -> Regex.simpleMatch(request.names(), k));
             }
 
-            indexToSettings.put(concreteIndex.getName(), indexSettings);
+            indexToSettings.put(concreteIndex.name(), indexSettings);
             if (indexToDefaultSettings != null) {
                 Settings defaultSettings = settingsFilter.filter(indexScopedSettings.diff(indexSettings, Settings.EMPTY));
                 if (isFilteredRequest(request)) {
                     defaultSettings = defaultSettings.filter(k -> Regex.simpleMatch(request.names(), k));
                 }
-                indexToDefaultSettings.put(concreteIndex.getName(), defaultSettings);
+                indexToDefaultSettings.put(concreteIndex.name(), defaultSettings);
             }
         }
         listener.onResponse(

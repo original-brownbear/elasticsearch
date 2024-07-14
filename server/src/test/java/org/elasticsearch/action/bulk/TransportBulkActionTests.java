@@ -395,11 +395,11 @@ public class TransportBulkActionTests extends ESTestCase {
             )
             .indices(
                 Map.of(
-                    backingIndex1.getIndex().getName(),
+                    backingIndex1.getIndex().name(),
                     backingIndex1,
-                    backingIndex2.getIndex().getName(),
+                    backingIndex2.getIndex().name(),
                     backingIndex2,
-                    failureStoreIndex1.getIndex().getName(),
+                    failureStoreIndex1.getIndex().name(),
                     failureStoreIndex1
                 )
             )
@@ -410,9 +410,9 @@ public class TransportBulkActionTests extends ESTestCase {
         // Data stream without failure store should not
         assertThat(TransportBulkAction.shouldStoreFailureInternal(dataStreamWithoutFailureStore, metadata, testTime), is(false));
         // An index should not be considered for failure storage
-        assertThat(TransportBulkAction.shouldStoreFailureInternal(backingIndex1.getIndex().getName(), metadata, testTime), is(false));
+        assertThat(TransportBulkAction.shouldStoreFailureInternal(backingIndex1.getIndex().name(), metadata, testTime), is(false));
         // even if that index is itself a failure store
-        assertThat(TransportBulkAction.shouldStoreFailureInternal(failureStoreIndex1.getIndex().getName(), metadata, testTime), is(false));
+        assertThat(TransportBulkAction.shouldStoreFailureInternal(failureStoreIndex1.getIndex().name(), metadata, testTime), is(false));
     }
 
     public void testResolveFailureStoreFromTemplate() throws Exception {

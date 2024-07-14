@@ -83,10 +83,10 @@ public class IndicesStatsResponse extends ChunkedBroadcastResponse {
             IndexMetadata indexMetadata = metadata.index(index);
             if (indexMetadata != null) {
                 indexHealthModifiableMap.computeIfAbsent(
-                    index.getName(),
+                    index.name(),
                     ignored -> new ClusterIndexHealth(indexMetadata, routingTable.index(index)).getStatus()
                 );
-                indexStateModifiableMap.computeIfAbsent(index.getName(), ignored -> indexMetadata.getState());
+                indexStateModifiableMap.computeIfAbsent(index.name(), ignored -> indexMetadata.getState());
             }
         }
         indexHealthMap = unmodifiableMap(indexHealthModifiableMap);
@@ -127,8 +127,8 @@ public class IndicesStatsResponse extends ChunkedBroadcastResponse {
         for (ShardStats shard : shards) {
             Index index = shard.getShardRouting().index();
             IndexStatsBuilder indexStatsBuilder = indexToIndexStatsBuilder.computeIfAbsent(
-                index.getName(),
-                k -> new IndexStatsBuilder(k, index.getUUID(), indexHealthMap.get(index.getName()), indexStateMap.get(index.getName()))
+                index.name(),
+                k -> new IndexStatsBuilder(k, index.uuid(), indexHealthMap.get(index.name()), indexStateMap.get(index.name()))
             );
             indexStatsBuilder.add(shard);
         }

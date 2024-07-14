@@ -102,7 +102,7 @@ public class TransportIndicesShardStoresActionTests extends ESTestCase {
                 );
 
                 for (final var indexRoutingTable : clusterState.routingTable()) {
-                    final var indexResponse = response.getStoreStatuses().get(indexRoutingTable.getIndex().getName());
+                    final var indexResponse = response.getStoreStatuses().get(indexRoutingTable.getIndex().name());
                     assertNotNull(indexResponse);
                     for (int shardNum = 0; shardNum < indexRoutingTable.size(); shardNum++) {
                         final var shardResponse = indexResponse.get(shardNum);

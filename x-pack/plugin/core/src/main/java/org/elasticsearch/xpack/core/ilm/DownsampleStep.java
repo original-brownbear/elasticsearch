@@ -60,11 +60,11 @@ public class DownsampleStep extends AsyncActionStep {
     ) {
         LifecycleExecutionState lifecycleState = indexMetadata.getLifecycleExecutionState();
         if (lifecycleState.lifecycleDate() == null) {
-            throw new IllegalStateException("source index [" + indexMetadata.getIndex().getName() + "] is missing lifecycle date");
+            throw new IllegalStateException("source index [" + indexMetadata.getIndex().name() + "] is missing lifecycle date");
         }
 
         final String policyName = indexMetadata.getLifecyclePolicyName();
-        final String indexName = indexMetadata.getIndex().getName();
+        final String indexName = indexMetadata.getIndex().name();
         final String downsampleIndexName = lifecycleState.downsampleIndexName();
         IndexMetadata downsampleIndexMetadata = currentState.metadata().index(downsampleIndexName);
         if (downsampleIndexMetadata != null) {

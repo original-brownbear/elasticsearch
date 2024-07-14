@@ -173,7 +173,8 @@ public final class SearchShardIterator implements Comparable<SearchShardIterator
 
     @Override
     public int hashCode() {
-        return Objects.hash(clusterAlias, shardId);
+        var clusterAlias = this.clusterAlias;
+        return 31 * (31 + (clusterAlias == null ? 0 : clusterAlias.hashCode())) + shardId.hashCode();
     }
 
     @Override

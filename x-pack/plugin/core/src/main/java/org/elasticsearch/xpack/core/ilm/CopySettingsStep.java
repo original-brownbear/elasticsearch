@@ -63,7 +63,7 @@ public class CopySettingsStep extends ClusterStateActionStep {
 
     @Override
     public ClusterState performAction(Index index, ClusterState clusterState) {
-        String sourceIndexName = index.getName();
+        String sourceIndexName = index.name();
         IndexMetadata sourceIndexMetadata = clusterState.metadata().index(sourceIndexName);
         if (sourceIndexMetadata == null) {
             // Index must have been since deleted, ignore it

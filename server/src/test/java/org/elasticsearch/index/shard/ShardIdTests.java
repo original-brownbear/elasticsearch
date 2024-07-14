@@ -45,14 +45,14 @@ public class ShardIdTests extends AbstractWireSerializingTestCase<ShardId> {
         ShardId id = ShardId.fromString("[" + indexName + "][" + shardId + "]");
         assertEquals(indexName, id.getIndexName());
         assertEquals(shardId, id.getId());
-        assertEquals(indexName, id.getIndex().getName());
-        assertEquals(IndexMetadata.INDEX_UUID_NA_VALUE, id.getIndex().getUUID());
+        assertEquals(indexName, id.getIndex().name());
+        assertEquals(IndexMetadata.INDEX_UUID_NA_VALUE, id.getIndex().uuid());
 
         id = ShardId.fromString("[some]weird[0]Name][-125]");
         assertEquals("some]weird[0]Name", id.getIndexName());
         assertEquals(-125, id.getId());
-        assertEquals("some]weird[0]Name", id.getIndex().getName());
-        assertEquals(IndexMetadata.INDEX_UUID_NA_VALUE, id.getIndex().getUUID());
+        assertEquals("some]weird[0]Name", id.getIndex().name());
+        assertEquals(IndexMetadata.INDEX_UUID_NA_VALUE, id.getIndex().uuid());
 
         String badId = indexName + "," + shardId; // missing separator
         IllegalArgumentException ex = expectThrows(IllegalArgumentException.class, () -> ShardId.fromString(badId));

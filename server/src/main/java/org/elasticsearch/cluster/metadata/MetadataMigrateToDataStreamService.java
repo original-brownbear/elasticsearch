@@ -115,7 +115,7 @@ public class MetadataMigrateToDataStreamService {
                             throw new IllegalStateException(e);
                         }
                     }, request, metadataCreateIndexService, clusterService.getSettings(), delegate.reroute());
-                    writeIndexRef.set(clusterState.metadata().dataStreams().get(request.aliasName).getWriteIndex().getName());
+                    writeIndexRef.set(clusterState.metadata().dataStreams().get(request.aliasName).getWriteIndex().name());
                     return clusterState;
                 }
             }
@@ -225,7 +225,7 @@ public class MetadataMigrateToDataStreamService {
     ) throws IOException {
         MappingMetadata mm = im.mapping();
         if (mm == null) {
-            throw new IllegalArgumentException("backing index [" + im.getIndex().getName() + "] must have mappings for a timestamp field");
+            throw new IllegalArgumentException("backing index [" + im.getIndex().name() + "] must have mappings for a timestamp field");
         }
 
         MapperService mapperService = mapperSupplier.apply(im);
@@ -265,7 +265,7 @@ public class MetadataMigrateToDataStreamService {
         for (Index index : alias.getIndices()) {
             IndexMetadata im = currentState.metadata().index(index);
             if (im.getAliases().size() > 1 || im.getAliases().containsKey(alias.getName()) == false) {
-                indicesWithOtherAliases.add(index.getName());
+                indicesWithOtherAliases.add(index.name());
             }
         }
         if (indicesWithOtherAliases.size() > 0) {

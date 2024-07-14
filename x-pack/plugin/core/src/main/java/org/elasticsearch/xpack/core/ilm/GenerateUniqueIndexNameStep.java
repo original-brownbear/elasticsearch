@@ -65,7 +65,7 @@ public class GenerateUniqueIndexNameStep extends ClusterStateActionStep {
         IndexMetadata indexMetadata = clusterState.metadata().index(index);
         if (indexMetadata == null) {
             // Index must have been since deleted, ignore it
-            logger.debug("[{}] lifecycle action for index [{}] executed but index no longer exists", getKey().action(), index.getName());
+            logger.debug("[{}] lifecycle action for index [{}] executed but index no longer exists", getKey().action(), index.name());
             return clusterState;
         }
 
@@ -73,13 +73,13 @@ public class GenerateUniqueIndexNameStep extends ClusterStateActionStep {
 
         Builder newLifecycleState = LifecycleExecutionState.builder(lifecycleState);
         String policyName = indexMetadata.getLifecyclePolicyName();
-        String generatedIndexName = generateIndexName(prefix, index.getName());
+        String generatedIndexName = generateIndexName(prefix, index.name());
         ActionRequestValidationException validationException = validateGeneratedIndexName(generatedIndexName, clusterState);
         if (validationException != null) {
             logger.warn(
                 "unable to generate a valid index name as part of policy [{}] for index [{}] due to [{}]",
                 policyName,
-                index.getName(),
+                index.name(),
                 validationException.getMessage()
             );
             throw validationException;

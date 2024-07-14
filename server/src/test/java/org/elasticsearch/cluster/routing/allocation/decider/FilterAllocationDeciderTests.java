@@ -190,7 +190,7 @@ public class FilterAllocationDeciderTests extends ESAllocationTestCase {
             .build();
         metadata.put(sourceIndex, false);
         indexSettings.put(INDEX_RESIZE_SOURCE_UUID.getKey(), sourceIndex.getIndexUUID());
-        indexSettings.put(INDEX_RESIZE_SOURCE_NAME.getKey(), sourceIndex.getIndex().getName());
+        indexSettings.put(INDEX_RESIZE_SOURCE_NAME.getKey(), sourceIndex.getIndex().name());
         final IndexMetadata.Builder indexMetadataBuilder = IndexMetadata.builder("idx")
             .settings(indexSettings)
             .numberOfShards(1)

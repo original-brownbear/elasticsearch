@@ -439,12 +439,12 @@ public class DataStreamLifecycleService implements ClusterStateListener, Closeab
             if (IndexSettings.MODE.get(backingIndex.getSettings()) == IndexMode.TIME_SERIES) {
                 Instant configuredEndTime = IndexSettings.TIME_SERIES_END_TIME.get(backingIndex.getSettings());
                 assert configuredEndTime != null
-                    : "a time series index must have an end time configured but [" + index.getName() + "] does not";
+                    : "a time series index must have an end time configured but [" + index.name() + "] does not";
                 if (nowSupplier.getAsLong() <= configuredEndTime.toEpochMilli()) {
                     logger.trace(
                         "Data stream lifecycle will not perform any operations in this run on time series index [{}] because "
                             + "its configured [{}] end time has not lapsed",
-                        index.getName(),
+                        index.name(),
                         configuredEndTime
                     );
                     tsIndicesWithinBounds.add(index);
@@ -484,7 +484,7 @@ public class DataStreamLifecycleService implements ClusterStateListener, Closeab
                 continue;
             }
 
-            String indexName = index.getName();
+            String indexName = index.name();
             String downsamplingSourceIndex = IndexMetadata.INDEX_DOWNSAMPLE_SOURCE_NAME.get(backingIndexMeta.getSettings());
 
             // if the current index is not a downsample we want to mark the index as read-only before proceeding with downsampling
@@ -523,7 +523,7 @@ public class DataStreamLifecycleService implements ClusterStateListener, Closeab
         DataStreamLifecycle.Downsampling.Round lastRound = downsamplingRounds.get(downsamplingRounds.size() - 1);
 
         Index index = backingIndex.getIndex();
-        String indexName = index.getName();
+        String indexName = index.name();
         for (DataStreamLifecycle.Downsampling.Round round : downsamplingRounds) {
             // the downsample index name for each round is deterministic
             String downsampleIndexName = DownsampleConfig.generateDownsampleIndexName(
@@ -595,8 +595,8 @@ public class DataStreamLifecycleService implements ClusterStateListener, Closeab
         Index downsampleIndex
     ) {
         Set<Index> affectedIndices = new HashSet<>();
-        String indexName = backingIndex.getName();
-        String downsampleIndexName = downsampleIndex.getName();
+        String indexName = backingIndex.name();
+        String downsampleIndexName = downsampleIndex.name();
         return switch (downsampleStatus) {
             case UNKNOWN -> {
                 if (currentRound.equals(lastRound)) {
@@ -829,7 +829,7 @@ public class DataStreamLifecycleService implements ClusterStateListener, Closeab
                     rolloverRequest,
                     new ErrorRecordingActionListener(
                         RolloverAction.NAME,
-                        currentRunWriteIndex.getName(),
+                        currentRunWriteIndex.name(),
                         errorStore,
                         Strings.format(
                             "Data stream lifecycle encountered an error trying to roll over%s data stream [%s]",
@@ -838,7 +838,7 @@ public class DataStreamLifecycleService implements ClusterStateListener, Closeab
                         ),
                         signallingErrorRetryInterval
                     ),
-                    (req, reqListener) -> rolloverDataStream(currentRunWriteIndex.getName(), rolloverRequest, reqListener)
+                    (req, reqListener) -> rolloverDataStream(currentRunWriteIndex.name(), rolloverRequest, reqListener)
                 );
             }
         } catch (Exception e) {
@@ -853,10 +853,10 @@ public class DataStreamLifecycleService implements ClusterStateListener, Closeab
             );
             DataStream latestDataStream = clusterService.state().metadata().dataStreams().get(dataStream.getName());
             if (latestDataStream != null) {
-                if (latestDataStream.getWriteIndex().getName().equals(currentRunWriteIndex.getName())) {
+                if (latestDataStream.getWriteIndex().name().equals(currentRunWriteIndex.name())) {
                     // data stream has not been rolled over in the meantime so record the error against the write index we
                     // attempted the rollover
-                    errorStore.recordError(currentRunWriteIndex.getName(), e);
+                    errorStore.recordError(currentRunWriteIndex.name(), e);
                 }
             }
         }
@@ -897,7 +897,7 @@ public class DataStreamLifecycleService implements ClusterStateListener, Closeab
                         "Data stream lifecycle skips deleting index [{}] even though its retention period [{}] has lapsed "
                             + "because there's a downsampling operation currently in progress for this index. Current downsampling "
                             + "status is [{}]. When downsampling completes, DSL will delete this index.",
-                        index.getName(),
+                        index.name(),
                         effectiveDataRetention,
                         downsampleStatus
                     );
@@ -908,7 +908,7 @@ public class DataStreamLifecycleService implements ClusterStateListener, Closeab
 
                     // there's an opportunity here to batch the delete requests (i.e. delete 100 indices / request)
                     // let's start simple and reevaluate
-                    String indexName = backingIndex.getIndex().getName();
+                    String indexName = backingIndex.getIndex().name();
                     deleteIndexOnce(indexName, "the lapsed [" + effectiveDataRetention + "] retention period");
                 }
             }
@@ -926,7 +926,7 @@ public class DataStreamLifecycleService implements ClusterStateListener, Closeab
         for (Index index : indices) {
             IndexMetadata backingIndex = metadata.index(index);
             assert backingIndex != null : "the data stream backing indices must exist";
-            String indexName = index.getName();
+            String indexName = index.name();
             boolean alreadyForceMerged = isForceMergeComplete(backingIndex);
             if (alreadyForceMerged) {
                 logger.trace("Already force merged {}", indexName);
@@ -1021,7 +1021,7 @@ public class DataStreamLifecycleService implements ClusterStateListener, Closeab
             @Override
             public void onFailure(Exception e) {
                 DataStream dataStream = clusterService.state().metadata().dataStreams().get(rolloverTarget);
-                if (dataStream == null || dataStream.getWriteIndex().getName().equals(writeIndexName) == false) {
+                if (dataStream == null || dataStream.getWriteIndex().name().equals(writeIndexName) == false) {
                     // the data stream has another write index so no point in recording an error for the previous write index we were
                     // attempting to roll over
                     // if there are persistent issues with rolling over this data stream, the next data stream lifecycle run will attempt to
@@ -1095,7 +1095,7 @@ public class DataStreamLifecycleService implements ClusterStateListener, Closeab
                 } else {
                     Optional<AddIndexBlockResponse.AddBlockResult> resultForTargetIndex = addIndexBlockResponse.getIndices()
                         .stream()
-                        .filter(blockResult -> blockResult.getIndex().getName().equals(targetIndex))
+                        .filter(blockResult -> blockResult.getIndex().name().equals(targetIndex))
                         .findAny();
                     if (resultForTargetIndex.isEmpty()) {
                         // blimey

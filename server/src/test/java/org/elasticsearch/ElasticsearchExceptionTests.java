@@ -161,7 +161,7 @@ public class ElasticsearchExceptionTests extends ESTestCase {
             assertEquals(1, ((ParsingException) rootCauses[0]).getLineNumber());
             assertEquals(2, ((ParsingException) rootCauses[0]).getColumnNumber());
             assertEquals("query_shard_exception", ElasticsearchException.getExceptionName(rootCauses[1]));
-            assertEquals("foo1", rootCauses[1].getIndex().getName());
+            assertEquals("foo1", rootCauses[1].getIndex().name());
             assertEquals("foobar", rootCauses[1].getMessage());
         }
 

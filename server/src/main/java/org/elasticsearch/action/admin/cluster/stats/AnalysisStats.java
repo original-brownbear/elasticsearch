@@ -141,7 +141,7 @@ public final class AnalysisStats implements ToXContentFragment, Writeable {
             aggregateSynonymsStats(
                 tokenFilterSettings.values(),
                 usedSynonyms,
-                indexMetadata.getIndex().getName(),
+                indexMetadata.getIndex().name(),
                 synonymsIdsUsed,
                 synonymsIdsUsedInIndices
             );

@@ -531,7 +531,7 @@ public class TransportWriteActionTests extends ESTestCase {
         when(indicesService.indexService(any(Index.class))).then(invocation -> {
             Index index = (Index) invocation.getArguments()[0];
             final ClusterState state = clusterService.state();
-            if (state.metadata().hasIndex(index.getName())) {
+            if (state.metadata().hasIndex(index.name())) {
                 return mockIndexService(clusterService.state().metadata().getIndexSafe(index), clusterService);
             } else {
                 return null;

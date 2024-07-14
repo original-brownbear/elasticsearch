@@ -727,7 +727,7 @@ public class ClusterState implements ChunkedToXContent, Diffable<ClusterState> {
                     });
                     return Iterators.concat(
                         Iterators.single(
-                            (builder, params) -> builder.startObject(indexRoutingTable.getIndex().getName()).startObject("shards")
+                            (builder, params) -> builder.startObject(indexRoutingTable.getIndex().name()).startObject("shards")
                         ),
                         Iterators.flatMap(input, Function.identity()),
                         Iterators.single((builder, params) -> builder.endObject().endObject())

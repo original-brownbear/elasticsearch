@@ -102,7 +102,7 @@ public class LocalAllocateDangledIndices {
         public void messageReceived(final AllocateDangledRequest request, final TransportChannel channel, Task task) throws Exception {
             String[] indexNames = new String[request.indices.length];
             for (int i = 0; i < request.indices.length; i++) {
-                indexNames[i] = request.indices[i].getIndex().getName();
+                indexNames[i] = request.indices[i].getIndex().name();
             }
             final String source = "allocation dangled indices " + Arrays.toString(indexNames);
 
@@ -150,10 +150,10 @@ public class LocalAllocateDangledIndices {
                             );
                             continue;
                         }
-                        if (currentState.metadata().hasIndex(indexMetadata.getIndex().getName())) {
+                        if (currentState.metadata().hasIndex(indexMetadata.getIndex().name())) {
                             continue;
                         }
-                        if (currentState.metadata().hasAlias(indexMetadata.getIndex().getName())) {
+                        if (currentState.metadata().hasAlias(indexMetadata.getIndex().name())) {
                             logger.warn(
                                 "ignoring dangled index [{}] on node [{}] due to an existing alias with the same name",
                                 indexMetadata.getIndex(),

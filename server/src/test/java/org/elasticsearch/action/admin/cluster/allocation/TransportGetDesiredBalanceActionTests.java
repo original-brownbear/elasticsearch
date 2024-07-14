@@ -205,7 +205,7 @@ public class TransportGetDesiredBalanceActionTests extends ESAllocationTestCase 
 
         List<ShardId> shardIds = routingTable.allShards().map(ShardRouting::shardId).toList();
         Map<String, Set<ShardId>> indexShards = shardIds.stream()
-            .collect(Collectors.groupingBy(e -> e.getIndex().getName(), Collectors.toSet()));
+            .collect(Collectors.groupingBy(e -> e.getIndex().name(), Collectors.toSet()));
         Map<ShardId, ShardAssignment> shardAssignments = new HashMap<>();
         if (shardIds.size() > 0) {
             for (int i = 0; i < randomInt(8); i++) {
@@ -262,7 +262,7 @@ public class TransportGetDesiredBalanceActionTests extends ESAllocationTestCase 
                     assertEquals(shard.primary(), shardView.primary());
                     assertEquals(shard.currentNodeId(), shardView.node());
                     assertEquals(shard.relocatingNodeId(), shardView.relocatingNode());
-                    assertEquals(shard.index().getName(), shardView.index());
+                    assertEquals(shard.index().name(), shardView.index());
                     assertEquals(shard.shardId().id(), shardView.shardId());
                     var forecastedWriteLoad = TEST_WRITE_LOAD_FORECASTER.getForecastedWriteLoad(indexMetadata);
                     assertEquals(forecastedWriteLoad.isPresent() ? forecastedWriteLoad.getAsDouble() : null, shardView.forecastWriteLoad());

@@ -77,7 +77,7 @@ public class SwapAliasesAndDeleteSourceIndexStep extends AsyncActionStep {
         ClusterStateObserver observer,
         ActionListener<Void> listener
     ) {
-        String originalIndex = indexMetadata.getIndex().getName();
+        String originalIndex = indexMetadata.getIndex().name();
         final String targetIndexName = targetIndexNameSupplier.apply(originalIndex, indexMetadata.getLifecycleExecutionState());
         IndexMetadata targetIndexMetadata = currentClusterState.metadata().index(targetIndexName);
 
@@ -113,7 +113,7 @@ public class SwapAliasesAndDeleteSourceIndexStep extends AsyncActionStep {
         ActionListener<Void> listener,
         boolean createSourceIndexAlias
     ) {
-        String sourceIndexName = sourceIndex.getIndex().getName();
+        String sourceIndexName = sourceIndex.getIndex().name();
         IndicesAliasesRequest aliasesRequest = new IndicesAliasesRequest().masterNodeTimeout(TimeValue.MAX_VALUE)
             .addAliasAction(IndicesAliasesRequest.AliasActions.removeIndex().index(sourceIndexName));
 

@@ -302,7 +302,7 @@ public class IndexRequestTests extends ESTestCase {
             request.source(renderSource(source, randomFrom(start1, end1, start2, end2)), XContentType.JSON);
 
             var result = request.getConcreteWriteIndex(metadata.getIndicesLookup().get(indexName), metadata);
-            assertThat(result.getName(), equalTo(indexName));
+            assertThat(result.name(), equalTo(indexName));
         }
         {
             String regularDataStream = "logs_another-app_prod";
@@ -325,7 +325,7 @@ public class IndexRequestTests extends ESTestCase {
             request.source(renderSource(source, randomFrom(start1, end1, start2, end2)), XContentType.JSON);
 
             var result = request.getConcreteWriteIndex(metadata2.getIndicesLookup().get(regularDataStream), metadata2);
-            assertThat(result.getName(), equalTo(backingIndex2.getIndex().getName()));
+            assertThat(result.name(), equalTo(backingIndex2.getIndex().name()));
         }
         {
             // provided timestamp resolves to the first backing index

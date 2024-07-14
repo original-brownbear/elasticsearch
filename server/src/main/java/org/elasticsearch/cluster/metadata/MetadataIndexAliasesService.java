@@ -128,7 +128,7 @@ public class MetadataIndexAliasesService {
                 Function<String, String> lookup = name -> {
                     IndexMetadata imd = metadata.get(name);
                     if (imd != null) {
-                        return imd.getIndex().getName();
+                        return imd.getIndex().name();
                     }
                     DataStream dataStream = metadata.dataStream(name);
                     if (dataStream != null) {
@@ -144,7 +144,7 @@ public class MetadataIndexAliasesService {
                         AliasValidator.validateAlias(alias, action.getIndex(), indexRouting, lookup);
                         if (Strings.hasLength(filter)) {
                             for (Index index : dataStream.getIndices()) {
-                                IndexMetadata imd = metadata.get(index.getName());
+                                IndexMetadata imd = metadata.get(index.name());
                                 if (imd == null) {
                                     throw new IndexNotFoundException(action.getIndex());
                                 }
@@ -173,7 +173,7 @@ public class MetadataIndexAliasesService {
                 };
                 if (action.apply(newAliasValidator, metadata, index)) {
                     changed = true;
-                    maybeModifiedIndices.add(index.getIndex().getName());
+                    maybeModifiedIndices.add(index.getIndex().name());
                 }
             }
 
@@ -222,7 +222,7 @@ public class MetadataIndexAliasesService {
         String alias,
         String filter
     ) {
-        IndexService indexService = indices.get(index.getIndex().getName());
+        IndexService indexService = indices.get(index.getIndex().name());
         if (indexService == null) {
             indexService = indicesService.indexService(index.getIndex());
             if (indexService == null) {

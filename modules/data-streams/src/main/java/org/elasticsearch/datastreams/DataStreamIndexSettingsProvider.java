@@ -99,7 +99,7 @@ public class DataStreamIndexSettingsProvider implements IndexSettingProvider {
                                 String.format(
                                     Locale.ROOT,
                                     "backing index [%s] in tsdb mode doesn't have the [%s] index setting",
-                                    currentLatestBackingIndex.getIndex().getName(),
+                                    currentLatestBackingIndex.getIndex().name(),
                                     IndexSettings.TIME_SERIES_END_TIME.getKey()
                                 )
                             );

@@ -25,11 +25,11 @@ import java.util.Objects;
 /**
  * A value class representing the basic required properties of an Elasticsearch index.
  */
-public class Index implements Writeable, ToXContentObject {
+public record Index(String name, String uuid) implements Writeable, ToXContentObject {
 
     public static final Index[] EMPTY_ARRAY = new Index[0];
 
-    public static Comparator<Index> COMPARE_BY_NAME = Comparator.comparing(Index::getName);
+    public static Comparator<Index> COMPARE_BY_NAME = Comparator.comparing(Index::name);
 
     private static final String INDEX_UUID_KEY = "index_uuid";
     private static final String INDEX_NAME_KEY = "index_name";
@@ -38,9 +38,6 @@ public class Index implements Writeable, ToXContentObject {
         INDEX_PARSER.declareString(Builder::name, new ParseField(INDEX_NAME_KEY));
         INDEX_PARSER.declareString(Builder::uuid, new ParseField(INDEX_UUID_KEY));
     }
-
-    private final String name;
-    private final String uuid;
 
     public Index(String name, String uuid) {
         this.name = Objects.requireNonNull(name);
@@ -51,16 +48,7 @@ public class Index implements Writeable, ToXContentObject {
      * Read from a stream.
      */
     public Index(StreamInput in) throws IOException {
-        this.name = in.readString();
-        this.uuid = in.readString();
-    }
-
-    public String getName() {
-        return this.name;
-    }
-
-    public String getUUID() {
-        return uuid;
+        this(in.readString(), in.readString());
     }
 
     @Override

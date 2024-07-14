@@ -138,7 +138,7 @@ public class ReindexValidator {
              * it. This is the same sort of dance that TransportIndexRequest
              * uses to decide to autocreate the index.
              */
-            target = indexNameExpressionResolver.concreteWriteIndex(clusterState, destination).getName();
+            target = indexNameExpressionResolver.concreteWriteIndex(clusterState, destination).name();
         }
         SearchRequest filteredSource = skipRemoteIndexNames(source);
         if (filteredSource.indices().length == 0) {

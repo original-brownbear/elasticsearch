@@ -1104,7 +1104,7 @@ public abstract class IndexShardTestCase extends ESTestCase {
     protected void recoverShardFromSnapshot(final IndexShard shard, final Snapshot snapshot, final Repository repository) {
         final IndexVersion version = IndexVersion.current();
         final ShardId shardId = shard.shardId();
-        final IndexId indexId = new IndexId(shardId.getIndex().getName(), shardId.getIndex().getUUID());
+        final IndexId indexId = new IndexId(shardId.getIndex().name(), shardId.getIndex().uuid());
         final DiscoveryNode node = getFakeDiscoNode(shard.routingEntry().currentNodeId());
         final RecoverySource.SnapshotRecoverySource recoverySource = new RecoverySource.SnapshotRecoverySource(
             UUIDs.randomBase64UUID(),
@@ -1129,7 +1129,7 @@ public abstract class IndexShardTestCase extends ESTestCase {
     protected ShardGeneration snapshotShard(final IndexShard shard, final Snapshot snapshot, final Repository repository)
         throws IOException {
         final Index index = shard.shardId().getIndex();
-        final IndexId indexId = new IndexId(index.getName(), index.getUUID());
+        final IndexId indexId = new IndexId(index.name(), index.uuid());
         final IndexShardSnapshotStatus snapshotStatus = IndexShardSnapshotStatus.newInitializing(
             ESBlobStoreRepositoryIntegTestCase.getRepositoryData(repository)
                 .shardGenerations()

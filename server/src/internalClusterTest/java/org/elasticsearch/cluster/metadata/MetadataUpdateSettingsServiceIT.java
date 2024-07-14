@@ -88,7 +88,7 @@ public class MetadataUpdateSettingsServiceIT extends ESIntegTestCase {
                 assertBusy(() -> {
                     for (IndexShard indexShard : indexService) {
                         final Engine engine = indexShard.getEngineOrNull();
-                        assertNotNull("engine is null for " + indexService.index().getName(), engine);
+                        assertNotNull("engine is null for " + indexService.index().name(), engine);
                         assertThat(engine.getEngineConfig().getCodec().getName(), equalTo("FastDecompressionCompressingStoredFieldsData"));
                     }
                 });

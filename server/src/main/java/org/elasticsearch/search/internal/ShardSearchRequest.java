@@ -169,7 +169,7 @@ public class ShardSearchRequest extends TransportRequest implements IndicesReque
     private static final long[] EMPTY_LONG_ARRAY = new long[0];
 
     public static long computeWaitForCheckpoint(Map<String, long[]> indexToWaitForCheckpoints, ShardId shardId, int shardRequestIndex) {
-        final long[] waitForCheckpoints = indexToWaitForCheckpoints.getOrDefault(shardId.getIndex().getName(), EMPTY_LONG_ARRAY);
+        final long[] waitForCheckpoints = indexToWaitForCheckpoints.getOrDefault(shardId.getIndex().name(), EMPTY_LONG_ARRAY);
 
         long waitForCheckpoint;
         if (waitForCheckpoints.length == 0) {

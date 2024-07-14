@@ -416,37 +416,37 @@ public class NodeEnvironmentTests extends ESTestCase {
         assertThat(env.availableShardPaths(sid), equalTo(env.availableShardPaths(sid)));
         assertThat(
             env.resolveCustomLocation("/tmp/foo", sid).toAbsolutePath(),
-            equalTo(PathUtils.get("/tmp/foo/0/" + index.getUUID() + "/0").toAbsolutePath())
+            equalTo(PathUtils.get("/tmp/foo/0/" + index.uuid() + "/0").toAbsolutePath())
         );
 
         assertThat(
             "shard paths with a custom data_path should contain only regular paths",
             env.availableShardPaths(sid),
-            equalTo(stringsToPaths(dataPaths, "indices/" + index.getUUID() + "/0"))
+            equalTo(stringsToPaths(dataPaths, "indices/" + index.uuid() + "/0"))
         );
 
         assertThat(
             "index paths uses the regular template",
             env.indexPaths(index),
-            equalTo(stringsToPaths(dataPaths, "indices/" + index.getUUID()))
+            equalTo(stringsToPaths(dataPaths, "indices/" + index.uuid()))
         );
 
         assertThat(env.availableShardPaths(sid), equalTo(env.availableShardPaths(sid)));
         assertThat(
             env.resolveCustomLocation("/tmp/foo", sid).toAbsolutePath(),
-            equalTo(PathUtils.get("/tmp/foo/0/" + index.getUUID() + "/0").toAbsolutePath())
+            equalTo(PathUtils.get("/tmp/foo/0/" + index.uuid() + "/0").toAbsolutePath())
         );
 
         assertThat(
             "shard paths with a custom data_path should contain only regular paths",
             env.availableShardPaths(sid),
-            equalTo(stringsToPaths(dataPaths, "indices/" + index.getUUID() + "/0"))
+            equalTo(stringsToPaths(dataPaths, "indices/" + index.uuid() + "/0"))
         );
 
         assertThat(
             "index paths uses the regular template",
             env.indexPaths(index),
-            equalTo(stringsToPaths(dataPaths, "indices/" + index.getUUID()))
+            equalTo(stringsToPaths(dataPaths, "indices/" + index.uuid()))
         );
 
         env.close();

@@ -81,7 +81,7 @@ public class SearchShardsResponseTests extends AbstractWireSerializingTestCase<S
             } else {
                 aliasFilter = AliasFilter.EMPTY;
             }
-            aliasFilters.put(g.shardId().getIndex().getUUID(), aliasFilter);
+            aliasFilters.put(g.shardId().getIndex().uuid(), aliasFilter);
         }
         return new SearchShardsResponse(groups, nodes, aliasFilters);
     }

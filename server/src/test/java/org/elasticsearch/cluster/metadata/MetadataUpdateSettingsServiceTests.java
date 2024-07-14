@@ -28,7 +28,7 @@ import static org.elasticsearch.index.IndexModule.Type.NIOFS;
 public class MetadataUpdateSettingsServiceTests extends ESTestCase {
     private final Index index = new Index("test", UUIDs.randomBase64UUID());
     private final Settings metaSettings = Settings.builder()
-        .put(IndexMetadata.SETTING_INDEX_UUID, index.getUUID())
+        .put(IndexMetadata.SETTING_INDEX_UUID, index.uuid())
         .put(IndexMetadata.INDEX_NUMBER_OF_SHARDS_SETTING.getKey(), 1)
         .put(IndexMetadata.SETTING_INDEX_VERSION_CREATED.getKey(), IndexVersion.current())
         .build();
@@ -64,7 +64,7 @@ public class MetadataUpdateSettingsServiceTests extends ESTestCase {
                 settingToApply,
                 indexSettings,
                 Settings.builder(),
-                index.getName()
+                index.name()
             ),
             false,
             indexScopedSettings
@@ -77,7 +77,7 @@ public class MetadataUpdateSettingsServiceTests extends ESTestCase {
                 .put(IndexSettings.INDEX_REFRESH_INTERVAL_SETTING.getKey(), "2s")
                 .put(IndexSettings.INDEX_TRANSLOG_DURABILITY_SETTING.getKey(), Translog.Durability.ASYNC)
                 .build(),
-            metadataBuilder.get(index.getName()).getSettings()
+            metadataBuilder.get(index.name()).getSettings()
         );
     }
 
@@ -110,12 +110,7 @@ public class MetadataUpdateSettingsServiceTests extends ESTestCase {
         MetadataUpdateSettingsService.updateIndexSettings(
             Set.of(index),
             metadataBuilder,
-            (index, indexSettings) -> indexScopedSettings.updateSettings(
-                settingToApply,
-                indexSettings,
-                Settings.builder(),
-                index.getName()
-            ),
+            (index, indexSettings) -> indexScopedSettings.updateSettings(settingToApply, indexSettings, Settings.builder(), index.name()),
             true,
             indexScopedSettings
         );
@@ -132,13 +127,13 @@ public class MetadataUpdateSettingsServiceTests extends ESTestCase {
                 .put(IndexModule.INDEX_STORE_TYPE_SETTING.getKey(), NIOFS.getSettingsKey())
                 .putList(IndexModule.INDEX_STORE_PRE_LOAD_SETTING.getKey(), "dvd", "tmp")
                 .build(),
-            metadataBuilder.get(index.getName()).getSettings()
+            metadataBuilder.get(index.name()).getSettings()
         );
     }
 
     private Metadata mockMetadata(Index index, Settings indexSettings) {
         return Metadata.builder()
-            .put(IndexMetadata.builder(index.getName()).settings(Settings.builder().put(indexSettings)).build(), true)
+            .put(IndexMetadata.builder(index.name()).settings(Settings.builder().put(indexSettings)).build(), true)
             .build();
     }
 }

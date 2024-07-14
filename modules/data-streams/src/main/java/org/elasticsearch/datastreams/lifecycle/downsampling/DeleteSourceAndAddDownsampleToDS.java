@@ -82,7 +82,7 @@ public class DeleteSourceAndAddDownsampleToDS implements ClusterStateTaskListene
             // index was deleted in the meantime, so let's check if we can make sure the downsample index ends up in the
             // data stream (if not already there)
             if (dataStream != null
-                && dataStream.getIndices().stream().filter(index -> index.getName().equals(downsampleIndex)).findAny().isEmpty()) {
+                && dataStream.getIndices().stream().filter(index -> index.name().equals(downsampleIndex)).findAny().isEmpty()) {
                 // add downsample index to data stream
                 LOGGER.trace(
                     "unable find source index [{}] but adding index [{}] to data stream [{}]",
@@ -96,7 +96,7 @@ public class DeleteSourceAndAddDownsampleToDS implements ClusterStateTaskListene
             }
         } else {
             DataStream sourceParentDataStream = sourceIndexAbstraction.getParentDataStream();
-            if (sourceParentDataStream != null && sourceParentDataStream.getWriteIndex().getName().equals(sourceBackingIndex)) {
+            if (sourceParentDataStream != null && sourceParentDataStream.getWriteIndex().name().equals(sourceBackingIndex)) {
                 String errorMessage = String.format(
                     Locale.ROOT,
                     "index [%s] is the write index for data stream [%s] and cannot be replaced",
@@ -127,7 +127,7 @@ public class DeleteSourceAndAddDownsampleToDS implements ClusterStateTaskListene
                 // the source index is not part of a data stream, so let's check if we can make sure the downsample index ends up in the
                 // data stream
                 if (dataStream != null
-                    && dataStream.getIndices().stream().filter(index -> index.getName().equals(downsampleIndex)).findAny().isEmpty()) {
+                    && dataStream.getIndices().stream().filter(index -> index.name().equals(downsampleIndex)).findAny().isEmpty()) {
                     return addDownsampleIndexToDataStream(state, dataStream, sourceIndexMeta, downsampleIndexMeta);
                 }
             }

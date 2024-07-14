@@ -106,7 +106,7 @@ public class LifecyclePolicyUtils {
             .values()
             .stream()
             .filter(indexMetadata -> policyName.equals(indexMetadata.getLifecyclePolicyName()))
-            .map(indexMetadata -> indexMetadata.getIndex().getName())
+            .map(indexMetadata -> indexMetadata.getIndex().name())
             .collect(Collectors.toList());
 
         final List<String> allDataStreams = indexNameExpressionResolver.dataStreamNames(

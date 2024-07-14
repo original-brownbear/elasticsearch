@@ -86,7 +86,7 @@ public record IndexMetadataStats(IndexWriteLoad indexWriteLoad, AverageShardSize
         if (indicesStatsResponse == null) {
             return null;
         }
-        final IndexStats indexStats = indicesStatsResponse.getIndex(indexMetadata.getIndex().getName());
+        final IndexStats indexStats = indicesStatsResponse.getIndex(indexMetadata.getIndex().name());
         if (indexStats == null) {
             return null;
         }

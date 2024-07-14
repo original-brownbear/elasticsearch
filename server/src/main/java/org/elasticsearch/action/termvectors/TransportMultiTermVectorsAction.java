@@ -70,13 +70,13 @@ public class TransportMultiTermVectorsAction extends HandledTransportAction<Mult
                 termVectorsRequest.routing(
                     clusterState.metadata().resolveIndexRouting(termVectorsRequest.routing(), termVectorsRequest.index())
                 );
-                String concreteSingleIndex = indexNameExpressionResolver.concreteSingleIndex(clusterState, termVectorsRequest).getName();
+                String concreteSingleIndex = indexNameExpressionResolver.concreteSingleIndex(clusterState, termVectorsRequest).name();
                 shardId = clusterService.operationRouting()
                     .shardId(clusterState, concreteSingleIndex, termVectorsRequest.id(), termVectorsRequest.routing());
             } catch (RoutingMissingException e) {
                 responses.set(
                     i,
-                    new MultiTermVectorsItemResponse(null, new MultiTermVectorsResponse.Failure(e.getIndex().getName(), e.getId(), e))
+                    new MultiTermVectorsItemResponse(null, new MultiTermVectorsResponse.Failure(e.getIndex().name(), e.getId(), e))
                 );
                 continue;
             } catch (Exception e) {

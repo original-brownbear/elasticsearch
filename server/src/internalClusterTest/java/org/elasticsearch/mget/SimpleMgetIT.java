@@ -55,7 +55,7 @@ public class SimpleMgetIT extends ESIntegTestCase {
         assertThat(mgetResponse.getResponses()[1].isFailed(), is(true));
         assertThat(mgetResponse.getResponses()[1].getFailure().getMessage(), is("no such index [nonExistingIndex]"));
         assertThat(
-            ((ElasticsearchException) mgetResponse.getResponses()[1].getFailure().getFailure()).getIndex().getName(),
+            ((ElasticsearchException) mgetResponse.getResponses()[1].getFailure().getFailure()).getIndex().name(),
             is("nonExistingIndex")
         );
 
@@ -65,7 +65,7 @@ public class SimpleMgetIT extends ESIntegTestCase {
         assertThat(mgetResponse.getResponses()[0].isFailed(), is(true));
         assertThat(mgetResponse.getResponses()[0].getFailure().getMessage(), is("no such index [nonExistingIndex]"));
         assertThat(
-            ((ElasticsearchException) mgetResponse.getResponses()[0].getFailure().getFailure()).getIndex().getName(),
+            ((ElasticsearchException) mgetResponse.getResponses()[0].getFailure().getFailure()).getIndex().name(),
             is("nonExistingIndex")
         );
     }

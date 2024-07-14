@@ -73,7 +73,7 @@ public final class VersionStats implements ToXContentFragment, Writeable {
             // Increment version-specific primary shard counts
             primaryShardCounts.merge(indexMetadata.getCreationVersion(), indexMetadata.getNumberOfShards(), Integer::sum);
             // Increment version-specific primary shard sizes
-            String indexName = indexMetadata.getIndex().getName();
+            String indexName = indexMetadata.getIndex().name();
             long indexPrimarySize = indexPrimaryShardStats.getOrDefault(indexName, Collections.emptyList())
                 .stream()
                 .mapToLong(stats -> stats.getStats().getStore().sizeInBytes())

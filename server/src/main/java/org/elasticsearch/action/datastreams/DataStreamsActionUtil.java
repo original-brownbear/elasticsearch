@@ -61,7 +61,7 @@ public class DataStreamsActionUtil {
             if (indexAbstraction.getType() == IndexAbstraction.Type.DATA_STREAM) {
                 DataStream dataStream = (DataStream) indexAbstraction;
                 List<Index> indices = dataStream.getIndices();
-                return indices.stream().map(Index::getName);
+                return indices.stream().map(Index::name);
             } else {
                 return Stream.empty();
             }

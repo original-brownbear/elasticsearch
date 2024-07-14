@@ -237,11 +237,11 @@ public class NodeRepurposeCommandTests extends ESTestCase {
                             .metadata(
                                 Metadata.builder()
                                     .put(
-                                        IndexMetadata.builder(INDEX.getName())
+                                        IndexMetadata.builder(INDEX.name())
                                             .settings(
                                                 Settings.builder()
                                                     .put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current())
-                                                    .put(IndexMetadata.SETTING_INDEX_UUID, INDEX.getUUID())
+                                                    .put(IndexMetadata.SETTING_INDEX_UUID, INDEX.uuid())
                                             )
                                             .numberOfShards(1)
                                             .numberOfReplicas(1)

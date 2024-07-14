@@ -155,7 +155,7 @@ public abstract class TestCluster {
                     ClusterStateResponse clusterStateResponse = client().admin().cluster().prepareState().get();
                     ArrayList<String> concreteIndices = new ArrayList<>();
                     for (IndexMetadata indexMetadata : clusterStateResponse.getState().metadata()) {
-                        concreteIndices.add(indexMetadata.getIndex().getName());
+                        concreteIndices.add(indexMetadata.getIndex().name());
                     }
                     if (concreteIndices.isEmpty() == false) {
                         assertAcked(client().admin().indices().prepareDelete(concreteIndices.toArray(new String[0])));

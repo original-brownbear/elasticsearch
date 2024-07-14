@@ -236,7 +236,7 @@ public class SystemIndexMappingUpdateService implements ClusterStateListener {
         final boolean isIndexUpToDate = INDEX_FORMAT_SETTING.get(indexMetadata.getSettings()) == descriptor.getIndexFormat();
 
         final boolean isMappingIsUpToDate = checkIndexMappingUpToDate(descriptor, indexMetadata);
-        final String concreteIndexName = indexMetadata.getIndex().getName();
+        final String concreteIndexName = indexMetadata.getIndex().name();
 
         final ClusterHealthStatus indexHealth;
         final IndexMetadata.State indexState = indexMetadata.getState();

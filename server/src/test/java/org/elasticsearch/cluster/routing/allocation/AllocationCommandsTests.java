@@ -871,7 +871,7 @@ public class AllocationCommandsTests extends ESAllocationTestCase {
         clusterState = startInitializingShardsAndReroute(allocation, clusterState);
 
         Index index = clusterState.getMetadata().index("test").getIndex();
-        MoveAllocationCommand command = new MoveAllocationCommand(index.getName(), 0, "node1", "node2");
+        MoveAllocationCommand command = new MoveAllocationCommand(index.name(), 0, "node1", "node2");
         RoutingAllocation routingAllocation = new RoutingAllocation(
             new AllocationDeciders(Collections.emptyList()),
             clusterState.mutableRoutingNodes(),
@@ -928,7 +928,7 @@ public class AllocationCommandsTests extends ESAllocationTestCase {
         clusterState = startInitializingShardsAndReroute(allocation, clusterState);
 
         Index index = clusterState.getMetadata().index("test").getIndex();
-        MoveAllocationCommand command = new MoveAllocationCommand(index.getName(), 0, "node2", "node1");
+        MoveAllocationCommand command = new MoveAllocationCommand(index.name(), 0, "node2", "node1");
         RoutingAllocation routingAllocation = new RoutingAllocation(
             new AllocationDeciders(Collections.emptyList()),
             clusterState.mutableRoutingNodes(),

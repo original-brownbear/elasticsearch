@@ -143,7 +143,7 @@ public class ClusterStateUpdatersTests extends ESTestCase {
             final ClusterState newState = updateRoutingTable(initialState, TestShardRoutingRoleStrategies.DEFAULT_ROLE_ONLY);
             assertTrue(newState.routingTable().hasIndex(index));
             assertThat(newState.routingTable().version(), is(0L));
-            assertThat(newState.routingTable().allShards(index.getName()).size(), is(numOfShards));
+            assertThat(newState.routingTable().allShards(index.name()).size(), is(numOfShards));
         }
         {
             final ClusterState newState = updateRoutingTable(
@@ -180,7 +180,7 @@ public class ClusterStateUpdatersTests extends ESTestCase {
             );
             assertTrue(newState.routingTable().hasIndex(index));
             assertThat(newState.routingTable().version(), is(0L));
-            assertThat(newState.routingTable().allShards(index.getName()).size(), is(numOfShards));
+            assertThat(newState.routingTable().allShards(index.name()).size(), is(numOfShards));
         }
     }
 
@@ -277,7 +277,7 @@ public class ClusterStateUpdatersTests extends ESTestCase {
         assertTrue(hiddenState.blocks().hasGlobalBlock(STATE_NOT_RECOVERED_BLOCK));
         assertFalse(hiddenState.blocks().hasGlobalBlock(Metadata.CLUSTER_READ_ONLY_BLOCK));
         assertFalse(hiddenState.blocks().hasGlobalBlock(Metadata.CLUSTER_READ_ONLY_ALLOW_DELETE_BLOCK));
-        assertFalse(hiddenState.blocks().hasIndexBlock(indexMetadata.getIndex().getName(), IndexMetadata.INDEX_READ_ONLY_BLOCK));
+        assertFalse(hiddenState.blocks().hasIndexBlock(indexMetadata.getIndex().name(), IndexMetadata.INDEX_READ_ONLY_BLOCK));
     }
 
 }

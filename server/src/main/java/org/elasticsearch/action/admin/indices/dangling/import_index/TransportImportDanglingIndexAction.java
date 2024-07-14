@@ -69,7 +69,7 @@ public class TransportImportDanglingIndexAction extends HandledTransportAction<I
                     return;
                 }
 
-                String indexName = indexMetaDataToImport.getIndex().getName();
+                String indexName = indexMetaDataToImport.getIndex().name();
                 String indexUUID = indexMetaDataToImport.getIndexUUID();
 
                 danglingIndexAllocator.allocateDangled(List.of(indexMetaDataToImport), new ActionListener<>() {

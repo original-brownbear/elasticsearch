@@ -589,7 +589,7 @@ public class RemoveCorruptedShardDataCommandIT extends ESIntegTestCase {
             .map(
                 dataPath -> PathUtils.get(dataPath.getPath())
                     .resolve(NodeEnvironment.INDICES_FOLDER)
-                    .resolve(shardId.getIndex().getUUID())
+                    .resolve(shardId.getIndex().uuid())
                     .resolve(Integer.toString(shardId.getId()))
                     .resolve(shardPathSubdirectory)
             )

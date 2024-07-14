@@ -495,7 +495,7 @@ public final class FieldSortBuilder extends SortBuilder<FieldSortBuilder> {
                     + "] of type ["
                     + fieldType.typeName()
                     + "] in index ["
-                    + context.index().getName()
+                    + context.index().name()
                     + "]: "
                     + e.getMessage(),
                 e

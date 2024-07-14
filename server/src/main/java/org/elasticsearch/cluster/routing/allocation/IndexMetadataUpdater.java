@@ -135,7 +135,7 @@ public class IndexMetadataUpdater implements RoutingChangesObserver {
             }
 
             if (updatedIndexMetadata != oldIndexMetadata) {
-                updatedIndices.put(updatedIndexMetadata.getIndex().getName(), updatedIndexMetadata.withIncrementedVersion());
+                updatedIndices.put(updatedIndexMetadata.getIndex().name(), updatedIndexMetadata.withIncrementedVersion());
             }
         }
         return oldMetadata.withAllocationAndTermUpdatesOnly(updatedIndices);

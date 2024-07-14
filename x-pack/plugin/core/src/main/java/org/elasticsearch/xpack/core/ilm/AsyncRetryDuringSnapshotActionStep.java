@@ -94,9 +94,9 @@ public abstract class AsyncRetryDuringSnapshotActionStep extends AsyncActionStep
                 try {
                     logger.debug(
                         "[{}] attempted to run ILM step but a snapshot is in progress, step will retry at a later time",
-                        index.getName()
+                        index.name()
                     );
-                    final String indexName = index.getName();
+                    final String indexName = index.name();
                     observer.waitForNextChange(new ClusterStateObserver.Listener() {
                         @Override
                         public void onNewClusterState(ClusterState state) {

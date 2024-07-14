@@ -67,7 +67,7 @@ public class CreateSnapshotStep extends AsyncRetryDuringSnapshotActionStep {
                     logger.warn(
                         "snapshot [{}] is already in-progress or in-use for index [{}], ILM will attempt to clean it up and recreate it",
                         snapshotNameAlreadyInUseException.getSnapshotName(),
-                        indexMetadata.getIndex().getName()
+                        indexMetadata.getIndex().name()
                     );
                     onResponse(false);
                 } else {
@@ -78,7 +78,7 @@ public class CreateSnapshotStep extends AsyncRetryDuringSnapshotActionStep {
     }
 
     void createSnapshot(IndexMetadata indexMetadata, ActionListener<Boolean> listener) {
-        final String indexName = indexMetadata.getIndex().getName();
+        final String indexName = indexMetadata.getIndex().name();
 
         final LifecycleExecutionState lifecycleState = indexMetadata.getLifecycleExecutionState();
 

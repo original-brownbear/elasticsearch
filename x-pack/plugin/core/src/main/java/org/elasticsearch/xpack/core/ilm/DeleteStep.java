@@ -35,20 +35,20 @@ public class DeleteStep extends AsyncRetryDuringSnapshotActionStep {
     @Override
     public void performDuringNoSnapshot(IndexMetadata indexMetadata, ClusterState currentState, ActionListener<Void> listener) {
         String policyName = indexMetadata.getLifecyclePolicyName();
-        String indexName = indexMetadata.getIndex().getName();
+        String indexName = indexMetadata.getIndex().name();
         IndexAbstraction indexAbstraction = currentState.metadata().getIndicesLookup().get(indexName);
         assert indexAbstraction != null : "invalid cluster metadata. index [" + indexName + "] was not found";
         DataStream dataStream = indexAbstraction.getParentDataStream();
 
         if (dataStream != null) {
             Index failureStoreWriteIndex = dataStream.getFailureStoreWriteIndex();
-            boolean isFailureStoreWriteIndex = failureStoreWriteIndex != null && indexName.equals(failureStoreWriteIndex.getName());
+            boolean isFailureStoreWriteIndex = failureStoreWriteIndex != null && indexName.equals(failureStoreWriteIndex.name());
 
             // using index name equality across this if/else branch as the UUID of the index might change via restoring a data stream
             // with one index from snapshot
             if (dataStream.getIndices().size() == 1
                 && isFailureStoreWriteIndex == false
-                && dataStream.getWriteIndex().getName().equals(indexName)) {
+                && dataStream.getWriteIndex().name().equals(indexName)) {
                 // This is the last backing index in the data stream, and it's being deleted because the policy doesn't have a rollover
                 // phase. The entire stream needs to be deleted, because we can't have an empty list of data stream backing indices.
                 // We do this even if there are multiple failure store indices because otherwise we would never delete the index.
@@ -59,7 +59,7 @@ public class DeleteStep extends AsyncRetryDuringSnapshotActionStep {
                     listener.delegateFailureAndWrap((l, response) -> l.onResponse(null))
                 );
                 return;
-            } else if (isFailureStoreWriteIndex || dataStream.getWriteIndex().getName().equals(indexName)) {
+            } else if (isFailureStoreWriteIndex || dataStream.getWriteIndex().name().equals(indexName)) {
                 String errorMessage = String.format(
                     Locale.ROOT,
                     "index [%s] is the%s write index for data stream [%s]. "

@@ -789,9 +789,9 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
      *                   tiebreak results with identical sort values
      */
     protected final ShardSearchRequest buildShardSearchRequest(SearchShardIterator shardIt, int shardIndex) {
-        AliasFilter filter = aliasFilter.get(shardIt.shardId().getIndex().getUUID());
+        AliasFilter filter = aliasFilter.get(shardIt.shardId().getIndex().uuid());
         assert filter != null;
-        float indexBoost = concreteIndexBoosts.getOrDefault(shardIt.shardId().getIndex().getUUID(), DEFAULT_INDEX_BOOST);
+        float indexBoost = concreteIndexBoosts.getOrDefault(shardIt.shardId().getIndex().uuid(), DEFAULT_INDEX_BOOST);
         ShardSearchRequest shardRequest = new ShardSearchRequest(
             shardIt.getOriginalIndices(),
             request,

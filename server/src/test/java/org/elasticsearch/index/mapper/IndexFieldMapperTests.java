@@ -53,7 +53,7 @@ public class IndexFieldMapperTests extends MetadataMapperTestCase {
 
     public void testFetchFieldValue() throws IOException {
         MapperService mapperService = createMapperService(fieldMapping(b -> b.field("type", "keyword")));
-        String index = mapperService.index().getName();
+        String index = mapperService.index().name();
         withLuceneIndex(mapperService, iw -> {
             SourceToParse source = source(b -> b.field("field", "value"));
             iw.addDocument(mapperService.documentMapper().parse(source).rootDoc());

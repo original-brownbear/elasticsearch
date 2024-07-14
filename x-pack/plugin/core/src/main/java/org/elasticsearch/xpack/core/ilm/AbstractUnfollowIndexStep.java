@@ -29,7 +29,7 @@ abstract class AbstractUnfollowIndexStep extends AsyncActionStep {
         ClusterStateObserver observer,
         ActionListener<Void> listener
     ) {
-        String followerIndex = indexMetadata.getIndex().getName();
+        String followerIndex = indexMetadata.getIndex().name();
         Map<String, String> customIndexMetadata = indexMetadata.getCustomData(CCR_METADATA_KEY);
         if (customIndexMetadata == null) {
             listener.onResponse(null);

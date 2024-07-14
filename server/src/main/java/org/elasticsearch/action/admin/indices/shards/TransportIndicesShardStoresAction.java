@@ -290,7 +290,7 @@ public class TransportIndicesShardStoresAction extends TransportMasterNodeReadAc
 
             private void putResults() {
                 if (isFailing() == false && indexResults.isEmpty() == false) {
-                    indicesStatuses.put(indexRoutingTable.getIndex().getName(), Map.copyOf(indexResults));
+                    indicesStatuses.put(indexRoutingTable.getIndex().name(), Map.copyOf(indexResults));
                 }
             }
 

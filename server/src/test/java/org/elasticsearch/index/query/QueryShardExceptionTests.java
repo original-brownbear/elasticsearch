@@ -21,8 +21,8 @@ public class QueryShardExceptionTests extends ESTestCase {
         SearchExecutionContext searchExecutionContext = SearchExecutionContextTests.createSearchExecutionContext(indexUuid, clusterAlias);
         {
             QueryShardException queryShardException = new QueryShardException(searchExecutionContext, "error");
-            assertThat(queryShardException.getIndex().getName(), equalTo(clusterAlias + ":index"));
-            assertThat(queryShardException.getIndex().getUUID(), equalTo(indexUuid));
+            assertThat(queryShardException.getIndex().name(), equalTo(clusterAlias + ":index"));
+            assertThat(queryShardException.getIndex().uuid(), equalTo(indexUuid));
         }
         {
             QueryShardException queryShardException = new QueryShardException(
@@ -30,8 +30,8 @@ public class QueryShardExceptionTests extends ESTestCase {
                 "error",
                 new IllegalArgumentException()
             );
-            assertThat(queryShardException.getIndex().getName(), equalTo(clusterAlias + ":index"));
-            assertThat(queryShardException.getIndex().getUUID(), equalTo(indexUuid));
+            assertThat(queryShardException.getIndex().name(), equalTo(clusterAlias + ":index"));
+            assertThat(queryShardException.getIndex().uuid(), equalTo(indexUuid));
         }
     }
 
@@ -40,7 +40,7 @@ public class QueryShardExceptionTests extends ESTestCase {
         String indexName = randomAlphaOfLengthBetween(5, 10);
         Index index = new Index(indexName, indexUuid);
         QueryShardException queryShardException = new QueryShardException(index, "error", new IllegalArgumentException());
-        assertThat(queryShardException.getIndex().getName(), equalTo(indexName));
-        assertThat(queryShardException.getIndex().getUUID(), equalTo(indexUuid));
+        assertThat(queryShardException.getIndex().name(), equalTo(indexName));
+        assertThat(queryShardException.getIndex().uuid(), equalTo(indexUuid));
     }
 }

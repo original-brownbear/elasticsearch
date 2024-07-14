@@ -61,15 +61,15 @@ public class ShrinkStep extends AsyncActionStep {
     ) {
         LifecycleExecutionState lifecycleState = indexMetadata.getLifecycleExecutionState();
         if (lifecycleState.lifecycleDate() == null) {
-            throw new IllegalStateException("source index [" + indexMetadata.getIndex().getName() + "] is missing lifecycle date");
+            throw new IllegalStateException("source index [" + indexMetadata.getIndex().name() + "] is missing lifecycle date");
         }
 
-        String shrunkenIndexName = getShrinkIndexName(indexMetadata.getIndex().getName(), lifecycleState);
+        String shrunkenIndexName = getShrinkIndexName(indexMetadata.getIndex().name(), lifecycleState);
         if (currentState.metadata().index(shrunkenIndexName) != null) {
             logger.warn(
                 "skipping [{}] step for index [{}] as part of policy [{}] as the shrunk index [{}] already exists",
                 ShrinkStep.NAME,
-                indexMetadata.getIndex().getName(),
+                indexMetadata.getIndex().name(),
                 indexMetadata.getLifecyclePolicyName(),
                 shrunkenIndexName
             );
@@ -89,7 +89,7 @@ public class ShrinkStep extends AsyncActionStep {
         }
         Settings relevantTargetSettings = builder.build();
 
-        ResizeRequest resizeRequest = new ResizeRequest(shrunkenIndexName, indexMetadata.getIndex().getName()).masterNodeTimeout(
+        ResizeRequest resizeRequest = new ResizeRequest(shrunkenIndexName, indexMetadata.getIndex().name()).masterNodeTimeout(
             TimeValue.MAX_VALUE
         );
         resizeRequest.setMaxPrimaryShardSize(maxPrimaryShardSize);

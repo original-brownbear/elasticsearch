@@ -48,7 +48,7 @@ public class RolloverStep extends AsyncActionStep {
         ClusterStateObserver observer,
         ActionListener<Void> listener
     ) {
-        String indexName = indexMetadata.getIndex().getName();
+        String indexName = indexMetadata.getIndex().name();
         boolean indexingComplete = LifecycleSettings.LIFECYCLE_INDEXING_COMPLETE_SETTING.get(indexMetadata.getSettings());
         if (indexingComplete) {
             logger.trace(indexMetadata.getIndex() + " has lifecycle complete set, skipping " + RolloverStep.NAME);
@@ -62,7 +62,7 @@ public class RolloverStep extends AsyncActionStep {
         DataStream dataStream = indexAbstraction.getParentDataStream();
         if (dataStream != null) {
             boolean isFailureStoreWriteIndex = indexMetadata.getIndex().equals(dataStream.getFailureStoreWriteIndex());
-            targetFailureStore = dataStream.isFailureStoreIndex(indexMetadata.getIndex().getName());
+            targetFailureStore = dataStream.isFailureStoreIndex(indexMetadata.getIndex().name());
             if (isFailureStoreWriteIndex == false && dataStream.getWriteIndex().equals(indexMetadata.getIndex()) == false) {
                 logger.warn(
                     "index [{}] is not the {}write index for data stream [{}]. skipping rollover for policy [{}]",

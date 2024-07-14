@@ -551,7 +551,7 @@ public class IndicesService extends AbstractLifecycleComponent
     }
 
     public boolean hasIndex(Index index) {
-        return indices.containsKey(index.getUUID());
+        return indices.containsKey(index.uuid());
     }
 
     /**
@@ -560,19 +560,19 @@ public class IndicesService extends AbstractLifecycleComponent
     @Override
     @Nullable
     public IndexService indexService(Index index) {
-        return indices.get(index.getUUID());
+        return indices.get(index.uuid());
     }
 
     /**
      * Returns an IndexService for the specified index if exists otherwise a {@link IndexNotFoundException} is thrown.
      */
     public IndexService indexServiceSafe(Index index) {
-        IndexService indexService = indices.get(index.getUUID());
+        IndexService indexService = indices.get(index.uuid());
         if (indexService == null) {
             throw new IndexNotFoundException(index);
         }
-        assert indexService.indexUUID().equals(index.getUUID())
-            : "uuid mismatch local: " + indexService.indexUUID() + " incoming: " + index.getUUID();
+        assert indexService.indexUUID().equals(index.uuid())
+            : "uuid mismatch local: " + indexService.indexUUID() + " incoming: " + index.uuid();
         return indexService;
     }
 
@@ -660,7 +660,7 @@ public class IndicesService extends AbstractLifecycleComponent
                 indexService.addMetadataListener(imd -> updateDanglingIndicesInfo(index));
             }
             indexService.getIndexEventListener().afterIndexCreated(indexService);
-            indices = Maps.copyMapWithAddedEntry(indices, index.getUUID(), indexService);
+            indices = Maps.copyMapWithAddedEntry(indices, index.uuid(), indexService);
             if (writeDanglingIndices) {
                 if (nodeWriteDanglingIndicesInfo) {
                     updateDanglingIndicesInfo(index);
@@ -914,7 +914,7 @@ public class IndicesService extends AbstractLifecycleComponent
         Executor shardCloseExecutor,
         ActionListener<Void> shardsClosedListener
     ) {
-        final String indexName = index.getName();
+        final String indexName = index.name();
         ActionListener.run(ActionListener.assertOnce(shardsClosedListener.delegateResponse((l, e) -> {
             logger.warn(() -> format("failed to remove index %s ([%s][%s])", index, reason, extraInfo), e);
             l.onResponse(null);
@@ -924,9 +924,9 @@ public class IndicesService extends AbstractLifecycleComponent
             synchronized (this) {
                 if (hasIndex(index)) {
                     logger.debug("[{}] closing ... (reason [{}])", indexName, reason);
-                    indexService = indices.get(index.getUUID());
+                    indexService = indices.get(index.uuid());
                     assert indexService != null : "IndexService is null for index: " + index;
-                    indices = Maps.copyMapWithRemovedEntry(indices, index.getUUID());
+                    indices = Maps.copyMapWithRemovedEntry(indices, index.uuid());
                     listener = indexService.getIndexEventListener();
                 } else {
                     indexService = null;
@@ -1012,7 +1012,7 @@ public class IndicesService extends AbstractLifecycleComponent
                     final IndexMetadata currentMetadata = clusterState.metadata().index(index);
                     throw new IllegalStateException(
                         "Can't delete unassigned index store for ["
-                            + index.getName()
+                            + index.name()
                             + "] - it's still part "
                             + "of the cluster state ["
                             + currentMetadata.getIndexUUID()
@@ -1042,7 +1042,7 @@ public class IndicesService extends AbstractLifecycleComponent
                     String localUUid = indexService(index).indexUUID();
                     throw new IllegalStateException(
                         "Can't delete index store for ["
-                            + index.getName()
+                            + index.name()
                             + "] - it's still part of the indices service ["
                             + localUUid
                             + "] ["
@@ -1819,7 +1819,7 @@ public class IndicesService extends AbstractLifecycleComponent
                     protected void doRun() {
                         final boolean exists = danglingIndicesToWrite.remove(index);
                         assert exists : "removed non-existing item for " + index;
-                        final IndexService indexService = indices.get(index.getUUID());
+                        final IndexService indexService = indices.get(index.uuid());
                         if (indexService != null) {
                             final long executedTimeMillis = threadPool.relativeTimeInMillis();
                             logger.trace(

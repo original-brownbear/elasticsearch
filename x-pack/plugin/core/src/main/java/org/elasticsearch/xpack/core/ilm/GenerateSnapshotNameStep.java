@@ -50,7 +50,7 @@ public class GenerateSnapshotNameStep extends ClusterStateActionStep {
         IndexMetadata indexMetadata = clusterState.metadata().index(index);
         if (indexMetadata == null) {
             // Index must have been since deleted, ignore it
-            logger.debug("[{}] lifecycle action for index [{}] executed but index no longer exists", getKey().action(), index.getName());
+            logger.debug("[{}] lifecycle action for index [{}] executed but index no longer exists", getKey().action(), index.name());
             return clusterState;
         }
 
@@ -68,17 +68,17 @@ public class GenerateSnapshotNameStep extends ClusterStateActionStep {
                     + policyName
                     + "] policy for "
                     + "index ["
-                    + index.getName()
+                    + index.name()
                     + "] cannot continue until the repository is created or the policy is changed"
             );
         }
 
         LifecycleExecutionState.Builder newLifecycleState = LifecycleExecutionState.builder(lifecycleState);
-        newLifecycleState.setSnapshotIndexName(index.getName());
+        newLifecycleState.setSnapshotIndexName(index.name());
         newLifecycleState.setSnapshotRepository(snapshotRepository);
         if (lifecycleState.snapshotName() == null) {
             // generate and validate the snapshotName
-            String snapshotNamePrefix = ("<{now/d}-" + index.getName() + "-" + Strings.stripDisallowedChars(policyName) + ">") //
+            String snapshotNamePrefix = ("<{now/d}-" + index.name() + "-" + Strings.stripDisallowedChars(policyName) + ">") //
                 .toLowerCase(Locale.ROOT);
             String snapshotName = generateSnapshotName(snapshotNamePrefix);
             ActionRequestValidationException validationException = validateGeneratedSnapshotName(snapshotNamePrefix, snapshotName);
@@ -86,7 +86,7 @@ public class GenerateSnapshotNameStep extends ClusterStateActionStep {
                 logger.warn(
                     "unable to generate a snapshot name as part of policy [{}] for index [{}] due to [{}]",
                     policyName,
-                    index.getName(),
+                    index.name(),
                     validationException.getMessage()
                 );
                 throw validationException;

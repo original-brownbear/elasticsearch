@@ -781,7 +781,7 @@ public final class SnapshotsService extends AbstractLifecycleComponent implement
             } else {
                 boolean missingIndex = false;
                 for (Index index : dataStream.getIndices()) {
-                    final String indexName = index.getName();
+                    final String indexName = index.name();
                     if (builder.get(indexName) == null || indicesInSnapshot.contains(indexName) == false) {
                         missingIndex = true;
                         break;
@@ -4098,7 +4098,7 @@ public final class SnapshotsService extends AbstractLifecycleComponent implement
                 Set<String> missing = new TreeSet<>(); // sorted for more usable message
                 for (Map.Entry<ShardId, ShardSnapshotStatus> entry : shards.entrySet()) {
                     if (entry.getValue().state() == ShardState.MISSING) {
-                        missing.add(entry.getKey().getIndex().getName());
+                        missing.add(entry.getKey().getIndex().name());
                     }
                 }
                 if (missing.isEmpty() == false) {

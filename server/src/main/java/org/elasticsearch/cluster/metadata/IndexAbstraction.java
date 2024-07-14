@@ -137,7 +137,7 @@ public interface IndexAbstraction {
 
         @Override
         public String getName() {
-            return concreteIndex.getName();
+            return concreteIndex.name();
         }
 
         @Override
@@ -261,7 +261,7 @@ public interface IndexAbstraction {
                 return getWriteIndex();
             }
 
-            return metadata.getIndicesLookup().get(getWriteIndex().getName()).getParentDataStream().getWriteIndex(request, metadata);
+            return metadata.getIndicesLookup().get(getWriteIndex().name()).getParentDataStream().getWriteIndex(request, metadata);
         }
 
         @Override

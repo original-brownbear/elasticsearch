@@ -114,7 +114,7 @@ public class SystemIndexMetadataUpgradeService implements ClusterStateListener {
     // package-private for testing
     boolean shouldBeSystem(IndexMetadata indexMetadata) {
         return systemIndices.isSystemIndex(indexMetadata.getIndex())
-            || systemIndices.isSystemIndexBackingDataStream(indexMetadata.getIndex().getName());
+            || systemIndices.isSystemIndexBackingDataStream(indexMetadata.getIndex().name());
     }
 
     // package-private for testing

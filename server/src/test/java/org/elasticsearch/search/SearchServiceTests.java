@@ -245,7 +245,7 @@ public class SearchServiceTests extends ESSingleNodeTestCase {
             indexModule.addSearchOperationListener(new SearchOperationListener() {
                 @Override
                 public void onFetchPhase(SearchContext context, long tookInNanos) {
-                    if ("throttled_threadpool_index".equals(context.indexShard().shardId().getIndex().getName())) {
+                    if ("throttled_threadpool_index".equals(context.indexShard().shardId().getIndex().name())) {
                         assertThat(Thread.currentThread().getName(), startsWith("elasticsearch[node_s_0][search_throttled]"));
                     } else {
                         assertThat(Thread.currentThread().getName(), startsWith("elasticsearch[node_s_0][search]"));
@@ -254,7 +254,7 @@ public class SearchServiceTests extends ESSingleNodeTestCase {
 
                 @Override
                 public void onQueryPhase(SearchContext context, long tookInNanos) {
-                    if ("throttled_threadpool_index".equals(context.indexShard().shardId().getIndex().getName())) {
+                    if ("throttled_threadpool_index".equals(context.indexShard().shardId().getIndex().name())) {
                         assertThat(Thread.currentThread().getName(), startsWith("elasticsearch[node_s_0][search_throttled]"));
                     } else {
                         assertThat(Thread.currentThread().getName(), startsWith("elasticsearch[node_s_0][search]"));
@@ -2045,7 +2045,7 @@ public class SearchServiceTests extends ESSingleNodeTestCase {
             SearchShardTarget searchShardTarget = searchContext.shardTarget();
             SearchExecutionContext searchExecutionContext = searchContext.getSearchExecutionContext();
             String expectedIndexName = clusterAlias == null ? index : clusterAlias + ":" + index;
-            assertEquals(expectedIndexName, searchExecutionContext.getFullyQualifiedIndex().getName());
+            assertEquals(expectedIndexName, searchExecutionContext.getFullyQualifiedIndex().name());
             assertEquals(expectedIndexName, searchShardTarget.getFullyQualifiedIndexName());
             assertEquals(clusterAlias, searchShardTarget.getClusterAlias());
             assertEquals(shardId, searchShardTarget.getShardId());

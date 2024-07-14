@@ -83,7 +83,7 @@ public interface ResizeNumberOfShardsCalculator {
                         maxPrimaryShardSize.toString(),
                         minShardsNum,
                         sourceIndexShardsNum,
-                        sourceMetadata.getIndex().getName(),
+                        sourceMetadata.getIndex().name(),
                         sourceIndexShardsNum
                     );
                     return sourceIndexShardsNum;

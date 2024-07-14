@@ -660,7 +660,7 @@ public class MatchQueryBuilderTests extends AbstractQueryTestCase<MatchQueryBuil
     }
 
     public void testRewriteIndexQueryToNotMatchNone() throws IOException {
-        QueryBuilder query = new MatchQueryBuilder("_index", getIndex().getName());
+        QueryBuilder query = new MatchQueryBuilder("_index", getIndex().name());
         QueryRewriteContext[] contexts = new QueryRewriteContext[] { createSearchExecutionContext(), createQueryRewriteContext() };
         for (QueryRewriteContext context : contexts) {
             QueryBuilder rewritten = query.rewrite(context);

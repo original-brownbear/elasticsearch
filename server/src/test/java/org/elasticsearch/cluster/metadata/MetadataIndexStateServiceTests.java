@@ -92,15 +92,15 @@ public class MetadataIndexStateServiceTests extends ESTestCase {
         assertThat(updatedState.metadata().indices().size(), equalTo(nonBlockedIndices.size() + blockedIndices.size()));
 
         for (Index nonBlockedIndex : nonBlockedIndices) {
-            assertIsOpened(nonBlockedIndex.getName(), updatedState);
-            assertThat(updatedState.blocks().hasIndexBlockWithId(nonBlockedIndex.getName(), INDEX_CLOSED_BLOCK_ID), is(false));
+            assertIsOpened(nonBlockedIndex.name(), updatedState);
+            assertThat(updatedState.blocks().hasIndexBlockWithId(nonBlockedIndex.name(), INDEX_CLOSED_BLOCK_ID), is(false));
         }
         for (Index blockedIndex : blockedIndices.keySet()) {
             if (results.get(blockedIndex).hasFailures() == false) {
-                assertIsClosed(blockedIndex.getName(), updatedState);
+                assertIsClosed(blockedIndex.name(), updatedState);
             } else {
-                assertIsOpened(blockedIndex.getName(), updatedState);
-                assertThat(updatedState.blocks().hasIndexBlockWithId(blockedIndex.getName(), INDEX_CLOSED_BLOCK_ID), is(true));
+                assertIsOpened(blockedIndex.name(), updatedState);
+                assertThat(updatedState.blocks().hasIndexBlockWithId(blockedIndex.name(), INDEX_CLOSED_BLOCK_ID), is(true));
             }
         }
     }
@@ -120,8 +120,8 @@ public class MetadataIndexStateServiceTests extends ESTestCase {
             Map.of(index, new IndexResult(index)),
             TestShardRoutingRoleStrategies.DEFAULT_ROLE_ONLY
         ).v1();
-        assertIsOpened(index.getName(), updatedState);
-        assertThat(updatedState.blocks().hasIndexBlockWithId(index.getName(), INDEX_CLOSED_BLOCK_ID), is(true));
+        assertIsOpened(index.name(), updatedState);
+        assertThat(updatedState.blocks().hasIndexBlockWithId(index.name(), INDEX_CLOSED_BLOCK_ID), is(true));
     }
 
     public void testCloseRoutingTableWithSnapshottedIndex() {
@@ -139,8 +139,8 @@ public class MetadataIndexStateServiceTests extends ESTestCase {
             Map.of(index, new IndexResult(index)),
             TestShardRoutingRoleStrategies.DEFAULT_ROLE_ONLY
         ).v1();
-        assertIsOpened(index.getName(), updatedState);
-        assertThat(updatedState.blocks().hasIndexBlockWithId(index.getName(), INDEX_CLOSED_BLOCK_ID), is(true));
+        assertIsOpened(index.name(), updatedState);
+        assertThat(updatedState.blocks().hasIndexBlockWithId(index.name(), INDEX_CLOSED_BLOCK_ID), is(true));
     }
 
     public void testAddIndexClosedBlocks() {
@@ -231,7 +231,7 @@ public class MetadataIndexStateServiceTests extends ESTestCase {
 
             for (Index index : indices) {
                 assertTrue(blockedIndices.containsKey(index));
-                assertHasBlock(index.getName(), updatedState, blockedIndices.get(index));
+                assertHasBlock(index.name(), updatedState, blockedIndices.get(index));
             }
         }
     }
@@ -247,13 +247,13 @@ public class MetadataIndexStateServiceTests extends ESTestCase {
         state = MetadataIndexStateService.addIndexClosedBlocks(indices, blockedIndices, state);
 
         assertTrue(blockedIndices.containsKey(test));
-        assertHasBlock(test.getName(), state, blockedIndices.get(test));
+        assertHasBlock(test.name(), state, blockedIndices.get(test));
 
         final Map<Index, ClusterBlock> blockedIndices2 = new HashMap<>();
         state = MetadataIndexStateService.addIndexClosedBlocks(indices, blockedIndices2, state);
 
         assertTrue(blockedIndices2.containsKey(test));
-        assertHasBlock(test.getName(), state, blockedIndices2.get(test));
+        assertHasBlock(test.name(), state, blockedIndices2.get(test));
         assertEquals(blockedIndices.get(test), blockedIndices2.get(test));
     }
 

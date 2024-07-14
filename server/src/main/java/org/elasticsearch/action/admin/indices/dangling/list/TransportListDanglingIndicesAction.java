@@ -91,7 +91,7 @@ public class TransportListDanglingIndicesAction extends TransportNodesAction<
             if (indexFilter == null || indexFilter.equals(each.getIndexUUID())) {
                 DanglingIndexInfo danglingIndexInfo = new DanglingIndexInfo(
                     localNode.getId(),
-                    each.getIndex().getName(),
+                    each.getIndex().name(),
                     each.getIndexUUID(),
                     each.getCreationDate()
                 );

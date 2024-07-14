@@ -1037,14 +1037,14 @@ public class PersistedClusterStateServiceTests extends ESTestCase {
                                 Metadata.builder(clusterState.metadata())
                                     .version(i + 2)
                                     .put(
-                                        IndexMetadata.builder(index.getName())
+                                        IndexMetadata.builder(index.name())
                                             .putMapping(randomMappingMetadataOrNull())
                                             .settings(
                                                 Settings.builder()
                                                     .put(IndexMetadata.INDEX_NUMBER_OF_SHARDS_SETTING.getKey(), 1)
                                                     .put(IndexMetadata.INDEX_NUMBER_OF_REPLICAS_SETTING.getKey(), 0)
                                                     .put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current())
-                                                    .put(IndexMetadata.SETTING_INDEX_UUID, index.getUUID())
+                                                    .put(IndexMetadata.SETTING_INDEX_UUID, index.uuid())
                                             )
                                     )
                             )
@@ -1057,8 +1057,8 @@ public class PersistedClusterStateServiceTests extends ESTestCase {
 
             final ClusterState clusterState = loadPersistedClusterState(persistedClusterStateService);
             for (Index index : indices) {
-                final IndexMetadata indexMetadata = clusterState.metadata().index(index.getName());
-                assertThat(indexMetadata.getIndexUUID(), equalTo(index.getUUID()));
+                final IndexMetadata indexMetadata = clusterState.metadata().index(index.name());
+                assertThat(indexMetadata.getIndexUUID(), equalTo(index.uuid()));
             }
         }
     }

@@ -66,7 +66,7 @@ public abstract class IndexRouting {
     private final int routingFactor;
 
     private IndexRouting(IndexMetadata metadata) {
-        this.indexName = metadata.getIndex().getName();
+        this.indexName = metadata.getIndex().name();
         this.routingNumShards = metadata.getRoutingNumShards();
         this.routingFactor = metadata.getRoutingFactor();
     }

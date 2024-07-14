@@ -287,7 +287,7 @@ public class MetadataIndexAliasesServiceTests extends ESTestCase {
                 Arrays.asList(new AliasAction.Add("test", "alias", null, null, null, null, null), new AliasAction.RemoveIndex("test"))
             )
         );
-        assertEquals("test", e.getIndex().getName());
+        assertEquals("test", e.getIndex().name());
     }
 
     public void testRemoveIndexTwice() {

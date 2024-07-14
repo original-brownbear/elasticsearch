@@ -121,7 +121,7 @@ public class DocumentMapper {
                         + type()
                         + "] must have routing "
                         + "required for partitioned index ["
-                        + settings.getIndex().getName()
+                        + settings.getIndex().name()
                         + "]"
                 );
             }

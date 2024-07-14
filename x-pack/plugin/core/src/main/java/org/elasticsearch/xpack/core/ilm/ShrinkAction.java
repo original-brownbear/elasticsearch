@@ -192,13 +192,13 @@ public class ShrinkAction implements LifecycleAction {
                         "[{}] action is configured for index [{}] in policy [{}] which is mounted as searchable snapshot. "
                             + "Skipping this action",
                         ShrinkAction.NAME,
-                        indexMetadata.getIndex().getName(),
+                        indexMetadata.getIndex().name(),
                         indexMetadata.getLifecyclePolicyName()
                     );
                     listener.onResponse(true);
                     return;
                 }
-                String indexName = indexMetadata.getIndex().getName();
+                String indexName = indexMetadata.getIndex().name();
                 client.admin()
                     .indices()
                     .prepareStats(indexName)
@@ -288,8 +288,8 @@ public class ShrinkAction implements LifecycleAction {
             aliasKey,
             replaceDataStreamIndexKey,
             (index, clusterState) -> {
-                IndexAbstraction indexAbstraction = clusterState.metadata().getIndicesLookup().get(index.getName());
-                assert indexAbstraction != null : "invalid cluster metadata. index [" + index.getName() + "] was not found";
+                IndexAbstraction indexAbstraction = clusterState.metadata().getIndicesLookup().get(index.name());
+                assert indexAbstraction != null : "invalid cluster metadata. index [" + index.name() + "] was not found";
                 return indexAbstraction.getParentDataStream() != null;
             }
         );

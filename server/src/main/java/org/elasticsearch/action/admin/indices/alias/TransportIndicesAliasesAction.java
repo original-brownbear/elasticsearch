@@ -134,7 +134,7 @@ public class TransportIndicesAliasesAction extends TransportMasterNodeAction<Ind
                     action.indices()
                 );
                 List<Index> nonBackingIndices = Arrays.stream(unprocessedConcreteIndices).filter(index -> {
-                    var ia = state.metadata().getIndicesLookup().get(index.getName());
+                    var ia = state.metadata().getIndicesLookup().get(index.name());
                     return ia.getParentDataStream() == null;
                 }).toList();
                 concreteIndices = nonBackingIndices.toArray(Index[]::new);
@@ -194,8 +194,8 @@ public class TransportIndicesAliasesAction extends TransportMasterNodeAction<Ind
             }
 
             for (Index concreteIndex : concreteIndices) {
-                IndexAbstraction indexAbstraction = state.metadata().getIndicesLookup().get(concreteIndex.getName());
-                assert indexAbstraction != null : "invalid cluster metadata. index [" + concreteIndex.getName() + "] was not found";
+                IndexAbstraction indexAbstraction = state.metadata().getIndicesLookup().get(concreteIndex.name());
+                assert indexAbstraction != null : "invalid cluster metadata. index [" + concreteIndex.name() + "] was not found";
                 if (indexAbstraction.getParentDataStream() != null) {
                     throw new IllegalArgumentException(
                         "The provided expressions ["
@@ -217,11 +217,11 @@ public class TransportIndicesAliasesAction extends TransportMasterNodeAction<Ind
             for (final Index index : concreteIndices) {
                 switch (action.actionType()) {
                     case ADD:
-                        for (String alias : concreteAliases(action, state.metadata(), index.getName())) {
+                        for (String alias : concreteAliases(action, state.metadata(), index.name())) {
                             String resolvedName = IndexNameExpressionResolver.resolveDateMathExpression(alias, now);
                             finalActions.add(
                                 new AliasAction.Add(
-                                    index.getName(),
+                                    index.name(),
                                     resolvedName,
                                     action.filter(),
                                     action.indexRouting(),
@@ -233,20 +233,20 @@ public class TransportIndicesAliasesAction extends TransportMasterNodeAction<Ind
                         }
                         break;
                     case REMOVE:
-                        for (String alias : concreteAliases(action, state.metadata(), index.getName())) {
-                            finalActions.add(new AliasAction.Remove(index.getName(), alias, action.mustExist()));
+                        for (String alias : concreteAliases(action, state.metadata(), index.name())) {
+                            finalActions.add(new AliasAction.Remove(index.name(), alias, action.mustExist()));
                             numAliasesRemoved++;
                         }
                         break;
                     case REMOVE_INDEX:
-                        finalActions.add(new AliasAction.RemoveIndex(index.getName()));
+                        finalActions.add(new AliasAction.RemoveIndex(index.name()));
                         break;
                     default:
                         throw new IllegalArgumentException("Unsupported action [" + action.actionType() + "]");
                 }
             }
 
-            Arrays.stream(concreteIndices).map(Index::getName).forEach(resolvedIndices::add);
+            Arrays.stream(concreteIndices).map(Index::name).forEach(resolvedIndices::add);
             actionResults.add(AliasActionResult.build(resolvedIndices, action, numAliasesRemoved));
         }
         if (finalActions.isEmpty() && false == actions.isEmpty()) {

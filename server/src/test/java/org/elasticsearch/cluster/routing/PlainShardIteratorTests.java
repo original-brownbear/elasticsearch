@@ -28,12 +28,12 @@ public class PlainShardIteratorTests extends ESTestCase {
                     case 0 -> new ShardId(i.shardId().getIndex(), i.shardId().getId() + randomIntBetween(1, 1000));
                     case 1 -> new ShardId(
                         i.shardId().getIndexName(),
-                        i.shardId().getIndex().getUUID() + randomAlphaOfLengthBetween(1, 3),
+                        i.shardId().getIndex().uuid() + randomAlphaOfLengthBetween(1, 3),
                         i.shardId().getId()
                     );
                     case 2 -> new ShardId(
                         i.shardId().getIndexName() + randomAlphaOfLengthBetween(1, 3),
-                        i.shardId().getIndex().getUUID(),
+                        i.shardId().getIndex().uuid(),
                         i.shardId().getId()
                     );
                     default -> throw new UnsupportedOperationException();

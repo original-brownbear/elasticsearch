@@ -460,7 +460,7 @@ public class DiskHealthIndicatorService implements HealthIndicatorService {
                 .map(node -> routingNodes.node(node.getId()))
                 .filter(Objects::nonNull)
                 .flatMap(routingNode -> Arrays.stream(routingNode.copyIndices()))
-                .map(Index::getName)
+                .map(Index::name)
                 .collect(Collectors.toSet());
         }
 

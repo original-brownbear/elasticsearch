@@ -65,7 +65,7 @@ public class MountSnapshotStep extends AsyncRetryDuringSnapshotActionStep {
 
     @Override
     void performDuringNoSnapshot(IndexMetadata indexMetadata, ClusterState currentClusterState, ActionListener<Void> listener) {
-        String indexName = indexMetadata.getIndex().getName();
+        String indexName = indexMetadata.getIndex().name();
 
         LifecycleExecutionState lifecycleState = indexMetadata.getLifecycleExecutionState();
         SearchableSnapshotAction.SearchableSnapshotMetadata searchableSnapshotMetadata = SearchableSnapshotAction
@@ -117,7 +117,7 @@ public class MountSnapshotStep extends AsyncRetryDuringSnapshotActionStep {
                 logger.debug(
                     "index [{}] using policy [{}] does not have a stored snapshot index name, "
                         + "using our best effort guess of [{}] for the original snapshotted index name",
-                    indexMetadata.getIndex().getName(),
+                    indexMetadata.getIndex().name(),
                     policyName,
                     indexName
                 );

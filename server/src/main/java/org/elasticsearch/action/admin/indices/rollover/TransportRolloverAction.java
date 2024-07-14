@@ -270,7 +270,7 @@ public class TransportRolloverAction extends TransportMasterNodeAction<RolloverR
                 if (indexAbstraction.getType().equals(IndexAbstraction.Type.DATA_STREAM)) {
                     DataStream dataStream = (DataStream) indexAbstraction;
                     final Optional<IndexStats> indexStats = Optional.ofNullable(statsResponse)
-                        .map(stats -> stats.getIndex(dataStream.getWriteIndex().getName()));
+                        .map(stats -> stats.getIndex(dataStream.getWriteIndex().name()));
 
                     Double indexWriteLoad = indexStats.map(
                         stats -> Arrays.stream(stats.getShards())
@@ -396,7 +396,7 @@ public class TransportRolloverAction extends TransportMasterNodeAction<RolloverR
             return null;
         } else {
             final Optional<IndexStats> indexStats = Optional.ofNullable(statsResponse)
-                .map(stats -> stats.getIndex(metadata.getIndex().getName()));
+                .map(stats -> stats.getIndex(metadata.getIndex().name()));
 
             final DocsStats docsStats = indexStats.map(stats -> stats.getPrimaries().getDocs()).orElse(null);
 

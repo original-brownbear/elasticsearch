@@ -57,7 +57,7 @@ public class UpdateRolloverLifecycleDateStep extends ClusterStateActionStep {
             if (rolloverInfo == null) {
                 throw new IllegalStateException(
                     "no rollover info found for ["
-                        + indexMetadata.getIndex().getName()
+                        + indexMetadata.getIndex().name()
                         + "] with rollover target ["
                         + rolloverTarget
                         + "], the index has not yet rolled over with that target"
@@ -76,7 +76,7 @@ public class UpdateRolloverLifecycleDateStep extends ClusterStateActionStep {
     }
 
     private static String getRolloverTarget(Index index, ClusterState currentState) {
-        IndexAbstraction indexAbstraction = currentState.metadata().getIndicesLookup().get(index.getName());
+        IndexAbstraction indexAbstraction = currentState.metadata().getIndicesLookup().get(index.name());
         final String rolloverTarget;
         if (indexAbstraction.getParentDataStream() != null) {
             rolloverTarget = indexAbstraction.getParentDataStream().getName();
@@ -89,7 +89,7 @@ public class UpdateRolloverLifecycleDateStep extends ClusterStateActionStep {
                     "setting ["
                         + RolloverAction.LIFECYCLE_ROLLOVER_ALIAS
                         + "] is not set on index ["
-                        + indexMetadata.getIndex().getName()
+                        + indexMetadata.getIndex().name()
                         + "]"
                 );
             }

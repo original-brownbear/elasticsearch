@@ -317,7 +317,7 @@ public final class ExceptionsHelper {
                 if (cause instanceof ElasticsearchException) {
                     final Index index = ((ElasticsearchException) cause).getIndex();
                     if (index != null) {
-                        indexName = index.getName();
+                        indexName = index.name();
                     }
                 }
             }

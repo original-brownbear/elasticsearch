@@ -316,7 +316,7 @@ public class GatewayIndexStateIT extends ESIntegTestCase {
 
         logger.info("--> waiting for green status");
         ensureGreen();
-        final String indexUUID = resolveIndex(indexName).getUUID();
+        final String indexUUID = resolveIndex(indexName).uuid();
 
         logger.info("--> restart a random date node, deleting the index in between stopping and restarting");
         internalCluster().restartRandomDataNode(new RestartCallback() {

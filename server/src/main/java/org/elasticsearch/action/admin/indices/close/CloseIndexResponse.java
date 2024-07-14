@@ -131,7 +131,7 @@ public class CloseIndexResponse extends ShardsAcknowledgedResponse {
 
         @Override
         public XContentBuilder toXContent(final XContentBuilder builder, final Params params) throws IOException {
-            builder.startObject(index.getName());
+            builder.startObject(index.name());
             {
                 if (hasFailures()) {
                     builder.field("closed", false);

@@ -100,7 +100,7 @@ public class Loggers {
     }
 
     public static Logger getLogger(Class<?> clazz, Index index, String... prefixes) {
-        return getLogger(clazz, Stream.concat(Stream.of(Loggers.SPACE, index.getName()), Arrays.stream(prefixes)).toArray(String[]::new));
+        return getLogger(clazz, Stream.concat(Stream.of(Loggers.SPACE, index.name()), Arrays.stream(prefixes)).toArray(String[]::new));
     }
 
     public static Logger getLogger(Class<?> clazz, String... prefixes) {

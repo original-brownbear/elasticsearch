@@ -95,12 +95,12 @@ public class IndexRoutingTable implements SimpleDiffable<IndexRoutingTable> {
 
     boolean validate(Metadata metadata) {
         // check index exists
-        if (metadata.hasIndex(index.getName()) == false) {
+        if (metadata.hasIndex(index.name()) == false) {
             throw new IllegalStateException(index + " exists in routing does not exists in metadata");
         }
-        IndexMetadata indexMetadata = metadata.index(index.getName());
-        if (indexMetadata.getIndexUUID().equals(index.getUUID()) == false) {
-            throw new IllegalStateException(index.getName() + " exists in routing does not exists in metadata with the same uuid");
+        IndexMetadata indexMetadata = metadata.index(index.name());
+        if (indexMetadata.getIndexUUID().equals(index.uuid()) == false) {
+            throw new IllegalStateException(index.name() + " exists in routing does not exists in metadata with the same uuid");
         }
 
         // check the number of shards
@@ -690,7 +690,7 @@ public class IndexRoutingTable implements SimpleDiffable<IndexRoutingTable> {
         StringBuilder sb = new StringBuilder("-- index [" + index + "]\n");
         for (IndexShardRoutingTable indexShard : shards) {
             sb.append("----shard_id [")
-                .append(indexShard.shardId().getIndex().getName())
+                .append(indexShard.shardId().getIndex().name())
                 .append("][")
                 .append(indexShard.shardId().id())
                 .append("]\n");

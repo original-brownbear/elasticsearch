@@ -57,7 +57,7 @@ public class AllocationDeciders {
             decider -> decider.canAllocate(indexMetadata, node, allocation),
             (decider, decision) -> Strings.format(
                 "Can not allocate [%s] on node [%s]. [%s]: %s",
-                indexMetadata.getIndex().getName(),
+                indexMetadata.getIndex().name(),
                 node.node(),
                 decider,
                 decision
@@ -115,7 +115,7 @@ public class AllocationDeciders {
             decider -> decider.shouldAutoExpandToNode(indexMetadata, node, allocation),
             (decider, decision) -> Strings.format(
                 "Should not auto expand [%s] to node [%s]. [%s]: %s",
-                indexMetadata.getIndex().getName(),
+                indexMetadata.getIndex().name(),
                 node,
                 decider,
                 decision

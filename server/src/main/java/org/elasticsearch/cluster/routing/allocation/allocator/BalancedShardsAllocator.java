@@ -1162,7 +1162,7 @@ public class BalancedShardsAllocator implements ShardsAllocator {
                          */
                         if (currentDecision.type() == decision.type()) {
                             final int repId = shard.id();
-                            final int nodeHigh = node.highestPrimary(shard.index().getName());
+                            final int nodeHigh = node.highestPrimary(shard.index().name());
                             final int minNodeHigh = minNode.highestPrimary(shard.getIndexName());
                             updateMinNode = ((((nodeHigh > repId && minNodeHigh > repId) || (nodeHigh < repId && minNodeHigh < repId))
                                 && (nodeHigh < minNodeHigh)) || (nodeHigh > repId && minNodeHigh < repId));

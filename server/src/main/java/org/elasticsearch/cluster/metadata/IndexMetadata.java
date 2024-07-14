@@ -1060,7 +1060,7 @@ public class IndexMetadata implements Diffable<IndexMetadata>, ToXContentFragmen
     }
 
     public String getIndexUUID() {
-        return index.getUUID();
+        return index.uuid();
     }
 
     public long getVersion() {
@@ -1552,7 +1552,7 @@ public class IndexMetadata implements Diffable<IndexMetadata>, ToXContentFragmen
         private final Long shardSizeInBytesForecast;
 
         IndexMetadataDiff(IndexMetadata before, IndexMetadata after) {
-            index = after.index.getName();
+            index = after.index.name();
             version = after.version;
             mappingVersion = after.mappingVersion;
             settingsVersion = after.settingsVersion;
@@ -1834,7 +1834,7 @@ public class IndexMetadata implements Diffable<IndexMetadata>, ToXContentFragmen
      * @param mappingsAsHash whether to serialize {@link MappingMetadata} in full or just its hash {@link MappingMetadata#getSha256()}
      */
     public void writeTo(StreamOutput out, boolean mappingsAsHash) throws IOException {
-        out.writeString(index.getName()); // uuid will come as part of settings
+        out.writeString(index.name()); // uuid will come as part of settings
         out.writeLong(version);
         out.writeVLong(mappingVersion);
         out.writeVLong(settingsVersion);
@@ -1949,7 +1949,7 @@ public class IndexMetadata implements Diffable<IndexMetadata>, ToXContentFragmen
         }
 
         public Builder(IndexMetadata indexMetadata) {
-            this.index = indexMetadata.getIndex().getName();
+            this.index = indexMetadata.getIndex().name();
             this.state = indexMetadata.state;
             this.version = indexMetadata.version;
             this.mappingVersion = indexMetadata.mappingVersion;
@@ -2448,7 +2448,7 @@ public class IndexMetadata implements Diffable<IndexMetadata>, ToXContentFragmen
                 params.param(CONTEXT_MODE_PARAM, Metadata.CONTEXT_MODE_API)
             );
 
-            builder.startObject(indexMetadata.getIndex().getName());
+            builder.startObject(indexMetadata.getIndex().name());
 
             builder.field(KEY_VERSION, indexMetadata.getVersion());
             builder.field(KEY_MAPPING_VERSION, indexMetadata.getMappingVersion());

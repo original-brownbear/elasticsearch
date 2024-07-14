@@ -218,8 +218,8 @@ public final class DataStreamTestHelper {
     }
 
     public static IndexMetadata.Builder getIndexMetadataBuilderForIndex(Index index) {
-        return IndexMetadata.builder(index.getName())
-            .settings(Settings.builder().put(SETTINGS.build()).put(SETTING_INDEX_UUID, index.getUUID()))
+        return IndexMetadata.builder(index.name())
+            .settings(Settings.builder().put(SETTINGS.build()).put(SETTING_INDEX_UUID, index.uuid()))
             .numberOfShards(NUMBER_OF_SHARDS)
             .numberOfReplicas(NUMBER_OF_REPLICAS);
     }
@@ -353,7 +353,7 @@ public final class DataStreamTestHelper {
                 .setAutoShardingEvent(
                     randomBoolean()
                         ? new DataStreamAutoShardingEvent(
-                            indices.get(indices.size() - 1).getName(),
+                            indices.get(indices.size() - 1).name(),
                             randomIntBetween(1, 10),
                             randomMillisUpToYear9999()
                         )
@@ -365,7 +365,7 @@ public final class DataStreamTestHelper {
                 .setAutoShardingEvent(
                     failureStore && randomBoolean()
                         ? new DataStreamAutoShardingEvent(
-                            indices.get(indices.size() - 1).getName(),
+                            indices.get(indices.size() - 1).name(),
                             randomIntBetween(1, 10),
                             randomMillisUpToYear9999()
                         )

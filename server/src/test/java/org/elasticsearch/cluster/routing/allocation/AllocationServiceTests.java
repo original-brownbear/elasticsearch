@@ -345,7 +345,7 @@ public class AllocationServiceTests extends ESTestCase {
                 if (decision.type() == Decision.Type.YES) {
                     return AllocateUnassignedDecision.yes(routingNode.node(), null, null, false);
                 } else {
-                    if (shardRouting.index().getName().equals("mediumPriority")
+                    if (shardRouting.index().name().equals("mediumPriority")
                         && shardRouting.primary() == false
                         && decision.type() == Decision.Type.THROTTLE) {
                         allocation.deciders().canAllocate(shardRouting, routingNode, allocation);

@@ -188,7 +188,7 @@ public class TransportPrevalidateNodeRemovalAction extends TransportMasterNodeRe
         Set<String> redNonSSIndices = redIndices.stream()
             .map(metadata::index)
             .filter(i -> i.isSearchableSnapshot() == false)
-            .map(im -> im.getIndex().getName())
+            .map(im -> im.getIndex().name())
             .collect(Collectors.toSet());
         if (redNonSSIndices.isEmpty()) {
             List<NodeResult> nodeResults = requestNodes.stream()

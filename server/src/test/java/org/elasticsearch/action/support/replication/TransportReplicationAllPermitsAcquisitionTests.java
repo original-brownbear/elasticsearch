@@ -124,7 +124,7 @@ public class TransportReplicationAllPermitsAcquisitionTests extends IndexShardTe
             RecoverySource.EmptyStoreRecoverySource.INSTANCE
         ).build();
 
-        Settings indexSettings = indexSettings(IndexVersion.current(), 1, 1).put(SETTING_INDEX_UUID, shardId.getIndex().getUUID())
+        Settings indexSettings = indexSettings(IndexVersion.current(), 1, 1).put(SETTING_INDEX_UUID, shardId.getIndex().uuid())
             .put(SETTING_CREATION_DATE, System.currentTimeMillis())
             .build();
 

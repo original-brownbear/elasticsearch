@@ -73,7 +73,7 @@ public class TransportAutoPutMappingAction extends AcknowledgedTransportMasterNo
 
     @Override
     protected ClusterBlockException checkBlock(PutMappingRequest request, ClusterState state) {
-        String[] indices = new String[] { request.getConcreteIndex().getName() };
+        String[] indices = new String[] { request.getConcreteIndex().name() };
         return state.blocks().indicesBlockedException(ClusterBlockLevel.METADATA_WRITE, indices);
     }
 

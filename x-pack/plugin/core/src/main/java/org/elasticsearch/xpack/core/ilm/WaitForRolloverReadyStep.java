@@ -81,18 +81,18 @@ public class WaitForRolloverReadyStep extends AsyncWaitStep {
 
     @Override
     public void evaluateCondition(Metadata metadata, Index index, Listener listener, TimeValue masterTimeout) {
-        IndexAbstraction indexAbstraction = metadata.getIndicesLookup().get(index.getName());
-        assert indexAbstraction != null : "invalid cluster metadata. index [" + index.getName() + "] was not found";
+        IndexAbstraction indexAbstraction = metadata.getIndicesLookup().get(index.name());
+        assert indexAbstraction != null : "invalid cluster metadata. index [" + index.name() + "] was not found";
         final String rolloverTarget;
         final boolean targetFailureStore;
         DataStream dataStream = indexAbstraction.getParentDataStream();
         if (dataStream != null) {
-            targetFailureStore = dataStream.isFailureStoreIndex(index.getName());
+            targetFailureStore = dataStream.isFailureStoreIndex(index.name());
             boolean isFailureStoreWriteIndex = index.equals(dataStream.getFailureStoreWriteIndex());
             if (isFailureStoreWriteIndex == false && dataStream.getWriteIndex().equals(index) == false) {
                 logger.warn(
                     "index [{}] is not the {}write index for data stream [{}]. skipping rollover for policy [{}]",
-                    index.getName(),
+                    index.name(),
                     targetFailureStore ? "failure store " : "",
                     dataStream.getName(),
                     metadata.index(index).getLifecyclePolicyName()
@@ -112,7 +112,7 @@ public class WaitForRolloverReadyStep extends AsyncWaitStep {
                             Locale.ROOT,
                             "setting [%s] for index [%s] is empty or not defined",
                             RolloverAction.LIFECYCLE_ROLLOVER_ALIAS,
-                            index.getName()
+                            index.name()
                         )
                     )
                 );
@@ -122,7 +122,7 @@ public class WaitForRolloverReadyStep extends AsyncWaitStep {
             if (indexMetadata.getRolloverInfos().get(rolloverAlias) != null) {
                 logger.info(
                     "index [{}] was already rolled over for alias [{}], not attempting to roll over again",
-                    index.getName(),
+                    index.name(),
                     rolloverAlias
                 );
                 listener.onResponse(true, EmptyInfo.INSTANCE);
@@ -158,7 +158,7 @@ public class WaitForRolloverReadyStep extends AsyncWaitStep {
                             String.format(
                                 Locale.ROOT,
                                 "index [%s] has [%s] set to [true], but is still the write index for alias [%s]",
-                                index.getName(),
+                                index.name(),
                                 LifecycleSettings.LIFECYCLE_INDEXING_COMPLETE,
                                 rolloverAlias
                             )
@@ -180,7 +180,7 @@ public class WaitForRolloverReadyStep extends AsyncWaitStep {
                             "%s [%s] does not point to index [%s]",
                             RolloverAction.LIFECYCLE_ROLLOVER_ALIAS,
                             rolloverAlias,
-                            index.getName()
+                            index.name()
                         )
                     )
                 );
@@ -191,7 +191,7 @@ public class WaitForRolloverReadyStep extends AsyncWaitStep {
             if (Boolean.FALSE.equals(isWriteIndex)) {
                 listener.onFailure(
                     new IllegalArgumentException(
-                        String.format(Locale.ROOT, "index [%s] is not the write index for alias [%s]", index.getName(), rolloverAlias)
+                        String.format(Locale.ROOT, "index [%s] is not the write index for alias [%s]", index.name(), rolloverAlias)
                     )
                 );
                 return;
@@ -215,9 +215,9 @@ public class WaitForRolloverReadyStep extends AsyncWaitStep {
             final var conditionStatus = response.getConditionStatus();
             final var conditionsMet = rolloverRequest.getConditions().areConditionsMet(conditionStatus);
             if (conditionsMet) {
-                logger.info("index [{}] is ready for rollover, conditions: [{}]", index.getName(), conditionStatus);
+                logger.info("index [{}] is ready for rollover, conditions: [{}]", index.name(), conditionStatus);
             } else {
-                logger.debug("index [{}] is not ready for rollover, conditions: [{}]", index.getName(), conditionStatus);
+                logger.debug("index [{}] is not ready for rollover, conditions: [{}]", index.name(), conditionStatus);
             }
             listener.onResponse(conditionsMet, EmptyInfo.INSTANCE);
         }, listener::onFailure));

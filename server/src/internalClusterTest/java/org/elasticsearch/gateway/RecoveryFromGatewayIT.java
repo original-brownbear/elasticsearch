@@ -144,7 +144,7 @@ public class RecoveryFromGatewayIT extends ESIntegTestCase {
         final Map<String, long[]> result = new HashMap<>();
         final ClusterState state = clusterAdmin().prepareState().get().getState();
         for (IndexMetadata indexMetadata : state.metadata().indices().values()) {
-            final String index = indexMetadata.getIndex().getName();
+            final String index = indexMetadata.getIndex().name();
             final long[] previous = previousTerms.get(index);
             final long[] current = IntStream.range(0, indexMetadata.getNumberOfShards()).mapToLong(indexMetadata::primaryTerm).toArray();
             if (previous == null) {

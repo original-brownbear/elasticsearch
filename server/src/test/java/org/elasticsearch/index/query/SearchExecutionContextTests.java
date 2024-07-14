@@ -159,8 +159,8 @@ public class SearchExecutionContextTests extends ESTestCase {
 
         IndexFieldData<?> forField = context.getForField(mapper.fieldType(), MappedFieldType.FielddataOperation.SEARCH);
         String expected = clusterAlias == null
-            ? context.getIndexSettings().getIndexMetadata().getIndex().getName()
-            : clusterAlias + ":" + context.getIndexSettings().getIndex().getName();
+            ? context.getIndexSettings().getIndexMetadata().getIndex().name()
+            : clusterAlias + ":" + context.getIndexSettings().getIndex().name();
         assertEquals(expected, ((AbstractLeafOrdinalsFieldData) forField.load(null)).getOrdinalsValues().lookupOrd(0).utf8ToString());
     }
 
@@ -168,8 +168,8 @@ public class SearchExecutionContextTests extends ESTestCase {
         String clusterAlias = randomAlphaOfLengthBetween(5, 10);
         String indexUuid = randomAlphaOfLengthBetween(3, 10);
         SearchExecutionContext searchExecutionContext = createSearchExecutionContext(indexUuid, clusterAlias);
-        assertThat(searchExecutionContext.getFullyQualifiedIndex().getName(), equalTo(clusterAlias + ":index"));
-        assertThat(searchExecutionContext.getFullyQualifiedIndex().getUUID(), equalTo(indexUuid));
+        assertThat(searchExecutionContext.getFullyQualifiedIndex().name(), equalTo(clusterAlias + ":index"));
+        assertThat(searchExecutionContext.getFullyQualifiedIndex().uuid(), equalTo(indexUuid));
     }
 
     public void testIndexSortedOnField() {

@@ -203,19 +203,19 @@ public class ClusterChangedEventTests extends ESTestCase {
         ClusterState newState = ClusterState.builder(originalState).build();
         ClusterChangedEvent event = new ClusterChangedEvent("_na_", originalState, newState);
         assertFalse("routing tables should be the same object", event.routingTableChanged());
-        assertFalse("index routing table should be the same object", event.indexRoutingTableChanged(initialIndices.get(0).getName()));
+        assertFalse("index routing table should be the same object", event.indexRoutingTableChanged(initialIndices.get(0).name()));
 
         // routing tables and index routing tables aren't same object
         newState = createState(numNodesInCluster, randomBoolean(), initialIndices);
         event = new ClusterChangedEvent("_na_", originalState, newState);
         assertTrue("routing tables should not be the same object", event.routingTableChanged());
-        assertTrue("index routing table should not be the same object", event.indexRoutingTableChanged(initialIndices.get(0).getName()));
+        assertTrue("index routing table should not be the same object", event.indexRoutingTableChanged(initialIndices.get(0).name()));
 
         // index routing tables are different because they don't exist
         newState = createState(numNodesInCluster, randomBoolean(), initialIndices.subList(1, initialIndices.size()));
         event = new ClusterChangedEvent("_na_", originalState, newState);
         assertTrue("routing tables should not be the same object", event.routingTableChanged());
-        assertTrue("index routing table should not be the same object", event.indexRoutingTableChanged(initialIndices.get(0).getName()));
+        assertTrue("index routing table should not be the same object", event.indexRoutingTableChanged(initialIndices.get(0).name()));
     }
 
     /**
@@ -391,7 +391,7 @@ public class ClusterChangedEventTests extends ESTestCase {
                 metaBuilder.put(createIndexMetadata(index), true);
             }
             for (Index index : deletedIndices) {
-                metaBuilder.remove(index.getName());
+                metaBuilder.remove(index.name());
                 IndexGraveyard.Builder graveyardBuilder = IndexGraveyard.builder(metaBuilder.indexGraveyard());
                 graveyardBuilder.addTombstone(index);
                 metaBuilder.indexGraveyard(graveyardBuilder.build());
@@ -486,9 +486,9 @@ public class ClusterChangedEventTests extends ESTestCase {
     private static IndexMetadata createIndexMetadata(final Index index, final long version) {
         final Settings settings = Settings.builder()
             .put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current())
-            .put(IndexMetadata.SETTING_INDEX_UUID, index.getUUID())
+            .put(IndexMetadata.SETTING_INDEX_UUID, index.uuid())
             .build();
-        return IndexMetadata.builder(index.getName())
+        return IndexMetadata.builder(index.name())
             .settings(settings)
             .numberOfShards(1)
             .numberOfReplicas(0)
@@ -552,7 +552,7 @@ public class ClusterChangedEventTests extends ESTestCase {
         ClusterChangedEvent event = new ClusterChangedEvent("_na_", newState, previousState);
         final List<String> addsFromEvent = ClusterChangedEventUtils.indicesCreated(event);
         List<Index> delsFromEvent = event.indicesDeleted();
-        assertThat(new HashSet<>(addsFromEvent), equalTo(addedIndices.stream().map(Index::getName).collect(Collectors.toSet())));
+        assertThat(new HashSet<>(addsFromEvent), equalTo(addedIndices.stream().map(Index::name).collect(Collectors.toSet())));
         assertThat(new HashSet<>(delsFromEvent), equalTo(new HashSet<>(delIndices)));
         assertThat(event.metadataChanged(), equalTo(changeClusterUUID || addedIndices.size() > 0 || delIndices.size() > 0));
         final IndexGraveyard newGraveyard = event.state().metadata().indexGraveyard();

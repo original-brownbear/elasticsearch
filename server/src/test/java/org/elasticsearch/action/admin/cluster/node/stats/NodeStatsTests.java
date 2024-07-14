@@ -658,7 +658,7 @@ public class NodeStatsTests extends ESTestCase {
             ShardRouting.Role.DEFAULT
         );
         Path path = createTempDir().resolve("indices")
-            .resolve(shardRouting.shardId().getIndex().getUUID())
+            .resolve(shardRouting.shardId().getIndex().uuid())
             .resolve(String.valueOf(shardRouting.shardId().id()));
         ShardPath shardPath = new ShardPath(false, path, path, shardRouting.shardId());
         return new ShardStats(shardRouting, shardPath, createShardLevelCommonStats(), null, null, null, false, 0);

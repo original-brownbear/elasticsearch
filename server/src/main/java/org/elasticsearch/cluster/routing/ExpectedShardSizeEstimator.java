@@ -107,7 +107,7 @@ public class ExpectedShardSizeEstimator {
                 sourceIndexMetadata,
                 indexMetadata.getNumberOfShards()
             );
-            final IndexRoutingTable indexRoutingTable = routingTable.index(mergeSourceIndex.getName());
+            final IndexRoutingTable indexRoutingTable = routingTable.index(mergeSourceIndex.name());
             for (int i = 0; i < indexRoutingTable.size(); i++) {
                 IndexShardRoutingTable shardRoutingTable = indexRoutingTable.shard(i);
                 if (shardIds.contains(shardRoutingTable.shardId())) {

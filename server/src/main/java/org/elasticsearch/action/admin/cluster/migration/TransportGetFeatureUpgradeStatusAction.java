@@ -169,10 +169,10 @@ public class TransportGetFeatureUpgradeStatusAction extends TransportMasterNodeA
             .map(index -> state.metadata().index(index))
             .map(
                 indexMetadata -> new GetFeatureUpgradeStatusResponse.IndexInfo(
-                    indexMetadata.getIndex().getName(),
+                    indexMetadata.getIndex().name(),
                     indexMetadata.getCreationVersion(),
-                    (indexMetadata.getIndex().getName().equals(failedFeatureName)
-                        || indexMetadata.getIndex().getName().equals(failedFeatureUpgradedName)) ? exception : null
+                    (indexMetadata.getIndex().name().equals(failedFeatureName)
+                        || indexMetadata.getIndex().name().equals(failedFeatureUpgradedName)) ? exception : null
                 )
             )
             .toList();

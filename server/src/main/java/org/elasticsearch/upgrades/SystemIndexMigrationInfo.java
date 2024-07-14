@@ -72,7 +72,7 @@ class SystemIndexMigrationInfo implements Comparable<SystemIndexMigrationInfo> {
      * Gets the name of the index to be migrated.
      */
     String getCurrentIndexName() {
-        return currentIndex.getIndex().getName();
+        return currentIndex.getIndex().name();
     }
 
     /**
@@ -86,7 +86,7 @@ class SystemIndexMigrationInfo implements Comparable<SystemIndexMigrationInfo> {
      * Gets the name to be used for the post-migration index.
      */
     String getNextIndexName() {
-        return currentIndex.getIndex().getName() + SystemIndices.UPGRADED_INDEX_SUFFIX;
+        return currentIndex.getIndex().name() + SystemIndices.UPGRADED_INDEX_SUFFIX;
     }
 
     /**
@@ -173,7 +173,7 @@ class SystemIndexMigrationInfo implements Comparable<SystemIndexMigrationInfo> {
     public String toString() {
         return "IndexUpgradeInfo["
             + "currentIndex='"
-            + currentIndex.getIndex().getName()
+            + currentIndex.getIndex().name()
             + "\'"
             + ", featureName='"
             + featureName

@@ -99,7 +99,7 @@ public class WildcardExpressionResolverTests extends ESTestCase {
                 IndexNotFoundException.class,
                 () -> IndexNameExpressionResolver.resolveExpressions(context, "testXXX", "-testXXX")
             );
-            assertEquals("-testXXX", infe.getIndex().getName());
+            assertEquals("-testXXX", infe.getIndex().name());
         }
         assertThat(
             newHashSet(IndexNameExpressionResolver.WildcardExpressionResolver.resolve(context, Arrays.asList("testXXX", "-testX*"))),
@@ -195,7 +195,7 @@ public class WildcardExpressionResolverTests extends ESTestCase {
             IndexNotFoundException.class,
             () -> IndexNameExpressionResolver.resolveExpressions(finalContext, "testX*")
         );
-        assertThat(infe.getIndex().getName(), is("testX*"));
+        assertThat(infe.getIndex().name(), is("testX*"));
     }
 
     // issue #13334
@@ -526,7 +526,7 @@ public class WildcardExpressionResolverTests extends ESTestCase {
                     Collections.singletonList("foo_a*")
                 )
             );
-            assertEquals("foo_a*", infe.getIndex().getName());
+            assertEquals("foo_a*", infe.getIndex().name());
         }
         {
             Collection<String> indices = IndexNameExpressionResolver.WildcardExpressionResolver.resolve(
@@ -841,6 +841,6 @@ public class WildcardExpressionResolverTests extends ESTestCase {
             IndexNotFoundException.class,
             () -> IndexNameExpressionResolver.WildcardExpressionResolver.resolve(context, List.of(wildcardExpression))
         );
-        assertEquals(wildcardExpression, infe.getIndex().getName());
+        assertEquals(wildcardExpression, infe.getIndex().name());
     }
 }

@@ -48,15 +48,15 @@ public class PriorityComparatorTests extends ESTestCase {
             @Override
             protected IndexMetadata getMetadata(Index index) {
                 Settings settings;
-                if ("oldest".equals(index.getName())) {
+                if ("oldest".equals(index.name())) {
                     settings = buildSettings(10, 1);
-                } else if ("newest".equals(index.getName())) {
+                } else if ("newest".equals(index.name())) {
                     settings = buildSettings(100, 1);
                 } else {
                     settings = Settings.EMPTY;
                 }
 
-                return IndexMetadata.builder(index.getName()).settings(settings).build();
+                return IndexMetadata.builder(index.name()).settings(settings).build();
             }
         });
         RoutingNodes.UnassignedShards.UnassignedIterator iterator = shards.iterator();
@@ -85,15 +85,15 @@ public class PriorityComparatorTests extends ESTestCase {
             @Override
             protected IndexMetadata getMetadata(Index index) {
                 Settings settings;
-                if ("oldest".equals(index.getName())) {
+                if ("oldest".equals(index.name())) {
                     settings = buildSettings(10, 100);
-                } else if ("newest".equals(index.getName())) {
+                } else if ("newest".equals(index.name())) {
                     settings = buildSettings(100, 1);
                 } else {
                     settings = Settings.EMPTY;
                 }
 
-                return IndexMetadata.builder(index.getName()).settings(settings).build();
+                return IndexMetadata.builder(index.name()).settings(settings).build();
             }
         });
         RoutingNodes.UnassignedShards.UnassignedIterator iterator = shards.iterator();
@@ -123,16 +123,16 @@ public class PriorityComparatorTests extends ESTestCase {
             protected IndexMetadata getMetadata(Index index) {
                 Settings settings;
                 boolean isSystem = false;
-                if ("oldest".equals(index.getName())) {
+                if ("oldest".equals(index.name())) {
                     settings = buildSettings(10, 100);
                     isSystem = true;
-                } else if ("newest".equals(index.getName())) {
+                } else if ("newest".equals(index.name())) {
                     settings = buildSettings(100, 1);
                 } else {
                     settings = Settings.EMPTY;
                 }
 
-                return IndexMetadata.builder(index.getName()).system(isSystem).settings(settings).build();
+                return IndexMetadata.builder(index.name()).system(isSystem).settings(settings).build();
             }
         });
         RoutingNodes.UnassignedShards.UnassignedIterator iterator = shards.iterator();
@@ -168,14 +168,14 @@ public class PriorityComparatorTests extends ESTestCase {
                 .settings(buildSettings(creationDate, priority))
                 .build();
 
-            map.put(indices[i].getIndex().getName(), indices[i]);
+            map.put(indices[i].getIndex().name(), indices[i]);
         }
         int numShards = randomIntBetween(10, 100);
         for (int i = 0; i < numShards; i++) {
             IndexMetadata indexMeta = randomFrom(indices);
             shards.add(
                 shardRoutingBuilder(
-                    indexMeta.getIndex().getName(),
+                    indexMeta.getIndex().name(),
                     randomIntBetween(1, 5),
                     null,
                     randomBoolean(),
@@ -186,7 +186,7 @@ public class PriorityComparatorTests extends ESTestCase {
         shards.sort(new PriorityComparator() {
             @Override
             protected IndexMetadata getMetadata(Index index) {
-                return map.get(index.getName());
+                return map.get(index.name());
             }
         });
         ShardRouting previous = null;
@@ -204,8 +204,8 @@ public class PriorityComparatorTests extends ESTestCase {
                         final int currentCreationDate = currentMeta.getSettings().getAsInt(IndexMetadata.SETTING_CREATION_DATE, -1);
 
                         if (prevCreationDate == currentCreationDate) {
-                            final String prevName = prevMeta.getIndex().getName();
-                            final String currentName = currentMeta.getIndex().getName();
+                            final String prevName = prevMeta.getIndex().name();
+                            final String currentName = currentMeta.getIndex().name();
 
                             if (prevName.equals(currentName) == false) {
                                 assertThat(

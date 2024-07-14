@@ -173,7 +173,7 @@ public class ScriptScoreQueryBuilder extends AbstractQueryBuilder<ScriptScoreQue
             scoreScriptFactory,
             context.lookup(),
             minScore,
-            context.index().getName(),
+            context.index().name(),
             context.getShardId(),
             context.indexVersionCreated()
         );

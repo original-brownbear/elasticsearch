@@ -654,7 +654,7 @@ public class PercolateQueryBuilder extends AbstractQueryBuilder<PercolateQueryBu
             ) {
                 IndexFieldData.Builder builder = fieldType.fielddataBuilder(
                     new FieldDataContext(
-                        delegate.getFullyQualifiedIndex().getName(),
+                        delegate.getFullyQualifiedIndex().name(),
                         delegate.getIndexSettings(),
                         delegate::lookup,
                         this::sourcePath,

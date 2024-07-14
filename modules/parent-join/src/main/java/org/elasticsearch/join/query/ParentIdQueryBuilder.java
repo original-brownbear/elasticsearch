@@ -160,7 +160,7 @@ public final class ParentIdQueryBuilder extends AbstractQueryBuilder<ParentIdQue
             if (ignoreUnmapped) {
                 return new MatchNoDocsQuery();
             } else {
-                final String indexName = context.getIndexSettings().getIndex().getName();
+                final String indexName = context.getIndexSettings().getIndex().name();
                 throw new QueryShardException(context, "[" + NAME + "] no join field found for index [" + indexName + "]");
             }
         }

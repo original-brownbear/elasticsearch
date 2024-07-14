@@ -45,8 +45,8 @@ public class IndexTests extends AbstractXContentSerializingTestCase<Index> {
 
     public static Index mutate(Index instance) {
         return switch (randomInt(1)) {
-            case 0 -> new Index(randomValueOtherThan(instance.getName(), ESTestCase::randomIdentifier), instance.getUUID());
-            case 1 -> new Index(instance.getName(), randomValueOtherThan(instance.getUUID(), UUIDs::randomBase64UUID));
+            case 0 -> new Index(randomValueOtherThan(instance.name(), ESTestCase::randomIdentifier), instance.uuid());
+            case 1 -> new Index(instance.name(), randomValueOtherThan(instance.uuid(), UUIDs::randomBase64UUID));
             default -> throw new RuntimeException("unreachable");
         };
     }
@@ -59,11 +59,11 @@ public class IndexTests extends AbstractXContentSerializingTestCase<Index> {
             randomSimpleString(random(), 1, 100),
             usually() ? UUIDs.randomBase64UUID(random()) : ClusterState.UNKNOWN_UUID
         );
-        assertThat(random.toString(), containsString(random.getName()));
-        if (ClusterState.UNKNOWN_UUID.equals(random.getUUID())) {
-            assertThat(random.toString(), not(containsString(random.getUUID())));
+        assertThat(random.toString(), containsString(random.name()));
+        if (ClusterState.UNKNOWN_UUID.equals(random.uuid())) {
+            assertThat(random.toString(), not(containsString(random.uuid())));
         } else {
-            assertThat(random.toString(), containsString(random.getUUID()));
+            assertThat(random.toString(), containsString(random.uuid()));
         }
     }
 }

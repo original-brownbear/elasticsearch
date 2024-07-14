@@ -355,11 +355,11 @@ public class IngestService implements ClusterStateApplier, ReportingService<Inge
             String defaultPipeline = IndexSettings.DEFAULT_PIPELINE.get(indexMetadata.getSettings());
             String finalPipeline = IndexSettings.FINAL_PIPELINE.get(indexMetadata.getSettings());
             if (pipeline.equals(defaultPipeline)) {
-                defaultPipelineIndices.add(indexMetadata.getIndex().getName());
+                defaultPipelineIndices.add(indexMetadata.getIndex().name());
             }
 
             if (pipeline.equals(finalPipeline)) {
-                finalPipelineIndices.add(indexMetadata.getIndex().getName());
+                finalPipelineIndices.add(indexMetadata.getIndex().name());
             }
         }
 

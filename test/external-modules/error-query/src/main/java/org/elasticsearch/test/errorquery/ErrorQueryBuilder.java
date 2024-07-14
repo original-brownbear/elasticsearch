@@ -203,7 +203,7 @@ public class ErrorQueryBuilder extends AbstractQueryBuilder<ErrorQueryBuilder> {
                     return;
                 }
             }
-            final String header = "[" + context.index().getName() + "][" + context.getShardId() + "]";
+            final String header = "[" + context.index().name() + "][" + context.getShardId() + "]";
             if (error.getErrorType() == IndexError.ERROR_TYPE.WARNING) {
                 HeaderWarning.addWarning(header + " " + error.getMessage());
             } else if (error.getErrorType() == IndexError.ERROR_TYPE.EXCEPTION) {

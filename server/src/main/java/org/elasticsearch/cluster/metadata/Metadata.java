@@ -380,7 +380,7 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, Ch
 
         // drop it into the indices
         final ImmutableOpenMap.Builder<String, IndexMetadata> builder = ImmutableOpenMap.builder(indices);
-        builder.put(index.getName(), indexMetadataBuilder.build());
+        builder.put(index.name(), indexMetadataBuilder.build());
 
         // construct a new Metadata object directly rather than using Metadata.builder(this).[...].build().
         // the Metadata.Builder validation needs to handle the general case where anything at all could
@@ -419,10 +419,10 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, Ch
 
         final ImmutableOpenMap.Builder<String, IndexMetadata> builder = ImmutableOpenMap.builder(indices);
         updates.forEach((index, settings) -> {
-            IndexMetadata previous = builder.remove(index.getName());
+            IndexMetadata previous = builder.remove(index.name());
             assert previous != null : index;
             builder.put(
-                index.getName(),
+                index.name(),
                 IndexMetadata.builder(previous).settingsVersion(previous.getSettingsVersion() + 1L).settings(settings).build()
             );
         });
@@ -566,7 +566,7 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, Ch
      * @return copy with added index
      */
     public Metadata withAddedIndex(IndexMetadata index) {
-        final String indexName = index.getIndex().getName();
+        final String indexName = index.getIndex().name();
         ensureNoNameCollision(indexName);
         final Map<String, AliasMetadata> aliases = index.getAliases();
         final ImmutableOpenMap<String, Set<Index>> updatedAliases = aliasesAfterAddingIndex(index, aliases);
@@ -624,7 +624,7 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, Ch
         builder.put(indexName, index);
         final ImmutableOpenMap<String, IndexMetadata> indicesMap = builder.build();
         for (var entry : updatedAliases.entrySet()) {
-            List<IndexMetadata> aliasIndices = entry.getValue().stream().map(idx -> indicesMap.get(idx.getName())).toList();
+            List<IndexMetadata> aliasIndices = entry.getValue().stream().map(idx -> indicesMap.get(idx.name())).toList();
             Builder.validateAlias(entry.getKey(), aliasIndices);
         }
         return new Metadata(
@@ -659,7 +659,7 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, Ch
         if (aliases.isEmpty()) {
             return aliasedIndices;
         }
-        final String indexName = index.getIndex().getName();
+        final String indexName = index.getIndex().name();
         final ImmutableOpenMap.Builder<String, Set<Index>> aliasesBuilder = ImmutableOpenMap.builder(aliasedIndices);
         for (String alias : aliases.keySet()) {
             ensureNoNameCollision(alias);
@@ -1171,7 +1171,7 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, Ch
         String[] indexNames = new String[result.getIndices().size()];
         int i = 0;
         for (Index indexName : result.getIndices()) {
-            indexNames[i++] = indexName.getName();
+            indexNames[i++] = indexName.name();
         }
         throw new IllegalArgumentException(
             "Alias ["
@@ -1198,8 +1198,8 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, Ch
      * @return {@code true} if an index exists with the same name and UUID as the given index object, {@code false} otherwise.
      */
     public boolean hasIndex(Index index) {
-        IndexMetadata metadata = index(index.getName());
-        return metadata != null && metadata.getIndexUUID().equals(index.getUUID());
+        IndexMetadata metadata = index(index.name());
+        return metadata != null && metadata.getIndexUUID().equals(index.uuid());
     }
 
     /**
@@ -1216,8 +1216,8 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, Ch
     }
 
     public IndexMetadata index(Index index) {
-        IndexMetadata metadata = index(index.getName());
-        if (metadata != null && metadata.getIndexUUID().equals(index.getUUID())) {
+        IndexMetadata metadata = index(index.name());
+        if (metadata != null && metadata.getIndexUUID().equals(index.uuid())) {
             return metadata;
         }
         return null;
@@ -1225,7 +1225,7 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, Ch
 
     /** Returns true iff existing index has the same {@link IndexMetadata} instance */
     public boolean hasIndexMetadata(final IndexMetadata indexMetadata) {
-        return indices.get(indexMetadata.getIndex().getName()) == indexMetadata;
+        return indices.get(indexMetadata.getIndex().name()) == indexMetadata;
     }
 
     /**
@@ -1233,15 +1233,15 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, Ch
      * @throws IndexNotFoundException if no metadata for this index is found
      */
     public IndexMetadata getIndexSafe(Index index) {
-        IndexMetadata metadata = index(index.getName());
+        IndexMetadata metadata = index(index.name());
         if (metadata != null) {
-            if (metadata.getIndexUUID().equals(index.getUUID())) {
+            if (metadata.getIndexUUID().equals(index.uuid())) {
                 return metadata;
             }
             throw new IndexNotFoundException(
                 index,
                 new IllegalStateException(
-                    "index uuid doesn't match expected: [" + index.getUUID() + "] but got: [" + metadata.getIndexUUID() + "]"
+                    "index uuid doesn't match expected: [" + index.uuid() + "] but got: [" + metadata.getIndexUUID() + "]"
                 )
             );
         }
@@ -1371,7 +1371,7 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, Ch
             return false;
         }
 
-        IndexAbstraction indexAbstraction = getIndicesLookup().get(indexMetadata.getIndex().getName());
+        IndexAbstraction indexAbstraction = getIndicesLookup().get(indexMetadata.getIndex().name());
         if (indexAbstraction == null) {
             // index doesn't exist anymore
             return false;
@@ -1860,7 +1860,7 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, Ch
             indexMetadataBuilder.version(indexMetadataBuilder.version() + 1);
             dedupeMapping(indexMetadataBuilder);
             IndexMetadata indexMetadata = indexMetadataBuilder.build();
-            IndexMetadata previous = indices.put(indexMetadata.getIndex().getName(), indexMetadata);
+            IndexMetadata previous = indices.put(indexMetadata.getIndex().name(), indexMetadata);
             updateAliases(previous, indexMetadata);
             if (unsetPreviousIndicesLookup(previous, indexMetadata)) {
                 previousIndicesLookup = null;
@@ -1870,7 +1870,7 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, Ch
         }
 
         public Builder put(IndexMetadata indexMetadata, boolean incrementVersion) {
-            final String name = indexMetadata.getIndex().getName();
+            final String name = indexMetadata.getIndex().name();
             indexMetadata = dedupeMapping(indexMetadata);
             IndexMetadata previous;
             if (incrementVersion) {
@@ -1943,15 +1943,15 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, Ch
         }
 
         public IndexMetadata getSafe(Index index) {
-            IndexMetadata indexMetadata = get(index.getName());
+            IndexMetadata indexMetadata = get(index.name());
             if (indexMetadata != null) {
-                if (indexMetadata.getIndexUUID().equals(index.getUUID())) {
+                if (indexMetadata.getIndexUUID().equals(index.uuid())) {
                     return indexMetadata;
                 }
                 throw new IndexNotFoundException(
                     index,
                     new IllegalStateException(
-                        "index uuid doesn't match expected: [" + index.getUUID() + "] but got: [" + indexMetadata.getIndexUUID() + "]"
+                        "index uuid doesn't match expected: [" + index.uuid() + "] but got: [" + indexMetadata.getIndexUUID() + "]"
                     )
                 );
             }
@@ -2028,12 +2028,12 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, Ch
 
             Set<Index> indices = aliasedIndices.get(alias);
             if (indices == null || indices.isEmpty()) {
-                throw new IllegalStateException("Cannot remove non-existent alias [" + alias + "] for index [" + index.getName() + "]");
+                throw new IllegalStateException("Cannot remove non-existent alias [" + alias + "] for index [" + index.name() + "]");
             }
 
             indices = new HashSet<>(indices);
             if (indices.remove(index) == false) {
-                throw new IllegalStateException("Cannot remove non-existent alias [" + alias + "] for index [" + index.getName() + "]");
+                throw new IllegalStateException("Cannot remove non-existent alias [" + alias + "] for index [" + index.name() + "]");
             }
 
             if (indices.isEmpty()) {
@@ -2372,7 +2372,7 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, Ch
                 allIndicesArray[i++] = entry.getKey();
                 final IndexMetadata indexMetadata = entry.getValue();
                 totalNumberOfShards += indexMetadata.getTotalNumberOfShards();
-                final String name = indexMetadata.getIndex().getName();
+                final String name = indexMetadata.getIndex().name();
                 final boolean visible = indexMetadata.isHidden() == false;
                 if (visible) {
                     visibleIndices.add(name);
@@ -2400,7 +2400,7 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, Ch
 
             var aliasedIndices = this.aliasedIndices.build();
             for (var entry : aliasedIndices.entrySet()) {
-                List<IndexMetadata> aliasIndices = entry.getValue().stream().map(idx -> indicesMap.get(idx.getName())).toList();
+                List<IndexMetadata> aliasIndices = entry.getValue().stream().map(idx -> indicesMap.get(idx.name())).toList();
                 validateAlias(entry.getKey(), aliasIndices);
             }
             SortedMap<String, IndexAbstraction> indicesLookup = null;
@@ -2597,13 +2597,13 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, Ch
 
         private static boolean assertContainsIndexIfDataStream(DataStream parent, IndexMetadata indexMetadata) {
             assert parent == null
-                || parent.getIndices().stream().anyMatch(index -> indexMetadata.getIndex().getName().equals(index.getName()))
+                || parent.getIndices().stream().anyMatch(index -> indexMetadata.getIndex().name().equals(index.name()))
                 || (DataStream.isFailureStoreFeatureFlagEnabled()
                     && parent.isFailureStoreEnabled()
                     && parent.getFailureIndices()
                         .getIndices()
                         .stream()
-                        .anyMatch(index -> indexMetadata.getIndex().getName().equals(index.getName())))
+                        .anyMatch(index -> indexMetadata.getIndex().name().equals(index.name())))
                 : "Expected data stream [" + parent.getName() + "] to contain index " + indexMetadata.getIndex();
             return true;
         }
@@ -2623,11 +2623,11 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, Ch
                 assert existing == null : "duplicate data stream for " + dataStream.getName();
 
                 for (Index i : dataStream.getIndices()) {
-                    indexToDataStreamLookup.put(i.getName(), dataStream);
+                    indexToDataStreamLookup.put(i.name(), dataStream);
                 }
                 if (DataStream.isFailureStoreFeatureFlagEnabled() && dataStream.isFailureStoreEnabled()) {
                     for (Index i : dataStream.getFailureIndices().getIndices()) {
-                        indexToDataStreamLookup.put(i.getName(), dataStream);
+                        indexToDataStreamLookup.put(i.name(), dataStream);
                     }
                 }
             }
@@ -2654,7 +2654,7 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, Ch
             // Validate write indices
             List<String> writeIndices = indexMetadatas.stream()
                 .filter(idxMeta -> Boolean.TRUE.equals(idxMeta.getAliases().get(aliasName).writeIndex()))
-                .map(im -> im.getIndex().getName())
+                .map(im -> im.getIndex().name())
                 .toList();
             if (writeIndices.size() > 1) {
                 throw new IllegalStateException(
@@ -2670,8 +2670,8 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, Ch
             final Map<Boolean, List<IndexMetadata>> groupedByHiddenStatus = indexMetadatas.stream()
                 .collect(Collectors.groupingBy(idxMeta -> Boolean.TRUE.equals(idxMeta.getAliases().get(aliasName).isHidden())));
             if (isNonEmpty(groupedByHiddenStatus.get(true)) && isNonEmpty(groupedByHiddenStatus.get(false))) {
-                List<String> hiddenOn = groupedByHiddenStatus.get(true).stream().map(idx -> idx.getIndex().getName()).toList();
-                List<String> nonHiddenOn = groupedByHiddenStatus.get(false).stream().map(idx -> idx.getIndex().getName()).toList();
+                List<String> hiddenOn = groupedByHiddenStatus.get(true).stream().map(idx -> idx.getIndex().name()).toList();
+                List<String> nonHiddenOn = groupedByHiddenStatus.get(false).stream().map(idx -> idx.getIndex().name()).toList();
                 throw new IllegalStateException(
                     "alias ["
                         + aliasName
@@ -2692,14 +2692,14 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, Ch
                 final List<String> newVersionSystemIndices = groupedBySystemStatus.get(true)
                     .stream()
                     .filter(i -> i.getCreationVersion().onOrAfter(IndexNameExpressionResolver.SYSTEM_INDEX_ENFORCEMENT_INDEX_VERSION))
-                    .map(i -> i.getIndex().getName())
+                    .map(i -> i.getIndex().name())
                     .sorted() // reliable error message for testing
                     .toList();
 
                 if (newVersionSystemIndices.isEmpty() == false) {
                     final List<String> nonSystemIndices = groupedBySystemStatus.get(false)
                         .stream()
-                        .map(i -> i.getIndex().getName())
+                        .map(i -> i.getIndex().name())
                         .sorted() // reliable error message for testing
                         .toList();
                     throw new IllegalStateException(
@@ -2722,7 +2722,7 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, Ch
 
             for (var dataStream : dsMetadata.dataStreams().values()) {
                 for (var index : dataStream.getIndices()) {
-                    IndexMetadata im = indices.get(index.getName());
+                    IndexMetadata im = indices.get(index.name());
                     if (im != null && im.getAliases().isEmpty() == false) {
                         for (var alias : im.getAliases().values()) {
                             if (conflictingAliases == null) {

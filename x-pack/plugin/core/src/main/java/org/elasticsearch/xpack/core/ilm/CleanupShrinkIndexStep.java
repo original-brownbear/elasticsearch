@@ -47,7 +47,7 @@ public class CleanupShrinkIndexStep extends AsyncRetryDuringSnapshotActionStep {
                 logger.warn(
                     "managed index [{}] as part of policy [{}] is a shrunk index and the source index [{}] does not exist "
                         + "anymore. will skip the [{}] step",
-                    indexMetadata.getIndex().getName(),
+                    indexMetadata.getIndex().name(),
                     policyName,
                     shrunkenIndexSource,
                     NAME

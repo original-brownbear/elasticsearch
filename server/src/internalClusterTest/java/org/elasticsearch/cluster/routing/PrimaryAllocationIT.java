@@ -391,7 +391,7 @@ public class PrimaryAllocationIT extends ESIntegTestCase {
             asInstanceOf(
                 IndexNotFoundException.class,
                 ClusterRerouteUtils.expectRerouteFailure(client(), new AllocateStalePrimaryAllocationCommand(idxName, 0, dataNode, true))
-            ).getIndex().getName()
+            ).getIndex().name()
         );
     }
 

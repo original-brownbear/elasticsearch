@@ -67,22 +67,19 @@ public class IndicesStatsResponseTests extends ESTestCase {
 
         for (int indCnt = 0; indCnt < noOfIndexes; indCnt++) {
             Index index = createIndex(randomAlphaOfLength(9));
-            expectedIndexes.add(index.getName());
+            expectedIndexes.add(index.name());
             int numShards = randomIntBetween(1, 5);
             for (int shardId = 0; shardId < numShards; shardId++) {
                 ShardId shId = new ShardId(index, shardId);
-                Path path = createTempDir().resolve("indices").resolve(index.getUUID()).resolve(String.valueOf(shardId));
+                Path path = createTempDir().resolve("indices").resolve(index.uuid()).resolve(String.valueOf(shardId));
                 ShardPath shardPath = new ShardPath(false, path, path, shId);
                 ShardRouting routing = createShardRouting(shId, (shardId == 0));
                 shards.add(new ShardStats(routing, shardPath, null, null, null, null, false, 0));
-                AtomicLong primaryShardsCounter = expectedIndexToPrimaryShardsCount.computeIfAbsent(
-                    index.getName(),
-                    k -> new AtomicLong(0L)
-                );
+                AtomicLong primaryShardsCounter = expectedIndexToPrimaryShardsCount.computeIfAbsent(index.name(), k -> new AtomicLong(0L));
                 if (routing.primary()) {
                     primaryShardsCounter.incrementAndGet();
                 }
-                AtomicLong shardsCounter = expectedIndexToTotalShardsCount.computeIfAbsent(index.getName(), k -> new AtomicLong(0L));
+                AtomicLong shardsCounter = expectedIndexToTotalShardsCount.computeIfAbsent(index.name(), k -> new AtomicLong(0L));
                 shardsCounter.incrementAndGet();
             }
         }
@@ -120,7 +117,7 @@ public class IndicesStatsResponseTests extends ESTestCase {
         final List<ShardStats> stats = new ArrayList<>(shards);
         for (int i = 0; i < shards; i++) {
             ShardId shId = new ShardId(createIndex("index-" + i), randomIntBetween(0, 1));
-            Path path = createTempDir().resolve("indices").resolve(shId.getIndex().getUUID()).resolve(String.valueOf(shId.id()));
+            Path path = createTempDir().resolve("indices").resolve(shId.getIndex().uuid()).resolve(String.valueOf(shId.id()));
             ShardPath shardPath = new ShardPath(false, path, path, shId);
             ShardRouting routing = createShardRouting(shId, (shId.id() == 0));
             stats.add(new ShardStats(routing, shardPath, new CommonStats(), null, null, null, false, 0));

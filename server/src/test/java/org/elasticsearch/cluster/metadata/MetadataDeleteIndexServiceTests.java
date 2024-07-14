@@ -188,7 +188,7 @@ public class MetadataDeleteIndexServiceTests extends ESTestCase {
         Index indexToDelete = before.metadata().index(DataStream.getDefaultBackingIndexName(dataStreamName, numIndexToDelete)).getIndex();
         ClusterState after = MetadataDeleteIndexService.deleteIndices(before, Set.of(indexToDelete), Settings.EMPTY);
 
-        assertThat(after.metadata().getIndices().get(indexToDelete.getName()), nullValue());
+        assertThat(after.metadata().getIndices().get(indexToDelete.name()), nullValue());
         assertThat(after.metadata().getIndices().size(), equalTo(numBackingIndices - 1));
         assertThat(after.metadata().getIndices().get(DataStream.getDefaultBackingIndexName(dataStreamName, numIndexToDelete)), nullValue());
     }
@@ -214,7 +214,7 @@ public class MetadataDeleteIndexServiceTests extends ESTestCase {
             .getIndex();
         ClusterState after = MetadataDeleteIndexService.deleteIndices(before, Set.of(indexToDelete), Settings.EMPTY);
 
-        assertThat(after.metadata().getIndices().get(indexToDelete.getName()), nullValue());
+        assertThat(after.metadata().getIndices().get(indexToDelete.name()), nullValue());
         assertThat(after.metadata().getIndices().size(), equalTo(2 * numBackingIndices - 1));
         assertThat(
             after.metadata().getIndices().get(DataStream.getDefaultFailureStoreName(dataStreamName, numIndexToDelete, now)),
@@ -246,7 +246,7 @@ public class MetadataDeleteIndexServiceTests extends ESTestCase {
         assertThat(dataStream, notNullValue());
         assertThat(dataStream.getIndices().size(), equalTo(numBackingIndices - indexNumbersToDelete.size()));
         for (Index i : indicesToDelete) {
-            assertThat(after.metadata().getIndices().get(i.getName()), nullValue());
+            assertThat(after.metadata().getIndices().get(i.name()), nullValue());
             assertFalse(dataStream.getIndices().contains(i));
         }
         assertThat(after.metadata().getIndices().size(), equalTo(numBackingIndices - indexNumbersToDelete.size()));
@@ -269,7 +269,7 @@ public class MetadataDeleteIndexServiceTests extends ESTestCase {
         assertThat(
             e.getMessage(),
             containsString(
-                "index [" + indexToDelete.getName() + "] is the write index for data stream [" + dataStreamName + "] and cannot be deleted"
+                "index [" + indexToDelete.name() + "] is the write index for data stream [" + dataStreamName + "] and cannot be deleted"
             )
         );
     }
@@ -304,7 +304,7 @@ public class MetadataDeleteIndexServiceTests extends ESTestCase {
         assertThat(dataStream, notNullValue());
         assertThat(dataStream.getFailureIndices().getIndices().size(), equalTo(numBackingIndices - indexNumbersToDelete.size()));
         for (Index i : indicesToDelete) {
-            assertThat(after.metadata().getIndices().get(i.getName()), nullValue());
+            assertThat(after.metadata().getIndices().get(i.name()), nullValue());
             assertFalse(dataStream.getFailureIndices().getIndices().contains(i));
         }
         assertThat(after.metadata().getIndices().size(), equalTo((2 * numBackingIndices) - indexNumbersToDelete.size()));
@@ -336,7 +336,7 @@ public class MetadataDeleteIndexServiceTests extends ESTestCase {
             e.getMessage(),
             containsString(
                 "index ["
-                    + indexToDelete.getName()
+                    + indexToDelete.name()
                     + "] is the failure store write index for data stream ["
                     + dataStreamName
                     + "] and cannot be deleted"

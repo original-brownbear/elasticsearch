@@ -248,9 +248,9 @@ public class IndicesClusterStateServiceRandomUpdatesTests extends AbstractIndice
         state = cluster.applyStartedShards(state, state.routingTable().index(index).shard(0).replicaShards());
 
         // close the index and open it up again (this will sometimes swap roles between primary and replica)
-        CloseIndexRequest closeIndexRequest = new CloseIndexRequest(state.metadata().index(index).getIndex().getName());
+        CloseIndexRequest closeIndexRequest = new CloseIndexRequest(state.metadata().index(index).getIndex().name());
         state = cluster.closeIndices(state, closeIndexRequest);
-        OpenIndexRequest openIndexRequest = new OpenIndexRequest(state.metadata().index(index).getIndex().getName());
+        OpenIndexRequest openIndexRequest = new OpenIndexRequest(state.metadata().index(index).getIndex().name());
         openIndexRequest.waitForActiveShards(ActiveShardCount.NONE);
         state = cluster.openIndices(state, openIndexRequest);
 
@@ -391,7 +391,7 @@ public class IndicesClusterStateServiceRandomUpdatesTests extends AbstractIndice
         Set<String> indicesToDelete = new HashSet<>();
         int numberOfIndicesToDelete = randomInt(Math.min(2, state.metadata().indices().size()));
         for (String index : randomSubsetOf(numberOfIndicesToDelete, state.metadata().indices().keySet().toArray(new String[0]))) {
-            indicesToDelete.add(state.metadata().index(index).getIndex().getName());
+            indicesToDelete.add(state.metadata().index(index).getIndex().name());
         }
         if (indicesToDelete.isEmpty() == false) {
             DeleteIndexRequest deleteRequest = new DeleteIndexRequest(indicesToDelete.toArray(new String[indicesToDelete.size()]));
@@ -404,14 +404,14 @@ public class IndicesClusterStateServiceRandomUpdatesTests extends AbstractIndice
         // randomly close indices
         int numberOfIndicesToClose = randomInt(Math.min(1, state.metadata().indices().size()));
         for (String index : randomSubsetOf(numberOfIndicesToClose, state.metadata().indices().keySet().toArray(new String[0]))) {
-            CloseIndexRequest closeIndexRequest = new CloseIndexRequest(state.metadata().index(index).getIndex().getName());
+            CloseIndexRequest closeIndexRequest = new CloseIndexRequest(state.metadata().index(index).getIndex().name());
             state = cluster.closeIndices(state, closeIndexRequest);
         }
 
         // randomly open indices
         int numberOfIndicesToOpen = randomInt(Math.min(1, state.metadata().indices().size()));
         for (String index : randomSubsetOf(numberOfIndicesToOpen, state.metadata().indices().keySet().toArray(new String[0]))) {
-            OpenIndexRequest openIndexRequest = new OpenIndexRequest(state.metadata().index(index).getIndex().getName());
+            OpenIndexRequest openIndexRequest = new OpenIndexRequest(state.metadata().index(index).getIndex().name());
             openIndexRequest.waitForActiveShards(ActiveShardCount.NONE);
             state = cluster.openIndices(state, openIndexRequest);
         }
@@ -421,7 +421,7 @@ public class IndicesClusterStateServiceRandomUpdatesTests extends AbstractIndice
         boolean containsClosedIndex = false;
         int numberOfIndicesToUpdate = randomInt(Math.min(2, state.metadata().indices().size()));
         for (String index : randomSubsetOf(numberOfIndicesToUpdate, state.metadata().indices().keySet().toArray(new String[0]))) {
-            indicesToUpdate.add(state.metadata().index(index).getIndex().getName());
+            indicesToUpdate.add(state.metadata().index(index).getIndex().name());
             if (state.metadata().index(index).getState() == IndexMetadata.State.CLOSE) {
                 containsClosedIndex = true;
             }

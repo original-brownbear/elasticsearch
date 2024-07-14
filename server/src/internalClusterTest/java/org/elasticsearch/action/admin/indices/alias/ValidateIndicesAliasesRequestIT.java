@@ -56,7 +56,7 @@ public class ValidateIndicesAliasesRequestIT extends ESSingleNodeTestCase {
                             Locale.ROOT,
                             "origin [%s] not allowed for index [%s]",
                             request.origin(),
-                            index.getName()
+                            index.name()
                         );
                         return Optional.of(new IllegalStateException(message));
                     }

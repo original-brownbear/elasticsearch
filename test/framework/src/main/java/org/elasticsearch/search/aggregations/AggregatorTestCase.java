@@ -353,7 +353,7 @@ public abstract class AggregatorTestCase extends ESTestCase {
         BiFunction<MappedFieldType, FieldDataContext, IndexFieldData<?>> fieldDataBuilder = (fieldType, context) -> fieldType
             .fielddataBuilder(
                 new FieldDataContext(
-                    indexSettings.getIndex().getName(),
+                    indexSettings.getIndex().name(),
                     indexSettings,
                     context.lookupSupplier(),
                     context.sourcePathsLookup(),

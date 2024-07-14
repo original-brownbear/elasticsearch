@@ -87,7 +87,7 @@ public class IndexFieldMapper extends MetadataFieldMapper {
         public ValueFetcher valueFetcher(SearchExecutionContext context, String format) {
             return new ValueFetcher() {
 
-                private final List<Object> indexName = List.of(context.getFullyQualifiedIndex().getName());
+                private final List<Object> indexName = List.of(context.getFullyQualifiedIndex().name());
 
                 @Override
                 public List<Object> fetchValues(Source source, int doc, List<Object> ignoredValues) {

@@ -81,7 +81,7 @@ public class SetSingleNodeAllocateStep extends AsyncActionStep {
         );
         RoutingAllocation allocation = new RoutingAllocation(allocationDeciders, clusterState, null, null, System.nanoTime());
         List<String> validNodeIds = new ArrayList<>();
-        String indexName = indexMetadata.getIndex().getName();
+        String indexName = indexMetadata.getIndex().name();
         final Map<ShardId, List<ShardRouting>> routingsByShardId = clusterState.getRoutingTable()
             .allShards(indexName)
             .stream()

@@ -135,12 +135,12 @@ public class MetadataIndexStateServiceBatchingTests extends ESSingleNodeTestCase
         final var resp1 = safeGet(future1);
         assertAcked(resp1);
         assertThat(resp1.getIndices(), hasSize(1));
-        assertThat(resp1.getIndices().get(0).getIndex().getName(), is("test-1"));
+        assertThat(resp1.getIndices().get(0).getIndex().name(), is("test-1"));
 
         final var resp2 = safeGet(future2);
         assertAcked(resp2);
         assertThat(resp2.getIndices(), hasSize(2));
-        assertThat(resp2.getIndices().stream().map(r -> r.getIndex().getName()).toList(), containsInAnyOrder("test-2", "test-3"));
+        assertThat(resp2.getIndices().stream().map(r -> r.getIndex().name()).toList(), containsInAnyOrder("test-2", "test-3"));
 
         // and assert that all the indices are closed
         for (String index : List.of("test-1", "test-2", "test-3")) {
@@ -192,12 +192,12 @@ public class MetadataIndexStateServiceBatchingTests extends ESSingleNodeTestCase
         final var resp1 = future1.get();
         assertAcked(resp1);
         assertThat(resp1.getIndices(), hasSize(1));
-        assertThat(resp1.getIndices().get(0).getIndex().getName(), is("test-1"));
+        assertThat(resp1.getIndices().get(0).getIndex().name(), is("test-1"));
 
         final var resp2 = future2.get();
         assertAcked(resp2);
         assertThat(resp2.getIndices(), hasSize(2));
-        assertThat(resp2.getIndices().stream().map(r -> r.getIndex().getName()).toList(), containsInAnyOrder("test-2", "test-3"));
+        assertThat(resp2.getIndices().stream().map(r -> r.getIndex().name()).toList(), containsInAnyOrder("test-2", "test-3"));
 
         // and assert that all the indices are blocked
         for (String index : List.of("test-1", "test-2", "test-3")) {

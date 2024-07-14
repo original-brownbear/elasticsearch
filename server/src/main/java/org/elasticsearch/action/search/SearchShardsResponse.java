@@ -103,7 +103,7 @@ public final class SearchShardsResponse extends ActionResponse {
         Map<String, AliasFilter> aliasFilters = Maps.newMapWithExpectedSize(oldResp.getIndicesAndFilters().size());
         for (Map.Entry<String, AliasFilter> e : oldResp.getIndicesAndFilters().entrySet()) {
             Index index = indexByNames.get(e.getKey());
-            aliasFilters.put(index.getUUID(), e.getValue());
+            aliasFilters.put(index.uuid(), e.getValue());
         }
         List<SearchShardsGroup> groups = Arrays.stream(oldResp.getGroups()).map(SearchShardsGroup::new).toList();
         assert groups.stream().noneMatch(SearchShardsGroup::preFiltered) : "legacy responses must not have preFiltered set";

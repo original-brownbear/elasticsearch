@@ -106,7 +106,7 @@ public class VersionStatsTests extends AbstractWireSerializingTestCase<VersionSt
             ShardRouting.Role.DEFAULT
         );
         Path path = createTempDir().resolve("indices")
-            .resolve(shardRouting.shardId().getIndex().getUUID())
+            .resolve(shardRouting.shardId().getIndex().uuid())
             .resolve(String.valueOf(shardRouting.shardId().id()));
         IndexShard indexShard = mock(IndexShard.class);
         StoreStats storeStats = new StoreStats(100, 150, 200);

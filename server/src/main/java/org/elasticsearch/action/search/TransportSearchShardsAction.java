@@ -124,7 +124,7 @@ public class TransportSearchShardsAction extends HandledTransportAction<SearchSh
                     indicesAndAliases,
                     concreteIndices
                 );
-                String[] concreteIndexNames = Arrays.stream(concreteIndices).map(Index::getName).toArray(String[]::new);
+                String[] concreteIndexNames = Arrays.stream(concreteIndices).map(Index::name).toArray(String[]::new);
                 GroupShardsIterator<SearchShardIterator> shardIts = GroupShardsIterator.sortAndCreate(
                     transportSearchAction.getLocalShardsIterator(
                         clusterState,

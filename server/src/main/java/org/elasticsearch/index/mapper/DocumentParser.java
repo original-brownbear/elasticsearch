@@ -162,7 +162,7 @@ public final class DocumentParser {
             context.mappingLookup().indexTimeLookup()::get,
             (ft, lookup, fto) -> ft.fielddataBuilder(
                 new FieldDataContext(
-                    context.indexSettings().getIndex().getName(),
+                    context.indexSettings().getIndex().name(),
                     context.indexSettings(),
                     lookup,
                     context.mappingLookup()::sourcePaths,

@@ -846,7 +846,7 @@ public class CanMatchPreFilterSearchPhaseTests extends ESTestCase {
                 // The search query matches index4, the background query matches index1 and index2,
                 // so index3 is the only one that must be skipped.
                 for (SearchShardIterator shard : updatedSearchShardIterators) {
-                    if (shard.shardId().getIndex().getName().equals("index3")) {
+                    if (shard.shardId().getIndex().name().equals("index3")) {
                         assertTrue(shard.skip());
                     } else {
                         assertFalse(shard.skip());
@@ -1030,7 +1030,7 @@ public class CanMatchPreFilterSearchPhaseTests extends ESTestCase {
             indicesToSearch.add(dataStream.getName());
         }
         for (Index regularIndex : regularIndices) {
-            indicesToSearch.add(regularIndex.getName());
+            indicesToSearch.add(regularIndex.name());
         }
 
         String[] indices = indicesToSearch.toArray(new String[0]);
@@ -1085,12 +1085,12 @@ public class CanMatchPreFilterSearchPhaseTests extends ESTestCase {
         Map<String, AliasFilter> aliasFilters = new HashMap<>();
         for (var dataStream : dataStreams) {
             for (var dataStreamIndex : dataStream.getIndices()) {
-                aliasFilters.put(dataStreamIndex.getUUID(), aliasFilter);
+                aliasFilters.put(dataStreamIndex.uuid(), aliasFilter);
             }
         }
 
         for (Index regularIndex : regularIndices) {
-            aliasFilters.put(regularIndex.getUUID(), aliasFilter);
+            aliasFilters.put(regularIndex.uuid(), aliasFilter);
         }
 
         // We respond by default that the query can match
@@ -1166,9 +1166,9 @@ public class CanMatchPreFilterSearchPhaseTests extends ESTestCase {
                 ShardLongFieldRange.of(minTimeStamp, maxTimestamp)
             );
 
-            Settings.Builder indexSettings = settings(IndexVersion.current()).put(IndexMetadata.SETTING_INDEX_UUID, index.getUUID());
+            Settings.Builder indexSettings = settings(IndexVersion.current()).put(IndexMetadata.SETTING_INDEX_UUID, index.uuid());
 
-            IndexMetadata.Builder indexMetadataBuilder = IndexMetadata.builder(index.getName())
+            IndexMetadata.Builder indexMetadataBuilder = IndexMetadata.builder(index.name())
                 .settings(indexSettings)
                 .numberOfShards(1)
                 .numberOfReplicas(0);
@@ -1209,9 +1209,9 @@ public class CanMatchPreFilterSearchPhaseTests extends ESTestCase {
                 ShardLongFieldRange.of(minTimestampForEventIngested, maxTimestampForEventIngested)
             );
 
-            Settings.Builder indexSettings = settings(IndexVersion.current()).put(IndexMetadata.SETTING_INDEX_UUID, index.getUUID());
+            Settings.Builder indexSettings = settings(IndexVersion.current()).put(IndexMetadata.SETTING_INDEX_UUID, index.uuid());
 
-            IndexMetadata.Builder indexMetadataBuilder = IndexMetadata.builder(index.getName())
+            IndexMetadata.Builder indexMetadataBuilder = IndexMetadata.builder(index.name())
                 .settings(indexSettings)
                 .numberOfShards(1)
                 .numberOfReplicas(0)
@@ -1236,8 +1236,8 @@ public class CanMatchPreFilterSearchPhaseTests extends ESTestCase {
                 throw new IllegalArgumentException("Min/Max timestamps for " + index + " were already defined");
             }
 
-            Settings.Builder indexSettings = settings(IndexVersion.current()).put(IndexMetadata.SETTING_INDEX_UUID, index.getUUID());
-            IndexMetadata.Builder indexMetadataBuilder = IndexMetadata.builder(index.getName())
+            Settings.Builder indexSettings = settings(IndexVersion.current()).put(IndexMetadata.SETTING_INDEX_UUID, index.uuid());
+            IndexMetadata.Builder indexMetadataBuilder = IndexMetadata.builder(index.name())
                 .settings(indexSettings)
                 .numberOfShards(1)
                 .numberOfReplicas(0);

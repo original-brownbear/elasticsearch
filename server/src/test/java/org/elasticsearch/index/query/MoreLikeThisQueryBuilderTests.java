@@ -84,7 +84,7 @@ public class MoreLikeThisQueryBuilderTests extends AbstractQueryTestCase<MoreLik
     }
 
     private Item generateRandomItem() {
-        String index = randomBoolean() ? getIndex().getName() : null;
+        String index = randomBoolean() ? getIndex().name() : null;
         // indexed item or artificial document
         Item item = randomBoolean() ? new Item(index, randomAlphaOfLength(10)) : new Item(index, randomArtificialDoc());
 

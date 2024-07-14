@@ -62,7 +62,7 @@ public class SearchContextIdTests extends ESTestCase {
                 aliasFilter = AliasFilter.EMPTY;
             }
             if (randomBoolean()) {
-                aliasFilters.put(result.getSearchShardTarget().getShardId().getIndex().getUUID(), aliasFilter);
+                aliasFilters.put(result.getSearchShardTarget().getShardId().getIndex().uuid(), aliasFilter);
             }
         }
         final BytesReference id = SearchContextId.encode(queryResults.asList(), aliasFilters, version);

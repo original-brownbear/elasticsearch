@@ -114,7 +114,7 @@ public class FsRepositoryTests extends ESTestCase {
             ShardId shardId = new ShardId(idxSettings.getIndex(), 1);
             Store store = new Store(shardId, idxSettings, directory, new DummyShardLock(shardId));
             SnapshotId snapshotId = new SnapshotId("test", "test");
-            IndexId indexId = new IndexId(idxSettings.getIndex().getName(), idxSettings.getUUID());
+            IndexId indexId = new IndexId(idxSettings.getIndex().name(), idxSettings.getUUID());
 
             IndexCommit indexCommit = Lucene.getIndexCommit(Lucene.readSegmentInfos(store.directory()), store.directory());
             final PlainActionFuture<ShardSnapshotResult> snapshot1Future = new PlainActionFuture<>();
@@ -292,7 +292,7 @@ public class FsRepositoryTests extends ESTestCase {
             final ShardId shardId1 = new ShardId(idxSettings.getIndex(), 1);
             final Store store1 = new Store(shardId1, idxSettings, directory, new DummyShardLock(shardId1));
             final SnapshotId snapshotId = new SnapshotId("test", "test");
-            final IndexId indexId = new IndexId(idxSettings.getIndex().getName(), idxSettings.getUUID());
+            final IndexId indexId = new IndexId(idxSettings.getIndex().name(), idxSettings.getUUID());
             IndexCommit indexCommit1 = Lucene.getIndexCommit(Lucene.readSegmentInfos(store1.directory()), store1.directory());
             final PlainActionFuture<ShardSnapshotResult> snapshot1Future = new PlainActionFuture<>();
             IndexShardSnapshotStatus snapshotStatus1 = IndexShardSnapshotStatus.newInitializing(null);

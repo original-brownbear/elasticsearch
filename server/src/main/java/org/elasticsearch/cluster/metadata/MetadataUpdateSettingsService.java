@@ -187,7 +187,7 @@ public class MetadataUpdateSettingsService {
             final String[] actualIndices = new String[request.indices().length];
             for (int i = 0; i < request.indices().length; i++) {
                 Index index = request.indices()[i];
-                actualIndices[i] = index.getName();
+                actualIndices[i] = index.name();
                 final IndexMetadata metadata = currentState.metadata().getIndexSafe(index);
 
                 if (metadata.getState() == IndexMetadata.State.OPEN) {
@@ -217,7 +217,7 @@ public class MetadataUpdateSettingsService {
                             }
                         }
                         if (needToReopenIndex) {
-                            List<ShardRouting> shardRoutingList = currentState.routingTable().allShards(index.getName());
+                            List<ShardRouting> shardRoutingList = currentState.routingTable().allShards(index.name());
                             IndexRoutingTable.Builder indexRoutingTableBuilder = IndexRoutingTable.builder(index);
                             for (ShardRouting shardRouting : shardRoutingList) {
                                 if (ShardRoutingState.UNASSIGNED.equals(shardRouting.state()) == false) {
@@ -282,7 +282,7 @@ public class MetadataUpdateSettingsService {
                     openSettings,
                     indexSettings,
                     Settings.builder(),
-                    index.getName()
+                    index.name()
                 ),
                 preserveExisting,
                 indexScopedSettings
@@ -295,7 +295,7 @@ public class MetadataUpdateSettingsService {
                     closedSettings,
                     indexSettings,
                     Settings.builder(),
-                    index.getName()
+                    index.name()
                 ),
                 preserveExisting,
                 indexScopedSettings

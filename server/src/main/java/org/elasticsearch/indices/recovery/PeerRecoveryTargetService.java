@@ -748,7 +748,7 @@ public class PeerRecoveryTargetService implements IndexEventListener {
             if (logger.isTraceEnabled()) {
                 StringBuilder sb = new StringBuilder();
                 sb.append('[')
-                    .append(request.shardId().getIndex().getName())
+                    .append(request.shardId().getIndex().name())
                     .append(']')
                     .append('[')
                     .append(request.shardId().id())
@@ -790,7 +790,7 @@ public class PeerRecoveryTargetService implements IndexEventListener {
         public void handleException(TransportException e) {
             if (logger.isTraceEnabled()) {
                 logger.trace(
-                    () -> format("[%s][%s] Got exception on recovery", request.shardId().getIndex().getName(), request.shardId().id()),
+                    () -> format("[%s][%s] Got exception on recovery", request.shardId().getIndex().name(), request.shardId().id()),
                     e
                 );
             }

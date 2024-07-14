@@ -93,8 +93,8 @@ public class DataStreamsActionUtilTests extends ESTestCase {
         return Arrays.stream(indices)
             .map(
                 index1 -> Map.entry(
-                    index1.getName(),
-                    IndexMetadata.builder(index1.getName())
+                    index1.name(),
+                    IndexMetadata.builder(index1.name())
                         .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current()))
                         .numberOfReplicas(0)
                         .numberOfShards(1)

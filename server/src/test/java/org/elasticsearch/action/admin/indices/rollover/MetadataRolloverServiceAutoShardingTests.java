@@ -338,7 +338,7 @@ public class MetadataRolloverServiceAutoShardingTests extends ESTestCase {
         builder.put("template", template);
         int numberOfShards = 1;
         for (Index index : dataStream.getIndices()) {
-            if (index.getName().equals(autoShardEventTriggerIndex)) {
+            if (index.name().equals(autoShardEventTriggerIndex)) {
                 // we configure the indices to have 1 shard until the auto shard trigger index, after which we go to 3 shards
                 numberOfShards = 3;
             }
@@ -616,8 +616,8 @@ public class MetadataRolloverServiceAutoShardingTests extends ESTestCase {
     }
 
     private static IndexMetadata.Builder getIndexMetadataBuilderForIndex(Index index, int numberOfShards) {
-        return IndexMetadata.builder(index.getName())
-            .settings(ESTestCase.settings(IndexVersion.current()).put("index.hidden", true).put(SETTING_INDEX_UUID, index.getUUID()))
+        return IndexMetadata.builder(index.name())
+            .settings(ESTestCase.settings(IndexVersion.current()).put("index.hidden", true).put(SETTING_INDEX_UUID, index.uuid()))
             .numberOfShards(numberOfShards)
             .numberOfReplicas(1);
     }

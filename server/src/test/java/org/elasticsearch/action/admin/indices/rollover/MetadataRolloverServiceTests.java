@@ -619,7 +619,7 @@ public class MetadataRolloverServiceTests extends ESTestCase {
             List<Condition<?>> metConditions = Collections.singletonList(condition);
             CreateIndexRequest createIndexRequest = new CreateIndexRequest("_na_");
 
-            String sourceIndexName = dataStream.getWriteIndex().getName();
+            String sourceIndexName = dataStream.getWriteIndex().name();
             long before = testThreadPool.absoluteTimeInMillis();
             MetadataRolloverService.RolloverResult rolloverResult = rolloverService.rolloverClusterState(
                 clusterState,
@@ -752,14 +752,14 @@ public class MetadataRolloverServiceTests extends ESTestCase {
             rolloverTarget = dataStream.getName();
             if (dataStream.isFailureStoreEnabled() && randomBoolean()) {
                 failureStoreOptions = new FailureStoreOptions(false, true);
-                sourceIndexName = dataStream.getFailureStoreWriteIndex().getName();
+                sourceIndexName = dataStream.getFailureStoreWriteIndex().name();
                 defaultRolloverIndexName = DataStream.getDefaultFailureStoreName(
                     dataStream.getName(),
                     dataStream.getGeneration() + 1,
                     System.currentTimeMillis()
                 );
             } else {
-                sourceIndexName = dataStream.getIndices().get(dataStream.getIndices().size() - 1).getName();
+                sourceIndexName = dataStream.getIndices().get(dataStream.getIndices().size() - 1).name();
                 defaultRolloverIndexName = DataStream.getDefaultBackingIndexName(dataStream.getName(), dataStream.getGeneration() + 1);
             }
             ComposableIndexTemplate template = ComposableIndexTemplate.builder()

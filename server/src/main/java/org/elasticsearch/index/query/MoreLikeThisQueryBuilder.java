@@ -1070,7 +1070,7 @@ public class MoreLikeThisQueryBuilder extends AbstractQueryBuilder<MoreLikeThisQ
         boolean useDefaultField
     ) {
         if (item.index() == null) {
-            item.index(context.index().getName());
+            item.index(context.index().name());
         }
         // default fields if not present but don't override for artificial docs
         if ((item.fields() == null || item.fields().length == 0) && item.doc() == null) {

@@ -34,7 +34,7 @@ public class CleanupSnapshotStep extends AsyncRetryDuringSnapshotActionStep {
 
     @Override
     void performDuringNoSnapshot(IndexMetadata indexMetadata, ClusterState currentClusterState, ActionListener<Void> listener) {
-        final String indexName = indexMetadata.getIndex().getName();
+        final String indexName = indexMetadata.getIndex().name();
 
         LifecycleExecutionState lifecycleState = indexMetadata.getLifecycleExecutionState();
         final String repositoryName = lifecycleState.snapshotRepository();

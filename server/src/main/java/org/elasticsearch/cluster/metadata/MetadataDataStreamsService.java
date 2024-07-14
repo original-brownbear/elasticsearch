@@ -303,7 +303,7 @@ public class MetadataDataStreamsService {
         DataStream dataStream = validateDataStream(metadata, dataStreamName);
         List<Index> targetIndices = failureStore ? dataStream.getFailureIndices().getIndices() : dataStream.getIndices();
         for (Index backingIndex : targetIndices) {
-            if (backingIndex.getName().equals(indexName)) {
+            if (backingIndex.name().equals(indexName)) {
                 if (failureStore) {
                     builder.put(dataStream.removeFailureStoreIndex(backingIndex));
                 } else {

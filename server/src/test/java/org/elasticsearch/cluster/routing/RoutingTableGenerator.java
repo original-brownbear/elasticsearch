@@ -63,7 +63,7 @@ public class RoutingTableGenerator {
     }
 
     public IndexShardRoutingTable.Builder genShardRoutingTable(IndexMetadata indexMetadata, int shardId, ShardCounter counter) {
-        final String index = indexMetadata.getIndex().getName();
+        final String index = indexMetadata.getIndex().name();
         IndexShardRoutingTable.Builder builder = new IndexShardRoutingTable.Builder(new ShardId(index, "_na_", shardId));
         final ShardRouting primary = genShardRouting(index, shardId, true);
         counter.update(primary);

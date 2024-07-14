@@ -316,9 +316,9 @@ public final class DataStream implements SimpleDiffable<DataStream>, ToXContentO
         if (indexMode == IndexMode.TIME_SERIES) {
             // Get a sorted overview of each backing index with there start and end time range:
             var startAndEndTimes = backingIndices.indices.stream().map(index -> {
-                IndexMetadata im = imSupplier.apply(index.getName());
+                IndexMetadata im = imSupplier.apply(index.name());
                 if (im == null) {
-                    throw new IllegalStateException("index [" + index.getName() + "] is not found in the index metadata supplier");
+                    throw new IllegalStateException("index [" + index.name() + "] is not found in the index metadata supplier");
                 }
                 return im;
             })
@@ -330,7 +330,7 @@ public final class DataStream implements SimpleDiffable<DataStream>, ToXContentO
                     Instant start = im.getTimeSeriesStart();
                     Instant end = im.getTimeSeriesEnd();
                     assert end.isAfter(start); // This is also validated by TIME_SERIES_END_TIME setting.
-                    return new Tuple<>(im.getIndex().getName(), new Tuple<>(start, end));
+                    return new Tuple<>(im.getIndex().name(), new Tuple<>(start, end));
                 })
                 .sorted(Comparator.comparing(entry -> entry.v2().v1())) // Sort by start time
                 .toList();
@@ -541,7 +541,7 @@ public final class DataStream implements SimpleDiffable<DataStream>, ToXContentO
 
         if (backingIndexPosition == -1) {
             throw new IllegalArgumentException(
-                String.format(Locale.ROOT, "index [%s] is not part of data stream [%s]", index.getName(), name)
+                String.format(Locale.ROOT, "index [%s] is not part of data stream [%s]", index.name(), name)
             );
         }
         if (backingIndices.indices.size() == (backingIndexPosition + 1)) {
@@ -549,7 +549,7 @@ public final class DataStream implements SimpleDiffable<DataStream>, ToXContentO
                 String.format(
                     Locale.ROOT,
                     "cannot remove backing index [%s] of data stream [%s] because it is the write index",
-                    index.getName(),
+                    index.name(),
                     name
                 )
             );
@@ -577,7 +577,7 @@ public final class DataStream implements SimpleDiffable<DataStream>, ToXContentO
 
         if (failureIndexPosition == -1) {
             throw new IllegalArgumentException(
-                String.format(Locale.ROOT, "index [%s] is not part of data stream [%s] failure store", index.getName(), name)
+                String.format(Locale.ROOT, "index [%s] is not part of data stream [%s] failure store", index.name(), name)
             );
         }
 
@@ -607,7 +607,7 @@ public final class DataStream implements SimpleDiffable<DataStream>, ToXContentO
         int backingIndexPosition = backingIndices.indexOf(existingBackingIndex);
         if (backingIndexPosition == -1) {
             throw new IllegalArgumentException(
-                String.format(Locale.ROOT, "index [%s] is not part of data stream [%s]", existingBackingIndex.getName(), name)
+                String.format(Locale.ROOT, "index [%s] is not part of data stream [%s]", existingBackingIndex.name(), name)
             );
         }
         if (this.backingIndices.indices.size() == (backingIndexPosition + 1)) {
@@ -615,7 +615,7 @@ public final class DataStream implements SimpleDiffable<DataStream>, ToXContentO
                 String.format(
                     Locale.ROOT,
                     "cannot replace backing index [%s] of data stream [%s] because it is the write index",
-                    existingBackingIndex.getName(),
+                    existingBackingIndex.name(),
                     name
                 )
             );
@@ -641,7 +641,7 @@ public final class DataStream implements SimpleDiffable<DataStream>, ToXContentO
         int failureIndexPosition = currentFailureIndices.indexOf(existingFailureIndex);
         if (failureIndexPosition == -1) {
             throw new IllegalArgumentException(
-                String.format(Locale.ROOT, "index [%s] is not part of data stream [%s] failure store", existingFailureIndex.getName(), name)
+                String.format(Locale.ROOT, "index [%s] is not part of data stream [%s] failure store", existingFailureIndex.name(), name)
             );
         }
         if (failureIndices.indices.size() == (failureIndexPosition + 1)) {
@@ -649,7 +649,7 @@ public final class DataStream implements SimpleDiffable<DataStream>, ToXContentO
                 String.format(
                     Locale.ROOT,
                     "cannot replace failure index [%s] of data stream [%s] because it is the failure store write index",
-                    existingFailureIndex.getName(),
+                    existingFailureIndex.name(),
                     name
                 )
             );
@@ -670,7 +670,7 @@ public final class DataStream implements SimpleDiffable<DataStream>, ToXContentO
      */
     public DataStream addBackingIndex(Metadata clusterMetadata, Index index) {
         // validate that index is not part of another data stream
-        final var parentDataStream = clusterMetadata.getIndicesLookup().get(index.getName()).getParentDataStream();
+        final var parentDataStream = clusterMetadata.getIndicesLookup().get(index.name()).getParentDataStream();
         if (parentDataStream != null) {
             validateDataStreamAlreadyContainsIndex(index, parentDataStream, false);
             return this;
@@ -697,7 +697,7 @@ public final class DataStream implements SimpleDiffable<DataStream>, ToXContentO
      */
     public DataStream addFailureStoreIndex(Metadata clusterMetadata, Index index) {
         // validate that index is not part of another data stream
-        final var parentDataStream = clusterMetadata.getIndicesLookup().get(index.getName()).getParentDataStream();
+        final var parentDataStream = clusterMetadata.getIndicesLookup().get(index.name()).getParentDataStream();
         if (parentDataStream != null) {
             validateDataStreamAlreadyContainsIndex(index, parentDataStream, true);
             return this;
@@ -723,14 +723,14 @@ public final class DataStream implements SimpleDiffable<DataStream>, ToXContentO
      * @throws IllegalArgumentException if the index belongs to a different data stream, or if it is in the wrong index set
      */
     private void validateDataStreamAlreadyContainsIndex(Index index, DataStream parentDataStream, boolean targetFailureStore) {
-        if (parentDataStream.equals(this) == false || (parentDataStream.isFailureStoreIndex(index.getName()) != targetFailureStore)) {
+        if (parentDataStream.equals(this) == false || (parentDataStream.isFailureStoreIndex(index.name()) != targetFailureStore)) {
             throw new IllegalArgumentException(
                 String.format(
                     Locale.ROOT,
                     "cannot add index [%s] to data stream [%s] because it is already a %s index on data stream [%s]",
-                    index.getName(),
+                    index.name(),
                     getName(),
-                    parentDataStream.isFailureStoreIndex(index.getName()) ? "failure store" : "backing",
+                    parentDataStream.isFailureStoreIndex(index.name()) ? "failure store" : "backing",
                     parentDataStream.getName()
                 )
             );
@@ -738,13 +738,13 @@ public final class DataStream implements SimpleDiffable<DataStream>, ToXContentO
     }
 
     private void ensureNoAliasesOnIndex(Metadata clusterMetadata, Index index) {
-        IndexMetadata im = clusterMetadata.index(clusterMetadata.getIndicesLookup().get(index.getName()).getWriteIndex());
+        IndexMetadata im = clusterMetadata.index(clusterMetadata.getIndicesLookup().get(index.name()).getWriteIndex());
         if (im.getAliases().size() > 0) {
             throw new IllegalArgumentException(
                 String.format(
                     Locale.ROOT,
                     "cannot add index [%s] to data stream [%s] until its %s [%s] %s removed",
-                    index.getName(),
+                    index.name(),
                     getName(),
                     im.getAliases().size() > 1 ? "aliases" : "alias",
                     Strings.collectionToCommaDelimitedString(im.getAliases().keySet().stream().sorted().toList()),
@@ -770,7 +770,7 @@ public final class DataStream implements SimpleDiffable<DataStream>, ToXContentO
     public DataStream snapshot(Collection<String> indicesInSnapshot) {
         // do not include indices not available in the snapshot
         List<Index> reconciledIndices = new ArrayList<>(this.backingIndices.indices);
-        if (reconciledIndices.removeIf(x -> indicesInSnapshot.contains(x.getName()) == false) == false) {
+        if (reconciledIndices.removeIf(x -> indicesInSnapshot.contains(x.name()) == false) == false) {
             return this;
         }
 
@@ -826,7 +826,7 @@ public final class DataStream implements SimpleDiffable<DataStream>, ToXContentO
             return List.of();
         }
 
-        IndexMetadata indexMetadata = indexMetadataSupplier.apply(index.getName());
+        IndexMetadata indexMetadata = indexMetadataSupplier.apply(index.name());
         if (indexMetadata == null || IndexSettings.MODE.get(indexMetadata.getSettings()) != IndexMode.TIME_SERIES) {
             return List.of();
         }
@@ -888,7 +888,7 @@ public final class DataStream implements SimpleDiffable<DataStream>, ToXContentO
         Predicate<IndexMetadata> indicesPredicate,
         Function<String, IndexMetadata> indexMetadataSupplier
     ) {
-        IndexMetadata indexMetadata = indexMetadataSupplier.apply(index.getName());
+        IndexMetadata indexMetadata = indexMetadataSupplier.apply(index.name());
         if (indexMetadata == null) {
             // we would normally throw exception in a situation like this however, this is meant to be a helper method
             // so let's ignore deleted indices
@@ -906,10 +906,10 @@ public final class DataStream implements SimpleDiffable<DataStream>, ToXContentO
      * we return false.
      */
     public boolean isIndexManagedByDataStreamLifecycle(Index index, Function<String, IndexMetadata> indexMetadataSupplier) {
-        if (backingIndices.containsIndex(index.getName()) == false && failureIndices.containsIndex(index.getName()) == false) {
+        if (backingIndices.containsIndex(index.name()) == false && failureIndices.containsIndex(index.name()) == false) {
             return false;
         }
-        IndexMetadata indexMetadata = indexMetadataSupplier.apply(index.getName());
+        IndexMetadata indexMetadata = indexMetadataSupplier.apply(index.name());
         if (indexMetadata == null) {
             // the index was deleted
             return false;
@@ -1425,7 +1425,7 @@ public final class DataStream implements SimpleDiffable<DataStream>, ToXContentO
 
         private Set<String> getLookup() {
             if (lookup == null) {
-                lookup = indices.stream().map(Index::getName).collect(Collectors.toSet());
+                lookup = indices.stream().map(Index::name).collect(Collectors.toSet());
             }
             return lookup;
         }

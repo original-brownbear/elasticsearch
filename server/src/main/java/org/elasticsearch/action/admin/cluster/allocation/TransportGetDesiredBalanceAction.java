@@ -151,7 +151,7 @@ public class TransportGetDesiredBalanceAction extends TransportMasterNodeReadAct
                     )
                 );
             }
-            routingTable.put(indexRoutingTable.getIndex().getName(), indexDesiredShards);
+            routingTable.put(indexRoutingTable.getIndex().name(), indexDesiredShards);
         }
         return routingTable;
     }

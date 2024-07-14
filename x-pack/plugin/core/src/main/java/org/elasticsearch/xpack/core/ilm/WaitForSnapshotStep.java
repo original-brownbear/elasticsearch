@@ -57,14 +57,14 @@ public class WaitForSnapshotStep extends AsyncWaitStep {
     public void evaluateCondition(Metadata metadata, Index index, Listener listener, TimeValue masterTimeout) {
         IndexMetadata indexMetadata = metadata.index(index);
         if (indexMetadata == null) {
-            listener.onFailure(error(NO_INDEX_METADATA_MESSAGE, index.getName()));
+            listener.onFailure(error(NO_INDEX_METADATA_MESSAGE, index.name()));
             return;
         }
 
         Long actionTime = indexMetadata.getLifecycleExecutionState().actionTime();
 
         if (actionTime == null) {
-            listener.onFailure(error(NO_ACTION_TIME_MESSAGE, index.getName()));
+            listener.onFailure(error(NO_ACTION_TIME_MESSAGE, index.name()));
             return;
         }
 
@@ -112,10 +112,10 @@ public class WaitForSnapshotStep extends AsyncWaitStep {
             if (response.getSnapshots().size() != 1) {
                 listener.onFailure(error(UNEXPECTED_SNAPSHOT_STATE_MESSAGE, repositoryName, snapshotName, response.getSnapshots().size()));
             } else {
-                if (response.getSnapshots().get(0).indices().contains(index.getName())) {
+                if (response.getSnapshots().get(0).indices().contains(index.name())) {
                     listener.onResponse(true, EmptyInfo.INSTANCE);
                 } else {
-                    listener.onFailure(error(INDEX_NOT_INCLUDED_IN_SNAPSHOT_MESSAGE, policy, index.getName()));
+                    listener.onFailure(error(INDEX_NOT_INCLUDED_IN_SNAPSHOT_MESSAGE, policy, index.name()));
                 }
             }
         }, listener::onFailure));

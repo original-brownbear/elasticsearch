@@ -154,7 +154,7 @@ public record AutoExpandReplicas(int minReplicas, int maxReplicas, boolean enabl
                     "stateless"
                 )) {
                     if (indexMetadata.getNumberOfReplicas() == 0) {
-                        nrReplicasChanged.computeIfAbsent(1, ArrayList::new).add(indexMetadata.getIndex().getName());
+                        nrReplicasChanged.computeIfAbsent(1, ArrayList::new).add(indexMetadata.getIndex().name());
                     } else {
                         continue;
                     }
@@ -164,7 +164,7 @@ public record AutoExpandReplicas(int minReplicas, int maxReplicas, boolean enabl
                 }
                 int numberOfReplicas = autoExpandReplicas.getDesiredNumberOfReplicas(indexMetadata, allocation);
                 if (numberOfReplicas != indexMetadata.getNumberOfReplicas()) {
-                    nrReplicasChanged.computeIfAbsent(numberOfReplicas, ArrayList::new).add(indexMetadata.getIndex().getName());
+                    nrReplicasChanged.computeIfAbsent(numberOfReplicas, ArrayList::new).add(indexMetadata.getIndex().name());
                 }
             }
         }

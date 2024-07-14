@@ -315,7 +315,7 @@ public class CloseIndexIT extends ESIntegTestCase {
         assertTrue(closeIndexResponse.isShardsAcknowledged());
         assertThat(closeIndexResponse.getIndices().get(0), notNullValue());
         assertThat(closeIndexResponse.getIndices().get(0).hasFailures(), is(false));
-        assertThat(closeIndexResponse.getIndices().get(0).getIndex().getName(), equalTo(indexName));
+        assertThat(closeIndexResponse.getIndices().get(0).getIndex().name(), equalTo(indexName));
         assertIndexIsClosed(indexName);
     }
 
@@ -513,7 +513,7 @@ public class CloseIndexIT extends ESIntegTestCase {
             for (String index : indices) {
                 CloseIndexResponse.IndexResult indexResult = response.getIndices()
                     .stream()
-                    .filter(result -> index.equals(result.getIndex().getName()))
+                    .filter(result -> index.equals(result.getIndex().name()))
                     .findFirst()
                     .get();
                 assertThat(indexResult, notNullValue());
@@ -572,10 +572,10 @@ public class CloseIndexIT extends ESIntegTestCase {
             assertTrue(clusterBlockException.blocks().stream().allMatch(b -> b.id() == MetadataIndexStateService.INDEX_CLOSED_BLOCK_ID));
         } else if (t instanceof IndexClosedException indexClosedException) {
             assertThat(indexClosedException.getIndex(), notNullValue());
-            assertThat(indexClosedException.getIndex().getName(), equalTo(indexName));
+            assertThat(indexClosedException.getIndex().name(), equalTo(indexName));
         } else if (t instanceof IndexNotFoundException indexNotFoundException) {
             assertThat(indexNotFoundException.getIndex(), notNullValue());
-            assertThat(indexNotFoundException.getIndex().getName(), equalTo(indexName));
+            assertThat(indexNotFoundException.getIndex().name(), equalTo(indexName));
         } else {
             fail("Unexpected exception: " + t);
         }

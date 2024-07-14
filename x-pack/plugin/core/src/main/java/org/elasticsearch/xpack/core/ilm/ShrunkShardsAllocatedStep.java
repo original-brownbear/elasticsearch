@@ -46,12 +46,12 @@ public class ShrunkShardsAllocatedStep extends ClusterStateWaitStep {
         IndexMetadata indexMetadata = clusterState.metadata().index(index);
         if (indexMetadata == null) {
             // Index must have been since deleted, ignore it
-            logger.debug("[{}] lifecycle action for index [{}] executed but index no longer exists", getKey().action(), index.getName());
+            logger.debug("[{}] lifecycle action for index [{}] executed but index no longer exists", getKey().action(), index.name());
             return new Result(false, null);
         }
 
         LifecycleExecutionState lifecycleState = indexMetadata.getLifecycleExecutionState();
-        String shrunkenIndexName = getShrinkIndexName(indexMetadata.getIndex().getName(), lifecycleState);
+        String shrunkenIndexName = getShrinkIndexName(indexMetadata.getIndex().name(), lifecycleState);
 
         // We only want to make progress if all shards of the shrunk index are
         // active

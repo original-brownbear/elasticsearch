@@ -195,8 +195,8 @@ public class SearchExecutionContext extends QueryRewriteContext {
             nowInMillis,
             indexNameMatcher,
             new Index(
-                RemoteClusterAware.buildRemoteIndexName(clusterAlias, indexSettings.getIndex().getName()),
-                indexSettings.getIndex().getUUID()
+                RemoteClusterAware.buildRemoteIndexName(clusterAlias, indexSettings.getIndex().name()),
+                indexSettings.getIndex().uuid()
             ),
             allowExpensiveQueries,
             valuesSourceRegistry,
@@ -337,7 +337,7 @@ public class SearchExecutionContext extends QueryRewriteContext {
         return (IFD) indexFieldDataLookup.apply(
             fieldType,
             new FieldDataContext(
-                getFullyQualifiedIndex().getName(),
+                getFullyQualifiedIndex().name(),
                 getIndexSettings(),
                 () -> this.lookup().forkAndTrackFieldReferences(fieldType.name()),
                 this::sourcePath,
@@ -516,7 +516,7 @@ public class SearchExecutionContext extends QueryRewriteContext {
             (fieldType, searchLookup, fielddataOperation) -> indexFieldDataLookup.apply(
                 fieldType,
                 new FieldDataContext(
-                    getFullyQualifiedIndex().getName(),
+                    getFullyQualifiedIndex().name(),
                     getIndexSettings(),
                     searchLookup,
                     this::sourcePath,

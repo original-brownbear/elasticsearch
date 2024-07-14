@@ -232,10 +232,10 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
     Map<String, AliasFilter> buildIndexAliasFilters(ClusterState clusterState, Set<String> indicesAndAliases, Index[] concreteIndices) {
         final Map<String, AliasFilter> aliasFilterMap = new HashMap<>();
         for (Index index : concreteIndices) {
-            clusterState.blocks().indexBlockedRaiseException(ClusterBlockLevel.READ, index.getName());
-            AliasFilter aliasFilter = searchService.buildAliasFilter(clusterState, index.getName(), indicesAndAliases);
+            clusterState.blocks().indexBlockedRaiseException(ClusterBlockLevel.READ, index.name());
+            AliasFilter aliasFilter = searchService.buildAliasFilter(clusterState, index.name(), indicesAndAliases);
             assert aliasFilter != null;
-            aliasFilterMap.put(index.getUUID(), aliasFilter);
+            aliasFilterMap.put(index.uuid(), aliasFilter);
         }
         return aliasFilterMap;
     }
@@ -259,7 +259,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
             );
 
             for (Index concreteIndex : concreteIndices) {
-                concreteIndexBoosts.putIfAbsent(concreteIndex.getUUID(), ib.getBoost());
+                concreteIndexBoosts.putIfAbsent(concreteIndex.uuid(), ib.getBoost());
             }
         }
         return Collections.unmodifiableMap(concreteIndexBoosts);
@@ -1004,7 +1004,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                 // add the cluster name to the remote index names for indices disambiguation
                 // this ends up in the hits returned with the search response
                 ShardId shardId = searchShardsGroup.shardId();
-                AliasFilter aliasFilter = aliasFilterMap.get(shardId.getIndex().getUUID());
+                AliasFilter aliasFilter = aliasFilterMap.get(shardId.getIndex().uuid());
                 String[] aliases = aliasFilter.getAliases();
                 String clusterAlias = entry.getKey();
                 String[] finalIndices = aliases.length == 0 ? new String[] { shardId.getIndexName() } : aliases;
@@ -1098,7 +1098,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
         Map<Index, IndexMetadata> indexMetadataMap = resolvedIndices.getConcreteLocalIndicesMetadata();
         for (var entry : indexMetadataMap.entrySet()) {
             if (entry.getValue().getSettings().getAsBoolean("index.frozen", false)) {
-                frozenIndices.add(entry.getKey().getName());
+                frozenIndices.add(entry.getKey().name());
             }
         }
 
@@ -1154,7 +1154,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
             );
         } else {
             final Index[] indices = resolvedIndices.getConcreteLocalIndices();
-            concreteLocalIndices = Arrays.stream(indices).map(Index::getName).toArray(String[]::new);
+            concreteLocalIndices = Arrays.stream(indices).map(Index::name).toArray(String[]::new);
             final Set<String> indicesAndAliases = indexNameExpressionResolver.resolveExpressions(clusterState, searchRequest.indices());
             aliasFilter = buildIndexAliasFilters(clusterState, indicesAndAliases, indices);
             aliasFilter.putAll(remoteAliasMap);
@@ -1463,7 +1463,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                     e
                 );
             }
-            String index = resolved.getName();
+            String index = resolved.name();
             IndexMetadata indexMetadata = clusterState.metadata().index(index);
             if (searchedIndices.contains(index) == false) {
                 throw new IllegalArgumentException(
@@ -1718,7 +1718,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
             searchRequest.indicesOptions()
         );
         return StreamSupport.stream(shardRoutings.spliterator(), false).map(it -> {
-            OriginalIndices finalIndices = originalIndices.get(it.shardId().getIndex().getName());
+            OriginalIndices finalIndices = originalIndices.get(it.shardId().getIndex().name());
             assert finalIndices != null;
             return new SearchShardIterator(clusterAlias, it.shardId(), it.getShardRoutings(), finalIndices);
         }).toList();

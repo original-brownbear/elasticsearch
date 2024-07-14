@@ -55,7 +55,7 @@ public class NodeEnvironmentIT extends ESIntegTestCase {
 
         logger.info("--> creating index");
         prepareCreate(indexName, indexSettings(1, 0)).get();
-        final String indexUUID = resolveIndex(indexName).getUUID();
+        final String indexUUID = resolveIndex(indexName).uuid();
         if (writeDanglingIndices) {
             assertBusy(
                 () -> internalCluster().getInstances(IndicesService.class)

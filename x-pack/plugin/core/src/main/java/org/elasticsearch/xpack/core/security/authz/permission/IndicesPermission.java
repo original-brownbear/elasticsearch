@@ -402,7 +402,7 @@ public final class IndicesPermission {
                 final List<Index> indices = indexAbstraction.getIndices();
                 final List<String> concreteIndexNames = new ArrayList<>(indices.size());
                 for (var idx : indices) {
-                    concreteIndexNames.add(idx.getName());
+                    concreteIndexNames.add(idx.name());
                 }
                 return concreteIndexNames;
             }

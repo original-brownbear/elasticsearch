@@ -164,15 +164,15 @@ public class TransportSearchActionTests extends ESTestCase {
         for (int i = 0; i < indices.length; i++) {
             if (randomBoolean() && i > 0) {
                 Index existingIndex = indices[randomIntBetween(0, i - 1)];
-                indices[i] = new Index(existingIndex.getName(), randomAlphaOfLength(10));
+                indices[i] = new Index(existingIndex.name(), randomAlphaOfLength(10));
             } else {
                 indices[i] = new Index(randomAlphaOfLengthBetween(5, 10), randomAlphaOfLength(10));
             }
         }
         Arrays.sort(indices, (o1, o2) -> {
-            int nameCompareTo = o1.getName().compareTo(o2.getName());
+            int nameCompareTo = o1.name().compareTo(o2.name());
             if (nameCompareTo == 0) {
-                return o1.getUUID().compareTo(o2.getUUID());
+                return o1.uuid().compareTo(o2.uuid());
             }
             return nameCompareTo;
         });
@@ -1700,7 +1700,7 @@ public class TransportSearchActionTests extends ESTestCase {
                 false
             );
         });
-        assertThat(error.getIndex().getName(), equalTo("another-index"));
+        assertThat(error.getIndex().name(), equalTo("another-index"));
         // Ok when some indices don't exist and `allowPartialSearchResults` is true.
         Optional<SearchShardIterator> anotherShardIterator = TransportSearchAction.getLocalLocalShardsIteratorFromPointInTime(
             clusterState,

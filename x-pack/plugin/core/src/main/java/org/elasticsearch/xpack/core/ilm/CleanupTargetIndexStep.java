@@ -70,7 +70,7 @@ public class CleanupTargetIndexStep extends AsyncRetryDuringSnapshotActionStep {
                 logger.warn(
                     "managed index [{}] has been created as part of policy [{}] and the source index [{}] does not exist "
                         + "anymore. will skip the [{}] step",
-                    indexMetadata.getIndex().getName(),
+                    indexMetadata.getIndex().name(),
                     policyName,
                     sourceIndexName,
                     NAME

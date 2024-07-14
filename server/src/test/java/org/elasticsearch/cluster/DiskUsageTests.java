@@ -103,7 +103,7 @@ public class DiskUsageTests extends ESTestCase {
         );
         test_0 = ShardRoutingHelper.initialize(test_0, "node1");
         test_0 = ShardRoutingHelper.moveToStarted(test_0);
-        Path test0Path = createTempDir().resolve("indices").resolve(index.getUUID()).resolve("0");
+        Path test0Path = createTempDir().resolve("indices").resolve(index.uuid()).resolve("0");
         CommonStats commonStats0 = new CommonStats();
         commonStats0.store = new StoreStats(100, 101, 0L);
         ShardRouting test_1 = ShardRouting.newUnassigned(
@@ -115,7 +115,7 @@ public class DiskUsageTests extends ESTestCase {
         );
         test_1 = ShardRoutingHelper.initialize(test_1, "node2");
         test_1 = ShardRoutingHelper.moveToStarted(test_1);
-        Path test1Path = createTempDir().resolve("indices").resolve(index.getUUID()).resolve("1");
+        Path test1Path = createTempDir().resolve("indices").resolve(index.uuid()).resolve("1");
         CommonStats commonStats1 = new CommonStats();
         commonStats1.store = new StoreStats(1000, 1001, 0L);
         CommonStats commonStats2 = new CommonStats();

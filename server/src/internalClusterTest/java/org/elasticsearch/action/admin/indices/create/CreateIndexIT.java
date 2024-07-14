@@ -319,7 +319,7 @@ public class CreateIndexIT extends ESIntegTestCase {
 
         IndicesService indicesService = internalCluster().getInstance(IndicesService.class, internalCluster().getMasterName());
         for (IndexService indexService : indicesService) {
-            assertThat(indexService.index().getName(), not("test-idx-2"));
+            assertThat(indexService.index().name(), not("test-idx-2"));
         }
     }
 

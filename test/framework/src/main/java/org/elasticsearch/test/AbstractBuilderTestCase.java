@@ -555,11 +555,11 @@ public abstract class AbstractBuilderTestCase extends ESTestCase {
                 testCase.initializeAdditionalMappings(mapperService);
             }
 
-            indexMetadata = IndexMetadata.builder(index.getName())
+            indexMetadata = IndexMetadata.builder(index.name())
                 .settings(
                     Settings.builder()
                         .put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current())
-                        .put(IndexMetadata.SETTING_INDEX_UUID, index.getUUID())
+                        .put(IndexMetadata.SETTING_INDEX_UUID, index.uuid())
                 )
                 .numberOfShards(1)
                 .numberOfReplicas(0)
@@ -569,7 +569,7 @@ public abstract class AbstractBuilderTestCase extends ESTestCase {
 
         public static Predicate<String> indexNameMatcher() {
             // Simplistic index name matcher used for testing
-            return pattern -> Regex.simpleMatch(pattern, index.getName());
+            return pattern -> Regex.simpleMatch(pattern, index.name());
         }
 
         @Override
@@ -609,10 +609,7 @@ public abstract class AbstractBuilderTestCase extends ESTestCase {
                 mapperService.mappingLookup(),
                 emptyMap(),
                 idxSettings,
-                new Index(
-                    RemoteClusterAware.buildRemoteIndexName(null, idxSettings.getIndex().getName()),
-                    idxSettings.getIndex().getUUID()
-                ),
+                new Index(RemoteClusterAware.buildRemoteIndexName(null, idxSettings.getIndex().name()), idxSettings.getIndex().uuid()),
                 indexNameMatcher(),
                 namedWriteableRegistry,
                 null,
@@ -651,7 +648,7 @@ public abstract class AbstractBuilderTestCase extends ESTestCase {
         private ResolvedIndices createMockResolvedIndices() {
             return new MockResolvedIndices(
                 Map.of(),
-                new OriginalIndices(new String[] { index.getName() }, IndicesOptions.DEFAULT),
+                new OriginalIndices(new String[] { index.name() }, IndicesOptions.DEFAULT),
                 Map.of(index, indexMetadata)
             );
         }

@@ -42,7 +42,7 @@ public class ShardPathTests extends ESTestCase {
             ShardStateMetadata.FORMAT.writeAndCleanup(new ShardStateMetadata(true, "0xDEADBEEF", AllocationId.newInitializing()), path);
             ShardPath shardPath = ShardPath.loadShardPath(logger, env, shardId, "");
             assertEquals(path, shardPath.getDataPath());
-            assertEquals("0xDEADBEEF", shardPath.getShardId().getIndex().getUUID());
+            assertEquals("0xDEADBEEF", shardPath.getShardId().getIndex().uuid());
             assertEquals("foo", shardPath.getShardId().getIndexName());
             assertEquals(path.resolve("translog"), shardPath.resolveTranslog());
             assertEquals(path.resolve("index"), shardPath.resolveIndex());
@@ -74,14 +74,14 @@ public class ShardPathTests extends ESTestCase {
 
     public void testIllegalCustomDataPath() {
         Index index = new Index("foo", "foo");
-        final Path path = createTempDir().resolve(index.getUUID()).resolve("0");
+        final Path path = createTempDir().resolve(index.uuid()).resolve("0");
         Exception e = expectThrows(IllegalArgumentException.class, () -> new ShardPath(true, path, path, new ShardId(index, 0)));
         assertThat(e.getMessage(), is("shard state path must be different to the data path when using custom data paths"));
     }
 
     public void testValidCtor() {
         Index index = new Index("foo", "foo");
-        final Path path = createTempDir().resolve(index.getUUID()).resolve("0");
+        final Path path = createTempDir().resolve(index.uuid()).resolve("0");
         ShardPath shardPath = new ShardPath(false, path, path, new ShardId(index, 0));
         assertFalse(shardPath.isCustomDataPath());
         assertEquals(shardPath.getDataPath(), path);
@@ -152,7 +152,7 @@ public class ShardPathTests extends ESTestCase {
             ShardPath shardPath = ShardPath.loadShardPath(logger, shardId, "", paths, env.sharedDataPath());
             assertNotNull(shardPath.getDataPath());
             assertEquals(envPaths[0], shardPath.getDataPath());
-            assertEquals("0xDEADBEEF", shardPath.getShardId().getIndex().getUUID());
+            assertEquals("0xDEADBEEF", shardPath.getShardId().getIndex().uuid());
             assertEquals("foo", shardPath.getShardId().getIndexName());
             assertEquals(envPaths[0].resolve("translog"), shardPath.resolveTranslog());
             assertEquals(envPaths[0].resolve("index"), shardPath.resolveIndex());
@@ -202,7 +202,7 @@ public class ShardPathTests extends ESTestCase {
             }
 
             assertThat(indexPaths, hasItem(shardPath.getDataPath()));
-            assertEquals("0xDEADBEEF", shardPath.getShardId().getIndex().getUUID());
+            assertEquals("0xDEADBEEF", shardPath.getShardId().getIndex().uuid());
             assertEquals("foo", shardPath.getShardId().getIndexName());
             assertFalse(shardPath.isCustomDataPath());
         }
