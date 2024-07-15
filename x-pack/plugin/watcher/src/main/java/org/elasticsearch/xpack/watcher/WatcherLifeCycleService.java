@@ -142,7 +142,7 @@ public class WatcherLifeCycleService implements ClusterStateListener {
             return;
         }
 
-        String watchIndex = watcherIndexMetadata.getIndex().getName();
+        String watchIndex = watcherIndexMetadata.getIndex().name();
         List<ShardRouting> localShards = routingNode.shardsWithState(watchIndex, RELOCATING, STARTED).toList();
         // no local shards, empty out watcher and dont waste resources!
         if (localShards.isEmpty()) {

@@ -104,9 +104,9 @@ public class ExplainDataStreamLifecycleIT extends ESIntegTestCase {
             assertThat(getDataStreamResponse.getDataStreams().get(0).getDataStream().getName(), equalTo(dataStreamName));
             List<Index> backingIndices = getDataStreamResponse.getDataStreams().get(0).getDataStream().getIndices();
             assertThat(backingIndices.size(), equalTo(2));
-            String backingIndex = backingIndices.get(0).getName();
+            String backingIndex = backingIndices.get(0).name();
             assertThat(backingIndex, backingIndexEqualTo(dataStreamName, 1));
-            String writeIndex = backingIndices.get(1).getName();
+            String writeIndex = backingIndices.get(1).name();
             assertThat(writeIndex, backingIndexEqualTo(dataStreamName, 2));
         });
 
@@ -233,9 +233,9 @@ public class ExplainDataStreamLifecycleIT extends ESIntegTestCase {
                 assertThat(getDataStreamResponse.getDataStreams().get(0).getDataStream().getName(), equalTo(dataStreamName));
                 List<Index> backingIndices = getDataStreamResponse.getDataStreams().get(0).getDataStream().getIndices();
                 assertThat(backingIndices.size(), equalTo(2));
-                String backingIndex = backingIndices.get(0).getName();
+                String backingIndex = backingIndices.get(0).name();
                 assertThat(backingIndex, backingIndexEqualTo(dataStreamName, 1));
-                String writeIndex = backingIndices.get(1).getName();
+                String writeIndex = backingIndices.get(1).name();
                 assertThat(writeIndex, backingIndexEqualTo(dataStreamName, 2));
             });
 
@@ -289,9 +289,9 @@ public class ExplainDataStreamLifecycleIT extends ESIntegTestCase {
             assertThat(getDataStreamResponse.getDataStreams().get(0).getDataStream().getName(), equalTo(dataStreamName));
             List<Index> backingIndices = getDataStreamResponse.getDataStreams().get(0).getDataStream().getIndices();
             assertThat(backingIndices.size(), equalTo(2));
-            String backingIndex = backingIndices.get(0).getName();
+            String backingIndex = backingIndices.get(0).name();
             assertThat(backingIndex, backingIndexEqualTo(dataStreamName, 1));
-            String writeIndex = backingIndices.get(1).getName();
+            String writeIndex = backingIndices.get(1).name();
             assertThat(writeIndex, backingIndexEqualTo(dataStreamName, 2));
         });
 

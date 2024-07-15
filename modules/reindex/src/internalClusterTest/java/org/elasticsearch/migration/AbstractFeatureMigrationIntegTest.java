@@ -252,9 +252,9 @@ public abstract class AbstractFeatureMigrationIntegTest extends ESIntegTestCase 
         Set<String> actualAliasNames = imd.getAliases().keySet();
         assertThat(actualAliasNames, containsInAnyOrder(aliasNames.toArray()));
 
-        IndicesStatsResponse indexStats = indicesAdmin().prepareStats(imd.getIndex().getName()).setDocs(true).get();
+        IndicesStatsResponse indexStats = indicesAdmin().prepareStats(imd.getIndex().name()).setDocs(true).get();
         assertNotNull(indexStats);
-        final IndexStats thisIndexStats = indexStats.getIndex(imd.getIndex().getName());
+        final IndexStats thisIndexStats = indexStats.getIndex(imd.getIndex().name());
         assertNotNull(thisIndexStats);
         assertNotNull(thisIndexStats.getTotal());
         assertNotNull(thisIndexStats.getTotal().getDocs());

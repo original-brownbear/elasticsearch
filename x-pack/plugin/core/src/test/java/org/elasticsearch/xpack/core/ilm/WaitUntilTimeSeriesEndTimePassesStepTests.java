@@ -104,7 +104,7 @@ public class WaitUntilTimeSeriesEndTimePassesStepTests extends AbstractStepTestC
                         information,
                         containsString(
                             "The [index.time_series.end_time] setting for index ["
-                                + writeIndex.getName()
+                                + writeIndex.name()
                                 + "] is ["
                                 + end2.toEpochMilli()
                                 + "]. Waiting until the index's time series end time lapses before proceeding with action ["

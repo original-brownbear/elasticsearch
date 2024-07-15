@@ -360,7 +360,7 @@ class IndicesAndAliasesResolver {
      * see if this can be authorized against an alias
      */
     static String getPutMappingIndexOrAlias(PutMappingRequest request, Predicate<String> isAuthorized, Metadata metadata) {
-        final String concreteIndexName = request.getConcreteIndex().getName();
+        final String concreteIndexName = request.getConcreteIndex().name();
 
         // validate that the concrete index exists, otherwise there is no remapping that we could do
         final IndexAbstraction indexAbstraction = metadata.getIndicesLookup().get(concreteIndexName);
@@ -392,7 +392,7 @@ class IndicesAndAliasesResolver {
                     } else {
                         assert alias.getType() == IndexAbstraction.Type.ALIAS;
                         Index writeIndex = alias.getWriteIndex();
-                        return writeIndex != null && writeIndex.getName().equals(concreteIndexName);
+                        return writeIndex != null && writeIndex.name().equals(concreteIndexName);
                     }
                 }).findFirst();
                 resolvedAliasOrIndex = foundAlias.orElse(concreteIndexName);

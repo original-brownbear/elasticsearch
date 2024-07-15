@@ -84,7 +84,7 @@ public class DataStreamLifecycleDownsampleIT extends ESIntegTestCase {
         Set<String> witnessedDownsamplingIndices = new HashSet<>();
         clusterService().addListener(event -> {
             if (indicesCreated(event).contains(oneSecondDownsampleIndex)
-                || event.indicesDeleted().stream().anyMatch(index -> index.getName().equals(oneSecondDownsampleIndex))) {
+                || event.indicesDeleted().stream().anyMatch(index -> index.name().equals(oneSecondDownsampleIndex))) {
                 witnessedDownsamplingIndices.add(oneSecondDownsampleIndex);
             }
             if (indicesCreated(event).contains(tenSecondsDownsampleIndex)) {
@@ -154,7 +154,7 @@ public class DataStreamLifecycleDownsampleIT extends ESIntegTestCase {
         Set<String> witnessedDownsamplingIndices = new HashSet<>();
         clusterService().addListener(event -> {
             if (indicesCreated(event).contains(oneSecondDownsampleIndex)
-                || event.indicesDeleted().stream().anyMatch(index -> index.getName().equals(oneSecondDownsampleIndex))) {
+                || event.indicesDeleted().stream().anyMatch(index -> index.name().equals(oneSecondDownsampleIndex))) {
                 witnessedDownsamplingIndices.add(oneSecondDownsampleIndex);
             }
             if (indicesCreated(event).contains(tenSecondsDownsampleIndex)) {
@@ -219,7 +219,7 @@ public class DataStreamLifecycleDownsampleIT extends ESIntegTestCase {
         Set<String> witnessedDownsamplingIndices = new HashSet<>();
         clusterService().addListener(event -> {
             if (indicesCreated(event).contains(oneSecondDownsampleIndex)
-                || event.indicesDeleted().stream().anyMatch(index -> index.getName().equals(oneSecondDownsampleIndex))) {
+                || event.indicesDeleted().stream().anyMatch(index -> index.name().equals(oneSecondDownsampleIndex))) {
                 witnessedDownsamplingIndices.add(oneSecondDownsampleIndex);
             }
             if (indicesCreated(event).contains(tenSecondsDownsampleIndex)) {

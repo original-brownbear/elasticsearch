@@ -267,7 +267,7 @@ public class IlmHealthIndicatorService implements HealthIndicatorService {
                 var affectedIndices = action.getValue()
                     .stream()
                     .map(IndexMetadata::getIndex)
-                    .map(Index::getName)
+                    .map(Index::name)
                     .limit(Math.min(maxAffectedResourcesCount, action.getValue().size()))
                     .collect(Collectors.toCollection(TreeSet::new));
                 var affectedPolicies = action.getValue()

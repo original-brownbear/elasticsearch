@@ -225,9 +225,9 @@ public class TransportResumeFollowAction extends AcknowledgedTransportMasterNode
 
         Map<String, String> ccrIndexMetadata = followIndex.getCustomData(Ccr.CCR_CUSTOM_METADATA_KEY);
         if (ccrIndexMetadata == null) {
-            throw new IllegalArgumentException("follow index [" + followIndex.getIndex().getName() + "] does not have ccr metadata");
+            throw new IllegalArgumentException("follow index [" + followIndex.getIndex().name() + "] does not have ccr metadata");
         }
-        String leaderIndexUUID = leaderIndex.getIndex().getUUID();
+        String leaderIndexUUID = leaderIndex.getIndex().uuid();
         String recordedLeaderIndexUUID = ccrIndexMetadata.get(Ccr.CCR_CUSTOM_METADATA_LEADER_INDEX_UUID_KEY);
         if (leaderIndexUUID.equals(recordedLeaderIndexUUID) == false) {
             throw new IllegalArgumentException(
@@ -261,14 +261,12 @@ public class TransportResumeFollowAction extends AcknowledgedTransportMasterNode
             }
         }
         if (IndexSettings.INDEX_SOFT_DELETES_SETTING.get(leaderIndex.getSettings()) == false) {
-            throw new IllegalArgumentException(
-                "leader index [" + leaderIndex.getIndex().getName() + "] does not have soft deletes enabled"
-            );
+            throw new IllegalArgumentException("leader index [" + leaderIndex.getIndex().name() + "] does not have soft deletes enabled");
         }
         if (leaderIndex.isSearchableSnapshot()) {
             throw new IllegalArgumentException(
                 "leader index ["
-                    + leaderIndex.getIndex().getName()
+                    + leaderIndex.getIndex().name()
                     + "] is a searchable snapshot index and cannot be used for cross-cluster replication purpose"
             );
         }

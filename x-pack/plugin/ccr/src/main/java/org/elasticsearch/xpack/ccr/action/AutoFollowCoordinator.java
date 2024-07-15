@@ -231,7 +231,7 @@ public class AutoFollowCoordinator extends AbstractLifecycleComponent implements
             } else {
                 recentAutoFollowErrors.remove(onlyPatternKey);
                 for (Map.Entry<Index, Exception> entry : result.autoFollowExecutionResults.entrySet()) {
-                    var patternAndIndexKey = new AutoFollowErrorKey(result.autoFollowPatternName, entry.getKey().getName());
+                    var patternAndIndexKey = new AutoFollowErrorKey(result.autoFollowPatternName, entry.getKey().name());
                     if (entry.getValue() != null) {
                         numberOfFailedIndicesAutoFollowed++;
                         recentAutoFollowErrors.put(
@@ -608,7 +608,7 @@ public class AutoFollowCoordinator extends AbstractLifecycleComponent implements
             for (final Index indexToFollow : leaderIndicesToFollow) {
                 // Look up the abstraction for the given index, e.g., an index ".ds-foo" could look
                 // up the Data Stream "foo"
-                IndexAbstraction indexAbstraction = remoteMetadata.getIndicesLookup().get(indexToFollow.getName());
+                IndexAbstraction indexAbstraction = remoteMetadata.getIndicesLookup().get(indexToFollow.name());
                 // Ensure that the remote cluster doesn't have other patterns
                 // that would follow the index, there can be only one.
                 List<String> otherMatchingPatterns = patternsForTheSameRemoteCluster.stream()
@@ -621,7 +621,7 @@ public class AutoFollowCoordinator extends AbstractLifecycleComponent implements
                             indexToFollow,
                             new ElasticsearchException(
                                 "index to follow ["
-                                    + indexToFollow.getName()
+                                    + indexToFollow.name()
                                     + "] for pattern ["
                                     + autoFollowPattenName
                                     + "] matches with other patterns "
@@ -637,7 +637,7 @@ public class AutoFollowCoordinator extends AbstractLifecycleComponent implements
                         String message = String.format(
                             Locale.ROOT,
                             "index [%s] cannot be followed, because soft deletes are not enabled",
-                            indexToFollow.getName()
+                            indexToFollow.name()
                         );
                         LOGGER.warn(message);
                         updateAutoFollowMetadata(recordLeaderIndexAsFollowFunction(autoFollowPattenName, indexToFollow), error -> {
@@ -651,7 +651,7 @@ public class AutoFollowCoordinator extends AbstractLifecycleComponent implements
                         String message = String.format(
                             Locale.ROOT,
                             "index to follow [%s] is a searchable snapshot index and cannot be used for cross-cluster replication purpose",
-                            indexToFollow.getName()
+                            indexToFollow.name()
                         );
                         LOGGER.debug(message);
                         updateAutoFollowMetadata(recordLeaderIndexAsFollowFunction(autoFollowPattenName, indexToFollow), error -> {
@@ -683,7 +683,7 @@ public class AutoFollowCoordinator extends AbstractLifecycleComponent implements
         }
 
         private static boolean leaderIndexAlreadyFollowed(AutoFollowPattern autoFollowPattern, Index leaderIndex, Metadata localMetadata) {
-            String followIndexName = getFollowerIndexName(autoFollowPattern, leaderIndex.getName());
+            String followIndexName = getFollowerIndexName(autoFollowPattern, leaderIndex.name());
             IndexMetadata indexMetadata = localMetadata.index(followIndexName);
             if (indexMetadata != null) {
                 // If an index with the same name exists, but it is not a follow index for this leader index then
@@ -693,7 +693,7 @@ public class AutoFollowCoordinator extends AbstractLifecycleComponent implements
                 Map<String, String> customData = indexMetadata.getCustomData(Ccr.CCR_CUSTOM_METADATA_KEY);
                 if (customData != null) {
                     String recordedLeaderIndexUUID = customData.get(Ccr.CCR_CUSTOM_METADATA_LEADER_INDEX_UUID_KEY);
-                    return leaderIndex.getUUID().equals(recordedLeaderIndexUUID);
+                    return leaderIndex.uuid().equals(recordedLeaderIndexUUID);
                 }
             }
             return false;
@@ -709,13 +709,13 @@ public class AutoFollowCoordinator extends AbstractLifecycleComponent implements
             IndexAbstraction indexAbstraction,
             AutoFollowPattern pattern
         ) {
-            final String leaderIndexName = indexToFollow.getName();
+            final String leaderIndexName = indexToFollow.name();
             final String followIndexName = getFollowerIndexName(pattern, leaderIndexName);
 
             // TODO use longer timeouts here? see https://github.com/elastic/elasticsearch/issues/109150
             PutFollowAction.Request request = new PutFollowAction.Request(TimeValue.THIRTY_SECONDS, TimeValue.THIRTY_SECONDS);
             request.setRemoteCluster(remoteCluster);
-            request.setLeaderIndex(indexToFollow.getName());
+            request.setLeaderIndex(indexToFollow.name());
             request.setFollowerIndex(followIndexName);
             request.setSettings(pattern.getSettings());
             // If there was a pattern specified for renaming the backing index, and this index is
@@ -814,7 +814,7 @@ public class AutoFollowCoordinator extends AbstractLifecycleComponent implements
                 }
                 IndexAbstraction indexAbstraction = remoteClusterState.getMetadata()
                     .getIndicesLookup()
-                    .get(leaderIndexMetadata.getIndex().getName());
+                    .get(leaderIndexMetadata.getIndex().name());
                 if (autoFollowPattern.isActive() && autoFollowPattern.match(indexAbstraction)) {
                     IndexRoutingTable indexRoutingTable = remoteClusterState.routingTable().index(leaderIndexMetadata.getIndex());
                     if (indexRoutingTable != null &&
@@ -823,7 +823,7 @@ public class AutoFollowCoordinator extends AbstractLifecycleComponent implements
                     // If not all primary shards are ready, then the next time the auto follow coordinator runs
                     // this index will be auto followed.
                         indexRoutingTable.allPrimaryShardsActive()
-                        && followedIndexUUIDs.contains(leaderIndexMetadata.getIndex().getUUID()) == false) {
+                        && followedIndexUUIDs.contains(leaderIndexMetadata.getIndex().uuid()) == false) {
                         leaderIndicesToFollow.add(leaderIndexMetadata.getIndex());
                     }
                 }
@@ -889,7 +889,7 @@ public class AutoFollowCoordinator extends AbstractLifecycleComponent implements
                 newFollowedIndexUUIDS.compute(name, (key, existingUUIDs) -> {
                     assert existingUUIDs != null;
                     List<String> newUUIDs = new ArrayList<>(existingUUIDs);
-                    newUUIDs.add(indexToFollow.getUUID());
+                    newUUIDs.add(indexToFollow.uuid());
                     return Collections.unmodifiableList(newUUIDs);
                 });
                 final AutoFollowMetadata newAutoFollowMetadata = new AutoFollowMetadata(

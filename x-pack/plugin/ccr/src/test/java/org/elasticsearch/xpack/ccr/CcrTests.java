@@ -31,12 +31,12 @@ public class CcrTests extends ESTestCase {
             final Index index = new Index(indexName, UUIDs.randomBase64UUID());
             final Settings.Builder builder = Settings.builder()
                 .put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current())
-                .put(IndexMetadata.SETTING_INDEX_UUID, index.getUUID());
+                .put(IndexMetadata.SETTING_INDEX_UUID, index.uuid());
             if (value != null) {
                 builder.put(CcrSettings.CCR_FOLLOWING_INDEX_SETTING.getKey(), value);
             }
 
-            final IndexMetadata indexMetadata = new IndexMetadata.Builder(index.getName()).settings(builder.build())
+            final IndexMetadata indexMetadata = new IndexMetadata.Builder(index.name()).settings(builder.build())
                 .numberOfShards(1)
                 .numberOfReplicas(0)
                 .build();

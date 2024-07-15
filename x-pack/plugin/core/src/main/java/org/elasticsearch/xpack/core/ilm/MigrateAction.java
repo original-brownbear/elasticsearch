@@ -115,7 +115,7 @@ public class MigrateAction implements LifecycleAction {
                                 + "skipping this action",
                             MigrateAction.NAME,
                             policyName,
-                            index.getName()
+                            index.name()
                         );
                         return true;
                     }

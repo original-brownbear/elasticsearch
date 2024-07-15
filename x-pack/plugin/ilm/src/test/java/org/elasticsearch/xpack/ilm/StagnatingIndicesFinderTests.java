@@ -55,7 +55,7 @@ public class StagnatingIndicesFinderTests extends ESTestCase {
         var mockedTimeSupplier = mock(LongSupplier.class);
         var instant = (long) randomIntBetween(100000, 200000);
         var ruleCreator = Stream.<IlmHealthIndicatorService.RuleConfig>of(
-            (now, indexMetadata) -> now == instant && stagnatingIndices.contains(indexMetadata.getIndex().getName())
+            (now, indexMetadata) -> now == instant && stagnatingIndices.contains(indexMetadata.getIndex().name())
         ).map(rc -> (IlmHealthIndicatorService.RuleCreator) (expectedMaxTimeOnAction, expectedMaxTimeOnStep, expectedMaxRetriesPerStep) -> {
             assertEquals(expectedMaxTimeOnAction, maxTimeOnAction);
             assertEquals(expectedMaxTimeOnStep, maxTimeOnStep);

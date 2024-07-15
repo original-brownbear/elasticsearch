@@ -65,17 +65,17 @@ public class KvIndexResolver {
             List<Tuple<Index, Instant>> indicesWithTime = new ArrayList<>();
             Map<String, IndexMetadata> indicesMetadata = clusterState.getMetadata().getIndices();
             for (Index i : indices) {
-                IndexMetadata indexMetadata = indicesMetadata.get(i.getName());
+                IndexMetadata indexMetadata = indicesMetadata.get(i.name());
                 // Prefer ILM creation date over the actual creation date. This is mainly intended for testing as
                 // during regular operation the actual creation date should suffice. Using LIFECYCLE_ORIGINATION_DATE
                 // allows for consistency between index resolution and how ILM operates on these indices.
                 long creationDate;
                 if (indexMetadata.getSettings().hasValue(IndexSettings.LIFECYCLE_ORIGINATION_DATE)) {
                     creationDate = IndexSettings.LIFECYCLE_ORIGINATION_DATE_SETTING.get(indexMetadata.getSettings());
-                    log.trace("Using lifecycle origination date [{}] for index [{}]", creationDate, i.getName());
+                    log.trace("Using lifecycle origination date [{}] for index [{}]", creationDate, i.name());
                 } else {
                     creationDate = indexMetadata.getCreationDate();
-                    log.trace("Using index creation date [{}] for index [{}]", creationDate, i.getName());
+                    log.trace("Using index creation date [{}] for index [{}]", creationDate, i.name());
                 }
                 indicesWithTime.add(Tuple.tuple(i, Instant.ofEpochMilli(creationDate)));
             }
@@ -106,7 +106,7 @@ public class KvIndexResolver {
                     + ", "
                     + eventEnd
                     + "] to indices ["
-                    + matchingIndices.stream().map(Index::getName).collect(Collectors.joining(", "))
+                    + matchingIndices.stream().map(Index::name).collect(Collectors.joining(", "))
                     + "]."
             );
         }

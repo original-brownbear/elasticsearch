@@ -711,7 +711,7 @@ public class ReactiveStorageDeciderService implements AutoscalingDeciderService 
 
             public void applySize(Map<String, Long> builder, RoutingTable updatedRoutingTable) {
                 for (Map.Entry<IndexMetadata, Long> entry : additionalIndices.entrySet()) {
-                    List<ShardRouting> shardRoutings = updatedRoutingTable.allShards(entry.getKey().getIndex().getName());
+                    List<ShardRouting> shardRoutings = updatedRoutingTable.allShards(entry.getKey().getIndex().name());
                     long size = entry.getValue() / shardRoutings.size();
                     shardRoutings.forEach(s -> builder.put(ClusterInfo.shardIdentifierFromRouting(s), size));
                 }
@@ -774,7 +774,7 @@ public class ReactiveStorageDeciderService implements AutoscalingDeciderService 
                     return null;
                 }
                 minCreationDate = Math.min(minCreationDate, creationDate);
-                totalSize += state.getRoutingTable().allShards(indexMetadata.getIndex().getName()).stream().mapToLong(this::sizeOf).sum();
+                totalSize += state.getRoutingTable().allShards(indexMetadata.getIndex().name()).stream().mapToLong(this::sizeOf).sum();
                 // we terminate loop after collecting data to ensure we consider at least the forecast window (and likely some more).
                 if (creationDate <= now - forecastWindow) {
                     break;
@@ -833,7 +833,7 @@ public class ReactiveStorageDeciderService implements AutoscalingDeciderService 
                 // ensuring at least that when replicas are involved, we still respect the low watermark. This is therefore left as is
                 // for now with the intention to fix in a follow-up.
                 IndexMetadata newIndex = IndexMetadata.builder(writeIndex)
-                    .index(stream.getWriteIndex().getName())
+                    .index(stream.getWriteIndex().name())
                     .settings(Settings.builder().put(writeIndex.getSettings()).put(IndexMetadata.SETTING_INDEX_UUID, uuid))
                     .build();
                 long size = Math.min(avgSizeCeil, scaledTotalSize - (avgSizeCeil * i));
@@ -854,7 +854,7 @@ public class ReactiveStorageDeciderService implements AutoscalingDeciderService 
             for (int i = 0; i < indices.size(); ++i) {
                 IndexMetadata indexMetadata = metadata.index(indices.get(indices.size() - i - 1));
                 Set<Boolean> inNodes = state.getRoutingTable()
-                    .allShards(indexMetadata.getIndex().getName())
+                    .allShards(indexMetadata.getIndex().name())
                     .stream()
                     .map(ShardRouting::currentNodeId)
                     .filter(Objects::nonNull)

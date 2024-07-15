@@ -100,7 +100,7 @@ public class FollowingEngineTests extends ESTestCase {
             builder.put("index.xpack.ccr.following_index", false);
         }
         final Settings settings = builder.build();
-        final IndexMetadata indexMetadata = IndexMetadata.builder(index.getName()).settings(settings).build();
+        final IndexMetadata indexMetadata = IndexMetadata.builder(index.name()).settings(settings).build();
         final IndexSettings indexSettings = new IndexSettings(indexMetadata, settings);
         try (Store store = createStore(shardId, indexSettings, newDirectory())) {
             final EngineConfig engineConfig = engineConfig(shardId, indexSettings, threadPool, store);
@@ -124,7 +124,7 @@ public class FollowingEngineTests extends ESTestCase {
      */
     public void testOutOfOrderDocuments() throws IOException {
         final Settings settings = indexSettings(IndexVersion.current(), 1, 0).put("index.xpack.ccr.following_index", true).build();
-        final IndexMetadata indexMetadata = IndexMetadata.builder(index.getName()).settings(settings).build();
+        final IndexMetadata indexMetadata = IndexMetadata.builder(index.name()).settings(settings).build();
         final IndexSettings indexSettings = new IndexSettings(indexMetadata, settings);
         try (Store store = createStore(shardId, indexSettings, newDirectory())) {
             final EngineConfig engineConfig = engineConfig(shardId, indexSettings, threadPool, store);
@@ -143,7 +143,7 @@ public class FollowingEngineTests extends ESTestCase {
         final CheckedBiConsumer<FollowingEngine, Engine.Index, IOException> consumer
     ) throws IOException {
         final Settings settings = indexSettings(IndexVersion.current(), 1, 0).put("index.xpack.ccr.following_index", true).build();
-        final IndexMetadata indexMetadata = IndexMetadata.builder(index.getName()).settings(settings).build();
+        final IndexMetadata indexMetadata = IndexMetadata.builder(index.name()).settings(settings).build();
         final IndexSettings indexSettings = new IndexSettings(indexMetadata, settings);
         try (Store store = createStore(shardId, indexSettings, newDirectory())) {
             final EngineConfig engineConfig = engineConfig(shardId, indexSettings, threadPool, store);
@@ -169,7 +169,7 @@ public class FollowingEngineTests extends ESTestCase {
         final CheckedBiConsumer<FollowingEngine, Engine.Delete, IOException> consumer
     ) throws IOException {
         final Settings settings = indexSettings(IndexVersion.current(), 1, 0).put("index.xpack.ccr.following_index", true).build();
-        final IndexMetadata indexMetadata = IndexMetadata.builder(index.getName()).settings(settings).build();
+        final IndexMetadata indexMetadata = IndexMetadata.builder(index.name()).settings(settings).build();
         final IndexSettings indexSettings = new IndexSettings(indexMetadata, settings);
         try (Store store = createStore(shardId, indexSettings, newDirectory())) {
             final EngineConfig engineConfig = engineConfig(shardId, indexSettings, threadPool, store);
@@ -195,7 +195,7 @@ public class FollowingEngineTests extends ESTestCase {
 
     public void testDoNotFillSeqNoGaps() throws Exception {
         final Settings settings = indexSettings(IndexVersion.current(), 1, 0).put("index.xpack.ccr.following_index", true).build();
-        final IndexMetadata indexMetadata = IndexMetadata.builder(index.getName()).settings(settings).build();
+        final IndexMetadata indexMetadata = IndexMetadata.builder(index.name()).settings(settings).build();
         final IndexSettings indexSettings = new IndexSettings(indexMetadata, settings);
         try (Store store = createStore(shardId, indexSettings, newDirectory())) {
             final EngineConfig engineConfig = engineConfig(shardId, indexSettings, threadPool, store);
@@ -492,7 +492,7 @@ public class FollowingEngineTests extends ESTestCase {
         // See #72527 for more details
         Settings followerSettings = indexSettings(IndexVersion.current(), 1, 0).put("index.xpack.ccr.following_index", true).build();
 
-        IndexMetadata followerIndexMetadata = IndexMetadata.builder(index.getName()).settings(followerSettings).build();
+        IndexMetadata followerIndexMetadata = IndexMetadata.builder(index.name()).settings(followerSettings).build();
         IndexSettings followerIndexSettings = new IndexSettings(followerIndexMetadata, Settings.EMPTY);
         try (Store followerStore = createStore(shardId, followerIndexSettings, newDirectory())) {
             EngineConfig followerConfig = engineConfig(shardId, followerIndexSettings, threadPool, followerStore);
@@ -598,7 +598,7 @@ public class FollowingEngineTests extends ESTestCase {
         };
 
         Settings leaderSettings = indexSettings(IndexVersion.current(), 1, 0).build();
-        IndexMetadata leaderIndexMetadata = IndexMetadata.builder(index.getName()).settings(leaderSettings).build();
+        IndexMetadata leaderIndexMetadata = IndexMetadata.builder(index.name()).settings(leaderSettings).build();
         IndexSettings leaderIndexSettings = new IndexSettings(leaderIndexMetadata, leaderSettings);
         try (Store leaderStore = createStore(shardId, leaderIndexSettings, newDirectory())) {
             leaderStore.createEmpty();
@@ -615,7 +615,7 @@ public class FollowingEngineTests extends ESTestCase {
                 leaderEngine.skipTranslogRecovery();
                 Settings followerSettings = indexSettings(IndexVersion.current(), 1, 0).put("index.xpack.ccr.following_index", true)
                     .build();
-                IndexMetadata followerIndexMetadata = IndexMetadata.builder(index.getName()).settings(followerSettings).build();
+                IndexMetadata followerIndexMetadata = IndexMetadata.builder(index.name()).settings(followerSettings).build();
                 IndexSettings followerIndexSettings = new IndexSettings(followerIndexMetadata, leaderSettings);
                 try (Store followerStore = createStore(shardId, followerIndexSettings, newDirectory())) {
                     EngineConfig followerConfig = engineConfig(shardId, followerIndexSettings, threadPool, followerStore);
@@ -704,7 +704,7 @@ public class FollowingEngineTests extends ESTestCase {
                 throw new UnsupportedOperationException("Unknown index mode [" + indexMode + "]");
         }
         final Settings settings = settingsBuilder.build();
-        final IndexMetadata indexMetadata = IndexMetadata.builder(index.getName()).settings(settings).build();
+        final IndexMetadata indexMetadata = IndexMetadata.builder(index.name()).settings(settings).build();
         final IndexSettings indexSettings = new IndexSettings(indexMetadata, settings);
         final CheckedBiFunction<String, Integer, ParsedDocument, IOException> nestedDocFunc = EngineTestCase.nestedParsedDocFactory();
         int numOps = between(10, 100);
@@ -824,7 +824,7 @@ public class FollowingEngineTests extends ESTestCase {
 
     public void testMaxSeqNoInCommitUserData() throws Exception {
         final Settings settings = indexSettings(IndexVersion.current(), 1, 0).put("index.xpack.ccr.following_index", true).build();
-        final IndexMetadata indexMetadata = IndexMetadata.builder(index.getName()).settings(settings).build();
+        final IndexMetadata indexMetadata = IndexMetadata.builder(index.name()).settings(settings).build();
         final IndexSettings indexSettings = new IndexSettings(indexMetadata, settings);
         try (Store store = createStore(shardId, indexSettings, newDirectory())) {
             final EngineConfig engineConfig = engineConfig(shardId, indexSettings, threadPool, store);

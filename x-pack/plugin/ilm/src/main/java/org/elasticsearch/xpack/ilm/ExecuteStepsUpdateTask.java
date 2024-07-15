@@ -88,7 +88,7 @@ public class ExecuteStepsUpdateTask extends IndexLifecycleClusterStateUpdateTask
         Step currentStep = startStep;
         IndexMetadata indexMetadata = currentState.metadata().index(index);
         if (indexMetadata == null) {
-            logger.debug("lifecycle for index [{}] executed but index no longer exists", index.getName());
+            logger.debug("lifecycle for index [{}] executed but index no longer exists", index.name());
             // This index doesn't exist any more, there's nothing to execute currently
             return currentState;
         }
@@ -104,7 +104,7 @@ public class ExecuteStepsUpdateTask extends IndexLifecycleClusterStateUpdateTask
                     // move the cluster state to the next step
                     logger.trace(
                         "[{}] performing cluster state action ({}) [{}]",
-                        index.getName(),
+                        index.name(),
                         currentStep.getClass().getSimpleName(),
                         currentStep.getKey()
                     );
@@ -126,7 +126,7 @@ public class ExecuteStepsUpdateTask extends IndexLifecycleClusterStateUpdateTask
                     if (nextStepKey == null) {
                         return state;
                     } else {
-                        logger.trace("[{}] moving cluster state to next step [{}]", index.getName(), nextStepKey);
+                        logger.trace("[{}] moving cluster state to next step [{}]", index.name(), nextStepKey);
                         state = IndexLifecycleTransition.moveClusterStateToStep(
                             index,
                             state,
@@ -145,7 +145,7 @@ public class ExecuteStepsUpdateTask extends IndexLifecycleClusterStateUpdateTask
                     // condition again
                     logger.trace(
                         "[{}] waiting for cluster state step condition ({}) [{}]",
-                        index.getName(),
+                        index.name(),
                         currentStep.getClass().getSimpleName(),
                         currentStep.getKey()
                     );
@@ -162,7 +162,7 @@ public class ExecuteStepsUpdateTask extends IndexLifecycleClusterStateUpdateTask
                     if (result.isComplete()) {
                         logger.trace(
                             "[{}] cluster state step condition met successfully ({}) [{}], moving to next step {}",
-                            index.getName(),
+                            index.name(),
                             currentStep.getClass().getSimpleName(),
                             currentStep.getKey(),
                             nextStepKey
@@ -184,7 +184,7 @@ public class ExecuteStepsUpdateTask extends IndexLifecycleClusterStateUpdateTask
                         if (logger.isTraceEnabled()) {
                             logger.trace(
                                 "[{}] condition not met ({}) [{}], returning existing state (info: {})",
-                                index.getName(),
+                                index.name(),
                                 currentStep.getClass().getSimpleName(),
                                 currentStep.getKey(),
                                 stepInfo == null ? "null" : Strings.toString(stepInfo)
@@ -236,7 +236,7 @@ public class ExecuteStepsUpdateTask extends IndexLifecycleClusterStateUpdateTask
             if (nextStepKey != null && nextStepKey != TerminalPolicyStep.KEY) {
                 logger.trace(
                     "[{}] step sequence starting with {} has completed, running next step {} if it is an async action",
-                    index.getName(),
+                    index.name(),
                     startStep.getKey(),
                     nextStepKey
                 );
@@ -280,7 +280,7 @@ public class ExecuteStepsUpdateTask extends IndexLifecycleClusterStateUpdateTask
             () -> format(
                 "policy [%s] for index [%s] failed on cluster state step [%s]. Moving to ERROR step",
                 policy,
-                index.getName(),
+                index.name(),
                 currentStepKey
             ),
             cause

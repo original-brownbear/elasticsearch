@@ -228,7 +228,7 @@ final class WatcherIndexingListener implements IndexingOperationListener, Cluste
     }
 
     private void checkWatchIndexHasChanged(IndexMetadata metadata, ClusterChangedEvent event) {
-        String watchIndex = metadata.getIndex().getName();
+        String watchIndex = metadata.getIndex().name();
         ClusterState state = event.state();
         String localNodeId = state.nodes().getLocalNode().getId();
         RoutingNode routingNode = state.getRoutingNodes().node(localNodeId);

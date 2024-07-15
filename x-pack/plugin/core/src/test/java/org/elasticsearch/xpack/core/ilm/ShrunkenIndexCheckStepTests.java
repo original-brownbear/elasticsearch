@@ -123,7 +123,7 @@ public class ShrunkenIndexCheckStepTests extends AbstractStepTestCase<ShrunkenIn
         );
         assertThat(
             exception.getMessage(),
-            equalTo("step[is-shrunken-index] is checking an un-shrunken index[" + indexMetadata.getIndex().getName() + "]")
+            equalTo("step[is-shrunken-index] is checking an un-shrunken index[" + indexMetadata.getIndex().name() + "]")
         );
     }
 }

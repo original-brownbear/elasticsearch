@@ -82,7 +82,7 @@ public class DataStreamLifecycleDriver {
         GetDataStreamAction.Response getDataStreamResponse = client.execute(GetDataStreamAction.INSTANCE, getDataStreamRequest).actionGet();
         assertThat(getDataStreamResponse.getDataStreams().isEmpty(), is(false));
         assertThat(getDataStreamResponse.getDataStreams().get(0).getDataStream().getName(), is(dataStreamName));
-        return getDataStreamResponse.getDataStreams().get(0).getDataStream().getIndices().stream().map(Index::getName).toList();
+        return getDataStreamResponse.getDataStreams().get(0).getDataStream().getIndices().stream().map(Index::name).toList();
     }
 
     public static void putTSDBIndexTemplate(

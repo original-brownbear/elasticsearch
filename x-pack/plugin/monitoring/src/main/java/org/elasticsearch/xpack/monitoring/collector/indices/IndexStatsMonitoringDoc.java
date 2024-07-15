@@ -66,7 +66,7 @@ public class IndexStatsMonitoringDoc extends FilteredMonitoringDoc {
 
         builder.startObject(TYPE);
         {
-            builder.field("index", metadata.getIndex().getName());
+            builder.field("index", metadata.getIndex().name());
             builder.field("uuid", metadata.getIndexUUID());
             builder.field("created", metadata.getCreationDate());
             builder.field("status", health.getStatus().name().toLowerCase(Locale.ROOT));

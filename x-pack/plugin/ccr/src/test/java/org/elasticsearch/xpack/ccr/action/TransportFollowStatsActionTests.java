@@ -57,19 +57,19 @@ public class TransportFollowStatsActionTests extends ESTestCase {
             .build();
         Set<String> result = TransportFollowStatsAction.findFollowerIndicesFromShardFollowTasks(clusterState, null);
         assertThat(result.size(), equalTo(2));
-        assertThat(result.contains(index1.getIndex().getName()), is(true));
-        assertThat(result.contains(index2.getIndex().getName()), is(true));
+        assertThat(result.contains(index1.getIndex().name()), is(true));
+        assertThat(result.contains(index2.getIndex().name()), is(true));
 
         result = TransportFollowStatsAction.findFollowerIndicesFromShardFollowTasks(
             clusterState,
-            new String[] { index2.getIndex().getName() }
+            new String[] { index2.getIndex().name() }
         );
         assertThat(result.size(), equalTo(1));
-        assertThat(result.contains(index2.getIndex().getName()), is(true));
+        assertThat(result.contains(index2.getIndex().name()), is(true));
 
         result = TransportFollowStatsAction.findFollowerIndicesFromShardFollowTasks(
             clusterState,
-            new String[] { index3.getIndex().getName() }
+            new String[] { index3.getIndex().name() }
         );
         assertThat(result.size(), equalTo(0));
     }

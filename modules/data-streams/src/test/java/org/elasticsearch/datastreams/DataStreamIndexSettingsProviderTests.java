@@ -46,7 +46,7 @@ public class DataStreamIndexSettingsProviderTests extends ESTestCase {
     @Before
     public void setup() {
         provider = new DataStreamIndexSettingsProvider(
-            im -> MapperTestUtils.newMapperService(xContentRegistry(), createTempDir(), im.getSettings(), im.getIndex().getName())
+            im -> MapperTestUtils.newMapperService(xContentRegistry(), createTempDir(), im.getSettings(), im.getIndex().name())
         );
     }
 

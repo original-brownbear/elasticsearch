@@ -589,7 +589,7 @@ public class AutoFollowIT extends CcrIntegTestCase {
         // check that all leader indices have been correctly auto followed
         List<String> matchingPrefixes = Arrays.stream(prefixes).map(prefix -> prefix + "*").collect(Collectors.toList());
         for (IndexMetadata leaderIndexMetadata : leaderClient().admin().cluster().prepareState().get().getState().metadata()) {
-            final String leaderIndex = leaderIndexMetadata.getIndex().getName();
+            final String leaderIndex = leaderIndexMetadata.getIndex().name();
             if (Regex.simpleMatch(matchingPrefixes, leaderIndex)) {
                 String followingIndex = "copy-" + leaderIndex;
                 assertBusy(
@@ -711,7 +711,7 @@ public class AutoFollowIT extends CcrIntegTestCase {
 
         final Metadata metadata = followerClient().admin().cluster().prepareState().get().getState().metadata();
         final DataStream dataStream = metadata.dataStreams().get(datastream);
-        assertTrue(dataStream.getIndices().stream().anyMatch(i -> i.getName().equals(indexInDatastream)));
+        assertTrue(dataStream.getIndices().stream().anyMatch(i -> i.name().equals(indexInDatastream)));
         assertEquals(IndexMetadata.State.OPEN, metadata.index(indexInDatastream).getState());
         ensureFollowerGreen("*");
         final IndicesStatsResponse stats = followerClient().admin().indices().prepareStats(datastream).get();

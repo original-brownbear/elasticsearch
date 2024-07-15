@@ -297,7 +297,7 @@ public class CcrLicenseChecker {
         final Consumer<String[]> historyUUIDConsumer
     ) {
 
-        String leaderIndex = leaderIndexMetadata.getIndex().getName();
+        String leaderIndex = leaderIndexMetadata.getIndex().name();
         CheckedConsumer<IndicesStatsResponse, Exception> indicesStatsHandler = indicesStatsResponse -> {
             IndexStats indexStats = indicesStatsResponse.getIndices().get(leaderIndex);
             if (indexStats == null) {

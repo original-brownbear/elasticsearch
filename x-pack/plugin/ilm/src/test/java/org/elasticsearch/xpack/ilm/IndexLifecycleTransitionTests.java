@@ -968,7 +968,7 @@ public class IndexLifecycleTransitionTests extends ESTestCase {
             .setPhaseDefinition(initialPhaseDefinition);
 
         IndexMetadata meta = buildIndexMetadata("my-policy", currentExecutionState);
-        String indexName = meta.getIndex().getName();
+        String indexName = meta.getIndex().name();
 
         Map<String, LifecycleAction> actions = new HashMap<>();
         actions.put("set_priority", new SetPriorityAction(100));
@@ -1031,7 +1031,7 @@ public class IndexLifecycleTransitionTests extends ESTestCase {
                 }""");
 
         IndexMetadata meta = buildIndexMetadata("my-policy", exState);
-        String index = meta.getIndex().getName();
+        String index = meta.getIndex().name();
 
         Map<String, LifecycleAction> actions = new HashMap<>();
         actions.put("rollover", new RolloverAction(null, null, null, 1L, null, null, null, null, null, null));

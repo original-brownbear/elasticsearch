@@ -540,7 +540,7 @@ public class ComputeService {
                     }
                     String targetNode = group.allocatedNodes().get(0);
                     nodeToShards.computeIfAbsent(targetNode, k -> new ArrayList<>()).add(shardId);
-                    AliasFilter aliasFilter = resp.getAliasFilters().get(shardId.getIndex().getUUID());
+                    AliasFilter aliasFilter = resp.getAliasFilters().get(shardId.getIndex().name());
                     if (aliasFilter != null) {
                         nodeToAliasFilters.computeIfAbsent(targetNode, k -> new HashMap<>()).put(shardId.getIndex(), aliasFilter);
                     }

@@ -83,7 +83,7 @@ public class WaitForSnapshotStepTests extends AbstractStepTestCase<WaitForSnapsh
             .numberOfShards(randomIntBetween(1, 5))
             .numberOfReplicas(randomIntBetween(0, 5))
             .build();
-        Map<String, IndexMetadata> indices = Map.of(indexMetadata.getIndex().getName(), indexMetadata);
+        Map<String, IndexMetadata> indices = Map.of(indexMetadata.getIndex().name(), indexMetadata);
         Metadata.Builder meta = Metadata.builder().indices(indices);
         ClusterState clusterState = ClusterState.builder(ClusterName.DEFAULT).metadata(meta).build();
         WaitForSnapshotStep instance = createRandomInstance();
@@ -122,7 +122,7 @@ public class WaitForSnapshotStepTests extends AbstractStepTestCase<WaitForSnapsh
             .numberOfShards(randomIntBetween(1, 5))
             .numberOfReplicas(randomIntBetween(0, 5))
             .build();
-        Map<String, IndexMetadata> indices = Map.of(indexMetadata.getIndex().getName(), indexMetadata);
+        Map<String, IndexMetadata> indices = Map.of(indexMetadata.getIndex().name(), indexMetadata);
         Metadata.Builder meta = Metadata.builder().indices(indices).putCustom(SnapshotLifecycleMetadata.TYPE, smlMetadata);
         ClusterState clusterState = ClusterState.builder(ClusterName.DEFAULT).metadata(meta).build();
         SetOnce<Boolean> isConditionMet = new SetOnce<>();
@@ -236,7 +236,7 @@ public class WaitForSnapshotStepTests extends AbstractStepTestCase<WaitForSnapsh
             .numberOfShards(randomIntBetween(1, 5))
             .numberOfReplicas(randomIntBetween(0, 5))
             .build();
-        Map<String, IndexMetadata> indices = Map.of(indexMetadata.getIndex().getName(), indexMetadata);
+        Map<String, IndexMetadata> indices = Map.of(indexMetadata.getIndex().name(), indexMetadata);
         Metadata.Builder meta = Metadata.builder().indices(indices).putCustom(SnapshotLifecycleMetadata.TYPE, smlMetadata);
         ClusterState clusterState = ClusterState.builder(ClusterName.DEFAULT).metadata(meta).build();
         SetOnce<Exception> error = new SetOnce<>();
@@ -300,7 +300,7 @@ public class WaitForSnapshotStepTests extends AbstractStepTestCase<WaitForSnapsh
             .numberOfShards(randomIntBetween(1, 5))
             .numberOfReplicas(randomIntBetween(0, 5))
             .build();
-        Map<String, IndexMetadata> indices = Map.of(indexMetadata.getIndex().getName(), indexMetadata);
+        Map<String, IndexMetadata> indices = Map.of(indexMetadata.getIndex().name(), indexMetadata);
         Metadata.Builder meta = Metadata.builder().indices(indices).putCustom(SnapshotLifecycleMetadata.TYPE, smlMetadata);
         ClusterState clusterState = ClusterState.builder(ClusterName.DEFAULT).metadata(meta).build();
         SetOnce<Boolean> isConditionMet = new SetOnce<>();
@@ -357,7 +357,7 @@ public class WaitForSnapshotStepTests extends AbstractStepTestCase<WaitForSnapsh
             .numberOfShards(randomIntBetween(1, 5))
             .numberOfReplicas(randomIntBetween(0, 5))
             .build();
-        Map<String, IndexMetadata> indices = Map.of(indexMetadata.getIndex().getName(), indexMetadata);
+        Map<String, IndexMetadata> indices = Map.of(indexMetadata.getIndex().name(), indexMetadata);
         Metadata.Builder meta = Metadata.builder().indices(indices).putCustom(SnapshotLifecycleMetadata.TYPE, smlMetadata);
         ClusterState clusterState = ClusterState.builder(ClusterName.DEFAULT).metadata(meta).build();
         SetOnce<Exception> error = new SetOnce<>();

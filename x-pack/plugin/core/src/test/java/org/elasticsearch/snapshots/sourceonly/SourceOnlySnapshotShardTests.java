@@ -117,7 +117,7 @@ public class SourceOnlySnapshotShardTests extends IndexShardTestCase {
             indexDoc(shard, "_doc", id);
         }
         SnapshotId snapshotId = new SnapshotId("test", "test");
-        IndexId indexId = new IndexId(shard.shardId().getIndexName(), shard.shardId().getIndex().getUUID());
+        IndexId indexId = new IndexId(shard.shardId().getIndexName(), shard.shardId().getIndex().uuid());
         SourceOnlySnapshotRepository repository = new SourceOnlySnapshotRepository(createRepository());
         repository.start();
         try (Engine.IndexCommitRef snapshotRef = shard.acquireLastIndexCommit(true)) {
@@ -156,7 +156,7 @@ public class SourceOnlySnapshotShardTests extends IndexShardTestCase {
             indexDoc(shard, "_doc", id);
         }
 
-        IndexId indexId = new IndexId(shard.shardId().getIndexName(), shard.shardId().getIndex().getUUID());
+        IndexId indexId = new IndexId(shard.shardId().getIndexName(), shard.shardId().getIndex().uuid());
         SourceOnlySnapshotRepository repository = new SourceOnlySnapshotRepository(createRepository());
         repository.start();
         int totalFileCount;
@@ -283,7 +283,7 @@ public class SourceOnlySnapshotShardTests extends IndexShardTestCase {
             }
         }
         SnapshotId snapshotId = new SnapshotId("test", "test");
-        IndexId indexId = new IndexId(shard.shardId().getIndexName(), shard.shardId().getIndex().getUUID());
+        IndexId indexId = new IndexId(shard.shardId().getIndexName(), shard.shardId().getIndex().uuid());
         SourceOnlySnapshotRepository repository = new SourceOnlySnapshotRepository(createRepository());
         repository.start();
         try (Engine.IndexCommitRef snapshotRef = shard.acquireLastIndexCommit(true)) {

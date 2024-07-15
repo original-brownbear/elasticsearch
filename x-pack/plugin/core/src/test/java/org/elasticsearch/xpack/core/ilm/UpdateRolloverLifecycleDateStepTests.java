@@ -140,7 +140,7 @@ public class UpdateRolloverLifecycleDateStepTests extends AbstractStepTestCase<U
             exceptionThrown.getMessage(),
             equalTo(
                 "no rollover info found for ["
-                    + indexMetadata.getIndex().getName()
+                    + indexMetadata.getIndex().name()
                     + "] with rollover target ["
                     + alias
                     + "], the "
@@ -168,7 +168,7 @@ public class UpdateRolloverLifecycleDateStepTests extends AbstractStepTestCase<U
         );
         assertThat(
             exceptionThrown.getMessage(),
-            equalTo("setting [index.lifecycle.rollover_alias] is not set on index [" + indexMetadata.getIndex().getName() + "]")
+            equalTo("setting [index.lifecycle.rollover_alias] is not set on index [" + indexMetadata.getIndex().name() + "]")
         );
     }
 

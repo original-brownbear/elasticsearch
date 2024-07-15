@@ -13,6 +13,7 @@ import org.apache.lucene.util.FixedBitSet;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.cluster.routing.GroupShardsIterator;
+import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
 import org.elasticsearch.common.util.concurrent.CountDown;
 import org.elasticsearch.core.Nullable;
@@ -107,7 +108,6 @@ final class CanMatchPreFilterSearchPhase extends SearchPhase {
         this.requireAtLeastOneMatch = requireAtLeastOneMatch;
         this.coordinatorRewriteContextProvider = coordinatorRewriteContextProvider;
         this.executor = executor;
-        this.shardItIndexMap = new HashMap<>();
         results = new CanMatchSearchPhaseResults(shardsIts.size());
 
         // we compute the shard index based on the natural order of the shards
@@ -119,9 +119,11 @@ final class CanMatchPreFilterSearchPhase extends SearchPhase {
             naturalOrder[i++] = shardsIt;
         }
         Arrays.sort(naturalOrder);
+        Map<SearchShardIterator, Integer> shardItIndexMap = Maps.newHashMapWithExpectedSize(naturalOrder.length);
         for (int j = 0; j < naturalOrder.length; j++) {
             shardItIndexMap.put(naturalOrder[j], j);
         }
+        this.shardItIndexMap = shardItIndexMap;
     }
 
     private static boolean assertSearchCoordinationThread() {

@@ -310,7 +310,7 @@ public final class TransportEqlSearchAction extends HandledTransportAction<EqlSe
         if (e instanceof RemoteTransportException && e.getCause() instanceof IndexNotFoundException infe) {
             if (infe.getIndex() != null) {
                 String qualifiedIndex;
-                String exceptionIndexName = infe.getIndex().getName();
+                String exceptionIndexName = infe.getIndex().name();
                 String[] notFoundIndices = notFoundIndices(exceptionIndexName, indices);
                 if (notFoundIndices != null) {
                     StringJoiner sj = new StringJoiner(",");

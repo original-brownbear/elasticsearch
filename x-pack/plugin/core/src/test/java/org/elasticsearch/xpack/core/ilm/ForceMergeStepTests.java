@@ -100,7 +100,7 @@ public class ForceMergeStepTests extends AbstractStepTestCase<ForceMergeStep> {
         Mockito.doAnswer(invocationOnMock -> {
             ForceMergeRequest request = (ForceMergeRequest) invocationOnMock.getArguments()[0];
             assertThat(request.indices().length, equalTo(1));
-            assertThat(request.indices()[0], equalTo(indexMetadata.getIndex().getName()));
+            assertThat(request.indices()[0], equalTo(indexMetadata.getIndex().name()));
             assertThat(request.maxNumSegments(), equalTo(maxNumSegments));
             @SuppressWarnings("unchecked")
             ActionListener<BroadcastResponse> listener = (ActionListener<BroadcastResponse>) invocationOnMock.getArguments()[1];
@@ -132,7 +132,7 @@ public class ForceMergeStepTests extends AbstractStepTestCase<ForceMergeStep> {
         Mockito.when(forceMergeResponse.getStatus()).thenReturn(RestStatus.BAD_REQUEST);
         Mockito.when(forceMergeResponse.getSuccessfulShards()).thenReturn(1);
         DefaultShardOperationFailedException cause = new DefaultShardOperationFailedException(
-            index.getName(),
+            index.name(),
             0,
             new IllegalArgumentException("couldn't merge")
         );
@@ -173,6 +173,6 @@ public class ForceMergeStepTests extends AbstractStepTestCase<ForceMergeStep> {
         assertThat(stepException.getMessage(), is(Strings.format("""
             index [%s] in policy [ilmPolicy] encountered failures [{"shard":0,"index":"%s","status":"BAD_REQUEST",\
             "reason":{"type":"illegal_argument_exception","reason":"couldn't merge"}}] on step [forcemerge]\
-            """, index.getName(), index.getName())));
+            """, index.name(), index.name())));
     }
 }

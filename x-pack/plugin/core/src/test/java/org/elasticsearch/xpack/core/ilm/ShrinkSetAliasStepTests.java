@@ -72,7 +72,7 @@ public class ShrinkSetAliasStepTests extends AbstractStepTestCase<ShrinkSetAlias
         IndexMetadata indexMetadata = indexMetadataBuilder.putAlias(aliasMetadata).build();
         ShrinkSetAliasStep step = createRandomInstance();
 
-        String sourceIndex = indexMetadata.getIndex().getName();
+        String sourceIndex = indexMetadata.getIndex().name();
         String shrunkenIndex = SHRUNKEN_INDEX_PREFIX + sourceIndex;
         List<AliasActions> expectedAliasActions = Arrays.asList(
             IndicesAliasesRequest.AliasActions.removeIndex().index(sourceIndex),

@@ -77,7 +77,7 @@ public class CloseIndexStepTests extends AbstractStepTestCase<CloseIndexStep> {
             CloseIndexRequest request = (CloseIndexRequest) invocation.getArguments()[0];
             @SuppressWarnings("unchecked")
             ActionListener<CloseIndexResponse> listener = (ActionListener<CloseIndexResponse>) invocation.getArguments()[1];
-            assertThat(request.indices(), equalTo(new String[] { indexMetadata.getIndex().getName() }));
+            assertThat(request.indices(), equalTo(new String[] { indexMetadata.getIndex().name() }));
             listener.onResponse(
                 new CloseIndexResponse(true, true, Collections.singletonList(new CloseIndexResponse.IndexResult(indexMetadata.getIndex())))
             );
@@ -124,7 +124,7 @@ public class CloseIndexStepTests extends AbstractStepTestCase<CloseIndexStep> {
             CloseIndexRequest request = (CloseIndexRequest) invocation.getArguments()[0];
             @SuppressWarnings("unchecked")
             ActionListener<CloseIndexResponse> listener = (ActionListener<CloseIndexResponse>) invocation.getArguments()[1];
-            assertThat(request.indices(), equalTo(new String[] { indexMetadata.getIndex().getName() }));
+            assertThat(request.indices(), equalTo(new String[] { indexMetadata.getIndex().name() }));
             listener.onFailure(exception);
             return null;
         }).when(indicesClient).close(Mockito.any(), Mockito.any());

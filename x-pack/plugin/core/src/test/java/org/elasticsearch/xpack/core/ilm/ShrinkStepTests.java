@@ -101,7 +101,7 @@ public class ShrinkStepTests extends AbstractStepTestCase<ShrinkStep> {
             ResizeRequest request = (ResizeRequest) invocation.getArguments()[0];
             @SuppressWarnings("unchecked")
             ActionListener<CreateIndexResponse> listener = (ActionListener<CreateIndexResponse>) invocation.getArguments()[1];
-            assertThat(request.getSourceIndex(), equalTo(sourceIndexMetadata.getIndex().getName()));
+            assertThat(request.getSourceIndex(), equalTo(sourceIndexMetadata.getIndex().name()));
             assertThat(request.getTargetIndexRequest().aliases(), equalTo(Collections.emptySet()));
 
             Settings.Builder builder = Settings.builder();
@@ -119,7 +119,7 @@ public class ShrinkStepTests extends AbstractStepTestCase<ShrinkStep> {
                 );
             }
             request.setMaxPrimaryShardSize(step.getMaxPrimaryShardSize());
-            listener.onResponse(new CreateIndexResponse(true, true, sourceIndexMetadata.getIndex().getName()));
+            listener.onResponse(new CreateIndexResponse(true, true, sourceIndexMetadata.getIndex().name()));
             return null;
         }).when(indicesClient).resizeIndex(Mockito.any(), Mockito.any());
 
@@ -182,7 +182,7 @@ public class ShrinkStepTests extends AbstractStepTestCase<ShrinkStep> {
         Mockito.doAnswer(invocation -> {
             @SuppressWarnings("unchecked")
             ActionListener<CreateIndexResponse> listener = (ActionListener<CreateIndexResponse>) invocation.getArguments()[1];
-            listener.onResponse(new CreateIndexResponse(false, false, indexMetadata.getIndex().getName()));
+            listener.onResponse(new CreateIndexResponse(false, false, indexMetadata.getIndex().name()));
             return null;
         }).when(indicesClient).resizeIndex(Mockito.any(), Mockito.any());
 

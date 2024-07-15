@@ -87,7 +87,7 @@ public class RollupResponseTranslator {
                 if (e instanceof IndexNotFoundException) {
                     throw new ResourceNotFoundException(
                         "Index ["
-                            + ((IndexNotFoundException) e).getIndex().getName()
+                            + ((IndexNotFoundException) e).getIndex().name()
                             + "] was not found, likely because it was deleted while the request was in-flight. "
                             + "Rollup does not support partial search results, please try the request again."
                     );

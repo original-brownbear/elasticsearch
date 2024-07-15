@@ -227,7 +227,7 @@ public class SearchableSnapshotsBlobStoreCacheIntegTests extends BaseFrozenSearc
 
         for (IndicesService indicesService : internalCluster().getDataNodeInstances(IndicesService.class)) {
             for (IndexService indexService : indicesService) {
-                if (indexService.index().getName().equals(restoredIndex)) {
+                if (indexService.index().name().equals(restoredIndex)) {
                     for (IndexShard indexShard : indexService) {
                         try {
                             unwrapDirectory(indexShard.store().directory()).clearStats();

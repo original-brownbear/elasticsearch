@@ -16,6 +16,7 @@ import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.BigArrays;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.engine.VersionConflictEngineException;
 import org.elasticsearch.indices.SystemIndexDescriptor;
 import org.elasticsearch.plugins.Plugin;
@@ -118,10 +119,7 @@ public class SearchApplicationIndexServiceTests extends ESSingleNodeTestCase {
         Metadata metadata = clusterService.state().metadata();
         final String aliasName = searchApp.name();
         assertTrue(metadata.hasAlias(aliasName));
-        final Set<String> aliasedIndices = metadata.aliasedIndices(aliasName)
-            .stream()
-            .map(index -> index.getName())
-            .collect(Collectors.toSet());
+        final Set<String> aliasedIndices = metadata.aliasedIndices(aliasName).stream().map(Index::name).collect(Collectors.toSet());
         assertThat(aliasedIndices, equalTo(Set.of(searchApp.indices())));
     }
 

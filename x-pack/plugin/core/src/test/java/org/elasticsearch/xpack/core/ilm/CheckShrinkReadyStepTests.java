@@ -76,7 +76,7 @@ public class CheckShrinkReadyStepTests extends AbstractStepTestCase<CheckShrinkR
         Map<String, String> requires = AllocateActionTests.randomAllocationRoutingMap(1, 5);
         Settings.Builder existingSettings = Settings.builder()
             .put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current())
-            .put(IndexMetadata.SETTING_INDEX_UUID, index.getUUID());
+            .put(IndexMetadata.SETTING_INDEX_UUID, index.uuid());
         Settings.Builder expectedSettings = Settings.builder();
         Settings.Builder node1Settings = Settings.builder();
         Settings.Builder node2Settings = Settings.builder();
@@ -112,7 +112,7 @@ public class CheckShrinkReadyStepTests extends AbstractStepTestCase<CheckShrinkR
         Settings.Builder existingSettings = Settings.builder()
             .put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current())
             .put(IndexMetadata.INDEX_ROUTING_REQUIRE_GROUP_PREFIX + "._id", "node1")
-            .put(IndexMetadata.SETTING_INDEX_UUID, index.getUUID());
+            .put(IndexMetadata.SETTING_INDEX_UUID, index.uuid());
         Settings.Builder expectedSettings = Settings.builder();
         Settings.Builder node1Settings = Settings.builder();
         Settings.Builder node2Settings = Settings.builder();
@@ -145,7 +145,7 @@ public class CheckShrinkReadyStepTests extends AbstractStepTestCase<CheckShrinkR
         Settings.Builder existingSettings = Settings.builder()
             .put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current())
             .put(IndexMetadata.INDEX_ROUTING_REQUIRE_GROUP_PREFIX + "._id", "node1")
-            .put(IndexMetadata.SETTING_INDEX_UUID, index.getUUID());
+            .put(IndexMetadata.SETTING_INDEX_UUID, index.uuid());
         Settings.Builder expectedSettings = Settings.builder();
         Settings.Builder node1Settings = Settings.builder();
         Settings.Builder node2Settings = Settings.builder();
@@ -179,7 +179,7 @@ public class CheckShrinkReadyStepTests extends AbstractStepTestCase<CheckShrinkR
         Settings.Builder existingSettings = Settings.builder()
             .put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current())
             .put(IndexMetadata.INDEX_ROUTING_REQUIRE_GROUP_PREFIX + "._id", "node1")
-            .put(IndexMetadata.SETTING_INDEX_UUID, index.getUUID());
+            .put(IndexMetadata.SETTING_INDEX_UUID, index.uuid());
         Settings.Builder expectedSettings = Settings.builder();
         Settings.Builder node1Settings = Settings.builder();
         Settings.Builder node2Settings = Settings.builder();
@@ -220,7 +220,7 @@ public class CheckShrinkReadyStepTests extends AbstractStepTestCase<CheckShrinkR
         Settings.Builder existingSettings = Settings.builder()
             .put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current())
             .put(IndexMetadata.INDEX_ROUTING_REQUIRE_GROUP_PREFIX + "._id", "node1")
-            .put(IndexMetadata.SETTING_INDEX_UUID, index.getUUID());
+            .put(IndexMetadata.SETTING_INDEX_UUID, index.uuid());
         Settings.Builder expectedSettings = Settings.builder();
         Settings.Builder node1Settings = Settings.builder();
         Settings.Builder node2Settings = Settings.builder();
@@ -254,7 +254,7 @@ public class CheckShrinkReadyStepTests extends AbstractStepTestCase<CheckShrinkR
         Settings.Builder existingSettings = Settings.builder()
             .put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current())
             .put(IndexMetadata.INDEX_ROUTING_REQUIRE_GROUP_PREFIX + "._id", "node1")
-            .put(IndexMetadata.SETTING_INDEX_UUID, index.getUUID());
+            .put(IndexMetadata.SETTING_INDEX_UUID, index.uuid());
         Settings.Builder expectedSettings = Settings.builder();
         Settings.Builder node1Settings = Settings.builder();
         Settings.Builder node2Settings = Settings.builder();
@@ -289,7 +289,7 @@ public class CheckShrinkReadyStepTests extends AbstractStepTestCase<CheckShrinkR
         Settings.Builder existingSettings = Settings.builder()
             .put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current())
             .put(IndexMetadata.INDEX_ROUTING_REQUIRE_GROUP_PREFIX + "._id", "node1")
-            .put(IndexMetadata.SETTING_INDEX_UUID, index.getUUID());
+            .put(IndexMetadata.SETTING_INDEX_UUID, index.uuid());
         Settings.Builder expectedSettings = Settings.builder();
         Settings.Builder node1Settings = Settings.builder();
         Settings.Builder node2Settings = Settings.builder();
@@ -344,7 +344,7 @@ public class CheckShrinkReadyStepTests extends AbstractStepTestCase<CheckShrinkR
         Settings.Builder existingSettings = Settings.builder()
             .put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current())
             .put(IndexMetadata.INDEX_ROUTING_REQUIRE_GROUP_PREFIX + "._id", "node1")
-            .put(IndexMetadata.SETTING_INDEX_UUID, index.getUUID());
+            .put(IndexMetadata.SETTING_INDEX_UUID, index.uuid());
         Settings.Builder expectedSettings = Settings.builder();
         Settings.Builder node1Settings = Settings.builder();
         Settings.Builder node2Settings = Settings.builder();
@@ -380,7 +380,7 @@ public class CheckShrinkReadyStepTests extends AbstractStepTestCase<CheckShrinkR
         Settings.Builder existingSettings = Settings.builder()
             .put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current())
             .put(IndexMetadata.INDEX_ROUTING_REQUIRE_GROUP_PREFIX + "._id", "node1")
-            .put(IndexMetadata.SETTING_INDEX_UUID, index.getUUID());
+            .put(IndexMetadata.SETTING_INDEX_UUID, index.uuid());
         Settings.Builder expectedSettings = Settings.builder();
         Settings.Builder node1Settings = Settings.builder();
         Settings.Builder node2Settings = Settings.builder();
@@ -428,7 +428,7 @@ public class CheckShrinkReadyStepTests extends AbstractStepTestCase<CheckShrinkR
             Settings.Builder existingSettings = Settings.builder()
                 .put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current())
                 .put(IndexMetadata.INDEX_ROUTING_REQUIRE_GROUP_PREFIX + "._id", "node1")
-                .put(IndexMetadata.SETTING_INDEX_UUID, index.getUUID());
+                .put(IndexMetadata.SETTING_INDEX_UUID, index.uuid());
             Settings.Builder expectedSettings = Settings.builder();
             Settings.Builder node1Settings = Settings.builder();
             Settings.Builder node2Settings = Settings.builder();
@@ -442,12 +442,12 @@ public class CheckShrinkReadyStepTests extends AbstractStepTestCase<CheckShrinkR
                 .addShard(TestShardRouting.newShardRouting(new ShardId(index, 0), "node1", true, ShardRoutingState.STARTED));
 
             CheckShrinkReadyStep step = createRandomInstance();
-            IndexMetadata indexMetadata = IndexMetadata.builder(index.getName())
+            IndexMetadata indexMetadata = IndexMetadata.builder(index.name())
                 .settings(existingSettings)
                 .numberOfShards(1)
                 .numberOfReplicas(1)
                 .build();
-            Map<String, IndexMetadata> indices = Map.of(index.getName(), indexMetadata);
+            Map<String, IndexMetadata> indices = Map.of(index.name(), indexMetadata);
 
             final String targetNodeName = type == SingleNodeShutdownMetadata.Type.REPLACE ? randomAlphaOfLengthBetween(10, 20) : null;
             final TimeValue grace = type == SIGTERM ? randomTimeValue() : null;
@@ -507,7 +507,7 @@ public class CheckShrinkReadyStepTests extends AbstractStepTestCase<CheckShrinkR
             Settings.Builder existingSettings = Settings.builder()
                 .put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current())
                 .put(IndexMetadata.INDEX_ROUTING_REQUIRE_GROUP_PREFIX + "._id", "node1")
-                .put(IndexMetadata.SETTING_INDEX_UUID, index.getUUID());
+                .put(IndexMetadata.SETTING_INDEX_UUID, index.uuid());
             Settings.Builder expectedSettings = Settings.builder();
             Settings.Builder node1Settings = Settings.builder();
             Settings.Builder node2Settings = Settings.builder();
@@ -521,12 +521,12 @@ public class CheckShrinkReadyStepTests extends AbstractStepTestCase<CheckShrinkR
                 .addShard(TestShardRouting.newShardRouting(new ShardId(index, 0), "node1", true, ShardRoutingState.INITIALIZING));
 
             CheckShrinkReadyStep step = createRandomInstance();
-            IndexMetadata indexMetadata = IndexMetadata.builder(index.getName())
+            IndexMetadata indexMetadata = IndexMetadata.builder(index.name())
                 .settings(existingSettings)
                 .numberOfShards(1)
                 .numberOfReplicas(1)
                 .build();
-            Map<String, IndexMetadata> indices = Map.of(index.getName(), indexMetadata);
+            Map<String, IndexMetadata> indices = Map.of(index.name(), indexMetadata);
 
             final String targetNodeName = type == SingleNodeShutdownMetadata.Type.REPLACE ? randomAlphaOfLengthBetween(10, 20) : null;
             final TimeValue grace = type == SIGTERM ? randomTimeValue() : null;
@@ -594,12 +594,12 @@ public class CheckShrinkReadyStepTests extends AbstractStepTestCase<CheckShrinkR
         IndexRoutingTable.Builder indexRoutingTable,
         ClusterStateWaitStep.Result expectedResult
     ) {
-        IndexMetadata indexMetadata = IndexMetadata.builder(index.getName())
+        IndexMetadata indexMetadata = IndexMetadata.builder(index.name())
             .settings(existingSettings)
             .numberOfShards(shards)
             .numberOfReplicas(replicas)
             .build();
-        Map<String, IndexMetadata> indices = Map.of(index.getName(), indexMetadata);
+        Map<String, IndexMetadata> indices = Map.of(index.name(), indexMetadata);
 
         ClusterState clusterState = ClusterState.builder(ClusterState.EMPTY_STATE)
             .metadata(Metadata.builder().indices(indices))

@@ -168,7 +168,7 @@ public class FrozenIndexInputTests extends AbstractSearchableSnapshotsTestCase {
                 new TestUtils.SimpleBlobStoreCacheService(),
                 "_repository",
                 snapshotId,
-                new IndexId(SHARD_ID.getIndex().getName(), SHARD_ID.getIndex().getUUID()),
+                new IndexId(SHARD_ID.getIndex().name(), SHARD_ID.getIndex().uuid()),
                 SHARD_ID,
                 Settings.builder()
                     .put(SearchableSnapshotsSettings.SNAPSHOT_PARTIAL_SETTING.getKey(), true)

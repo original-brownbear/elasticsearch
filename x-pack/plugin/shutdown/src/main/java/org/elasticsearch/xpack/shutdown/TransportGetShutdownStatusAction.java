@@ -234,7 +234,7 @@ public class TransportGetShutdownStatusAction extends TransportMasterNodeAction<
                     "shard [%s] [%s] of index [%s] is unassigned, see [%s] for details or use the cluster allocation explain API",
                     shardRouting.shardId().getId(),
                     shardRouting.primary() ? "primary" : "replica",
-                    shardRouting.index().getName(),
+                    shardRouting.index().name(),
                     NODE_ALLOCATION_DECISION_KEY
                 ),
                 decision
@@ -349,7 +349,7 @@ public class TransportGetShutdownStatusAction extends TransportMasterNodeAction<
                     "shard [%s] [%s] of index [%s] cannot move, see [%s] for details or use the cluster allocation explain API",
                     shardRouting.shardId().getId(),
                     shardRouting.primary() ? "primary" : "replica",
-                    shardRouting.index().getName(),
+                    shardRouting.index().name(),
                     NODE_ALLOCATION_DECISION_KEY
                 ),
                 decision
@@ -373,7 +373,7 @@ public class TransportGetShutdownStatusAction extends TransportMasterNodeAction<
                             + "for details or use the cluster allocation explain API",
                         shardRouting.shardId().getId(),
                         shardRouting.primary() ? "primary" : "replica",
-                        shardRouting.index().getName(),
+                        shardRouting.index().name(),
                         NODE_ALLOCATION_DECISION_KEY
                     ),
                     decision
@@ -402,7 +402,7 @@ public class TransportGetShutdownStatusAction extends TransportMasterNodeAction<
                         "shard [%s] [%s] of index [%s] cannot move, but ILM is shrinking that index so assuming it will move",
                         pair.shardId().getId(),
                         pair.primary() ? "primary" : "replica",
-                        pair.index().getName()
+                        pair.index().name()
                     )
                 );
             }

@@ -68,7 +68,7 @@ public class UpdateSettingsStepTests extends AbstractStepTestCase<UpdateSettings
             @SuppressWarnings("unchecked")
             ActionListener<AcknowledgedResponse> listener = (ActionListener<AcknowledgedResponse>) invocation.getArguments()[1];
             assertThat(request.settings(), equalTo(step.getSettings()));
-            assertThat(request.indices(), equalTo(new String[] { indexMetadata.getIndex().getName() }));
+            assertThat(request.indices(), equalTo(new String[] { indexMetadata.getIndex().name() }));
             listener.onResponse(AcknowledgedResponse.TRUE);
             return null;
         }).when(indicesClient).updateSettings(Mockito.any(), Mockito.any());
@@ -90,7 +90,7 @@ public class UpdateSettingsStepTests extends AbstractStepTestCase<UpdateSettings
             @SuppressWarnings("unchecked")
             ActionListener<AcknowledgedResponse> listener = (ActionListener<AcknowledgedResponse>) invocation.getArguments()[1];
             assertThat(request.settings(), equalTo(step.getSettings()));
-            assertThat(request.indices(), equalTo(new String[] { indexMetadata.getIndex().getName() }));
+            assertThat(request.indices(), equalTo(new String[] { indexMetadata.getIndex().name() }));
             listener.onFailure(exception);
             return null;
         }).when(indicesClient).updateSettings(Mockito.any(), Mockito.any());

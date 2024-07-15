@@ -395,7 +395,7 @@ public final class MetadataMigrateToDataTiersRoutingService {
 
                         logger.debug(
                             "updating the cached phase definition for index [{}], current step [{}] in policy " + "[{}] to [{}]",
-                            indexMetadata.getIndex().getName(),
+                            indexMetadata.getIndex().name(),
                             currentStepKey,
                             policyName,
                             newPhaseDefinition
@@ -516,7 +516,7 @@ public final class MetadataMigrateToDataTiersRoutingService {
         String nodeAttrIndexIncludeRoutingSetting = INDEX_ROUTING_INCLUDE_GROUP_SETTING.getKey() + nodeAttrName;
         String nodeAttrIndexExcludeRoutingSetting = INDEX_ROUTING_EXCLUDE_GROUP_SETTING.getKey() + nodeAttrName;
         for (var indexMetadata : currentState.metadata().indices().values()) {
-            String indexName = indexMetadata.getIndex().getName();
+            String indexName = indexMetadata.getIndex().name();
             Settings currentSettings = indexMetadata.getSettings();
 
             boolean removeNodeAttrIndexRoutingSettings = true;
@@ -564,7 +564,7 @@ public final class MetadataMigrateToDataTiersRoutingService {
                 mb.put(
                     IndexMetadata.builder(indexMetadata).settings(finalSettings).settingsVersion(indexMetadata.getSettingsVersion() + 1)
                 );
-                migratedIndices.add(indexMetadata.getIndex().getName());
+                migratedIndices.add(indexMetadata.getIndex().name());
             }
         }
         return migratedIndices;
@@ -772,7 +772,7 @@ public final class MetadataMigrateToDataTiersRoutingService {
         }
 
         Settings.Builder newSettingsBuilder = Settings.builder().put(currentIndexSettings);
-        String indexName = indexMetadata.getIndex().getName();
+        String indexName = indexMetadata.getIndex().name();
 
         boolean isDataStream = currentState.metadata().findDataStreams(indexName).isEmpty() == false;
         String convertedTierPreference = isDataStream ? DataTier.DATA_HOT : DataTier.DATA_CONTENT;

@@ -497,7 +497,7 @@ public class ProfilingIndexManagerTests extends ESTestCase {
             Index index = new Index(indexName, indexName);
             IndexMetadata.Builder builder = new IndexMetadata.Builder(indexName);
             builder.state(state);
-            builder.settings(indexSettings(indexVersion, 1, 1).put(IndexMetadata.SETTING_INDEX_UUID, index.getUUID()));
+            builder.settings(indexSettings(indexVersion, 1, 1).put(IndexMetadata.SETTING_INDEX_UUID, index.uuid()));
             builder.putMapping(
                 new MappingMetadata(
                     MapperService.SINGLE_MAPPING_NAME,

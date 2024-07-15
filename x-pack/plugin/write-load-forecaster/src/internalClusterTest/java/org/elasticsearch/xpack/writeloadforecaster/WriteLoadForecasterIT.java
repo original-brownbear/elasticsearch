@@ -173,7 +173,7 @@ public class WriteLoadForecasterIT extends ESIntegTestCase {
 
                 final ClusterState clusterState = internalCluster().getCurrentMasterNodeInstance(ClusterService.class).state();
                 final DataStream dataStream = clusterState.getMetadata().dataStreams().get(dataStreamName);
-                final String writeIndex = dataStream.getWriteIndex().getName();
+                final String writeIndex = dataStream.getWriteIndex().name();
                 final IndicesStatsResponse indicesStatsResponse = indicesAdmin().prepareStats(writeIndex).get();
                 for (IndexShardStats indexShardStats : indicesStatsResponse.getIndex(writeIndex).getIndexShards().values()) {
                     for (ShardStats shard : indexShardStats.getShards()) {

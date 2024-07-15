@@ -90,7 +90,7 @@ public class IndexTemplateRegistryRolloverIT extends ESIntegTestCase {
     private void assertNumberOfBackingIndices(final int expected) {
         DataStream dataStream = getDataStream();
         assertThat(dataStream.getIndices(), hasSize(expected));
-        assertThat(dataStream.getWriteIndex().getName(), endsWith(String.valueOf(expected)));
+        assertThat(dataStream.getWriteIndex().name(), endsWith(String.valueOf(expected)));
     }
 
     private DataStream getDataStream() {

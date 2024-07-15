@@ -87,8 +87,8 @@ public class DataStreamSecurityIT extends SecurityIntegTestCase {
                 public ClusterState execute(ClusterState currentState) throws Exception {
                     DataStream original = currentState.getMetadata().dataStreams().get(dataStreamName);
                     String brokenIndexName = shouldBreakIndexName
-                        ? original.getIndices().get(0).getName() + "-broken"
-                        : original.getIndices().get(0).getName();
+                        ? original.getIndices().get(0).name() + "-broken"
+                        : original.getIndices().get(0).name();
                     DataStream broken = original.copy()
                         .setBackingIndices(
                             original.getBackingIndices()
@@ -125,7 +125,7 @@ public class DataStreamSecurityIT extends SecurityIntegTestCase {
         assertAcked(
             client.execute(
                 ModifyDataStreamsAction.INSTANCE,
-                new ModifyDataStreamsAction.Request(List.of(DataStreamAction.removeBackingIndex(dataStreamName, ghostReference.getName())))
+                new ModifyDataStreamsAction.Request(List.of(DataStreamAction.removeBackingIndex(dataStreamName, ghostReference.name())))
             )
         );
         ClusterState after = internalCluster().getCurrentMasterNodeInstance(ClusterService.class).state();

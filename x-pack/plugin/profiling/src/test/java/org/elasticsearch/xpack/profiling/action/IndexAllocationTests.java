@@ -79,7 +79,7 @@ public class IndexAllocationTests extends ESTestCase {
         DiscoveryNodes.Builder nodesBuilder = DiscoveryNodes.builder().localNodeId("node").masterNodeId("node").add(node);
 
         nodesBuilder.add(
-            DiscoveryNodeUtils.builder("n-" + content.getName())
+            DiscoveryNodeUtils.builder("n-" + content.name())
                 .roles(
                     Set.of(
                         // content nodes have all roles
@@ -92,17 +92,15 @@ public class IndexAllocationTests extends ESTestCase {
                 )
                 .build()
         );
-        nodesBuilder.add(DiscoveryNodeUtils.builder("n-" + hot.getName()).roles(Set.of(DiscoveryNodeRole.DATA_HOT_NODE_ROLE)).build());
-        nodesBuilder.add(DiscoveryNodeUtils.builder("n-" + warm.getName()).roles(Set.of(DiscoveryNodeRole.DATA_WARM_NODE_ROLE)).build());
-        nodesBuilder.add(DiscoveryNodeUtils.builder("n-" + cold.getName()).roles(Set.of(DiscoveryNodeRole.DATA_COLD_NODE_ROLE)).build());
-        nodesBuilder.add(
-            DiscoveryNodeUtils.builder("n-" + frozen.getName()).roles(Set.of(DiscoveryNodeRole.DATA_FROZEN_NODE_ROLE)).build()
-        );
+        nodesBuilder.add(DiscoveryNodeUtils.builder("n-" + hot.name()).roles(Set.of(DiscoveryNodeRole.DATA_HOT_NODE_ROLE)).build());
+        nodesBuilder.add(DiscoveryNodeUtils.builder("n-" + warm.name()).roles(Set.of(DiscoveryNodeRole.DATA_WARM_NODE_ROLE)).build());
+        nodesBuilder.add(DiscoveryNodeUtils.builder("n-" + cold.name()).roles(Set.of(DiscoveryNodeRole.DATA_COLD_NODE_ROLE)).build());
+        nodesBuilder.add(DiscoveryNodeUtils.builder("n-" + frozen.name()).roles(Set.of(DiscoveryNodeRole.DATA_FROZEN_NODE_ROLE)).build());
 
         RoutingTable.Builder routingTableBuilder = RoutingTable.builder();
         Map<String, IndexMetadata> indices = new HashMap<>();
         for (Index index : List.of(content, hot, warm, cold, frozen)) {
-            indices.put(index.getName(), metadata(index));
+            indices.put(index.name(), metadata(index));
             ShardRouting shardRouting = ShardRouting.newUnassigned(
                 new ShardId(index, 0),
                 true,
@@ -111,7 +109,7 @@ public class IndexAllocationTests extends ESTestCase {
                 ShardRouting.Role.DEFAULT
             );
 
-            shardRouting = shardRouting.initialize("n-" + index.getName(), null, 0).moveToStarted(0);
+            shardRouting = shardRouting.initialize("n-" + index.name(), null, 0).moveToStarted(0);
             routingTableBuilder.add(
                 IndexRoutingTable.builder(index)
                     .addIndexShard(IndexShardRoutingTable.builder(shardRouting.shardId()).addShard(shardRouting))
@@ -129,9 +127,9 @@ public class IndexAllocationTests extends ESTestCase {
     private IndexMetadata metadata(Index index) {
         final Settings settings = Settings.builder()
             .put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current())
-            .put(IndexMetadata.SETTING_INDEX_UUID, index.getUUID())
+            .put(IndexMetadata.SETTING_INDEX_UUID, index.uuid())
             .build();
-        return IndexMetadata.builder(index.getName()).settings(settings).numberOfShards(1).numberOfReplicas(0).build();
+        return IndexMetadata.builder(index.name()).settings(settings).numberOfShards(1).numberOfReplicas(0).build();
     }
 
     private Index idx(String name) {

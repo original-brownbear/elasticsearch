@@ -66,7 +66,7 @@ public class TransportDownsampleActionTests extends ESTestCase {
     }
 
     private static void assertSourceSettings(final IndexMetadata indexMetadata, final Settings settings) {
-        assertEquals(indexMetadata.getIndex().getName(), settings.get(IndexMetadata.INDEX_DOWNSAMPLE_SOURCE_NAME_KEY));
+        assertEquals(indexMetadata.getIndex().name(), settings.get(IndexMetadata.INDEX_DOWNSAMPLE_SOURCE_NAME_KEY));
         assertEquals(
             indexMetadata.getSettings().get(DataTier.TIER_PREFERENCE_SETTING.getKey()),
             settings.get(DataTier.TIER_PREFERENCE_SETTING.getKey())

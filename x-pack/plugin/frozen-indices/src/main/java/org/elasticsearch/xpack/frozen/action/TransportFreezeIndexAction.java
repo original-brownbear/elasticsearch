@@ -164,9 +164,9 @@ public final class TransportFreezeIndexAction extends TransportMasterNodeAction<
                     List<String> writeIndices = new ArrayList<>();
                     SortedMap<String, IndexAbstraction> lookup = currentState.metadata().getIndicesLookup();
                     for (Index index : concreteIndices) {
-                        IndexAbstraction ia = lookup.get(index.getName());
+                        IndexAbstraction ia = lookup.get(index.name());
                         if (ia != null && ia.getParentDataStream() != null && ia.getParentDataStream().getWriteIndex().equals(index)) {
-                            writeIndices.add(index.getName());
+                            writeIndices.add(index.name());
                         }
                     }
                     if (writeIndices.size() > 0) {
@@ -182,20 +182,20 @@ public final class TransportFreezeIndexAction extends TransportMasterNodeAction<
                     for (Index index : concreteIndices) {
                         final IndexMetadata indexMetadata = currentState.metadata().getIndexSafe(index);
                         if (indexMetadata.getState() != IndexMetadata.State.CLOSE) {
-                            throw new IllegalStateException("index [" + index.getName() + "] is not closed");
+                            throw new IllegalStateException("index [" + index.name() + "] is not closed");
                         }
                         final Settings.Builder settingsBuilder = Settings.builder().put(indexMetadata.getSettings());
                         if (request.freeze()) {
                             settingsBuilder.put(FrozenEngine.INDEX_FROZEN.getKey(), true);
                             settingsBuilder.put(IndexSettings.INDEX_SEARCH_THROTTLED.getKey(), true);
                             settingsBuilder.put("index.blocks.write", true);
-                            blocks.addIndexBlock(index.getName(), IndexMetadata.INDEX_WRITE_BLOCK);
+                            blocks.addIndexBlock(index.name(), IndexMetadata.INDEX_WRITE_BLOCK);
                         } else {
                             settingsBuilder.remove(FrozenEngine.INDEX_FROZEN.getKey());
                             settingsBuilder.remove(IndexSettings.INDEX_SEARCH_THROTTLED.getKey());
                             if (indexMetadata.isSearchableSnapshot() == false) {
                                 settingsBuilder.remove("index.blocks.write");
-                                blocks.removeIndexBlock(index.getName(), IndexMetadata.INDEX_WRITE_BLOCK);
+                                blocks.removeIndexBlock(index.name(), IndexMetadata.INDEX_WRITE_BLOCK);
                             }
                         }
                         builder.put(

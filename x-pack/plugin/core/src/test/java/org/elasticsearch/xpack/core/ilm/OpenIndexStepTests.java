@@ -75,7 +75,7 @@ public class OpenIndexStepTests extends AbstractStepTestCase<OpenIndexStep> {
             OpenIndexRequest request = (OpenIndexRequest) invocation.getArguments()[0];
             @SuppressWarnings("unchecked")
             ActionListener<OpenIndexResponse> listener = (ActionListener<OpenIndexResponse>) invocation.getArguments()[1];
-            assertThat(request.indices(), equalTo(new String[] { indexMetadata.getIndex().getName() }));
+            assertThat(request.indices(), equalTo(new String[] { indexMetadata.getIndex().name() }));
             listener.onResponse(new OpenIndexResponse(true, true));
             return null;
         }).when(indicesClient).open(Mockito.any(), Mockito.any());
@@ -107,7 +107,7 @@ public class OpenIndexStepTests extends AbstractStepTestCase<OpenIndexStep> {
             OpenIndexRequest request = (OpenIndexRequest) invocation.getArguments()[0];
             @SuppressWarnings("unchecked")
             ActionListener<OpenIndexResponse> listener = (ActionListener<OpenIndexResponse>) invocation.getArguments()[1];
-            assertThat(request.indices(), equalTo(new String[] { indexMetadata.getIndex().getName() }));
+            assertThat(request.indices(), equalTo(new String[] { indexMetadata.getIndex().name() }));
             listener.onFailure(exception);
             return null;
         }).when(indicesClient).open(Mockito.any(), Mockito.any());

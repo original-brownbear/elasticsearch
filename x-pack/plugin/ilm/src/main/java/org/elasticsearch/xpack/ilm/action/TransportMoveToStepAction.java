@@ -109,7 +109,7 @@ public class TransportMoveToStepAction extends TransportMasterNodeAction<Transpo
         if (concreteTargetStepKey == null) {
             // This means we weren't able to find the key they specified
             String message = "cannot move index ["
-                + indexMetadata.getIndex().getName()
+                + indexMetadata.getIndex().name()
                 + "] with policy ["
                 + policyName
                 + "]: unable to determine concrete step key from target next step key: "

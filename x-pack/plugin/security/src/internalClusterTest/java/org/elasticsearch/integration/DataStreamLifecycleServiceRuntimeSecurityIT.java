@@ -99,9 +99,9 @@ public class DataStreamLifecycleServiceRuntimeSecurityIT extends SecurityIntegTe
             assertNoAuthzErrors();
             List<Index> backingIndices = getDataStreamBackingIndices(dataStreamName);
             assertThat(backingIndices.size(), equalTo(2));
-            String backingIndex = backingIndices.get(0).getName();
+            String backingIndex = backingIndices.get(0).name();
             assertThat(backingIndex, backingIndexEqualTo(dataStreamName, 1));
-            String writeIndex = backingIndices.get(1).getName();
+            String writeIndex = backingIndices.get(1).name();
             assertThat(writeIndex, backingIndexEqualTo(dataStreamName, 2));
         });
         // Index another doc to force another rollover and trigger an attempted force-merge. The force-merge may be a noop under
@@ -124,7 +124,7 @@ public class DataStreamLifecycleServiceRuntimeSecurityIT extends SecurityIntegTe
             assertThat(backingIndices.size(), equalTo(1));
             // we expect the data stream to have only one backing index, the write one, with generation 2
             // as generation 1 would've been deleted by the data stream lifecycle given the lifecycle configuration
-            String writeIndex = backingIndices.get(0).getName();
+            String writeIndex = backingIndices.get(0).name();
             assertThat(writeIndex, backingIndexEqualTo(dataStreamName, 2));
         });
     }
@@ -154,7 +154,7 @@ public class DataStreamLifecycleServiceRuntimeSecurityIT extends SecurityIntegTe
             assertThat(backingIndices.size(), equalTo(1));
             // we expect the data stream to have only one backing index, the write one, with generation 2
             // as generation 1 would've been deleted by the data stream lifecycle given the lifecycle configuration
-            String writeIndex = backingIndices.get(0).getName();
+            String writeIndex = backingIndices.get(0).name();
             assertThat(writeIndex, backingIndexEqualTo(dataStreamName, 2));
         });
     }

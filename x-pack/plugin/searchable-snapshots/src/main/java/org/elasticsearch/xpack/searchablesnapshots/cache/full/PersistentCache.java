@@ -161,7 +161,7 @@ public class PersistentCache implements Closeable {
                         new TermQuery(new Term(SNAPSHOT_ID_FIELD, snapshotId.getUUID())),
                         BooleanClause.Occur.MUST
                     )
-                        .add(new TermQuery(new Term(SHARD_INDEX_ID_FIELD, shardId.getIndex().getUUID())), BooleanClause.Occur.MUST)
+                        .add(new TermQuery(new Term(SHARD_INDEX_ID_FIELD, shardId.getIndex().uuid())), BooleanClause.Occur.MUST)
                         .add(new TermQuery(new Term(SHARD_ID_FIELD, String.valueOf(shardId.getId()))), BooleanClause.Occur.MUST)
                         .build(),
                     ScoreMode.COMPLETE_NO_SCORES,
@@ -583,8 +583,8 @@ public class PersistentCache implements Closeable {
         document.add(new StringField(SNAPSHOT_INDEX_NAME_FIELD, cacheKey.snapshotIndexName(), Field.Store.YES));
 
         final ShardId shardId = cacheKey.shardId();
-        document.add(new StringField(SHARD_INDEX_NAME_FIELD, shardId.getIndex().getName(), Field.Store.YES));
-        document.add(new StringField(SHARD_INDEX_ID_FIELD, shardId.getIndex().getUUID(), Field.Store.YES));
+        document.add(new StringField(SHARD_INDEX_NAME_FIELD, shardId.getIndex().name(), Field.Store.YES));
+        document.add(new StringField(SHARD_INDEX_ID_FIELD, shardId.getIndex().uuid(), Field.Store.YES));
         document.add(new StringField(SHARD_ID_FIELD, Integer.toString(shardId.getId()), Field.Store.YES));
 
         return document;

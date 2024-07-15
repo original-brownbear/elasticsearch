@@ -233,7 +233,7 @@ public class ReactiveStorageDeciderServiceTests extends AutoscalingTestCase {
 
         int shardId = randomInt(indexMetadata.getNumberOfShards() - 1);
         IndexShardRoutingTable subjectRoutings = initialClusterState.routingTable()
-            .shardRoutingTable(indexMetadata.getIndex().getName(), shardId);
+            .shardRoutingTable(indexMetadata.getIndex().name(), shardId);
         RoutingAllocation allocation = new RoutingAllocation(
             new AllocationDeciders(List.of()),
             initialClusterState.mutableRoutingNodes(),
@@ -335,7 +335,7 @@ public class ReactiveStorageDeciderServiceTests extends AutoscalingTestCase {
         IndexMetadata indexMetadata = IndexMetadata.builder(randomAlphaOfLength(5))
             .settings(
                 settings(IndexVersion.current()).put(IndexMetadata.INDEX_RESIZE_SOURCE_UUID_KEY, sourceIndexMetadata.getIndexUUID())
-                    .put(IndexMetadata.INDEX_RESIZE_SOURCE_NAME_KEY, sourceIndexMetadata.getIndex().getName())
+                    .put(IndexMetadata.INDEX_RESIZE_SOURCE_NAME_KEY, sourceIndexMetadata.getIndex().name())
             )
             .numberOfShards(numberOfShards)
             .numberOfReplicas(numberOfReplicas)
@@ -434,9 +434,7 @@ public class ReactiveStorageDeciderServiceTests extends AutoscalingTestCase {
         ClusterState clusterState = stateBuilder.build();
 
         int shardId = randomInt(indexMetadata.getNumberOfShards() - 1);
-        ShardRouting primaryShard = clusterState.routingTable()
-            .shardRoutingTable(indexMetadata.getIndex().getName(), shardId)
-            .primaryShard();
+        ShardRouting primaryShard = clusterState.routingTable().shardRoutingTable(indexMetadata.getIndex().name(), shardId).primaryShard();
 
         Map<InternalSnapshotsInfoService.SnapshotShard, Long> shardSizeBuilder = new HashMap<>();
         IntStream.range(0, randomInt(10))
@@ -580,7 +578,7 @@ public class ReactiveStorageDeciderServiceTests extends AutoscalingTestCase {
         ClusterState clusterState = stateBuilder.build();
 
         ShardRouting shardRouting = TestShardRouting.newShardRouting(
-            indexMetadata.getIndex().getName(),
+            indexMetadata.getIndex().name(),
             randomInt(10),
             clusterState.nodes().iterator().next().getId(),
             randomBoolean(),
@@ -656,7 +654,7 @@ public class ReactiveStorageDeciderServiceTests extends AutoscalingTestCase {
         ClusterState clusterState = stateBuilder.build();
 
         ShardRouting shardRouting = TestShardRouting.newShardRouting(
-            indexMetadata.getIndex().getName(),
+            indexMetadata.getIndex().name(),
             randomInt(10),
             clusterState.nodes().iterator().next().getId(),
             randomBoolean(),
@@ -689,7 +687,7 @@ public class ReactiveStorageDeciderServiceTests extends AutoscalingTestCase {
 
         boolean primary = randomBoolean();
         ShardRouting shardRouting = TestShardRouting.newShardRouting(
-            indexMetadata.getIndex().getName(),
+            indexMetadata.getIndex().name(),
             randomInt(10),
             clusterState.nodes().iterator().next().getId(),
             primary,

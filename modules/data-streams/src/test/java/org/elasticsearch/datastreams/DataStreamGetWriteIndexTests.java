@@ -100,7 +100,7 @@ public class DataStreamGetWriteIndexTests extends ESTestCase {
         assertThat(backingIndex, notNullValue());
         assertThat(backingIndex.getSettings().get("index.time_series.start_time"), equalTo("2022-03-15T08:59:36.000Z"));
         assertThat(backingIndex.getSettings().get("index.time_series.end_time"), equalTo("2022-03-15T09:29:36.000Z"));
-        String secondBackingIndex = backingIndex.getIndex().getName();
+        String secondBackingIndex = backingIndex.getIndex().name();
 
         // first backing index:
         {
@@ -109,14 +109,14 @@ public class DataStreamGetWriteIndexTests extends ESTestCase {
             for (int i = 0; i < 256; i++) {
                 String timestamp = MILLIS_FORMATTER.formatMillis(randomLongBetween(start, end));
                 var writeIndex = getWriteIndex(state, "logs-myapp", timestamp);
-                assertThat(writeIndex.getName(), equalTo(".ds-logs-myapp-2022.03.15-000001"));
+                assertThat(writeIndex.name(), equalTo(".ds-logs-myapp-2022.03.15-000001"));
             }
         }
 
         // Borderline:
         {
             var writeIndex = getWriteIndex(state, "logs-myapp", "2022-03-15T08:59:35.999Z");
-            assertThat(writeIndex.getName(), equalTo(".ds-logs-myapp-2022.03.15-000001"));
+            assertThat(writeIndex.name(), equalTo(".ds-logs-myapp-2022.03.15-000001"));
         }
 
         // Second backing index:
@@ -126,14 +126,14 @@ public class DataStreamGetWriteIndexTests extends ESTestCase {
             for (int i = 0; i < 256; i++) {
                 String timestamp = MILLIS_FORMATTER.formatMillis(randomLongBetween(start, end));
                 var writeIndex = getWriteIndex(state, "logs-myapp", timestamp);
-                assertThat(writeIndex.getName(), equalTo(secondBackingIndex));
+                assertThat(writeIndex.name(), equalTo(secondBackingIndex));
             }
         }
 
         // Borderline (again):
         {
             var writeIndex = getWriteIndex(state, "logs-myapp", "2022-03-15T09:29:35.999Z");
-            assertThat(writeIndex.getName(), equalTo(secondBackingIndex));
+            assertThat(writeIndex.name(), equalTo(secondBackingIndex));
         }
 
         // Outside the valid temporal ranges:
@@ -171,7 +171,7 @@ public class DataStreamGetWriteIndexTests extends ESTestCase {
         assertThat(backingIndex, notNullValue());
         assertThat(backingIndex.getSettings().get("index.time_series.start_time"), equalTo("2022-03-15T08:59:36.000Z"));
         assertThat(backingIndex.getSettings().get("index.time_series.end_time"), equalTo("2022-03-15T09:29:36.000Z"));
-        String secondBackingIndex = backingIndex.getIndex().getName();
+        String secondBackingIndex = backingIndex.getIndex().name();
 
         // first backing index:
         {
@@ -180,14 +180,14 @@ public class DataStreamGetWriteIndexTests extends ESTestCase {
             for (int i = 0; i < 256; i++) {
                 String timestamp = NANOS_FORMATTER.formatMillis(randomLongBetween(start, end));
                 var writeIndex = getWriteIndex(state, "logs-myapp", timestamp);
-                assertThat(writeIndex.getName(), equalTo(".ds-logs-myapp-2022.03.15-000001"));
+                assertThat(writeIndex.name(), equalTo(".ds-logs-myapp-2022.03.15-000001"));
             }
         }
 
         // Borderline:
         {
             var writeIndex = getWriteIndex(state, "logs-myapp", "2022-03-15T08:59:35.999999999Z");
-            assertThat(writeIndex.getName(), equalTo(".ds-logs-myapp-2022.03.15-000001"));
+            assertThat(writeIndex.name(), equalTo(".ds-logs-myapp-2022.03.15-000001"));
         }
 
         // Second backing index:
@@ -197,14 +197,14 @@ public class DataStreamGetWriteIndexTests extends ESTestCase {
             for (int i = 0; i < 256; i++) {
                 String timestamp = NANOS_FORMATTER.formatMillis(randomLongBetween(start, end));
                 var writeIndex = getWriteIndex(state, "logs-myapp", timestamp);
-                assertThat(writeIndex.getName(), equalTo(secondBackingIndex));
+                assertThat(writeIndex.name(), equalTo(secondBackingIndex));
             }
         }
 
         // Borderline (again):
         {
             var writeIndex = getWriteIndex(state, "logs-myapp", "2022-03-15T09:29:35.999999999Z");
-            assertThat(writeIndex.getName(), equalTo(secondBackingIndex));
+            assertThat(writeIndex.name(), equalTo(secondBackingIndex));
         }
     }
 

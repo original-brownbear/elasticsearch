@@ -110,7 +110,7 @@ class IndexLifecycleRunner {
         LifecycleExecutionState lifecycleState
     ) {
         StepKey currentStepKey = Step.getCurrentStepKey(lifecycleState);
-        logger.trace("[{}] retrieved current step key: {}", indexMetadata.getIndex().getName(), currentStepKey);
+        logger.trace("[{}] retrieved current step key: {}", indexMetadata.getIndex().name(), currentStepKey);
         if (currentStepKey == null) {
             return stepRegistry.getFirstStep(policy);
         } else {
@@ -139,7 +139,7 @@ class IndexLifecycleRunner {
     boolean isReadyToTransitionToThisPhase(final String policy, final IndexMetadata indexMetadata, final String phase) {
         final Long lifecycleDate = calculateOriginationMillis(indexMetadata);
         if (lifecycleDate == null) {
-            logger.trace("[{}] no index creation or origination date has been set yet", indexMetadata.getIndex().getName());
+            logger.trace("[{}] no index creation or origination date has been set yet", indexMetadata.getIndex().name());
             return true;
         }
         final TimeValue after = stepRegistry.getIndexAgeForPhase(policy, phase);
@@ -157,7 +157,7 @@ class IndexLifecycleRunner {
             logger.trace(
                 "[{}] checking for index age to be at least [{}] before performing actions in "
                     + "the \"{}\" phase. Now: {}, lifecycle date: {}, age: [{}{}/{}s]",
-                indexMetadata.getIndex().getName(),
+                indexMetadata.getIndex().name(),
                 after,
                 phase,
                 new TimeValue(now).seconds(),
@@ -175,7 +175,7 @@ class IndexLifecycleRunner {
      * wait criteria are checked periodically from the ILM scheduler
      */
     void runPeriodicStep(String policy, Metadata metadata, IndexMetadata indexMetadata) {
-        String index = indexMetadata.getIndex().getName();
+        String index = indexMetadata.getIndex().name();
         LifecycleExecutionState lifecycleState = indexMetadata.getLifecycleExecutionState();
         final Step currentStep;
         try {
@@ -260,7 +260,7 @@ class IndexLifecycleRunner {
      * counter.
      */
     void onErrorMaybeRetryFailedStep(String policy, StepKey currentStep, IndexMetadata indexMetadata) {
-        String index = indexMetadata.getIndex().getName();
+        String index = indexMetadata.getIndex().name();
         LifecycleExecutionState lifecycleState = indexMetadata.getLifecycleExecutionState();
         Step failedStep = stepRegistry.getStep(
             indexMetadata,
@@ -308,7 +308,7 @@ class IndexLifecycleRunner {
      * If the current step (matching the expected step key) is an asynchronous action step, run it
      */
     void maybeRunAsyncAction(ClusterState currentState, IndexMetadata indexMetadata, String policy, StepKey expectedStepKey) {
-        String index = indexMetadata.getIndex().getName();
+        String index = indexMetadata.getIndex().name();
         LifecycleExecutionState lifecycleState = indexMetadata.getLifecycleExecutionState();
         final Step currentStep;
         try {
@@ -338,7 +338,7 @@ class IndexLifecycleRunner {
         if (currentStep.getKey().equals(expectedStepKey) == false) {
             throw new IllegalStateException(
                 "expected index ["
-                    + indexMetadata.getIndex().getName()
+                    + indexMetadata.getIndex().name()
                     + "] with policy ["
                     + policy
                     + "] to have current step consistent with provided step key ("
@@ -384,7 +384,7 @@ class IndexLifecycleRunner {
      * Invoked after the cluster state has been changed
      */
     void runPolicyAfterStateChange(String policy, IndexMetadata indexMetadata) {
-        String index = indexMetadata.getIndex().getName();
+        String index = indexMetadata.getIndex().name();
         LifecycleExecutionState lifecycleState = indexMetadata.getLifecycleExecutionState();
         final StepKey currentStepKey = Step.getCurrentStepKey(lifecycleState);
         if (busyIndices.contains(Tuple.tuple(indexMetadata.getIndex(), currentStepKey))) {
@@ -442,7 +442,7 @@ class IndexLifecycleRunner {
                 moveToStep(indexMetadata.getIndex(), policy, currentStep.getKey(), currentStep.getNextStepKey());
             }
         } else if (currentStep instanceof ClusterStateActionStep || currentStep instanceof ClusterStateWaitStep) {
-            logger.debug("[{}] running policy with current-step [{}]", indexMetadata.getIndex().getName(), currentStep.getKey());
+            logger.debug("[{}] running policy with current-step [{}]", indexMetadata.getIndex().name(), currentStep.getKey());
             submitUnlessAlreadyQueued(
                 String.format(Locale.ROOT, "ilm-execute-cluster-state-steps [%s]", currentStep),
                 new ExecuteStepsUpdateTask(policy, indexMetadata.getIndex(), currentStep, stepRegistry, this, nowSupplier)
@@ -457,13 +457,13 @@ class IndexLifecycleRunner {
      * current step matches the {@code currentStepKey} prior to changing the state.
      */
     private void moveToStep(Index index, String policy, Step.StepKey currentStepKey, Step.StepKey newStepKey) {
-        logger.debug("[{}] moving to step [{}] {} -> {}", index.getName(), policy, currentStepKey, newStepKey);
+        logger.debug("[{}] moving to step [{}] {} -> {}", index.name(), policy, currentStepKey, newStepKey);
         submitUnlessAlreadyQueued(
             String.format(
                 Locale.ROOT,
                 "ilm-move-to-step {policy [%s], index [%s], currentStep [%s], nextStep [%s]}",
                 policy,
-                index.getName(),
+                index.name(),
                 currentStepKey,
                 newStepKey
             ),
@@ -482,7 +482,7 @@ class IndexLifecycleRunner {
      */
     private void moveToErrorStep(Index index, String policy, Step.StepKey currentStepKey, Exception e) {
         logger.error(
-            () -> format("policy [%s] for index [%s] failed on step [%s]. Moving to ERROR step", policy, index.getName(), currentStepKey),
+            () -> format("policy [%s] for index [%s] failed on step [%s]. Moving to ERROR step", policy, index.name(), currentStepKey),
             e
         );
         submitUnlessAlreadyQueued(
@@ -490,7 +490,7 @@ class IndexLifecycleRunner {
                 Locale.ROOT,
                 "ilm-move-to-error-step {policy [%s], index [%s], currentStep [%s]}",
                 policy,
-                index.getName(),
+                index.name(),
                 currentStepKey
             ),
             new MoveToErrorStepUpdateTask(index, policy, currentStepKey, e, nowSupplier, stepRegistry::getStep, clusterState -> {
@@ -510,7 +510,7 @@ class IndexLifecycleRunner {
                 Locale.ROOT,
                 "ilm-set-step-info {policy [%s], index [%s], currentStep [%s]}",
                 policy,
-                index.getName(),
+                index.name(),
                 currentStepKey
             ),
             new SetStepInfoUpdateTask(index, policy, currentStepKey, stepInfo)
@@ -540,7 +540,7 @@ class IndexLifecycleRunner {
             () -> format(
                 "unable to retrieve policy [%s] for index [%s], recording this in step_info for this index",
                 policyName,
-                index.getName()
+                index.name()
             ),
             e
         );
@@ -559,7 +559,7 @@ class IndexLifecycleRunner {
         Long origination = calculateOriginationMillis(indexMetadata);
         ilmHistoryStore.putAsync(
             ILMHistoryItem.success(
-                indexMetadata.getIndex().getName(),
+                indexMetadata.getIndex().name(),
                 indexMetadata.getLifecyclePolicyName(),
                 nowSupplier.getAsLong(),
                 origination == null ? null : (nowSupplier.getAsLong() - origination),
@@ -579,7 +579,7 @@ class IndexLifecycleRunner {
         Long origination = calculateOriginationMillis(metadataBeforeDeletion);
         ilmHistoryStore.putAsync(
             ILMHistoryItem.success(
-                metadataBeforeDeletion.getIndex().getName(),
+                metadataBeforeDeletion.getIndex().name(),
                 metadataBeforeDeletion.getLifecyclePolicyName(),
                 nowSupplier.getAsLong(),
                 origination == null ? null : (nowSupplier.getAsLong() - origination),
@@ -603,7 +603,7 @@ class IndexLifecycleRunner {
         Long origination = calculateOriginationMillis(indexMetadata);
         ilmHistoryStore.putAsync(
             ILMHistoryItem.failure(
-                indexMetadata.getIndex().getName(),
+                indexMetadata.getIndex().name(),
                 indexMetadata.getLifecyclePolicyName(),
                 nowSupplier.getAsLong(),
                 origination == null ? null : (nowSupplier.getAsLong() - origination),
@@ -661,7 +661,7 @@ class IndexLifecycleRunner {
         protected ClusterState doExecute(ClusterState currentState) {
             return IndexLifecycleTransition.moveClusterStateToPreviouslyFailedStep(
                 currentState,
-                index.getName(),
+                index.name(),
                 nowSupplier,
                 stepRegistry,
                 true

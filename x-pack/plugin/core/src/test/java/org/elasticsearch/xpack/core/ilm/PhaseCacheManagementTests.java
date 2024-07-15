@@ -78,7 +78,7 @@ public class PhaseCacheManagementTests extends ESTestCase {
                 }""");
 
         IndexMetadata meta = buildIndexMetadata("my-policy", exState);
-        String indexName = meta.getIndex().getName();
+        String indexName = meta.getIndex().name();
 
         Map<String, LifecycleAction> actions = new HashMap<>();
         actions.put("rollover", new RolloverAction(null, null, null, 1L, null, null, null, null, null, null));

@@ -54,11 +54,11 @@ public class CcrRetentionLeases {
             Locale.ROOT,
             "%s/%s/%s-following-%s/%s/%s",
             localClusterName,
-            followerIndex.getName(),
-            followerIndex.getUUID(),
+            followerIndex.name(),
+            followerIndex.uuid(),
             remoteClusterAlias,
-            leaderIndex.getName(),
-            leaderIndex.getUUID()
+            leaderIndex.name(),
+            leaderIndex.uuid()
         );
     }
 

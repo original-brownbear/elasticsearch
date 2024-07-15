@@ -99,7 +99,7 @@ public class TransportFollowInfoAction extends TransportMasterNodeReadAction<Fol
                     result = Optional.empty();
                 }
 
-                String followerIndex = indexMetadata.getIndex().getName();
+                String followerIndex = indexMetadata.getIndex().name();
                 String remoteCluster = ccrCustomData.get(Ccr.CCR_CUSTOM_METADATA_REMOTE_CLUSTER_NAME_KEY);
                 String leaderIndex = ccrCustomData.get(Ccr.CCR_CUSTOM_METADATA_LEADER_INDEX_NAME_KEY);
                 if (result.isPresent()) {

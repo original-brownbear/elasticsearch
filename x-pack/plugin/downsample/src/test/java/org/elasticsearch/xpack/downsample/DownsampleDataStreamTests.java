@@ -132,7 +132,7 @@ public class DownsampleDataStreamTests extends ESSingleNodeTestCase {
             .getDataStream()
             .getIndices()
             .stream()
-            .map(Index::getName)
+            .map(Index::name)
             .toList();
         assertThat(backingIndices, Matchers.contains(downsampleTargetIndex, rolloverResponse.getNewIndex()));
 

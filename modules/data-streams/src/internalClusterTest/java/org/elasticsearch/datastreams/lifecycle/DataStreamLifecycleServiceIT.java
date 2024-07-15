@@ -162,9 +162,9 @@ public class DataStreamLifecycleServiceIT extends ESIntegTestCase {
             assertThat(getDataStreamResponse.getDataStreams().get(0).getDataStream().getName(), equalTo(dataStreamName));
             List<Index> backingIndices = getDataStreamResponse.getDataStreams().get(0).getDataStream().getIndices();
             assertThat(backingIndices.size(), equalTo(2));
-            String backingIndex = backingIndices.get(0).getName();
+            String backingIndex = backingIndices.get(0).name();
             assertThat(backingIndex, backingIndexEqualTo(dataStreamName, 1));
-            String writeIndex = backingIndices.get(1).getName();
+            String writeIndex = backingIndices.get(1).name();
             assertThat(writeIndex, backingIndexEqualTo(dataStreamName, 2));
         });
     }
@@ -190,7 +190,7 @@ public class DataStreamLifecycleServiceIT extends ESIntegTestCase {
             assertThat(backingIndices.size(), equalTo(1));
             // we expect the data stream to have only one backing index, the write one, with generation 2
             // as generation 1 would've been deleted by the data stream lifecycle given the configuration
-            String writeIndex = backingIndices.get(0).getName();
+            String writeIndex = backingIndices.get(0).name();
             assertThat(writeIndex, backingIndexEqualTo(dataStreamName, 2));
         });
     }
@@ -240,7 +240,7 @@ public class DataStreamLifecycleServiceIT extends ESIntegTestCase {
                     List<Index> backingIndices = getDataStreamResponse.getDataStreams().get(0).getDataStream().getIndices();
                     assertThat(backingIndices.size(), equalTo(2)); // global retention is ignored
                     // we expect the data stream to have two backing indices since the effective retention is 100 days
-                    String writeIndex = backingIndices.get(1).getName();
+                    String writeIndex = backingIndices.get(1).name();
                     assertThat(writeIndex, backingIndexEqualTo(SYSTEM_DATA_STREAM_NAME, 2));
                 });
 
@@ -260,7 +260,7 @@ public class DataStreamLifecycleServiceIT extends ESIntegTestCase {
                     assertThat(backingIndices.size(), equalTo(1)); // global retention is ignored
                     // we expect the data stream to have only one backing index, the write one, with generation 2
                     // as generation 1 would've been deleted by the data stream lifecycle given the configuration
-                    String writeIndex = backingIndices.get(0).getName();
+                    String writeIndex = backingIndices.get(0).name();
                     assertThat(writeIndex, backingIndexEqualTo(SYSTEM_DATA_STREAM_NAME, 2));
                     try (XContentBuilder builder = XContentBuilder.builder(XContentType.JSON.xContent())) {
                         builder.humanReadable(true);
@@ -365,7 +365,7 @@ public class DataStreamLifecycleServiceIT extends ESIntegTestCase {
             assertThat(getDataStreamResponse.getDataStreams().size(), equalTo(1));
             assertThat(getDataStreamResponse.getDataStreams().get(0).getDataStream().getName(), equalTo(dataStreamName));
             List<Index> backingIndices = getDataStreamResponse.getDataStreams().get(0).getDataStream().getIndices();
-            Set<String> indexNames = backingIndices.stream().map(Index::getName).collect(Collectors.toSet());
+            Set<String> indexNames = backingIndices.stream().map(Index::name).collect(Collectors.toSet());
             assertTrue(indexNames.contains("index_new"));
             assertFalse(indexNames.contains("index_old"));
         });
@@ -395,7 +395,7 @@ public class DataStreamLifecycleServiceIT extends ESIntegTestCase {
             assertThat(dataStream.getName(), equalTo(dataStreamName));
             List<Index> backingIndices = dataStream.getIndices();
             assertThat(backingIndices.size(), equalTo(1));
-            String writeIndex = dataStream.getWriteIndex().getName();
+            String writeIndex = dataStream.getWriteIndex().name();
             assertThat(writeIndex, backingIndexEqualTo(dataStreamName, finalGeneration));
         });
     }
@@ -477,7 +477,7 @@ public class DataStreamLifecycleServiceIT extends ESIntegTestCase {
                 assertThat(dataStream.getName(), equalTo(dataStreamName));
                 List<Index> backingIndices = dataStream.getIndices();
                 assertThat(backingIndices.size(), equalTo(currentBackingIndexCount + 1));
-                String writeIndex = dataStream.getWriteIndex().getName();
+                String writeIndex = dataStream.getWriteIndex().name();
                 assertThat(writeIndex, backingIndexEqualTo(dataStreamName, currentBackingIndexCount + 1));
                 /*
                  * We only expect forcemerge to happen on the 2nd data stream lifecycle run and later, since on the first there's only the
@@ -538,9 +538,9 @@ public class DataStreamLifecycleServiceIT extends ESIntegTestCase {
             assertThat(getDataStreamResponse.getDataStreams().get(0).getDataStream().getName(), equalTo(dataStreamName));
             List<Index> backingIndices = getDataStreamResponse.getDataStreams().get(0).getDataStream().getIndices();
             assertThat(backingIndices.size(), equalTo(2));
-            String backingIndex = backingIndices.get(0).getName();
+            String backingIndex = backingIndices.get(0).name();
             assertThat(backingIndex, backingIndexEqualTo(dataStreamName, 1));
-            String writeIndex = backingIndices.get(1).getName();
+            String writeIndex = backingIndices.get(1).name();
             assertThat(writeIndex, backingIndexEqualTo(dataStreamName, 2));
         });
 
@@ -688,9 +688,9 @@ public class DataStreamLifecycleServiceIT extends ESIntegTestCase {
             assertThat(getDataStreamResponse.getDataStreams().get(0).getDataStream().getName(), equalTo(dataStreamName));
             List<Index> backingIndices = getDataStreamResponse.getDataStreams().get(0).getDataStream().getIndices();
             assertThat(backingIndices.size(), equalTo(2));
-            String backingIndex = backingIndices.get(0).getName();
+            String backingIndex = backingIndices.get(0).name();
             assertThat(backingIndex, backingIndexEqualTo(dataStreamName, 1));
-            String writeIndex = backingIndices.get(1).getName();
+            String writeIndex = backingIndices.get(1).name();
             assertThat(writeIndex, backingIndexEqualTo(dataStreamName, 2));
         });
 
@@ -711,7 +711,7 @@ public class DataStreamLifecycleServiceIT extends ESIntegTestCase {
                 assertThat(getDataStreamResponse.getDataStreams().get(0).getDataStream().getName(), equalTo(dataStreamName));
                 List<Index> backingIndices = getDataStreamResponse.getDataStreams().get(0).getDataStream().getIndices();
                 assertThat(backingIndices.size(), equalTo(2));
-                String writeIndex = backingIndices.get(1).getName();
+                String writeIndex = backingIndices.get(1).name();
                 assertThat(writeIndex, backingIndexEqualTo(dataStreamName, 2));
 
                 ErrorEntry recordedRetentionExecutionError = null;
@@ -851,9 +851,9 @@ public class DataStreamLifecycleServiceIT extends ESIntegTestCase {
             assertThat(getDataStreamResponse.getDataStreams().get(0).getDataStream().getName(), equalTo(dataStreamName));
             List<Index> backingIndices = getDataStreamResponse.getDataStreams().get(0).getDataStream().getIndices();
             assertThat(backingIndices.size(), equalTo(2));
-            String backingIndex = backingIndices.get(0).getName();
+            String backingIndex = backingIndices.get(0).name();
             assertThat(backingIndex, backingIndexEqualTo(dataStreamName, 1));
-            String writeIndex = backingIndices.get(1).getName();
+            String writeIndex = backingIndices.get(1).name();
             assertThat(writeIndex, backingIndexEqualTo(dataStreamName, 2));
         });
 
@@ -1052,7 +1052,7 @@ public class DataStreamLifecycleServiceIT extends ESIntegTestCase {
             assertThat(backingIndices.size(), equalTo(1));
             List<Index> failureIndices = getDataStreamResponse.getDataStreams().get(0).getDataStream().getFailureIndices().getIndices();
             assertThat(failureIndices.size(), equalTo(1));
-            assertThat(failureIndices.get(0).getName(), equalTo(secondGenerationIndex));
+            assertThat(failureIndices.get(0).name(), equalTo(secondGenerationIndex));
         });
     }
 
@@ -1062,7 +1062,7 @@ public class DataStreamLifecycleServiceIT extends ESIntegTestCase {
             .actionGet();
         assertThat(getDataStreamResponse.getDataStreams().size(), equalTo(1));
         assertThat(getDataStreamResponse.getDataStreams().get(0).getDataStream().getName(), equalTo(dataStreamName));
-        return getDataStreamResponse.getDataStreams().get(0).getDataStream().getIndices().stream().map(Index::getName).toList();
+        return getDataStreamResponse.getDataStreams().get(0).getDataStream().getIndices().stream().map(Index::name).toList();
     }
 
     private static List<String> getFailureIndices(String dataStreamName) {
@@ -1077,7 +1077,7 @@ public class DataStreamLifecycleServiceIT extends ESIntegTestCase {
             .getFailureIndices()
             .getIndices()
             .stream()
-            .map(Index::getName)
+            .map(Index::name)
             .toList();
     }
 

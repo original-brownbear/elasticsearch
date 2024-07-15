@@ -284,7 +284,7 @@ public class CachedBlobContainerIndexInput extends MetadataCachingIndexInput {
             + (cacheFile != null
                 ? String.join(
                     "/",
-                    directory.getShardId().getIndex().getUUID(),
+                    directory.getShardId().getIndex().uuid(),
                     String.valueOf(directory.getShardId().getId()),
                     "snapshot_cache",
                     directory.getSnapshotId().getUUID(),

@@ -320,7 +320,7 @@ public class WatcherService {
             refreshWatches(indexMetadata);
 
             // find out local shards
-            String watchIndexName = indexMetadata.getIndex().getName();
+            String watchIndexName = indexMetadata.getIndex().name();
             RoutingNode routingNode = clusterState.getRoutingNodes().node(clusterState.nodes().getLocalNodeId());
             // yes, this can happen, if the state is not recovered
             if (routingNode == null) {

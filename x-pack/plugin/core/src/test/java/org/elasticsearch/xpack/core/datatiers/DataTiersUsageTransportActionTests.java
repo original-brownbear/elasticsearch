@@ -84,9 +84,9 @@ public class DataTiersUsageTransportActionTests extends ESTestCase {
             List.of(new NodeDataTiersUsage(dataNode, Map.of(DataTier.DATA_WARM, createStats(5, 5, 0, 10))))
         );
         assertThat(result.keySet(), equalTo(Set.of(DataTier.DATA_HOT, DataTier.DATA_WARM, DataTier.DATA_COLD)));
-        assertThat(result.get(DataTier.DATA_HOT), equalTo(Set.of(hotIndex1.getIndex().getName(), hotIndex2.getIndex().getName())));
-        assertThat(result.get(DataTier.DATA_WARM), equalTo(Set.of(warmIndex1.getIndex().getName())));
-        assertThat(result.get(DataTier.DATA_COLD), equalTo(Set.of(coldIndex1.getIndex().getName(), coldIndex2.getIndex().getName())));
+        assertThat(result.get(DataTier.DATA_HOT), equalTo(Set.of(hotIndex1.getIndex().name(), hotIndex2.getIndex().name())));
+        assertThat(result.get(DataTier.DATA_WARM), equalTo(Set.of(warmIndex1.getIndex().name())));
+        assertThat(result.get(DataTier.DATA_COLD), equalTo(Set.of(coldIndex1.getIndex().name(), coldIndex2.getIndex().name())));
     }
 
     public void testCalculateMAD() {

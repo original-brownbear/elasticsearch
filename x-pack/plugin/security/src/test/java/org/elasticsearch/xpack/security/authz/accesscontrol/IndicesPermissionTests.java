@@ -487,15 +487,15 @@ public class IndicesPermissionTests extends ESTestCase {
         ).build();
         IndicesAccessControl iac = indicesPermission.authorize(
             TransportSearchAction.TYPE.name(),
-            Sets.newHashSet(backingIndices.stream().map(im -> im.getIndex().getName()).collect(Collectors.toList())),
+            Sets.newHashSet(backingIndices.stream().map(im -> im.getIndex().name()).collect(Collectors.toList())),
             lookup,
             fieldPermissionsCache
         );
 
         assertThat(iac.isGranted(), is(true));
         for (IndexMetadata im : backingIndices) {
-            assertThat(iac.getIndexPermissions(im.getIndex().getName()), is(notNullValue()));
-            assertThat(iac.hasIndexPermissions(im.getIndex().getName()), is(true));
+            assertThat(iac.getIndexPermissions(im.getIndex().name()), is(notNullValue()));
+            assertThat(iac.hasIndexPermissions(im.getIndex().name()), is(true));
         }
 
         indicesPermission = new IndicesPermission.Builder(RESTRICTED_INDICES).addGroup(
@@ -507,15 +507,15 @@ public class IndicesPermissionTests extends ESTestCase {
         ).build();
         iac = indicesPermission.authorize(
             randomFrom(TransportPutMappingAction.TYPE.name(), TransportAutoPutMappingAction.TYPE.name()),
-            Sets.newHashSet(backingIndices.stream().map(im -> im.getIndex().getName()).collect(Collectors.toList())),
+            Sets.newHashSet(backingIndices.stream().map(im -> im.getIndex().name()).collect(Collectors.toList())),
             lookup,
             fieldPermissionsCache
         );
 
         assertThat(iac.isGranted(), is(false));
         for (IndexMetadata im : backingIndices) {
-            assertThat(iac.getIndexPermissions(im.getIndex().getName()), is(nullValue()));
-            assertThat(iac.hasIndexPermissions(im.getIndex().getName()), is(false));
+            assertThat(iac.getIndexPermissions(im.getIndex().name()), is(nullValue()));
+            assertThat(iac.hasIndexPermissions(im.getIndex().name()), is(false));
         }
     }
 
@@ -614,25 +614,25 @@ public class IndicesPermissionTests extends ESTestCase {
         assertThat(iac.hasIndexPermissions("test_write2"), is(false));
         iac = core.authorize(
             TransportAutoPutMappingAction.TYPE.name(),
-            Sets.newHashSet(backingIndices.stream().map(im -> im.getIndex().getName()).collect(Collectors.toList())),
+            Sets.newHashSet(backingIndices.stream().map(im -> im.getIndex().name()).collect(Collectors.toList())),
             lookup,
             fieldPermissionsCache
         );
         assertThat(iac.isGranted(), is(true));
         for (IndexMetadata im : backingIndices) {
-            assertThat(iac.getIndexPermissions(im.getIndex().getName()), is(notNullValue()));
-            assertThat(iac.hasIndexPermissions(im.getIndex().getName()), is(true));
+            assertThat(iac.getIndexPermissions(im.getIndex().name()), is(notNullValue()));
+            assertThat(iac.hasIndexPermissions(im.getIndex().name()), is(true));
         }
         iac = core.authorize(
             TransportPutMappingAction.TYPE.name(),
-            Sets.newHashSet(backingIndices.stream().map(im -> im.getIndex().getName()).collect(Collectors.toList())),
+            Sets.newHashSet(backingIndices.stream().map(im -> im.getIndex().name()).collect(Collectors.toList())),
             lookup,
             fieldPermissionsCache
         );
         assertThat(iac.isGranted(), is(false));
         for (IndexMetadata im : backingIndices) {
-            assertThat(iac.getIndexPermissions(im.getIndex().getName()), is(nullValue()));
-            assertThat(iac.hasIndexPermissions(im.getIndex().getName()), is(false));
+            assertThat(iac.getIndexPermissions(im.getIndex().name()), is(nullValue()));
+            assertThat(iac.hasIndexPermissions(im.getIndex().name()), is(false));
         }
     }
 

@@ -108,7 +108,7 @@ public class IndexDeprecationChecks {
     static DeprecationIssue frozenIndexSettingCheck(IndexMetadata indexMetadata) {
         Boolean isIndexFrozen = FrozenEngine.INDEX_FROZEN.get(indexMetadata.getSettings());
         if (Boolean.TRUE.equals(isIndexFrozen)) {
-            String indexName = indexMetadata.getIndex().getName();
+            String indexName = indexMetadata.getIndex().name();
             return new DeprecationIssue(
                 DeprecationIssue.Level.WARNING,
                 "index ["

@@ -226,7 +226,7 @@ public abstract class BaseSearchableSnapshotsIntegTestCase extends AbstractSnaps
     protected void checkSoftDeletesNotEagerlyLoaded(String restoredIndexName) {
         for (IndicesService indicesService : internalCluster().getDataNodeInstances(IndicesService.class)) {
             for (IndexService indexService : indicesService) {
-                if (indexService.index().getName().equals(restoredIndexName)) {
+                if (indexService.index().name().equals(restoredIndexName)) {
                     for (IndexShard indexShard : indexService) {
                         try {
                             Engine engine = IndexShardTestCase.getEngine(indexShard);

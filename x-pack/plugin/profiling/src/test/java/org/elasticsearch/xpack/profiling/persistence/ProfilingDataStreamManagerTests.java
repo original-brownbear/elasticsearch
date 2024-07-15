@@ -485,7 +485,7 @@ public class ProfilingDataStreamManagerTests extends ESTestCase {
             metadataBuilder.put(ds);
             IndexMetadata.Builder builder = new IndexMetadata.Builder(writeIndexName);
             builder.state(state);
-            builder.settings(indexSettings(indexVersion, 1, 1).put(IndexMetadata.SETTING_INDEX_UUID, writeIndex.getUUID()));
+            builder.settings(indexSettings(indexVersion, 1, 1).put(IndexMetadata.SETTING_INDEX_UUID, writeIndex.uuid()));
             builder.putMapping(
                 new MappingMetadata(
                     MapperService.SINGLE_MAPPING_NAME,

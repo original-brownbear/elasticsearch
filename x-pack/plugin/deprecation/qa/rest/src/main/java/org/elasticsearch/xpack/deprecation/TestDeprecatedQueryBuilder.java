@@ -74,7 +74,7 @@ public class TestDeprecatedQueryBuilder extends AbstractQueryBuilder<TestDepreca
             NAME,
             "[{}] query is deprecated, but used on [{}] index",
             NAME,
-            context.index().getName()
+            context.index().name()
         );
 
         return Queries.newMatchAllQuery();

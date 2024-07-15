@@ -206,7 +206,7 @@ public class SearchApplicationIndexService {
     }
 
     private String[] getAliasIndices(String searchApplicationName) {
-        return clusterService.state().metadata().aliasedIndices(searchApplicationName).stream().map(Index::getName).toArray(String[]::new);
+        return clusterService.state().metadata().aliasedIndices(searchApplicationName).stream().map(Index::name).toArray(String[]::new);
     }
 
     private static String getSearchAliasName(SearchApplication app) {
@@ -247,7 +247,7 @@ public class SearchApplicationIndexService {
 
         IndicesAliasesRequestBuilder requestBuilder = null;
         if (metadata.hasAlias(searchAliasName)) {
-            Set<String> currentAliases = metadata.aliasedIndices(searchAliasName).stream().map(Index::getName).collect(Collectors.toSet());
+            Set<String> currentAliases = metadata.aliasedIndices(searchAliasName).stream().map(Index::name).collect(Collectors.toSet());
             Set<String> targetAliases = Set.of(app.indices());
 
             requestBuilder = updateAliasIndices(currentAliases, targetAliases, searchAliasName);

@@ -57,7 +57,7 @@ public class WatchStoreUtilsTests extends ESTestCase {
         metadataBuilder.customs(customsBuilder);
         IndexMetadata concreteIndex = WatchStoreUtils.getConcreteIndex(dataStreamName, metadataBuilder.build());
         assertNotNull(concreteIndex);
-        assertEquals(indexNames.get(indexNames.size() - 1), concreteIndex.getIndex().getName());
+        assertEquals(indexNames.get(indexNames.size() - 1), concreteIndex.getIndex().name());
     }
 
     public void testGetConcreteIndexForAliasWithMultipleNonWritableIndices() {
@@ -102,7 +102,7 @@ public class WatchStoreUtilsTests extends ESTestCase {
         metadataBuilder.indices(indexMetadataMapBuilder);
         IndexMetadata concreteIndex = WatchStoreUtils.getConcreteIndex(aliasName, metadataBuilder.build());
         assertNotNull(concreteIndex);
-        assertEquals(indexNames.get(writableIndexIndex), concreteIndex.getIndex().getName());
+        assertEquals(indexNames.get(writableIndexIndex), concreteIndex.getIndex().name());
     }
 
     public void testGetConcreteIndexForAliasWithOneNonWritableIndex() {
@@ -117,7 +117,7 @@ public class WatchStoreUtilsTests extends ESTestCase {
         metadataBuilder.indices(indexMetadataMapBuilder);
         IndexMetadata concreteIndex = WatchStoreUtils.getConcreteIndex(aliasName, metadataBuilder.build());
         assertNotNull(concreteIndex);
-        assertEquals(indexName, concreteIndex.getIndex().getName());
+        assertEquals(indexName, concreteIndex.getIndex().name());
     }
 
     public void testGetConcreteIndexForConcreteIndex() {
@@ -128,7 +128,7 @@ public class WatchStoreUtilsTests extends ESTestCase {
         metadataBuilder.indices(indexMetadataMapBuilder);
         IndexMetadata concreteIndex = WatchStoreUtils.getConcreteIndex(indexName, metadataBuilder.build());
         assertNotNull(concreteIndex);
-        assertEquals(indexName, concreteIndex.getIndex().getName());
+        assertEquals(indexName, concreteIndex.getIndex().name());
     }
 
     private IndexMetadata createIndexMetaData(String indexName, AliasMetadata aliasMetadata) {

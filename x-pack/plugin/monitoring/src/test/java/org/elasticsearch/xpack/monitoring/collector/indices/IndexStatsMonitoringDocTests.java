@@ -345,8 +345,8 @@ public class IndexStatsMonitoringDocTests extends BaseFilteredMonitoringDocTestC
     private String indexStatsSummary() throws IOException {
         final XContentBuilder builder = XContentFactory.jsonBuilder()
             .startObject()
-            .field("index", index.getName())
-            .field("uuid", index.getUUID())
+            .field("index", index.name())
+            .field("uuid", index.uuid())
             .field("created", metadata.getCreationDate())
             .field("status", indexHealth.getStatus().name().toLowerCase(Locale.ROOT));
         {
@@ -408,13 +408,13 @@ public class IndexStatsMonitoringDocTests extends BaseFilteredMonitoringDocTestC
     private static IndexMetadata mockIndexMetadata(final Index index, final int primaries, final int replicas) {
         final Settings.Builder settings = Settings.builder();
 
-        settings.put(IndexMetadata.SETTING_INDEX_UUID, index.getUUID());
+        settings.put(IndexMetadata.SETTING_INDEX_UUID, index.uuid());
         settings.put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, primaries);
         settings.put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, replicas);
         settings.put(IndexMetadata.SETTING_VERSION_CREATED, MonitoringTemplateUtils.LAST_UPDATED_VERSION);
         settings.put(IndexMetadata.SETTING_CREATION_DATE, (new Date()).getTime());
 
-        return IndexMetadata.builder(index.getName()).settings(settings).build();
+        return IndexMetadata.builder(index.name()).settings(settings).build();
     }
 
     private static IndexRoutingTable mockIndexRoutingTable(

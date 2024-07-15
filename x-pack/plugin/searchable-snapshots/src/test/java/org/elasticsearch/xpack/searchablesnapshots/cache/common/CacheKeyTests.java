@@ -40,7 +40,7 @@ public class CacheKeyTests extends ESTestCase {
     private CacheKey copy(final CacheKey origin) {
         ShardId shardId = origin.shardId();
         if (randomBoolean()) {
-            shardId = new ShardId(new Index(shardId.getIndex().getName(), shardId.getIndex().getUUID()), shardId.id());
+            shardId = new ShardId(new Index(shardId.getIndex().name(), shardId.getIndex().uuid()), shardId.id());
         }
         return new CacheKey(origin.snapshotUUID(), origin.snapshotIndexName(), shardId, origin.fileName());
     }

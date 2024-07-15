@@ -68,7 +68,7 @@ public final class IndexLifecycleTransition {
         Step.StepKey newStepKey,
         PolicyStepsRegistry stepRegistry
     ) {
-        String indexName = idxMeta.getIndex().getName();
+        String indexName = idxMeta.getIndex().name();
         String policyName = idxMeta.getLifecyclePolicyName();
 
         // policy could be updated in-between execution
@@ -127,7 +127,7 @@ public final class IndexLifecycleTransition {
         validateTransition(idxMeta, currentStepKey, newStepKey, stepRegistry);
 
         String policyName = idxMeta.getLifecyclePolicyName();
-        logger.info("moving index [{}] from [{}] to [{}] in policy [{}]", index.getName(), currentStepKey, newStepKey, policyName);
+        logger.info("moving index [{}] from [{}] to [{}] in policy [{}]", index.name(), currentStepKey, newStepKey, policyName);
 
         IndexLifecycleMetadata ilmMeta = state.metadata().custom(IndexLifecycleMetadata.TYPE);
         LifecyclePolicyMetadata policyMetadata = ilmMeta.getPolicyMetadatas().get(idxMeta.getLifecyclePolicyName());
@@ -342,7 +342,7 @@ public final class IndexLifecycleTransition {
         Client client,
         XPackLicenseState licenseState
     ) {
-        String indexName = indexMetadata.getIndex().getName();
+        String indexName = indexMetadata.getIndex().name();
         String policyName = indexMetadata.getLifecyclePolicyName();
         Step.StepKey currentStepKey = Step.getCurrentStepKey(existingState);
         if (currentStepKey == null) {
@@ -441,7 +441,7 @@ public final class IndexLifecycleTransition {
             IndexMetadata indexMetadata = currentState.getMetadata().index(index);
             if (indexMetadata == null) {
                 // Index doesn't exist so fail it
-                failedIndexes.add(index.getName());
+                failedIndexes.add(index.name());
             } else {
                 IndexMetadata.Builder newIdxMetadata = removePolicyForIndex(indexMetadata);
                 if (newIdxMetadata != null) {

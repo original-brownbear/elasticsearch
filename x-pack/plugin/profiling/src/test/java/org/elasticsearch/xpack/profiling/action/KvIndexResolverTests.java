@@ -65,13 +65,13 @@ public class KvIndexResolverTests extends ESTestCase {
         metaBuilder.indices(
             Map.of(
                 // Jan 15, 2023
-                stGen1.getName(),
+                stGen1.name(),
                 metadata(stGen1, 1673740800000L),
                 // Feb 1, 2023
-                stGen2.getName(),
+                stGen2.name(),
                 metadata(stGen2, 1675209600000L),
                 // Feb 15, 2023
-                stGen3.getName(),
+                stGen3.name(),
                 metadata(stGen3, 1676419200000L)
             )
         );
@@ -103,13 +103,13 @@ public class KvIndexResolverTests extends ESTestCase {
         metaBuilder.indices(
             Map.of(
                 // Jan 15, 2023
-                stGen1.getName(),
+                stGen1.name(),
                 metadata(stGen1, 1673740800000L),
                 // Feb 1, 2023
-                stGen2.getName(),
+                stGen2.name(),
                 metadata(stGen2, 1675209600000L),
                 // Feb 15, 2023
-                stGen3.getName(),
+                stGen3.name(),
                 metadata(stGen3, 1676419200000L)
             )
         );
@@ -133,9 +133,9 @@ public class KvIndexResolverTests extends ESTestCase {
     private IndexMetadata metadata(Index index, long creationDate) {
         final Settings settings = Settings.builder()
             .put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current())
-            .put(IndexMetadata.SETTING_INDEX_UUID, index.getUUID())
+            .put(IndexMetadata.SETTING_INDEX_UUID, index.uuid())
             .build();
-        return IndexMetadata.builder(index.getName())
+        return IndexMetadata.builder(index.name())
             .settings(settings)
             .numberOfShards(1)
             .numberOfReplicas(0)
@@ -154,10 +154,10 @@ public class KvIndexResolverTests extends ESTestCase {
         metaBuilder.indices(
             Map.of(
                 // Feb 1, 2023
-                stV1.getName(),
+                stV1.name(),
                 metadata(stV1, 1675209600000L),
                 // Feb 15, 2023
-                stV2.getName(),
+                stV2.name(),
                 metadata(stV2, 1676419200000L)
             )
         );

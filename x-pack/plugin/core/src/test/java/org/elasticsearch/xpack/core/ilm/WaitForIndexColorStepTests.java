@@ -228,7 +228,7 @@ public class WaitForIndexColorStepTests extends AbstractStepTestCase<WaitForInde
 
         String indexPrefix = randomAlphaOfLengthBetween(5, 10) + "-";
         ShardRouting shardRouting = TestShardRouting.newShardRouting(
-            originalIndex.getIndex().getName(),
+            originalIndex.getIndex().name(),
             0,
             "1",
             true,
@@ -245,14 +245,14 @@ public class WaitForIndexColorStepTests extends AbstractStepTestCase<WaitForInde
         ClusterStateWaitStep.Result result = step.isConditionMet(originalIndex.getIndex(), clusterState);
         assertThat(result.isComplete(), is(false));
         SingleMessageFieldInfo info = (SingleMessageFieldInfo) result.getInfomationContext();
-        String targetIndex = indexPrefix + originalIndex.getIndex().getName();
+        String targetIndex = indexPrefix + originalIndex.getIndex().name();
         assertThat(
             info.getMessage(),
             is(
                 "["
                     + step.getKey().action()
                     + "] lifecycle action for index ["
-                    + originalIndex.getIndex().getName()
+                    + originalIndex.getIndex().name()
                     + "] executed but the target index ["
                     + targetIndex
                     + "] does not exist"
@@ -267,7 +267,7 @@ public class WaitForIndexColorStepTests extends AbstractStepTestCase<WaitForInde
             .numberOfReplicas(2)
             .build();
         ShardRouting originalShardRouting = TestShardRouting.newShardRouting(
-            originalIndex.getIndex().getName(),
+            originalIndex.getIndex().name(),
             0,
             "1",
             true,
@@ -278,7 +278,7 @@ public class WaitForIndexColorStepTests extends AbstractStepTestCase<WaitForInde
             .build();
 
         String indexPrefix = randomAlphaOfLengthBetween(5, 10) + "-";
-        String targetIndexName = indexPrefix + originalIndex.getIndex().getName();
+        String targetIndexName = indexPrefix + originalIndex.getIndex().name();
         IndexMetadata targetIndex = IndexMetadata.builder(targetIndexName)
             .settings(settings(IndexVersion.current()))
             .numberOfShards(1)

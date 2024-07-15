@@ -90,7 +90,7 @@ public class RestEqlSearchAction extends BaseRestHandler {
                      * pattern that failed resolving. More details here https://github.com/elastic/elasticsearch/issues/63529
                      */
                     if (e instanceof IndexNotFoundException infe) {
-                        if (infe.getIndex() != null && infe.getIndex().getName().equals("Unknown index [*,-*]")) {
+                        if (infe.getIndex() != null && infe.getIndex().name().equals("Unknown index [*,-*]")) {
                             finalException = new IndexNotFoundException(indices, infe.getCause());
                         }
                     }

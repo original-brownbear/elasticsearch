@@ -430,7 +430,7 @@ public class NodeShutdownShardsIT extends ESIntegTestCase {
         List<ShardRouting> startedShards = RoutingNodesHelper.shardsWithState(state.getRoutingNodes(), ShardRoutingState.STARTED);
         return startedShards.stream()
             .filter(ShardRouting::primary)
-            .filter(shardRouting -> indexName.equals(shardRouting.index().getName()))
+            .filter(shardRouting -> indexName.equals(shardRouting.index().name()))
             .map(ShardRouting::currentNodeId)
             .findFirst()
             .orElseThrow(

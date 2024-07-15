@@ -157,10 +157,10 @@ public class EnrichPolicyMaintenanceService implements LocalNodeMasterListener {
             .indices()
             .values()
             .stream()
-            .filter(indexMetadata -> indexMetadata.getIndex().getName().startsWith(EnrichPolicy.ENRICH_INDEX_NAME_BASE))
+            .filter(indexMetadata -> indexMetadata.getIndex().name().startsWith(EnrichPolicy.ENRICH_INDEX_NAME_BASE))
             .filter(indexMetadata -> indexUsedByPolicy(indexMetadata, policies, inflightPolicyExecutionIndices) == false)
             .map(IndexMetadata::getIndex)
-            .map(Index::getName)
+            .map(Index::name)
             .toArray(String[]::new);
         deleteIndices(removeIndices);
     }
@@ -170,7 +170,7 @@ public class EnrichPolicyMaintenanceService implements LocalNodeMasterListener {
         Map<String, EnrichPolicy> policies,
         Set<String> inflightPolicyIndices
     ) {
-        String indexName = indexMetadata.getIndex().getName();
+        String indexName = indexMetadata.getIndex().name();
         logger.debug("Checking if should remove enrich index [{}]", indexName);
         // First ignore the index entirely if it is in the inflightPolicyIndices set as it is actively being worked on
         if (inflightPolicyIndices.contains(indexName)) {

@@ -61,7 +61,7 @@ public final class CcrRequests {
         Supplier<TimeValue> timeoutSupplier,
         ActionListener<IndexMetadata> listener
     ) {
-        final ClusterStateRequest request = CcrRequests.metadataRequest(index.getName());
+        final ClusterStateRequest request = CcrRequests.metadataRequest(index.name());
         if (metadataVersion > 0) {
             request.waitForMetadataVersion(metadataVersion).waitForTimeout(timeoutSupplier.get());
         }
@@ -115,7 +115,7 @@ public final class CcrRequests {
         if (followingIndices.isEmpty() == false && "ccr".equals(request.origin()) == false) {
             final String errorMessage = "can't put mapping to the following indices "
                 + "["
-                + followingIndices.stream().map(Index::getName).collect(Collectors.joining(", "))
+                + followingIndices.stream().map(Index::name).collect(Collectors.joining(", "))
                 + "]; "
                 + "the mapping of the following indices are self-replicated from its leader indices";
             return Optional.of(new ElasticsearchStatusException(errorMessage, RestStatus.FORBIDDEN));
@@ -137,7 +137,7 @@ public final class CcrRequests {
         if (followingIndices.isEmpty() == false && "ccr".equals(request.origin()) == false) {
             final String errorMessage = "can't modify aliases on indices "
                 + "["
-                + followingIndices.stream().map(Index::getName).collect(Collectors.joining(", "))
+                + followingIndices.stream().map(Index::name).collect(Collectors.joining(", "))
                 + "]; "
                 + "aliases of following indices are self-replicated from their leader indices";
             return Optional.of(new ElasticsearchStatusException(errorMessage, RestStatus.FORBIDDEN));

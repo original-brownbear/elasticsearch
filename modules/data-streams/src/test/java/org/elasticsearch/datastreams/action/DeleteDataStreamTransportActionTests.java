@@ -52,7 +52,7 @@ public class DeleteDataStreamTransportActionTests extends ESTestCase {
         assertThat(newState.metadata().dataStreams().size(), equalTo(0));
         assertThat(newState.metadata().indices().size(), equalTo(otherIndices.size()));
         for (String indexName : otherIndices) {
-            assertThat(newState.metadata().indices().get(indexName).getIndex().getName(), equalTo(indexName));
+            assertThat(newState.metadata().indices().get(indexName).getIndex().name(), equalTo(indexName));
         }
     }
 
@@ -76,7 +76,7 @@ public class DeleteDataStreamTransportActionTests extends ESTestCase {
         assertThat(newState.metadata().dataStreams().size(), equalTo(0));
         assertThat(newState.metadata().indices().size(), equalTo(otherIndices.size()));
         for (String indexName : otherIndices) {
-            assertThat(newState.metadata().indices().get(indexName).getIndex().getName(), equalTo(indexName));
+            assertThat(newState.metadata().indices().get(indexName).getIndex().name(), equalTo(indexName));
         }
     }
 
@@ -99,7 +99,7 @@ public class DeleteDataStreamTransportActionTests extends ESTestCase {
         assertNotNull(remainingDataStream);
         assertThat(newState.metadata().indices().size(), equalTo(remainingDataStream.getIndices().size()));
         for (Index i : remainingDataStream.getIndices()) {
-            assertThat(newState.metadata().indices().get(i.getName()).getIndex(), equalTo(i));
+            assertThat(newState.metadata().indices().get(i.name()).getIndex(), equalTo(i));
         }
     }
 

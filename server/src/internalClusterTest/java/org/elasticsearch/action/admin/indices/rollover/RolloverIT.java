@@ -384,7 +384,7 @@ public class RolloverIT extends ESIntegTestCase {
             indicesAdmin().prepareRolloverIndex("test_alias").get();
             fail("expected failure due to existing rollover index");
         } catch (ResourceAlreadyExistsException e) {
-            assertThat(e.getIndex().getName(), equalTo("test_index-000001"));
+            assertThat(e.getIndex().name(), equalTo("test_index-000001"));
         }
     }
 

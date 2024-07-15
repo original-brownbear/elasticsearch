@@ -191,7 +191,7 @@ public class IndexLifecycleService
                             if (stepKey != null && IGNORE_STEPS_MAINTENANCE_REQUESTED.contains(stepKey.name())) {
                                 logger.info(
                                     "waiting to stop ILM because index [{}] with policy [{}] is currently in step [{}]",
-                                    idxMeta.getIndex().getName(),
+                                    idxMeta.getIndex().name(),
                                     policyName,
                                     stepKey.name()
                                 );
@@ -202,7 +202,7 @@ public class IndexLifecycleService
                                 logger.info(
                                     "skipping policy execution of step [{}] for index [{}] with policy [{}]" + " because ILM is stopping",
                                     stepKey == null ? "n/a" : stepKey.name(),
-                                    idxMeta.getIndex().getName(),
+                                    idxMeta.getIndex().name(),
                                     policyName
                                 );
                             }
@@ -215,7 +215,7 @@ public class IndexLifecycleService
                                 () -> format(
                                     "async action execution failed during master election trigger"
                                         + " for index [%s] with policy [%s] in step [%s], lifecycle state: [%s]",
-                                    idxMeta.getIndex().getName(),
+                                    idxMeta.getIndex().name(),
                                     policyName,
                                     stepKey,
                                     lifecycleState.asMap()
@@ -227,7 +227,7 @@ public class IndexLifecycleService
                                 () -> format(
                                     "async action execution failed during master election trigger"
                                         + " for index [%s] with policy [%s] in step [%s]",
-                                    idxMeta.getIndex().getName(),
+                                    idxMeta.getIndex().name(),
                                     policyName,
                                     stepKey
                                 ),
@@ -254,7 +254,7 @@ public class IndexLifecycleService
     @Override
     public void beforeIndexAddedToCluster(Index index, Settings indexSettings) {
         if (shouldParseIndexName(indexSettings)) {
-            parseIndexNameAndExtractDate(index.getName());
+            parseIndexNameAndExtractDate(index.name());
         }
     }
 
@@ -404,7 +404,7 @@ public class IndexLifecycleService
                         if (stepKey != null && IGNORE_STEPS_MAINTENANCE_REQUESTED.contains(stepKey.name())) {
                             logger.info(
                                 "waiting to stop ILM because index [{}] with policy [{}] is currently in step [{}]",
-                                idxMeta.getIndex().getName(),
+                                idxMeta.getIndex().name(),
                                 policyName,
                                 stepKey.name()
                             );
@@ -419,7 +419,7 @@ public class IndexLifecycleService
                             logger.info(
                                 "skipping policy execution of step [{}] for index [{}] with policy [{}] because ILM is stopping",
                                 stepKey == null ? "n/a" : stepKey.name(),
-                                idxMeta.getIndex().getName(),
+                                idxMeta.getIndex().name(),
                                 policyName
                             );
                         }
@@ -436,7 +436,7 @@ public class IndexLifecycleService
                             () -> format(
                                 "async action execution failed during policy trigger"
                                     + " for index [%s] with policy [%s] in step [%s], lifecycle state: [%s]",
-                                idxMeta.getIndex().getName(),
+                                idxMeta.getIndex().name(),
                                 policyName,
                                 stepKey,
                                 lifecycleState.asMap()
@@ -447,7 +447,7 @@ public class IndexLifecycleService
                         logger.warn(
                             () -> format(
                                 "async action execution failed during policy trigger" + " for index [%s] with policy [%s] in step [%s]",
-                                idxMeta.getIndex().getName(),
+                                idxMeta.getIndex().name(),
                                 policyName,
                                 stepKey
                             ),

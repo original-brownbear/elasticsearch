@@ -55,7 +55,7 @@ public final class IndexId implements Writeable, ToXContentObject {
      * index's UUID, but merely a unique file/URL friendly identifier that a repository can
      * use to name blobs for the index.
      *
-     * We could not use the index's actual UUID (See {@link Index#getUUID()}) because in the
+     * We could not use the index's actual UUID (See {@link Index#uuid()}) because in the
      * case of snapshot/restore, the index UUID in the snapshotted index will be different
      * from the index UUID assigned to it when it is restored. Hence, the actual index UUID
      * is not useful in the context of snapshot/restore for tying a snapshotted index to the

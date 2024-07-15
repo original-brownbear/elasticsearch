@@ -168,7 +168,7 @@ public class CopyExecutionStateStepTests extends AbstractStepTestCase<CopyExecut
                     + indexName
                     + "] to ["
                     + step.getTargetIndexNameSupplier()
-                        .apply(originalIndexMetadata.getIndex().getName(), LifecycleExecutionState.builder().build())
+                        .apply(originalIndexMetadata.getIndex().name(), LifecycleExecutionState.builder().build())
                     + "] as target index does not exist"
             )
         );

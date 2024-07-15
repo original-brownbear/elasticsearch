@@ -483,7 +483,7 @@ public class WaitForRolloverReadyStepTests extends AbstractStepTestCase<WaitForR
                         String.format(
                             Locale.ROOT,
                             "index [%s] is not the write index for alias [%s]",
-                            indexMetadata.getIndex().getName(),
+                            indexMetadata.getIndex().name(),
                             alias
                         )
                     )
@@ -662,7 +662,7 @@ public class WaitForRolloverReadyStepTests extends AbstractStepTestCase<WaitForR
                     Locale.ROOT,
                     "setting [%s] for index [%s] is empty or not defined",
                     RolloverAction.LIFECYCLE_ROLLOVER_ALIAS,
-                    indexMetadata.getIndex().getName()
+                    indexMetadata.getIndex().name()
                 )
             )
         );
@@ -698,7 +698,7 @@ public class WaitForRolloverReadyStepTests extends AbstractStepTestCase<WaitForR
                     "%s [%s] does not point to index [%s]",
                     RolloverAction.LIFECYCLE_ROLLOVER_ALIAS,
                     alias,
-                    indexMetadata.getIndex().getName()
+                    indexMetadata.getIndex().name()
                 )
             )
         );

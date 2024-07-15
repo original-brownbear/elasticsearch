@@ -285,7 +285,7 @@ public class ProactiveStorageDeciderServiceTests extends AutoscalingTestCase {
             assertThat(forecastRoutingTable.allShards().count(), Matchers.equalTo((long) (expectedIndices) * shardCopies));
 
             forecastDataStream.getIndices()
-                .forEach(index -> assertThat(forecastRoutingTable.allShards(index.getName()).size(), Matchers.equalTo(shardCopies)));
+                .forEach(index -> assertThat(forecastRoutingTable.allShards(index.name()).size(), Matchers.equalTo(shardCopies)));
 
             forecastRoutingTable.allShards().forEach(s -> assertThat(forecast.info().getShardSize(s), Matchers.notNullValue()));
 
@@ -298,7 +298,7 @@ public class ProactiveStorageDeciderServiceTests extends AutoscalingTestCase {
             assertThat(actualTotal, Matchers.greaterThanOrEqualTo(actualTotal - 3));
             // omit last index, since it is reduced a bit for rounding. Total validated above so it all adds up.
             for (int i = 0; i < addedIndices.size() - 1; ++i) {
-                forecastRoutingTable.allShards(addedIndices.get(i).getName())
+                forecastRoutingTable.allShards(addedIndices.get(i).name())
                     .forEach(
                         shard -> assertThat(
                             forecast.info().getShardSize(shard),
@@ -310,7 +310,7 @@ public class ProactiveStorageDeciderServiceTests extends AutoscalingTestCase {
     }
 
     private long totalSize(List<Index> indices, RoutingTable routingTable, ClusterInfo info) {
-        return indices.stream().flatMap(i -> routingTable.allShards(i.getName()).stream()).mapToLong(info::getShardSize).sum();
+        return indices.stream().flatMap(i -> routingTable.allShards(i.name()).stream()).mapToLong(info::getShardSize).sum();
     }
 
     private ClusterState randomAllocate(ClusterState state) {

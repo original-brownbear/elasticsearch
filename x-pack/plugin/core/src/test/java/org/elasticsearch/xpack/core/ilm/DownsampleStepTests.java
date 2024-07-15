@@ -141,7 +141,7 @@ public class DownsampleStepTests extends AbstractStepTestCase<DownsampleStep> {
             .build();
 
         String policyName = indexMetadata.getLifecyclePolicyName();
-        String indexName = indexMetadata.getIndex().getName();
+        String indexName = indexMetadata.getIndex().name();
         step.performAction(indexMetadata, emptyClusterState(), null, new ActionListener<>() {
             @Override
             public void onResponse(Void unused) {

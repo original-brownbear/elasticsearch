@@ -130,7 +130,7 @@ public class ShardFollowTaskReplicationTests extends ESIndexLevelReplicationTest
                 // Deletes should be replicated to the follower
                 List<String> deleteDocIds = randomSubsetOf(indexedDocIds);
                 for (String deleteId : deleteDocIds) {
-                    BulkItemResponse resp = leaderGroup.delete(new DeleteRequest(index.getName(), deleteId));
+                    BulkItemResponse resp = leaderGroup.delete(new DeleteRequest(index.name(), deleteId));
                     assertThat(resp.getResponse().getResult(), equalTo(DocWriteResponse.Result.DELETED));
                 }
                 leaderGroup.syncGlobalCheckpoint();
@@ -529,7 +529,7 @@ public class ShardFollowTaskReplicationTests extends ESIndexLevelReplicationTest
                 );
                 primaryShard.markAsRecovering("remote recovery from leader", new RecoveryState(routing, localNode, null));
                 final PlainActionFuture<Boolean> future = new PlainActionFuture<>();
-                primaryShard.restoreFromRepository(new RestoreOnlyRepository(index.getName()) {
+                primaryShard.restoreFromRepository(new RestoreOnlyRepository(index.name()) {
                     @Override
                     public void restoreShard(
                         Store store,
