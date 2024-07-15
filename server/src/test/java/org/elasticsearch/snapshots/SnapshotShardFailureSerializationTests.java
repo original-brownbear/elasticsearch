@@ -50,10 +50,11 @@ public class SnapshotShardFailureSerializationTests extends AbstractXContentTest
                             randomValueOtherThan((byte) originalShardId.getId(), ESTestCase::randomNonNegativeByte)
                         );
                     } else if (randomBoolean()) {
+                        Index index = originalShardId.getIndex();
                         mutatedShardId = new ShardId(
                             new Index(
                                 originalShardId.getIndexName(),
-                                randomValueOtherThan(originalShardId.getIndex().getUUID(), () -> UUIDs.randomBase64UUID(random()))
+                                randomValueOtherThan(index.uuid(), () -> UUIDs.randomBase64UUID(random()))
                             ),
                             originalShardId.id()
                         );

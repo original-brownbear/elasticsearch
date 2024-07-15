@@ -611,7 +611,7 @@ public class SearchableSnapshotDirectoryTests extends AbstractSearchableSnapshot
                 releasables.add(repository::stop);
 
                 final SnapshotId snapshotId = new SnapshotId("_snapshot", UUIDs.randomBase64UUID(random()));
-                final IndexId indexId = new IndexId(indexSettings.getIndex().getName(), UUIDs.randomBase64UUID(random()));
+                final IndexId indexId = new IndexId(indexSettings.getIndex().name(), UUIDs.randomBase64UUID(random()));
 
                 final PlainActionFuture<ShardSnapshotResult> future = new PlainActionFuture<>();
                 threadPool.generic().submit(() -> {

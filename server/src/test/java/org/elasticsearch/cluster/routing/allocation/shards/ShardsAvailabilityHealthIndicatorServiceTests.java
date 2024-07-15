@@ -958,16 +958,18 @@ public class ShardsAvailabilityHealthIndicatorServiceTests extends ESTestCase {
         Metadata.Builder metadataBuilder = Metadata.builder();
         Map<String, IndexMetadata> indexMetadataMap = new HashMap<>();
         for (IndexMetadata indexMetadata : indexMetadataList) {
-            indexMetadataMap.put(indexMetadata.getIndex().getName(), indexMetadata);
+            Index index = indexMetadata.getIndex();
+            indexMetadataMap.put(index.name(), indexMetadata);
         }
         metadataBuilder.indices(indexMetadataMap);
         metadataBuilder.put(newInstance(featureDataStreamName, List.of(backingIndex.getIndex())));
         Metadata metadata = metadataBuilder.build();
         {
+            Index index = backingIndex.getIndex();
             List<Diagnosis.Resource> affectedResources = ShardAllocationStatus.getRestoreFromSnapshotAffectedResources(
                 metadata,
                 getSystemIndices(featureDataStreamName, ".test-ds-*", ".feature-*"),
-                Set.of(backingIndex.getIndex().getName(), ".feature-index", "regular-index"),
+                Set.of(index.name(), ".feature-index", "regular-index"),
                 10
             );
 
@@ -983,10 +985,11 @@ public class ShardsAvailabilityHealthIndicatorServiceTests extends ESTestCase {
         }
 
         {
+            Index index = backingIndex.getIndex();
             List<Diagnosis.Resource> affectedResources = ShardAllocationStatus.getRestoreFromSnapshotAffectedResources(
                 metadata,
                 getSystemIndices(featureDataStreamName, ".test-ds-*", ".feature-*"),
-                Set.of(backingIndex.getIndex().getName(), ".feature-index", "regular-index"),
+                Set.of(index.name(), ".feature-index", "regular-index"),
                 0
             );
 
@@ -2091,15 +2094,14 @@ public class ShardsAvailabilityHealthIndicatorServiceTests extends ESTestCase {
     }
 
     private static ClusterState createClusterStateWith(List<IndexRoutingTable> indexRoutes, List<NodeShutdown> nodeShutdowns) {
-        List<IndexMetadata> indices = indexRoutes.stream()
-            .map(
-                table -> IndexMetadata.builder(table.getIndex().getName())
-                    .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current()).build())
-                    .numberOfShards(1)
-                    .numberOfReplicas(table.size() - 1)
-                    .build()
-            )
-            .collect(Collectors.toList());
+        List<IndexMetadata> indices = indexRoutes.stream().map(table -> {
+            Index index = table.getIndex();
+            return IndexMetadata.builder(index.name())
+                .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current()).build())
+                .numberOfShards(1)
+                .numberOfReplicas(table.size() - 1)
+                .build();
+        }).collect(Collectors.toList());
         return createClusterStateWith(indices, indexRoutes, nodeShutdowns, List.of());
     }
 
@@ -2153,7 +2155,8 @@ public class ShardsAvailabilityHealthIndicatorServiceTests extends ESTestCase {
         Metadata.Builder metadataBuilder = Metadata.builder();
         Map<String, IndexMetadata> indexMetadataMap = new HashMap<>();
         for (IndexMetadata indexMetadata : indexMetadataList) {
-            indexMetadataMap.put(indexMetadata.getIndex().getName(), indexMetadata);
+            Index index = indexMetadata.getIndex();
+            indexMetadataMap.put(index.name(), indexMetadata);
         }
         metadataBuilder.indices(indexMetadataMap);
         metadataBuilder.putCustom(NodesShutdownMetadata.TYPE, nodesShutdownMetadata);

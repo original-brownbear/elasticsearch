@@ -19,6 +19,7 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.settings.IndexScopedSettings;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.indices.SystemIndexDescriptor;
 import org.elasticsearch.indices.SystemIndices;
 import org.elasticsearch.plugins.SystemIndexPlugin;
@@ -72,7 +73,7 @@ class SystemIndexMigrationInfo implements Comparable<SystemIndexMigrationInfo> {
      * Gets the name of the index to be migrated.
      */
     String getCurrentIndexName() {
-        return currentIndex.getIndex().getName();
+        return currentIndex.getIndex().name();
     }
 
     /**
@@ -86,7 +87,8 @@ class SystemIndexMigrationInfo implements Comparable<SystemIndexMigrationInfo> {
      * Gets the name to be used for the post-migration index.
      */
     String getNextIndexName() {
-        return currentIndex.getIndex().getName() + SystemIndices.UPGRADED_INDEX_SUFFIX;
+        Index index = currentIndex.getIndex();
+        return index.name() + SystemIndices.UPGRADED_INDEX_SUFFIX;
     }
 
     /**
@@ -171,9 +173,10 @@ class SystemIndexMigrationInfo implements Comparable<SystemIndexMigrationInfo> {
 
     @Override
     public String toString() {
+        Index index = currentIndex.getIndex();
         return "IndexUpgradeInfo["
             + "currentIndex='"
-            + currentIndex.getIndex().getName()
+            + index.name()
             + "\'"
             + ", featureName='"
             + featureName

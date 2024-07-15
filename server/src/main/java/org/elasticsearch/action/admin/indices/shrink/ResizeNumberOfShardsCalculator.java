@@ -14,6 +14,7 @@ import org.apache.lucene.index.IndexWriter;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.core.Nullable;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.shard.DocsStats;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.index.store.StoreStats;
@@ -76,6 +77,7 @@ public interface ResizeNumberOfShardsCalculator {
                     minShardsNum = minShardsNum + 1;
                 }
                 if (minShardsNum > sourceIndexShardsNum) {
+                    Index index = sourceMetadata.getIndex();
                     logger.info(
                         "By setting max_primary_shard_size to [{}], the shrunk index will contain [{}] shards,"
                             + " which will be greater than [{}] shards in the source index [{}],"
@@ -83,7 +85,7 @@ public interface ResizeNumberOfShardsCalculator {
                         maxPrimaryShardSize.toString(),
                         minShardsNum,
                         sourceIndexShardsNum,
-                        sourceMetadata.getIndex().getName(),
+                        index.name(),
                         sourceIndexShardsNum
                     );
                     return sourceIndexShardsNum;

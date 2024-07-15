@@ -90,18 +90,16 @@ public class DataStreamsActionUtilTests extends ESTestCase {
     }
 
     private Map<String, IndexMetadata> createLocalOnlyIndicesMetadata(Index... indices) {
-        return Arrays.stream(indices)
-            .map(
-                index1 -> Map.entry(
-                    index1.getName(),
-                    IndexMetadata.builder(index1.getName())
-                        .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current()))
-                        .numberOfReplicas(0)
-                        .numberOfShards(1)
-                        .build()
-                )
-            )
-            .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
+        return Arrays.stream(indices).map(index1 -> {
+            return Map.entry(
+                index1.name(),
+                IndexMetadata.builder(index1.name())
+                    .settings(Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current()))
+                    .numberOfReplicas(0)
+                    .numberOfShards(1)
+                    .build()
+            );
+        }).collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
 }

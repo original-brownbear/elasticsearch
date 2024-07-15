@@ -27,6 +27,7 @@ import org.elasticsearch.cluster.routing.allocation.command.AllocationCommands;
 import org.elasticsearch.cluster.routing.allocation.command.MoveAllocationCommand;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeValue;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.repositories.IndexId;
@@ -96,6 +97,7 @@ public class ExpectedShardSizeAllocationTests extends ESAllocationTestCase {
             .putInSyncAllocationIds(0, Set.of(randomUUID()))
             .build();
 
+        Index index = indexMetadata.getIndex();
         var clusterState = ClusterState.builder(ClusterName.DEFAULT)
             .nodes(DiscoveryNodes.builder().add(newNode("node-1")).add(newNode("node-2")).add(newNode("node-3")))
             .metadata(Metadata.builder().put(indexMetadata, false))
@@ -115,7 +117,7 @@ public class ExpectedShardSizeAllocationTests extends ESAllocationTestCase {
                             snapshot,
                             RestoreInProgress.State.STARTED,
                             false,
-                            List.of(indexMetadata.getIndex().getName()),
+                            List.of(index.name()),
                             Map.of(new ShardId(indexMetadata.getIndex(), 0), new RestoreInProgress.ShardRestoreStatus(randomIdentifier()))
                         )
                     ).build()

@@ -28,7 +28,6 @@ import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.time.DateFormatter;
 import org.elasticsearch.core.Nullable;
-import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexMode;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.engine.VersionConflictEngineException;
@@ -82,7 +81,7 @@ public class DataStreamLifecycleDriver {
         GetDataStreamAction.Response getDataStreamResponse = client.execute(GetDataStreamAction.INSTANCE, getDataStreamRequest).actionGet();
         assertThat(getDataStreamResponse.getDataStreams().isEmpty(), is(false));
         assertThat(getDataStreamResponse.getDataStreams().get(0).getDataStream().getName(), is(dataStreamName));
-        return getDataStreamResponse.getDataStreams().get(0).getDataStream().getIndices().stream().map(Index::getName).toList();
+        return getDataStreamResponse.getDataStreams().get(0).getDataStream().getIndices().stream().map(index -> index.name()).toList();
     }
 
     public static void putTSDBIndexTemplate(

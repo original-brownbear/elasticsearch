@@ -16,6 +16,7 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.unit.ByteSizeValue;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.xcontent.ToXContentFragment;
 import org.elasticsearch.xcontent.ToXContentObject;
@@ -73,7 +74,8 @@ public final class VersionStats implements ToXContentFragment, Writeable {
             // Increment version-specific primary shard counts
             primaryShardCounts.merge(indexMetadata.getCreationVersion(), indexMetadata.getNumberOfShards(), Integer::sum);
             // Increment version-specific primary shard sizes
-            String indexName = indexMetadata.getIndex().getName();
+            Index index = indexMetadata.getIndex();
+            String indexName = index.name();
             long indexPrimarySize = indexPrimaryShardStats.getOrDefault(indexName, Collections.emptyList())
                 .stream()
                 .mapToLong(stats -> stats.getStats().getStore().sizeInBytes())

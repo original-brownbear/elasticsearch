@@ -30,6 +30,7 @@ import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
 import org.elasticsearch.index.reindex.DeleteByQueryAction;
 import org.elasticsearch.index.reindex.DeleteByQueryRequest;
@@ -529,7 +530,8 @@ public class GeoIpDownloaderTests extends ESTestCase {
 
     public void testUpdateDatabasesWriteBlock() {
         ClusterState state = createClusterState(new PersistentTasksCustomMetadata(1L, Map.of()));
-        var geoIpIndex = state.getMetadata().getIndicesLookup().get(GeoIpDownloader.DATABASES_INDEX).getWriteIndex().getName();
+        Index index = state.getMetadata().getIndicesLookup().get(GeoIpDownloader.DATABASES_INDEX).getWriteIndex();
+        var geoIpIndex = index.name();
         state = ClusterState.builder(state)
             .blocks(new ClusterBlocks.Builder().addIndexBlock(geoIpIndex, IndexMetadata.INDEX_READ_ONLY_ALLOW_DELETE_BLOCK))
             .build();
@@ -549,7 +551,8 @@ public class GeoIpDownloaderTests extends ESTestCase {
 
     public void testUpdateDatabasesIndexNotReady() {
         ClusterState state = createClusterState(new PersistentTasksCustomMetadata(1L, Map.of()), true);
-        var geoIpIndex = state.getMetadata().getIndicesLookup().get(GeoIpDownloader.DATABASES_INDEX).getWriteIndex().getName();
+        Index index = state.getMetadata().getIndicesLookup().get(GeoIpDownloader.DATABASES_INDEX).getWriteIndex();
+        var geoIpIndex = index.name();
         state = ClusterState.builder(state)
             .blocks(new ClusterBlocks.Builder().addIndexBlock(geoIpIndex, IndexMetadata.INDEX_READ_ONLY_ALLOW_DELETE_BLOCK))
             .build();

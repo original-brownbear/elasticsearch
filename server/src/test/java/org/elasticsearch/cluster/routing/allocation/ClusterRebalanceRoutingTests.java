@@ -22,6 +22,7 @@ import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.routing.UnassignedInfo;
 import org.elasticsearch.cluster.routing.allocation.decider.ClusterRebalanceAllocationDecider;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.test.gateway.TestGatewayAllocator;
 
@@ -115,7 +116,8 @@ public class ClusterRebalanceRoutingTests extends ESAllocationTestCase {
         clusterState = strategy.reroute(clusterState, "reroute", ActionListener.noop());
 
         final var newNodesIterator = clusterState.getRoutingNodes().node("node3").iterator();
-        assertThat(newNodesIterator.next().shardId().getIndex().getName(), equalTo("test1"));
+        Index index = newNodesIterator.next().shardId().getIndex();
+        assertThat(index.name(), equalTo("test1"));
         assertFalse(newNodesIterator.hasNext());
     }
 
@@ -219,7 +221,8 @@ public class ClusterRebalanceRoutingTests extends ESAllocationTestCase {
 
         RoutingNodes routingNodes = clusterState.getRoutingNodes();
         assertThat(routingNodes.node("node3").size(), equalTo(1));
-        assertThat(routingNodes.node("node3").iterator().next().shardId().getIndex().getName(), equalTo("test1"));
+        Index index = routingNodes.node("node3").iterator().next().shardId().getIndex();
+        assertThat(index.name(), equalTo("test1"));
     }
 
     public void testClusterPrimariesActive2() {
@@ -406,7 +409,8 @@ public class ClusterRebalanceRoutingTests extends ESAllocationTestCase {
         RoutingNodes routingNodes = clusterState.getRoutingNodes();
 
         assertThat(routingNodes.node("node3").size(), equalTo(1));
-        assertThat(routingNodes.node("node3").iterator().next().shardId().getIndex().getName(), anyOf(equalTo("test1"), equalTo("test2")));
+        Index index = routingNodes.node("node3").iterator().next().shardId().getIndex();
+        assertThat(index.name(), anyOf(equalTo("test1"), equalTo("test2")));
     }
 
     public void testClusterAllActive2() {
@@ -590,7 +594,8 @@ public class ClusterRebalanceRoutingTests extends ESAllocationTestCase {
                 RoutingAllocation allocation,
                 UnassignedAllocationHandler unassignedAllocationHandler
             ) {
-                if (allocateTest1.get() == false && "test1".equals(shardRouting.index().getName())) {
+                Index index = shardRouting.index();
+                if (allocateTest1.get() == false && "test1".equals(index.name())) {
                     unassignedAllocationHandler.removeAndIgnore(UnassignedInfo.AllocationStatus.NO_ATTEMPT, allocation.changes());
                 } else {
                     super.allocateUnassigned(shardRouting, allocation, unassignedAllocationHandler);

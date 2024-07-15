@@ -16,6 +16,7 @@ import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.core.TimeValue;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexNotFoundException;
 
 import java.util.Objects;
@@ -67,10 +68,11 @@ public class CleanupTargetIndexStep extends AsyncRetryDuringSnapshotActionStep {
                 // if the source index does not exist, we'll skip deleting the
                 // (managed) target index as that will cause data loss
                 String policyName = indexMetadata.getLifecyclePolicyName();
+                Index index = indexMetadata.getIndex();
                 logger.warn(
                     "managed index [{}] has been created as part of policy [{}] and the source index [{}] does not exist "
                         + "anymore. will skip the [{}] step",
-                    indexMetadata.getIndex().getName(),
+                    index.name(),
                     policyName,
                     sourceIndexName,
                     NAME

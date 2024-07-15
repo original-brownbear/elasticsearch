@@ -25,6 +25,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.FutureUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.Tuple;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexService;
 import org.elasticsearch.index.shard.IndexEventListener;
 import org.elasticsearch.index.shard.IndexShard;
@@ -175,12 +176,8 @@ public class PeerRecoverySourceService extends AbstractLifecycleComponent implem
         }
 
         RecoverySourceHandler handler = ongoingRecoveries.addNewRecovery(request, task, shard);
-        logger.trace(
-            "[{}][{}] starting recovery to {}",
-            request.shardId().getIndex().getName(),
-            request.shardId().id(),
-            request.targetNode()
-        );
+        Index index = request.shardId().getIndex();
+        logger.trace("[{}][{}] starting recovery to {}", index.name(), request.shardId().id(), request.targetNode());
         handler.recoverToTarget(ActionListener.runAfter(listener, () -> ongoingRecoveries.remove(shard, handler)));
     }
 
@@ -188,12 +185,8 @@ public class PeerRecoverySourceService extends AbstractLifecycleComponent implem
         final IndexService indexService = indicesService.indexServiceSafe(request.shardId().getIndex());
         final IndexShard shard = indexService.getShard(request.shardId().id());
 
-        logger.trace(
-            "[{}][{}] reestablishing recovery {}",
-            request.shardId().getIndex().getName(),
-            request.shardId().id(),
-            request.recoveryId()
-        );
+        Index index = request.shardId().getIndex();
+        logger.trace("[{}][{}] reestablishing recovery {}", index.name(), request.shardId().id(), request.recoveryId());
         ongoingRecoveries.reestablishRecovery(request, shard, listener);
     }
 

@@ -845,7 +845,8 @@ public class IndexRequest extends ReplicatedWriteRequest<IndexRequest> implement
                 );
             }
             // Resolve write index and get parent data stream to handle the case of dealing with an alias
-            String defaultWriteIndexName = ia.getWriteIndex().getName();
+            Index index1 = ia.getWriteIndex();
+            String defaultWriteIndexName = index1.name();
             DataStream dataStream = metadata.getIndicesLookup().get(defaultWriteIndexName).getParentDataStream();
             if (dataStream.getFailureIndices().getIndices().size() < 1) {
                 throw new ElasticsearchException(

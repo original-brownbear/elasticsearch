@@ -122,7 +122,7 @@ public class NodesDataTiersUsageTransportAction extends TransportNodesAction<
         }
         Map<String, NodeDataTiersUsage.UsageStats> usageStatsByTier = new HashMap<>();
         Set<String> localIndices = StreamSupport.stream(routingNode.spliterator(), false)
-            .map(routing -> routing.index().getName())
+            .map(routing -> { return routing.index().name(); })
             .collect(Collectors.toSet());
         for (String indexName : localIndices) {
             IndexMetadata indexMetadata = metadata.index(indexName);

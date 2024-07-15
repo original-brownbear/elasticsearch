@@ -83,7 +83,9 @@ public class TransportDeleteLifecycleAction extends TransportMasterNodeAction<Re
                 .values()
                 .stream()
                 .filter(idxMeta -> policyToDelete.equals(idxMeta.getLifecyclePolicyName()))
-                .map(idxMeta -> idxMeta.getIndex().getName())
+                .map(idxMeta -> {
+                    return idxMeta.getIndex().name();
+                })
                 .toList();
             if (indicesUsingPolicy.isEmpty() == false) {
                 throw new IllegalArgumentException(

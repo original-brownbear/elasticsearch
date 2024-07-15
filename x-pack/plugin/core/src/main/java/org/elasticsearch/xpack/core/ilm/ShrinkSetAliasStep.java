@@ -11,6 +11,7 @@ import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.LifecycleExecutionState;
+import org.elasticsearch.index.Index;
 
 import static org.elasticsearch.xpack.core.ilm.ShrinkIndexNameSupplier.getShrinkIndexName;
 import static org.elasticsearch.xpack.core.ilm.SwapAliasesAndDeleteSourceIndexStep.deleteSourceIndexAndTransferAliases;
@@ -34,7 +35,8 @@ public class ShrinkSetAliasStep extends AsyncRetryDuringSnapshotActionStep {
     @Override
     public void performDuringNoSnapshot(IndexMetadata indexMetadata, ClusterState currentState, ActionListener<Void> listener) {
         // get source index
-        String indexName = indexMetadata.getIndex().getName();
+        Index index = indexMetadata.getIndex();
+        String indexName = index.name();
         // get target shrink index
         LifecycleExecutionState lifecycleState = indexMetadata.getLifecycleExecutionState();
         String targetIndexName = getShrinkIndexName(indexName, lifecycleState);

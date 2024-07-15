@@ -15,6 +15,7 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.lucene.search.function.ScoreFunction;
 import org.elasticsearch.common.lucene.search.function.ScriptScoreFunction;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.query.QueryShardException;
 import org.elasticsearch.index.query.SearchExecutionContext;
 import org.elasticsearch.script.ScoreScript;
@@ -92,7 +93,8 @@ public class ScriptScoreFunctionBuilder extends ScoreFunctionBuilder<ScriptScore
             ScoreScript.Factory factory = context.compile(script, ScoreScript.CONTEXT);
             SearchLookup lookup = context.lookup();
             ScoreScript.LeafFactory searchScript = factory.newFactory(script.getParams(), lookup);
-            return new ScriptScoreFunction(script, searchScript, lookup, context.index().getName(), context.getShardId());
+            Index index = context.index();
+            return new ScriptScoreFunction(script, searchScript, lookup, index.name(), context.getShardId());
         } catch (Exception e) {
             throw new QueryShardException(context, "script_score: the script could not be loaded", e);
         }

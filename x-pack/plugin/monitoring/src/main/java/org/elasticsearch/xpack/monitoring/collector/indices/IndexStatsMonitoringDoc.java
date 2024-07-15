@@ -12,6 +12,7 @@ import org.elasticsearch.cluster.health.ClusterIndexHealth;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.routing.IndexRoutingTable;
 import org.elasticsearch.core.Nullable;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xpack.core.monitoring.MonitoredSystem;
 import org.elasticsearch.xpack.core.monitoring.exporter.MonitoringDoc;
@@ -66,7 +67,8 @@ public class IndexStatsMonitoringDoc extends FilteredMonitoringDoc {
 
         builder.startObject(TYPE);
         {
-            builder.field("index", metadata.getIndex().getName());
+            Index index = metadata.getIndex();
+            builder.field("index", index.name());
             builder.field("uuid", metadata.getIndexUUID());
             builder.field("created", metadata.getCreationDate());
             builder.field("status", health.getStatus().name().toLowerCase(Locale.ROOT));

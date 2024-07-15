@@ -859,7 +859,7 @@ public class RBACEngine implements AuthorizationEngine {
                         if (indexAbstraction.getType() == IndexAbstraction.Type.DATA_STREAM) {
                             // add data stream and its backing indices for any authorized data streams
                             for (Index index : indexAbstraction.getIndices()) {
-                                indicesAndAliases.add(index.getName());
+                                indicesAndAliases.add(index.name());
                             }
                         }
                     }

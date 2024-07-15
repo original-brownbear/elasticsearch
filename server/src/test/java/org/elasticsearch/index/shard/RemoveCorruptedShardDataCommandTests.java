@@ -41,6 +41,7 @@ import org.elasticsearch.env.Environment;
 import org.elasticsearch.env.NodeEnvironment;
 import org.elasticsearch.env.TestEnvironment;
 import org.elasticsearch.gateway.PersistedClusterStateService;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.MergePolicyConfig;
@@ -118,8 +119,9 @@ public class RemoveCorruptedShardDataCommandTests extends IndexShardTestCase {
             Files.createDirectories(dataPath);
         }
 
+        Index index = shardId.getIndex();
         final Settings settings = indexSettings(IndexVersion.current(), 1, 0).put(MergePolicyConfig.INDEX_MERGE_ENABLED, false)
-            .put(IndexMetadata.SETTING_INDEX_UUID, shardId.getIndex().getUUID())
+            .put(IndexMetadata.SETTING_INDEX_UUID, index.uuid())
             .build();
 
         final NodeEnvironment.DataPath dataPath = new NodeEnvironment.DataPath(tempDir);
@@ -399,7 +401,8 @@ public class RemoveCorruptedShardDataCommandTests extends IndexShardTestCase {
         final OptionParser parser = command.getParser();
 
         // `--index index_name --shard-id 0` has to be resolved to indexPath
-        final OptionSet options = parser.parse("--index", shardId.getIndex().getName(), "--shard-id", Integer.toString(shardId.id()));
+        Index index = shardId.getIndex();
+        final OptionSet options = parser.parse("--index", index.name(), "--shard-id", Integer.toString(shardId.id()));
 
         command.findAndProcessShardPath(
             options,

@@ -18,6 +18,7 @@ import org.elasticsearch.cluster.service.ClusterStateTaskExecutorUtils;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.core.Tuple;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.rest.action.admin.indices.AliasesNotFoundException;
@@ -287,7 +288,8 @@ public class MetadataIndexAliasesServiceTests extends ESTestCase {
                 Arrays.asList(new AliasAction.Add("test", "alias", null, null, null, null, null), new AliasAction.RemoveIndex("test"))
             )
         );
-        assertEquals("test", e.getIndex().getName());
+        Index index = e.getIndex();
+        assertEquals("test", index.name());
     }
 
     public void testRemoveIndexTwice() {

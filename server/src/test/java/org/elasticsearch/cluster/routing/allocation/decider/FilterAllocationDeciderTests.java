@@ -29,6 +29,7 @@ import org.elasticsearch.cluster.routing.allocation.decider.Decision.Type;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.IndexScopedSettings;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.snapshots.EmptySnapshotsInfoService;
@@ -190,7 +191,8 @@ public class FilterAllocationDeciderTests extends ESAllocationTestCase {
             .build();
         metadata.put(sourceIndex, false);
         indexSettings.put(INDEX_RESIZE_SOURCE_UUID.getKey(), sourceIndex.getIndexUUID());
-        indexSettings.put(INDEX_RESIZE_SOURCE_NAME.getKey(), sourceIndex.getIndex().getName());
+        Index index = sourceIndex.getIndex();
+        indexSettings.put(INDEX_RESIZE_SOURCE_NAME.getKey(), index.name());
         final IndexMetadata.Builder indexMetadataBuilder = IndexMetadata.builder("idx")
             .settings(indexSettings)
             .numberOfShards(1)

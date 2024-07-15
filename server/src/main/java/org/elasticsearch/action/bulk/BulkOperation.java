@@ -510,7 +510,7 @@ final class BulkOperation extends ActionRunnable<BulkResponse> {
             // will write to, not which _data stream_.
             // We work backward to find the data stream from the concrete write index to cover this case.
             Index concreteIndex = ia.getWriteIndex();
-            IndexAbstraction writeIndexAbstraction = metadata.getIndicesLookup().get(concreteIndex.getName());
+            IndexAbstraction writeIndexAbstraction = metadata.getIndicesLookup().get(concreteIndex.name());
             DataStream parentDataStream = writeIndexAbstraction.getParentDataStream();
             if (parentDataStream != null && parentDataStream.isFailureStoreEnabled()) {
                 // Keep the data stream name around to resolve the redirect to failure store if the shard level request fails.

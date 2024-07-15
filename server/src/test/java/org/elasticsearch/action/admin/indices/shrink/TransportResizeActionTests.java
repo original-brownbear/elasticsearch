@@ -31,6 +31,7 @@ import org.elasticsearch.cluster.routing.allocation.decider.AllocationDeciders;
 import org.elasticsearch.cluster.routing.allocation.decider.MaxRetryAllocationDecider;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeValue;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.shard.DocsStats;
 import org.elasticsearch.index.store.StoreStats;
@@ -281,7 +282,8 @@ public class TransportResizeActionTests extends ESTestCase {
             )
         );
         assertNotNull(request.recoverFrom());
-        assertEquals(indexName, request.recoverFrom().getName());
+        Index index = request.recoverFrom();
+        assertEquals(indexName, index.name());
         assertEquals("1", request.settings().get("index.number_of_shards"));
         assertEquals("shrink_index", request.cause());
         assertEquals(request.waitForActiveShards(), activeShardCount);
@@ -349,7 +351,8 @@ public class TransportResizeActionTests extends ESTestCase {
             new ResizeNumberOfShardsCalculator.ShrinkShardsCalculator(storeStats, (i) -> stats)
         );
         assertNotNull(request1.recoverFrom());
-        assertEquals("source", request1.recoverFrom().getName());
+        Index index1 = request1.recoverFrom();
+        assertEquals("source", index1.name());
         assertEquals(String.valueOf(targetIndexShardsNum1), request1.settings().get("index.number_of_shards"));
         assertEquals("shrink_index", request1.cause());
         assertEquals(request1.waitForActiveShards(), activeShardCount1);
@@ -370,7 +373,8 @@ public class TransportResizeActionTests extends ESTestCase {
             new ResizeNumberOfShardsCalculator.ShrinkShardsCalculator(storeStats2, (i) -> stats)
         );
         assertNotNull(request2.recoverFrom());
-        assertEquals("source", request2.recoverFrom().getName());
+        Index index = request2.recoverFrom();
+        assertEquals("source", index.name());
         assertEquals(String.valueOf(targetIndexShardsNum2), request2.settings().get("index.number_of_shards"));
         assertEquals("shrink_index", request2.cause());
         assertEquals(request2.waitForActiveShards(), activeShardCount2);

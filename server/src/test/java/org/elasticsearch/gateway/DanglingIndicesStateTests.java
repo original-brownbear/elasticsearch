@@ -110,7 +110,8 @@ public class DanglingIndicesStateTests extends ESTestCase {
             IndexMetadata existingIndex = IndexMetadata.builder("test_index").settings(existingSettings).build();
             MetaStateWriterUtils.writeIndex(env, "test_write", existingIndex);
 
-            Map<String, IndexMetadata> indices = Map.of(dangledIndex.getIndex().getName(), existingIndex);
+            Index index = dangledIndex.getIndex();
+            Map<String, IndexMetadata> indices = Map.of(index.name(), existingIndex);
             final Metadata metadata = Metadata.builder().indices(indices).build();
 
             DanglingIndicesState danglingState = createDanglingIndicesState(metaStateService, metadata);
@@ -139,7 +140,7 @@ public class DanglingIndicesStateTests extends ESTestCase {
             Map<Index, IndexMetadata> newDanglingIndices = danglingState.getDanglingIndices();
             assertThat(newDanglingIndices.size(), equalTo(1));
             Map.Entry<Index, IndexMetadata> entry = newDanglingIndices.entrySet().iterator().next();
-            assertThat(entry.getKey().getName(), equalTo("test1"));
+            assertThat(entry.getKey().name(), equalTo("test1"));
             assertThat(entry.getValue().getAliases().size(), equalTo(0));
         }
     }

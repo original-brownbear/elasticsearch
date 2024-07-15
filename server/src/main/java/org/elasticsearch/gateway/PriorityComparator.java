@@ -45,7 +45,7 @@ public abstract class PriorityComparator implements Comparator<ShardRouting> {
                 if (cmp == 0) {
                     cmp = Long.compare(metadata02.getCreationDate(), metadata01.getCreationDate());
                     if (cmp == 0) {
-                        cmp = o2Index.getName().compareTo(o1Index.getName());
+                        cmp = o2Index.name().compareTo(o1Index.name());
                     }
                 }
             }

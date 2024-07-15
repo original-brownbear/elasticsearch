@@ -231,14 +231,14 @@ public class QueryRewriteContextIT extends ESIntegTestCase {
                     }
 
                     assertThat(
-                        Arrays.stream(resolvedIndices.getConcreteLocalIndices()).map(Index::getName).collect(Collectors.toSet()),
+                        Arrays.stream(resolvedIndices.getConcreteLocalIndices()).map(index -> index.name()).collect(Collectors.toSet()),
                         equalTo(expectedConcreteLocalIndices)
                     );
 
                     Map<Index, IndexMetadata> indexMetadataMap = resolvedIndices.getConcreteLocalIndicesMetadata();
                     assertThat(indexMetadataMap.size(), equalTo(expectedConcreteLocalIndices.size()));
                     indexMetadataMap.forEach((k, v) -> {
-                        assertThat(expectedConcreteLocalIndices.contains(k.getName()), is(true));
+                        assertThat(expectedConcreteLocalIndices.contains(k.name()), is(true));
                         assertThat(v, notNullValue());
                     });
                 }

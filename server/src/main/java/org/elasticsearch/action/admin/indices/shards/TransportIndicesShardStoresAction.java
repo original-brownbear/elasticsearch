@@ -40,6 +40,7 @@ import org.elasticsearch.common.util.concurrent.ThrottledIterator;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.gateway.TransportNodesListGatewayStartedShards;
 import org.elasticsearch.gateway.TransportNodesListGatewayStartedShards.NodeGatewayStartedShards;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.tasks.CancellableTask;
 import org.elasticsearch.tasks.Task;
@@ -290,7 +291,8 @@ public class TransportIndicesShardStoresAction extends TransportMasterNodeReadAc
 
             private void putResults() {
                 if (isFailing() == false && indexResults.isEmpty() == false) {
-                    indicesStatuses.put(indexRoutingTable.getIndex().getName(), Map.copyOf(indexResults));
+                    Index index = indexRoutingTable.getIndex();
+                    indicesStatuses.put(index.name(), Map.copyOf(indexResults));
                 }
             }
 

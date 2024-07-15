@@ -48,6 +48,7 @@ import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.core.Nullable;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.shard.DocsStats;
 import org.elasticsearch.tasks.CancellableTask;
 import org.elasticsearch.tasks.Task;
@@ -269,8 +270,10 @@ public class TransportRolloverAction extends TransportMasterNodeAction<RolloverR
                     .get(rolloverRequest.getRolloverTarget());
                 if (indexAbstraction.getType().equals(IndexAbstraction.Type.DATA_STREAM)) {
                     DataStream dataStream = (DataStream) indexAbstraction;
-                    final Optional<IndexStats> indexStats = Optional.ofNullable(statsResponse)
-                        .map(stats -> stats.getIndex(dataStream.getWriteIndex().getName()));
+                    final Optional<IndexStats> indexStats = Optional.ofNullable(statsResponse).map(stats -> {
+                        Index index = dataStream.getWriteIndex();
+                        return stats.getIndex(index.name());
+                    });
 
                     Double indexWriteLoad = indexStats.map(
                         stats -> Arrays.stream(stats.getShards())
@@ -395,8 +398,10 @@ public class TransportRolloverAction extends TransportMasterNodeAction<RolloverR
         if (metadata == null) {
             return null;
         } else {
-            final Optional<IndexStats> indexStats = Optional.ofNullable(statsResponse)
-                .map(stats -> stats.getIndex(metadata.getIndex().getName()));
+            final Optional<IndexStats> indexStats = Optional.ofNullable(statsResponse).map(stats -> {
+                Index index = metadata.getIndex();
+                return stats.getIndex(index.name());
+            });
 
             final DocsStats docsStats = indexStats.map(stats -> stats.getPrimaries().getDocs()).orElse(null);
 

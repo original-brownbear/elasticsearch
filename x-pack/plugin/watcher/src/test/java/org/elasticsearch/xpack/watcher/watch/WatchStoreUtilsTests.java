@@ -57,7 +57,8 @@ public class WatchStoreUtilsTests extends ESTestCase {
         metadataBuilder.customs(customsBuilder);
         IndexMetadata concreteIndex = WatchStoreUtils.getConcreteIndex(dataStreamName, metadataBuilder.build());
         assertNotNull(concreteIndex);
-        assertEquals(indexNames.get(indexNames.size() - 1), concreteIndex.getIndex().getName());
+        Index index = concreteIndex.getIndex();
+        assertEquals(indexNames.get(indexNames.size() - 1), index.name());
     }
 
     public void testGetConcreteIndexForAliasWithMultipleNonWritableIndices() {
@@ -102,7 +103,8 @@ public class WatchStoreUtilsTests extends ESTestCase {
         metadataBuilder.indices(indexMetadataMapBuilder);
         IndexMetadata concreteIndex = WatchStoreUtils.getConcreteIndex(aliasName, metadataBuilder.build());
         assertNotNull(concreteIndex);
-        assertEquals(indexNames.get(writableIndexIndex), concreteIndex.getIndex().getName());
+        Index index = concreteIndex.getIndex();
+        assertEquals(indexNames.get(writableIndexIndex), index.name());
     }
 
     public void testGetConcreteIndexForAliasWithOneNonWritableIndex() {
@@ -117,7 +119,8 @@ public class WatchStoreUtilsTests extends ESTestCase {
         metadataBuilder.indices(indexMetadataMapBuilder);
         IndexMetadata concreteIndex = WatchStoreUtils.getConcreteIndex(aliasName, metadataBuilder.build());
         assertNotNull(concreteIndex);
-        assertEquals(indexName, concreteIndex.getIndex().getName());
+        Index index = concreteIndex.getIndex();
+        assertEquals(indexName, index.name());
     }
 
     public void testGetConcreteIndexForConcreteIndex() {
@@ -128,7 +131,8 @@ public class WatchStoreUtilsTests extends ESTestCase {
         metadataBuilder.indices(indexMetadataMapBuilder);
         IndexMetadata concreteIndex = WatchStoreUtils.getConcreteIndex(indexName, metadataBuilder.build());
         assertNotNull(concreteIndex);
-        assertEquals(indexName, concreteIndex.getIndex().getName());
+        Index index = concreteIndex.getIndex();
+        assertEquals(indexName, index.name());
     }
 
     private IndexMetadata createIndexMetaData(String indexName, AliasMetadata aliasMetadata) {

@@ -184,7 +184,7 @@ public final class ShardFollowTasksExecutor extends PersistentTasksExecutor<Shar
                         return;
                     }
                     MappingMetadata mappingMetadata = indexMetadata.mapping();
-                    PutMappingRequest putMappingRequest = CcrRequests.putMappingRequest(followerIndex.getName(), mappingMetadata);
+                    PutMappingRequest putMappingRequest = CcrRequests.putMappingRequest(followerIndex.name(), mappingMetadata);
                     followerClient.admin()
                         .indices()
                         .putMapping(
@@ -230,7 +230,7 @@ public final class ShardFollowTasksExecutor extends PersistentTasksExecutor<Shar
                         // if so just update the follower index's settings:
                         if (updatedSettings.keySet().stream().allMatch(indexScopedSettings::isDynamicSetting)) {
                             // If only dynamic settings have been updated then just update these settings in follower index:
-                            final UpdateSettingsRequest updateSettingsRequest = new UpdateSettingsRequest(followIndex.getName())
+                            final UpdateSettingsRequest updateSettingsRequest = new UpdateSettingsRequest(followIndex.name())
                                 .masterNodeTimeout(TimeValue.MAX_VALUE)
                                 .settings(updatedSettings);
                             followerClient.admin()
@@ -243,14 +243,14 @@ public final class ShardFollowTasksExecutor extends PersistentTasksExecutor<Shar
                             // If one or more setting are not dynamic then close follow index, update leader settings and
                             // then open leader index:
                             Runnable handler = () -> finalHandler.accept(leaderIMD.getSettingsVersion());
-                            closeIndexUpdateSettingsAndOpenIndex(followIndex.getName(), updatedSettings, handler, errorHandler);
+                            closeIndexUpdateSettingsAndOpenIndex(followIndex.name(), updatedSettings, handler, errorHandler);
                         }
                     }
                 };
                 try {
                     remoteClient(params).execute(
                         ClusterStateAction.REMOTE_TYPE,
-                        CcrRequests.metadataRequest(leaderIndex.getName()),
+                        CcrRequests.metadataRequest(leaderIndex.name()),
                         ActionListener.wrap(onResponse, errorHandler)
                     );
                 } catch (NoSuchRemoteClusterException e) {
@@ -319,7 +319,7 @@ public final class ShardFollowTasksExecutor extends PersistentTasksExecutor<Shar
                         // we intentionally override that the alias is not a write alias as follower indices do not receive direct writes
                         aliasActions.add(
                             IndicesAliasesRequest.AliasActions.add()
-                                .index(followerIndex.getName())
+                                .index(followerIndex.name())
                                 .alias(alias.alias())
                                 .filter(alias.filter() == null ? null : alias.filter().toString())
                                 .indexRouting(alias.indexRouting())
@@ -347,7 +347,7 @@ public final class ShardFollowTasksExecutor extends PersistentTasksExecutor<Shar
                         // we intentionally override that the alias is not a write alias as follower indices do not receive direct writes
                         aliasActions.add(
                             IndicesAliasesRequest.AliasActions.add()
-                                .index(followerIndex.getName())
+                                .index(followerIndex.name())
                                 .alias(leaderAliasMetadata.alias())
                                 .filter(leaderAliasMetadata.filter() == null ? null : leaderAliasMetadata.filter().toString())
                                 .indexRouting(leaderAliasMetadata.indexRouting())
@@ -358,7 +358,7 @@ public final class ShardFollowTasksExecutor extends PersistentTasksExecutor<Shar
 
                     // remove aliases that the leader no longer has
                     for (final var aliasName : aliasesOnFollowerNotOnLeader) {
-                        aliasActions.add(IndicesAliasesRequest.AliasActions.remove().index(followerIndex.getName()).alias(aliasName));
+                        aliasActions.add(IndicesAliasesRequest.AliasActions.remove().index(followerIndex.name()).alias(aliasName));
                     }
 
                     if (aliasActions.isEmpty()) {
@@ -379,7 +379,7 @@ public final class ShardFollowTasksExecutor extends PersistentTasksExecutor<Shar
                 try {
                     remoteClient(params).execute(
                         ClusterStateAction.REMOTE_TYPE,
-                        CcrRequests.metadataRequest(leaderIndex.getName()),
+                        CcrRequests.metadataRequest(leaderIndex.name()),
                         ActionListener.wrap(onResponse, errorHandler)
                     );
                 } catch (final NoSuchRemoteClusterException e) {

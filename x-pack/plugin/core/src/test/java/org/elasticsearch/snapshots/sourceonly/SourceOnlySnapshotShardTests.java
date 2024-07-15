@@ -45,6 +45,7 @@ import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.env.TestEnvironment;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.VersionType;
 import org.elasticsearch.index.engine.Engine;
@@ -117,7 +118,8 @@ public class SourceOnlySnapshotShardTests extends IndexShardTestCase {
             indexDoc(shard, "_doc", id);
         }
         SnapshotId snapshotId = new SnapshotId("test", "test");
-        IndexId indexId = new IndexId(shard.shardId().getIndexName(), shard.shardId().getIndex().getUUID());
+        Index index = shard.shardId().getIndex();
+        IndexId indexId = new IndexId(shard.shardId().getIndexName(), index.uuid());
         SourceOnlySnapshotRepository repository = new SourceOnlySnapshotRepository(createRepository());
         repository.start();
         try (Engine.IndexCommitRef snapshotRef = shard.acquireLastIndexCommit(true)) {
@@ -156,7 +158,8 @@ public class SourceOnlySnapshotShardTests extends IndexShardTestCase {
             indexDoc(shard, "_doc", id);
         }
 
-        IndexId indexId = new IndexId(shard.shardId().getIndexName(), shard.shardId().getIndex().getUUID());
+        Index index = shard.shardId().getIndex();
+        IndexId indexId = new IndexId(shard.shardId().getIndexName(), index.uuid());
         SourceOnlySnapshotRepository repository = new SourceOnlySnapshotRepository(createRepository());
         repository.start();
         int totalFileCount;
@@ -283,7 +286,8 @@ public class SourceOnlySnapshotShardTests extends IndexShardTestCase {
             }
         }
         SnapshotId snapshotId = new SnapshotId("test", "test");
-        IndexId indexId = new IndexId(shard.shardId().getIndexName(), shard.shardId().getIndex().getUUID());
+        Index index = shard.shardId().getIndex();
+        IndexId indexId = new IndexId(shard.shardId().getIndexName(), index.uuid());
         SourceOnlySnapshotRepository repository = new SourceOnlySnapshotRepository(createRepository());
         repository.start();
         try (Engine.IndexCommitRef snapshotRef = shard.acquireLastIndexCommit(true)) {

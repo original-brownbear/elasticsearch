@@ -16,6 +16,7 @@ import org.elasticsearch.client.internal.AdminClient;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.client.internal.IndicesAdminClient;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexVersion;
 import org.junit.Before;
 import org.mockito.Mockito;
@@ -77,7 +78,8 @@ public class CloseIndexStepTests extends AbstractStepTestCase<CloseIndexStep> {
             CloseIndexRequest request = (CloseIndexRequest) invocation.getArguments()[0];
             @SuppressWarnings("unchecked")
             ActionListener<CloseIndexResponse> listener = (ActionListener<CloseIndexResponse>) invocation.getArguments()[1];
-            assertThat(request.indices(), equalTo(new String[] { indexMetadata.getIndex().getName() }));
+            Index index = indexMetadata.getIndex();
+            assertThat(request.indices(), equalTo(new String[] { index.name() }));
             listener.onResponse(
                 new CloseIndexResponse(true, true, Collections.singletonList(new CloseIndexResponse.IndexResult(indexMetadata.getIndex())))
             );
@@ -124,7 +126,8 @@ public class CloseIndexStepTests extends AbstractStepTestCase<CloseIndexStep> {
             CloseIndexRequest request = (CloseIndexRequest) invocation.getArguments()[0];
             @SuppressWarnings("unchecked")
             ActionListener<CloseIndexResponse> listener = (ActionListener<CloseIndexResponse>) invocation.getArguments()[1];
-            assertThat(request.indices(), equalTo(new String[] { indexMetadata.getIndex().getName() }));
+            Index index = indexMetadata.getIndex();
+            assertThat(request.indices(), equalTo(new String[] { index.name() }));
             listener.onFailure(exception);
             return null;
         }).when(indicesClient).close(Mockito.any(), Mockito.any());

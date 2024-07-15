@@ -33,6 +33,7 @@ import org.elasticsearch.cluster.routing.allocation.decider.ThrottlingAllocation
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.gateway.GatewayAllocator;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.snapshots.EmptySnapshotsInfoService;
 import org.elasticsearch.test.ESTestCase;
@@ -345,7 +346,8 @@ public class AllocationServiceTests extends ESTestCase {
                 if (decision.type() == Decision.Type.YES) {
                     return AllocateUnassignedDecision.yes(routingNode.node(), null, null, false);
                 } else {
-                    if (shardRouting.index().getName().equals("mediumPriority")
+                    Index index = shardRouting.index();
+                    if (index.name().equals("mediumPriority")
                         && shardRouting.primary() == false
                         && decision.type() == Decision.Type.THROTTLE) {
                         allocation.deciders().canAllocate(shardRouting, routingNode, allocation);

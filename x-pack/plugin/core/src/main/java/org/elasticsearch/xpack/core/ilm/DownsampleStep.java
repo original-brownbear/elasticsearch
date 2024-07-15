@@ -17,6 +17,7 @@ import org.elasticsearch.cluster.ClusterStateObserver;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.LifecycleExecutionState;
 import org.elasticsearch.core.TimeValue;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
 
 import java.util.Objects;
@@ -60,11 +61,13 @@ public class DownsampleStep extends AsyncActionStep {
     ) {
         LifecycleExecutionState lifecycleState = indexMetadata.getLifecycleExecutionState();
         if (lifecycleState.lifecycleDate() == null) {
-            throw new IllegalStateException("source index [" + indexMetadata.getIndex().getName() + "] is missing lifecycle date");
+            Index index = indexMetadata.getIndex();
+            throw new IllegalStateException("source index [" + index.name() + "] is missing lifecycle date");
         }
 
         final String policyName = indexMetadata.getLifecyclePolicyName();
-        final String indexName = indexMetadata.getIndex().getName();
+        Index index = indexMetadata.getIndex();
+        final String indexName = index.name();
         final String downsampleIndexName = lifecycleState.downsampleIndexName();
         IndexMetadata downsampleIndexMetadata = currentState.metadata().index(downsampleIndexName);
         if (downsampleIndexMetadata != null) {

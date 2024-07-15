@@ -185,11 +185,9 @@ public class TransportPrevalidateNodeRemovalAction extends TransportMasterNodeRe
             .map(Map.Entry::getKey)
             .collect(Collectors.toSet());
         // If all red indices are searchable snapshot indices, it is safe to remove any node.
-        Set<String> redNonSSIndices = redIndices.stream()
-            .map(metadata::index)
-            .filter(i -> i.isSearchableSnapshot() == false)
-            .map(im -> im.getIndex().getName())
-            .collect(Collectors.toSet());
+        Set<String> redNonSSIndices = redIndices.stream().map(metadata::index).filter(i -> i.isSearchableSnapshot() == false).map(im -> {
+            return im.getIndex().name();
+        }).collect(Collectors.toSet());
         if (redNonSSIndices.isEmpty()) {
             List<NodeResult> nodeResults = requestNodes.stream()
                 .map(

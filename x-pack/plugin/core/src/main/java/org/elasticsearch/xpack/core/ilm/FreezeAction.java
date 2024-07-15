@@ -72,14 +72,14 @@ public class FreezeAction implements LifecycleAction {
             nextStepKey,
             (index, clusterState) -> {
                 IndexMetadata indexMetadata = clusterState.getMetadata().index(index);
-                assert indexMetadata != null : "index " + index.getName() + " must exist in the cluster state";
+                assert indexMetadata != null : "index " + index.name() + " must exist in the cluster state";
                 String policyName = indexMetadata.getLifecyclePolicyName();
                 if (indexMetadata.getSettings().get(LifecycleSettings.SNAPSHOT_INDEX_NAME) != null) {
                     logger.warn(
                         "[{}] action is configured for index [{}] in policy [{}] which is mounted as searchable snapshot. "
                             + "Skipping this action",
                         FreezeAction.NAME,
-                        index.getName(),
+                        index.name(),
                         policyName
                     );
                     return true;
@@ -88,7 +88,7 @@ public class FreezeAction implements LifecycleAction {
                     logger.debug(
                         "skipping [{}] action for index [{}] in policy [{}] as the index is already frozen",
                         FreezeAction.NAME,
-                        index.getName(),
+                        index.name(),
                         policyName
                     );
                     return true;

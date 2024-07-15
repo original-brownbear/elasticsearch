@@ -24,6 +24,7 @@ import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.util.iterable.Iterables;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.IndexVersions;
 import org.elasticsearch.index.query.RandomQueryBuilder;
@@ -81,7 +82,8 @@ public class SearchShardsResponseTests extends AbstractWireSerializingTestCase<S
             } else {
                 aliasFilter = AliasFilter.EMPTY;
             }
-            aliasFilters.put(g.shardId().getIndex().getUUID(), aliasFilter);
+            Index index = g.shardId().getIndex();
+            aliasFilters.put(index.uuid(), aliasFilter);
         }
         return new SearchShardsResponse(groups, nodes, aliasFilters);
     }

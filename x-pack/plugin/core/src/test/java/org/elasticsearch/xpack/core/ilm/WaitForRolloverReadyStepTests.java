@@ -32,6 +32,7 @@ import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.core.TimeValue;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.xcontent.ToXContentObject;
@@ -477,16 +478,10 @@ public class WaitForRolloverReadyStepTests extends AbstractStepTestCase<WaitForR
 
             @Override
             public void onFailure(Exception e) {
+                Index index = indexMetadata.getIndex();
                 assertThat(
                     e.getMessage(),
-                    is(
-                        String.format(
-                            Locale.ROOT,
-                            "index [%s] is not the write index for alias [%s]",
-                            indexMetadata.getIndex().getName(),
-                            alias
-                        )
-                    )
+                    is(String.format(Locale.ROOT, "index [%s] is not the write index for alias [%s]", index.name(), alias))
                 );
             }
         }, MASTER_TIMEOUT);
@@ -655,6 +650,7 @@ public class WaitForRolloverReadyStepTests extends AbstractStepTestCase<WaitForR
             }
         }, MASTER_TIMEOUT);
         assertThat(exceptionThrown.get().getClass(), equalTo(IllegalArgumentException.class));
+        Index index = indexMetadata.getIndex();
         assertThat(
             exceptionThrown.get().getMessage(),
             equalTo(
@@ -662,7 +658,7 @@ public class WaitForRolloverReadyStepTests extends AbstractStepTestCase<WaitForR
                     Locale.ROOT,
                     "setting [%s] for index [%s] is empty or not defined",
                     RolloverAction.LIFECYCLE_ROLLOVER_ALIAS,
-                    indexMetadata.getIndex().getName()
+                    index.name()
                 )
             )
         );
@@ -690,6 +686,7 @@ public class WaitForRolloverReadyStepTests extends AbstractStepTestCase<WaitForR
             }
         }, MASTER_TIMEOUT);
         assertThat(exceptionThrown.get().getClass(), equalTo(IllegalArgumentException.class));
+        Index index = indexMetadata.getIndex();
         assertThat(
             exceptionThrown.get().getMessage(),
             equalTo(
@@ -698,7 +695,7 @@ public class WaitForRolloverReadyStepTests extends AbstractStepTestCase<WaitForR
                     "%s [%s] does not point to index [%s]",
                     RolloverAction.LIFECYCLE_ROLLOVER_ALIAS,
                     alias,
-                    indexMetadata.getIndex().getName()
+                    index.name()
                 )
             )
         );

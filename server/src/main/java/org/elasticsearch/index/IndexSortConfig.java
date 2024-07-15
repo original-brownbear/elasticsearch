@@ -144,7 +144,7 @@ public final class IndexSortConfig {
     public IndexSortConfig(IndexSettings indexSettings) {
         final Settings settings = indexSettings.getSettings();
         this.indexCreatedVersion = indexSettings.getIndexVersionCreated();
-        this.indexName = indexSettings.getIndex().getName();
+        this.indexName = indexSettings.getIndex().name();
         this.indexMode = indexSettings.getMode();
 
         if (this.indexMode == IndexMode.TIME_SERIES) {

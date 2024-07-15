@@ -45,7 +45,7 @@ public class SegmentCountStepTests extends AbstractStepTestCase<SegmentCountStep
     }
 
     private IndexMetadata makeMeta(Index index) {
-        return IndexMetadata.builder(index.getName()).settings(indexSettings(IndexVersion.current(), 1, 0)).build();
+        return IndexMetadata.builder(index.name()).settings(indexSettings(IndexVersion.current(), 1, 0)).build();
     }
 
     @Override
@@ -84,7 +84,7 @@ public class SegmentCountStepTests extends AbstractStepTestCase<SegmentCountStep
             segments.add(null);
         }
         Mockito.when(indicesSegmentResponse.getStatus()).thenReturn(RestStatus.OK);
-        Mockito.when(indicesSegmentResponse.getIndices()).thenReturn(Collections.singletonMap(index.getName(), indexSegments));
+        Mockito.when(indicesSegmentResponse.getIndices()).thenReturn(Collections.singletonMap(index.name(), indexSegments));
         Mockito.when(indexSegments.spliterator()).thenReturn(iss);
         Mockito.when(shardSegmentsOne.getSegments()).thenReturn(segments);
 
@@ -136,7 +136,7 @@ public class SegmentCountStepTests extends AbstractStepTestCase<SegmentCountStep
             segments.add(null);
         }
         Mockito.when(indicesSegmentResponse.getStatus()).thenReturn(RestStatus.OK);
-        Mockito.when(indicesSegmentResponse.getIndices()).thenReturn(Collections.singletonMap(index.getName(), indexSegments));
+        Mockito.when(indicesSegmentResponse.getIndices()).thenReturn(Collections.singletonMap(index.name(), indexSegments));
         Mockito.when(indexSegments.spliterator()).thenReturn(iss);
         Mockito.when(shardSegmentsOne.getSegments()).thenReturn(segments);
 
@@ -188,11 +188,11 @@ public class SegmentCountStepTests extends AbstractStepTestCase<SegmentCountStep
             segments.add(null);
         }
         Mockito.when(indicesSegmentResponse.getStatus()).thenReturn(RestStatus.OK);
-        Mockito.when(indicesSegmentResponse.getIndices()).thenReturn(Collections.singletonMap(index.getName(), null));
+        Mockito.when(indicesSegmentResponse.getIndices()).thenReturn(Collections.singletonMap(index.name(), null));
         Mockito.when(indicesSegmentResponse.getShardFailures())
             .thenReturn(
                 new DefaultShardOperationFailedException[] {
-                    new DefaultShardOperationFailedException(index.getName(), 0, new IllegalArgumentException("fake")) }
+                    new DefaultShardOperationFailedException(index.name(), 0, new IllegalArgumentException("fake")) }
             );
         Mockito.when(indexSegments.spliterator()).thenReturn(iss);
         Mockito.when(shardSegmentsOne.getSegments()).thenReturn(segments);

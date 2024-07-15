@@ -41,6 +41,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.AtomicArray;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.mapper.MapperException;
@@ -138,50 +139,60 @@ public class BulkOperationTests extends ESTestCase {
         )
         .build();
 
-    private final ClusterState DEFAULT_STATE = ClusterState.builder(ClusterName.DEFAULT)
-        .metadata(
-            Metadata.builder()
-                .indexTemplates(
-                    Map.of(
-                        "ds-template",
-                        ComposableIndexTemplate.builder()
-                            .indexPatterns(List.of(dataStreamName))
-                            .dataStreamTemplate(new ComposableIndexTemplate.DataStreamTemplate(false, false, false))
-                            .template(new Template(null, null, null, null))
-                            .build(),
-                        "ds-template-with-failure-store",
-                        ComposableIndexTemplate.builder()
-                            .indexPatterns(List.of(fsDataStreamName, fsRolloverDataStreamName))
-                            .dataStreamTemplate(new ComposableIndexTemplate.DataStreamTemplate(false, false, true))
-                            .template(new Template(null, null, null, null))
-                            .build()
+    private final ClusterState DEFAULT_STATE;
+
+    {
+        Index index = ds3FailureStore1.getIndex();
+        Index index1 = ds3BackingIndex1.getIndex();
+        Index index2 = ds2FailureStore1.getIndex();
+        Index index3 = ds2BackingIndex1.getIndex();
+        Index index4 = ds1BackingIndex2.getIndex();
+        Index index5 = ds1BackingIndex1.getIndex();
+        DEFAULT_STATE = ClusterState.builder(ClusterName.DEFAULT)
+            .metadata(
+                Metadata.builder()
+                    .indexTemplates(
+                        Map.of(
+                            "ds-template",
+                            ComposableIndexTemplate.builder()
+                                .indexPatterns(List.of(dataStreamName))
+                                .dataStreamTemplate(new ComposableIndexTemplate.DataStreamTemplate(false, false, false))
+                                .template(new Template(null, null, null, null))
+                                .build(),
+                            "ds-template-with-failure-store",
+                            ComposableIndexTemplate.builder()
+                                .indexPatterns(List.of(fsDataStreamName, fsRolloverDataStreamName))
+                                .dataStreamTemplate(new ComposableIndexTemplate.DataStreamTemplate(false, false, true))
+                                .template(new Template(null, null, null, null))
+                                .build()
+                        )
                     )
-                )
-                .indices(
-                    Map.of(
-                        indexName,
-                        indexMetadata,
-                        ds1BackingIndex1.getIndex().getName(),
-                        ds1BackingIndex1,
-                        ds1BackingIndex2.getIndex().getName(),
-                        ds1BackingIndex2,
-                        ds2BackingIndex1.getIndex().getName(),
-                        ds2BackingIndex1,
-                        ds2FailureStore1.getIndex().getName(),
-                        ds2FailureStore1,
-                        ds3BackingIndex1.getIndex().getName(),
-                        ds3BackingIndex1,
-                        ds3FailureStore1.getIndex().getName(),
-                        ds3FailureStore1
+                    .indices(
+                        Map.of(
+                            indexName,
+                            indexMetadata,
+                            index5.name(),
+                            ds1BackingIndex1,
+                            index4.name(),
+                            ds1BackingIndex2,
+                            index3.name(),
+                            ds2BackingIndex1,
+                            index2.name(),
+                            ds2FailureStore1,
+                            index1.name(),
+                            ds3BackingIndex1,
+                            index.name(),
+                            ds3FailureStore1
+                        )
                     )
-                )
-                .dataStreams(
-                    Map.of(dataStreamName, dataStream1, fsDataStreamName, dataStream2, fsRolloverDataStreamName, dataStream3),
-                    Map.of()
-                )
-                .build()
-        )
-        .build();
+                    .dataStreams(
+                        Map.of(dataStreamName, dataStream1, fsDataStreamName, dataStream2, fsRolloverDataStreamName, dataStream3),
+                        Map.of()
+                    )
+                    .build()
+            )
+            .build();
+    }
 
     private TestThreadPool threadPool;
 
@@ -403,10 +414,10 @@ public class BulkOperationTests extends ESTestCase {
 
         BulkResponse bulkItemResponses = future.get();
         assertThat(bulkItemResponses.hasFailures(), is(false));
-        BulkItemResponse failedItem = Arrays.stream(bulkItemResponses.getItems())
-            .filter(item -> item.getIndex().equals(ds2FailureStore1.getIndex().getName()))
-            .findFirst()
-            .orElseThrow(() -> new AssertionError("Could not find redirected item"));
+        BulkItemResponse failedItem = Arrays.stream(bulkItemResponses.getItems()).filter(item -> {
+            Index index = ds2FailureStore1.getIndex();
+            return item.getIndex().equals(index.name());
+        }).findFirst().orElseThrow(() -> new AssertionError("Could not find redirected item"));
         assertThat(failedItem, is(notNullValue()));
     }
 
@@ -422,8 +433,9 @@ public class BulkOperationTests extends ESTestCase {
         bulkRequest.add(new IndexRequest(fsDataStreamName).id("1").source(Map.of("key", "val")).opType(DocWriteRequest.OpType.CREATE));
         bulkRequest.add(new IndexRequest(fsDataStreamName).id("3").source(Map.of("key", "val")).opType(DocWriteRequest.OpType.CREATE));
 
+        Index index1 = ds2BackingIndex1.getIndex();
         NodeClient client = getNodeClient(
-            thatFailsDocuments(Map.of(new IndexAndId(ds2BackingIndex1.getIndex().getName(), "3"), () -> new MapperException("test")))
+            thatFailsDocuments(Map.of(new IndexAndId(index1.name(), "3"), () -> new MapperException("test")))
         );
 
         CompletableFuture<BulkResponse> future = new CompletableFuture<>();
@@ -433,10 +445,10 @@ public class BulkOperationTests extends ESTestCase {
 
         BulkResponse bulkItemResponses = future.get();
         assertThat(bulkItemResponses.hasFailures(), is(false));
-        BulkItemResponse failedItem = Arrays.stream(bulkItemResponses.getItems())
-            .filter(item -> item.getIndex().equals(ds2FailureStore1.getIndex().getName()))
-            .findFirst()
-            .orElseThrow(() -> new AssertionError("Could not find redirected item"));
+        BulkItemResponse failedItem = Arrays.stream(bulkItemResponses.getItems()).filter(item -> {
+            Index index = ds2FailureStore1.getIndex();
+            return item.getIndex().equals(index.name());
+        }).findFirst().orElseThrow(() -> new AssertionError("Could not find redirected item"));
         assertThat(failedItem.getIndex(), is(notNullValue()));
     }
 
@@ -496,8 +508,9 @@ public class BulkOperationTests extends ESTestCase {
         bulkRequest.add(new IndexRequest(fsDataStreamName).id("1").source(Map.of("key", "val")).opType(DocWriteRequest.OpType.CREATE));
         bulkRequest.add(new IndexRequest(fsDataStreamName).id("3").source(Map.of("key", "val")).opType(DocWriteRequest.OpType.CREATE));
 
+        Index index = ds2BackingIndex1.getIndex();
         NodeClient client = getNodeClient(
-            thatFailsDocuments(Map.of(new IndexAndId(ds2BackingIndex1.getIndex().getName(), "3"), () -> new MapperException("root cause")))
+            thatFailsDocuments(Map.of(new IndexAndId(index.name(), "3"), () -> new MapperException("root cause")))
         );
 
         CompletableFuture<BulkResponse> future = new CompletableFuture<>();
@@ -607,10 +620,10 @@ public class BulkOperationTests extends ESTestCase {
         // Await final result and verify
         BulkResponse bulkItemResponses = future.get();
         assertThat(bulkItemResponses.hasFailures(), is(false));
-        BulkItemResponse failedItem = Arrays.stream(bulkItemResponses.getItems())
-            .filter(item -> item.getIndex().equals(ds2FailureStore1.getIndex().getName()))
-            .findFirst()
-            .orElseThrow(() -> new AssertionError("Could not find redirected item"));
+        BulkItemResponse failedItem = Arrays.stream(bulkItemResponses.getItems()).filter(item -> {
+            Index index = ds2FailureStore1.getIndex();
+            return item.getIndex().equals(index.name());
+        }).findFirst().orElseThrow(() -> new AssertionError("Could not find redirected item"));
         assertThat(failedItem, is(notNullValue()));
 
         verify(observer, times(1)).isTimedOut();
@@ -806,18 +819,11 @@ public class BulkOperationTests extends ESTestCase {
             shardSpecificResponse(
                 Map.of(new ShardId(ds3BackingIndex1.getIndex(), 0), failWithException(() -> new MapperException("test")))
             ),
-            (rolloverRequest, actionListener) -> actionListener.onResponse(
-                new RolloverResponse(
-                    ds3FailureStore1.getIndex().getName(),
-                    ds3FailureStore2.getIndex().getName(),
-                    Map.of(),
-                    false,
-                    true,
-                    true,
-                    true,
-                    false
-                )
-            )
+            (rolloverRequest, actionListener) -> {
+                Index index = ds3FailureStore2.getIndex();
+                Index index1 = ds3FailureStore1.getIndex();
+                actionListener.onResponse(new RolloverResponse(index1.name(), index.name(), Map.of(), false, true, true, true, false));
+            }
         );
 
         DataStream rolledOverDataStream = dataStream3.copy()
@@ -825,8 +831,9 @@ public class BulkOperationTests extends ESTestCase {
                 dataStream3.getFailureIndices().copy().setIndices(List.of(ds3FailureStore1.getIndex(), ds3FailureStore2.getIndex())).build()
             )
             .build();
+        Index index1 = ds3FailureStore2.getIndex();
         Metadata metadata = Metadata.builder(DEFAULT_STATE.metadata())
-            .indices(Map.of(ds3FailureStore2.getIndex().getName(), ds3FailureStore2))
+            .indices(Map.of(index1.name(), ds3FailureStore2))
             .put(rolledOverDataStream)
             .build();
         ClusterState rolledOverState = ClusterState.builder(DEFAULT_STATE).metadata(metadata).build();
@@ -838,10 +845,10 @@ public class BulkOperationTests extends ESTestCase {
         newBulkOperation(client, bulkRequest, DEFAULT_STATE, observer, listener).run();
 
         BulkResponse bulkItemResponses = future.get();
-        BulkItemResponse failedItem = Arrays.stream(bulkItemResponses.getItems())
-            .filter(item -> item.getIndex().equals(ds3FailureStore2.getIndex().getName()))
-            .findFirst()
-            .orElseThrow(() -> new AssertionError("Could not find redirected item"));
+        BulkItemResponse failedItem = Arrays.stream(bulkItemResponses.getItems()).filter(item -> {
+            Index index = ds3FailureStore2.getIndex();
+            return item.getIndex().equals(index.name());
+        }).findFirst().orElseThrow(() -> new AssertionError("Could not find redirected item"));
         assertThat(failedItem, is(notNullValue()));
     }
 
@@ -873,8 +880,9 @@ public class BulkOperationTests extends ESTestCase {
                 dataStream3.getFailureIndices().copy().setIndices(List.of(ds3FailureStore1.getIndex(), ds3FailureStore2.getIndex())).build()
             )
             .build();
+        Index index = ds3FailureStore2.getIndex();
         Metadata metadata = Metadata.builder(DEFAULT_STATE.metadata())
-            .indices(Map.of(ds3FailureStore2.getIndex().getName(), ds3FailureStore2))
+            .indices(Map.of(index.name(), ds3FailureStore2))
             .put(rolledOverDataStream)
             .build();
         ClusterState rolledOverState = ClusterState.builder(DEFAULT_STATE).metadata(metadata).build();

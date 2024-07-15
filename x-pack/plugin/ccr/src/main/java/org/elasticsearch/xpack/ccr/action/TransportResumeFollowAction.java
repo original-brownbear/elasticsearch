@@ -30,12 +30,7 @@ import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.core.TimeValue;
-import org.elasticsearch.index.IndexNotFoundException;
-import org.elasticsearch.index.IndexSettings;
-import org.elasticsearch.index.IndexingSlowLog;
-import org.elasticsearch.index.MergePolicyConfig;
-import org.elasticsearch.index.MergeSchedulerConfig;
-import org.elasticsearch.index.SearchSlowLog;
+import org.elasticsearch.index.*;
 import org.elasticsearch.index.cache.bitset.BitsetFilterCache;
 import org.elasticsearch.index.engine.EngineConfig;
 import org.elasticsearch.index.mapper.MapperService;
@@ -225,9 +220,11 @@ public class TransportResumeFollowAction extends AcknowledgedTransportMasterNode
 
         Map<String, String> ccrIndexMetadata = followIndex.getCustomData(Ccr.CCR_CUSTOM_METADATA_KEY);
         if (ccrIndexMetadata == null) {
-            throw new IllegalArgumentException("follow index [" + followIndex.getIndex().getName() + "] does not have ccr metadata");
+            Index index = followIndex.getIndex();
+            throw new IllegalArgumentException("follow index [" + index.name() + "] does not have ccr metadata");
         }
-        String leaderIndexUUID = leaderIndex.getIndex().getUUID();
+        Index index1 = leaderIndex.getIndex();
+        String leaderIndexUUID = index1.uuid();
         String recordedLeaderIndexUUID = ccrIndexMetadata.get(Ccr.CCR_CUSTOM_METADATA_LEADER_INDEX_UUID_KEY);
         if (leaderIndexUUID.equals(recordedLeaderIndexUUID) == false) {
             throw new IllegalArgumentException(
@@ -261,14 +258,14 @@ public class TransportResumeFollowAction extends AcknowledgedTransportMasterNode
             }
         }
         if (IndexSettings.INDEX_SOFT_DELETES_SETTING.get(leaderIndex.getSettings()) == false) {
-            throw new IllegalArgumentException(
-                "leader index [" + leaderIndex.getIndex().getName() + "] does not have soft deletes enabled"
-            );
+            Index index = leaderIndex.getIndex();
+            throw new IllegalArgumentException("leader index [" + index.name() + "] does not have soft deletes enabled");
         }
         if (leaderIndex.isSearchableSnapshot()) {
+            Index index = leaderIndex.getIndex();
             throw new IllegalArgumentException(
                 "leader index ["
-                    + leaderIndex.getIndex().getName()
+                    + index.name()
                     + "] is a searchable snapshot index and cannot be used for cross-cluster replication purpose"
             );
         }

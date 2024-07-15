@@ -34,6 +34,7 @@ import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.env.BuildVersion;
 import org.elasticsearch.env.NodeEnvironment;
 import org.elasticsearch.env.NodeMetadata;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexVersions;
 import org.elasticsearch.index.mapper.MapperParsingException;
 import org.elasticsearch.indices.IndexClosedException;
@@ -316,7 +317,8 @@ public class GatewayIndexStateIT extends ESIntegTestCase {
 
         logger.info("--> waiting for green status");
         ensureGreen();
-        final String indexUUID = resolveIndex(indexName).getUUID();
+        Index index = resolveIndex(indexName);
+        final String indexUUID = index.uuid();
 
         logger.info("--> restart a random date node, deleting the index in between stopping and restarting");
         internalCluster().restartRandomDataNode(new RestartCallback() {

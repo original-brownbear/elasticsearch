@@ -286,9 +286,9 @@ public class LogsDataStreamIT extends ESSingleNodeTestCase {
         assertThat(backingIndices.getIndices().size(), Matchers.equalTo(modes.size()));
         for (final Index index : backingIndices.getIndices()) {
             final GetSettingsResponse getSettingsResponse = indicesAdmin().getSettings(
-                new GetSettingsRequest().indices(index.getName()).includeDefaults(true)
+                new GetSettingsRequest().indices(index.name()).includeDefaults(true)
             ).actionGet();
-            final Settings settings = getSettingsResponse.getIndexToSettings().get(index.getName());
+            final Settings settings = getSettingsResponse.getIndexToSettings().get(index.name());
             assertThat(settings.get("index.mode"), Matchers.equalTo(indexModesIterator.next().getName()));
         }
     }

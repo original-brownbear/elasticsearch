@@ -17,6 +17,7 @@ import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.cluster.routing.IndexRoutingTable;
 import org.elasticsearch.cluster.routing.RoutingTable;
 import org.elasticsearch.cluster.routing.allocation.DataTier;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.search.aggregations.metrics.TDigestState;
 import org.elasticsearch.test.ESTestCase;
 import org.junit.Before;
@@ -84,9 +85,14 @@ public class DataTiersUsageTransportActionTests extends ESTestCase {
             List.of(new NodeDataTiersUsage(dataNode, Map.of(DataTier.DATA_WARM, createStats(5, 5, 0, 10))))
         );
         assertThat(result.keySet(), equalTo(Set.of(DataTier.DATA_HOT, DataTier.DATA_WARM, DataTier.DATA_COLD)));
-        assertThat(result.get(DataTier.DATA_HOT), equalTo(Set.of(hotIndex1.getIndex().getName(), hotIndex2.getIndex().getName())));
-        assertThat(result.get(DataTier.DATA_WARM), equalTo(Set.of(warmIndex1.getIndex().getName())));
-        assertThat(result.get(DataTier.DATA_COLD), equalTo(Set.of(coldIndex1.getIndex().getName(), coldIndex2.getIndex().getName())));
+        Index index3 = hotIndex2.getIndex();
+        Index index4 = hotIndex1.getIndex();
+        assertThat(result.get(DataTier.DATA_HOT), equalTo(Set.of(index4.name(), index3.name())));
+        Index index2 = warmIndex1.getIndex();
+        assertThat(result.get(DataTier.DATA_WARM), equalTo(Set.of(index2.name())));
+        Index index = coldIndex2.getIndex();
+        Index index1 = coldIndex1.getIndex();
+        assertThat(result.get(DataTier.DATA_COLD), equalTo(Set.of(index1.name(), index.name())));
     }
 
     public void testCalculateMAD() {

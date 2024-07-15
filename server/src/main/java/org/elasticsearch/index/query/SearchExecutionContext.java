@@ -195,8 +195,8 @@ public class SearchExecutionContext extends QueryRewriteContext {
             nowInMillis,
             indexNameMatcher,
             new Index(
-                RemoteClusterAware.buildRemoteIndexName(clusterAlias, indexSettings.getIndex().getName()),
-                indexSettings.getIndex().getUUID()
+                RemoteClusterAware.buildRemoteIndexName(clusterAlias, indexSettings.getIndex().name()),
+                indexSettings.getIndex().uuid()
             ),
             allowExpensiveQueries,
             valuesSourceRegistry,
@@ -334,10 +334,11 @@ public class SearchExecutionContext extends QueryRewriteContext {
 
     @SuppressWarnings("unchecked")
     public <IFD extends IndexFieldData<?>> IFD getForField(MappedFieldType fieldType, FielddataOperation fielddataOperation) {
+        Index index = getFullyQualifiedIndex();
         return (IFD) indexFieldDataLookup.apply(
             fieldType,
             new FieldDataContext(
-                getFullyQualifiedIndex().getName(),
+                index.name(),
                 getIndexSettings(),
                 () -> this.lookup().forkAndTrackFieldReferences(fieldType.name()),
                 this::sourcePath,
@@ -511,21 +512,13 @@ public class SearchExecutionContext extends QueryRewriteContext {
         Function<LeafReaderContext, LeafFieldLookupProvider> fieldLookupProvider
     ) {
         // TODO can we assert that this is only called during FetchPhase?
-        this.lookup = new SearchLookup(
-            this::getFieldType,
-            (fieldType, searchLookup, fielddataOperation) -> indexFieldDataLookup.apply(
+        this.lookup = new SearchLookup(this::getFieldType, (fieldType, searchLookup, fielddataOperation) -> {
+            Index index = getFullyQualifiedIndex();
+            return indexFieldDataLookup.apply(
                 fieldType,
-                new FieldDataContext(
-                    getFullyQualifiedIndex().getName(),
-                    getIndexSettings(),
-                    searchLookup,
-                    this::sourcePath,
-                    fielddataOperation
-                )
-            ),
-            sourceProvider,
-            fieldLookupProvider
-        );
+                new FieldDataContext(index.name(), getIndexSettings(), searchLookup, this::sourcePath, fielddataOperation)
+            );
+        }, sourceProvider, fieldLookupProvider);
     }
 
     public NestedScope nestedScope() {

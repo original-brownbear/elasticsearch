@@ -15,6 +15,7 @@ import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.core.TimeValue;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.xcontent.NamedXContentRegistry;
@@ -78,7 +79,8 @@ public class PhaseCacheManagementTests extends ESTestCase {
                 }""");
 
         IndexMetadata meta = buildIndexMetadata("my-policy", exState);
-        String indexName = meta.getIndex().getName();
+        Index index1 = meta.getIndex();
+        String indexName = index1.name();
 
         Map<String, LifecycleAction> actions = new HashMap<>();
         actions.put("rollover", new RolloverAction(null, null, null, 1L, null, null, null, null, null, null));

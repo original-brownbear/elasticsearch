@@ -37,6 +37,7 @@ import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.Releasables;
 import org.elasticsearch.core.TimeValue;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.engine.RecoveryEngineException;
 import org.elasticsearch.index.mapper.MapperException;
@@ -747,12 +748,8 @@ public class PeerRecoveryTargetService implements IndexEventListener {
             onGoingRecoveries.markRecoveryAsDone(recoveryId);
             if (logger.isTraceEnabled()) {
                 StringBuilder sb = new StringBuilder();
-                sb.append('[')
-                    .append(request.shardId().getIndex().getName())
-                    .append(']')
-                    .append('[')
-                    .append(request.shardId().id())
-                    .append("] ");
+                Index index = request.shardId().getIndex();
+                sb.append('[').append(index.name()).append(']').append('[').append(request.shardId().id()).append("] ");
                 sb.append("recovery completed from ").append(request.sourceNode()).append(", took[").append(recoveryTime).append("]\n");
                 sb.append("   phase1: recovered_files [")
                     .append(recoveryResponse.phase1FileNames.size())
@@ -789,10 +786,10 @@ public class PeerRecoveryTargetService implements IndexEventListener {
         @Override
         public void handleException(TransportException e) {
             if (logger.isTraceEnabled()) {
-                logger.trace(
-                    () -> format("[%s][%s] Got exception on recovery", request.shardId().getIndex().getName(), request.shardId().id()),
-                    e
-                );
+                logger.trace(() -> {
+                    Index index = request.shardId().getIndex();
+                    return format("[%s][%s] Got exception on recovery", index.name(), request.shardId().id());
+                }, e);
             }
             Throwable cause = ExceptionsHelper.unwrapCause(e);
             if (transportService.lifecycleState() != Lifecycle.State.STARTED) {

@@ -44,6 +44,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.core.Tuple;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.repositories.IndexId;
@@ -232,8 +233,8 @@ public class ReactiveStorageDeciderServiceTests extends AutoscalingTestCase {
         ClusterState initialClusterState = stateBuilder.build();
 
         int shardId = randomInt(indexMetadata.getNumberOfShards() - 1);
-        IndexShardRoutingTable subjectRoutings = initialClusterState.routingTable()
-            .shardRoutingTable(indexMetadata.getIndex().getName(), shardId);
+        Index index = indexMetadata.getIndex();
+        IndexShardRoutingTable subjectRoutings = initialClusterState.routingTable().shardRoutingTable(index.name(), shardId);
         RoutingAllocation allocation = new RoutingAllocation(
             new AllocationDeciders(List.of()),
             initialClusterState.mutableRoutingNodes(),
@@ -332,10 +333,11 @@ public class ReactiveStorageDeciderServiceTests extends AutoscalingTestCase {
             .build();
         int numberOfShards = randomIntBetween(1, 2);
         int numberOfReplicas = randomIntBetween(1, 10);
+        Index index = sourceIndexMetadata.getIndex();
         IndexMetadata indexMetadata = IndexMetadata.builder(randomAlphaOfLength(5))
             .settings(
                 settings(IndexVersion.current()).put(IndexMetadata.INDEX_RESIZE_SOURCE_UUID_KEY, sourceIndexMetadata.getIndexUUID())
-                    .put(IndexMetadata.INDEX_RESIZE_SOURCE_NAME_KEY, sourceIndexMetadata.getIndex().getName())
+                    .put(IndexMetadata.INDEX_RESIZE_SOURCE_NAME_KEY, index.name())
             )
             .numberOfShards(numberOfShards)
             .numberOfReplicas(numberOfReplicas)
@@ -434,9 +436,8 @@ public class ReactiveStorageDeciderServiceTests extends AutoscalingTestCase {
         ClusterState clusterState = stateBuilder.build();
 
         int shardId = randomInt(indexMetadata.getNumberOfShards() - 1);
-        ShardRouting primaryShard = clusterState.routingTable()
-            .shardRoutingTable(indexMetadata.getIndex().getName(), shardId)
-            .primaryShard();
+        Index index = indexMetadata.getIndex();
+        ShardRouting primaryShard = clusterState.routingTable().shardRoutingTable(index.name(), shardId).primaryShard();
 
         Map<InternalSnapshotsInfoService.SnapshotShard, Long> shardSizeBuilder = new HashMap<>();
         IntStream.range(0, randomInt(10))
@@ -579,8 +580,9 @@ public class ReactiveStorageDeciderServiceTests extends AutoscalingTestCase {
         stateBuilder.metadata(metaBuilder);
         ClusterState clusterState = stateBuilder.build();
 
+        Index index = indexMetadata.getIndex();
         ShardRouting shardRouting = TestShardRouting.newShardRouting(
-            indexMetadata.getIndex().getName(),
+            index.name(),
             randomInt(10),
             clusterState.nodes().iterator().next().getId(),
             randomBoolean(),
@@ -655,8 +657,9 @@ public class ReactiveStorageDeciderServiceTests extends AutoscalingTestCase {
         stateBuilder.metadata(metaBuilder);
         ClusterState clusterState = stateBuilder.build();
 
+        Index index = indexMetadata.getIndex();
         ShardRouting shardRouting = TestShardRouting.newShardRouting(
-            indexMetadata.getIndex().getName(),
+            index.name(),
             randomInt(10),
             clusterState.nodes().iterator().next().getId(),
             randomBoolean(),
@@ -688,8 +691,9 @@ public class ReactiveStorageDeciderServiceTests extends AutoscalingTestCase {
         ClusterState clusterState = stateBuilder.build();
 
         boolean primary = randomBoolean();
+        Index index = indexMetadata.getIndex();
         ShardRouting shardRouting = TestShardRouting.newShardRouting(
-            indexMetadata.getIndex().getName(),
+            index.name(),
             randomInt(10),
             clusterState.nodes().iterator().next().getId(),
             primary,

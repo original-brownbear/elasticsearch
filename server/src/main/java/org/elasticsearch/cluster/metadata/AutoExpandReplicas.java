@@ -14,6 +14,7 @@ import org.elasticsearch.cluster.routing.allocation.decider.Decision;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Setting.Property;
 import org.elasticsearch.core.Booleans;
+import org.elasticsearch.index.Index;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -154,7 +155,8 @@ public record AutoExpandReplicas(int minReplicas, int maxReplicas, boolean enabl
                     "stateless"
                 )) {
                     if (indexMetadata.getNumberOfReplicas() == 0) {
-                        nrReplicasChanged.computeIfAbsent(1, ArrayList::new).add(indexMetadata.getIndex().getName());
+                        Index index = indexMetadata.getIndex();
+                        nrReplicasChanged.computeIfAbsent(1, ArrayList::new).add(index.name());
                     } else {
                         continue;
                     }
@@ -164,7 +166,8 @@ public record AutoExpandReplicas(int minReplicas, int maxReplicas, boolean enabl
                 }
                 int numberOfReplicas = autoExpandReplicas.getDesiredNumberOfReplicas(indexMetadata, allocation);
                 if (numberOfReplicas != indexMetadata.getNumberOfReplicas()) {
-                    nrReplicasChanged.computeIfAbsent(numberOfReplicas, ArrayList::new).add(indexMetadata.getIndex().getName());
+                    Index index = indexMetadata.getIndex();
+                    nrReplicasChanged.computeIfAbsent(numberOfReplicas, ArrayList::new).add(index.name());
                 }
             }
         }

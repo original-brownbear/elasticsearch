@@ -29,6 +29,7 @@ import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.DeterministicTaskQueue;
 import org.elasticsearch.gateway.TransportNodesListGatewayStartedShards;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.indices.SystemIndices;
@@ -102,7 +103,8 @@ public class TransportIndicesShardStoresActionTests extends ESTestCase {
                 );
 
                 for (final var indexRoutingTable : clusterState.routingTable()) {
-                    final var indexResponse = response.getStoreStatuses().get(indexRoutingTable.getIndex().getName());
+                    Index index = indexRoutingTable.getIndex();
+                    final var indexResponse = response.getStoreStatuses().get(index.name());
                     assertNotNull(indexResponse);
                     for (int shardNum = 0; shardNum < indexRoutingTable.size(); shardNum++) {
                         final var shardResponse = indexResponse.get(shardNum);

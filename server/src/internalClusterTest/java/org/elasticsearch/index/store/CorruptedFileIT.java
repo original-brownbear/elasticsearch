@@ -629,11 +629,11 @@ public class CorruptedFileIT extends ESIntegTestCase {
 
         final IndicesShardStoresResponse stores = client().execute(
             TransportIndicesShardStoresAction.TYPE,
-            new IndicesShardStoresRequest(index.getName())
+            new IndicesShardStoresRequest(index.name())
         ).get();
 
         for (Map.Entry<Integer, List<IndicesShardStoresResponse.StoreStatus>> shards : stores.getStoreStatuses()
-            .get(index.getName())
+            .get(index.name())
             .entrySet()) {
             for (IndicesShardStoresResponse.StoreStatus store : shards.getValue()) {
                 final ShardId shardId = new ShardId(index, shards.getKey());
@@ -699,7 +699,7 @@ public class CorruptedFileIT extends ESIntegTestCase {
             String path = info.getPath();
             Path file = PathUtils.get(path)
                 .resolve("indices")
-                .resolve(test.getUUID())
+                .resolve(test.uuid())
                 .resolve(Integer.toString(shardRouting.getId()))
                 .resolve("index");
             if (Files.exists(file)) { // multi data path might only have one path in use
@@ -744,7 +744,7 @@ public class CorruptedFileIT extends ESIntegTestCase {
         List<Path> files = new ArrayList<>();
         for (FsInfo.Path info : nodeStatses.getNodes().get(0).getFs()) {
             String path = info.getPath();
-            Path file = PathUtils.get(path).resolve("indices/" + test.getUUID() + "/" + Integer.toString(routing.getId()) + "/index");
+            Path file = PathUtils.get(path).resolve("indices/" + test.uuid() + "/" + Integer.toString(routing.getId()) + "/index");
             if (Files.exists(file)) { // multi data path might only have one path in use
                 try (DirectoryStream<Path> stream = Files.newDirectoryStream(file)) {
                     for (Path item : stream) {

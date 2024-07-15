@@ -24,6 +24,7 @@ import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Setting.Property;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.TimeValue;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.MatchQueryBuilder;
 import org.elasticsearch.index.query.RangeQueryBuilder;
@@ -139,7 +140,8 @@ public class GeoIpDownloader extends AllocatedPersistentTask {
             if (clusterState.getRoutingTable().index(geoipIndex.getWriteIndex()).allPrimaryShardsActive() == false) {
                 throw new ElasticsearchException("not all primary shards of [" + DATABASES_INDEX + "] index are active");
             }
-            var blockException = clusterState.blocks().indexBlockedException(ClusterBlockLevel.WRITE, geoipIndex.getWriteIndex().getName());
+            Index index = geoipIndex.getWriteIndex();
+            var blockException = clusterState.blocks().indexBlockedException(ClusterBlockLevel.WRITE, index.name());
             if (blockException != null) {
                 throw blockException;
             }

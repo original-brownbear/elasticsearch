@@ -17,6 +17,7 @@ import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.routing.allocation.RoutingAllocation;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.util.set.Sets;
+import org.elasticsearch.index.Index;
 
 import java.util.Collection;
 import java.util.Optional;
@@ -52,17 +53,10 @@ public class AllocationDeciders {
     }
 
     public Decision canAllocate(IndexMetadata indexMetadata, RoutingNode node, RoutingAllocation allocation) {
-        return withDeciders(
-            allocation,
-            decider -> decider.canAllocate(indexMetadata, node, allocation),
-            (decider, decision) -> Strings.format(
-                "Can not allocate [%s] on node [%s]. [%s]: %s",
-                indexMetadata.getIndex().getName(),
-                node.node(),
-                decider,
-                decision
-            )
-        );
+        return withDeciders(allocation, decider -> decider.canAllocate(indexMetadata, node, allocation), (decider, decision) -> {
+            Index index = indexMetadata.getIndex();
+            return Strings.format("Can not allocate [%s] on node [%s]. [%s]: %s", index.name(), node.node(), decider, decision);
+        });
     }
 
     public Decision canAllocate(ShardRouting shardRouting, RoutingNode node, RoutingAllocation allocation) {
@@ -110,17 +104,10 @@ public class AllocationDeciders {
     }
 
     public Decision shouldAutoExpandToNode(IndexMetadata indexMetadata, DiscoveryNode node, RoutingAllocation allocation) {
-        return withDeciders(
-            allocation,
-            decider -> decider.shouldAutoExpandToNode(indexMetadata, node, allocation),
-            (decider, decision) -> Strings.format(
-                "Should not auto expand [%s] to node [%s]. [%s]: %s",
-                indexMetadata.getIndex().getName(),
-                node,
-                decider,
-                decision
-            )
-        );
+        return withDeciders(allocation, decider -> decider.shouldAutoExpandToNode(indexMetadata, node, allocation), (decider, decision) -> {
+            Index index = indexMetadata.getIndex();
+            return Strings.format("Should not auto expand [%s] to node [%s]. [%s]: %s", index.name(), node, decider, decision);
+        });
     }
 
     public Decision canForceAllocatePrimary(ShardRouting shardRouting, RoutingNode node, RoutingAllocation allocation) {

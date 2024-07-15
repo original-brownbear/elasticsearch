@@ -29,6 +29,7 @@ import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.cluster.metadata.SystemIndexMetadataUpgradeService;
 import org.elasticsearch.cluster.routing.IndexRoutingTable;
 import org.elasticsearch.gateway.GatewayService;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.xcontent.XContentType;
 
 import java.util.Collections;
@@ -236,7 +237,8 @@ public class SystemIndexMappingUpdateService implements ClusterStateListener {
         final boolean isIndexUpToDate = INDEX_FORMAT_SETTING.get(indexMetadata.getSettings()) == descriptor.getIndexFormat();
 
         final boolean isMappingIsUpToDate = checkIndexMappingUpToDate(descriptor, indexMetadata);
-        final String concreteIndexName = indexMetadata.getIndex().getName();
+        Index index = indexMetadata.getIndex();
+        final String concreteIndexName = index.name();
 
         final ClusterHealthStatus indexHealth;
         final IndexMetadata.State indexState = indexMetadata.getState();

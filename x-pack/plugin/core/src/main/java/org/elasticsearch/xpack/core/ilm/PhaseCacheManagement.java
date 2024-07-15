@@ -16,6 +16,7 @@ import org.elasticsearch.cluster.metadata.LifecycleExecutionState;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.core.Nullable;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.license.XPackLicenseState;
 import org.elasticsearch.xcontent.NamedXContentRegistry;
 import org.elasticsearch.xcontent.XContentParser;
@@ -65,7 +66,8 @@ public final class PhaseCacheManagement {
         final IndexMetadata idxMeta,
         final LifecyclePolicyMetadata updatedPolicy
     ) {
-        String index = idxMeta.getIndex().getName();
+        Index index1 = idxMeta.getIndex();
+        String index = index1.name();
         assert eligibleToCheckForRefresh(idxMeta) : "index " + index + " is missing crucial information needed to refresh phase definition";
 
         logger.trace("[{}] updating cached phase definition for policy [{}]", index, updatedPolicy.getName());
@@ -162,7 +164,8 @@ public final class PhaseCacheManagement {
         for (IndexMetadata index : indicesThatCanBeUpdated) {
             try {
                 refreshPhaseDefinition(mb, index, newPolicy);
-                refreshedIndices.add(index.getIndex().getName());
+                Index index1 = index.getIndex();
+                refreshedIndices.add(index1.name());
             } catch (Exception e) {
                 logger.warn(() -> format("[%s] unable to refresh phase definition for updated policy [%s]", index, newPolicy.getName()), e);
             }
@@ -181,7 +184,8 @@ public final class PhaseCacheManagement {
         final LifecyclePolicy newPolicy,
         final XPackLicenseState licenseState
     ) {
-        final String index = metadata.getIndex().getName();
+        Index index1 = metadata.getIndex();
+        final String index = index1.name();
         if (eligibleToCheckForRefresh(metadata) == false) {
             logger.debug("[{}] does not contain enough information to check for eligibility of refreshing phase", index);
             return false;

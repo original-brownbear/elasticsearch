@@ -97,7 +97,7 @@ public class SearchableSnapshotsStatsResponse extends BroadcastResponse {
                 .toList();
 
             for (Index index : indices) {
-                builder.startObject(index.getName());
+                builder.startObject(index.name());
                 {
                     builder.startArray("total");
                     List<CacheIndexInputStats> indexStats = computeCompound(

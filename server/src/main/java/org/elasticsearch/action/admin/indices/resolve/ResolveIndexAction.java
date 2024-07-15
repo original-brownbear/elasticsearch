@@ -35,7 +35,6 @@ import org.elasticsearch.common.regex.Regex;
 import org.elasticsearch.common.util.concurrent.CountDown;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.core.Nullable;
-import org.elasticsearch.index.Index;
 import org.elasticsearch.search.SearchService;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.transport.RemoteClusterAware;
@@ -630,13 +629,13 @@ public class ResolveIndexAction extends ActionType<ResolveIndexAction.Response> 
                         );
                     }
                     case ALIAS -> {
-                        String[] indexNames = ia.getIndices().stream().map(Index::getName).toArray(String[]::new);
+                        String[] indexNames = ia.getIndices().stream().map(index -> index.name()).toArray(String[]::new);
                         Arrays.sort(indexNames);
                         aliases.add(new ResolvedAlias(ia.getName(), indexNames));
                     }
                     case DATA_STREAM -> {
                         DataStream dataStream = (DataStream) ia;
-                        String[] backingIndices = dataStream.getIndices().stream().map(Index::getName).toArray(String[]::new);
+                        String[] backingIndices = dataStream.getIndices().stream().map(index -> index.name()).toArray(String[]::new);
                         dataStreams.add(new ResolvedDataStream(dataStream.getName(), backingIndices, DataStream.TIMESTAMP_FIELD_NAME));
                     }
                     default -> throw new IllegalStateException("unknown index abstraction type: " + ia.getType());

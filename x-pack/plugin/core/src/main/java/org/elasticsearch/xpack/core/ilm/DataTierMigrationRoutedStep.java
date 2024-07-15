@@ -49,7 +49,7 @@ public class DataTierMigrationRoutedStep extends ClusterStateWaitStep {
         IndexMetadata idxMeta = clusterState.metadata().index(index);
         if (idxMeta == null) {
             // Index must have been since deleted, ignore it
-            logger.debug("[{}] lifecycle action for index [{}] executed but index no longer exists", getKey().action(), index.getName());
+            logger.debug("[{}] lifecycle action for index [{}] executed but index no longer exists", getKey().action(), index.name());
             return new Result(false, null);
         }
         List<String> preferredTierConfiguration = idxMeta.getTierPreference();
@@ -60,19 +60,19 @@ public class DataTierMigrationRoutedStep extends ClusterStateWaitStep {
             clusterState.metadata().nodeShutdowns()
         );
 
-        if (ActiveShardCount.ALL.enoughShardsActive(clusterState, index.getName()) == false) {
+        if (ActiveShardCount.ALL.enoughShardsActive(clusterState, index.name()) == false) {
             if (preferredTierConfiguration.isEmpty()) {
                 logger.debug(
                     "[{}] lifecycle action for index [{}] cannot make progress because not all shards are active",
                     getKey().action(),
-                    index.getName()
+                    index.name()
                 );
             } else {
                 if (availableDestinationTier.isPresent()) {
                     logger.debug(
                         "[{}] migration of index [{}] to the {} tier preference cannot progress, as not all shards are active",
                         getKey().action(),
-                        index.getName(),
+                        index.name(),
                         preferredTierConfiguration
                     );
                 } else {
@@ -80,7 +80,7 @@ public class DataTierMigrationRoutedStep extends ClusterStateWaitStep {
                         "[{}] migration of index [{}] to the next tier cannot progress as there is no available tier for the "
                             + "configured preferred tiers {} and not all shards are active",
                         getKey().action(),
-                        index.getName(),
+                        index.name(),
                         preferredTierConfiguration
                     );
                 }
@@ -92,7 +92,7 @@ public class DataTierMigrationRoutedStep extends ClusterStateWaitStep {
             logger.debug(
                 "index [{}] has no data tier routing preference setting configured and all its shards are active. considering "
                     + "the [{}] step condition met and continuing to the next step",
-                index.getName(),
+                index.name(),
                 getKey().name()
             );
             // the user removed the tier routing setting and all the shards are active so we'll cary on
@@ -102,26 +102,25 @@ public class DataTierMigrationRoutedStep extends ClusterStateWaitStep {
         int allocationPendingAllShards = getPendingAllocations(index, DECIDERS, clusterState);
 
         if (allocationPendingAllShards > 0) {
-            String statusMessage = availableDestinationTier.map(
-                s -> String.format(
+            String statusMessage = availableDestinationTier.map(s -> {
+                return String.format(
                     Locale.ROOT,
                     "[%s] lifecycle action [%s] waiting for [%s] shards to be moved to the [%s] tier (tier "
                         + "migration preference configuration is %s)",
-                    index.getName(),
+                    index.name(),
                     getKey().action(),
                     allocationPendingAllShards,
                     s,
                     preferredTierConfiguration
-                )
-            )
-                .orElseGet(
-                    () -> String.format(
-                        Locale.ROOT,
-                        "index [%s] has a preference for tiers %s, but no nodes for any of those tiers are " + "available in the cluster",
-                        index.getName(),
-                        preferredTierConfiguration
-                    )
                 );
+            }).orElseGet(() -> {
+                return String.format(
+                    Locale.ROOT,
+                    "index [%s] has a preference for tiers %s, but no nodes for any of those tiers are " + "available in the cluster",
+                    index.name(),
+                    preferredTierConfiguration
+                );
+            });
             logger.debug(statusMessage);
             return new Result(false, new AllocationInfo(idxMeta.getNumberOfReplicas(), allocationPendingAllShards, true, statusMessage));
         } else {

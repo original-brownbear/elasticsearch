@@ -55,6 +55,7 @@ import org.elasticsearch.core.Tuple;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.gateway.GatewayService;
 import org.elasticsearch.grok.MatcherWatchdog;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.VersionType;
 import org.elasticsearch.index.analysis.AnalysisRegistry;
@@ -355,11 +356,13 @@ public class IngestService implements ClusterStateApplier, ReportingService<Inge
             String defaultPipeline = IndexSettings.DEFAULT_PIPELINE.get(indexMetadata.getSettings());
             String finalPipeline = IndexSettings.FINAL_PIPELINE.get(indexMetadata.getSettings());
             if (pipeline.equals(defaultPipeline)) {
-                defaultPipelineIndices.add(indexMetadata.getIndex().getName());
+                Index index = indexMetadata.getIndex();
+                defaultPipelineIndices.add(index.name());
             }
 
             if (pipeline.equals(finalPipeline)) {
-                finalPipelineIndices.add(indexMetadata.getIndex().getName());
+                Index index = indexMetadata.getIndex();
+                finalPipelineIndices.add(index.name());
             }
         }
 

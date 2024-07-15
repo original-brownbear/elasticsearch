@@ -16,6 +16,7 @@ import org.elasticsearch.cluster.ClusterStateObserver;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.LifecycleExecutionState;
 import org.elasticsearch.core.TimeValue;
+import org.elasticsearch.index.Index;
 
 import java.util.Locale;
 import java.util.Objects;
@@ -77,7 +78,8 @@ public class SwapAliasesAndDeleteSourceIndexStep extends AsyncActionStep {
         ClusterStateObserver observer,
         ActionListener<Void> listener
     ) {
-        String originalIndex = indexMetadata.getIndex().getName();
+        Index index = indexMetadata.getIndex();
+        String originalIndex = index.name();
         final String targetIndexName = targetIndexNameSupplier.apply(originalIndex, indexMetadata.getLifecycleExecutionState());
         IndexMetadata targetIndexMetadata = currentClusterState.metadata().index(targetIndexName);
 
@@ -113,7 +115,8 @@ public class SwapAliasesAndDeleteSourceIndexStep extends AsyncActionStep {
         ActionListener<Void> listener,
         boolean createSourceIndexAlias
     ) {
-        String sourceIndexName = sourceIndex.getIndex().getName();
+        Index index = sourceIndex.getIndex();
+        String sourceIndexName = index.name();
         IndicesAliasesRequest aliasesRequest = new IndicesAliasesRequest().masterNodeTimeout(TimeValue.MAX_VALUE)
             .addAliasAction(IndicesAliasesRequest.AliasActions.removeIndex().index(sourceIndexName));
 

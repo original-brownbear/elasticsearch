@@ -84,7 +84,8 @@ public class TransportPutMappingAction extends AcknowledgedTransportMasterNodeAc
         if (request.getConcreteIndex() == null) {
             indices = indexNameExpressionResolver.concreteIndexNames(state, request);
         } else {
-            indices = new String[] { request.getConcreteIndex().getName() };
+            Index index = request.getConcreteIndex();
+            indices = new String[] { index.name() };
         }
         return state.blocks().indicesBlockedException(ClusterBlockLevel.METADATA_WRITE, indices);
     }
@@ -180,13 +181,13 @@ public class TransportPutMappingAction extends AcknowledgedTransportMasterNodeAc
         final String requestMappings = request.source();
 
         for (Index index : concreteIndices) {
-            final SystemIndexDescriptor descriptor = systemIndices.findMatchingDescriptor(index.getName());
+            final SystemIndexDescriptor descriptor = systemIndices.findMatchingDescriptor(index.name());
             if (descriptor != null && descriptor.isAutomaticallyManaged() && descriptor.hasDynamicMappings() == false) {
                 final String descriptorMappings = descriptor.getMappings();
                 // Technically we could trip over a difference in whitespace here, but then again nobody should be trying to manually
                 // update a descriptor's mappings.
                 if (descriptorMappings.equals(requestMappings) == false) {
-                    violations.add(index.getName());
+                    violations.add(index.name());
                 }
             }
         }

@@ -15,6 +15,7 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.core.Nullable;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.xcontent.ConstructingObjectParser;
 import org.elasticsearch.xcontent.ParseField;
 import org.elasticsearch.xcontent.ToXContentFragment;
@@ -86,7 +87,8 @@ public record IndexMetadataStats(IndexWriteLoad indexWriteLoad, AverageShardSize
         if (indicesStatsResponse == null) {
             return null;
         }
-        final IndexStats indexStats = indicesStatsResponse.getIndex(indexMetadata.getIndex().getName());
+        Index index = indexMetadata.getIndex();
+        final IndexStats indexStats = indicesStatsResponse.getIndex(index.name());
         if (indexStats == null) {
             return null;
         }

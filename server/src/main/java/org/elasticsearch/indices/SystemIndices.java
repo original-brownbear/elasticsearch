@@ -284,7 +284,7 @@ public class SystemIndices {
      * @return true if the {@link Index}'s name matches a pattern from a {@link SystemIndexDescriptor}
      */
     public boolean isSystemIndex(Index index) {
-        return isSystemIndex(index.getName());
+        return isSystemIndex(index.name());
     }
 
     /**

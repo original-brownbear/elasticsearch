@@ -35,6 +35,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.core.CheckedConsumer;
 import org.elasticsearch.core.Tuple;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.engine.CommitStats;
 import org.elasticsearch.index.engine.Engine;
@@ -297,7 +298,8 @@ public class CcrLicenseChecker {
         final Consumer<String[]> historyUUIDConsumer
     ) {
 
-        String leaderIndex = leaderIndexMetadata.getIndex().getName();
+        Index index = leaderIndexMetadata.getIndex();
+        String leaderIndex = index.name();
         CheckedConsumer<IndicesStatsResponse, Exception> indicesStatsHandler = indicesStatsResponse -> {
             IndexStats indexStats = indicesStatsResponse.getIndices().get(leaderIndex);
             if (indexStats == null) {

@@ -334,7 +334,7 @@ public class ResolveClusterDataStreamIT extends AbstractMultiClustersTestCase {
             GetDataStreamAction.Response getDataStreamResponse = client.execute(GetDataStreamAction.INSTANCE, getDataStreamRequest)
                 .actionGet();
             DataStream fooDataStream = getDataStreamResponse.getDataStreams().get(0).getDataStream();
-            String backingIndex = fooDataStream.getIndices().get(0).getName();
+            String backingIndex = fooDataStream.getIndices().get(0).name();
             backingIndices.add(backingIndex);
             GetIndexResponse getIndexResponse = client.admin().indices().getIndex(new GetIndexRequest().indices(backingIndex)).actionGet();
             assertThat(getIndexResponse.getSettings().get(backingIndex), notNullValue());
@@ -366,7 +366,7 @@ public class ResolveClusterDataStreamIT extends AbstractMultiClustersTestCase {
                 .actionGet();
 
             DataStream barDataStream = getDataStreamResponse.getDataStreams().get(0).getDataStream();
-            String backingIndex = barDataStream.getIndices().get(0).getName();
+            String backingIndex = barDataStream.getIndices().get(0).name();
             backingIndices.add(backingIndex);
             GetIndexResponse getIndexResponse = client.admin().indices().getIndex(new GetIndexRequest().indices(backingIndex)).actionGet();
             assertThat(getIndexResponse.getSettings().get(backingIndex), notNullValue());

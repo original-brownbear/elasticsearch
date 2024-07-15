@@ -26,7 +26,6 @@ import org.elasticsearch.health.HealthIndicatorResult;
 import org.elasticsearch.health.HealthIndicatorService;
 import org.elasticsearch.health.HealthStatus;
 import org.elasticsearch.health.ImpactArea;
-import org.elasticsearch.index.Index;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -460,7 +459,7 @@ public class DiskHealthIndicatorService implements HealthIndicatorService {
                 .map(node -> routingNodes.node(node.getId()))
                 .filter(Objects::nonNull)
                 .flatMap(routingNode -> Arrays.stream(routingNode.copyIndices()))
-                .map(Index::getName)
+                .map(index -> index.name())
                 .collect(Collectors.toSet());
         }
 

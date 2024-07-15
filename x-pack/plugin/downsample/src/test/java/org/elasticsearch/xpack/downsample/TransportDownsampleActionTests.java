@@ -11,6 +11,7 @@ import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.routing.allocation.DataTier;
 import org.elasticsearch.common.settings.IndexScopedSettings;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.test.ESTestCase;
@@ -66,7 +67,8 @@ public class TransportDownsampleActionTests extends ESTestCase {
     }
 
     private static void assertSourceSettings(final IndexMetadata indexMetadata, final Settings settings) {
-        assertEquals(indexMetadata.getIndex().getName(), settings.get(IndexMetadata.INDEX_DOWNSAMPLE_SOURCE_NAME_KEY));
+        Index index = indexMetadata.getIndex();
+        assertEquals(index.name(), settings.get(IndexMetadata.INDEX_DOWNSAMPLE_SOURCE_NAME_KEY));
         assertEquals(
             indexMetadata.getSettings().get(DataTier.TIER_PREFERENCE_SETTING.getKey()),
             settings.get(DataTier.TIER_PREFERENCE_SETTING.getKey())

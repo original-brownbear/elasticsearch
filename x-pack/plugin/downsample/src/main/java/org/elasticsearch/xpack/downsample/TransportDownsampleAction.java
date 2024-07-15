@@ -442,19 +442,15 @@ public class TransportDownsampleAction extends AcknowledgedTransportMasterNodeAc
         // but the previous invocation failed later performing settings update, refresh or force merge.
         // The write block is used a signal to resume from the refresh part of the downsample api invocation.
         if (targetIndexMetadata.getSettings().get(IndexMetadata.SETTING_BLOCKS_WRITE) != null) {
-            var refreshRequest = new RefreshRequest(targetIndexMetadata.getIndex().getName());
+            Index index1 = targetIndexMetadata.getIndex();
+            var refreshRequest = new RefreshRequest(index1.name());
             refreshRequest.setParentTask(parentTask);
+            Index index = targetIndexMetadata.getIndex();
             client.admin()
                 .indices()
                 .refresh(
                     refreshRequest,
-                    new RefreshDownsampleIndexActionListener(
-                        listener,
-                        parentTask,
-                        targetIndexMetadata.getIndex().getName(),
-                        waitTimeout,
-                        startTime
-                    )
+                    new RefreshDownsampleIndexActionListener(listener, parentTask, index.name(), waitTimeout, startTime)
                 );
             return true;
         }
@@ -840,12 +836,12 @@ public class TransportDownsampleAction extends AcknowledgedTransportMasterNodeAc
         Index sourceIndex = sourceIndexMetadata.getIndex();
         if (IndexMetadata.INDEX_DOWNSAMPLE_ORIGIN_UUID.exists(sourceIndexMetadata.getSettings()) == false
             || IndexMetadata.INDEX_DOWNSAMPLE_ORIGIN_NAME.exists(sourceIndexMetadata.getSettings()) == false) {
-            targetSettings.put(IndexMetadata.INDEX_DOWNSAMPLE_ORIGIN_NAME.getKey(), sourceIndex.getName())
-                .put(IndexMetadata.INDEX_DOWNSAMPLE_ORIGIN_UUID.getKey(), sourceIndex.getUUID());
+            targetSettings.put(IndexMetadata.INDEX_DOWNSAMPLE_ORIGIN_NAME.getKey(), sourceIndex.name())
+                .put(IndexMetadata.INDEX_DOWNSAMPLE_ORIGIN_UUID.getKey(), sourceIndex.uuid());
         }
 
-        targetSettings.put(IndexMetadata.INDEX_DOWNSAMPLE_SOURCE_NAME_KEY, sourceIndex.getName());
-        targetSettings.put(IndexMetadata.INDEX_DOWNSAMPLE_SOURCE_UUID_KEY, sourceIndex.getUUID());
+        targetSettings.put(IndexMetadata.INDEX_DOWNSAMPLE_SOURCE_NAME_KEY, sourceIndex.name());
+        targetSettings.put(IndexMetadata.INDEX_DOWNSAMPLE_SOURCE_UUID_KEY, sourceIndex.uuid());
         return IndexMetadata.builder(downsampleIndexMetadata).settings(targetSettings);
     }
 

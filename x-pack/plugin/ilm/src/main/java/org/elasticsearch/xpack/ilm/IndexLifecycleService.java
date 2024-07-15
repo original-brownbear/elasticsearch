@@ -189,9 +189,10 @@ public class IndexLifecycleService
                     try {
                         if (OperationMode.STOPPING == currentMode) {
                             if (stepKey != null && IGNORE_STEPS_MAINTENANCE_REQUESTED.contains(stepKey.name())) {
+                                Index index = idxMeta.getIndex();
                                 logger.info(
                                     "waiting to stop ILM because index [{}] with policy [{}] is currently in step [{}]",
-                                    idxMeta.getIndex().getName(),
+                                    index.name(),
                                     policyName,
                                     stepKey.name()
                                 );
@@ -199,10 +200,11 @@ public class IndexLifecycleService
                                 // ILM is trying to stop, but this index is in a Shrink step (or other dangerous step) so we can't stop
                                 safeToStop = false;
                             } else {
+                                Index index = idxMeta.getIndex();
                                 logger.info(
                                     "skipping policy execution of step [{}] for index [{}] with policy [{}]" + " because ILM is stopping",
                                     stepKey == null ? "n/a" : stepKey.name(),
-                                    idxMeta.getIndex().getName(),
+                                    index.name(),
                                     policyName
                                 );
                             }
@@ -211,28 +213,28 @@ public class IndexLifecycleService
                         }
                     } catch (Exception e) {
                         if (logger.isTraceEnabled()) {
-                            logger.warn(
-                                () -> format(
+                            logger.warn(() -> {
+                                Index index = idxMeta.getIndex();
+                                return format(
                                     "async action execution failed during master election trigger"
                                         + " for index [%s] with policy [%s] in step [%s], lifecycle state: [%s]",
-                                    idxMeta.getIndex().getName(),
+                                    index.name(),
                                     policyName,
                                     stepKey,
                                     lifecycleState.asMap()
-                                ),
-                                e
-                            );
+                                );
+                            }, e);
                         } else {
-                            logger.warn(
-                                () -> format(
+                            logger.warn(() -> {
+                                Index index = idxMeta.getIndex();
+                                return format(
                                     "async action execution failed during master election trigger"
                                         + " for index [%s] with policy [%s] in step [%s]",
-                                    idxMeta.getIndex().getName(),
+                                    index.name(),
                                     policyName,
                                     stepKey
-                                ),
-                                e
-                            );
+                                );
+                            }, e);
 
                         }
                         // Don't rethrow the exception, we don't want a failure for one index to be
@@ -254,7 +256,7 @@ public class IndexLifecycleService
     @Override
     public void beforeIndexAddedToCluster(Index index, Settings indexSettings) {
         if (shouldParseIndexName(indexSettings)) {
-            parseIndexNameAndExtractDate(index.getName());
+            parseIndexNameAndExtractDate(index.name());
         }
     }
 
@@ -402,9 +404,10 @@ public class IndexLifecycleService
                 try {
                     if (OperationMode.STOPPING == currentMode) {
                         if (stepKey != null && IGNORE_STEPS_MAINTENANCE_REQUESTED.contains(stepKey.name())) {
+                            Index index = idxMeta.getIndex();
                             logger.info(
                                 "waiting to stop ILM because index [{}] with policy [{}] is currently in step [{}]",
-                                idxMeta.getIndex().getName(),
+                                index.name(),
                                 policyName,
                                 stepKey.name()
                             );
@@ -416,10 +419,11 @@ public class IndexLifecycleService
                             // ILM is trying to stop, but this index is in a Shrink step (or other dangerous step) so we can't stop
                             safeToStop = false;
                         } else {
+                            Index index = idxMeta.getIndex();
                             logger.info(
                                 "skipping policy execution of step [{}] for index [{}] with policy [{}] because ILM is stopping",
                                 stepKey == null ? "n/a" : stepKey.name(),
-                                idxMeta.getIndex().getName(),
+                                index.name(),
                                 policyName
                             );
                         }
@@ -432,27 +436,27 @@ public class IndexLifecycleService
                     }
                 } catch (Exception e) {
                     if (logger.isTraceEnabled()) {
-                        logger.warn(
-                            () -> format(
+                        logger.warn(() -> {
+                            Index index = idxMeta.getIndex();
+                            return format(
                                 "async action execution failed during policy trigger"
                                     + " for index [%s] with policy [%s] in step [%s], lifecycle state: [%s]",
-                                idxMeta.getIndex().getName(),
+                                index.name(),
                                 policyName,
                                 stepKey,
                                 lifecycleState.asMap()
-                            ),
-                            e
-                        );
+                            );
+                        }, e);
                     } else {
-                        logger.warn(
-                            () -> format(
+                        logger.warn(() -> {
+                            Index index = idxMeta.getIndex();
+                            return format(
                                 "async action execution failed during policy trigger" + " for index [%s] with policy [%s] in step [%s]",
-                                idxMeta.getIndex().getName(),
+                                index.name(),
                                 policyName,
                                 stepKey
-                            ),
-                            e
-                        );
+                            );
+                        }, e);
 
                     }
                     // Don't rethrow the exception, we don't want a failure for one index to be

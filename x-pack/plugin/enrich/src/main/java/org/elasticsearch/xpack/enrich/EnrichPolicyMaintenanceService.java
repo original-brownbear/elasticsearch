@@ -153,14 +153,13 @@ public class EnrichPolicyMaintenanceService implements LocalNodeMasterListener {
         Set<String> inflightPolicyExecutionIndices = enrichPolicyLocks.inflightPolicyIndices();
         final Map<String, EnrichPolicy> policies = EnrichStore.getPolicies(clusterState);
         logger.debug(() -> "Working enrich indices excluded from maintenance [" + String.join(", ", inflightPolicyExecutionIndices) + "]");
-        String[] removeIndices = clusterState.metadata()
-            .indices()
-            .values()
-            .stream()
-            .filter(indexMetadata -> indexMetadata.getIndex().getName().startsWith(EnrichPolicy.ENRICH_INDEX_NAME_BASE))
+        String[] removeIndices = clusterState.metadata().indices().values().stream().filter(indexMetadata -> {
+            Index index = indexMetadata.getIndex();
+            return index.name().startsWith(EnrichPolicy.ENRICH_INDEX_NAME_BASE);
+        })
             .filter(indexMetadata -> indexUsedByPolicy(indexMetadata, policies, inflightPolicyExecutionIndices) == false)
             .map(IndexMetadata::getIndex)
-            .map(Index::getName)
+            .map(index -> index.name())
             .toArray(String[]::new);
         deleteIndices(removeIndices);
     }
@@ -170,7 +169,8 @@ public class EnrichPolicyMaintenanceService implements LocalNodeMasterListener {
         Map<String, EnrichPolicy> policies,
         Set<String> inflightPolicyIndices
     ) {
-        String indexName = indexMetadata.getIndex().getName();
+        Index index = indexMetadata.getIndex();
+        String indexName = index.name();
         logger.debug("Checking if should remove enrich index [{}]", indexName);
         // First ignore the index entirely if it is in the inflightPolicyIndices set as it is actively being worked on
         if (inflightPolicyIndices.contains(indexName)) {

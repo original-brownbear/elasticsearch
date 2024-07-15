@@ -68,7 +68,7 @@ public class WaitForNoFollowersStep extends AsyncWaitStep {
     private void leaderIndexCheck(Metadata metadata, Index index, Listener listener, TimeValue masterTimeout) {
         IndicesStatsRequest request = new IndicesStatsRequest();
         request.clear();
-        String indexName = index.getName();
+        String indexName = index.name();
         request.indices(indexName);
 
         getClient().admin().indices().stats(request, ActionListener.wrap((response) -> {

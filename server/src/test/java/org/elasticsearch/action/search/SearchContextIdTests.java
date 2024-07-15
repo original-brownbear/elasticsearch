@@ -12,6 +12,7 @@ import org.elasticsearch.TransportVersion;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.util.concurrent.AtomicArray;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.query.IdsQueryBuilder;
 import org.elasticsearch.index.query.MatchAllQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -62,7 +63,8 @@ public class SearchContextIdTests extends ESTestCase {
                 aliasFilter = AliasFilter.EMPTY;
             }
             if (randomBoolean()) {
-                aliasFilters.put(result.getSearchShardTarget().getShardId().getIndex().getUUID(), aliasFilter);
+                Index index = result.getSearchShardTarget().getShardId().getIndex();
+                aliasFilters.put(index.uuid(), aliasFilter);
             }
         }
         final BytesReference id = SearchContextId.encode(queryResults.asList(), aliasFilters, version);

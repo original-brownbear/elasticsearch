@@ -163,12 +163,12 @@ public class IndexLifecycleServiceTests extends ESTestCase {
             new LifecyclePolicyMetadata(policy, Collections.emptyMap(), randomNonNegativeLong(), randomNonNegativeLong())
         );
         Index index = new Index(randomAlphaOfLengthBetween(1, 20), randomAlphaOfLengthBetween(1, 20));
-        IndexMetadata indexMetadata = IndexMetadata.builder(index.getName())
+        IndexMetadata indexMetadata = IndexMetadata.builder(index.name())
             .settings(settings(IndexVersion.current()).put(LifecycleSettings.LIFECYCLE_NAME, policyName))
             .numberOfShards(randomIntBetween(1, 5))
             .numberOfReplicas(randomIntBetween(0, 5))
             .build();
-        Map<String, IndexMetadata> indices = Map.of(index.getName(), indexMetadata);
+        Map<String, IndexMetadata> indices = Map.of(index.name(), indexMetadata);
         Metadata metadata = Metadata.builder()
             .putCustom(IndexLifecycleMetadata.TYPE, new IndexLifecycleMetadata(policyMap, OperationMode.STOPPED))
             .indices(indices)
@@ -204,13 +204,13 @@ public class IndexLifecycleServiceTests extends ESTestCase {
         lifecycleState.setPhase(mockShrinkStep.phase());
         lifecycleState.setAction(mockShrinkStep.action());
         lifecycleState.setStep(mockShrinkStep.name());
-        IndexMetadata indexMetadata = IndexMetadata.builder(index.getName())
+        IndexMetadata indexMetadata = IndexMetadata.builder(index.name())
             .settings(settings(IndexVersion.current()).put(LifecycleSettings.LIFECYCLE_NAME, policyName))
             .putCustom(ILM_CUSTOM_METADATA_KEY, lifecycleState.build().asMap())
             .numberOfShards(randomIntBetween(1, 5))
             .numberOfReplicas(randomIntBetween(0, 5))
             .build();
-        Map<String, IndexMetadata> indices = Map.of(index.getName(), indexMetadata);
+        Map<String, IndexMetadata> indices = Map.of(index.name(), indexMetadata);
         Metadata metadata = Metadata.builder()
             .putCustom(IndexLifecycleMetadata.TYPE, new IndexLifecycleMetadata(policyMap, OperationMode.STOPPING))
             .indices(indices)
@@ -263,13 +263,13 @@ public class IndexLifecycleServiceTests extends ESTestCase {
         lifecycleState.setPhase(mockShrinkStep.phase());
         lifecycleState.setAction(mockShrinkStep.action());
         lifecycleState.setStep(mockShrinkStep.name());
-        IndexMetadata indexMetadata = IndexMetadata.builder(index.getName())
+        IndexMetadata indexMetadata = IndexMetadata.builder(index.name())
             .settings(settings(IndexVersion.current()).put(LifecycleSettings.LIFECYCLE_NAME, policyName))
             .putCustom(ILM_CUSTOM_METADATA_KEY, lifecycleState.build().asMap())
             .numberOfShards(randomIntBetween(1, 5))
             .numberOfReplicas(randomIntBetween(0, 5))
             .build();
-        Map<String, IndexMetadata> indices = Map.of(index.getName(), indexMetadata);
+        Map<String, IndexMetadata> indices = Map.of(index.name(), indexMetadata);
         Metadata metadata = Metadata.builder()
             .putCustom(IndexLifecycleMetadata.TYPE, new IndexLifecycleMetadata(policyMap, OperationMode.STOPPING))
             .indices(indices)
@@ -314,13 +314,13 @@ public class IndexLifecycleServiceTests extends ESTestCase {
         lifecycleState.setPhase(currentStepKey.phase());
         lifecycleState.setAction(currentStepKey.action());
         lifecycleState.setStep(currentStepKey.name());
-        IndexMetadata indexMetadata = IndexMetadata.builder(index.getName())
+        IndexMetadata indexMetadata = IndexMetadata.builder(index.name())
             .settings(settings(IndexVersion.current()).put(LifecycleSettings.LIFECYCLE_NAME, policyName))
             .putCustom(ILM_CUSTOM_METADATA_KEY, lifecycleState.build().asMap())
             .numberOfShards(randomIntBetween(1, 5))
             .numberOfReplicas(randomIntBetween(0, 5))
             .build();
-        Map<String, IndexMetadata> indices = Map.of(index.getName(), indexMetadata);
+        Map<String, IndexMetadata> indices = Map.of(index.name(), indexMetadata);
         Metadata metadata = Metadata.builder()
             .putCustom(IndexLifecycleMetadata.TYPE, new IndexLifecycleMetadata(policyMap, OperationMode.STOPPING))
             .indices(indices)
@@ -428,19 +428,19 @@ public class IndexLifecycleServiceTests extends ESTestCase {
             new LifecyclePolicyMetadata(i2policy, Collections.emptyMap(), randomNonNegativeLong(), randomNonNegativeLong())
         );
 
-        IndexMetadata i1indexMetadata = IndexMetadata.builder(index1.getName())
+        IndexMetadata i1indexMetadata = IndexMetadata.builder(index1.name())
             .settings(settings(IndexVersion.current()).put(LifecycleSettings.LIFECYCLE_NAME, policy1))
             .putCustom(ILM_CUSTOM_METADATA_KEY, i1lifecycleState.build().asMap())
             .numberOfShards(randomIntBetween(1, 5))
             .numberOfReplicas(randomIntBetween(0, 5))
             .build();
-        IndexMetadata i2indexMetadata = IndexMetadata.builder(index2.getName())
+        IndexMetadata i2indexMetadata = IndexMetadata.builder(index2.name())
             .settings(settings(IndexVersion.current()).put(LifecycleSettings.LIFECYCLE_NAME, policy1))
             .putCustom(ILM_CUSTOM_METADATA_KEY, i2lifecycleState.build().asMap())
             .numberOfShards(randomIntBetween(1, 5))
             .numberOfReplicas(randomIntBetween(0, 5))
             .build();
-        Map<String, IndexMetadata> indices = Map.of(index1.getName(), i1indexMetadata, index2.getName(), i2indexMetadata);
+        Map<String, IndexMetadata> indices = Map.of(index1.name(), i1indexMetadata, index2.name(), i2indexMetadata);
 
         Metadata metadata = Metadata.builder()
             .putCustom(IndexLifecycleMetadata.TYPE, new IndexLifecycleMetadata(policyMap, OperationMode.RUNNING))
@@ -510,7 +510,7 @@ public class IndexLifecycleServiceTests extends ESTestCase {
         expectThrows(
             IllegalArgumentException.class,
             "The parse origination date setting was configured for index "
-                + index.getName()
+                + index.name()
                 + " but the index name did not match the expected format",
             () -> indexLifecycleService.beforeIndexAddedToCluster(index, indexSettings)
         );

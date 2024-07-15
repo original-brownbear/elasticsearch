@@ -192,7 +192,11 @@ public final class SourceDestValidator {
                         false
                     );
 
-                    resolvedDest = singleWriteIndex != null ? singleWriteIndex.getName() : destIndex;
+                    if (singleWriteIndex != null) {
+                        resolvedDest = singleWriteIndex.name();
+                    } else {
+                        resolvedDest = destIndex;
+                    }
                 } catch (IllegalArgumentException e) {
                     // stop here as we can not return a single dest index
                     addValidationError(e.getMessage());

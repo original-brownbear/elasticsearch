@@ -29,7 +29,6 @@ import org.elasticsearch.cluster.metadata.ComposableIndexTemplate;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.TimeValue;
-import org.elasticsearch.index.Index;
 import org.elasticsearch.indices.SystemIndexDescriptor;
 import org.elasticsearch.xcontent.XContentParserConfiguration;
 import org.elasticsearch.xcontent.json.JsonXContent;
@@ -128,7 +127,7 @@ public final class MlIndexAndAlias {
         String firstConcreteIndex = indexPatternPrefix + "-000001";
         String[] concreteIndexNames = resolver.concreteIndexNames(clusterState, IndicesOptions.lenientExpandHidden(), indexPattern);
         Optional<String> indexPointedByCurrentWriteAlias = clusterState.getMetadata().hasAlias(alias)
-            ? clusterState.getMetadata().getIndicesLookup().get(alias).getIndices().stream().map(Index::getName).findFirst()
+            ? clusterState.getMetadata().getIndicesLookup().get(alias).getIndices().stream().map(index -> index.name()).findFirst()
             : Optional.empty();
 
         if (concreteIndexNames.length == 0) {

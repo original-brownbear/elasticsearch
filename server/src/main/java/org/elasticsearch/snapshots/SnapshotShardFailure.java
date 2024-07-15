@@ -14,6 +14,7 @@ import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.core.Nullable;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.xcontent.ConstructingObjectParser;
@@ -166,7 +167,8 @@ public class SnapshotShardFailure extends ShardOperationFailedException {
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
         builder.startObject();
         builder.field("index", shardId.getIndexName());
-        builder.field("index_uuid", shardId.getIndex().getUUID());
+        Index index1 = shardId.getIndex();
+        builder.field("index_uuid", index1.uuid());
         builder.field("shard_id", shardId.id());
         builder.field("reason", reason);
         if (nodeId != null) {

@@ -20,7 +20,6 @@ import org.elasticsearch.health.HealthIndicatorService;
 import org.elasticsearch.health.ImpactArea;
 import org.elasticsearch.health.SimpleHealthIndicatorDetails;
 import org.elasticsearch.health.node.HealthInfo;
-import org.elasticsearch.index.Index;
 import org.elasticsearch.xpack.core.ilm.AllocateAction;
 import org.elasticsearch.xpack.core.ilm.DeleteAction;
 import org.elasticsearch.xpack.core.ilm.DeleteStep;
@@ -267,7 +266,7 @@ public class IlmHealthIndicatorService implements HealthIndicatorService {
                 var affectedIndices = action.getValue()
                     .stream()
                     .map(IndexMetadata::getIndex)
-                    .map(Index::getName)
+                    .map(index -> index.name())
                     .limit(Math.min(maxAffectedResourcesCount, action.getValue().size()))
                     .collect(Collectors.toCollection(TreeSet::new));
                 var affectedPolicies = action.getValue()

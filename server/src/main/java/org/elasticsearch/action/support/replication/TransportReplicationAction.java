@@ -44,6 +44,7 @@ import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.Releasables;
 import org.elasticsearch.core.TimeValue;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.IndexService;
 import org.elasticsearch.index.seqno.SequenceNumbers;
@@ -428,7 +429,8 @@ public abstract class TransportReplicationAction<
                 final ClusterState clusterState = clusterService.state();
                 final IndexMetadata indexMetadata = clusterState.metadata().getIndexSafe(primaryShardReference.routingEntry().index());
 
-                final ClusterBlockException blockException = blockExceptions(clusterState, indexMetadata.getIndex().getName());
+                Index index = indexMetadata.getIndex();
+                final ClusterBlockException blockException = blockExceptions(clusterState, index.name());
                 if (blockException != null) {
                     logger.trace("cluster is blocked, action failed on primary", blockException);
                     throw blockException;

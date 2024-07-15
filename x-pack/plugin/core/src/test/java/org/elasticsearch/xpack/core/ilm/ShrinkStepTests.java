@@ -18,6 +18,7 @@ import org.elasticsearch.cluster.metadata.LifecycleExecutionState;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeValue;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.xpack.core.ilm.Step.StepKey;
 import org.mockito.Mockito;
@@ -101,7 +102,8 @@ public class ShrinkStepTests extends AbstractStepTestCase<ShrinkStep> {
             ResizeRequest request = (ResizeRequest) invocation.getArguments()[0];
             @SuppressWarnings("unchecked")
             ActionListener<CreateIndexResponse> listener = (ActionListener<CreateIndexResponse>) invocation.getArguments()[1];
-            assertThat(request.getSourceIndex(), equalTo(sourceIndexMetadata.getIndex().getName()));
+            Index index1 = sourceIndexMetadata.getIndex();
+            assertThat(request.getSourceIndex(), equalTo(index1.name()));
             assertThat(request.getTargetIndexRequest().aliases(), equalTo(Collections.emptySet()));
 
             Settings.Builder builder = Settings.builder();
@@ -119,7 +121,8 @@ public class ShrinkStepTests extends AbstractStepTestCase<ShrinkStep> {
                 );
             }
             request.setMaxPrimaryShardSize(step.getMaxPrimaryShardSize());
-            listener.onResponse(new CreateIndexResponse(true, true, sourceIndexMetadata.getIndex().getName()));
+            Index index = sourceIndexMetadata.getIndex();
+            listener.onResponse(new CreateIndexResponse(true, true, index.name()));
             return null;
         }).when(indicesClient).resizeIndex(Mockito.any(), Mockito.any());
 
@@ -182,7 +185,8 @@ public class ShrinkStepTests extends AbstractStepTestCase<ShrinkStep> {
         Mockito.doAnswer(invocation -> {
             @SuppressWarnings("unchecked")
             ActionListener<CreateIndexResponse> listener = (ActionListener<CreateIndexResponse>) invocation.getArguments()[1];
-            listener.onResponse(new CreateIndexResponse(false, false, indexMetadata.getIndex().getName()));
+            Index index = indexMetadata.getIndex();
+            listener.onResponse(new CreateIndexResponse(false, false, index.name()));
             return null;
         }).when(indicesClient).resizeIndex(Mockito.any(), Mockito.any());
 

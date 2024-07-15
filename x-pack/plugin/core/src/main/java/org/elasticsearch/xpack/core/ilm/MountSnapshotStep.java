@@ -19,6 +19,7 @@ import org.elasticsearch.cluster.routing.allocation.decider.ShardsLimitAllocatio
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.TimeValue;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.xpack.core.searchablesnapshots.MountSearchableSnapshotAction;
 import org.elasticsearch.xpack.core.searchablesnapshots.MountSearchableSnapshotRequest;
@@ -65,7 +66,8 @@ public class MountSnapshotStep extends AsyncRetryDuringSnapshotActionStep {
 
     @Override
     void performDuringNoSnapshot(IndexMetadata indexMetadata, ClusterState currentClusterState, ActionListener<Void> listener) {
-        String indexName = indexMetadata.getIndex().getName();
+        Index index1 = indexMetadata.getIndex();
+        String indexName = index1.name();
 
         LifecycleExecutionState lifecycleState = indexMetadata.getLifecycleExecutionState();
         SearchableSnapshotAction.SearchableSnapshotMetadata searchableSnapshotMetadata = SearchableSnapshotAction
@@ -114,10 +116,11 @@ public class MountSnapshotStep extends AsyncRetryDuringSnapshotActionStep {
                 // This index had its searchable snapshot created prior to a version where we captured
                 // the original index name, so make our best guess at the name
                 indexName = bestEffortIndexNameResolution(indexName);
+                Index index = indexMetadata.getIndex();
                 logger.debug(
                     "index [{}] using policy [{}] does not have a stored snapshot index name, "
                         + "using our best effort guess of [{}] for the original snapshotted index name",
-                    indexMetadata.getIndex().getName(),
+                    index.name(),
                     policyName,
                     indexName
                 );

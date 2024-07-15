@@ -26,6 +26,7 @@ import org.elasticsearch.common.logging.DeprecationCategory;
 import org.elasticsearch.common.logging.DeprecationLogger;
 import org.elasticsearch.common.regex.Regex;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.reindex.ReindexRequest;
 import org.elasticsearch.index.reindex.RemoteInfo;
@@ -138,7 +139,8 @@ public class ReindexValidator {
              * it. This is the same sort of dance that TransportIndexRequest
              * uses to decide to autocreate the index.
              */
-            target = indexNameExpressionResolver.concreteWriteIndex(clusterState, destination).getName();
+            Index index = indexNameExpressionResolver.concreteWriteIndex(clusterState, destination);
+            target = index.name();
         }
         SearchRequest filteredSource = skipRemoteIndexNames(source);
         if (filteredSource.indices().length == 0) {

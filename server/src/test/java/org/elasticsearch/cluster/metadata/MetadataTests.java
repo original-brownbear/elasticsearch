@@ -270,12 +270,12 @@ public class MetadataTests extends ESTestCase {
 
         List<Index> allIndices = new ArrayList<>(result.indices);
         allIndices.addAll(result.backingIndices);
-        String[] concreteIndices = allIndices.stream().map(Index::getName).toArray(String[]::new);
+        String[] concreteIndices = allIndices.stream().map(index -> index.name()).toArray(String[]::new);
         Map<String, DataStream> dataStreams = result.metadata.findDataStreams(concreteIndices);
         assertThat(dataStreams, aMapWithSize(numBackingIndices));
         for (Index backingIndex : result.backingIndices) {
-            assertThat(dataStreams, hasKey(backingIndex.getName()));
-            assertThat(dataStreams.get(backingIndex.getName()).getName(), equalTo(dataStreamName));
+            assertThat(dataStreams, hasKey(backingIndex.name()));
+            assertThat(dataStreams.get(backingIndex.name()).getName(), equalTo(dataStreamName));
         }
     }
 
@@ -1188,7 +1188,8 @@ public class MetadataTests extends ESTestCase {
             assertThat(value.isHidden(), is(false));
             assertThat(value.getType(), equalTo(IndexAbstraction.Type.DATA_STREAM));
             assertThat(value.getIndices(), hasSize(ds.getIndices().size()));
-            assertThat(value.getWriteIndex().getName(), equalTo(DataStream.getDefaultBackingIndexName(name, ds.getGeneration())));
+            Index index = value.getWriteIndex();
+            assertThat(index.name(), equalTo(DataStream.getDefaultBackingIndexName(name, ds.getGeneration())));
         }
     }
 
@@ -1321,13 +1322,13 @@ public class MetadataTests extends ESTestCase {
         SortedMap<String, IndexAbstraction> indicesLookup = result.metadata.getIndicesLookup();
         assertThat(indicesLookup, aMapWithSize(result.indices.size() + result.backingIndices.size() + 1));
         for (Index index : result.indices) {
-            assertThat(indicesLookup, hasKey(index.getName()));
-            assertNull(indicesLookup.get(index.getName()).getParentDataStream());
+            assertThat(indicesLookup, hasKey(index.name()));
+            assertNull(indicesLookup.get(index.name()).getParentDataStream());
         }
         for (Index index : result.backingIndices) {
-            assertThat(indicesLookup, hasKey(index.getName()));
-            assertNotNull(indicesLookup.get(index.getName()).getParentDataStream());
-            assertThat(indicesLookup.get(index.getName()).getParentDataStream().getName(), equalTo(dataStreamName));
+            assertThat(indicesLookup, hasKey(index.name()));
+            assertNotNull(indicesLookup.get(index.name()).getParentDataStream());
+            assertThat(indicesLookup.get(index.name()).getParentDataStream().getName(), equalTo(dataStreamName));
         }
     }
 
@@ -1892,19 +1893,19 @@ public class MetadataTests extends ESTestCase {
                 () -> metadataWithIndices(hidden1, hidden2, hidden3, nonHidden)
             );
             assertThat(exception.getMessage(), containsString("alias [" + hiddenAliasName + "] has is_hidden set to true on indices ["));
+            Index index1 = hidden3.getIndex();
+            Index index2 = hidden2.getIndex();
+            Index index3 = hidden1.getIndex();
             assertThat(
                 exception.getMessage(),
-                allOf(
-                    containsString(hidden1.getIndex().getName()),
-                    containsString(hidden2.getIndex().getName()),
-                    containsString(hidden3.getIndex().getName())
-                )
+                allOf(containsString(index3.name()), containsString(index2.name()), containsString(index1.name()))
             );
+            Index index = nonHidden.getIndex();
             assertThat(
                 exception.getMessage(),
                 containsString(
                     "but does not have is_hidden set to true on indices ["
-                        + nonHidden.getIndex().getName()
+                        + index.name()
                         + "]; alias must have the same is_hidden setting on all indices"
                 )
             );
@@ -1916,19 +1917,19 @@ public class MetadataTests extends ESTestCase {
                 () -> metadataWithIndices(hidden1, hidden2, hidden3, unspecified)
             );
             assertThat(exception.getMessage(), containsString("alias [" + hiddenAliasName + "] has is_hidden set to true on indices ["));
+            Index index1 = hidden3.getIndex();
+            Index index2 = hidden2.getIndex();
+            Index index3 = hidden1.getIndex();
             assertThat(
                 exception.getMessage(),
-                allOf(
-                    containsString(hidden1.getIndex().getName()),
-                    containsString(hidden2.getIndex().getName()),
-                    containsString(hidden3.getIndex().getName())
-                )
+                allOf(containsString(index3.name()), containsString(index2.name()), containsString(index1.name()))
             );
+            Index index = unspecified.getIndex();
             assertThat(
                 exception.getMessage(),
                 containsString(
                     "but does not have is_hidden set to true on indices ["
-                        + unspecified.getIndex().getName()
+                        + index.name()
                         + "]; alias must have the same is_hidden setting on all indices"
                 )
             );
@@ -1943,6 +1944,7 @@ public class MetadataTests extends ESTestCase {
                     metadataWithIndices(unspecified, nonHidden, hiddenIndex);
                 }
             });
+            Index index2 = hiddenIndex.getIndex();
             assertThat(
                 exception.getMessage(),
                 containsString(
@@ -1950,14 +1952,13 @@ public class MetadataTests extends ESTestCase {
                         + hiddenAliasName
                         + "] has is_hidden set to true on "
                         + "indices ["
-                        + hiddenIndex.getIndex().getName()
+                        + index2.name()
                         + "] but does not have is_hidden set to true on indices ["
                 )
             );
-            assertThat(
-                exception.getMessage(),
-                allOf(containsString(unspecified.getIndex().getName()), containsString(nonHidden.getIndex().getName()))
-            );
+            Index index = nonHidden.getIndex();
+            Index index1 = unspecified.getIndex();
+            assertThat(exception.getMessage(), allOf(containsString(index1.name()), containsString(index.name())));
             assertThat(exception.getMessage(), containsString("but does not have is_hidden set to true on indices ["));
         }
     }
@@ -1976,15 +1977,17 @@ public class MetadataTests extends ESTestCase {
             IllegalStateException.class,
             () -> metadataWithIndices(currentVersionSystem, oldVersionSystem, regularIndex)
         );
+        Index index = regularIndex.getIndex();
+        Index index1 = currentVersionSystem.getIndex();
         assertThat(
             exception.getMessage(),
             containsString(
                 "alias ["
                     + SYSTEM_ALIAS_NAME
                     + "] refers to both system indices ["
-                    + currentVersionSystem.getIndex().getName()
+                    + index1.name()
                     + "] and non-system indices: ["
-                    + regularIndex.getIndex().getName()
+                    + index.name()
                     + "], but aliases must refer to either system or non-system indices, not both"
             )
         );
@@ -1998,15 +2001,17 @@ public class MetadataTests extends ESTestCase {
             IllegalStateException.class,
             () -> metadataWithIndices(currentVersionSystem, regularIndex)
         );
+        Index index = regularIndex.getIndex();
+        Index index1 = currentVersionSystem.getIndex();
         assertThat(
             exception.getMessage(),
             containsString(
                 "alias ["
                     + SYSTEM_ALIAS_NAME
                     + "] refers to both system indices ["
-                    + currentVersionSystem.getIndex().getName()
+                    + index1.name()
                     + "] and non-system indices: ["
-                    + regularIndex.getIndex().getName()
+                    + index.name()
                     + "], but aliases must refer to either system or non-system indices, not both"
             )
         );
@@ -2167,7 +2172,8 @@ public class MetadataTests extends ESTestCase {
         // Remove the index with updated mapping
         {
             Metadata.Builder mb = new Metadata.Builder(metadata);
-            mb.remove(luckyIndex.getIndex().getName());
+            Index index = luckyIndex.getIndex();
+            mb.remove(index.name());
             metadata = mb.build();
         }
         assertThat(metadata.getMappingsByHash(), aMapWithSize(randomMappingDefinitions.size()));

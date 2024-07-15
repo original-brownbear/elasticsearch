@@ -17,6 +17,7 @@ import org.elasticsearch.cluster.routing.IndexShardRoutingTable;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.core.Nullable;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.shard.ShardId;
 
 import java.io.IOException;
@@ -45,7 +46,8 @@ public class BroadcastUnpromotableRequest extends ActionRequest implements Indic
         super(in);
         indexShardRoutingTable = null;
         shardId = new ShardId(in);
-        indices = new String[] { shardId.getIndex().getName() };
+        Index index = shardId.getIndex();
+        indices = new String[] { index.name() };
         failShardOnError = in.getTransportVersion().onOrAfter(TransportVersions.V_8_9_X) && in.readBoolean();
     }
 
@@ -56,7 +58,8 @@ public class BroadcastUnpromotableRequest extends ActionRequest implements Indic
     public BroadcastUnpromotableRequest(IndexShardRoutingTable indexShardRoutingTable, boolean failShardOnError) {
         this.indexShardRoutingTable = Objects.requireNonNull(indexShardRoutingTable, "index shard routing table is null");
         this.shardId = indexShardRoutingTable.shardId();
-        this.indices = new String[] { this.shardId.getIndex().getName() };
+        Index index = this.shardId.getIndex();
+        this.indices = new String[] { index.name() };
         this.failShardOnError = failShardOnError;
     }
 

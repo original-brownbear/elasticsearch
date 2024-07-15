@@ -122,7 +122,7 @@ public class AnnotationIndex {
                     // The old index might no longer be an index - that index could have been reindexed
                     // with the old index name now being an alias to that reindexed index.
                     for (Index oldIndex : oldIndexAbstraction.getIndices()) {
-                        requestBuilder.removeAlias(oldIndex.getName(), WRITE_ALIAS_NAME);
+                        requestBuilder.removeAlias(oldIndex.name(), WRITE_ALIAS_NAME);
                     }
                 }
             }
@@ -187,7 +187,7 @@ public class AnnotationIndex {
 
             // Account for the possibility that the latest index has been reindexed
             // into a new index with the latest index name as an alias.
-            String currentIndexName = currentIndexAbstraction.getIndices().get(0).getName();
+            String currentIndexName = currentIndexAbstraction.getIndices().get(0).name();
 
             // Recreate the aliases if they've gone even though the index still exists.
             IndexAbstraction writeAliasAbstraction = mlLookup.get(WRITE_ALIAS_NAME);
@@ -197,7 +197,7 @@ public class AnnotationIndex {
             }
 
             List<Index> writeAliasIndices = writeAliasAbstraction.getIndices();
-            if (writeAliasIndices.size() != 1 || currentIndexName.equals(writeAliasIndices.get(0).getName()) == false) {
+            if (writeAliasIndices.size() != 1 || currentIndexName.equals(writeAliasIndices.get(0).name()) == false) {
                 createAliasListener.onResponse(currentIndexName);
                 return;
             }

@@ -18,6 +18,7 @@ import org.elasticsearch.TransportVersions;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.lucene.search.Queries;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.query.AbstractQueryBuilder;
 import org.elasticsearch.index.query.SearchExecutionContext;
 import org.elasticsearch.xcontent.XContentBuilder;
@@ -99,7 +100,8 @@ public class SlowRunningQueryBuilder extends AbstractQueryBuilder<SlowRunningQue
         return new Query() {
             @Override
             public Weight createWeight(IndexSearcher searcher, ScoreMode scoreMode, float boost) throws IOException {
-                if (index == null || context.index().getName().equals(index)) {
+                Index index1 = context.index();
+                if (index == null || index1.name().equals(index)) {
                     sleep();
                 }
                 return delegate.createWeight(searcher, scoreMode, boost);

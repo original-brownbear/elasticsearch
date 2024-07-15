@@ -285,9 +285,13 @@ public class SecurityIndexManager implements ClusterStateListener {
         final int migrationsVersion = getMigrationVersionFromIndexMetadata(indexMetadata);
         final SystemIndexDescriptor.MappingsVersion minClusterMappingVersion = getMinSecurityIndexMappingVersion(event.state());
         final int indexMappingVersion = loadIndexMappingVersion(systemIndexDescriptor.getAliasName(), event.state());
-        final String concreteIndexName = indexMetadata == null
-            ? systemIndexDescriptor.getPrimaryIndex()
-            : indexMetadata.getIndex().getName();
+        final String concreteIndexName;
+        if (indexMetadata == null) {
+            concreteIndexName = systemIndexDescriptor.getPrimaryIndex();
+        } else {
+            Index index = indexMetadata.getIndex();
+            concreteIndexName = index.name();
+        }
         final ClusterHealthStatus indexHealth;
         final IndexMetadata.State indexState;
         if (indexMetadata == null) {

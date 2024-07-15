@@ -27,6 +27,7 @@ import org.elasticsearch.cluster.routing.allocation.decider.AllocationDeciders;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.xcontent.ChunkedToXContent;
 import org.elasticsearch.common.xcontent.XContentHelper;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.test.gateway.TestGatewayAllocator;
 import org.elasticsearch.xcontent.ToXContent;
@@ -154,7 +155,8 @@ public class ClusterAllocationExplainActionTests extends ESTestCase {
                 final IndexShardRoutingTable.Builder shardBuilder = new IndexShardRoutingTable.Builder(indexShardRoutingTable.shardId());
                 for (int copy = 0; copy < indexShardRoutingTable.size(); copy++) {
                     ShardRouting shardRouting = indexShardRoutingTable.shard(copy);
-                    if (shardRouting.primary() == false || indexRoutingTable.getIndex().getName().equals(redIndex)) {
+                    Index index = indexRoutingTable.getIndex();
+                    if (shardRouting.primary() == false || index.name().equals(redIndex)) {
                         // move all replicas and one primary to unassigned
                         shardBuilder.addShard(
                             shardRouting.moveToUnassigned(new UnassignedInfo(UnassignedInfo.Reason.ALLOCATION_FAILED, "test"))

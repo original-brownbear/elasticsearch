@@ -21,6 +21,7 @@ import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.TimeValue;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexService;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.query.MatchAllQueryBuilder;
@@ -239,12 +240,10 @@ public class PointInTimeIT extends ESIntegTestCase {
                 assertThat(resp.pointInTimeId(), equalTo(pitId));
             });
             assertBusy(() -> {
-                final Set<String> assignedNodes = clusterService().state()
-                    .routingTable()
-                    .allShards()
-                    .filter(shr -> shr.index().getName().equals("test") && shr.assignedToNode())
-                    .map(ShardRouting::currentNodeId)
-                    .collect(Collectors.toSet());
+                final Set<String> assignedNodes = clusterService().state().routingTable().allShards().filter(shr -> {
+                    Index index = shr.index();
+                    return index.name().equals("test") && shr.assignedToNode();
+                }).map(ShardRouting::currentNodeId).collect(Collectors.toSet());
                 assertThat(assignedNodes, everyItem(not(in(excludedNodes))));
             }, 30, TimeUnit.SECONDS);
             assertNoFailuresAndResponse(prepareSearch().setPointInTime(new PointInTimeBuilder(pitId)), resp -> {

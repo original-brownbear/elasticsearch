@@ -344,7 +344,7 @@ public final class TransportPutFollowAction extends TransportMasterNodeAction<Pu
             if (localDataStream.isReplicated() == false) {
                 throw new IllegalArgumentException(
                     "cannot follow backing index ["
-                        + backingIndexToFollow.getName()
+                        + backingIndexToFollow.name()
                         + "], because local data stream ["
                         + localDataStream.getName()
                         + "] is no longer marked as replicated"
@@ -368,10 +368,14 @@ public final class TransportPutFollowAction extends TransportMasterNodeAction<Pu
 
                 String partitionByBackingIndexBaseName = BACKING_INDEX_PREFIX + localDataStream.getName();
                 backingIndices.sort(
-                    Comparator.comparing((Index o) -> o.getName().contains(partitionByBackingIndexBaseName) ? 1 : -1)
+                    Comparator.comparing((Index o) -> { return o.name().contains(partitionByBackingIndexBaseName) ? 1 : -1; })
                         .thenComparing((Index o) -> {
-                            int backingPrefixPosition = o.getName().indexOf(BACKING_INDEX_PREFIX);
-                            return backingPrefixPosition > -1 ? o.getName().substring(backingPrefixPosition) : o.getName();
+                            int backingPrefixPosition = o.name().indexOf(BACKING_INDEX_PREFIX);
+                            if (backingPrefixPosition > -1) {
+                                return o.name().substring(backingPrefixPosition);
+                            } else {
+                                return o.name();
+                            }
                         })
                 );
             } else {

@@ -17,6 +17,7 @@ import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.ClusterStateObserver;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.index.Index;
 
 import java.util.Arrays;
 import java.util.Locale;
@@ -53,7 +54,8 @@ public class ForceMergeStep extends AsyncActionStep {
         ClusterStateObserver observer,
         ActionListener<Void> listener
     ) {
-        String indexName = indexMetadata.getIndex().getName();
+        Index index = indexMetadata.getIndex();
+        String indexName = index.name();
         ForceMergeRequest request = new ForceMergeRequest(indexName);
         request.maxNumSegments(maxNumSegments);
         getClient().admin().indices().forceMerge(request, listener.delegateFailureAndWrap((l, response) -> {

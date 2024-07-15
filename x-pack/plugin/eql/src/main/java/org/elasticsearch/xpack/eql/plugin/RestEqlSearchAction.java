@@ -10,6 +10,7 @@ import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.client.internal.node.NodeClient;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.logging.LogManager;
 import org.elasticsearch.logging.Logger;
@@ -90,8 +91,11 @@ public class RestEqlSearchAction extends BaseRestHandler {
                      * pattern that failed resolving. More details here https://github.com/elastic/elasticsearch/issues/63529
                      */
                     if (e instanceof IndexNotFoundException infe) {
-                        if (infe.getIndex() != null && infe.getIndex().getName().equals("Unknown index [*,-*]")) {
-                            finalException = new IndexNotFoundException(indices, infe.getCause());
+                        if (infe.getIndex() != null) {
+                            Index index = infe.getIndex();
+                            if (index.name().equals("Unknown index [*,-*]")) {
+                                finalException = new IndexNotFoundException(indices, infe.getCause());
+                            }
                         }
                     }
                     logOnFailure(LOGGER, finalException);

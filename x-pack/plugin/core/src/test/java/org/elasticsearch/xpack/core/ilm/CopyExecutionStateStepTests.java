@@ -12,6 +12,7 @@ import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.LifecycleExecutionState;
 import org.elasticsearch.cluster.metadata.Metadata;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.xpack.core.ilm.Step.StepKey;
 
@@ -161,14 +162,14 @@ public class CopyExecutionStateStepTests extends AbstractStepTestCase<CopyExecut
             () -> step.performAction(originalIndexMetadata.getIndex(), originalClusterState)
         );
 
+        Index index = originalIndexMetadata.getIndex();
         assertThat(
             e.getMessage(),
             equalTo(
                 "unable to copy execution state from ["
                     + indexName
                     + "] to ["
-                    + step.getTargetIndexNameSupplier()
-                        .apply(originalIndexMetadata.getIndex().getName(), LifecycleExecutionState.builder().build())
+                    + step.getTargetIndexNameSupplier().apply(index.name(), LifecycleExecutionState.builder().build())
                     + "] as target index does not exist"
             )
         );

@@ -33,6 +33,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.core.SuppressForbidden;
 import org.elasticsearch.discovery.MasterNotDiscoveredException;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.transport.TransportChannel;
@@ -102,7 +103,8 @@ public class LocalAllocateDangledIndices {
         public void messageReceived(final AllocateDangledRequest request, final TransportChannel channel, Task task) throws Exception {
             String[] indexNames = new String[request.indices.length];
             for (int i = 0; i < request.indices.length; i++) {
-                indexNames[i] = request.indices[i].getIndex().getName();
+                Index index = request.indices[i].getIndex();
+                indexNames[i] = index.name();
             }
             final String source = "allocation dangled indices " + Arrays.toString(indexNames);
 
@@ -150,10 +152,12 @@ public class LocalAllocateDangledIndices {
                             );
                             continue;
                         }
-                        if (currentState.metadata().hasIndex(indexMetadata.getIndex().getName())) {
+                        Index index1 = indexMetadata.getIndex();
+                        if (currentState.metadata().hasIndex(index1.name())) {
                             continue;
                         }
-                        if (currentState.metadata().hasAlias(indexMetadata.getIndex().getName())) {
+                        Index index = indexMetadata.getIndex();
+                        if (currentState.metadata().hasAlias(index.name())) {
                             logger.warn(
                                 "ignoring dangled index [{}] on node [{}] due to an existing alias with the same name",
                                 indexMetadata.getIndex(),

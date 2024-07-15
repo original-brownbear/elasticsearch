@@ -27,6 +27,7 @@ import org.elasticsearch.common.lucene.uid.VersionsAndSeqNoResolver.DocIdAndVers
 import org.elasticsearch.common.regex.Regex;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.core.Nullable;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.engine.Engine;
 import org.elasticsearch.index.get.GetResult;
 import org.elasticsearch.index.mapper.DocumentParser;
@@ -68,7 +69,8 @@ public class TermVectorsService {
 
     static TermVectorsResponse getTermVectors(IndexShard indexShard, TermVectorsRequest request, LongSupplier nanoTimeSupplier) {
         final long startTime = nanoTimeSupplier.getAsLong();
-        final TermVectorsResponse termVectorsResponse = new TermVectorsResponse(indexShard.shardId().getIndex().getName(), request.id());
+        Index index = indexShard.shardId().getIndex();
+        final TermVectorsResponse termVectorsResponse = new TermVectorsResponse(index.name(), request.id());
 
         Fields termVectorsByField = null;
         TermVectorsFilter termVectorsFilter = null;

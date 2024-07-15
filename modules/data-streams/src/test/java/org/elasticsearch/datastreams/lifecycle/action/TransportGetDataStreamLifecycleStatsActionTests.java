@@ -98,7 +98,8 @@ public class TransportGetDataStreamLifecycleStatsActionTests extends ESTestCase 
             DataStreamLifecycle.newBuilder().dataRetention(TimeValue.timeValueDays(10)).build(),
             Clock.systemUTC().millis()
         );
-        indicesInError.add(dslDataStream.getIndices().get(randomInt(numBackingIndices - 1)).getName());
+        Index index = dslDataStream.getIndices().get(randomInt(numBackingIndices - 1));
+        indicesInError.add(index.name());
         builder.put(dslDataStream);
         {
             String dataStreamName = "mixed";

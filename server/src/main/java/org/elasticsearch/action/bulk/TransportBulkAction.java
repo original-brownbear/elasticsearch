@@ -586,7 +586,7 @@ public class TransportBulkAction extends TransportAbstractBulkAction {
         // This handles alias resolution as well as data stream resolution.
         Index writeIndex = indexAbstraction.getWriteIndex();
         assert writeIndex != null : "Could not resolve write index for resource [" + indexName + "]";
-        IndexAbstraction writeAbstraction = metadata.getIndicesLookup().get(writeIndex.getName());
+        IndexAbstraction writeAbstraction = metadata.getIndicesLookup().get(writeIndex.name());
         DataStream targetDataStream = writeAbstraction.getParentDataStream();
 
         // We will store the failure if the write target belongs to a data stream with a failure store.

@@ -46,6 +46,7 @@ import org.elasticsearch.common.xcontent.ChunkedToXContent;
 import org.elasticsearch.common.xcontent.ChunkedToXContentHelper;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.SuppressForbidden;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.shard.IndexLongFieldRange;
 import org.elasticsearch.indices.SystemIndexDescriptor;
 import org.elasticsearch.xcontent.ToXContent;
@@ -725,10 +726,10 @@ public class ClusterState implements ChunkedToXContent, Diffable<ClusterState> {
                             Iterators.single((builder, params) -> builder.endArray())
                         );
                     });
-                    return Iterators.concat(
-                        Iterators.single(
-                            (builder, params) -> builder.startObject(indexRoutingTable.getIndex().getName()).startObject("shards")
-                        ),
+                    return Iterators.concat(Iterators.single((builder, params) -> {
+                        Index index = indexRoutingTable.getIndex();
+                        return builder.startObject(index.name()).startObject("shards");
+                    }),
                         Iterators.flatMap(input, Function.identity()),
                         Iterators.single((builder, params) -> builder.endObject().endObject())
                     );

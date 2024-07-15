@@ -21,8 +21,10 @@ public class QueryShardExceptionTests extends ESTestCase {
         SearchExecutionContext searchExecutionContext = SearchExecutionContextTests.createSearchExecutionContext(indexUuid, clusterAlias);
         {
             QueryShardException queryShardException = new QueryShardException(searchExecutionContext, "error");
-            assertThat(queryShardException.getIndex().getName(), equalTo(clusterAlias + ":index"));
-            assertThat(queryShardException.getIndex().getUUID(), equalTo(indexUuid));
+            Index index = queryShardException.getIndex();
+            assertThat(index.name(), equalTo(clusterAlias + ":index"));
+            Index index1 = queryShardException.getIndex();
+            assertThat(index1.uuid(), equalTo(indexUuid));
         }
         {
             QueryShardException queryShardException = new QueryShardException(
@@ -30,8 +32,10 @@ public class QueryShardExceptionTests extends ESTestCase {
                 "error",
                 new IllegalArgumentException()
             );
-            assertThat(queryShardException.getIndex().getName(), equalTo(clusterAlias + ":index"));
-            assertThat(queryShardException.getIndex().getUUID(), equalTo(indexUuid));
+            Index index = queryShardException.getIndex();
+            assertThat(index.name(), equalTo(clusterAlias + ":index"));
+            Index index1 = queryShardException.getIndex();
+            assertThat(index1.uuid(), equalTo(indexUuid));
         }
     }
 
@@ -40,7 +44,9 @@ public class QueryShardExceptionTests extends ESTestCase {
         String indexName = randomAlphaOfLengthBetween(5, 10);
         Index index = new Index(indexName, indexUuid);
         QueryShardException queryShardException = new QueryShardException(index, "error", new IllegalArgumentException());
-        assertThat(queryShardException.getIndex().getName(), equalTo(indexName));
-        assertThat(queryShardException.getIndex().getUUID(), equalTo(indexUuid));
+        Index index1 = queryShardException.getIndex();
+        assertThat(index1.name(), equalTo(indexName));
+        Index index2 = queryShardException.getIndex();
+        assertThat(index2.uuid(), equalTo(indexUuid));
     }
 }

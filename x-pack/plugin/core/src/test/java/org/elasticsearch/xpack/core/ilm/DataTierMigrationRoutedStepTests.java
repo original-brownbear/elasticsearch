@@ -120,7 +120,7 @@ public class DataTierMigrationRoutedStepTests extends AbstractStepTestCase<DataT
                 1,
                 true,
                 "["
-                    + index.getName()
+                    + index.name()
                     + "] lifecycle action ["
                     + step.getKey().action()
                     + "] waiting for "
@@ -156,7 +156,7 @@ public class DataTierMigrationRoutedStepTests extends AbstractStepTestCase<DataT
                 1,
                 true,
                 "index ["
-                    + index.getName()
+                    + index.name()
                     + "] has a preference for tiers [data_warm], but no nodes for any of those tiers are available "
                     + "in the cluster"
             )

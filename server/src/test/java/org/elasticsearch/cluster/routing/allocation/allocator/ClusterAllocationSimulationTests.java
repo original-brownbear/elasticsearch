@@ -44,6 +44,7 @@ import org.elasticsearch.common.util.concurrent.PrioritizedEsThreadPoolExecutor;
 import org.elasticsearch.common.util.concurrent.StoppableExecutorServiceWrapper;
 import org.elasticsearch.core.Strings;
 import org.elasticsearch.core.TimeValue;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.snapshots.SnapshotShardSizeInfo;
 import org.elasticsearch.tasks.TaskManager;
@@ -386,7 +387,8 @@ public class ClusterAllocationSimulationTests extends ESAllocationTestCase {
 
                 for (ShardRouting shardRouting : routingNode) {
                     shards += 1;
-                    totalBytes += shardSizesByIndex.get(shardRouting.index().getName());
+                    Index index = shardRouting.index();
+                    totalBytes += shardSizesByIndex.get(index.name());
                     totalWriteLoad += TEST_WRITE_LOAD_FORECASTER.getForecastedWriteLoad(clusterState.metadata().index(shardRouting.index()))
                         .orElseThrow(() -> new AssertionError("missing write load"));
                 }

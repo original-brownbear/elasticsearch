@@ -13,6 +13,7 @@ import org.elasticsearch.action.admin.indices.alias.IndicesAliasesResponse;
 import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.cluster.metadata.AliasMetadata;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.xpack.core.ilm.Step.StepKey;
 import org.mockito.Mockito;
@@ -72,7 +73,8 @@ public class ShrinkSetAliasStepTests extends AbstractStepTestCase<ShrinkSetAlias
         IndexMetadata indexMetadata = indexMetadataBuilder.putAlias(aliasMetadata).build();
         ShrinkSetAliasStep step = createRandomInstance();
 
-        String sourceIndex = indexMetadata.getIndex().getName();
+        Index index = indexMetadata.getIndex();
+        String sourceIndex = index.name();
         String shrunkenIndex = SHRUNKEN_INDEX_PREFIX + sourceIndex;
         List<AliasActions> expectedAliasActions = Arrays.asList(
             IndicesAliasesRequest.AliasActions.removeIndex().index(sourceIndex),

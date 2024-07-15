@@ -14,6 +14,7 @@ import org.elasticsearch.cluster.ClusterStateObserver;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.TimeValue;
+import org.elasticsearch.index.Index;
 
 import java.util.Objects;
 
@@ -42,9 +43,9 @@ public class UpdateSettingsStep extends AsyncActionStep {
         ClusterStateObserver observer,
         ActionListener<Void> listener
     ) {
-        UpdateSettingsRequest updateSettingsRequest = new UpdateSettingsRequest(indexMetadata.getIndex().getName()).masterNodeTimeout(
-            TimeValue.MAX_VALUE
-        ).settings(settings);
+        Index index = indexMetadata.getIndex();
+        UpdateSettingsRequest updateSettingsRequest = new UpdateSettingsRequest(index.name()).masterNodeTimeout(TimeValue.MAX_VALUE)
+            .settings(settings);
         getClient().admin().indices().updateSettings(updateSettingsRequest, listener.delegateFailureAndWrap((l, r) -> l.onResponse(null)));
     }
 

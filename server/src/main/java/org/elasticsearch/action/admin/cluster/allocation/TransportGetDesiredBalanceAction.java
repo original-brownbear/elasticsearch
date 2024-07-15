@@ -30,6 +30,7 @@ import org.elasticsearch.cluster.routing.allocation.allocator.ShardsAllocator;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.core.Nullable;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
@@ -151,7 +152,8 @@ public class TransportGetDesiredBalanceAction extends TransportMasterNodeReadAct
                     )
                 );
             }
-            routingTable.put(indexRoutingTable.getIndex().getName(), indexDesiredShards);
+            Index index = indexRoutingTable.getIndex();
+            routingTable.put(index.name(), indexDesiredShards);
         }
         return routingTable;
     }

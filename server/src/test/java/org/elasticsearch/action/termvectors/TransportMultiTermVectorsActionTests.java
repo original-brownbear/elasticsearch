@@ -91,8 +91,8 @@ public class TransportMultiTermVectorsActionTests extends ESTestCase {
         final ClusterState clusterState = ClusterState.builder(new ClusterName(TransportMultiGetActionTests.class.getSimpleName()))
             .metadata(
                 new Metadata.Builder().put(
-                    new IndexMetadata.Builder(index1.getName()).settings(
-                        indexSettings(IndexVersion.current(), 1, 1).put(IndexMetadata.SETTING_INDEX_UUID, index1.getUUID())
+                    new IndexMetadata.Builder(index1.name()).settings(
+                        indexSettings(IndexVersion.current(), 1, 1).put(IndexMetadata.SETTING_INDEX_UUID, index1.uuid())
                     )
                         .putMapping(
                             XContentHelper.convertToJson(
@@ -112,8 +112,8 @@ public class TransportMultiTermVectorsActionTests extends ESTestCase {
                         )
                 )
                     .put(
-                        new IndexMetadata.Builder(index2.getName()).settings(
-                            indexSettings(IndexVersion.current(), 1, 1).put(IndexMetadata.SETTING_INDEX_UUID, index1.getUUID())
+                        new IndexMetadata.Builder(index2.name()).settings(
+                            indexSettings(IndexVersion.current(), 1, 1).put(IndexMetadata.SETTING_INDEX_UUID, index1.uuid())
                         )
                             .putMapping(
                                 XContentHelper.convertToJson(
@@ -142,16 +142,14 @@ public class TransportMultiTermVectorsActionTests extends ESTestCase {
         when(index2ShardIterator.shardId()).thenReturn(new ShardId(index2, randomInt()));
 
         final OperationRouting operationRouting = mock(OperationRouting.class);
-        when(
-            operationRouting.getShards(eq(clusterState), eq(index1.getName()), anyString(), nullable(String.class), nullable(String.class))
-        ).thenReturn(index1ShardIterator);
-        when(operationRouting.shardId(eq(clusterState), eq(index1.getName()), nullable(String.class), nullable(String.class))).thenReturn(
+        when(operationRouting.getShards(eq(clusterState), eq(index1.name()), anyString(), nullable(String.class), nullable(String.class)))
+            .thenReturn(index1ShardIterator);
+        when(operationRouting.shardId(eq(clusterState), eq(index1.name()), nullable(String.class), nullable(String.class))).thenReturn(
             new ShardId(index1, randomInt())
         );
-        when(
-            operationRouting.getShards(eq(clusterState), eq(index2.getName()), anyString(), nullable(String.class), nullable(String.class))
-        ).thenReturn(index2ShardIterator);
-        when(operationRouting.shardId(eq(clusterState), eq(index2.getName()), nullable(String.class), nullable(String.class))).thenReturn(
+        when(operationRouting.getShards(eq(clusterState), eq(index2.name()), anyString(), nullable(String.class), nullable(String.class)))
+            .thenReturn(index2ShardIterator);
+        when(operationRouting.shardId(eq(clusterState), eq(index2.name()), nullable(String.class), nullable(String.class))).thenReturn(
             new ShardId(index2, randomInt())
         );
 

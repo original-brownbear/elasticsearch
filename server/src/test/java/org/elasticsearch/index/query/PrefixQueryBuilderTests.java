@@ -159,7 +159,7 @@ public class PrefixQueryBuilderTests extends AbstractQueryTestCase<PrefixQueryBu
     }
 
     public void testRewriteIndexQueryToNotMatchNone() throws Exception {
-        PrefixQueryBuilder query = prefixQuery("_index", getIndex().getName());
+        PrefixQueryBuilder query = prefixQuery("_index", getIndex().name());
         for (QueryRewriteContext context : new QueryRewriteContext[] { createSearchExecutionContext(), createQueryRewriteContext() }) {
             QueryBuilder rewritten = query.rewrite(context);
             assertThat(rewritten, instanceOf(MatchAllQueryBuilder.class));

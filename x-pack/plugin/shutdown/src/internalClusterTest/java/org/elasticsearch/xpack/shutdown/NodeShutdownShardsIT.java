@@ -21,6 +21,7 @@ import org.elasticsearch.cluster.routing.allocation.decider.Decision;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.Strings;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.test.ESIntegTestCase;
 import org.elasticsearch.test.InternalTestCluster;
@@ -428,9 +429,10 @@ public class NodeShutdownShardsIT extends ESIntegTestCase {
     private String findIdOfNodeWithPrimaryShard(String indexName) {
         ClusterState state = clusterAdmin().prepareState().get().getState();
         List<ShardRouting> startedShards = RoutingNodesHelper.shardsWithState(state.getRoutingNodes(), ShardRoutingState.STARTED);
-        return startedShards.stream()
-            .filter(ShardRouting::primary)
-            .filter(shardRouting -> indexName.equals(shardRouting.index().getName()))
+        return startedShards.stream().filter(ShardRouting::primary).filter(shardRouting -> {
+            Index index = shardRouting.index();
+            return indexName.equals(index.name());
+        })
             .map(ShardRouting::currentNodeId)
             .findFirst()
             .orElseThrow(

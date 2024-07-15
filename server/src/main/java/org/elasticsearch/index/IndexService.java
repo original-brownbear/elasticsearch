@@ -724,8 +724,9 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
         Map<String, Object> runtimeMappings,
         Integer requestSize
     ) {
+        Index index = index();
         final SearchIndexNameMatcher indexNameMatcher = new SearchIndexNameMatcher(
-            index().getName(),
+            index.name(),
             clusterAlias,
             clusterService,
             expressionResolver
@@ -766,8 +767,9 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
         final Map<String, Object> runtimeMappings,
         final String clusterAlias
     ) {
+        Index index = index();
         final SearchIndexNameMatcher indexNameMatcher = new SearchIndexNameMatcher(
-            index().getName(),
+            index.name(),
             clusterAlias,
             clusterService,
             expressionResolver
@@ -783,8 +785,8 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
             parseRuntimeMappings(runtimeMappings, mapperService, indexSettings, mappingLookup),
             indexSettings,
             new Index(
-                RemoteClusterAware.buildRemoteIndexName(clusterAlias, indexSettings.getIndex().getName()),
-                indexSettings.getIndex().getUUID()
+                RemoteClusterAware.buildRemoteIndexName(clusterAlias, indexSettings.getIndex().name()),
+                indexSettings.getIndex().uuid()
             ),
             indexNameMatcher,
             namedWriteableRegistry,

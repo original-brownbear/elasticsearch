@@ -22,6 +22,7 @@ import org.elasticsearch.common.time.DateUtils;
 import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.core.TimeValue;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.search.fetch.subphase.FieldAndFormat;
@@ -310,7 +311,8 @@ public final class TransportEqlSearchAction extends HandledTransportAction<EqlSe
         if (e instanceof RemoteTransportException && e.getCause() instanceof IndexNotFoundException infe) {
             if (infe.getIndex() != null) {
                 String qualifiedIndex;
-                String exceptionIndexName = infe.getIndex().getName();
+                Index index = infe.getIndex();
+                String exceptionIndexName = index.name();
                 String[] notFoundIndices = notFoundIndices(exceptionIndexName, indices);
                 if (notFoundIndices != null) {
                     StringJoiner sj = new StringJoiner(",");

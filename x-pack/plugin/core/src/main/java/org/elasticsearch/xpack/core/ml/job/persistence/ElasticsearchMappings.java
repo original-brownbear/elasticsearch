@@ -20,7 +20,6 @@ import org.elasticsearch.cluster.metadata.MappingMetadata;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.common.CheckedSupplier;
 import org.elasticsearch.core.TimeValue;
-import org.elasticsearch.index.Index;
 import org.elasticsearch.indices.SystemIndexDescriptor;
 import org.elasticsearch.plugins.MapperPlugin;
 import org.elasticsearch.rest.RestStatus;
@@ -171,7 +170,7 @@ public class ElasticsearchMappings {
         final var mappingCheck = new ActionRunnable<>(listener) {
             @Override
             protected void doRun() throws Exception {
-                String[] concreteIndices = indexAbstraction.getIndices().stream().map(Index::getName).toArray(String[]::new);
+                String[] concreteIndices = indexAbstraction.getIndices().stream().map(index -> index.name()).toArray(String[]::new);
 
                 final String[] indicesThatRequireAnUpdate = mappingRequiresUpdate(state, concreteIndices, minVersion);
                 if (indicesThatRequireAnUpdate.length > 0) {

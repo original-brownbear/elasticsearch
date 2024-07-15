@@ -288,9 +288,9 @@ public class IndexFoldersDeletionListenerIT extends ESIntegTestCase {
         for (int i = 0; i < leftovers.length; i++) {
             final Path dataPath = createTempDir();
             dataPaths.add(dataPath);
-            final Path shardPath = dataPath.resolve(INDICES_FOLDER).resolve(index.getUUID()).resolve("0");
+            final Path shardPath = dataPath.resolve(INDICES_FOLDER).resolve(index.uuid()).resolve("0");
             Files.createDirectories(shardPath);
-            final Path leftoverPath = dataDirWithLeftOverShards.resolve(INDICES_FOLDER).resolve(leftovers[i].getUUID()).resolve("0");
+            final Path leftoverPath = dataDirWithLeftOverShards.resolve(INDICES_FOLDER).resolve(leftovers[i].uuid()).resolve("0");
             Files.move(leftoverPath.resolve(STATE_DIR_NAME), shardPath.resolve(STATE_DIR_NAME));
             Files.move(leftoverPath.resolve(INDEX_FOLDER_NAME), shardPath.resolve(INDEX_FOLDER_NAME));
         }

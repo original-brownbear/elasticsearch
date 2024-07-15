@@ -798,7 +798,7 @@ public class IndexLifecycleRunnerTests extends ESTestCase {
         lifecycleState.setPhase(step.getKey().phase());
         lifecycleState.setAction(step.getKey().action());
         lifecycleState.setStep(step.getKey().name());
-        IndexMetadata indexMetadata = IndexMetadata.builder(index.getName())
+        IndexMetadata indexMetadata = IndexMetadata.builder(index.name())
             .settings(indexSettings)
             .putCustom(ILM_CUSTOM_METADATA_KEY, lifecycleState.build().asMap())
             .build();
@@ -807,7 +807,7 @@ public class IndexLifecycleRunnerTests extends ESTestCase {
         PolicyStepsRegistry registry = new PolicyStepsRegistry(metas, firstStepMap, stepMap, REGISTRY, client, null);
 
         // First step is retrieved because there are no settings for the index
-        IndexMetadata indexMetadataWithNoKey = IndexMetadata.builder(index.getName())
+        IndexMetadata indexMetadataWithNoKey = IndexMetadata.builder(index.name())
             .settings(indexSettings)
             .putCustom(ILM_CUSTOM_METADATA_KEY, LifecycleExecutionState.builder().build().asMap())
             .build();

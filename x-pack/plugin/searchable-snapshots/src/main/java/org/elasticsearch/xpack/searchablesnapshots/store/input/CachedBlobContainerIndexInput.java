@@ -12,6 +12,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.lucene.store.IOContext;
 import org.elasticsearch.blobcache.BlobCacheUtils;
 import org.elasticsearch.blobcache.common.ByteRange;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.snapshots.blobstore.BlobStoreIndexShardSnapshot.FileInfo;
 import org.elasticsearch.xpack.searchablesnapshots.cache.common.CacheFile;
 import org.elasticsearch.xpack.searchablesnapshots.store.IndexInputStats;
@@ -279,12 +280,13 @@ public class CachedBlobContainerIndexInput extends MetadataCachingIndexInput {
     @Override
     public String toString() {
         final CacheFile cacheFile = cacheFileReference.cacheFile.get();
+        Index index = directory.getShardId().getIndex();
         return super.toString()
             + "[cache file="
             + (cacheFile != null
                 ? String.join(
                     "/",
-                    directory.getShardId().getIndex().getUUID(),
+                    index.uuid(),
                     String.valueOf(directory.getShardId().getId()),
                     "snapshot_cache",
                     directory.getSnapshotId().getUUID(),

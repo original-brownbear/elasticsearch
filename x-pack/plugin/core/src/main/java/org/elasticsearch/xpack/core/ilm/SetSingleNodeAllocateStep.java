@@ -29,6 +29,7 @@ import org.elasticsearch.common.Randomness;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.TimeValue;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.xpack.cluster.routing.allocation.DataTierAllocationDecider;
@@ -81,7 +82,8 @@ public class SetSingleNodeAllocateStep extends AsyncActionStep {
         );
         RoutingAllocation allocation = new RoutingAllocation(allocationDeciders, clusterState, null, null, System.nanoTime());
         List<String> validNodeIds = new ArrayList<>();
-        String indexName = indexMetadata.getIndex().getName();
+        Index index = indexMetadata.getIndex();
+        String indexName = index.name();
         final Map<ShardId, List<ShardRouting>> routingsByShardId = clusterState.getRoutingTable()
             .allShards(indexName)
             .stream()

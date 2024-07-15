@@ -50,14 +50,15 @@ public class IndicesLifecycleListenerSingleNodeTests extends ESSingleNodeTestCas
 
             @Override
             public void beforeIndexCreated(Index index, Settings indexSettings) {
-                assertEquals("test", index.getName());
+                assertEquals("test", index.name());
                 assertEquals(1, counter.get());
                 counter.incrementAndGet();
             }
 
             @Override
             public void afterIndexCreated(IndexService indexService) {
-                assertEquals("test", indexService.index().getName());
+                Index index = indexService.index();
+                assertEquals("test", index.name());
                 assertEquals(2, counter.get());
                 counter.incrementAndGet();
             }

@@ -31,6 +31,7 @@ import org.elasticsearch.common.time.DateFormatter;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.core.TimeValue;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.test.ESIntegTestCase;
@@ -384,7 +385,8 @@ public class RolloverIT extends ESIntegTestCase {
             indicesAdmin().prepareRolloverIndex("test_alias").get();
             fail("expected failure due to existing rollover index");
         } catch (ResourceAlreadyExistsException e) {
-            assertThat(e.getIndex().getName(), equalTo("test_index-000001"));
+            Index index = e.getIndex();
+            assertThat(index.name(), equalTo("test_index-000001"));
         }
     }
 

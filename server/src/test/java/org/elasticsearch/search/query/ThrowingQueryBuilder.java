@@ -17,6 +17,7 @@ import org.elasticsearch.TransportVersions;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.lucene.search.Queries;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.query.AbstractQueryBuilder;
 import org.elasticsearch.index.query.SearchExecutionContext;
 import org.elasticsearch.xcontent.XContentBuilder;
@@ -96,7 +97,8 @@ public class ThrowingQueryBuilder extends AbstractQueryBuilder<ThrowingQueryBuil
         return new Query() {
             @Override
             public Weight createWeight(IndexSearcher searcher, ScoreMode scoreMode, float boost) throws IOException {
-                if (context.getShardId() == shardId || shardId < 0 || context.index().getName().equals(index)) {
+                Index index1 = context.index();
+                if (context.getShardId() == shardId || shardId < 0 || index1.name().equals(index)) {
                     throw failure;
                 }
                 return delegate.createWeight(searcher, scoreMode, boost);

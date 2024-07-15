@@ -12,6 +12,7 @@ import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexMetadata.State;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.indices.SystemIndices.SystemIndexAccessLevel;
@@ -99,7 +100,8 @@ public class WildcardExpressionResolverTests extends ESTestCase {
                 IndexNotFoundException.class,
                 () -> IndexNameExpressionResolver.resolveExpressions(context, "testXXX", "-testXXX")
             );
-            assertEquals("-testXXX", infe.getIndex().getName());
+            Index index = infe.getIndex();
+            assertEquals("-testXXX", index.name());
         }
         assertThat(
             newHashSet(IndexNameExpressionResolver.WildcardExpressionResolver.resolve(context, Arrays.asList("testXXX", "-testX*"))),
@@ -195,7 +197,8 @@ public class WildcardExpressionResolverTests extends ESTestCase {
             IndexNotFoundException.class,
             () -> IndexNameExpressionResolver.resolveExpressions(finalContext, "testX*")
         );
-        assertThat(infe.getIndex().getName(), is("testX*"));
+        Index index = infe.getIndex();
+        assertThat(index.name(), is("testX*"));
     }
 
     // issue #13334
@@ -526,7 +529,8 @@ public class WildcardExpressionResolverTests extends ESTestCase {
                     Collections.singletonList("foo_a*")
                 )
             );
-            assertEquals("foo_a*", infe.getIndex().getName());
+            Index index = infe.getIndex();
+            assertEquals("foo_a*", index.name());
         }
         {
             Collection<String> indices = IndexNameExpressionResolver.WildcardExpressionResolver.resolve(
@@ -841,6 +845,7 @@ public class WildcardExpressionResolverTests extends ESTestCase {
             IndexNotFoundException.class,
             () -> IndexNameExpressionResolver.WildcardExpressionResolver.resolve(context, List.of(wildcardExpression))
         );
-        assertEquals(wildcardExpression, infe.getIndex().getName());
+        Index index = infe.getIndex();
+        assertEquals(wildcardExpression, index.name());
     }
 }

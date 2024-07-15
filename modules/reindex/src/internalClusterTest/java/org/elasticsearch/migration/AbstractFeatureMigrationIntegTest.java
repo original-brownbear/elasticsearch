@@ -24,6 +24,7 @@ import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.indices.AssociatedIndexDescriptor;
 import org.elasticsearch.indices.SystemIndexDescriptor;
@@ -252,9 +253,11 @@ public abstract class AbstractFeatureMigrationIntegTest extends ESIntegTestCase 
         Set<String> actualAliasNames = imd.getAliases().keySet();
         assertThat(actualAliasNames, containsInAnyOrder(aliasNames.toArray()));
 
-        IndicesStatsResponse indexStats = indicesAdmin().prepareStats(imd.getIndex().getName()).setDocs(true).get();
+        Index index1 = imd.getIndex();
+        IndicesStatsResponse indexStats = indicesAdmin().prepareStats(index1.name()).setDocs(true).get();
         assertNotNull(indexStats);
-        final IndexStats thisIndexStats = indexStats.getIndex(imd.getIndex().getName());
+        Index index = imd.getIndex();
+        final IndexStats thisIndexStats = indexStats.getIndex(index.name());
         assertNotNull(thisIndexStats);
         assertNotNull(thisIndexStats.getTotal());
         assertNotNull(thisIndexStats.getTotal().getDocs());

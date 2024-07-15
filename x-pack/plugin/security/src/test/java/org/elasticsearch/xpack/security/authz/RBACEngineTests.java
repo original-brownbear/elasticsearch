@@ -32,6 +32,7 @@ import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.core.Tuple;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.license.GetLicenseAction;
 import org.elasticsearch.test.ESTestCase;
@@ -1426,7 +1427,8 @@ public class RBACEngineTests extends ESTestCase {
         );
         lookup.put(ds.getName(), ds);
         for (IndexMetadata im : backingIndices) {
-            lookup.put(im.getIndex().getName(), new IndexAbstraction.ConcreteIndex(im, ds));
+            Index index = im.getIndex();
+            lookup.put(index.name(), new IndexAbstraction.ConcreteIndex(im, ds));
         }
 
         SearchRequest request = new SearchRequest("*");
@@ -1440,9 +1442,14 @@ public class RBACEngineTests extends ESTestCase {
         assertThat(authorizedIndices.check(dataStreamName), is(true));
         assertThat(
             authorizedIndices.all().get(),
-            hasItems(backingIndices.stream().map(im -> im.getIndex().getName()).collect(Collectors.toList()).toArray(Strings.EMPTY_ARRAY))
+            hasItems(
+                backingIndices.stream()
+                    .map(im -> { return im.getIndex().name(); })
+                    .collect(Collectors.toList())
+                    .toArray(Strings.EMPTY_ARRAY)
+            )
         );
-        for (String index : backingIndices.stream().map(im -> im.getIndex().getName()).toList()) {
+        for (String index : backingIndices.stream().map(im -> { return im.getIndex().name(); }).toList()) {
             assertThat(authorizedIndices.check(index), is(true));
         }
     }
@@ -1468,7 +1475,8 @@ public class RBACEngineTests extends ESTestCase {
         );
         lookup.put(ds.getName(), ds);
         for (IndexMetadata im : backingIndices) {
-            lookup.put(im.getIndex().getName(), new IndexAbstraction.ConcreteIndex(im, ds));
+            Index index = im.getIndex();
+            lookup.put(index.name(), new IndexAbstraction.ConcreteIndex(im, ds));
         }
 
         PutMappingRequest request = new PutMappingRequest("*");

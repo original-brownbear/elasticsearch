@@ -48,7 +48,6 @@ import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.common.xcontent.XContentParserUtils;
 import org.elasticsearch.core.Streams;
-import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
 import org.elasticsearch.indices.ExecutorNames;
@@ -206,7 +205,12 @@ public class SearchApplicationIndexService {
     }
 
     private String[] getAliasIndices(String searchApplicationName) {
-        return clusterService.state().metadata().aliasedIndices(searchApplicationName).stream().map(Index::getName).toArray(String[]::new);
+        return clusterService.state()
+            .metadata()
+            .aliasedIndices(searchApplicationName)
+            .stream()
+            .map(index -> index.name())
+            .toArray(String[]::new);
     }
 
     private static String getSearchAliasName(SearchApplication app) {
@@ -247,7 +251,10 @@ public class SearchApplicationIndexService {
 
         IndicesAliasesRequestBuilder requestBuilder = null;
         if (metadata.hasAlias(searchAliasName)) {
-            Set<String> currentAliases = metadata.aliasedIndices(searchAliasName).stream().map(Index::getName).collect(Collectors.toSet());
+            Set<String> currentAliases = metadata.aliasedIndices(searchAliasName)
+                .stream()
+                .map(index -> index.name())
+                .collect(Collectors.toSet());
             Set<String> targetAliases = Set.of(app.indices());
 
             requestBuilder = updateAliasIndices(currentAliases, targetAliases, searchAliasName);

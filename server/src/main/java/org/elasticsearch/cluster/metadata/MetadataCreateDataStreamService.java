@@ -105,9 +105,9 @@ public class MetadataCreateDataStreamService {
                     // because we don't need to redirect any failures in the same request.
                     ClusterState clusterState = createDataStream(request, currentState, delegate.reroute(), false);
                     DataStream createdDataStream = clusterState.metadata().dataStreams().get(request.name);
-                    firstBackingIndexRef.set(createdDataStream.getIndices().get(0).getName());
+                    firstBackingIndexRef.set(createdDataStream.getIndices().get(0).name());
                     if (createdDataStream.getFailureIndices().getIndices().isEmpty() == false) {
-                        firstFailureStoreRef.set(createdDataStream.getFailureIndices().getIndices().get(0).getName());
+                        firstFailureStoreRef.set(createdDataStream.getFailureIndices().getIndices().get(0).name());
                     }
                     return clusterState;
                 }
@@ -319,11 +319,11 @@ public class MetadataCreateDataStreamService {
             rerouteListener.onResponse(null);
         }
         assert writeIndex != null;
-        assert writeIndex.mapping() != null : "no mapping found for backing index [" + writeIndex.getIndex().getName() + "]";
+        assert writeIndex.mapping() != null : "no mapping found for backing index [" + writeIndex.getIndex().name() + "]";
         assert template.getDataStreamTemplate().hasFailureStore() == false || initializeFailureStore == false || failureStoreIndex != null
             : "failure store should have an initial index";
         assert failureStoreIndex == null || failureStoreIndex.mapping() != null
-            : "no mapping found for failure store [" + failureStoreIndex.getIndex().getName() + "]";
+            : "no mapping found for failure store [" + failureStoreIndex.getIndex().name() + "]";
 
         List<Index> dsBackingIndices = backingIndices.stream()
             .map(IndexMetadata::getIndex)
@@ -366,8 +366,8 @@ public class MetadataCreateDataStreamService {
         logger.info(
             "adding data stream [{}] with write index [{}], backing indices [{}], and aliases [{}]",
             dataStreamName,
-            writeIndex.getIndex().getName(),
-            Strings.arrayToCommaDelimitedString(backingIndices.stream().map(i -> i.getIndex().getName()).toArray()),
+            writeIndex.getIndex().name(),
+            Strings.arrayToCommaDelimitedString(backingIndices.stream().map(i -> i.getIndex().name()).toArray()),
             Strings.collectionToCommaDelimitedString(aliases)
         );
 

@@ -131,9 +131,9 @@ public class DataStreamAndIndexLifecycleMixingTests extends ESIntegTestCase {
             assertThat(getDataStreamResponse.getDataStreams().get(0).getDataStream().getName(), equalTo(dataStreamName));
             List<Index> backingIndices = getDataStreamResponse.getDataStreams().get(0).getDataStream().getIndices();
             assertThat(backingIndices.size(), equalTo(2));
-            String backingIndex = backingIndices.get(0).getName();
+            String backingIndex = backingIndices.get(0).name();
             assertThat(backingIndex, backingIndexEqualTo(dataStreamName, 1));
-            String writeIndex = backingIndices.get(1).getName();
+            String writeIndex = backingIndices.get(1).name();
             assertThat(writeIndex, backingIndexEqualTo(dataStreamName, 2));
         });
 
@@ -876,13 +876,13 @@ public class DataStreamAndIndexLifecycleMixingTests extends ESIntegTestCase {
             String secondGenerationIndex = backingIndices.get(1);
             String writeIndex = backingIndices.get(2);
             assertThat(
-                indices.stream().map(i -> i.getName()).toList(),
+                indices.stream().map(i -> { return i.name(); }).toList(),
                 containsInAnyOrder(firstGenerationIndex, secondGenerationIndex, writeIndex)
             );
 
-            Function<String, Optional<Index>> backingIndexSupplier = indexName -> indices.stream()
-                .filter(index -> index.getName().equals(indexName))
-                .findFirst();
+            Function<String, Optional<Index>> backingIndexSupplier = indexName -> indices.stream().filter(index -> {
+                return index.name().equals(indexName);
+            }).findFirst();
 
             // let's assert the policy is reported for all indices (as it's present in the index template) and the value of the
             // prefer_ilm setting remains true for the first 2 generations and is false for the write index (the generation after rollover)
@@ -979,6 +979,6 @@ public class DataStreamAndIndexLifecycleMixingTests extends ESIntegTestCase {
         GetDataStreamAction.Request getDataStreamRequest = new GetDataStreamAction.Request(new String[] { dataStreamName });
         GetDataStreamAction.Response getDataStreamResponse = client().execute(GetDataStreamAction.INSTANCE, getDataStreamRequest)
             .actionGet();
-        return getDataStreamResponse.getDataStreams().get(0).getDataStream().getIndices().stream().map(Index::getName).toList();
+        return getDataStreamResponse.getDataStreams().get(0).getDataStream().getIndices().stream().map(index -> index.name()).toList();
     }
 }

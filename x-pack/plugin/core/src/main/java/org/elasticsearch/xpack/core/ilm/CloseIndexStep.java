@@ -15,6 +15,7 @@ import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.ClusterStateObserver;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.core.TimeValue;
+import org.elasticsearch.index.Index;
 
 /**
  * Invokes a close step on a single index.
@@ -35,7 +36,8 @@ public class CloseIndexStep extends AsyncActionStep {
         ActionListener<Void> listener
     ) {
         if (indexMetadata.getState() == IndexMetadata.State.OPEN) {
-            CloseIndexRequest request = new CloseIndexRequest(indexMetadata.getIndex().getName()).masterNodeTimeout(TimeValue.MAX_VALUE);
+            Index index = indexMetadata.getIndex();
+            CloseIndexRequest request = new CloseIndexRequest(index.name()).masterNodeTimeout(TimeValue.MAX_VALUE);
             getClient().admin().indices().close(request, listener.delegateFailureAndWrap((l, closeIndexResponse) -> {
                 if (closeIndexResponse.isAcknowledged() == false) {
                     throw new ElasticsearchException("close index request failed to be acknowledged");

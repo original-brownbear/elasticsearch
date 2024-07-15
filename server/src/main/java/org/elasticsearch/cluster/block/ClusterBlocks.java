@@ -17,6 +17,7 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.core.Nullable;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.rest.RestStatus;
 
 import java.io.IOException;
@@ -334,7 +335,8 @@ public class ClusterBlocks implements SimpleDiffable<ClusterBlocks> {
         }
 
         public Builder addBlocks(IndexMetadata indexMetadata) {
-            String indexName = indexMetadata.getIndex().getName();
+            Index index = indexMetadata.getIndex();
+            String indexName = index.name();
             if (indexMetadata.getState() == IndexMetadata.State.CLOSE) {
                 addIndexBlock(indexName, MetadataIndexStateService.INDEX_CLOSED_BLOCK);
             }
@@ -358,7 +360,8 @@ public class ClusterBlocks implements SimpleDiffable<ClusterBlocks> {
 
         public Builder updateBlocks(IndexMetadata indexMetadata) {
             // let's remove all blocks for this index and add them back -- no need to remove all individual blocks....
-            indices.remove(indexMetadata.getIndex().getName());
+            Index index = indexMetadata.getIndex();
+            indices.remove(index.name());
             return addBlocks(indexMetadata);
         }
 

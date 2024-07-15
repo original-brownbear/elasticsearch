@@ -16,6 +16,7 @@ import org.elasticsearch.action.get.MultiGetResponse;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
 import org.elasticsearch.test.ESIntegTestCase;
 import org.elasticsearch.xcontent.XContentType;
@@ -54,20 +55,16 @@ public class SimpleMgetIT extends ESIntegTestCase {
         assertThat(mgetResponse.getResponses()[1].getIndex(), is("nonExistingIndex"));
         assertThat(mgetResponse.getResponses()[1].isFailed(), is(true));
         assertThat(mgetResponse.getResponses()[1].getFailure().getMessage(), is("no such index [nonExistingIndex]"));
-        assertThat(
-            ((ElasticsearchException) mgetResponse.getResponses()[1].getFailure().getFailure()).getIndex().getName(),
-            is("nonExistingIndex")
-        );
+        Index index1 = ((ElasticsearchException) mgetResponse.getResponses()[1].getFailure().getFailure()).getIndex();
+        assertThat(index1.name(), is("nonExistingIndex"));
 
         mgetResponse = client().prepareMultiGet().add(new MultiGetRequest.Item("nonExistingIndex", "1")).get();
         assertThat(mgetResponse.getResponses().length, is(1));
         assertThat(mgetResponse.getResponses()[0].getIndex(), is("nonExistingIndex"));
         assertThat(mgetResponse.getResponses()[0].isFailed(), is(true));
         assertThat(mgetResponse.getResponses()[0].getFailure().getMessage(), is("no such index [nonExistingIndex]"));
-        assertThat(
-            ((ElasticsearchException) mgetResponse.getResponses()[0].getFailure().getFailure()).getIndex().getName(),
-            is("nonExistingIndex")
-        );
+        Index index = ((ElasticsearchException) mgetResponse.getResponses()[0].getFailure().getFailure()).getIndex();
+        assertThat(index.name(), is("nonExistingIndex"));
     }
 
     public void testThatMgetShouldWorkWithMultiIndexAlias() throws IOException {

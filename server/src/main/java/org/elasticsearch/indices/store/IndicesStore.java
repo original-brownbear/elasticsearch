@@ -35,6 +35,7 @@ import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.core.Tuple;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexService;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.shard.IndexShard;
@@ -219,7 +220,8 @@ public final class IndicesStore implements ClusterStateListener, Closeable {
 
     private void deleteShardIfExistElseWhere(ClusterState state, IndexShardRoutingTable indexShardRoutingTable) {
         List<Tuple<DiscoveryNode, ShardActiveRequest>> requests = new ArrayList<>(indexShardRoutingTable.size());
-        String indexUUID = indexShardRoutingTable.shardId().getIndex().getUUID();
+        Index index = indexShardRoutingTable.shardId().getIndex();
+        String indexUUID = index.uuid();
         ClusterName clusterName = state.getClusterName();
         for (int copy = 0; copy < indexShardRoutingTable.size(); copy++) {
             ShardRouting shardRouting = indexShardRoutingTable.shard(copy);

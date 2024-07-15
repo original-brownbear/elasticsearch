@@ -17,6 +17,7 @@ import org.elasticsearch.cluster.routing.GroupShardsIterator;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
 import org.elasticsearch.common.util.concurrent.CountDown;
 import org.elasticsearch.core.Nullable;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.query.CoordinatorRewriteContext;
 import org.elasticsearch.index.query.CoordinatorRewriteContextProvider;
 import org.elasticsearch.search.CanMatchShardResponse;
@@ -358,9 +359,11 @@ final class CanMatchPreFilterSearchPhase extends SearchPhase {
     private static final float DEFAULT_INDEX_BOOST = 1.0f;
 
     public CanMatchNodeRequest.Shard buildShardLevelRequest(SearchShardIterator shardIt) {
-        AliasFilter filter = aliasFilter.get(shardIt.shardId().getIndex().getUUID());
+        Index index1 = shardIt.shardId().getIndex();
+        AliasFilter filter = aliasFilter.get(index1.uuid());
         assert filter != null;
-        float indexBoost = concreteIndexBoosts.getOrDefault(shardIt.shardId().getIndex().getUUID(), DEFAULT_INDEX_BOOST);
+        Index index = shardIt.shardId().getIndex();
+        float indexBoost = concreteIndexBoosts.getOrDefault(index.uuid(), DEFAULT_INDEX_BOOST);
         int shardRequestIndex = shardItIndexMap.get(shardIt);
         return new CanMatchNodeRequest.Shard(
             shardIt.getOriginalIndices().indices(),

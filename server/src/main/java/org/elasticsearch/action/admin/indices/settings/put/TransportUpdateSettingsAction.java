@@ -157,7 +157,7 @@ public class TransportUpdateSettingsAction extends AcknowledgedTransportMasterNo
         final Settings requestSettings = request.settings();
 
         for (Index index : concreteIndices) {
-            final SystemIndexDescriptor descriptor = systemIndices.findMatchingDescriptor(index.getName());
+            final SystemIndexDescriptor descriptor = systemIndices.findMatchingDescriptor(index.name());
             if (descriptor != null && descriptor.isAutomaticallyManaged()) {
                 final Settings descriptorSettings = descriptor.getSettings();
                 List<String> failedKeys = new ArrayList<>();
@@ -201,9 +201,9 @@ public class TransportUpdateSettingsAction extends AcknowledgedTransportMasterNo
         final List<String> systemPatterns = new ArrayList<>();
 
         for (Index index : concreteIndices) {
-            final SystemIndexDescriptor descriptor = systemIndices.findMatchingDescriptor(index.getName());
+            final SystemIndexDescriptor descriptor = systemIndices.findMatchingDescriptor(index.name());
             if (descriptor != null) {
-                systemPatterns.add(index.getName());
+                systemPatterns.add(index.name());
             }
         }
 

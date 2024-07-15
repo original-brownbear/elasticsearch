@@ -60,7 +60,7 @@ public final class ParentJoinFieldMapper extends FieldMapper {
     public static final String CONTENT_TYPE = "join";
 
     private static void checkIndexCompatibility(IndexSettings settings, String name) {
-        String indexName = settings.getIndex().getName();
+        String indexName = settings.getIndex().name();
         if (settings.getIndexMetadata().isRoutingPartitionedIndex()) {
             throw new IllegalStateException("cannot create join field [" + name + "] for the partitioned index [" + indexName + "]");
         }

@@ -45,10 +45,11 @@ public class CheckTargetShardsCountStep extends ClusterStateWaitStep {
         IndexMetadata indexMetadata = clusterState.metadata().index(index);
         if (indexMetadata == null) {
             // Index must have been since deleted, ignore it
-            logger.debug("[{}] lifecycle action for index [{}] executed but index no longer exists", getKey().action(), index.getName());
+            logger.debug("[{}] lifecycle action for index [{}] executed but index no longer exists", getKey().action(), index.name());
             return new Result(false, null);
         }
-        String indexName = indexMetadata.getIndex().getName();
+        Index index1 = indexMetadata.getIndex();
+        String indexName = index1.name();
         if (numberOfShards != null) {
             int sourceNumberOfShards = indexMetadata.getNumberOfShards();
             if (sourceNumberOfShards % numberOfShards != 0) {

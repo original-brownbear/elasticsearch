@@ -12,6 +12,7 @@ import org.elasticsearch.action.search.MultiSearchResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.ShardSearchFailure;
 import org.elasticsearch.common.TriFunction;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.search.DocValueFormat;
 import org.elasticsearch.search.SearchHits;
@@ -85,9 +86,10 @@ public class RollupResponseTranslator {
 
                 // If an index was deleted after execution, give a hint to the user that this is a transient error
                 if (e instanceof IndexNotFoundException) {
+                    Index index = ((IndexNotFoundException) e).getIndex();
                     throw new ResourceNotFoundException(
                         "Index ["
-                            + ((IndexNotFoundException) e).getIndex().getName()
+                            + index.name()
                             + "] was not found, likely because it was deleted while the request was in-flight. "
                             + "Rollup does not support partial search results, please try the request again."
                     );

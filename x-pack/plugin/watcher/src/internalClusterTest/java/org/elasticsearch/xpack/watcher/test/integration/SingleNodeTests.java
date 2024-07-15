@@ -9,6 +9,7 @@ package org.elasticsearch.xpack.watcher.test.integration;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
 import org.elasticsearch.action.support.broadcast.BroadcastResponse;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.protocol.xpack.watcher.PutWatchResponse;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.test.ESIntegTestCase.ClusterScope;
@@ -48,7 +49,8 @@ public class SingleNodeTests extends AbstractWatcherIntegrationTestCase {
         stopWatcher();
         ClusterStateResponse clusterStateResponse = clusterAdmin().prepareState().get();
         IndexMetadata metadata = WatchStoreUtils.getConcreteIndex(Watch.INDEX, clusterStateResponse.getState().metadata());
-        String watchIndexName = metadata.getIndex().getName();
+        Index index = metadata.getIndex();
+        String watchIndexName = index.name();
         assertAcked(indicesAdmin().prepareDelete(watchIndexName));
         startWatcher();
 

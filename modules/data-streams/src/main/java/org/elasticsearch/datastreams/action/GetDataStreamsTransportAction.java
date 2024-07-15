@@ -139,7 +139,7 @@ public class GetDataStreamsTransportAction extends TransportMasterNodeReadAction
 
             ClusterStateHealth streamHealth = new ClusterStateHealth(
                 state,
-                dataStream.getIndices().stream().map(Index::getName).toArray(String[]::new)
+                dataStream.getIndices().stream().map(index1 -> index1.name()).toArray(String[]::new)
             );
 
             Map<Index, IndexProperties> backingIndicesSettingsValues = new HashMap<>();
@@ -169,7 +169,10 @@ public class GetDataStreamsTransportAction extends TransportMasterNodeReadAction
                     .stream()
                     .map(metadata::index)
                     .filter(m -> m.getIndexMode() == IndexMode.TIME_SERIES)
-                    .map(m -> new IndexInfo(m.getIndex().getName(), m.getTimeSeriesStart(), m.getTimeSeriesEnd()))
+                    .map(m -> {
+                        Index index = m.getIndex();
+                        return new IndexInfo(index.name(), m.getTimeSeriesStart(), m.getTimeSeriesEnd());
+                    })
                     .sorted()
                     .toList();
 

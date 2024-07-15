@@ -1842,7 +1842,8 @@ public class AuthorizationServiceTests extends ESTestCase {
             () -> authorize(authentication, GetIndexAction.NAME, request)
         );
         assertThat(nfe.getIndex(), is(notNullValue()));
-        assertThat(nfe.getIndex().getName(), is("not-an-index-*"));
+        Index index = nfe.getIndex();
+        assertThat(index.name(), is("not-an-index-*"));
         verify(auditTrail).accessDenied(
             eq(requestId),
             eq(authentication),
@@ -3645,9 +3646,7 @@ public class AuthorizationServiceTests extends ESTestCase {
     private static BytesReference createEncodedPIT(Index index) {
         DiscoveryNode node1 = DiscoveryNodeUtils.create("node_1");
         TestSearchPhaseResult testSearchPhaseResult1 = new TestSearchPhaseResult(new ShardSearchContextId("a", 1), node1);
-        testSearchPhaseResult1.setSearchShardTarget(
-            new SearchShardTarget("node_1", new ShardId(index.getName(), index.getUUID(), 0), null)
-        );
+        testSearchPhaseResult1.setSearchShardTarget(new SearchShardTarget("node_1", new ShardId(index.name(), index.uuid(), 0), null));
         List<SearchPhaseResult> results = new ArrayList<>();
         results.add(testSearchPhaseResult1);
         return SearchContextId.encode(results, Collections.emptyMap(), TransportVersion.current());

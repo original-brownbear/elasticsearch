@@ -16,6 +16,7 @@ import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.LifecycleExecutionState;
 import org.elasticsearch.cluster.metadata.Metadata;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.test.client.NoOpClient;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -65,8 +66,14 @@ public class CleanupTargetIndexStepTests extends AbstractStepTestCase<CleanupTar
         switch (between(0, 3)) {
             case 0 -> key = new StepKey(key.phase(), key.action(), key.name() + randomAlphaOfLength(5));
             case 1 -> nextKey = new StepKey(nextKey.phase(), nextKey.action(), nextKey.name() + randomAlphaOfLength(5));
-            case 2 -> sourceIndexNameSupplier = (indexMetadata) -> randomAlphaOfLengthBetween(11, 15) + indexMetadata.getIndex().getName();
-            case 3 -> targetIndexNameSupplier = (indexMetadata) -> randomAlphaOfLengthBetween(11, 15) + indexMetadata.getIndex().getName();
+            case 2 -> sourceIndexNameSupplier = (indexMetadata) -> {
+                Index index = indexMetadata.getIndex();
+                return randomAlphaOfLengthBetween(11, 15) + index.name();
+            };
+            case 3 -> targetIndexNameSupplier = (indexMetadata) -> {
+                Index index = indexMetadata.getIndex();
+                return randomAlphaOfLengthBetween(11, 15) + index.name();
+            };
             default -> throw new AssertionError("Illegal randomisation branch");
         }
         return new CleanupTargetIndexStep(key, nextKey, instance.getClient(), sourceIndexNameSupplier, targetIndexNameSupplier);

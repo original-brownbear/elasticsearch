@@ -151,7 +151,8 @@ public class ExceptionsHelperTests extends ESTestCase {
             assertThat(shardOperationFailedException.getCause(), instanceOf(ElasticsearchException.class));
             ElasticsearchException elasticsearchException = (ElasticsearchException) shardOperationFailedException.getCause();
             assertThat(elasticsearchException.getMessage(), equalTo(expectedErrors[i]));
-            assertThat(elasticsearchException.getIndex().getName(), equalTo(expectedIndices[i++]));
+            Index index = elasticsearchException.getIndex();
+            assertThat(index.name(), equalTo(expectedIndices[i++]));
         }
     }
 

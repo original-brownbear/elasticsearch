@@ -229,7 +229,7 @@ public class TransformsCheckpointServiceTests extends ESTestCase {
                 SeqNoStats validSeqNoStats = null;
 
                 // add broken seqNoStats if requested
-                if (missingSeqNoStats && index.getName().equals(missingSeqNoStatsIndex)) {
+                if (missingSeqNoStats && index.name().equals(missingSeqNoStatsIndex)) {
                     checkpoints.add(-1L);
                 } else {
                     validSeqNoStats = new SeqNoStats(maxSeqNo, localCheckpoint, globalCheckpoint);
@@ -240,7 +240,7 @@ public class TransformsCheckpointServiceTests extends ESTestCase {
                     ShardId shardId = new ShardId(index, shardIndex);
                     boolean primary = (replica == primaryShard);
 
-                    Path path = createTempDir().resolve("indices").resolve(index.getUUID()).resolve(String.valueOf(shardIndex));
+                    Path path = createTempDir().resolve("indices").resolve(index.uuid()).resolve(String.valueOf(shardIndex));
                     ShardRouting shardRouting = ShardRouting.newUnassigned(
                         shardId,
                         primary,
@@ -303,8 +303,8 @@ public class TransformsCheckpointServiceTests extends ESTestCase {
                 }
             }
 
-            if (userIndices.contains(index.getName())) {
-                expectedCheckpoints.put(index.getName(), checkpoints.stream().mapToLong(l -> l).toArray());
+            if (userIndices.contains(index.name())) {
+                expectedCheckpoints.put(index.name(), checkpoints.stream().mapToLong(l -> l).toArray());
             }
         }
         // shuffle the shard stats

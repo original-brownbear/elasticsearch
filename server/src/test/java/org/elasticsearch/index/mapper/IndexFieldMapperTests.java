@@ -10,6 +10,7 @@ package org.elasticsearch.index.mapper;
 
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.search.IndexSearcher;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.query.SearchExecutionContext;
 import org.elasticsearch.search.lookup.SearchLookup;
 
@@ -53,7 +54,8 @@ public class IndexFieldMapperTests extends MetadataMapperTestCase {
 
     public void testFetchFieldValue() throws IOException {
         MapperService mapperService = createMapperService(fieldMapping(b -> b.field("type", "keyword")));
-        String index = mapperService.index().getName();
+        Index index1 = mapperService.index();
+        String index = index1.name();
         withLuceneIndex(mapperService, iw -> {
             SourceToParse source = source(b -> b.field("field", "value"));
             iw.addDocument(mapperService.documentMapper().parse(source).rootDoc());

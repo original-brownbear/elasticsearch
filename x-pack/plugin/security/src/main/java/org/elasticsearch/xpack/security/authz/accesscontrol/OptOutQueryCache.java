@@ -43,7 +43,7 @@ public final class OptOutQueryCache extends IndexQueryCache {
             return weight;
         }
 
-        IndicesAccessControl.IndexAccessControl indexAccessControl = indicesAccessControl.getIndexPermissions(index.getName());
+        IndicesAccessControl.IndexAccessControl indexAccessControl = indicesAccessControl.getIndexPermissions(index.name());
         if (indexAccessControl != null && indexAccessControl.getFieldPermissions().hasFieldLevelSecurity()) {
             if (cachingIsSafe(weight, indexAccessControl)) {
                 logger.trace("not opting out of the query cache. request for index [{}] is safe to cache", index);

@@ -26,6 +26,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.core.TimeValue;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.IndexService;
 import org.elasticsearch.index.IndexSettings;
@@ -315,7 +316,8 @@ public class CloseIndexIT extends ESIntegTestCase {
         assertTrue(closeIndexResponse.isShardsAcknowledged());
         assertThat(closeIndexResponse.getIndices().get(0), notNullValue());
         assertThat(closeIndexResponse.getIndices().get(0).hasFailures(), is(false));
-        assertThat(closeIndexResponse.getIndices().get(0).getIndex().getName(), equalTo(indexName));
+        Index index = closeIndexResponse.getIndices().get(0).getIndex();
+        assertThat(index.name(), equalTo(indexName));
         assertIndexIsClosed(indexName);
     }
 
@@ -511,11 +513,10 @@ public class CloseIndexIT extends ESIntegTestCase {
         if (indices != null) {
             assertThat(response.getIndices().size(), equalTo(indices.length));
             for (String index : indices) {
-                CloseIndexResponse.IndexResult indexResult = response.getIndices()
-                    .stream()
-                    .filter(result -> index.equals(result.getIndex().getName()))
-                    .findFirst()
-                    .get();
+                CloseIndexResponse.IndexResult indexResult = response.getIndices().stream().filter(result -> {
+                    Index index1 = result.getIndex();
+                    return index.equals(index1.name());
+                }).findFirst().get();
                 assertThat(indexResult, notNullValue());
                 assertThat(indexResult.hasFailures(), is(false));
                 assertThat(indexResult.getException(), nullValue());
@@ -572,10 +573,12 @@ public class CloseIndexIT extends ESIntegTestCase {
             assertTrue(clusterBlockException.blocks().stream().allMatch(b -> b.id() == MetadataIndexStateService.INDEX_CLOSED_BLOCK_ID));
         } else if (t instanceof IndexClosedException indexClosedException) {
             assertThat(indexClosedException.getIndex(), notNullValue());
-            assertThat(indexClosedException.getIndex().getName(), equalTo(indexName));
+            Index index = indexClosedException.getIndex();
+            assertThat(index.name(), equalTo(indexName));
         } else if (t instanceof IndexNotFoundException indexNotFoundException) {
             assertThat(indexNotFoundException.getIndex(), notNullValue());
-            assertThat(indexNotFoundException.getIndex().getName(), equalTo(indexName));
+            Index index = indexNotFoundException.getIndex();
+            assertThat(index.name(), equalTo(indexName));
         } else {
             fail("Unexpected exception: " + t);
         }

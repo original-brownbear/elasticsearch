@@ -15,6 +15,7 @@ import org.elasticsearch.TransportVersions;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.lucene.search.function.ScriptScoreQuery;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.query.AbstractQueryBuilder;
 import org.elasticsearch.index.query.InnerHitContextBuilder;
 import org.elasticsearch.index.query.MatchNoneQueryBuilder;
@@ -167,13 +168,14 @@ public class ScriptScoreQueryBuilder extends AbstractQueryBuilder<ScriptScoreQue
         SearchLookup lookup = context.lookup();
         ScoreScript.LeafFactory scoreScriptFactory = factory.newFactory(script.getParams(), lookup);
         Query query = this.query.toQuery(context);
+        Index index = context.index();
         return new ScriptScoreQuery(
             query,
             script,
             scoreScriptFactory,
             context.lookup(),
             minScore,
-            context.index().getName(),
+            index.name(),
             context.getShardId(),
             context.indexVersionCreated()
         );

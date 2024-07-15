@@ -32,6 +32,7 @@ import org.elasticsearch.compute.operator.EvalOperator;
 import org.elasticsearch.compute.operator.Operator;
 import org.elasticsearch.compute.operator.OrdinalsGroupingOperator;
 import org.elasticsearch.compute.operator.SourceOperator;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexMode;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.mapper.BlockLoader;
@@ -135,7 +136,8 @@ public class EsPhysicalOperationProviders extends AbstractPhysicalOperationProvi
         DefaultShardContext shardContext = (DefaultShardContext) shardContexts.get(shardId);
         BlockLoader blockLoader = shardContext.blockLoader(fieldName, isUnsupported, fieldExtractPreference);
         if (unionTypes != null) {
-            String indexName = shardContext.ctx.index().getName();
+            Index index = shardContext.ctx.index();
+            String indexName = index.name();
             Expression conversion = unionTypes.getConversionExpressionForIndex(indexName);
             return new TypeConvertingBlockLoader(blockLoader, (AbstractConvertFunction) conversion);
         }
@@ -274,7 +276,8 @@ public class EsPhysicalOperationProviders extends AbstractPhysicalOperationProvi
 
         @Override
         public String shardIdentifier() {
-            return ctx.getFullyQualifiedIndex().getName() + ":" + ctx.getShardId();
+            Index index1 = ctx.getFullyQualifiedIndex();
+            return index1.name() + ":" + ctx.getShardId();
         }
 
         @Override
@@ -321,7 +324,7 @@ public class EsPhysicalOperationProviders extends AbstractPhysicalOperationProvi
             BlockLoader loader = fieldType.blockLoader(new MappedFieldType.BlockLoaderContext() {
                 @Override
                 public String indexName() {
-                    return ctx.getFullyQualifiedIndex().getName();
+                    return ctx.getFullyQualifiedIndex().name();
                 }
 
                 @Override

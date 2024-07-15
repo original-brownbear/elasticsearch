@@ -102,14 +102,13 @@ public class MoveToErrorStepUpdateTask extends IndexLifecycleClusterStateUpdateT
             level = Level.ERROR;
             assert false : new AssertionError("unexpected exception", e);
         }
-        logger.log(
-            level,
-            () -> Strings.format(
+        logger.log(level, () -> {
+            return Strings.format(
                 "policy [%s] for index [%s] failed trying to move from step [%s] to the ERROR step.",
                 policy,
-                index.getName(),
+                index.name(),
                 currentStepKey
-            )
-        );
+            );
+        });
     }
 }

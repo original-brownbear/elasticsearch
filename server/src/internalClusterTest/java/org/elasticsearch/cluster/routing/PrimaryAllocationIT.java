@@ -29,6 +29,7 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.gateway.GatewayAllocator;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.engine.Engine;
 import org.elasticsearch.index.engine.EngineTestCase;
@@ -386,13 +387,11 @@ public class PrimaryAllocationIT extends ESIntegTestCase {
         internalCluster().startMasterOnlyNode(Settings.EMPTY);
         final String dataNode = internalCluster().startDataOnlyNode();
         final String idxName = "test";
-        assertEquals(
-            idxName,
-            asInstanceOf(
-                IndexNotFoundException.class,
-                ClusterRerouteUtils.expectRerouteFailure(client(), new AllocateStalePrimaryAllocationCommand(idxName, 0, dataNode, true))
-            ).getIndex().getName()
-        );
+        Index index = asInstanceOf(
+            IndexNotFoundException.class,
+            ClusterRerouteUtils.expectRerouteFailure(client(), new AllocateStalePrimaryAllocationCommand(idxName, 0, dataNode, true))
+        ).getIndex();
+        assertEquals(idxName, index.name());
     }
 
     public void testForcePrimaryShardIfAllocationDecidersSayNoAfterIndexCreation() throws ExecutionException, InterruptedException {

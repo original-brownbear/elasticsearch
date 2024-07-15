@@ -23,6 +23,7 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.time.DateMathParser;
 import org.elasticsearch.common.time.DateUtils;
 import org.elasticsearch.common.util.BigArrays;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexSortConfig;
 import org.elasticsearch.index.fielddata.IndexFieldData;
 import org.elasticsearch.index.fielddata.IndexFieldData.XFieldComparatorSource.Nested;
@@ -489,13 +490,14 @@ public final class FieldSortBuilder extends SortBuilder<FieldSortBuilder> {
                 extra
             );
         } catch (IllegalArgumentException e) {
+            Index index = context.index();
             throw new IllegalArgumentException(
                 "error building sort for field ["
                     + fieldName
                     + "] of type ["
                     + fieldType.typeName()
                     + "] in index ["
-                    + context.index().getName()
+                    + index.name()
                     + "]: "
                     + e.getMessage(),
                 e

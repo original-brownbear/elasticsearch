@@ -122,7 +122,7 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
             assertThat(results.get(0).clusterStateFetchException, nullValue());
             List<Map.Entry<Index, Exception>> entries = new ArrayList<>(results.get(0).autoFollowExecutionResults.entrySet());
             assertThat(entries.size(), equalTo(1));
-            assertThat(entries.get(0).getKey().getName(), equalTo("logs-20190101"));
+            assertThat(entries.get(0).getKey().name(), equalTo("logs-20190101"));
             assertThat(entries.get(0).getValue(), nullValue());
         };
         AutoFollower autoFollower = new AutoFollower("remote", handler, localClusterStateSupplier(currentState), () -> 1L, Runnable::run) {
@@ -192,7 +192,7 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
             assertThat(results.get(0).clusterStateFetchException, nullValue());
             List<Map.Entry<Index, Exception>> entries = new ArrayList<>(results.get(0).autoFollowExecutionResults.entrySet());
             assertThat(entries.size(), equalTo(1));
-            assertThat(entries.get(0).getKey().getName(), matchesPattern(DataStreamTestHelper.backingIndexPattern("logs-foobar", 1)));
+            assertThat(entries.get(0).getKey().name(), matchesPattern(DataStreamTestHelper.backingIndexPattern("logs-foobar", 1)));
             assertThat(entries.get(0).getValue(), nullValue());
         };
         AutoFollower autoFollower = new AutoFollower("remote", handler, localClusterStateSupplier(currentState), () -> 1L, Runnable::run) {
@@ -309,7 +309,7 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
             assertThat(results.get(0).clusterStateFetchException, nullValue());
             List<Map.Entry<Index, Exception>> entries = new ArrayList<>(results.get(0).autoFollowExecutionResults.entrySet());
             assertThat(entries.size(), equalTo(1));
-            assertThat(entries.get(0).getKey().getName(), equalTo("logs-20190101"));
+            assertThat(entries.get(0).getKey().name(), equalTo("logs-20190101"));
             assertThat(entries.get(0).getValue(), sameInstance(failure));
         };
         AutoFollower autoFollower = new AutoFollower("remote", handler, localClusterStateSupplier(clusterState), () -> 1L, Runnable::run) {
@@ -688,7 +688,7 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
             assertThat(results.get(0).clusterStateFetchException, nullValue());
             List<Map.Entry<Index, Exception>> entries = new ArrayList<>(results.get(0).autoFollowExecutionResults.entrySet());
             assertThat(entries.size(), equalTo(1));
-            assertThat(entries.get(0).getKey().getName(), equalTo("logs-20190101"));
+            assertThat(entries.get(0).getKey().name(), equalTo("logs-20190101"));
             assertThat(entries.get(0).getValue(), sameInstance(failure));
         };
         AutoFollower autoFollower = new AutoFollower("remote", handler, localClusterStateSupplier(clusterState), () -> 1L, Runnable::run) {
@@ -763,20 +763,20 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
         List<Index> result = AutoFollower.getLeaderIndicesToFollow(autoFollowPattern, remoteState, Collections.emptyList());
         result.sort(Index.COMPARE_BY_NAME);
         assertThat(result.size(), equalTo(5));
-        assertThat(result.get(0).getName(), equalTo("metrics-0"));
-        assertThat(result.get(1).getName(), equalTo("metrics-1"));
-        assertThat(result.get(2).getName(), equalTo("metrics-2"));
-        assertThat(result.get(3).getName(), equalTo("metrics-3"));
-        assertThat(result.get(4).getName(), equalTo("metrics-4"));
+        assertThat(result.get(0).name(), equalTo("metrics-0"));
+        assertThat(result.get(1).name(), equalTo("metrics-1"));
+        assertThat(result.get(2).name(), equalTo("metrics-2"));
+        assertThat(result.get(3).name(), equalTo("metrics-3"));
+        assertThat(result.get(4).name(), equalTo("metrics-4"));
 
         final List<String> followedIndexUUIDs = Collections.singletonList(remoteState.metadata().index("metrics-2").getIndexUUID());
         result = AutoFollower.getLeaderIndicesToFollow(autoFollowPattern, remoteState, followedIndexUUIDs);
         result.sort(Index.COMPARE_BY_NAME);
         assertThat(result.size(), equalTo(4));
-        assertThat(result.get(0).getName(), equalTo("metrics-0"));
-        assertThat(result.get(1).getName(), equalTo("metrics-1"));
-        assertThat(result.get(2).getName(), equalTo("metrics-3"));
-        assertThat(result.get(3).getName(), equalTo("metrics-4"));
+        assertThat(result.get(0).name(), equalTo("metrics-0"));
+        assertThat(result.get(1).name(), equalTo("metrics-1"));
+        assertThat(result.get(2).name(), equalTo("metrics-3"));
+        assertThat(result.get(3).name(), equalTo("metrics-4"));
 
         final AutoFollowPattern inactiveAutoFollowPattern = new AutoFollowPattern(
             "remote",
@@ -820,7 +820,7 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
 
         List<Index> result = AutoFollower.getLeaderIndicesToFollow(autoFollowPattern, remoteState, Collections.emptyList());
         assertThat(result.size(), equalTo(1));
-        assertThat(result.get(0).getName(), equalTo("index1"));
+        assertThat(result.get(0).name(), equalTo("index1"));
 
         // Start second shard:
         shardRouting = shardRouting.moveToStarted(ShardRouting.UNAVAILABLE_EXPECTED_SHARD_SIZE);
@@ -835,8 +835,8 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
         result = AutoFollower.getLeaderIndicesToFollow(autoFollowPattern, remoteState, Collections.emptyList());
         assertThat(result.size(), equalTo(2));
         result.sort(Index.COMPARE_BY_NAME);
-        assertThat(result.get(0).getName(), equalTo("index1"));
-        assertThat(result.get(1).getName(), equalTo("index2"));
+        assertThat(result.get(0).name(), equalTo("index1"));
+        assertThat(result.get(1).name(), equalTo("index2"));
     }
 
     public void testGetLeaderIndicesToFollowWithClosedIndices() {
@@ -1096,13 +1096,13 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
 
             Index index = new Index(".ds-logs-foo-bar-2022-02-01-123456", "uuid");
             IndexAbstraction indexAbstraction = new IndexAbstraction.ConcreteIndex(
-                IndexMetadata.builder(index.getName())
+                IndexMetadata.builder(index.name())
                     .settings(
                         Settings.builder()
                             .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
                             .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 1)
                             .put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current())
-                            .put(IndexMetadata.SETTING_INDEX_UUID, index.getUUID())
+                            .put(IndexMetadata.SETTING_INDEX_UUID, index.uuid())
                             .build()
                     )
                     .build(),
@@ -1139,13 +1139,13 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
 
             Index index = new Index(".ds-logs-foo-bar-2022-02-01-123456", "uuid");
             IndexAbstraction indexAbstraction = new IndexAbstraction.ConcreteIndex(
-                IndexMetadata.builder(index.getName())
+                IndexMetadata.builder(index.name())
                     .settings(
                         Settings.builder()
                             .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
                             .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 1)
                             .put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current())
-                            .put(IndexMetadata.SETTING_INDEX_UUID, index.getUUID())
+                            .put(IndexMetadata.SETTING_INDEX_UUID, index.uuid())
                             .build()
                     )
                     .build(),
@@ -1182,13 +1182,13 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
 
             Index index = new Index("my-backing-index", "uuid");
             IndexAbstraction indexAbstraction = new IndexAbstraction.ConcreteIndex(
-                IndexMetadata.builder(index.getName())
+                IndexMetadata.builder(index.name())
                     .settings(
                         Settings.builder()
                             .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
                             .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 1)
                             .put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current())
-                            .put(IndexMetadata.SETTING_INDEX_UUID, index.getUUID())
+                            .put(IndexMetadata.SETTING_INDEX_UUID, index.uuid())
                             .build()
                     )
                     .build(),
@@ -1225,13 +1225,13 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
 
             Index index = new Index(".ds-logs-foo-bar-2022-02-01-123456", "uuid");
             IndexAbstraction indexAbstraction = new IndexAbstraction.ConcreteIndex(
-                IndexMetadata.builder(index.getName())
+                IndexMetadata.builder(index.name())
                     .settings(
                         Settings.builder()
                             .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
                             .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 1)
                             .put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current())
-                            .put(IndexMetadata.SETTING_INDEX_UUID, index.getUUID())
+                            .put(IndexMetadata.SETTING_INDEX_UUID, index.uuid())
                             .build()
                     )
                     .build(),
@@ -1268,13 +1268,13 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
 
             Index index = new Index(".ds-logs-foo-bar-2022-02-01-123456", "uuid");
             IndexAbstraction indexAbstraction = new IndexAbstraction.ConcreteIndex(
-                IndexMetadata.builder(index.getName())
+                IndexMetadata.builder(index.name())
                     .settings(
                         Settings.builder()
                             .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
                             .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 1)
                             .put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current())
-                            .put(IndexMetadata.SETTING_INDEX_UUID, index.getUUID())
+                            .put(IndexMetadata.SETTING_INDEX_UUID, index.uuid())
                             .build()
                     )
                     .build(),
@@ -1311,13 +1311,13 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
 
             Index index = new Index("my-.ds-backing-index", "uuid");
             IndexAbstraction indexAbstraction = new IndexAbstraction.ConcreteIndex(
-                IndexMetadata.builder(index.getName())
+                IndexMetadata.builder(index.name())
                     .settings(
                         Settings.builder()
                             .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
                             .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 1)
                             .put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current())
-                            .put(IndexMetadata.SETTING_INDEX_UUID, index.getUUID())
+                            .put(IndexMetadata.SETTING_INDEX_UUID, index.uuid())
                             .build()
                     )
                     .build(),
@@ -1754,7 +1754,9 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
         for (int i = 0; i < states.length; i++) {
             final String indexName = "logs-" + i;
             assertThat(
-                allResults.get(i).autoFollowExecutionResults.keySet().stream().anyMatch(index -> index.getName().equals(indexName)),
+                allResults.get(i).autoFollowExecutionResults.keySet()
+                    .stream()
+                    .anyMatch(index -> { return index.name().equals(indexName); }),
                 is(true)
             );
         }
@@ -1870,7 +1872,7 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
         assertThat(results.get(0).clusterStateFetchException, nullValue());
         List<Map.Entry<Index, Exception>> entries = new ArrayList<>(results.get(0).autoFollowExecutionResults.entrySet());
         assertThat(entries.size(), equalTo(1));
-        assertThat(entries.get(0).getKey().getName(), equalTo("logs-20190101"));
+        assertThat(entries.get(0).getKey().name(), equalTo("logs-20190101"));
         assertThat(entries.get(0).getValue(), notNullValue());
         assertThat(
             entries.get(0).getValue().getMessage(),
@@ -1955,7 +1957,7 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
         assertThat(results.get(0).clusterStateFetchException, nullValue());
         List<Map.Entry<Index, Exception>> entries = new ArrayList<>(results.get(0).autoFollowExecutionResults.entrySet());
         assertThat(entries.size(), equalTo(1));
-        assertThat(entries.get(0).getKey().getName(), equalTo("logs-20190101"));
+        assertThat(entries.get(0).getKey().name(), equalTo("logs-20190101"));
         assertThat(entries.get(0).getValue(), nullValue());
     }
 
@@ -2242,10 +2244,10 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
 
         for (var index : remoteState.metadata().indices().entrySet()) {
             final Index remoteIndex = index.getValue().getIndex();
-            boolean followed = remoteIndex.getName().startsWith("docs-excluded") == false;
+            boolean followed = remoteIndex.name().startsWith("docs-excluded") == false;
             assertThat(results.get(0).autoFollowExecutionResults.containsKey(index.getValue().getIndex()), is(followed));
             assertThat(followedIndices.contains(index.getKey()), is(followed));
-            assertThat(autoFollowedIndices.contains(remoteIndex.getUUID()), equalTo(followed));
+            assertThat(autoFollowedIndices.contains(remoteIndex.uuid()), equalTo(followed));
         }
     }
 
@@ -2286,7 +2288,7 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
         assertThat(autoFollowResults.v1().size(), equalTo(1));
         assertThat(autoFollowResults.v1().get(0).autoFollowExecutionResults.size(), equalTo(1));
         for (Map.Entry<Index, Exception> autoFollowEntry : autoFollowResults.v1().get(0).autoFollowExecutionResults.entrySet()) {
-            assertThat(autoFollowEntry.getKey().getName(), equalTo(indexName));
+            assertThat(autoFollowEntry.getKey().name(), equalTo(indexName));
             assertThat(autoFollowEntry.getValue(), nullValue());
         }
         assertThat(autoFollowResults.v2().contains(indexName), equalTo(true));

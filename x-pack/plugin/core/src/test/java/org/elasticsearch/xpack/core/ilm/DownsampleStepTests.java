@@ -17,6 +17,7 @@ import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.LifecycleExecutionState;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.core.TimeValue;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
 import org.elasticsearch.test.client.NoOpClient;
@@ -141,7 +142,8 @@ public class DownsampleStepTests extends AbstractStepTestCase<DownsampleStep> {
             .build();
 
         String policyName = indexMetadata.getLifecyclePolicyName();
-        String indexName = indexMetadata.getIndex().getName();
+        Index index = indexMetadata.getIndex();
+        String indexName = index.name();
         step.performAction(indexMetadata, emptyClusterState(), null, new ActionListener<>() {
             @Override
             public void onResponse(Void unused) {

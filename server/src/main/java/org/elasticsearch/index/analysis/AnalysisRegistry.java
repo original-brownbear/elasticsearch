@@ -675,7 +675,7 @@ public final class AnalysisRegistry implements Closeable {
             throw new IllegalArgumentException(
                 "setting [index.analysis.analyzer.default_index] is not supported anymore, use "
                     + "[index.analysis.analyzer.default] instead for index ["
-                    + indexSettings.getIndex().getName()
+                    + indexSettings.getIndex().name()
                     + "]"
             );
         }

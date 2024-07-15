@@ -73,11 +73,13 @@ public class MetadataDataStreamRolloverServiceTests extends ESTestCase {
             .build();
         Metadata.Builder builder = Metadata.builder();
         builder.put("template", template);
+        Index index = dataStream.getWriteIndex();
+        Index index1 = dataStream.getWriteIndex();
         builder.put(
-            IndexMetadata.builder(dataStream.getWriteIndex().getName())
+            IndexMetadata.builder(index.name())
                 .settings(
                     settings(IndexVersion.current()).put("index.hidden", true)
-                        .put(SETTING_INDEX_UUID, dataStream.getWriteIndex().getUUID())
+                        .put(SETTING_INDEX_UUID, index1.uuid())
                         .put("index.mode", "time_series")
                         .put("index.routing_path", "uid")
                         .put("index.time_series.start_time", FORMATTER.format(now.minus(4, ChronoUnit.HOURS)))
@@ -176,14 +178,13 @@ public class MetadataDataStreamRolloverServiceTests extends ESTestCase {
             .build();
         Metadata.Builder builder = Metadata.builder();
         builder.put("template", template);
-        Settings.Builder indexSettings = settings(IndexVersion.current()).put("index.hidden", true)
-            .put(SETTING_INDEX_UUID, dataStream.getWriteIndex().getUUID());
+        Index index1 = dataStream.getWriteIndex();
+        Settings.Builder indexSettings = settings(IndexVersion.current()).put("index.hidden", true).put(SETTING_INDEX_UUID, index1.uuid());
         if (dsIndexMode != null) {
             indexSettings.put("index.mode", dsIndexMode.getName());
         }
-        builder.put(
-            IndexMetadata.builder(dataStream.getWriteIndex().getName()).settings(indexSettings).numberOfShards(1).numberOfReplicas(0)
-        );
+        Index index = dataStream.getWriteIndex();
+        builder.put(IndexMetadata.builder(index.name()).settings(indexSettings).numberOfShards(1).numberOfReplicas(0));
         builder.put(dataStream);
         final ClusterState clusterState = ClusterState.builder(new ClusterName("test")).metadata(builder).build();
         final TestTelemetryPlugin telemetryPlugin = new TestTelemetryPlugin();
@@ -260,11 +261,13 @@ public class MetadataDataStreamRolloverServiceTests extends ESTestCase {
             .build();
         Metadata.Builder builder = Metadata.builder();
         builder.put("template", template);
+        Index index = dataStream.getWriteIndex();
+        Index index1 = dataStream.getWriteIndex();
         builder.put(
-            IndexMetadata.builder(dataStream.getWriteIndex().getName())
+            IndexMetadata.builder(index.name())
                 .settings(
                     settings(IndexVersion.current()).put("index.hidden", true)
-                        .put(SETTING_INDEX_UUID, dataStream.getWriteIndex().getUUID())
+                        .put(SETTING_INDEX_UUID, index1.uuid())
                         .put("index.mode", "time_series")
                         .put("index.routing_path", "uid")
                         .put("index.time_series.start_time", FORMATTER.format(now.minus(4, ChronoUnit.HOURS)))
@@ -477,22 +480,23 @@ public class MetadataDataStreamRolloverServiceTests extends ESTestCase {
 
         for (Index backingIndex : backingIndices) {
             var settings = settings(IndexVersion.current()).put("index.hidden", true)
-                .put(SETTING_INDEX_UUID, backingIndex.getUUID())
+                .put(SETTING_INDEX_UUID, backingIndex.uuid())
                 .put("index.mode", "time_series")
                 .put("index.routing_path", "uid");
             if (includeVersion) {
                 settings.put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersions.V_8_9_0);
             }
-            builder.put(IndexMetadata.builder(backingIndex.getName()).settings(settings).numberOfShards(1).numberOfReplicas(0));
+            builder.put(IndexMetadata.builder(backingIndex.name()).settings(settings).numberOfShards(1).numberOfReplicas(0));
         }
         builder.put(dataStream);
         return ClusterState.builder(new ClusterName("test")).metadata(builder).build();
     }
 
     static DataStreamIndexSettingsProvider createSettingsProvider(NamedXContentRegistry xContentRegistry) {
-        return new DataStreamIndexSettingsProvider(
-            im -> MapperTestUtils.newMapperService(xContentRegistry, createTempDir(), im.getSettings(), im.getIndex().getName())
-        );
+        return new DataStreamIndexSettingsProvider(im -> {
+            Index index = im.getIndex();
+            return MapperTestUtils.newMapperService(xContentRegistry, createTempDir(), im.getSettings(), index.name());
+        });
     }
 
 }

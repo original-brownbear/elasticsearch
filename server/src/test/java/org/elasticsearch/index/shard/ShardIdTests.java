@@ -11,6 +11,7 @@ package org.elasticsearch.index.shard;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.io.stream.Writeable;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexTests;
 import org.elasticsearch.test.AbstractWireSerializingTestCase;
 
@@ -45,14 +46,18 @@ public class ShardIdTests extends AbstractWireSerializingTestCase<ShardId> {
         ShardId id = ShardId.fromString("[" + indexName + "][" + shardId + "]");
         assertEquals(indexName, id.getIndexName());
         assertEquals(shardId, id.getId());
-        assertEquals(indexName, id.getIndex().getName());
-        assertEquals(IndexMetadata.INDEX_UUID_NA_VALUE, id.getIndex().getUUID());
+        Index index1 = id.getIndex();
+        assertEquals(indexName, index1.name());
+        Index index3 = id.getIndex();
+        assertEquals(IndexMetadata.INDEX_UUID_NA_VALUE, index3.uuid());
 
         id = ShardId.fromString("[some]weird[0]Name][-125]");
         assertEquals("some]weird[0]Name", id.getIndexName());
         assertEquals(-125, id.getId());
-        assertEquals("some]weird[0]Name", id.getIndex().getName());
-        assertEquals(IndexMetadata.INDEX_UUID_NA_VALUE, id.getIndex().getUUID());
+        Index index = id.getIndex();
+        assertEquals("some]weird[0]Name", index.name());
+        Index index2 = id.getIndex();
+        assertEquals(IndexMetadata.INDEX_UUID_NA_VALUE, index2.uuid());
 
         String badId = indexName + "," + shardId; // missing separator
         IllegalArgumentException ex = expectThrows(IllegalArgumentException.class, () -> ShardId.fromString(badId));

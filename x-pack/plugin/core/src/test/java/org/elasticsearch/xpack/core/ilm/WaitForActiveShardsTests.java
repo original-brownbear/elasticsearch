@@ -78,15 +78,10 @@ public class WaitForActiveShardsTests extends AbstractStepTestCase<WaitForActive
             createRandomInstance().isConditionMet(indexMetadata.getIndex(), clusterState);
             fail("expected the invocation to fail");
         } catch (IllegalStateException e) {
+            Index index = indexMetadata.getIndex();
             assertThat(
                 e.getMessage(),
-                is(
-                    "setting ["
-                        + RolloverAction.LIFECYCLE_ROLLOVER_ALIAS
-                        + "] is not set on index ["
-                        + indexMetadata.getIndex().getName()
-                        + "]"
-                )
+                is("setting [" + RolloverAction.LIFECYCLE_ROLLOVER_ALIAS + "] is not set on index [" + index.name() + "]")
             );
         }
     }
@@ -112,12 +107,10 @@ public class WaitForActiveShardsTests extends AbstractStepTestCase<WaitForActive
             ShardRoutingRoleStrategy.NO_SHARD_CREATION,
             rolledIndex.getIndex()
         );
-        routingTable.addShard(
-            TestShardRouting.newShardRouting(rolledIndex.getIndex().getName(), 0, "node", null, true, ShardRoutingState.STARTED)
-        );
-        routingTable.addShard(
-            TestShardRouting.newShardRouting(rolledIndex.getIndex().getName(), 0, "node2", null, false, ShardRoutingState.STARTED)
-        );
+        Index index1 = rolledIndex.getIndex();
+        routingTable.addShard(TestShardRouting.newShardRouting(index1.name(), 0, "node", null, true, ShardRoutingState.STARTED));
+        Index index = rolledIndex.getIndex();
+        routingTable.addShard(TestShardRouting.newShardRouting(index.name(), 0, "node2", null, false, ShardRoutingState.STARTED));
         ClusterState clusterState = ClusterState.builder(ClusterName.DEFAULT)
             .metadata(Metadata.builder().put(originalIndex, true).put(rolledIndex, true).build())
             .routingTable(RoutingTable.builder().add(routingTable.build()).build())
@@ -150,12 +143,10 @@ public class WaitForActiveShardsTests extends AbstractStepTestCase<WaitForActive
             ShardRoutingRoleStrategy.NO_SHARD_CREATION,
             rolledIndex.getIndex()
         );
-        routingTable.addShard(
-            TestShardRouting.newShardRouting(rolledIndex.getIndex().getName(), 0, "node", null, true, ShardRoutingState.STARTED)
-        );
-        routingTable.addShard(
-            TestShardRouting.newShardRouting(rolledIndex.getIndex().getName(), 0, "node2", null, false, ShardRoutingState.STARTED)
-        );
+        Index index1 = rolledIndex.getIndex();
+        routingTable.addShard(TestShardRouting.newShardRouting(index1.name(), 0, "node", null, true, ShardRoutingState.STARTED));
+        Index index = rolledIndex.getIndex();
+        routingTable.addShard(TestShardRouting.newShardRouting(index.name(), 0, "node2", null, false, ShardRoutingState.STARTED));
         ClusterState clusterState = ClusterState.builder(ClusterName.DEFAULT)
             .metadata(Metadata.builder().put(originalIndex, true).put(rolledIndex, true).build())
             .routingTable(RoutingTable.builder().add(routingTable.build()).build())
@@ -201,25 +192,14 @@ public class WaitForActiveShardsTests extends AbstractStepTestCase<WaitForActive
             ShardRoutingRoleStrategy.NO_SHARD_CREATION,
             failureRolledIndexMeta.getIndex()
         );
-        routingTable.addShard(
-            TestShardRouting.newShardRouting(rolledIndexMeta.getIndex().getName(), 0, "node", null, true, ShardRoutingState.STARTED)
-        );
-        routingTable.addShard(
-            TestShardRouting.newShardRouting(rolledIndexMeta.getIndex().getName(), 0, "node2", null, false, ShardRoutingState.STARTED)
-        );
-        failureRoutingTable.addShard(
-            TestShardRouting.newShardRouting(failureRolledIndexMeta.getIndex().getName(), 0, "node", null, true, ShardRoutingState.STARTED)
-        );
-        failureRoutingTable.addShard(
-            TestShardRouting.newShardRouting(
-                failureRolledIndexMeta.getIndex().getName(),
-                0,
-                "node2",
-                null,
-                false,
-                ShardRoutingState.STARTED
-            )
-        );
+        Index index3 = rolledIndexMeta.getIndex();
+        routingTable.addShard(TestShardRouting.newShardRouting(index3.name(), 0, "node", null, true, ShardRoutingState.STARTED));
+        Index index2 = rolledIndexMeta.getIndex();
+        routingTable.addShard(TestShardRouting.newShardRouting(index2.name(), 0, "node2", null, false, ShardRoutingState.STARTED));
+        Index index1 = failureRolledIndexMeta.getIndex();
+        failureRoutingTable.addShard(TestShardRouting.newShardRouting(index1.name(), 0, "node", null, true, ShardRoutingState.STARTED));
+        Index index = failureRolledIndexMeta.getIndex();
+        failureRoutingTable.addShard(TestShardRouting.newShardRouting(index.name(), 0, "node2", null, false, ShardRoutingState.STARTED));
 
         ClusterState clusterState = ClusterState.builder(ClusterName.DEFAULT)
             .metadata(
@@ -276,12 +256,10 @@ public class WaitForActiveShardsTests extends AbstractStepTestCase<WaitForActive
             ShardRoutingRoleStrategy.NO_SHARD_CREATION,
             rolledIndex.getIndex()
         );
-        routingTable.addShard(
-            TestShardRouting.newShardRouting(rolledIndex.getIndex().getName(), 0, "node", null, true, ShardRoutingState.STARTED)
-        );
-        routingTable.addShard(
-            TestShardRouting.newShardRouting(rolledIndex.getIndex().getName(), 0, "node2", null, false, ShardRoutingState.STARTED)
-        );
+        Index index1 = rolledIndex.getIndex();
+        routingTable.addShard(TestShardRouting.newShardRouting(index1.name(), 0, "node", null, true, ShardRoutingState.STARTED));
+        Index index = rolledIndex.getIndex();
+        routingTable.addShard(TestShardRouting.newShardRouting(index.name(), 0, "node2", null, false, ShardRoutingState.STARTED));
         ClusterState clusterState = ClusterState.builder(ClusterName.DEFAULT)
             .metadata(Metadata.builder().put(originalIndex, true).put(rolledIndex, true).build())
             .routingTable(RoutingTable.builder().add(routingTable.build()).build())

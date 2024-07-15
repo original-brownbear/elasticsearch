@@ -136,7 +136,8 @@ public class RoutingTableTests extends ESAllocationTestCase {
     }
 
     public void testIndex() {
-        assertThat(clusterState.routingTable().index(TEST_INDEX_1).getIndex().getName(), is(TEST_INDEX_1));
+        Index index = clusterState.routingTable().index(TEST_INDEX_1).getIndex();
+        assertThat(index.name(), is(TEST_INDEX_1));
         assertThat(clusterState.routingTable().index(new Index(TEST_INDEX_1, UUIDs.randomBase64UUID())), is(nullValue()));
         assertThat(clusterState.routingTable().index("foobar"), is(nullValue()));
     }

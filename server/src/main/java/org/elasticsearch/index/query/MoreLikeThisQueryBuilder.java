@@ -37,6 +37,7 @@ import org.elasticsearch.common.lucene.uid.Versions;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.RestApiVersion;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.VersionType;
 import org.elasticsearch.index.mapper.IdFieldMapper;
 import org.elasticsearch.index.mapper.KeywordFieldMapper.KeywordFieldType;
@@ -1070,7 +1071,8 @@ public class MoreLikeThisQueryBuilder extends AbstractQueryBuilder<MoreLikeThisQ
         boolean useDefaultField
     ) {
         if (item.index() == null) {
-            item.index(context.index().getName());
+            Index index = context.index();
+            item.index(index.name());
         }
         // default fields if not present but don't override for artificial docs
         if ((item.fields() == null || item.fields().length == 0) && item.doc() == null) {

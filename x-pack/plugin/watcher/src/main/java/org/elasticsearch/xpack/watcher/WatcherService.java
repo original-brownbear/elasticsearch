@@ -28,6 +28,7 @@ import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.core.TimeValue;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
@@ -320,7 +321,8 @@ public class WatcherService {
             refreshWatches(indexMetadata);
 
             // find out local shards
-            String watchIndexName = indexMetadata.getIndex().getName();
+            Index index = indexMetadata.getIndex();
+            String watchIndexName = index.name();
             RoutingNode routingNode = clusterState.getRoutingNodes().node(clusterState.nodes().getLocalNodeId());
             // yes, this can happen, if the state is not recovered
             if (routingNode == null) {

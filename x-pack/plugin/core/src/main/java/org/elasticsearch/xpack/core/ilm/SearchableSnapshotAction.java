@@ -141,7 +141,7 @@ public class SearchableSnapshotAction implements LifecycleAction {
                 }
 
                 IndexMetadata indexMetadata = clusterState.getMetadata().index(index);
-                assert indexMetadata != null : "index " + index.getName() + " must exist in the cluster state";
+                assert indexMetadata != null : "index " + index.name() + " must exist in the cluster state";
                 String policyName = indexMetadata.getLifecyclePolicyName();
                 SearchableSnapshotMetadata searchableSnapshotMetadata = extractSearchableSnapshotFromSettings(indexMetadata);
                 if (searchableSnapshotMetadata != null) {
@@ -155,7 +155,7 @@ public class SearchableSnapshotAction implements LifecycleAction {
                                 + "snapshot, but with a different repository (existing: [{}] vs new: [{}]), a new snapshot and "
                                 + "index will be created",
                             SearchableSnapshotAction.NAME,
-                            index.getName(),
+                            index.name(),
                             policyName,
                             searchableSnapshotMetadata.repositoryName,
                             this.snapshotRepository
@@ -173,7 +173,7 @@ public class SearchableSnapshotAction implements LifecycleAction {
                             "[{}] action is configured for index [{}] in policy [{}] which is already mounted "
                                 + "as a searchable snapshot with the same repository [{}] and storage type [{}], skipping this action",
                             SearchableSnapshotAction.NAME,
-                            index.getName(),
+                            index.name(),
                             policyName,
                             searchableSnapshotMetadata.repositoryName,
                             type
@@ -186,7 +186,7 @@ public class SearchableSnapshotAction implements LifecycleAction {
                             + "as a searchable snapshot in repository [{}], however, the storage type ([{}] vs [{}]) "
                             + "differs, so a new index will be created",
                         SearchableSnapshotAction.NAME,
-                        index.getName(),
+                        index.name(),
                         policyName,
                         this.snapshotRepository,
                         existingType,
@@ -233,7 +233,7 @@ public class SearchableSnapshotAction implements LifecycleAction {
                     // No name exists, so it must be generated
                     logger.trace(
                         "no snapshot name for index [{}] in policy [{}] exists, so one will be generated",
-                        index.getName(),
+                        index.name(),
                         policyName
                     );
                     return false;
@@ -266,8 +266,8 @@ public class SearchableSnapshotAction implements LifecycleAction {
                     snapshotName,
                     snapshotRepository,
                     snapshotIndexName,
-                    index.getName(),
-                    lifecycleExecutionState.snapshotName() != null ? "lifecycle execution state" : "metadata of " + index.getName()
+                    index.name(),
+                    lifecycleExecutionState.snapshotName() != null ? "lifecycle execution state" : "metadata of " + index.name()
                 );
                 return true;
             }
@@ -323,8 +323,8 @@ public class SearchableSnapshotAction implements LifecycleAction {
             swapAliasesKey,
             replaceDataStreamIndexKey,
             (index, clusterState) -> {
-                IndexAbstraction indexAbstraction = clusterState.metadata().getIndicesLookup().get(index.getName());
-                assert indexAbstraction != null : "invalid cluster metadata. index [" + index.getName() + "] was not found";
+                IndexAbstraction indexAbstraction = clusterState.metadata().getIndicesLookup().get(index.name());
+                assert indexAbstraction != null : "invalid cluster metadata. index [" + index.name() + "] was not found";
                 return indexAbstraction.getParentDataStream() != null;
             }
         );

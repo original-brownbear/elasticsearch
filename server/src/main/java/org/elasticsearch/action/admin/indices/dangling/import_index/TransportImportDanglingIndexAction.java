@@ -25,6 +25,7 @@ import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.gateway.LocalAllocateDangledIndices;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.transport.TransportService;
 
@@ -69,7 +70,8 @@ public class TransportImportDanglingIndexAction extends HandledTransportAction<I
                     return;
                 }
 
-                String indexName = indexMetaDataToImport.getIndex().getName();
+                Index index = indexMetaDataToImport.getIndex();
+                String indexName = index.name();
                 String indexUUID = indexMetaDataToImport.getIndexUUID();
 
                 danglingIndexAllocator.allocateDangled(List.of(indexMetaDataToImport), new ActionListener<>() {

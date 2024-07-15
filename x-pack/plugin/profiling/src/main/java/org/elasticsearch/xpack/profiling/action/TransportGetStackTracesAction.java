@@ -194,7 +194,8 @@ public class TransportGetStackTracesAction extends TransportAction<GetStackTrace
                 // data that we need to resort to the "full" events stream. As this is an edge case we'd rather fail instead of prematurely
                 // checking for existence in all cases.
                 if (e instanceof IndexNotFoundException) {
-                    String missingIndex = ((IndexNotFoundException) e).getIndex().getName();
+                    Index index = ((IndexNotFoundException) e).getIndex();
+                    String missingIndex = index.name();
                     EventsIndex fullIndex = EventsIndex.FULL_INDEX;
                     log.debug("Index [{}] does not exist. Using [{}] instead.", missingIndex, fullIndex.getName());
                     searchEventGroupedByStackTrace(submitTask, client, request, submitListener, responseBuilder, fullIndex);
@@ -826,7 +827,7 @@ public class TransportGetStackTracesAction extends TransportAction<GetStackTrace
     private void mget(Client client, List<Index> indices, List<String> slice, ActionListener<MultiGetResponse> listener) {
         for (Index index : indices) {
             client.prepareMultiGet()
-                .addIds(index.getName(), slice)
+                .addIds(index.name(), slice)
                 .setRealtime(realtime)
                 .execute(new RefCountAwareThreadedActionListener<>(responseExecutor, listener));
         }

@@ -20,6 +20,7 @@ import org.elasticsearch.cluster.routing.RoutingTable;
 import org.elasticsearch.cluster.routing.ShardRoutingRoleStrategy;
 import org.elasticsearch.cluster.version.CompatibilityVersions;
 import org.elasticsearch.common.settings.ClusterSettings;
+import org.elasticsearch.index.Index;
 
 import java.util.Map;
 
@@ -137,7 +138,8 @@ public class ClusterStateUpdaters {
             blocks.removeGlobalBlock(Metadata.CLUSTER_READ_ONLY_BLOCK);
             blocks.removeGlobalBlock(Metadata.CLUSTER_READ_ONLY_ALLOW_DELETE_BLOCK);
             for (IndexMetadata indexMetadata : state.metadata()) {
-                blocks.removeIndexBlocks(indexMetadata.getIndex().getName());
+                Index index = indexMetadata.getIndex();
+                blocks.removeIndexBlocks(index.name());
             }
             final Metadata metadata = Metadata.builder()
                 .clusterUUID(state.metadata().clusterUUID())

@@ -12,6 +12,7 @@ import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.fielddata.FieldData;
 import org.elasticsearch.index.fielddata.FieldDataContext;
 import org.elasticsearch.index.fielddata.IndexFieldData;
@@ -87,7 +88,12 @@ public class IndexFieldMapper extends MetadataFieldMapper {
         public ValueFetcher valueFetcher(SearchExecutionContext context, String format) {
             return new ValueFetcher() {
 
-                private final List<Object> indexName = List.of(context.getFullyQualifiedIndex().getName());
+                private final List<Object> indexName;
+
+                {
+                    Index index = context.getFullyQualifiedIndex();
+                    indexName = List.of(index.name());
+                }
 
                 @Override
                 public List<Object> fetchValues(Source source, int doc, List<Object> ignoredValues) {

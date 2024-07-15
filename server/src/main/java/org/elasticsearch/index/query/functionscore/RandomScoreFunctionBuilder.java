@@ -16,6 +16,7 @@ import org.elasticsearch.common.logging.DeprecationCategory;
 import org.elasticsearch.common.logging.DeprecationLogger;
 import org.elasticsearch.common.lucene.search.function.RandomScoreFunction;
 import org.elasticsearch.common.lucene.search.function.ScoreFunction;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.mapper.IdFieldMapper;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.query.SearchExecutionContext;
@@ -142,7 +143,8 @@ public class RandomScoreFunctionBuilder extends ScoreFunctionBuilder<RandomScore
 
     @Override
     protected ScoreFunction doToFunction(SearchExecutionContext context) {
-        final int salt = (context.index().getName().hashCode() << 10) | context.getShardId();
+        Index index = context.index();
+        final int salt = (index.name().hashCode() << 10) | context.getShardId();
         if (seed == null) {
             // DocID-based random score generation
             return new RandomScoreFunction(hash(context.nowInMillis()), salt, null);

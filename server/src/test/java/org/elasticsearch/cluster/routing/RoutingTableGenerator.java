@@ -12,6 +12,7 @@ import com.carrotsearch.randomizedtesting.RandomizedContext;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.shard.ShardId;
 
 import static org.elasticsearch.cluster.health.ClusterShardHealth.getInactivePrimaryHealth;
@@ -63,7 +64,8 @@ public class RoutingTableGenerator {
     }
 
     public IndexShardRoutingTable.Builder genShardRoutingTable(IndexMetadata indexMetadata, int shardId, ShardCounter counter) {
-        final String index = indexMetadata.getIndex().getName();
+        Index index1 = indexMetadata.getIndex();
+        final String index = index1.name();
         IndexShardRoutingTable.Builder builder = new IndexShardRoutingTable.Builder(new ShardId(index, "_na_", shardId));
         final ShardRouting primary = genShardRouting(index, shardId, true);
         counter.update(primary);

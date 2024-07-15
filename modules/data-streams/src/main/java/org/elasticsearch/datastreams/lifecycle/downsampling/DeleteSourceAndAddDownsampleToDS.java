@@ -20,6 +20,7 @@ import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.cluster.metadata.MetadataDeleteIndexService;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.TimeValue;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexSettings;
 
 import java.util.Locale;
@@ -82,7 +83,7 @@ public class DeleteSourceAndAddDownsampleToDS implements ClusterStateTaskListene
             // index was deleted in the meantime, so let's check if we can make sure the downsample index ends up in the
             // data stream (if not already there)
             if (dataStream != null
-                && dataStream.getIndices().stream().filter(index -> index.getName().equals(downsampleIndex)).findAny().isEmpty()) {
+                && dataStream.getIndices().stream().filter(index -> { return index.name().equals(downsampleIndex); }).findAny().isEmpty()) {
                 // add downsample index to data stream
                 LOGGER.trace(
                     "unable find source index [{}] but adding index [{}] to data stream [{}]",
@@ -96,14 +97,17 @@ public class DeleteSourceAndAddDownsampleToDS implements ClusterStateTaskListene
             }
         } else {
             DataStream sourceParentDataStream = sourceIndexAbstraction.getParentDataStream();
-            if (sourceParentDataStream != null && sourceParentDataStream.getWriteIndex().getName().equals(sourceBackingIndex)) {
-                String errorMessage = String.format(
-                    Locale.ROOT,
-                    "index [%s] is the write index for data stream [%s] and cannot be replaced",
-                    sourceBackingIndex,
-                    sourceParentDataStream.getName()
-                );
-                throw new IllegalStateException(errorMessage);
+            if (sourceParentDataStream != null) {
+                Index index = sourceParentDataStream.getWriteIndex();
+                if (index.name().equals(sourceBackingIndex)) {
+                    String errorMessage = String.format(
+                        Locale.ROOT,
+                        "index [%s] is the write index for data stream [%s] and cannot be replaced",
+                        sourceBackingIndex,
+                        sourceParentDataStream.getName()
+                    );
+                    throw new IllegalStateException(errorMessage);
+                }
             }
 
             IndexMetadata sourceIndexMeta = state.metadata().index(sourceBackingIndex);
@@ -127,7 +131,11 @@ public class DeleteSourceAndAddDownsampleToDS implements ClusterStateTaskListene
                 // the source index is not part of a data stream, so let's check if we can make sure the downsample index ends up in the
                 // data stream
                 if (dataStream != null
-                    && dataStream.getIndices().stream().filter(index -> index.getName().equals(downsampleIndex)).findAny().isEmpty()) {
+                    && dataStream.getIndices()
+                        .stream()
+                        .filter(index -> { return index.name().equals(downsampleIndex); })
+                        .findAny()
+                        .isEmpty()) {
                     return addDownsampleIndexToDataStream(state, dataStream, sourceIndexMeta, downsampleIndexMeta);
                 }
             }

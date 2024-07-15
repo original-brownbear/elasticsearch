@@ -50,7 +50,7 @@ final class WaitForFollowShardTasksStep extends AsyncWaitStep {
         }
 
         FollowStatsAction.StatsRequest request = new FollowStatsAction.StatsRequest();
-        request.setIndices(new String[] { index.getName() });
+        request.setIndices(new String[] { index.name() });
         getClient().execute(
             FollowStatsAction.INSTANCE,
             request,

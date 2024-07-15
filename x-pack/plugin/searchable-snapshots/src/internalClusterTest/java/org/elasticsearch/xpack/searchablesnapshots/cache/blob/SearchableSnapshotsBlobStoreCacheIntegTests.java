@@ -28,6 +28,7 @@ import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.IndexService;
 import org.elasticsearch.index.shard.IndexShard;
@@ -227,7 +228,8 @@ public class SearchableSnapshotsBlobStoreCacheIntegTests extends BaseFrozenSearc
 
         for (IndicesService indicesService : internalCluster().getDataNodeInstances(IndicesService.class)) {
             for (IndexService indexService : indicesService) {
-                if (indexService.index().getName().equals(restoredIndex)) {
+                Index index = indexService.index();
+                if (index.name().equals(restoredIndex)) {
                     for (IndexShard indexShard : indexService) {
                         try {
                             unwrapDirectory(indexShard.store().directory()).clearStats();

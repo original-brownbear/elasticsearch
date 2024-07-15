@@ -16,6 +16,7 @@ import org.elasticsearch.core.CheckedConsumer;
 import org.elasticsearch.core.PathUtils;
 import org.elasticsearch.gateway.CorruptStateException;
 import org.elasticsearch.gateway.PersistedClusterStateService;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.test.ESIntegTestCase;
 import org.elasticsearch.test.InternalTestCluster;
@@ -55,7 +56,8 @@ public class NodeEnvironmentIT extends ESIntegTestCase {
 
         logger.info("--> creating index");
         prepareCreate(indexName, indexSettings(1, 0)).get();
-        final String indexUUID = resolveIndex(indexName).getUUID();
+        Index index = resolveIndex(indexName);
+        final String indexUUID = index.uuid();
         if (writeDanglingIndices) {
             assertBusy(
                 () -> internalCluster().getInstances(IndicesService.class)

@@ -18,7 +18,6 @@ import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.index.Index;
 import org.elasticsearch.license.LicenseUtils;
 import org.elasticsearch.persistent.PersistentTasksCustomMetadata;
 import org.elasticsearch.tasks.CancellableTask;
@@ -138,7 +137,7 @@ public class TransportFollowStatsAction extends TransportTasksAction<
                 return shardFollowTask.getFollowShardId().getIndex();
             })
             .filter(followerIndex -> metadata.index(followerIndex) != null) // hide tasks that are orphaned (see ShardFollowTaskCleaner)
-            .map(Index::getName)
+            .map(index -> index.name())
             .filter(followerIndex -> Strings.isAllOrWildcard(indices) || requestedFollowerIndices.contains(followerIndex))
             .collect(Collectors.toSet());
     }

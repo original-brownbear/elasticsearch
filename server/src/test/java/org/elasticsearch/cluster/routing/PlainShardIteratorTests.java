@@ -8,6 +8,7 @@
 
 package org.elasticsearch.cluster.routing;
 
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.test.EqualsHashCodeTestUtils;
@@ -26,16 +27,14 @@ public class PlainShardIteratorTests extends ESTestCase {
             i -> {
                 ShardId shardId = switch (randomIntBetween(0, 2)) {
                     case 0 -> new ShardId(i.shardId().getIndex(), i.shardId().getId() + randomIntBetween(1, 1000));
-                    case 1 -> new ShardId(
-                        i.shardId().getIndexName(),
-                        i.shardId().getIndex().getUUID() + randomAlphaOfLengthBetween(1, 3),
-                        i.shardId().getId()
-                    );
-                    case 2 -> new ShardId(
-                        i.shardId().getIndexName() + randomAlphaOfLengthBetween(1, 3),
-                        i.shardId().getIndex().getUUID(),
-                        i.shardId().getId()
-                    );
+                    case 1 -> {
+                        Index index = i.shardId().getIndex();
+                        yield new ShardId(i.shardId().getIndexName(), index.uuid() + randomAlphaOfLengthBetween(1, 3), i.shardId().getId());
+                    }
+                    case 2 -> {
+                        Index index = i.shardId().getIndex();
+                        yield new ShardId(i.shardId().getIndexName() + randomAlphaOfLengthBetween(1, 3), index.uuid(), i.shardId().getId());
+                    }
                     default -> throw new UnsupportedOperationException();
                 };
                 return new PlainShardIterator(shardId, i.getShardRoutings());

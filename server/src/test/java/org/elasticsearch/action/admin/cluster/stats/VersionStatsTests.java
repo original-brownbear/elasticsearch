@@ -19,6 +19,7 @@ import org.elasticsearch.cluster.routing.RecoverySource;
 import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.routing.UnassignedInfo;
 import org.elasticsearch.common.io.stream.Writeable;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.IndexVersions;
 import org.elasticsearch.index.shard.IndexShard;
@@ -105,9 +106,8 @@ public class VersionStatsTests extends AbstractWireSerializingTestCase<VersionSt
             new UnassignedInfo(UnassignedInfo.Reason.INDEX_CREATED, "message"),
             ShardRouting.Role.DEFAULT
         );
-        Path path = createTempDir().resolve("indices")
-            .resolve(shardRouting.shardId().getIndex().getUUID())
-            .resolve(String.valueOf(shardRouting.shardId().id()));
+        Index index = shardRouting.shardId().getIndex();
+        Path path = createTempDir().resolve("indices").resolve(index.uuid()).resolve(String.valueOf(shardRouting.shardId().id()));
         IndexShard indexShard = mock(IndexShard.class);
         StoreStats storeStats = new StoreStats(100, 150, 200);
         when(indexShard.storeStats()).thenReturn(storeStats);

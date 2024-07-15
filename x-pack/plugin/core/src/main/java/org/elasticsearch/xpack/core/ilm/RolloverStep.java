@@ -20,6 +20,7 @@ import org.elasticsearch.cluster.metadata.IndexAbstraction;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.core.TimeValue;
+import org.elasticsearch.index.Index;
 
 import java.util.Locale;
 import java.util.Objects;
@@ -48,7 +49,8 @@ public class RolloverStep extends AsyncActionStep {
         ClusterStateObserver observer,
         ActionListener<Void> listener
     ) {
-        String indexName = indexMetadata.getIndex().getName();
+        Index index1 = indexMetadata.getIndex();
+        String indexName = index1.name();
         boolean indexingComplete = LifecycleSettings.LIFECYCLE_INDEXING_COMPLETE_SETTING.get(indexMetadata.getSettings());
         if (indexingComplete) {
             logger.trace(indexMetadata.getIndex() + " has lifecycle complete set, skipping " + RolloverStep.NAME);
@@ -62,7 +64,8 @@ public class RolloverStep extends AsyncActionStep {
         DataStream dataStream = indexAbstraction.getParentDataStream();
         if (dataStream != null) {
             boolean isFailureStoreWriteIndex = indexMetadata.getIndex().equals(dataStream.getFailureStoreWriteIndex());
-            targetFailureStore = dataStream.isFailureStoreIndex(indexMetadata.getIndex().getName());
+            Index index = indexMetadata.getIndex();
+            targetFailureStore = dataStream.isFailureStoreIndex(index.name());
             if (isFailureStoreWriteIndex == false && dataStream.getWriteIndex().equals(indexMetadata.getIndex()) == false) {
                 logger.warn(
                     "index [{}] is not the {}write index for data stream [{}]. skipping rollover for policy [{}]",

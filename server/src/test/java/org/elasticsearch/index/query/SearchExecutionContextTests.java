@@ -31,6 +31,7 @@ import org.elasticsearch.common.Explicit;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.BigArrays;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.analysis.AnalyzerScope;
@@ -158,9 +159,13 @@ public class SearchExecutionContextTests extends ESTestCase {
         IndexFieldMapper mapper = new IndexFieldMapper();
 
         IndexFieldData<?> forField = context.getForField(mapper.fieldType(), MappedFieldType.FielddataOperation.SEARCH);
-        String expected = clusterAlias == null
-            ? context.getIndexSettings().getIndexMetadata().getIndex().getName()
-            : clusterAlias + ":" + context.getIndexSettings().getIndex().getName();
+        String expected;
+        if (clusterAlias == null) {
+            Index index = context.getIndexSettings().getIndexMetadata().getIndex();
+            expected = index.name();
+        } else {
+            expected = clusterAlias + ":" + context.getIndexSettings().getIndex().name();
+        }
         assertEquals(expected, ((AbstractLeafOrdinalsFieldData) forField.load(null)).getOrdinalsValues().lookupOrd(0).utf8ToString());
     }
 
@@ -168,8 +173,10 @@ public class SearchExecutionContextTests extends ESTestCase {
         String clusterAlias = randomAlphaOfLengthBetween(5, 10);
         String indexUuid = randomAlphaOfLengthBetween(3, 10);
         SearchExecutionContext searchExecutionContext = createSearchExecutionContext(indexUuid, clusterAlias);
-        assertThat(searchExecutionContext.getFullyQualifiedIndex().getName(), equalTo(clusterAlias + ":index"));
-        assertThat(searchExecutionContext.getFullyQualifiedIndex().getUUID(), equalTo(indexUuid));
+        Index index = searchExecutionContext.getFullyQualifiedIndex();
+        assertThat(index.name(), equalTo(clusterAlias + ":index"));
+        Index index1 = searchExecutionContext.getFullyQualifiedIndex();
+        assertThat(index1.uuid(), equalTo(indexUuid));
     }
 
     public void testIndexSortedOnField() {

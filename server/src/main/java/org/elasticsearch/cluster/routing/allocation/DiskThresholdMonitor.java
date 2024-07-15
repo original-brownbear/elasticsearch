@@ -34,6 +34,7 @@ import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.gateway.GatewayService;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.snapshots.SnapshotShardSizeInfo;
 
 import java.util.ArrayList;
@@ -208,7 +209,8 @@ public class DiskThresholdMonitor {
 
                 if (routingNode != null) { // might be temporarily null if the ClusterInfoService and the ClusterService are out of step
                     for (ShardRouting routing : routingNode) {
-                        String indexName = routing.index().getName();
+                        Index index = routing.index();
+                        String indexName = index.name();
                         indicesToMarkReadOnly.add(indexName);
                         indicesNotToAutoRelease.add(indexName);
                     }
@@ -226,7 +228,8 @@ public class DiskThresholdMonitor {
             if (usage.freeBytes() < diskThresholdSettings.getFreeBytesThresholdHighStage(total).getBytes()) {
                 if (routingNode != null) { // might be temporarily null if the ClusterInfoService and the ClusterService are out of step
                     for (ShardRouting routing : routingNode) {
-                        String indexName = routing.index().getName();
+                        Index index = routing.index();
+                        String indexName = index.name();
                         indicesNotToAutoRelease.add(indexName);
                     }
                 }
@@ -386,7 +389,8 @@ public class DiskThresholdMonitor {
             final Set<String> indicesOnReplaceSourceOrTarget = new HashSet<>();
             for (String nodeId : nodesIdsPartOfReplacement) {
                 for (ShardRouting shardRouting : state.getRoutingNodes().node(nodeId)) {
-                    indicesOnReplaceSourceOrTarget.add(shardRouting.index().getName());
+                    Index index = shardRouting.index();
+                    indicesOnReplaceSourceOrTarget.add(index.name());
                 }
             }
 
@@ -441,7 +445,8 @@ public class DiskThresholdMonitor {
         for (RoutingNode routingNode : routingNodes) {
             if (usages.containsKey(routingNode.nodeId()) == false) {
                 for (ShardRouting routing : routingNode) {
-                    String indexName = routing.index().getName();
+                    Index index = routing.index();
+                    String indexName = index.name();
                     indicesToMarkIneligibleForAutoRelease.add(indexName);
                 }
             }

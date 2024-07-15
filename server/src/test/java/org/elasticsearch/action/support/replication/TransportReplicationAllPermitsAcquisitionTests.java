@@ -35,6 +35,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.TimeValue;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexService;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.engine.InternalEngineFactory;
@@ -124,7 +125,8 @@ public class TransportReplicationAllPermitsAcquisitionTests extends IndexShardTe
             RecoverySource.EmptyStoreRecoverySource.INSTANCE
         ).build();
 
-        Settings indexSettings = indexSettings(IndexVersion.current(), 1, 1).put(SETTING_INDEX_UUID, shardId.getIndex().getUUID())
+        Index index = shardId.getIndex();
+        Settings indexSettings = indexSettings(IndexVersion.current(), 1, 1).put(SETTING_INDEX_UUID, index.uuid())
             .put(SETTING_CREATION_DATE, System.currentTimeMillis())
             .build();
 

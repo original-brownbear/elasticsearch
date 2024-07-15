@@ -19,6 +19,7 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.gateway.DanglingIndicesState;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
@@ -89,9 +90,10 @@ public class TransportListDanglingIndicesAction extends TransportNodesAction<
 
         for (IndexMetadata each : danglingIndicesState.getDanglingIndices().values()) {
             if (indexFilter == null || indexFilter.equals(each.getIndexUUID())) {
+                Index index = each.getIndex();
                 DanglingIndexInfo danglingIndexInfo = new DanglingIndexInfo(
                     localNode.getId(),
-                    each.getIndex().getName(),
+                    index.name(),
                     each.getIndexUUID(),
                     each.getCreationDate()
                 );

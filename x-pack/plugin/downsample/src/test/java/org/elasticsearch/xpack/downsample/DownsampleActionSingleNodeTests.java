@@ -561,7 +561,8 @@ public class DownsampleActionSingleNodeTests extends ESSingleNodeTestCase {
             IndexNotFoundException.class,
             () -> downsample("missing-index", downsampleIndex, config)
         );
-        assertEquals("missing-index", exception.getIndex().getName());
+        Index index = exception.getIndex();
+        assertEquals("missing-index", index.name());
         assertThat(exception.getMessage(), containsString("no such index [missing-index]"));
     }
 
@@ -644,9 +645,9 @@ public class DownsampleActionSingleNodeTests extends ESSingleNodeTestCase {
         assertEquals(1, r.getDataStreams().size());
         List<Index> indices = r.getDataStreams().get(0).getDataStream().getIndices();
         // Assert that the downsample index has not been added to the data stream
-        assertTrue(indices.stream().filter(i -> i.getName().equals(downsampleIndex)).toList().isEmpty());
+        assertTrue(indices.stream().filter(i -> { return i.name().equals(downsampleIndex); }).toList().isEmpty());
         // Assert that the source index is still a member of the data stream
-        assertFalse(indices.stream().filter(i -> i.getName().equals(sourceIndex)).toList().isEmpty());
+        assertFalse(indices.stream().filter(i -> { return i.name().equals(sourceIndex); }).toList().isEmpty());
     }
 
     public void testCancelDownsampleIndexer() throws IOException {

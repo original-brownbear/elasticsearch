@@ -339,13 +339,13 @@ public class IndicesAndAliasesResolverTests extends ESTestCase {
                 null
             )
         );
+        Index index = dataStreamIndex1.getIndex();
         roleMap.put(
             "backing_index_test_name",
             new RoleDescriptor(
                 "backing_index_test_name",
                 null,
-                new IndicesPrivileges[] {
-                    IndicesPrivileges.builder().indices(dataStreamIndex1.getIndex().getName()).privileges("all").build() },
+                new IndicesPrivileges[] { IndicesPrivileges.builder().indices(index.name()).privileges("all").build() },
                 null
             )
         );
@@ -2171,8 +2171,8 @@ public class IndicesAndAliasesResolverTests extends ESTestCase {
             assertThat(authorizedIndices.all().get(), hasItem(dsName));
             assertThat(authorizedIndices.check(dsName), is(true));
             for (Index i : dataStream.getIndices()) {
-                assertThat(authorizedIndices.all().get(), hasItem(i.getName()));
-                assertThat(authorizedIndices.check(i.getName()), is(true));
+                assertThat(authorizedIndices.all().get(), hasItem(i.name()));
+                assertThat(authorizedIndices.check(i.name()), is(true));
             }
         }
 
@@ -2189,7 +2189,7 @@ public class IndicesAndAliasesResolverTests extends ESTestCase {
             DataStream dataStream = metadata.dataStreams().get(dsName);
             assertThat(resolvedIndices.getLocal(), hasItem(dsName));
             for (Index i : dataStream.getIndices()) {
-                assertThat(resolvedIndices.getLocal(), hasItem(i.getName()));
+                assertThat(resolvedIndices.getLocal(), hasItem(i.name()));
             }
         }
     }
@@ -2210,8 +2210,8 @@ public class IndicesAndAliasesResolverTests extends ESTestCase {
         assertThat(authorizedIndices.all().get(), hasItem(dataStreamName));
         assertThat(authorizedIndices.check(dataStreamName), is(true));
         for (Index i : dataStream.getIndices()) {
-            assertThat(authorizedIndices.all().get(), hasItem(i.getName()));
-            assertThat(authorizedIndices.check(i.getName()), is(true));
+            assertThat(authorizedIndices.all().get(), hasItem(i.name()));
+            assertThat(authorizedIndices.check(i.name()), is(true));
         }
 
         // neither data streams nor their backing indices will be in the resolved list since the backing indices do not match the
@@ -2224,7 +2224,7 @@ public class IndicesAndAliasesResolverTests extends ESTestCase {
         );
         assertThat(resolvedIndices.getLocal(), hasItem(dataStreamName));
         for (Index i : dataStream.getIndices()) {
-            assertThat(resolvedIndices.getLocal(), hasItem(i.getName()));
+            assertThat(resolvedIndices.getLocal(), hasItem(i.name()));
         }
     }
 
@@ -2242,8 +2242,8 @@ public class IndicesAndAliasesResolverTests extends ESTestCase {
             assertThat(authorizedIndices.all().get(), hasItem(dsName));
             assertThat(authorizedIndices.check(dsName), is(true));
             for (Index i : dataStream.getIndices()) {
-                assertThat(authorizedIndices.all().get(), hasItem(i.getName()));
-                assertThat(authorizedIndices.check(i.getName()), is(true));
+                assertThat(authorizedIndices.all().get(), hasItem(i.name()));
+                assertThat(authorizedIndices.check(i.name()), is(true));
             }
         }
 
@@ -2265,7 +2265,7 @@ public class IndicesAndAliasesResolverTests extends ESTestCase {
             DataStream dataStream = metadata.dataStreams().get(dsName);
             assertNotNull(dataStream);
             for (Index i : dataStream.getIndices()) {
-                assertThat(resolvedIndices.getLocal(), not(hasItem(i.getName())));
+                assertThat(resolvedIndices.getLocal(), not(hasItem(i.name())));
             }
         }
     }
@@ -2283,8 +2283,8 @@ public class IndicesAndAliasesResolverTests extends ESTestCase {
         assertThat(authorizedIndices.all().get(), hasItem(dataStreamName));
         assertThat(authorizedIndices.check(dataStreamName), is(true));
         for (Index i : dataStream.getIndices()) {
-            assertThat(authorizedIndices.all().get(), hasItem(i.getName()));
-            assertThat(authorizedIndices.check(i.getName()), is(true));
+            assertThat(authorizedIndices.all().get(), hasItem(i.name()));
+            assertThat(authorizedIndices.check(i.name()), is(true));
         }
 
         ResolvedIndices resolvedIndices = defaultIndicesResolver.resolveIndicesAndAliases(
@@ -2297,7 +2297,7 @@ public class IndicesAndAliasesResolverTests extends ESTestCase {
         // name
         assertThat(resolvedIndices.getLocal(), hasItem(dataStreamName));
         for (Index i : dataStream.getIndices()) {
-            assertThat(resolvedIndices.getLocal(), not(hasItem(i.getName())));
+            assertThat(resolvedIndices.getLocal(), not(hasItem(i.name())));
         }
     }
 
@@ -2315,8 +2315,8 @@ public class IndicesAndAliasesResolverTests extends ESTestCase {
             assertThat(authorizedIndices.all().get(), hasItem(dsName));
             assertThat(authorizedIndices.check(dsName), is(true));
             for (Index i : dataStream.getIndices()) {
-                assertThat(authorizedIndices.all().get(), hasItem(i.getName()));
-                assertThat(authorizedIndices.check(i.getName()), is(true));
+                assertThat(authorizedIndices.all().get(), hasItem(i.name()));
+                assertThat(authorizedIndices.check(i.name()), is(true));
             }
         }
 
@@ -2332,7 +2332,7 @@ public class IndicesAndAliasesResolverTests extends ESTestCase {
             DataStream dataStream = metadata.dataStreams().get(dsName);
             assertThat(resolvedIndices.getLocal(), not(hasItem(dsName)));
             for (Index i : dataStream.getIndices()) {
-                assertThat(resolvedIndices.getLocal(), hasItem(i.getName()));
+                assertThat(resolvedIndices.getLocal(), hasItem(i.name()));
             }
         }
     }
@@ -2353,8 +2353,8 @@ public class IndicesAndAliasesResolverTests extends ESTestCase {
         assertThat(authorizedIndices.all().get(), hasItem(dataStreamName));
         assertThat(authorizedIndices.check(dataStreamName), is(true));
         for (Index i : dataStream.getIndices()) {
-            assertThat(authorizedIndices.all().get(), hasItem(i.getName()));
-            assertThat(authorizedIndices.check(i.getName()), is(true));
+            assertThat(authorizedIndices.all().get(), hasItem(i.name()));
+            assertThat(authorizedIndices.check(i.name()), is(true));
         }
 
         // neither data streams nor their backing indices will be in the resolved list since the request does not support data streams
@@ -2367,7 +2367,7 @@ public class IndicesAndAliasesResolverTests extends ESTestCase {
         );
         assertThat(resolvedIndices.getLocal(), hasItem(dataStreamName));
         for (Index i : dataStream.getIndices()) {
-            assertThat(resolvedIndices.getLocal(), hasItem(i.getName()));
+            assertThat(resolvedIndices.getLocal(), hasItem(i.name()));
         }
     }
 
@@ -2388,8 +2388,8 @@ public class IndicesAndAliasesResolverTests extends ESTestCase {
         // request pattern is subset of the authorized pattern, but be aware that patterns are never passed to #check in main code
         assertThat(authorizedIndices.check(indexName), is(true));
         for (Index i : dataStream.getIndices()) {
-            assertThat(authorizedIndices.all().get(), hasItem(i.getName()));
-            assertThat(authorizedIndices.check(i.getName()), is(true));
+            assertThat(authorizedIndices.all().get(), hasItem(i.name()));
+            assertThat(authorizedIndices.check(i.name()), is(true));
         }
 
         // only the backing indices will be in the resolved list since the request does not support data streams
@@ -2402,7 +2402,7 @@ public class IndicesAndAliasesResolverTests extends ESTestCase {
         );
         assertThat(resolvedIndices.getLocal(), not(hasItem(dataStream.getName())));
         for (Index i : dataStream.getIndices()) {
-            assertThat(resolvedIndices.getLocal(), hasItem(i.getName()));
+            assertThat(resolvedIndices.getLocal(), hasItem(i.name()));
         }
     }
 
@@ -2450,8 +2450,8 @@ public class IndicesAndAliasesResolverTests extends ESTestCase {
         // request pattern is subset of the authorized pattern, but be aware that patterns are never passed to #check in main code
         assertThat(authorizedIndices.check(indexName), is(true));
         for (Index i : dataStream.getIndices()) {
-            assertThat(authorizedIndices.all().get(), hasItem(i.getName()));
-            assertThat(authorizedIndices.check(i.getName()), is(true));
+            assertThat(authorizedIndices.all().get(), hasItem(i.name()));
+            assertThat(authorizedIndices.check(i.name()), is(true));
         }
 
         // only the backing indices will be in the resolved list since the request does not support data streams
@@ -2464,7 +2464,7 @@ public class IndicesAndAliasesResolverTests extends ESTestCase {
         );
         assertThat(resolvedIndices.getLocal(), not(hasItem(dataStream.getName())));
         for (Index i : dataStream.getIndices()) {
-            assertThat(resolvedIndices.getLocal(), hasItem(i.getName()));
+            assertThat(resolvedIndices.getLocal(), hasItem(i.name()));
         }
     }
 

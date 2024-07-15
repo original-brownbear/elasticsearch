@@ -43,6 +43,7 @@ import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.util.Maps;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.repositories.IndexId;
@@ -547,8 +548,8 @@ public class DesiredBalanceComputerTests extends ESAllocationTestCase {
             DesiredBalance.INITIAL,
             createInput(clusterState),
             queue(
-                new MoveAllocationCommand(index.getName(), 0, "node-1", "node-2"),
-                new MoveAllocationCommand(index.getName(), 1, "node-1", "node-2")
+                new MoveAllocationCommand(index.name(), 0, "node-1", "node-2"),
+                new MoveAllocationCommand(index.name(), 1, "node-1", "node-2")
             ),
             input -> true
         );
@@ -938,6 +939,8 @@ public class DesiredBalanceComputerTests extends ESAllocationTestCase {
             ByteSizeValue.ofMb(512).getBytes()
         );
 
+        Index index = indexMetadata3.getIndex();
+        Index index1 = indexMetadata2.getIndex();
         var clusterState = ClusterState.builder(ClusterName.DEFAULT)
             .nodes(DiscoveryNodes.builder().add(newNode("node-1")).add(newNode("node-2")))
             .metadata(Metadata.builder().put(indexMetadata1, false).put(indexMetadata2, false).put(indexMetadata3, false).build())
@@ -951,7 +954,7 @@ public class DesiredBalanceComputerTests extends ESAllocationTestCase {
                             snapshot,
                             RestoreInProgress.State.STARTED,
                             randomBoolean(),
-                            List.of(indexMetadata2.getIndex().getName(), indexMetadata3.getIndex().getName()),
+                            List.of(index1.name(), index.name()),
                             Map.ofEntries(
                                 Map.entry(shardIdFrom(indexMetadata2, 0), new RestoreInProgress.ShardRestoreStatus(randomUUID())),
                                 Map.entry(shardIdFrom(indexMetadata3, 0), new RestoreInProgress.ShardRestoreStatus(randomUUID())),
@@ -1065,6 +1068,8 @@ public class DesiredBalanceComputerTests extends ESAllocationTestCase {
             ByteSizeValue.ofMb(512).getBytes()
         );
 
+        Index index = indexMetadata3.getIndex();
+        Index index1 = indexMetadata2.getIndex();
         var clusterState = ClusterState.builder(ClusterName.DEFAULT)
             .nodes(DiscoveryNodes.builder().add(newNode("node-1")).add(newNode("node-2")))
             .metadata(Metadata.builder().put(indexMetadata1, false).put(indexMetadata2, false).put(indexMetadata3, false).build())
@@ -1078,7 +1083,7 @@ public class DesiredBalanceComputerTests extends ESAllocationTestCase {
                             snapshot,
                             RestoreInProgress.State.STARTED,
                             randomBoolean(),
-                            List.of(indexMetadata2.getIndex().getName(), indexMetadata3.getIndex().getName()),
+                            List.of(index1.name(), index.name()),
                             Map.ofEntries(
                                 Map.entry(shardIdFrom(indexMetadata2, 0), new RestoreInProgress.ShardRestoreStatus(randomUUID())),
                                 Map.entry(shardIdFrom(indexMetadata3, 0), new RestoreInProgress.ShardRestoreStatus(randomUUID())),
@@ -1173,7 +1178,9 @@ public class DesiredBalanceComputerTests extends ESAllocationTestCase {
     }
 
     private static IndexId indexIdFrom(IndexMetadata indexMetadata) {
-        return new IndexId(indexMetadata.getIndex().getName(), indexMetadata.getIndex().getUUID());
+        Index index = indexMetadata.getIndex();
+        Index index1 = indexMetadata.getIndex();
+        return new IndexId(index.name(), index1.uuid());
     }
 
     private static ShardId shardIdFrom(IndexMetadata indexMetadata, int shardId) {

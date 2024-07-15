@@ -331,7 +331,7 @@ public class IndexNameExpressionResolver {
         Index[] indexes = concreteIndices(context, indexExpressions);
         String[] names = new String[indexes.length];
         for (int i = 0; i < indexes.length; i++) {
-            names[i] = indexes[i].getName();
+            names[i] = indexes[i].name();
         }
         return names;
     }
@@ -356,7 +356,8 @@ public class IndexNameExpressionResolver {
                     );
                 }
                 if (indexAbstraction.isDataStreamRelated()) {
-                    DataStream dataStream = indicesLookup.get(indexAbstraction.getWriteIndex().getName()).getParentDataStream();
+                    Index index = indexAbstraction.getWriteIndex();
+                    DataStream dataStream = indicesLookup.get(index.name()).getParentDataStream();
                     resolveWriteIndexForDataStreams(context, dataStream, concreteIndicesResult);
                 } else {
                     if (addIndex(writeIndex, null, context)) {
@@ -371,7 +372,7 @@ public class IndexNameExpressionResolver {
                     String[] indexNames = new String[indexAbstraction.getIndices().size()];
                     int i = 0;
                     for (Index indexName : indexAbstraction.getIndices()) {
-                        indexNames[i++] = indexName.getName();
+                        indexNames[i++] = indexName.name();
                     }
                     throw new IllegalArgumentException(
                         indexAbstraction.getType().getDisplayName()
@@ -392,7 +393,7 @@ public class IndexNameExpressionResolver {
                         // Collect the data streams involved
                         Set<DataStream> aliasDataStreams = new HashSet<>();
                         for (Index index : indexAbstraction.getIndices()) {
-                            aliasDataStreams.add(indicesLookup.get(index.getName()).getParentDataStream());
+                            aliasDataStreams.add(indicesLookup.get(index.name()).getParentDataStream());
                         }
                         for (DataStream dataStream : aliasDataStreams) {
                             resolveIndicesForDataStream(context, dataStream, concreteIndicesResult);
@@ -493,7 +494,7 @@ public class IndexNameExpressionResolver {
         boolean matchedIndex = false;
         for (Index concreteIndex : concreteIndices) {
             IndexMetadata idxMetadata = metadata.index(concreteIndex);
-            String name = concreteIndex.getName();
+            String name = concreteIndex.name();
             if (idxMetadata.isSystem() && systemIndexAccessPredicate.test(name) == false) {
                 matchedIndex = true;
                 IndexAbstraction indexAbstraction = indicesLookup.get(name);
@@ -562,17 +563,18 @@ public class IndexNameExpressionResolver {
     }
 
     private static boolean shouldTrackConcreteIndex(Context context, IndicesOptions options, Index index) {
-        if (context.systemIndexAccessLevel == SystemIndexAccessLevel.BACKWARDS_COMPATIBLE_ONLY
-            && context.netNewSystemIndexPredicate.test(index.getName())) {
-            // Exclude this one as it's a net-new system index, and we explicitly don't want those.
-            return false;
+        if (context.systemIndexAccessLevel == SystemIndexAccessLevel.BACKWARDS_COMPATIBLE_ONLY) {
+            if (context.netNewSystemIndexPredicate.test(index.name())) {
+                // Exclude this one as it's a net-new system index, and we explicitly don't want those.
+                return false;
+            }
         }
         if (DataStream.isFailureStoreFeatureFlagEnabled()) {
-            IndexAbstraction indexAbstraction = context.getState().metadata().getIndicesLookup().get(index.getName());
+            IndexAbstraction indexAbstraction = context.getState().metadata().getIndicesLookup().get(index.name());
             if (context.options.allowFailureIndices() == false) {
                 DataStream parentDataStream = indexAbstraction.getParentDataStream();
                 if (parentDataStream != null && parentDataStream.isFailureStoreEnabled()) {
-                    if (parentDataStream.isFailureStoreIndex(index.getName())) {
+                    if (parentDataStream.isFailureStoreIndex(index.name())) {
                         if (options.ignoreUnavailable()) {
                             return false;
                         } else {
@@ -929,7 +931,7 @@ public class IndexNameExpressionResolver {
             IndexAbstraction indexAbstraction = state.metadata().getIndicesLookup().get(expression);
             if (indexAbstraction != null && indexAbstraction.getType() == Type.ALIAS) {
                 for (Index index : indexAbstraction.getIndices()) {
-                    String concreteIndex = index.getName();
+                    String concreteIndex = index.name();
                     if (norouting.contains(concreteIndex) == false) {
                         AliasMetadata aliasMetadata = state.metadata().index(concreteIndex).getAliases().get(indexAbstraction.getName());
                         if (aliasMetadata != null && aliasMetadata.searchRoutingValues().isEmpty() == false) {
@@ -958,7 +960,7 @@ public class IndexNameExpressionResolver {
                 }
                 if (dataStream.getIndices() != null) {
                     for (Index index : dataStream.getIndices()) {
-                        String concreteIndex = index.getName();
+                        String concreteIndex = index.name();
                         routings = collectRoutings(routings, paramRouting, norouting, concreteIndex);
                     }
                 }
@@ -1435,7 +1437,7 @@ public class IndexNameExpressionResolver {
                     if (excludeState != null) {
                         indicesStateStream = indicesStateStream.filter(indexMeta -> indexMeta.getState() != excludeState);
                     }
-                    return indicesStateStream.map(indexMeta -> indexMeta.getIndex().getName());
+                    return indicesStateStream.map(indexMeta -> { return indexMeta.getIndex().name(); });
                 }
             });
         }

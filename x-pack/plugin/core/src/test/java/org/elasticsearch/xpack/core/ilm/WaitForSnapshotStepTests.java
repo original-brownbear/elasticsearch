@@ -17,6 +17,7 @@ import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.LifecycleExecutionState;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.snapshots.Snapshot;
 import org.elasticsearch.snapshots.SnapshotId;
@@ -83,7 +84,8 @@ public class WaitForSnapshotStepTests extends AbstractStepTestCase<WaitForSnapsh
             .numberOfShards(randomIntBetween(1, 5))
             .numberOfReplicas(randomIntBetween(0, 5))
             .build();
-        Map<String, IndexMetadata> indices = Map.of(indexMetadata.getIndex().getName(), indexMetadata);
+        Index index = indexMetadata.getIndex();
+        Map<String, IndexMetadata> indices = Map.of(index.name(), indexMetadata);
         Metadata.Builder meta = Metadata.builder().indices(indices);
         ClusterState clusterState = ClusterState.builder(ClusterName.DEFAULT).metadata(meta).build();
         WaitForSnapshotStep instance = createRandomInstance();
@@ -122,7 +124,8 @@ public class WaitForSnapshotStepTests extends AbstractStepTestCase<WaitForSnapsh
             .numberOfShards(randomIntBetween(1, 5))
             .numberOfReplicas(randomIntBetween(0, 5))
             .build();
-        Map<String, IndexMetadata> indices = Map.of(indexMetadata.getIndex().getName(), indexMetadata);
+        Index index = indexMetadata.getIndex();
+        Map<String, IndexMetadata> indices = Map.of(index.name(), indexMetadata);
         Metadata.Builder meta = Metadata.builder().indices(indices).putCustom(SnapshotLifecycleMetadata.TYPE, smlMetadata);
         ClusterState clusterState = ClusterState.builder(ClusterName.DEFAULT).metadata(meta).build();
         SetOnce<Boolean> isConditionMet = new SetOnce<>();
@@ -236,7 +239,8 @@ public class WaitForSnapshotStepTests extends AbstractStepTestCase<WaitForSnapsh
             .numberOfShards(randomIntBetween(1, 5))
             .numberOfReplicas(randomIntBetween(0, 5))
             .build();
-        Map<String, IndexMetadata> indices = Map.of(indexMetadata.getIndex().getName(), indexMetadata);
+        Index index = indexMetadata.getIndex();
+        Map<String, IndexMetadata> indices = Map.of(index.name(), indexMetadata);
         Metadata.Builder meta = Metadata.builder().indices(indices).putCustom(SnapshotLifecycleMetadata.TYPE, smlMetadata);
         ClusterState clusterState = ClusterState.builder(ClusterName.DEFAULT).metadata(meta).build();
         SetOnce<Exception> error = new SetOnce<>();
@@ -300,7 +304,8 @@ public class WaitForSnapshotStepTests extends AbstractStepTestCase<WaitForSnapsh
             .numberOfShards(randomIntBetween(1, 5))
             .numberOfReplicas(randomIntBetween(0, 5))
             .build();
-        Map<String, IndexMetadata> indices = Map.of(indexMetadata.getIndex().getName(), indexMetadata);
+        Index index = indexMetadata.getIndex();
+        Map<String, IndexMetadata> indices = Map.of(index.name(), indexMetadata);
         Metadata.Builder meta = Metadata.builder().indices(indices).putCustom(SnapshotLifecycleMetadata.TYPE, smlMetadata);
         ClusterState clusterState = ClusterState.builder(ClusterName.DEFAULT).metadata(meta).build();
         SetOnce<Boolean> isConditionMet = new SetOnce<>();
@@ -357,7 +362,8 @@ public class WaitForSnapshotStepTests extends AbstractStepTestCase<WaitForSnapsh
             .numberOfShards(randomIntBetween(1, 5))
             .numberOfReplicas(randomIntBetween(0, 5))
             .build();
-        Map<String, IndexMetadata> indices = Map.of(indexMetadata.getIndex().getName(), indexMetadata);
+        Index index = indexMetadata.getIndex();
+        Map<String, IndexMetadata> indices = Map.of(index.name(), indexMetadata);
         Metadata.Builder meta = Metadata.builder().indices(indices).putCustom(SnapshotLifecycleMetadata.TYPE, smlMetadata);
         ClusterState clusterState = ClusterState.builder(ClusterName.DEFAULT).metadata(meta).build();
         SetOnce<Exception> error = new SetOnce<>();

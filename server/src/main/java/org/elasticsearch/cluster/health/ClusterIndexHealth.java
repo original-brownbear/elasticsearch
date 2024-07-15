@@ -15,6 +15,7 @@ import org.elasticsearch.cluster.routing.IndexShardRoutingTable;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.xcontent.ToXContentFragment;
 import org.elasticsearch.xcontent.XContentBuilder;
 
@@ -47,7 +48,8 @@ public final class ClusterIndexHealth implements Writeable, ToXContentFragment {
     private final Map<Integer, ClusterShardHealth> shards;
 
     public ClusterIndexHealth(final IndexMetadata indexMetadata, final IndexRoutingTable indexRoutingTable) {
-        this.index = indexMetadata.getIndex().getName();
+        Index index1 = indexMetadata.getIndex();
+        this.index = index1.name();
         this.numberOfShards = indexMetadata.getNumberOfShards();
         this.numberOfReplicas = indexMetadata.getNumberOfReplicas();
 

@@ -412,7 +412,7 @@ public class TransportGetShutdownStatusActionTests extends ESTestCase {
             status,
             SingleNodeShutdownMetadata.Status.STALLED,
             1,
-            allOf(containsString(index.getName()), containsString("[2] [primary]"), containsString("cannot move"))
+            allOf(containsString(index.name()), containsString("[2] [primary]"), containsString("cannot move"))
         );
     }
 
@@ -441,7 +441,7 @@ public class TransportGetShutdownStatusActionTests extends ESTestCase {
             getUnassignedShutdownStatus(index, imd, shard0, shard1, unassigned),
             SingleNodeShutdownMetadata.Status.STALLED,
             1,
-            allOf(containsString(index.getName()), containsString("[2] [primary]"))
+            allOf(containsString(index.name()), containsString("[2] [primary]"))
         );
 
         // if the shard is unassigned, but it's not a primary on this node, we shouldn't stall
@@ -458,7 +458,7 @@ public class TransportGetShutdownStatusActionTests extends ESTestCase {
             getUnassignedShutdownStatus(index, imd, shard0, shard1, unassigned3, unassigned),
             SingleNodeShutdownMetadata.Status.STALLED,
             2,
-            allOf(containsString(index.getName()), containsString("[2] [primary]"))
+            allOf(containsString(index.name()), containsString("[2] [primary]"))
         );
 
         // check if we correctly walk all of the unassigned shards, shard 2 replica, shard 3 primary
@@ -466,7 +466,7 @@ public class TransportGetShutdownStatusActionTests extends ESTestCase {
             getUnassignedShutdownStatus(index, imd, shard0, shard1, shard2, unassignedReplica, unassigned3),
             SingleNodeShutdownMetadata.Status.STALLED,
             1,
-            allOf(containsString(index.getName()), containsString("[3] [primary]"))
+            allOf(containsString(index.name()), containsString("[3] [primary]"))
         );
     }
 
@@ -511,7 +511,7 @@ public class TransportGetShutdownStatusActionTests extends ESTestCase {
             status,
             SingleNodeShutdownMetadata.Status.STALLED,
             1,
-            allOf(containsString(index.getName()), containsString("[0] [replica]"))
+            allOf(containsString(index.name()), containsString("[0] [replica]"))
         );
     }
 
@@ -681,7 +681,7 @@ public class TransportGetShutdownStatusActionTests extends ESTestCase {
             status,
             SingleNodeShutdownMetadata.Status.IN_PROGRESS,
             1,
-            allOf(containsString(index.getName()), containsString("[2] [primary]"), containsString("is waiting to be moved"))
+            allOf(containsString(index.name()), containsString("[2] [primary]"), containsString("is waiting to be moved"))
         );
         var explain = status.getAllocationDecision();
         assertThat(explain, notNullValue());
@@ -787,17 +787,17 @@ public class TransportGetShutdownStatusActionTests extends ESTestCase {
             expectedStatus,
             1,
             expectedStatus == SingleNodeShutdownMetadata.Status.STALLED
-                ? allOf(containsString(index.getName()), containsString("[2] [primary]"))
+                ? allOf(containsString(index.name()), containsString("[2] [primary]"))
                 : nullValue()
         );
     }
 
     private IndexMetadata generateIndexMetadata(Index index, int numberOfShards, int numberOfReplicas) {
-        return IndexMetadata.builder(index.getName())
+        return IndexMetadata.builder(index.name())
             .settings(
                 Settings.builder()
                     .put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current())
-                    .put(IndexMetadata.SETTING_INDEX_UUID, index.getUUID())
+                    .put(IndexMetadata.SETTING_INDEX_UUID, index.uuid())
             )
             .numberOfShards(numberOfShards)
             .numberOfReplicas(numberOfReplicas)
@@ -829,7 +829,8 @@ public class TransportGetShutdownStatusActionTests extends ESTestCase {
         SingleNodeShutdownMetadata.Type shutdownType,
         boolean shuttingDownNodeAlreadyLeft
     ) {
-        Map<String, IndexMetadata> indicesTable = indices.stream().collect(toMap(imd -> imd.getIndex().getName(), Function.identity()));
+        Map<String, IndexMetadata> indicesTable = indices.stream()
+            .collect(toMap(imd -> { return imd.getIndex().name(); }, Function.identity()));
         DiscoveryNodes.Builder discoveryNodesBuilder = DiscoveryNodes.builder()
             .add(
                 DiscoveryNodeUtils.builder(LIVE_NODE_ID)

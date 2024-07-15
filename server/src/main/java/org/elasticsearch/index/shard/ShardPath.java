@@ -14,6 +14,7 @@ import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.env.NodeEnvironment;
 import org.elasticsearch.env.ShardLock;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.xcontent.NamedXContentRegistry;
 
@@ -41,9 +42,11 @@ public final class ShardPath {
             : "dataPath must end with the shard ID but didn't: " + dataPath.toString();
         assert shardStatePath.getFileName().toString().equals(Integer.toString(shardId.id()))
             : "shardStatePath must end with the shard ID but didn't: " + dataPath.toString();
-        assert dataPath.getParent().getFileName().toString().equals(shardId.getIndex().getUUID())
+        Index index1 = shardId.getIndex();
+        assert dataPath.getParent().getFileName().toString().equals(index1.uuid())
             : "dataPath must end with index path id but didn't: " + dataPath.toString();
-        assert shardStatePath.getParent().getFileName().toString().equals(shardId.getIndex().getUUID())
+        Index index = shardId.getIndex();
+        assert shardStatePath.getParent().getFileName().toString().equals(index.uuid())
             : "shardStatePath must end with index path id but didn't: " + dataPath.toString();
         if (isCustomDataPath && dataPath.equals(shardStatePath)) {
             throw new IllegalArgumentException("shard state path must be different to the data path when using custom data paths");
@@ -125,7 +128,8 @@ public final class ShardPath {
         Path[] availableShardPaths,
         Path sharedDataPath
     ) throws IOException {
-        final String indexUUID = shardId.getIndex().getUUID();
+        Index index = shardId.getIndex();
+        final String indexUUID = index.uuid();
         Path loadedPath = null;
         for (Path path : availableShardPaths) {
             // EMPTY is safe here because we never call namedObject

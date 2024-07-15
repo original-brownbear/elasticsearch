@@ -276,7 +276,8 @@ public class ExceptionSerializationTests extends ESTestCase {
 
     public void testQueryShardException() throws IOException {
         QueryShardException ex = serialize(new QueryShardException(new Index("foo", "_na_"), "fobar", null));
-        assertEquals(ex.getIndex().getName(), "foo");
+        Index index = ex.getIndex();
+        assertEquals(index.name(), "foo");
         assertEquals(ex.getMessage(), "fobar");
 
         ex = serialize(new QueryShardException((Index) null, null, null));
@@ -428,7 +429,8 @@ public class ExceptionSerializationTests extends ESTestCase {
 
     public void testRoutingMissingException() throws IOException {
         RoutingMissingException ex = serialize(new RoutingMissingException("idx", "id"));
-        assertEquals("idx", ex.getIndex().getName());
+        Index index = ex.getIndex();
+        assertEquals("idx", index.name());
         assertEquals("id", ex.getId());
         assertEquals("routing is required for [idx]/[id]", ex.getMessage());
     }

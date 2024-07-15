@@ -15,6 +15,7 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.TimeValue;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.xpack.core.ilm.LifecycleSettings;
@@ -54,14 +55,23 @@ public class StagnatingIndicesFinderTests extends ESTestCase {
         var stagnatingIndices = List.of(idxMd1.indexName, idxMd3.indexName);
         var mockedTimeSupplier = mock(LongSupplier.class);
         var instant = (long) randomIntBetween(100000, 200000);
-        var ruleCreator = Stream.<IlmHealthIndicatorService.RuleConfig>of(
-            (now, indexMetadata) -> now == instant && stagnatingIndices.contains(indexMetadata.getIndex().getName())
-        ).map(rc -> (IlmHealthIndicatorService.RuleCreator) (expectedMaxTimeOnAction, expectedMaxTimeOnStep, expectedMaxRetriesPerStep) -> {
-            assertEquals(expectedMaxTimeOnAction, maxTimeOnAction);
-            assertEquals(expectedMaxTimeOnStep, maxTimeOnStep);
-            assertEquals(expectedMaxRetriesPerStep, maxRetriesPerStep);
-            return rc;
-        }).collect(Collectors.toList());
+        var ruleCreator = Stream.<IlmHealthIndicatorService.RuleConfig>of((now, indexMetadata) -> {
+            if (now != instant) return false;
+            Index index = indexMetadata.getIndex();
+            return stagnatingIndices.contains(index.name());
+        })
+            .map(
+                rc -> (IlmHealthIndicatorService.RuleCreator) (
+                    expectedMaxTimeOnAction,
+                    expectedMaxTimeOnStep,
+                    expectedMaxRetriesPerStep) -> {
+                    assertEquals(expectedMaxTimeOnAction, maxTimeOnAction);
+                    assertEquals(expectedMaxTimeOnStep, maxTimeOnStep);
+                    assertEquals(expectedMaxRetriesPerStep, maxRetriesPerStep);
+                    return rc;
+                }
+            )
+            .collect(Collectors.toList());
         // Per the evaluator, the timeSupplier _must_ be called only twice
         when(mockedTimeSupplier.getAsLong()).thenReturn(instant, instant);
 

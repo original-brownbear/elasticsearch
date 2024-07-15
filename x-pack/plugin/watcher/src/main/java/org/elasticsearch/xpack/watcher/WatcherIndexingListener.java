@@ -22,6 +22,7 @@ import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.common.util.set.Sets;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.engine.Engine;
 import org.elasticsearch.index.shard.IndexingOperationListener;
 import org.elasticsearch.index.shard.ShardId;
@@ -228,7 +229,8 @@ final class WatcherIndexingListener implements IndexingOperationListener, Cluste
     }
 
     private void checkWatchIndexHasChanged(IndexMetadata metadata, ClusterChangedEvent event) {
-        String watchIndex = metadata.getIndex().getName();
+        Index index = metadata.getIndex();
+        String watchIndex = index.name();
         ClusterState state = event.state();
         String localNodeId = state.nodes().getLocalNode().getId();
         RoutingNode routingNode = state.getRoutingNodes().node(localNodeId);

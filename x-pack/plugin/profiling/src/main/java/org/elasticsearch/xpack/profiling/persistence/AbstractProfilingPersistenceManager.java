@@ -153,7 +153,7 @@ abstract class AbstractProfilingPersistenceManager<T extends ProfilingIndexAbstr
     );
 
     protected final void applyMigrations(IndexState<T> indexState, ActionListener<? super ActionResponse> listener) {
-        String writeIndex = indexState.getWriteIndex().getName();
+        String writeIndex = indexState.getWriteIndex().name();
         try (var refs = new RefCountingRunnable(() -> listener.onResponse(null))) {
             for (Migration migration : indexState.getPendingMigrations()) {
                 logger.debug("Applying migration [{}] for [{}].", migration, writeIndex);

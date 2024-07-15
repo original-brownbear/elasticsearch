@@ -142,16 +142,10 @@ public class DataStreamsSnapshotsIT extends AbstractSnapshotIntegTestCase {
         // (these names have a date component, and running around midnight could lead to test failures otherwise)
         GetDataStreamAction.Request getDataStreamRequest = new GetDataStreamAction.Request(new String[] { "*" });
         GetDataStreamAction.Response getDataStreamResponse = client.execute(GetDataStreamAction.INSTANCE, getDataStreamRequest).actionGet();
-        dsBackingIndexName = getDataStreamResponse.getDataStreams().get(0).getDataStream().getIndices().get(0).getName();
-        otherDsBackingIndexName = getDataStreamResponse.getDataStreams().get(1).getDataStream().getIndices().get(0).getName();
-        fsBackingIndexName = getDataStreamResponse.getDataStreams().get(2).getDataStream().getIndices().get(0).getName();
-        fsFailureIndexName = getDataStreamResponse.getDataStreams()
-            .get(2)
-            .getDataStream()
-            .getFailureIndices()
-            .getIndices()
-            .get(0)
-            .getName();
+        dsBackingIndexName = getDataStreamResponse.getDataStreams().get(0).getDataStream().getIndices().get(0).name();
+        otherDsBackingIndexName = getDataStreamResponse.getDataStreams().get(1).getDataStream().getIndices().get(0).name();
+        fsBackingIndexName = getDataStreamResponse.getDataStreams().get(2).getDataStream().getIndices().get(0).name();
+        fsFailureIndexName = getDataStreamResponse.getDataStreams().get(2).getDataStream().getFailureIndices().getIndices().get(0).name();
 
         // Will be used in some tests, to test renaming while restoring a snapshot:
         ds2BackingIndexName = dsBackingIndexName.replace("-ds-", "-ds2-");
@@ -217,7 +211,7 @@ public class DataStreamsSnapshotsIT extends AbstractSnapshotIntegTestCase {
         ).get();
         assertEquals(1, ds.getDataStreams().size());
         assertEquals(1, ds.getDataStreams().get(0).getDataStream().getIndices().size());
-        assertEquals(dsBackingIndexName, ds.getDataStreams().get(0).getDataStream().getIndices().get(0).getName());
+        assertEquals(dsBackingIndexName, ds.getDataStreams().get(0).getDataStream().getIndices().get(0).name());
 
         GetAliasesResponse getAliasesResponse = client.admin().indices().getAliases(new GetAliasesRequest("my-alias")).actionGet();
         assertThat(getAliasesResponse.getDataStreamAliases().keySet(), containsInAnyOrder("ds", "other-ds"));
@@ -278,13 +272,13 @@ public class DataStreamsSnapshotsIT extends AbstractSnapshotIntegTestCase {
             contains(equalTo("ds"), equalTo("other-ds"), equalTo("with-fs"))
         );
         List<Index> backingIndices = ds.getDataStreams().get(0).getDataStream().getIndices();
-        assertThat(backingIndices.stream().map(Index::getName).collect(Collectors.toList()), contains(dsBackingIndexName));
+        assertThat(backingIndices.stream().map(index3 -> index3.name()).collect(Collectors.toList()), contains(dsBackingIndexName));
         backingIndices = ds.getDataStreams().get(1).getDataStream().getIndices();
-        assertThat(backingIndices.stream().map(Index::getName).collect(Collectors.toList()), contains(otherDsBackingIndexName));
+        assertThat(backingIndices.stream().map(index2 -> index2.name()).collect(Collectors.toList()), contains(otherDsBackingIndexName));
         backingIndices = ds.getDataStreams().get(2).getDataStream().getIndices();
-        assertThat(backingIndices.stream().map(Index::getName).collect(Collectors.toList()), contains(fsBackingIndexName));
+        assertThat(backingIndices.stream().map(index1 -> index1.name()).collect(Collectors.toList()), contains(fsBackingIndexName));
         List<Index> failureIndices = ds.getDataStreams().get(2).getDataStream().getFailureIndices().getIndices();
-        assertThat(failureIndices.stream().map(Index::getName).collect(Collectors.toList()), contains(fsFailureIndexName));
+        assertThat(failureIndices.stream().map(index -> index.name()).collect(Collectors.toList()), contains(fsFailureIndexName));
     }
 
     public void testSnapshotAndRestoreInPlace() {
@@ -338,7 +332,7 @@ public class DataStreamsSnapshotsIT extends AbstractSnapshotIntegTestCase {
         );
         List<Index> backingIndices = ds.getDataStreams().get(0).getDataStream().getIndices();
         assertThat(ds.getDataStreams().get(0).getDataStream().getIndices(), hasSize(1));
-        assertThat(backingIndices.stream().map(Index::getName).collect(Collectors.toList()), contains(equalTo(dsBackingIndexName)));
+        assertThat(backingIndices.stream().map(index -> index.name()).collect(Collectors.toList()), contains(equalTo(dsBackingIndexName)));
 
         // The backing index created as part of rollover should still exist (but just not part of the data stream)
         assertThat(indexExists(backingIndexAfterSnapshot), is(true));
@@ -381,8 +375,8 @@ public class DataStreamsSnapshotsIT extends AbstractSnapshotIntegTestCase {
             ).get();
             assertEquals(1, ds.getDataStreams().size());
             assertEquals(1, ds.getDataStreams().get(0).getDataStream().getIndices().size());
-            assertEquals(fsBackingIndexName, ds.getDataStreams().get(0).getDataStream().getIndices().get(0).getName());
-            assertEquals(fsFailureIndexName, ds.getDataStreams().get(0).getDataStream().getFailureIndices().getIndices().get(0).getName());
+            assertEquals(fsBackingIndexName, ds.getDataStreams().get(0).getDataStream().getIndices().get(0).name());
+            assertEquals(fsFailureIndexName, ds.getDataStreams().get(0).getDataStream().getFailureIndices().getIndices().get(0).name());
         }
         {
             // With rename pattern
@@ -403,8 +397,8 @@ public class DataStreamsSnapshotsIT extends AbstractSnapshotIntegTestCase {
             ).get();
             assertEquals(1, ds.getDataStreams().size());
             assertEquals(1, ds.getDataStreams().get(0).getDataStream().getIndices().size());
-            assertEquals(fs2BackingIndexName, ds.getDataStreams().get(0).getDataStream().getIndices().get(0).getName());
-            assertEquals(fs2FailureIndexName, ds.getDataStreams().get(0).getDataStream().getFailureIndices().getIndices().get(0).getName());
+            assertEquals(fs2BackingIndexName, ds.getDataStreams().get(0).getDataStream().getIndices().get(0).name());
+            assertEquals(fs2FailureIndexName, ds.getDataStreams().get(0).getDataStream().getFailureIndices().getIndices().get(0).name());
         }
     }
 
@@ -476,7 +470,7 @@ public class DataStreamsSnapshotsIT extends AbstractSnapshotIntegTestCase {
         ).get();
         assertEquals(1, ds.getDataStreams().size());
         assertEquals(1, ds.getDataStreams().get(0).getDataStream().getIndices().size());
-        assertEquals(backingIndexName, ds.getDataStreams().get(0).getDataStream().getIndices().get(0).getName());
+        assertEquals(backingIndexName, ds.getDataStreams().get(0).getDataStream().getIndices().get(0).name());
 
         GetAliasesResponse getAliasesResponse = client.admin().indices().getAliases(new GetAliasesRequest("my-alias")).actionGet();
         assertThat(getAliasesResponse.getDataStreamAliases().keySet(), contains(dataStreamToSnapshot));
@@ -592,13 +586,13 @@ public class DataStreamsSnapshotsIT extends AbstractSnapshotIntegTestCase {
         ).get();
         assertEquals(3, ds.getDataStreams().size());
         assertEquals(1, ds.getDataStreams().get(0).getDataStream().getIndices().size());
-        assertEquals(dsBackingIndexName, ds.getDataStreams().get(0).getDataStream().getIndices().get(0).getName());
+        assertEquals(dsBackingIndexName, ds.getDataStreams().get(0).getDataStream().getIndices().get(0).name());
         assertEquals(1, ds.getDataStreams().get(1).getDataStream().getIndices().size());
-        assertEquals(otherDsBackingIndexName, ds.getDataStreams().get(1).getDataStream().getIndices().get(0).getName());
+        assertEquals(otherDsBackingIndexName, ds.getDataStreams().get(1).getDataStream().getIndices().get(0).name());
         assertEquals(1, ds.getDataStreams().get(2).getDataStream().getIndices().size());
-        assertEquals(fsBackingIndexName, ds.getDataStreams().get(2).getDataStream().getIndices().get(0).getName());
+        assertEquals(fsBackingIndexName, ds.getDataStreams().get(2).getDataStream().getIndices().get(0).name());
         assertEquals(1, ds.getDataStreams().get(2).getDataStream().getFailureIndices().getIndices().size());
-        assertEquals(fsFailureIndexName, ds.getDataStreams().get(2).getDataStream().getFailureIndices().getIndices().get(0).getName());
+        assertEquals(fsFailureIndexName, ds.getDataStreams().get(2).getDataStream().getFailureIndices().getIndices().get(0).name());
 
         GetAliasesResponse getAliasesResponse = client.admin().indices().getAliases(new GetAliasesRequest("my-alias")).actionGet();
         assertThat(getAliasesResponse.getDataStreamAliases().keySet(), containsInAnyOrder("ds", "other-ds"));
@@ -658,13 +652,13 @@ public class DataStreamsSnapshotsIT extends AbstractSnapshotIntegTestCase {
         ).get();
         assertEquals(3, ds.getDataStreams().size());
         assertEquals(1, ds.getDataStreams().get(0).getDataStream().getIndices().size());
-        assertEquals(dsBackingIndexName, ds.getDataStreams().get(0).getDataStream().getIndices().get(0).getName());
+        assertEquals(dsBackingIndexName, ds.getDataStreams().get(0).getDataStream().getIndices().get(0).name());
         assertEquals(1, ds.getDataStreams().get(1).getDataStream().getIndices().size());
-        assertEquals(otherDsBackingIndexName, ds.getDataStreams().get(1).getDataStream().getIndices().get(0).getName());
+        assertEquals(otherDsBackingIndexName, ds.getDataStreams().get(1).getDataStream().getIndices().get(0).name());
         assertEquals(1, ds.getDataStreams().get(2).getDataStream().getIndices().size());
-        assertEquals(fsBackingIndexName, ds.getDataStreams().get(2).getDataStream().getIndices().get(0).getName());
+        assertEquals(fsBackingIndexName, ds.getDataStreams().get(2).getDataStream().getIndices().get(0).name());
         assertEquals(1, ds.getDataStreams().get(2).getDataStream().getIndices().size());
-        assertEquals(fsFailureIndexName, ds.getDataStreams().get(2).getDataStream().getFailureIndices().getIndices().get(0).getName());
+        assertEquals(fsFailureIndexName, ds.getDataStreams().get(2).getDataStream().getFailureIndices().getIndices().get(0).name());
 
         GetAliasesResponse getAliasesResponse = client.admin().indices().getAliases(new GetAliasesRequest("*")).actionGet();
         assertThat(getAliasesResponse.getDataStreamAliases(), anEmptyMap());
@@ -707,7 +701,7 @@ public class DataStreamsSnapshotsIT extends AbstractSnapshotIntegTestCase {
         ).get();
         assertEquals(1, ds.getDataStreams().size());
         assertEquals(1, ds.getDataStreams().get(0).getDataStream().getIndices().size());
-        assertEquals(ds2BackingIndexName, ds.getDataStreams().get(0).getDataStream().getIndices().get(0).getName());
+        assertEquals(ds2BackingIndexName, ds.getDataStreams().get(0).getDataStream().getIndices().get(0).name());
         assertResponse(
             client.prepareSearch("ds2"),
             response -> assertEquals(DOCUMENT_SOURCE, response.getHits().getHits()[0].getSourceAsMap())
@@ -765,7 +759,7 @@ public class DataStreamsSnapshotsIT extends AbstractSnapshotIntegTestCase {
         ).get();
         assertEquals(1, ds.getDataStreams().size());
         assertEquals(1, ds.getDataStreams().get(0).getDataStream().getIndices().size());
-        assertEquals(otherDs2BackingIndexName, ds.getDataStreams().get(0).getDataStream().getIndices().get(0).getName());
+        assertEquals(otherDs2BackingIndexName, ds.getDataStreams().get(0).getDataStream().getIndices().get(0).name());
 
         GetAliasesResponse getAliasesResponse = client.admin().indices().getAliases(new GetAliasesRequest("my-alias")).actionGet();
         assertThat(getAliasesResponse.getDataStreamAliases().keySet(), containsInAnyOrder("ds", "other-ds", "other-ds2"));
@@ -830,7 +824,7 @@ public class DataStreamsSnapshotsIT extends AbstractSnapshotIntegTestCase {
 
         GetDataStreamAction.Request getDSRequest = new GetDataStreamAction.Request(new String[] { "ds" });
         GetDataStreamAction.Response response = client.execute(GetDataStreamAction.INSTANCE, getDSRequest).actionGet();
-        assertThat(response.getDataStreams().get(0).getDataStream().getIndices().get(0).getName(), is(dsBackingIndexName));
+        assertThat(response.getDataStreams().get(0).getDataStream().getIndices().get(0).name(), is(dsBackingIndexName));
     }
 
     public void testDataStreamAndBackingIndicesAreRenamedUsingRegex() {
@@ -870,14 +864,14 @@ public class DataStreamsSnapshotsIT extends AbstractSnapshotIntegTestCase {
         GetDataStreamAction.Request getRenamedDS = new GetDataStreamAction.Request(new String[] { "test-ds" });
         GetDataStreamAction.Response response = client.execute(GetDataStreamAction.INSTANCE, getRenamedDS).actionGet();
         assertThat(
-            response.getDataStreams().get(0).getDataStream().getIndices().get(0).getName(),
+            response.getDataStreams().get(0).getDataStream().getIndices().get(0).name(),
             is(DataStream.getDefaultBackingIndexName("test-ds", 1L))
         );
 
         // data stream "ds" should still exist in the system
         GetDataStreamAction.Request getDSRequest = new GetDataStreamAction.Request(new String[] { "ds" });
         response = client.execute(GetDataStreamAction.INSTANCE, getDSRequest).actionGet();
-        assertThat(response.getDataStreams().get(0).getDataStream().getIndices().get(0).getName(), is(dsBackingIndexName));
+        assertThat(response.getDataStreams().get(0).getDataStream().getIndices().get(0).name(), is(dsBackingIndexName));
     }
 
     public void testWildcards() throws Exception {
@@ -909,7 +903,7 @@ public class DataStreamsSnapshotsIT extends AbstractSnapshotIntegTestCase {
         ).get();
         assertEquals(1, ds.getDataStreams().size());
         assertEquals(1, ds.getDataStreams().get(0).getDataStream().getIndices().size());
-        assertEquals(ds2BackingIndexName, ds.getDataStreams().get(0).getDataStream().getIndices().get(0).getName());
+        assertEquals(ds2BackingIndexName, ds.getDataStreams().get(0).getDataStream().getIndices().get(0).name());
         assertThat(
             "we renamed the restored data stream to one that doesn't match any existing composable template",
             ds.getDataStreams().get(0).getIndexTemplate(),
@@ -1016,7 +1010,7 @@ public class DataStreamsSnapshotsIT extends AbstractSnapshotIntegTestCase {
         // and running around midnight could lead to test failures otherwise
         GetDataStreamAction.Request getDataStreamRequest = new GetDataStreamAction.Request(new String[] { dataStream });
         GetDataStreamAction.Response getDataStreamResponse = client.execute(GetDataStreamAction.INSTANCE, getDataStreamRequest).actionGet();
-        String backingIndexName = getDataStreamResponse.getDataStreams().get(0).getDataStream().getIndices().get(0).getName();
+        String backingIndexName = getDataStreamResponse.getDataStreams().get(0).getDataStream().getIndices().get(0).name();
 
         logger.info("--> snapshot");
         ActionFuture<CreateSnapshotResponse> future = client1.admin()

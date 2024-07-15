@@ -148,7 +148,7 @@ public class WildcardQueryBuilderTests extends AbstractQueryTestCase<WildcardQue
     }
 
     public void testRewriteIndexQueryNotMatchNone() throws IOException {
-        String fullIndexName = getIndex().getName();
+        String fullIndexName = getIndex().name();
         String firstHalfOfIndexName = fullIndexName.substring(0, fullIndexName.length() / 2);
         WildcardQueryBuilder query = new WildcardQueryBuilder("_index", firstHalfOfIndexName + "*");
         for (QueryRewriteContext context : new QueryRewriteContext[] { createSearchExecutionContext(), createQueryRewriteContext() }) {

@@ -22,6 +22,7 @@ import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.routing.ShardRoutingState;
 import org.elasticsearch.cluster.routing.TestShardRouting;
 import org.elasticsearch.common.Table;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.shard.ShardPath;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.test.rest.FakeRestRequest;
@@ -49,9 +50,8 @@ public class RestShardsActionTests extends ESTestCase {
         for (int i = 0; i < numShards; i++) {
             ShardRoutingState shardRoutingState = ShardRoutingState.fromValue((byte) randomIntBetween(2, 3));
             ShardRouting shardRouting = TestShardRouting.newShardRouting(index, i, localNode.getId(), randomBoolean(), shardRoutingState);
-            Path path = createTempDir().resolve("indices")
-                .resolve(shardRouting.shardId().getIndex().getUUID())
-                .resolve(String.valueOf(shardRouting.shardId().id()));
+            Index index1 = shardRouting.shardId().getIndex();
+            Path path = createTempDir().resolve("indices").resolve(index1.uuid()).resolve(String.valueOf(shardRouting.shardId().id()));
             ShardStats shardStats = new ShardStats(
                 shardRouting,
                 new ShardPath(false, path, path, shardRouting.shardId()),

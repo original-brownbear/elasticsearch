@@ -47,7 +47,7 @@ public class WaitUntilTimeSeriesEndTimePassesStep extends AsyncWaitStep {
     public void evaluateCondition(Metadata metadata, Index index, Listener listener, TimeValue masterTimeout) {
         IndexMetadata indexMetadata = metadata.index(index);
         assert indexMetadata != null
-            : "the index metadata for index [" + index.getName() + "] must exist in the cluster state for step " + "[" + NAME + "]";
+            : "the index metadata for index [" + index.name() + "] must exist in the cluster state for step " + "[" + NAME + "]";
 
         if (IndexSettings.MODE.get(indexMetadata.getSettings()) != IndexMode.TIME_SERIES) {
             // this index is not a time series index so no need to wait
@@ -55,7 +55,7 @@ public class WaitUntilTimeSeriesEndTimePassesStep extends AsyncWaitStep {
             return;
         }
         Instant configuredEndTime = IndexSettings.TIME_SERIES_END_TIME.get(indexMetadata.getSettings());
-        assert configuredEndTime != null : "a time series index must have an end time configured but [" + index.getName() + "] does not";
+        assert configuredEndTime != null : "a time series index must have an end time configured but [" + index.name() + "] does not";
         if (nowSupplier.get().isBefore(configuredEndTime)) {
             listener.onResponse(
                 false,
@@ -65,7 +65,7 @@ public class WaitUntilTimeSeriesEndTimePassesStep extends AsyncWaitStep {
                         "The [%s] setting for index [%s] is [%s]. Waiting until the index's time series end time lapses before"
                             + " proceeding with action [%s] as the index can still accept writes.",
                         IndexSettings.TIME_SERIES_END_TIME.getKey(),
-                        index.getName(),
+                        index.name(),
                         configuredEndTime.toEpochMilli(),
                         getKey().action()
                     )

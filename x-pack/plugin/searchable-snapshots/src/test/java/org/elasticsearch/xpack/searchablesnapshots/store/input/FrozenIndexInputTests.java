@@ -162,13 +162,15 @@ public class FrozenIndexInputTests extends AbstractSearchableSnapshotsTestCase {
             ShardPath shardPath,
             Path cacheDir
         ) {
+            Index index = SHARD_ID.getIndex();
+            Index index1 = SHARD_ID.getIndex();
             super(
                 () -> TestUtils.singleBlobContainer(fileInfo.partName(0), fileData),
                 () -> new BlobStoreIndexShardSnapshot("_snapshot_id", List.of(fileInfo), 0L, 0L, 0, 0L),
                 new TestUtils.SimpleBlobStoreCacheService(),
                 "_repository",
                 snapshotId,
-                new IndexId(SHARD_ID.getIndex().getName(), SHARD_ID.getIndex().getUUID()),
+                new IndexId(index.name(), index1.uuid()),
                 SHARD_ID,
                 Settings.builder()
                     .put(SearchableSnapshotsSettings.SNAPSHOT_PARTIAL_SETTING.getKey(), true)

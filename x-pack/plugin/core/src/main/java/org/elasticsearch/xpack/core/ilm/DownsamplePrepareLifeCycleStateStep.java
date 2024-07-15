@@ -39,7 +39,7 @@ public class DownsamplePrepareLifeCycleStateStep extends ClusterStateActionStep 
         IndexMetadata indexMetadata = clusterState.metadata().index(index);
         if (indexMetadata == null) {
             // Index must have been since deleted, ignore it
-            LOGGER.debug("[{}] lifecycle action for index [{}] executed but index no longer exists", getKey().action(), index.getName());
+            LOGGER.debug("[{}] lifecycle action for index [{}] executed but index no longer exists", getKey().action(), index.name());
             return clusterState;
         }
 

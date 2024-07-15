@@ -15,6 +15,7 @@ import org.elasticsearch.common.io.stream.NamedWriteable;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.core.TimeValue;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.mapper.DataStreamTimestampFieldMapper;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
@@ -259,7 +260,8 @@ public class DownsampleConfig implements NamedWriteable, ToXContentObject {
             // bwc for downsample indices created pre 8.10 which didn't configure the origin
             sourceIndexName = IndexMetadata.INDEX_DOWNSAMPLE_SOURCE_NAME.get(sourceIndexMetadata.getSettings());
         } else {
-            sourceIndexName = sourceIndexMetadata.getIndex().getName();
+            Index index = sourceIndexMetadata.getIndex();
+            sourceIndexName = index.name();
         }
         return prefix + fixedInterval + "-" + sourceIndexName;
     }

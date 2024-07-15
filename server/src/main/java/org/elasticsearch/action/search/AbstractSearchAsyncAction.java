@@ -30,6 +30,7 @@ import org.elasticsearch.common.util.concurrent.AtomicArray;
 import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.Releasables;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.search.SearchContextMissingException;
 import org.elasticsearch.search.SearchPhaseResult;
@@ -789,9 +790,11 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
      *                   tiebreak results with identical sort values
      */
     protected final ShardSearchRequest buildShardSearchRequest(SearchShardIterator shardIt, int shardIndex) {
-        AliasFilter filter = aliasFilter.get(shardIt.shardId().getIndex().getUUID());
+        Index index1 = shardIt.shardId().getIndex();
+        AliasFilter filter = aliasFilter.get(index1.uuid());
         assert filter != null;
-        float indexBoost = concreteIndexBoosts.getOrDefault(shardIt.shardId().getIndex().getUUID(), DEFAULT_INDEX_BOOST);
+        Index index = shardIt.shardId().getIndex();
+        float indexBoost = concreteIndexBoosts.getOrDefault(index.uuid(), DEFAULT_INDEX_BOOST);
         ShardSearchRequest shardRequest = new ShardSearchRequest(
             shardIt.getOriginalIndices(),
             request,

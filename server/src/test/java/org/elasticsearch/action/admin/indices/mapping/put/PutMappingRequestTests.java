@@ -85,10 +85,11 @@ public class PutMappingRequestTests extends ESTestCase {
         );
         PutMappingRequest request = new PutMappingRequest().indices("foo", "alias1", "alias2").writeIndexOnly(true);
         Index[] indices = TransportPutMappingAction.resolveIndices(cs, request, TestIndexNameExpressionResolver.newInstance());
-        List<String> indexNames = Arrays.stream(indices).map(Index::getName).toList();
+        List<String> indexNames = Arrays.stream(indices).map(index1 -> index1.name()).toList();
         IndexAbstraction expectedDs = cs.metadata().getIndicesLookup().get("foo");
         // should resolve the data stream and each alias to their respective write indices
-        assertThat(indexNames, containsInAnyOrder(expectedDs.getWriteIndex().getName(), "index2", "index3"));
+        Index index = expectedDs.getWriteIndex();
+        assertThat(indexNames, containsInAnyOrder(index.name(), "index2", "index3"));
     }
 
     public void testResolveIndicesWithoutWriteIndexOnlyAndDataStreamsAndWriteAliases() {
@@ -109,11 +110,11 @@ public class PutMappingRequestTests extends ESTestCase {
         );
         PutMappingRequest request = new PutMappingRequest().indices("foo", "alias1", "alias2");
         Index[] indices = TransportPutMappingAction.resolveIndices(cs, request, TestIndexNameExpressionResolver.newInstance());
-        List<String> indexNames = Arrays.stream(indices).map(Index::getName).toList();
+        List<String> indexNames = Arrays.stream(indices).map(index1 -> index1.name()).toList();
         IndexAbstraction expectedDs = cs.metadata().getIndicesLookup().get("foo");
         List<String> expectedIndices = expectedDs.getIndices()
             .stream()
-            .map(Index::getName)
+            .map(index -> index.name())
             .collect(Collectors.toCollection(ArrayList::new));
         expectedIndices.addAll(List.of("index1", "index2", "index3"));
         // should resolve the data stream and each alias to _all_ their respective indices
@@ -138,15 +139,16 @@ public class PutMappingRequestTests extends ESTestCase {
         );
         PutMappingRequest request = new PutMappingRequest().indices("foo", "index3").writeIndexOnly(true);
         Index[] indices = TransportPutMappingAction.resolveIndices(cs, request, TestIndexNameExpressionResolver.newInstance());
-        List<String> indexNames = Arrays.stream(indices).map(Index::getName).toList();
+        List<String> indexNames = Arrays.stream(indices).map(index2 -> index2.name()).toList();
         IndexAbstraction expectedDs = cs.metadata().getIndicesLookup().get("foo");
         List<String> expectedIndices = expectedDs.getIndices()
             .stream()
-            .map(Index::getName)
+            .map(index1 -> index1.name())
             .collect(Collectors.toCollection(ArrayList::new));
         expectedIndices.addAll(List.of("index1", "index2", "index3"));
         // should resolve the data stream and each alias to _all_ their respective indices
-        assertThat(indexNames, containsInAnyOrder(expectedDs.getWriteIndex().getName(), "index3"));
+        Index index = expectedDs.getWriteIndex();
+        assertThat(indexNames, containsInAnyOrder(index.name(), "index3"));
     }
 
     public void testResolveIndicesWithWriteIndexOnlyAndNoSingleWriteIndex() {

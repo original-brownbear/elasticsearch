@@ -33,6 +33,7 @@ import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.SuppressForbidden;
 import org.elasticsearch.core.TimeValue;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
@@ -108,8 +109,9 @@ public class TransportMoveToStepAction extends TransportMasterNodeAction<Transpo
         // We do a pre-check here before invoking the cluster state update just so we can skip the submission if the request is bad.
         if (concreteTargetStepKey == null) {
             // This means we weren't able to find the key they specified
+            Index index = indexMetadata.getIndex();
             String message = "cannot move index ["
-                + indexMetadata.getIndex().getName()
+                + index.name()
                 + "] with policy ["
                 + policyName
                 + "]: unable to determine concrete step key from target next step key: "

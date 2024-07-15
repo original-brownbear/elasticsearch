@@ -57,20 +57,19 @@ public class TransportFollowStatsActionTests extends ESTestCase {
             .build();
         Set<String> result = TransportFollowStatsAction.findFollowerIndicesFromShardFollowTasks(clusterState, null);
         assertThat(result.size(), equalTo(2));
-        assertThat(result.contains(index1.getIndex().getName()), is(true));
-        assertThat(result.contains(index2.getIndex().getName()), is(true));
+        Index index7 = index1.getIndex();
+        assertThat(result.contains(index7.name()), is(true));
+        Index index6 = index2.getIndex();
+        assertThat(result.contains(index6.name()), is(true));
 
-        result = TransportFollowStatsAction.findFollowerIndicesFromShardFollowTasks(
-            clusterState,
-            new String[] { index2.getIndex().getName() }
-        );
+        Index index5 = index2.getIndex();
+        result = TransportFollowStatsAction.findFollowerIndicesFromShardFollowTasks(clusterState, new String[] { index5.name() });
         assertThat(result.size(), equalTo(1));
-        assertThat(result.contains(index2.getIndex().getName()), is(true));
+        Index index4 = index2.getIndex();
+        assertThat(result.contains(index4.name()), is(true));
 
-        result = TransportFollowStatsAction.findFollowerIndicesFromShardFollowTasks(
-            clusterState,
-            new String[] { index3.getIndex().getName() }
-        );
+        Index index = index3.getIndex();
+        result = TransportFollowStatsAction.findFollowerIndicesFromShardFollowTasks(clusterState, new String[] { index.name() });
         assertThat(result.size(), equalTo(0));
     }
 

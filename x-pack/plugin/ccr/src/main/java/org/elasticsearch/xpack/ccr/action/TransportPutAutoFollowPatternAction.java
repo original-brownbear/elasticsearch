@@ -27,6 +27,7 @@ import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.core.SuppressForbidden;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.license.LicenseUtils;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -245,7 +246,8 @@ public class TransportPutAutoFollowPatternAction extends AcknowledgedTransportMa
     ) {
 
         for (final IndexMetadata indexMetadata : leaderMetadata) {
-            IndexAbstraction indexAbstraction = leaderMetadata.getIndicesLookup().get(indexMetadata.getIndex().getName());
+            Index index = indexMetadata.getIndex();
+            IndexAbstraction indexAbstraction = leaderMetadata.getIndicesLookup().get(index.name());
             if (AutoFollowPattern.match(patterns, exclusionPatterns, indexAbstraction)) {
                 followedIndexUUIDS.add(indexMetadata.getIndexUUID());
             }

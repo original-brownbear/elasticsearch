@@ -12,6 +12,7 @@ import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.xpack.core.ilm.Step.StepKey;
 import org.mockito.Mockito;
@@ -68,7 +69,8 @@ public class UpdateSettingsStepTests extends AbstractStepTestCase<UpdateSettings
             @SuppressWarnings("unchecked")
             ActionListener<AcknowledgedResponse> listener = (ActionListener<AcknowledgedResponse>) invocation.getArguments()[1];
             assertThat(request.settings(), equalTo(step.getSettings()));
-            assertThat(request.indices(), equalTo(new String[] { indexMetadata.getIndex().getName() }));
+            Index index = indexMetadata.getIndex();
+            assertThat(request.indices(), equalTo(new String[] { index.name() }));
             listener.onResponse(AcknowledgedResponse.TRUE);
             return null;
         }).when(indicesClient).updateSettings(Mockito.any(), Mockito.any());
@@ -90,7 +92,8 @@ public class UpdateSettingsStepTests extends AbstractStepTestCase<UpdateSettings
             @SuppressWarnings("unchecked")
             ActionListener<AcknowledgedResponse> listener = (ActionListener<AcknowledgedResponse>) invocation.getArguments()[1];
             assertThat(request.settings(), equalTo(step.getSettings()));
-            assertThat(request.indices(), equalTo(new String[] { indexMetadata.getIndex().getName() }));
+            Index index = indexMetadata.getIndex();
+            assertThat(request.indices(), equalTo(new String[] { index.name() }));
             listener.onFailure(exception);
             return null;
         }).when(indicesClient).updateSettings(Mockito.any(), Mockito.any());

@@ -120,7 +120,7 @@ public class SearchApplicationIndexServiceTests extends ESSingleNodeTestCase {
         assertTrue(metadata.hasAlias(aliasName));
         final Set<String> aliasedIndices = metadata.aliasedIndices(aliasName)
             .stream()
-            .map(index -> index.getName())
+            .map(index -> { return index.name(); })
             .collect(Collectors.toSet());
         assertThat(aliasedIndices, equalTo(Set.of(searchApp.indices())));
     }

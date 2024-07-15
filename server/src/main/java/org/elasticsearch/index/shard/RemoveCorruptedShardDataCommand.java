@@ -156,7 +156,7 @@ public class RemoveCorruptedShardDataCommand extends ElasticsearchNodeCommand {
 
         for (Path dataPath : dataPaths) {
             final Path shardPathLocation = dataPath.resolve(NodeEnvironment.INDICES_FOLDER)
-                .resolve(index.getUUID())
+                .resolve(index.uuid())
                 .resolve(Integer.toString(shId.id()));
             if (Files.exists(shardPathLocation)) {
                 final ShardPath shardPath = ShardPath.loadShardPath(

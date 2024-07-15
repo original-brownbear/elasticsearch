@@ -220,7 +220,7 @@ public class SetSingleNodeAllocateStepTests extends AbstractStepTestCase<SetSing
         );
 
         Settings clusterSettings = Settings.builder().put("cluster.routing.allocation.exclude._id", "node_id_0").build();
-        Map<String, IndexMetadata> indices = Map.of(index.getName(), indexMetadata);
+        Map<String, IndexMetadata> indices = Map.of(index.name(), indexMetadata);
         IndexRoutingTable.Builder indexRoutingTable = IndexRoutingTable.builder(index)
             .addShard(TestShardRouting.newShardRouting(new ShardId(index, 0), "node_id_0", true, ShardRoutingState.STARTED));
         ClusterState clusterState = ClusterState.builder(ClusterState.EMPTY_STATE)
@@ -304,7 +304,7 @@ public class SetSingleNodeAllocateStepTests extends AbstractStepTestCase<SetSing
             validNodeIds.add(nodeId);
         }
 
-        Map<String, IndexMetadata> indices = Map.of(index.getName(), indexMetadata);
+        Map<String, IndexMetadata> indices = Map.of(index.name(), indexMetadata);
         IndexRoutingTable.Builder indexRoutingTable = IndexRoutingTable.builder(index)
             .addShard(TestShardRouting.newShardRouting(new ShardId(index, 0), "node_id_0", true, ShardRoutingState.STARTED));
         ClusterState clusterState = ClusterState.builder(ClusterState.EMPTY_STATE)
@@ -320,12 +320,13 @@ public class SetSingleNodeAllocateStepTests extends AbstractStepTestCase<SetSing
             UpdateSettingsRequest request = (UpdateSettingsRequest) invocation.getArguments()[0];
             @SuppressWarnings("unchecked")
             ActionListener<AcknowledgedResponse> listener = (ActionListener<AcknowledgedResponse>) invocation.getArguments()[1];
+            Index index1 = indexMetadata.getIndex();
             assertSettingsRequestContainsValueFrom(
                 request,
                 IndexMetadata.INDEX_ROUTING_REQUIRE_GROUP_SETTING.getKey() + "_id",
                 validNodeIds,
                 true,
-                indexMetadata.getIndex().getName()
+                index1.name()
             );
             listener.onFailure(exception);
             return null;
@@ -377,7 +378,7 @@ public class SetSingleNodeAllocateStepTests extends AbstractStepTestCase<SetSing
             );
         }
 
-        Map<String, IndexMetadata> indices = Map.of(index.getName(), indexMetadata);
+        Map<String, IndexMetadata> indices = Map.of(index.name(), indexMetadata);
         IndexRoutingTable.Builder indexRoutingTable = IndexRoutingTable.builder(index);
         ClusterState clusterState = ClusterState.builder(ClusterState.EMPTY_STATE)
             .metadata(Metadata.builder().indices(indices))
@@ -652,7 +653,7 @@ public class SetSingleNodeAllocateStepTests extends AbstractStepTestCase<SetSing
         DiscoveryNodes nodes,
         IndexRoutingTable indexRoutingTable
     ) throws Exception {
-        Map<String, IndexMetadata> indices = Map.of(index.getName(), indexMetadata);
+        Map<String, IndexMetadata> indices = Map.of(index.name(), indexMetadata);
         ClusterState clusterState = ClusterState.builder(ClusterState.EMPTY_STATE)
             .metadata(Metadata.builder().indices(indices))
             .nodes(nodes)
@@ -665,12 +666,13 @@ public class SetSingleNodeAllocateStepTests extends AbstractStepTestCase<SetSing
             UpdateSettingsRequest request = (UpdateSettingsRequest) invocation.getArguments()[0];
             @SuppressWarnings("unchecked")
             ActionListener<AcknowledgedResponse> listener = (ActionListener<AcknowledgedResponse>) invocation.getArguments()[1];
+            Index index1 = indexMetadata.getIndex();
             assertSettingsRequestContainsValueFrom(
                 request,
                 IndexMetadata.INDEX_ROUTING_REQUIRE_GROUP_SETTING.getKey() + "_id",
                 validNodeIds,
                 true,
-                indexMetadata.getIndex().getName()
+                index1.name()
             );
             listener.onResponse(AcknowledgedResponse.TRUE);
             return null;
@@ -692,7 +694,7 @@ public class SetSingleNodeAllocateStepTests extends AbstractStepTestCase<SetSing
 
     private void assertNoValidNode(IndexMetadata indexMetadata, Index index, DiscoveryNodes nodes, IndexRoutingTable indexRoutingTable) {
 
-        Map<String, IndexMetadata> indices = Map.of(index.getName(), indexMetadata);
+        Map<String, IndexMetadata> indices = Map.of(index.name(), indexMetadata);
         ClusterState clusterState = ClusterState.builder(ClusterState.EMPTY_STATE)
             .metadata(Metadata.builder().indices(indices))
             .nodes(nodes)

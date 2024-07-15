@@ -193,7 +193,7 @@ public class ResolvedIndices {
         Set<Index> localIndicesSet = indicesFromSearchContext.remove(RemoteClusterAware.LOCAL_CLUSTER_GROUP_KEY);
         if (localIndicesSet != null) {
             concreteLocalIndices = localIndicesSet.toArray(Index[]::new);
-            localIndices = new OriginalIndices(localIndicesSet.stream().map(Index::getName).toArray(String[]::new), indicesOptions);
+            localIndices = new OriginalIndices(localIndicesSet.stream().map(index -> index.name()).toArray(String[]::new), indicesOptions);
         } else {
             concreteLocalIndices = Index.EMPTY_ARRAY;
             // Set localIndices to null because a non-null value with a null or 0-length indices array will be resolved to all indices by
@@ -204,7 +204,7 @@ public class ResolvedIndices {
         Map<String, OriginalIndices> remoteClusterIndices = new HashMap<>();
         for (var entry : indicesFromSearchContext.entrySet()) {
             OriginalIndices originalIndices = new OriginalIndices(
-                entry.getValue().stream().map(Index::getName).toArray(String[]::new),
+                entry.getValue().stream().map(index -> index.name()).toArray(String[]::new),
                 indicesOptions
             );
             remoteClusterIndices.put(entry.getKey(), originalIndices);

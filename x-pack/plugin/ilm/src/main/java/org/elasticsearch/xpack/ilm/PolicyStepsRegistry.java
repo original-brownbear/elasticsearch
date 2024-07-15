@@ -376,7 +376,7 @@ public class PolicyStepsRegistry {
         final Index index = indexMetadata.getIndex();
 
         if (policyName == null) {
-            throw new IllegalArgumentException("failed to retrieve step " + stepKey + " as index [" + index.getName() + "] has no policy");
+            throw new IllegalArgumentException("failed to retrieve step " + stepKey + " as index [" + index.name() + "] has no policy");
         }
 
         // parse phase steps from the phase definition in the index settings
@@ -400,7 +400,7 @@ public class PolicyStepsRegistry {
 
         assert phaseSteps.stream().allMatch(step -> step.getKey().phase().equals(phase))
             : "expected phase steps loaded from phase definition for ["
-                + index.getName()
+                + index.name()
                 + "] to be in phase ["
                 + phase
                 + "] but they were not, steps: "

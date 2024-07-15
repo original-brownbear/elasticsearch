@@ -17,6 +17,7 @@ import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.LifecycleExecutionState;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.core.TimeValue;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexNotFoundException;
 
 /**
@@ -44,10 +45,11 @@ public class CleanupShrinkIndexStep extends AsyncRetryDuringSnapshotActionStep {
                 // if the source index does not exist, we'll skip deleting the
                 // (managed) shrunk index as that will cause data loss
                 String policyName = indexMetadata.getLifecyclePolicyName();
+                Index index = indexMetadata.getIndex();
                 logger.warn(
                     "managed index [{}] as part of policy [{}] is a shrunk index and the source index [{}] does not exist "
                         + "anymore. will skip the [{}] step",
-                    indexMetadata.getIndex().getName(),
+                    index.name(),
                     policyName,
                     shrunkenIndexSource,
                     NAME

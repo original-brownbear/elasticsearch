@@ -21,7 +21,6 @@ import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.core.Tuple;
-import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.indices.SystemIndices;
 import org.elasticsearch.indices.TestIndexNameExpressionResolver;
@@ -180,7 +179,7 @@ public class GetDataStreamsTransportActionTests extends ESTestCase {
             Metadata.Builder mBuilder = Metadata.builder(state.getMetadata());
             DataStream dataStream = state.getMetadata().dataStreams().get(dataStream1);
             mBuilder.put(dataStream.removeBackingIndex(dataStream.getIndices().get(1)));
-            mBuilder.remove(dataStream.getIndices().get(1).getName());
+            mBuilder.remove(dataStream.getIndices().get(1).name());
             state = ClusterState.builder(state).metadata(mBuilder).build();
         }
         response = GetDataStreamsTransportAction.innerOperation(
@@ -294,7 +293,7 @@ public class GetDataStreamsTransportActionTests extends ESTestCase {
                 allOf(
                     transformedMatch(d -> d.getDataStream().getName(), equalTo(dataStream1)),
                     transformedMatch(
-                        d -> d.getDataStream().getIndices().stream().map(Index::getName).toList(),
+                        d -> d.getDataStream().getIndices().stream().map(index -> index.name()).toList(),
                         contains(name1, name2, name3)
                     ),
                     transformedMatch(d -> d.getTimeSeries().temporalRanges(), contains(new Tuple<>(twoHoursAgo, twoHoursAhead)))

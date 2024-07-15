@@ -14,6 +14,7 @@ import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.LifecycleExecutionState;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.core.TimeValue;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.repositories.RepositoryMissingException;
 import org.elasticsearch.snapshots.SnapshotMissingException;
 
@@ -34,7 +35,8 @@ public class CleanupSnapshotStep extends AsyncRetryDuringSnapshotActionStep {
 
     @Override
     void performDuringNoSnapshot(IndexMetadata indexMetadata, ClusterState currentClusterState, ActionListener<Void> listener) {
-        final String indexName = indexMetadata.getIndex().getName();
+        Index index = indexMetadata.getIndex();
+        final String indexName = index.name();
 
         LifecycleExecutionState lifecycleState = indexMetadata.getLifecycleExecutionState();
         final String repositoryName = lifecycleState.snapshotRepository();

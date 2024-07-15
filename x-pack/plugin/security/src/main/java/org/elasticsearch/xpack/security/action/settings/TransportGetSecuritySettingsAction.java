@@ -106,7 +106,7 @@ public class TransportGetSecuritySettingsAction extends TransportMasterNodeActio
 
     static String[] resolveConcreteIndices(List<String> indexAbstractionNames, ClusterState state) {
         return indexAbstractionNames.stream()
-            .map(alias -> resolveConcreteIndex(alias, state).map(Index::getName))
+            .map(alias -> resolveConcreteIndex(alias, state).map(index -> index.name()))
             .filter(Optional::isPresent)
             .map(Optional::get)
             .toArray(String[]::new);

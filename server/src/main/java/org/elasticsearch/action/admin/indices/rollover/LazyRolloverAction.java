@@ -31,6 +31,7 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.features.NodeFeature;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.tasks.CancellableTask;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -305,7 +306,8 @@ public final class LazyRolloverAction extends ActionType<RolloverResponse> {
     }
 
     private static RolloverResponse noopLazyRolloverResponse(DataStream.DataStreamIndices indices) {
-        String latestWriteIndex = indices.getWriteIndex().getName();
+        Index index = indices.getWriteIndex();
+        String latestWriteIndex = index.name();
         return new RolloverResponse(latestWriteIndex, latestWriteIndex, Map.of(), false, false, true, true, false);
     }
 }

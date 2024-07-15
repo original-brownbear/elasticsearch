@@ -134,7 +134,7 @@ public class AddIndexBlockResponse extends ShardsAcknowledgedResponse {
         public XContentBuilder toXContent(final XContentBuilder builder, final Params params) throws IOException {
             builder.startObject();
             {
-                builder.field("name", index.getName());
+                builder.field("name", index.name());
                 if (hasFailures()) {
                     if (exception != null) {
                         builder.startObject("exception");

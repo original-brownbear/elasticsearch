@@ -49,7 +49,9 @@ public class FrozenExistenceDeciderService implements AutoscalingDeciderService 
             .metadata()
             .stream()
             .filter(FrozenExistenceDeciderService::isFrozenPhase)
-            .map(imd -> imd.getIndex().getName())
+            .map(imd -> {
+                return imd.getIndex().name();
+            })
             .limit(10)
             .collect(Collectors.toList());
         AutoscalingCapacity.Builder builder = AutoscalingCapacity.builder();

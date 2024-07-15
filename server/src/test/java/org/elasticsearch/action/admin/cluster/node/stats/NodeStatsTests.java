@@ -657,9 +657,8 @@ public class NodeStatsTests extends ESTestCase {
             new UnassignedInfo(UnassignedInfo.Reason.INDEX_CREATED, "message"),
             ShardRouting.Role.DEFAULT
         );
-        Path path = createTempDir().resolve("indices")
-            .resolve(shardRouting.shardId().getIndex().getUUID())
-            .resolve(String.valueOf(shardRouting.shardId().id()));
+        Index index = shardRouting.shardId().getIndex();
+        Path path = createTempDir().resolve("indices").resolve(index.uuid()).resolve(String.valueOf(shardRouting.shardId().id()));
         ShardPath shardPath = new ShardPath(false, path, path, shardRouting.shardId());
         return new ShardStats(shardRouting, shardPath, createShardLevelCommonStats(), null, null, null, false, 0);
     }

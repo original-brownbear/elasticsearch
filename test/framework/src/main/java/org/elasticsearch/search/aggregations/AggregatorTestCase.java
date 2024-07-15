@@ -350,16 +350,17 @@ public abstract class AggregatorTestCase extends ESTestCase {
                 .collect(toList()),
             List.of()
         );
-        BiFunction<MappedFieldType, FieldDataContext, IndexFieldData<?>> fieldDataBuilder = (fieldType, context) -> fieldType
-            .fielddataBuilder(
+        BiFunction<MappedFieldType, FieldDataContext, IndexFieldData<?>> fieldDataBuilder = (fieldType, context) -> {
+            return fieldType.fielddataBuilder(
                 new FieldDataContext(
-                    indexSettings.getIndex().getName(),
+                    indexSettings.getIndex().name(),
                     indexSettings,
                     context.lookupSupplier(),
                     context.sourcePathsLookup(),
                     context.fielddataOperation()
                 )
             ).build(new IndexFieldDataCache.None(), breakerService);
+        };
         BitsetFilterCache bitsetFilterCache = new BitsetFilterCache(indexSettings, new BitsetFilterCache.Listener() {
             @Override
             public void onRemoval(ShardId shardId, Accountable accountable) {}

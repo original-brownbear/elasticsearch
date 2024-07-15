@@ -31,6 +31,7 @@ import org.elasticsearch.common.Priority;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.FutureUtils;
 import org.elasticsearch.core.TimeValue;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.IndexService;
 import org.elasticsearch.index.mapper.MapperParsingException;
@@ -319,7 +320,8 @@ public class CreateIndexIT extends ESIntegTestCase {
 
         IndicesService indicesService = internalCluster().getInstance(IndicesService.class, internalCluster().getMasterName());
         for (IndexService indexService : indicesService) {
-            assertThat(indexService.index().getName(), not("test-idx-2"));
+            Index index = indexService.index();
+            assertThat(index.name(), not("test-idx-2"));
         }
     }
 

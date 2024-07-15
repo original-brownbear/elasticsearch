@@ -41,7 +41,7 @@ public class SettingsListenerIT extends ESIntegTestCase {
 
         @Override
         public void onIndexModule(IndexModule module) {
-            if (module.getIndex().getName().equals("test")) { // only for the test index
+            if (module.getIndex().name().equals("test")) { // only for the test index
                 module.addSettingsUpdateConsumer(SettingsTestingService.VALUE, service::setValue);
                 service.setValue(SettingsTestingService.VALUE.get(module.getSettings()));
             }

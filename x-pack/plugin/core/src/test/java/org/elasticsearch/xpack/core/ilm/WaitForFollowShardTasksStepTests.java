@@ -9,6 +9,7 @@ package org.elasticsearch.xpack.core.ilm;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.Metadata;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.xcontent.ToXContentObject;
 import org.elasticsearch.xpack.core.ccr.ShardFollowNodeTaskStatus;
@@ -65,7 +66,8 @@ public class WaitForFollowShardTasksStepTests extends AbstractStepTestCase<WaitF
             new FollowStatsAction.StatsResponse(createShardFollowTaskStatus(0, 9, 9)),
             new FollowStatsAction.StatsResponse(createShardFollowTaskStatus(1, 3, 3))
         );
-        mockFollowStatsCall(indexMetadata.getIndex().getName(), statsResponses);
+        Index index = indexMetadata.getIndex();
+        mockFollowStatsCall(index.name(), statsResponses);
 
         final boolean[] conditionMetHolder = new boolean[1];
         final ToXContentObject[] informationContextHolder = new ToXContentObject[1];
@@ -104,7 +106,8 @@ public class WaitForFollowShardTasksStepTests extends AbstractStepTestCase<WaitF
             new FollowStatsAction.StatsResponse(createShardFollowTaskStatus(0, 9, 9)),
             new FollowStatsAction.StatsResponse(createShardFollowTaskStatus(1, 8, 3))
         );
-        mockFollowStatsCall(indexMetadata.getIndex().getName(), statsResponses);
+        Index index = indexMetadata.getIndex();
+        mockFollowStatsCall(index.name(), statsResponses);
 
         final boolean[] conditionMetHolder = new boolean[1];
         final ToXContentObject[] informationContextHolder = new ToXContentObject[1];

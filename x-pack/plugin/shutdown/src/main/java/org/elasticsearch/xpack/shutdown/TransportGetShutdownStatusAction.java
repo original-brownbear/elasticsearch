@@ -34,6 +34,7 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.core.Tuple;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.shutdown.PluginShutdownService;
 import org.elasticsearch.snapshots.SnapshotsInfoService;
 import org.elasticsearch.tasks.CancellableTask;
@@ -227,6 +228,7 @@ public class TransportGetShutdownStatusAction extends TransportMasterNodeAction<
             var shardRouting = unassignedShards.get(0);
             ShardAllocationDecision decision = allocationService.explainShardAllocation(shardRouting, allocation);
 
+            Index index = shardRouting.index();
             return new ShutdownShardMigrationStatus(
                 SingleNodeShutdownMetadata.Status.STALLED,
                 unassignedShards.size(),
@@ -234,7 +236,7 @@ public class TransportGetShutdownStatusAction extends TransportMasterNodeAction<
                     "shard [%s] [%s] of index [%s] is unassigned, see [%s] for details or use the cluster allocation explain API",
                     shardRouting.shardId().getId(),
                     shardRouting.primary() ? "primary" : "replica",
-                    shardRouting.index().getName(),
+                    index.name(),
                     NODE_ALLOCATION_DECISION_KEY
                 ),
                 decision
@@ -342,6 +344,7 @@ public class TransportGetShutdownStatusAction extends TransportMasterNodeAction<
             ShardRouting shardRouting = unmovableShard.get().v1();
             ShardAllocationDecision decision = unmovableShard.get().v2();
 
+            Index index = shardRouting.index();
             return new ShutdownShardMigrationStatus(
                 SingleNodeShutdownMetadata.Status.STALLED,
                 totalRemainingShards,
@@ -349,7 +352,7 @@ public class TransportGetShutdownStatusAction extends TransportMasterNodeAction<
                     "shard [%s] [%s] of index [%s] cannot move, see [%s] for details or use the cluster allocation explain API",
                     shardRouting.shardId().getId(),
                     shardRouting.primary() ? "primary" : "replica",
-                    shardRouting.index().getName(),
+                    index.name(),
                     NODE_ALLOCATION_DECISION_KEY
                 ),
                 decision
@@ -363,6 +366,7 @@ public class TransportGetShutdownStatusAction extends TransportMasterNodeAction<
                 ShardRouting shardRouting = temporarilyUnmovableShards.get(0).v1();
                 ShardAllocationDecision decision = temporarilyUnmovableShards.get(0).v2();
 
+                Index index = shardRouting.index();
                 return new ShutdownShardMigrationStatus(
                     SingleNodeShutdownMetadata.Status.IN_PROGRESS,
                     startedShards,
@@ -373,7 +377,7 @@ public class TransportGetShutdownStatusAction extends TransportMasterNodeAction<
                             + "for details or use the cluster allocation explain API",
                         shardRouting.shardId().getId(),
                         shardRouting.primary() ? "primary" : "replica",
-                        shardRouting.index().getName(),
+                        index.name(),
                         NODE_ALLOCATION_DECISION_KEY
                     ),
                     decision
@@ -397,12 +401,13 @@ public class TransportGetShutdownStatusAction extends TransportMasterNodeAction<
                 && ShrinkAction.NAME.equals(ilmState.action())
                 && ErrorStep.NAME.equals(ilmState.step()) == false;
             if (ilmWillMoveShardEventually) {
+                Index index = pair.index();
                 logger.debug(
                     format(
                         "shard [%s] [%s] of index [%s] cannot move, but ILM is shrinking that index so assuming it will move",
                         pair.shardId().getId(),
                         pair.primary() ? "primary" : "replica",
-                        pair.index().getName()
+                        index.name()
                     )
                 );
             }

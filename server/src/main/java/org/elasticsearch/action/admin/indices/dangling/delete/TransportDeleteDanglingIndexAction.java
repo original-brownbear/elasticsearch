@@ -96,8 +96,8 @@ public class TransportDeleteDanglingIndexAction extends AcknowledgedTransportMas
                     return;
                 }
 
-                String indexName = indexToDelete.getName();
-                String indexUUID = indexToDelete.getUUID();
+                String indexName = indexToDelete.name();
+                String indexUUID = indexToDelete.uuid();
 
                 final ActionListener<AcknowledgedResponse> clusterStateUpdatedListener = deleteListener.delegateResponse((l, e) -> {
                     logger.debug("Failed to delete dangling index [" + indexName + "] [" + indexUUID + "]", e);
@@ -131,12 +131,12 @@ public class TransportDeleteDanglingIndexAction extends AcknowledgedTransportMas
         final Metadata metaData = currentState.getMetadata();
 
         for (Map.Entry<String, IndexMetadata> each : metaData.indices().entrySet()) {
-            if (indexToDelete.getUUID().equals(each.getValue().getIndexUUID())) {
+            if (indexToDelete.uuid().equals(each.getValue().getIndexUUID())) {
                 throw new IllegalArgumentException(
                     "Refusing to delete dangling index "
                         + indexToDelete
                         + " as an index with UUID ["
-                        + indexToDelete.getUUID()
+                        + indexToDelete.uuid()
                         + "] already exists in the cluster state"
                 );
             }

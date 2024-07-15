@@ -19,6 +19,7 @@ import org.elasticsearch.cluster.metadata.DataStream;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.common.unit.ByteSizeValue;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.xpack.core.ilm.Step.StepKey;
 import org.hamcrest.Matchers;
@@ -275,6 +276,7 @@ public class RolloverStepTests extends AbstractStepTestCase<RolloverStep> {
             IllegalArgumentException.class,
             () -> PlainActionFuture.<Void, Exception>get(f -> step.performAction(indexMetadata, clusterState, null, f))
         );
+        Index index = indexMetadata.getIndex();
         assertThat(
             e.getMessage(),
             Matchers.is(
@@ -283,7 +285,7 @@ public class RolloverStepTests extends AbstractStepTestCase<RolloverStep> {
                     "setting [%s] for index [%s] is empty or not defined, it must be set to the name of the alias pointing to the group of "
                         + "indices being rolled over",
                     RolloverAction.LIFECYCLE_ROLLOVER_ALIAS,
-                    indexMetadata.getIndex().getName()
+                    index.name()
                 )
             )
         );
@@ -303,6 +305,7 @@ public class RolloverStepTests extends AbstractStepTestCase<RolloverStep> {
             IllegalArgumentException.class,
             () -> PlainActionFuture.<Void, Exception>get(f -> step.performAction(indexMetadata, clusterState, null, f))
         );
+        Index index = indexMetadata.getIndex();
         assertThat(
             e.getMessage(),
             Matchers.is(
@@ -311,7 +314,7 @@ public class RolloverStepTests extends AbstractStepTestCase<RolloverStep> {
                     "%s [%s] does not point to index [%s]",
                     RolloverAction.LIFECYCLE_ROLLOVER_ALIAS,
                     alias,
-                    indexMetadata.getIndex().getName()
+                    index.name()
                 )
             )
         );

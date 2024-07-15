@@ -20,6 +20,7 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.core.UpdateForV9;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.IndexVersions;
 import org.elasticsearch.indices.SystemIndices;
@@ -167,14 +168,16 @@ public class TransportGetFeatureUpgradeStatusAction extends TransportMasterNodeA
             .flatMap(descriptor -> descriptor.getMatchingIndices(state.metadata()).stream())
             .sorted(String::compareTo)
             .map(index -> state.metadata().index(index))
-            .map(
-                indexMetadata -> new GetFeatureUpgradeStatusResponse.IndexInfo(
-                    indexMetadata.getIndex().getName(),
+            .map(indexMetadata -> {
+                Index index = indexMetadata.getIndex();
+                Index index1 = indexMetadata.getIndex();
+                Index index2 = indexMetadata.getIndex();
+                return new GetFeatureUpgradeStatusResponse.IndexInfo(
+                    index2.name(),
                     indexMetadata.getCreationVersion(),
-                    (indexMetadata.getIndex().getName().equals(failedFeatureName)
-                        || indexMetadata.getIndex().getName().equals(failedFeatureUpgradedName)) ? exception : null
-                )
-            )
+                    (index1.name().equals(failedFeatureName) || index.name().equals(failedFeatureUpgradedName)) ? exception : null
+                );
+            })
             .toList();
     }
 

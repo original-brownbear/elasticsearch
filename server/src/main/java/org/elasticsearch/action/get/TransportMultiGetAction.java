@@ -23,6 +23,7 @@ import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.util.concurrent.AtomicArray;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.core.Tuple;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.tasks.Task;
@@ -76,13 +77,15 @@ public class TransportMultiGetAction extends HandledTransportAction<MultiGetRequ
                 if (item.index().equals(lastResolvedIndex.v1())) {
                     concreteSingleIndex = lastResolvedIndex.v2();
                 } else {
-                    concreteSingleIndex = indexNameExpressionResolver.concreteSingleIndex(clusterState, item).getName();
+                    Index index = indexNameExpressionResolver.concreteSingleIndex(clusterState, item);
+                    concreteSingleIndex = index.name();
                     lastResolvedIndex = Tuple.tuple(item.index(), concreteSingleIndex);
                 }
                 item.routing(clusterState.metadata().resolveIndexRouting(item.routing(), item.index()));
                 shardId = clusterService.operationRouting().shardId(clusterState, concreteSingleIndex, item.id(), item.routing());
             } catch (RoutingMissingException e) {
-                responses.set(i, newItemFailure(e.getIndex().getName(), e.getId(), e));
+                Index index = e.getIndex();
+                responses.set(i, newItemFailure(index.name(), e.getId(), e));
                 continue;
             } catch (Exception e) {
                 responses.set(i, newItemFailure(item.index(), item.id(), e));

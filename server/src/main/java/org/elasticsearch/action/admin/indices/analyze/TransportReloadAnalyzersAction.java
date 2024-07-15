@@ -29,6 +29,7 @@ import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexService;
 import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.tasks.Task;
@@ -128,7 +129,8 @@ public class TransportReloadAnalyzersAction extends TransportBroadcastByNodeActi
             IndexService indexService = indicesService.indexService(shardRouting.index());
             List<String> reloadedSearchAnalyzers = indexService.mapperService()
                 .reloadSearchAnalyzers(indicesService.getAnalysis(), request.resource(), request.preview());
-            return new ReloadResult(shardRouting.index().getName(), shardRouting.currentNodeId(), reloadedSearchAnalyzers);
+            Index index = shardRouting.index();
+            return new ReloadResult(index.name(), shardRouting.currentNodeId(), reloadedSearchAnalyzers);
         });
     }
 

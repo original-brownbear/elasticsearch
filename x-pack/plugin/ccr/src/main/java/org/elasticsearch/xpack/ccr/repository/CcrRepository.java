@@ -288,7 +288,8 @@ public class CcrRepository extends AbstractLifecycleComponent implements Reposit
         Map<String, String> customMetadata = new HashMap<>();
         customMetadata.put(Ccr.CCR_CUSTOM_METADATA_LEADER_INDEX_SHARD_HISTORY_UUIDS, String.join(",", leaderHistoryUUIDs));
         customMetadata.put(Ccr.CCR_CUSTOM_METADATA_LEADER_INDEX_UUID_KEY, leaderIndexMetadata.getIndexUUID());
-        customMetadata.put(Ccr.CCR_CUSTOM_METADATA_LEADER_INDEX_NAME_KEY, leaderIndexMetadata.getIndex().getName());
+        Index index1 = leaderIndexMetadata.getIndex();
+        customMetadata.put(Ccr.CCR_CUSTOM_METADATA_LEADER_INDEX_NAME_KEY, index1.name());
         customMetadata.put(Ccr.CCR_CUSTOM_METADATA_REMOTE_CLUSTER_NAME_KEY, remoteClusterAlias);
         imdBuilder.putCustom(Ccr.CCR_CUSTOM_METADATA_KEY, customMetadata);
 
@@ -324,7 +325,8 @@ public class CcrRepository extends AbstractLifecycleComponent implements Reposit
                         indexName,
                         new RepositoryData.SnapshotDetails(SnapshotState.SUCCESS, IndexVersion.current(), nowMillis, nowMillis, "")
                     );
-                    indexSnapshots.put(new IndexId(indexName, remoteIndices.get(indexName).getIndex().getUUID()), List.of(snapshotId));
+                    Index index = remoteIndices.get(indexName).getIndex();
+                    indexSnapshots.put(new IndexId(indexName, index.uuid()), List.of(snapshotId));
                 }
                 return new RepositoryData(
                     MISSING_UUID,
@@ -614,7 +616,7 @@ public class CcrRepository extends AbstractLifecycleComponent implements Reposit
         final IndexMetadata leaderIndexMetadata = indexMetadataFuture.actionGet(ccrSettings.getRecoveryActionTimeout());
         final MappingMetadata mappingMetadata = leaderIndexMetadata.mapping();
         if (mappingMetadata != null) {
-            final PutMappingRequest putMappingRequest = CcrRequests.putMappingRequest(followerIndex.getName(), mappingMetadata);
+            final PutMappingRequest putMappingRequest = CcrRequests.putMappingRequest(followerIndex.name(), mappingMetadata);
             followerClient.admin().indices().putMapping(putMappingRequest).actionGet(ccrSettings.getRecoveryActionTimeout());
         }
     }

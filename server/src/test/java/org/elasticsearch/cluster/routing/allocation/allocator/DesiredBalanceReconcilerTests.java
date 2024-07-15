@@ -55,6 +55,7 @@ import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.gateway.GatewayAllocator;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.repositories.IndexId;
@@ -387,7 +388,9 @@ public class DesiredBalanceReconcilerTests extends ESAllocationTestCase {
         final var comparisonResult = Comparator.<IndexMetadata>comparingInt(indexMetadata -> indexMetadata.isSystem() ? 1 : 0)
             .thenComparingInt(IndexMetadata::priority)
             .thenComparingLong(IndexMetadata::getCreationDate)
-            .thenComparing(indexMetadata -> indexMetadata.getIndex().getName())
+            .thenComparing(indexMetadata -> {
+                return indexMetadata.getIndex().name();
+            })
             .compare(indexMetadata0, indexMetadata1);
         assert comparisonResult != 0;
         final var higherIndex = comparisonResult > 0 ? indexMetadata0 : indexMetadata1;
@@ -418,10 +421,10 @@ public class DesiredBalanceReconcilerTests extends ESAllocationTestCase {
             }
         );
 
-        final TriFunction<ClusterState, IndexMetadata, Integer, ShardRouting> primaryGetter = (state, indexMetadata, shardId) -> state
-            .routingTable()
-            .shardRoutingTable(indexMetadata.getIndex().getName(), shardId)
-            .primaryShard();
+        final TriFunction<ClusterState, IndexMetadata, Integer, ShardRouting> primaryGetter = (state, indexMetadata, shardId) -> {
+            Index index = indexMetadata.getIndex();
+            return state.routingTable().shardRoutingTable(index.name(), shardId).primaryShard();
+        };
 
         final var state1 = startInitializingShardsAndReroute(allocationService, clusterState);
         assertTrue(primaryGetter.apply(state1, higherIndex, 0).initializing());
@@ -453,11 +456,10 @@ public class DesiredBalanceReconcilerTests extends ESAllocationTestCase {
         assertTrue(primaryGetter.apply(state5, lowerIndex, 0).started());
         assertTrue(primaryGetter.apply(state5, lowerIndex, 1).started());
 
-        final TriFunction<ClusterState, IndexMetadata, Integer, ShardRouting> replicaGetter = (state, indexMetadata, shardId) -> state
-            .routingTable()
-            .shardRoutingTable(indexMetadata.getIndex().getName(), shardId)
-            .replicaShards()
-            .get(0);
+        final TriFunction<ClusterState, IndexMetadata, Integer, ShardRouting> replicaGetter = (state, indexMetadata, shardId) -> {
+            Index index = indexMetadata.getIndex();
+            return state.routingTable().shardRoutingTable(index.name(), shardId).replicaShards().get(0);
+        };
 
         assignReplicas.set(true);
 

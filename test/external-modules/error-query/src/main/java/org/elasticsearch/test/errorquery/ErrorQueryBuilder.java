@@ -19,6 +19,7 @@ import org.elasticsearch.TransportVersions;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.logging.HeaderWarning;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.query.AbstractQueryBuilder;
 import org.elasticsearch.index.query.SearchExecutionContext;
 import org.elasticsearch.xcontent.ConstructingObjectParser;
@@ -203,7 +204,8 @@ public class ErrorQueryBuilder extends AbstractQueryBuilder<ErrorQueryBuilder> {
                     return;
                 }
             }
-            final String header = "[" + context.index().getName() + "][" + context.getShardId() + "]";
+            Index index = context.index();
+            final String header = "[" + index.name() + "][" + context.getShardId() + "]";
             if (error.getErrorType() == IndexError.ERROR_TYPE.WARNING) {
                 HeaderWarning.addWarning(header + " " + error.getMessage());
             } else if (error.getErrorType() == IndexError.ERROR_TYPE.EXCEPTION) {

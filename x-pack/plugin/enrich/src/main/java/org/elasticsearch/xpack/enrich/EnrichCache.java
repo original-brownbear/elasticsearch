@@ -147,7 +147,7 @@ public final class EnrichCache {
         if (ia == null) {
             throw new IndexNotFoundException("no generated enrich index [" + alias + "]");
         }
-        return ia.getIndices().get(0).getName();
+        return ia.getIndices().get(0).name();
     }
 
     static CacheValue toCacheValue(SearchResponse response) {

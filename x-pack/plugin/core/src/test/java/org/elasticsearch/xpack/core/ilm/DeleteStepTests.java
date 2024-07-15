@@ -16,6 +16,7 @@ import org.elasticsearch.cluster.metadata.DataStream;
 import org.elasticsearch.cluster.metadata.DataStreamTestHelper;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.Metadata;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.xpack.core.ilm.Step.StepKey;
 import org.mockito.Mockito;
@@ -78,7 +79,8 @@ public class DeleteStepTests extends AbstractStepTestCase<DeleteStep> {
             ActionListener<AcknowledgedResponse> listener = (ActionListener<AcknowledgedResponse>) invocation.getArguments()[1];
             assertNotNull(request);
             assertEquals(1, request.indices().length);
-            assertEquals(indexMetadata.getIndex().getName(), request.indices()[0]);
+            Index index = indexMetadata.getIndex();
+            assertEquals(index.name(), request.indices()[0]);
             listener.onResponse(null);
             return null;
         }).when(indicesClient).delete(any(), any());
@@ -104,7 +106,8 @@ public class DeleteStepTests extends AbstractStepTestCase<DeleteStep> {
             ActionListener<AcknowledgedResponse> listener = (ActionListener<AcknowledgedResponse>) invocation.getArguments()[1];
             assertNotNull(request);
             assertEquals(1, request.indices().length);
-            assertEquals(indexMetadata.getIndex().getName(), request.indices()[0]);
+            Index index = indexMetadata.getIndex();
+            assertEquals(index.name(), request.indices()[0]);
             listener.onFailure(exception);
             return null;
         }).when(indicesClient).delete(any(), any());
@@ -200,11 +203,12 @@ public class DeleteStepTests extends AbstractStepTestCase<DeleteStep> {
             @Override
             public void onFailure(Exception e) {
                 listenerCalled.set(true);
+                Index index = indexToOperateOn.getIndex();
                 assertThat(
                     e.getMessage(),
                     is(
                         "index ["
-                            + indexToOperateOn.getIndex().getName()
+                            + index.name()
                             + "] is the "
                             + (useFailureStore ? "failure store " : "")
                             + "write index for data stream ["
@@ -405,11 +409,12 @@ public class DeleteStepTests extends AbstractStepTestCase<DeleteStep> {
             @Override
             public void onFailure(Exception e) {
                 listenerCalled.set(true);
+                Index index = failureSourceIndexMetadata.getIndex();
                 assertThat(
                     e.getMessage(),
                     is(
                         "index ["
-                            + failureSourceIndexMetadata.getIndex().getName()
+                            + index.name()
                             + "] is the failure store write index for data stream ["
                             + dataStreamName
                             + "]. stopping execution of lifecycle [test-ilm-policy] as a data stream's write index cannot be deleted. "

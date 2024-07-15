@@ -14,6 +14,7 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.core.TimeValue;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.persistent.PersistentTaskParams;
 import org.elasticsearch.xcontent.ConstructingObjectParser;
@@ -164,11 +165,15 @@ public class ShardFollowTask extends ImmutableFollowParameters implements Persis
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
         builder.startObject();
         builder.field(REMOTE_CLUSTER_FIELD.getPreferredName(), remoteCluster);
-        builder.field(FOLLOW_SHARD_INDEX_FIELD.getPreferredName(), followShardId.getIndex().getName());
-        builder.field(FOLLOW_SHARD_INDEX_UUID_FIELD.getPreferredName(), followShardId.getIndex().getUUID());
+        Index index1 = followShardId.getIndex();
+        builder.field(FOLLOW_SHARD_INDEX_FIELD.getPreferredName(), index1.name());
+        Index index3 = followShardId.getIndex();
+        builder.field(FOLLOW_SHARD_INDEX_UUID_FIELD.getPreferredName(), index3.uuid());
         builder.field(FOLLOW_SHARD_SHARDID_FIELD.getPreferredName(), followShardId.id());
-        builder.field(LEADER_SHARD_INDEX_FIELD.getPreferredName(), leaderShardId.getIndex().getName());
-        builder.field(LEADER_SHARD_INDEX_UUID_FIELD.getPreferredName(), leaderShardId.getIndex().getUUID());
+        Index index = leaderShardId.getIndex();
+        builder.field(LEADER_SHARD_INDEX_FIELD.getPreferredName(), index.name());
+        Index index2 = leaderShardId.getIndex();
+        builder.field(LEADER_SHARD_INDEX_UUID_FIELD.getPreferredName(), index2.uuid());
         builder.field(LEADER_SHARD_SHARDID_FIELD.getPreferredName(), leaderShardId.id());
         toXContentFragment(builder);
         builder.field(HEADERS.getPreferredName(), headers);

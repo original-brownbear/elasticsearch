@@ -471,8 +471,8 @@ public class MetadataCreateIndexService {
         final ActionListener<Void> rerouteListener
     ) throws Exception {
         // create the index here (on the master) to validate it can be created, as well as adding the mapping
-        assert indicesService.hasIndex(temporaryIndexMeta.getIndex()) == false
-            : Strings.format("Index [%s] already exists", temporaryIndexMeta.getIndex().getName());
+        Index index1 = temporaryIndexMeta.getIndex();
+        assert indicesService.hasIndex(temporaryIndexMeta.getIndex()) == false : Strings.format("Index [%s] already exists", index1.name());
         return indicesService.<ClusterState, Exception>withTempIndexService(temporaryIndexMeta, indexService -> {
             try {
                 updateIndexMappingsAndBuildSortOrder(indexService, request, mappings, sourceMetadata);
@@ -520,7 +520,8 @@ public class MetadataCreateIndexService {
                 allocationService.getShardRoutingRoleStrategy()
             );
             if (request.performReroute()) {
-                updated = allocationService.reroute(updated, "index [" + indexMetadata.getIndex().getName() + "] created", rerouteListener);
+                Index index = indexMetadata.getIndex();
+                updated = allocationService.reroute(updated, "index [" + index.name() + "] created", rerouteListener);
             }
             return updated;
         });
@@ -847,7 +848,8 @@ public class MetadataCreateIndexService {
         final BiConsumer<Metadata.Builder, IndexMetadata> metadataTransformer,
         final ActionListener<Void> rerouteListener
     ) throws Exception {
-        logger.info("applying create index request using existing index [{}] metadata", sourceMetadata.getIndex().getName());
+        Index index = sourceMetadata.getIndex();
+        logger.info("applying create index request using existing index [{}] metadata", index.name());
 
         final Map<String, Object> mappings = MapperService.parseMapping(xContentRegistry, request.mappings());
         if (mappings.isEmpty() == false) {
@@ -1245,7 +1247,8 @@ public class MetadataCreateIndexService {
             newMetadata = currentState.metadata().withAddedIndex(indexMetadata);
         }
 
-        String indexName = indexMetadata.getIndex().getName();
+        Index index = indexMetadata.getIndex();
+        String indexName = index.name();
         ClusterBlocks.Builder blocks = createClusterBlocksBuilder(currentState, indexName, clusterBlocks);
         blocks.updateBlocks(indexMetadata);
 
@@ -1545,20 +1548,20 @@ public class MetadataCreateIndexService {
         final boolean copySettings,
         final IndexScopedSettings indexScopedSettings
     ) {
-        final IndexMetadata sourceMetadata = currentState.metadata().index(resizeSourceIndex.getName());
+        final IndexMetadata sourceMetadata = currentState.metadata().index(resizeSourceIndex.name());
         if (type == ResizeType.SHRINK) {
             final List<String> nodesToAllocateOn = validateShrinkIndex(
                 currentState,
-                resizeSourceIndex.getName(),
+                resizeSourceIndex.name(),
                 resizeIntoName,
                 indexSettingsBuilder.build()
             );
             indexSettingsBuilder.put(INDEX_SHRINK_INITIAL_RECOVERY_KEY, Strings.arrayToCommaDelimitedString(nodesToAllocateOn.toArray()));
         } else if (type == ResizeType.SPLIT) {
-            validateSplitIndex(currentState, resizeSourceIndex.getName(), resizeIntoName, indexSettingsBuilder.build());
+            validateSplitIndex(currentState, resizeSourceIndex.name(), resizeIntoName, indexSettingsBuilder.build());
             indexSettingsBuilder.putNull(INDEX_SHRINK_INITIAL_RECOVERY_KEY);
         } else if (type == ResizeType.CLONE) {
-            validateCloneIndex(currentState, resizeSourceIndex.getName(), resizeIntoName, indexSettingsBuilder.build());
+            validateCloneIndex(currentState, resizeSourceIndex.name(), resizeIntoName, indexSettingsBuilder.build());
             indexSettingsBuilder.putNull(INDEX_SHRINK_INITIAL_RECOVERY_KEY);
         } else {
             throw new IllegalStateException("unknown resize type is " + type);
@@ -1591,8 +1594,8 @@ public class MetadataCreateIndexService {
         indexSettingsBuilder.put(IndexMetadata.SETTING_VERSION_CREATED, sourceMetadata.getCreationVersion())
             .put(builder.build())
             .put(IndexMetadata.SETTING_ROUTING_PARTITION_SIZE, sourceMetadata.getRoutingPartitionSize())
-            .put(IndexMetadata.INDEX_RESIZE_SOURCE_NAME.getKey(), resizeSourceIndex.getName())
-            .put(IndexMetadata.INDEX_RESIZE_SOURCE_UUID.getKey(), resizeSourceIndex.getUUID());
+            .put(IndexMetadata.INDEX_RESIZE_SOURCE_NAME.getKey(), resizeSourceIndex.name())
+            .put(IndexMetadata.INDEX_RESIZE_SOURCE_UUID.getKey(), resizeSourceIndex.uuid());
         if (sourceMetadata.getSettings().hasValue(IndexMetadata.SETTING_VERSION_COMPATIBILITY)) {
             indexSettingsBuilder.put(IndexMetadata.SETTING_VERSION_COMPATIBILITY, sourceMetadata.getCompatibilityVersion());
         }

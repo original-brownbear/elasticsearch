@@ -34,7 +34,6 @@ import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.datastreams.DataStreamsPlugin;
-import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexMode;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.mapper.DateFieldMapper;
@@ -132,7 +131,7 @@ public class DownsampleDataStreamTests extends ESSingleNodeTestCase {
             .getDataStream()
             .getIndices()
             .stream()
-            .map(Index::getName)
+            .map(index -> index.name())
             .toList();
         assertThat(backingIndices, Matchers.contains(downsampleTargetIndex, rolloverResponse.getNewIndex()));
 

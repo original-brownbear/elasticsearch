@@ -307,10 +307,9 @@ public class SearchHitsTests extends AbstractChunkedSerializingTestCase<SearchHi
                         );
                         assertEquals(hits[i].getShard().getNodeId(), newSearchHits.getAt(i).getShard().getNodeId());
                         // The index uuid is not serialized in the rest layer
-                        assertNotEquals(
-                            hits[i].getShard().getShardId().getIndex().getUUID(),
-                            newSearchHits.getAt(i).getShard().getShardId().getIndex().getUUID()
-                        );
+                        Index index = newSearchHits.getAt(i).getShard().getShardId().getIndex();
+                        Index index1 = hits[i].getShard().getShardId().getIndex();
+                        assertNotEquals(index1.uuid(), index.uuid());
                     } else {
                         assertNull(newSearchHits.getAt(i).getShard());
                     }

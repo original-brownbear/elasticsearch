@@ -304,9 +304,9 @@ public class MetadataMigrateToDataStreamServiceTests extends MapperServiceTestCa
         assertThat(ds, notNullValue());
         assertThat(ds.getType(), equalTo(IndexAbstraction.Type.DATA_STREAM));
         assertThat(ds.getIndices().size(), equalTo(2));
-        List<String> backingIndexNames = ds.getIndices().stream().map(Index::getName).toList();
+        List<String> backingIndexNames = ds.getIndices().stream().map(Index::name).toList();
         assertThat(backingIndexNames, containsInAnyOrder("foo1", "foo2"));
-        assertThat(ds.getWriteIndex().getName(), equalTo("foo1"));
+        assertThat(ds.getWriteIndex().name(), equalTo("foo1"));
         for (Index index : ds.getIndices()) {
             IndexMetadata im = newState.metadata().index(index);
             assertThat(im.getSettings().get("index.hidden"), equalTo("true"));
@@ -363,9 +363,9 @@ public class MetadataMigrateToDataStreamServiceTests extends MapperServiceTestCa
         assertThat(ds, notNullValue());
         assertThat(ds.getType(), equalTo(IndexAbstraction.Type.DATA_STREAM));
         assertThat(ds.getIndices().size(), equalTo(2));
-        List<String> backingIndexNames = ds.getIndices().stream().map(Index::getName).toList();
+        List<String> backingIndexNames = ds.getIndices().stream().map(Index::name).toList();
         assertThat(backingIndexNames, containsInAnyOrder("foo1", "foo2"));
-        assertThat(ds.getWriteIndex().getName(), equalTo("foo1"));
+        assertThat(ds.getWriteIndex().name(), equalTo("foo1"));
         for (Index index : ds.getIndices()) {
             IndexMetadata im = newState.metadata().index(index);
             assertThat(im.getSettings().get("index.hidden"), equalTo("true"));

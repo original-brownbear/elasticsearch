@@ -23,6 +23,7 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.Tuple;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.license.XPackLicenseState;
 import org.elasticsearch.snapshots.SearchableSnapshotsSettings;
 import org.elasticsearch.xcontent.NamedXContentRegistry;
@@ -393,9 +394,10 @@ public final class MetadataMigrateToDataTiersRoutingService {
                         String newPhaseDefinition = Strings.toString(phaseExecutionInfo, false, false);
                         updatedState.setPhaseDefinition(newPhaseDefinition);
 
+                        Index index = indexMetadata.getIndex();
                         logger.debug(
                             "updating the cached phase definition for index [{}], current step [{}] in policy " + "[{}] to [{}]",
-                            indexMetadata.getIndex().getName(),
+                            index.name(),
                             currentStepKey,
                             policyName,
                             newPhaseDefinition
@@ -516,7 +518,8 @@ public final class MetadataMigrateToDataTiersRoutingService {
         String nodeAttrIndexIncludeRoutingSetting = INDEX_ROUTING_INCLUDE_GROUP_SETTING.getKey() + nodeAttrName;
         String nodeAttrIndexExcludeRoutingSetting = INDEX_ROUTING_EXCLUDE_GROUP_SETTING.getKey() + nodeAttrName;
         for (var indexMetadata : currentState.metadata().indices().values()) {
-            String indexName = indexMetadata.getIndex().getName();
+            Index index1 = indexMetadata.getIndex();
+            String indexName = index1.name();
             Settings currentSettings = indexMetadata.getSettings();
 
             boolean removeNodeAttrIndexRoutingSettings = true;
@@ -564,7 +567,8 @@ public final class MetadataMigrateToDataTiersRoutingService {
                 mb.put(
                     IndexMetadata.builder(indexMetadata).settings(finalSettings).settingsVersion(indexMetadata.getSettingsVersion() + 1)
                 );
-                migratedIndices.add(indexMetadata.getIndex().getName());
+                Index index = indexMetadata.getIndex();
+                migratedIndices.add(index.name());
             }
         }
         return migratedIndices;
@@ -772,7 +776,8 @@ public final class MetadataMigrateToDataTiersRoutingService {
         }
 
         Settings.Builder newSettingsBuilder = Settings.builder().put(currentIndexSettings);
-        String indexName = indexMetadata.getIndex().getName();
+        Index index = indexMetadata.getIndex();
+        String indexName = index.name();
 
         boolean isDataStream = currentState.metadata().findDataStreams(indexName).isEmpty() == false;
         String convertedTierPreference = isDataStream ? DataTier.DATA_HOT : DataTier.DATA_CONTENT;

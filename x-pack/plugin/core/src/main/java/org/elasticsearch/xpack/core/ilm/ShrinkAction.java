@@ -20,6 +20,7 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.core.Nullable;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.xcontent.ConstructingObjectParser;
 import org.elasticsearch.xcontent.ObjectParser;
 import org.elasticsearch.xcontent.ParseField;
@@ -188,17 +189,19 @@ public class ShrinkAction implements LifecycleAction {
             lastOrNextStep,
             (indexMetadata, clusterState, listener) -> {
                 if (indexMetadata.getSettings().get(LifecycleSettings.SNAPSHOT_INDEX_NAME) != null) {
+                    Index index = indexMetadata.getIndex();
                     logger.warn(
                         "[{}] action is configured for index [{}] in policy [{}] which is mounted as searchable snapshot. "
                             + "Skipping this action",
                         ShrinkAction.NAME,
-                        indexMetadata.getIndex().getName(),
+                        index.name(),
                         indexMetadata.getLifecyclePolicyName()
                     );
                     listener.onResponse(true);
                     return;
                 }
-                String indexName = indexMetadata.getIndex().getName();
+                Index index = indexMetadata.getIndex();
+                String indexName = index.name();
                 client.admin()
                     .indices()
                     .prepareStats(indexName)
@@ -288,8 +291,8 @@ public class ShrinkAction implements LifecycleAction {
             aliasKey,
             replaceDataStreamIndexKey,
             (index, clusterState) -> {
-                IndexAbstraction indexAbstraction = clusterState.metadata().getIndicesLookup().get(index.getName());
-                assert indexAbstraction != null : "invalid cluster metadata. index [" + index.getName() + "] was not found";
+                IndexAbstraction indexAbstraction = clusterState.metadata().getIndicesLookup().get(index.name());
+                assert indexAbstraction != null : "invalid cluster metadata. index [" + index.name() + "] was not found";
                 return indexAbstraction.getParentDataStream() != null;
             }
         );

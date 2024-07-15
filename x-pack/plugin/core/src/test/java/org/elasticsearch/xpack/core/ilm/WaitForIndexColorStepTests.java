@@ -18,6 +18,7 @@ import org.elasticsearch.cluster.routing.RoutingTable;
 import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.routing.ShardRoutingState;
 import org.elasticsearch.cluster.routing.TestShardRouting;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.xpack.core.ilm.Step.StepKey;
@@ -227,13 +228,8 @@ public class WaitForIndexColorStepTests extends AbstractStepTestCase<WaitForInde
             .build();
 
         String indexPrefix = randomAlphaOfLengthBetween(5, 10) + "-";
-        ShardRouting shardRouting = TestShardRouting.newShardRouting(
-            originalIndex.getIndex().getName(),
-            0,
-            "1",
-            true,
-            ShardRoutingState.STARTED
-        );
+        Index index2 = originalIndex.getIndex();
+        ShardRouting shardRouting = TestShardRouting.newShardRouting(index2.name(), 0, "1", true, ShardRoutingState.STARTED);
         IndexRoutingTable indexRoutingTable = IndexRoutingTable.builder(originalIndex.getIndex()).addShard(shardRouting).build();
 
         ClusterState clusterState = ClusterState.builder(new ClusterName("_name"))
@@ -245,14 +241,16 @@ public class WaitForIndexColorStepTests extends AbstractStepTestCase<WaitForInde
         ClusterStateWaitStep.Result result = step.isConditionMet(originalIndex.getIndex(), clusterState);
         assertThat(result.isComplete(), is(false));
         SingleMessageFieldInfo info = (SingleMessageFieldInfo) result.getInfomationContext();
-        String targetIndex = indexPrefix + originalIndex.getIndex().getName();
+        Index index1 = originalIndex.getIndex();
+        String targetIndex = indexPrefix + index1.name();
+        Index index = originalIndex.getIndex();
         assertThat(
             info.getMessage(),
             is(
                 "["
                     + step.getKey().action()
                     + "] lifecycle action for index ["
-                    + originalIndex.getIndex().getName()
+                    + index.name()
                     + "] executed but the target index ["
                     + targetIndex
                     + "] does not exist"
@@ -266,19 +264,15 @@ public class WaitForIndexColorStepTests extends AbstractStepTestCase<WaitForInde
             .numberOfShards(1)
             .numberOfReplicas(2)
             .build();
-        ShardRouting originalShardRouting = TestShardRouting.newShardRouting(
-            originalIndex.getIndex().getName(),
-            0,
-            "1",
-            true,
-            ShardRoutingState.STARTED
-        );
+        Index index1 = originalIndex.getIndex();
+        ShardRouting originalShardRouting = TestShardRouting.newShardRouting(index1.name(), 0, "1", true, ShardRoutingState.STARTED);
         IndexRoutingTable originalIndexRoutingTable = IndexRoutingTable.builder(originalIndex.getIndex())
             .addShard(originalShardRouting)
             .build();
 
         String indexPrefix = randomAlphaOfLengthBetween(5, 10) + "-";
-        String targetIndexName = indexPrefix + originalIndex.getIndex().getName();
+        Index index = originalIndex.getIndex();
+        String targetIndexName = indexPrefix + index.name();
         IndexMetadata targetIndex = IndexMetadata.builder(targetIndexName)
             .settings(settings(IndexVersion.current()))
             .numberOfShards(1)

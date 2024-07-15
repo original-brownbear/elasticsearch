@@ -585,16 +585,14 @@ public class RemoveCorruptedShardDataCommandIT extends ESIntegTestCase {
 
     public static Path getPathToShardData(String nodeId, ShardId shardId, String shardPathSubdirectory) {
         final NodesStatsResponse nodeStatsResponse = clusterAdmin().prepareNodesStats(nodeId).setFs(true).get();
-        final Set<Path> paths = StreamSupport.stream(nodeStatsResponse.getNodes().get(0).getFs().spliterator(), false)
-            .map(
-                dataPath -> PathUtils.get(dataPath.getPath())
-                    .resolve(NodeEnvironment.INDICES_FOLDER)
-                    .resolve(shardId.getIndex().getUUID())
-                    .resolve(Integer.toString(shardId.getId()))
-                    .resolve(shardPathSubdirectory)
-            )
-            .filter(Files::isDirectory)
-            .collect(Collectors.toSet());
+        final Set<Path> paths = StreamSupport.stream(nodeStatsResponse.getNodes().get(0).getFs().spliterator(), false).map(dataPath -> {
+            Index index = shardId.getIndex();
+            return PathUtils.get(dataPath.getPath())
+                .resolve(NodeEnvironment.INDICES_FOLDER)
+                .resolve(index.uuid())
+                .resolve(Integer.toString(shardId.getId()))
+                .resolve(shardPathSubdirectory);
+        }).filter(Files::isDirectory).collect(Collectors.toSet());
         assertThat(paths, hasSize(1));
         return paths.iterator().next();
     }

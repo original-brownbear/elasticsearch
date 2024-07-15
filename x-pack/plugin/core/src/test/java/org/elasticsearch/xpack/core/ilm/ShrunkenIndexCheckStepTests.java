@@ -10,6 +10,7 @@ import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.Metadata;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.xpack.core.ilm.ClusterStateWaitStep.Result;
 import org.elasticsearch.xpack.core.ilm.Step.StepKey;
@@ -121,9 +122,7 @@ public class ShrunkenIndexCheckStepTests extends AbstractStepTestCase<ShrunkenIn
             IllegalStateException.class,
             () -> step.isConditionMet(indexMetadata.getIndex(), clusterState)
         );
-        assertThat(
-            exception.getMessage(),
-            equalTo("step[is-shrunken-index] is checking an un-shrunken index[" + indexMetadata.getIndex().getName() + "]")
-        );
+        Index index = indexMetadata.getIndex();
+        assertThat(exception.getMessage(), equalTo("step[is-shrunken-index] is checking an un-shrunken index[" + index.name() + "]"));
     }
 }

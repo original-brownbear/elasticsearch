@@ -19,6 +19,7 @@ import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.DataStream;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.datastreams.DataStreamsPlugin;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.mapper.DateFieldMapper;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.test.ESIntegTestCase;
@@ -90,7 +91,8 @@ public class IndexTemplateRegistryRolloverIT extends ESIntegTestCase {
     private void assertNumberOfBackingIndices(final int expected) {
         DataStream dataStream = getDataStream();
         assertThat(dataStream.getIndices(), hasSize(expected));
-        assertThat(dataStream.getWriteIndex().getName(), endsWith(String.valueOf(expected)));
+        Index index = dataStream.getWriteIndex();
+        assertThat(index.name(), endsWith(String.valueOf(expected)));
     }
 
     private DataStream getDataStream() {

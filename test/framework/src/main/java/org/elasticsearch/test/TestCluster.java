@@ -26,6 +26,7 @@ import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.IndexTemplateMetadata;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.indices.IndexTemplateMissingException;
 import org.elasticsearch.repositories.RepositoryMissingException;
@@ -155,7 +156,8 @@ public abstract class TestCluster {
                     ClusterStateResponse clusterStateResponse = client().admin().cluster().prepareState().get();
                     ArrayList<String> concreteIndices = new ArrayList<>();
                     for (IndexMetadata indexMetadata : clusterStateResponse.getState().metadata()) {
-                        concreteIndices.add(indexMetadata.getIndex().getName());
+                        Index index = indexMetadata.getIndex();
+                        concreteIndices.add(index.name());
                     }
                     if (concreteIndices.isEmpty() == false) {
                         assertAcked(client().admin().indices().prepareDelete(concreteIndices.toArray(new String[0])));

@@ -82,7 +82,7 @@ public class MetaStateService {
         for (Map.Entry<Index, Long> entry : manifest.indexGenerations().entrySet()) {
             final Index index = entry.getKey();
             final long generation = entry.getValue();
-            final String indexFolderName = index.getUUID();
+            final String indexFolderName = index.uuid();
             final IndexMetadata indexMetadata = IndexMetadata.FORMAT.loadGeneration(
                 logger,
                 namedXContentRegistry,
@@ -94,7 +94,7 @@ public class MetaStateService {
             } else {
                 throw new IOException(
                     "failed to find metadata for existing index "
-                        + index.getName()
+                        + index.name()
                         + " [location: "
                         + indexFolderName
                         + ", generation: "
@@ -178,7 +178,8 @@ public class MetaStateService {
                 nodeEnv.resolveIndexFolder(indexFolderName)
             );
             if (indexMetadata != null) {
-                final String indexPathId = indexMetadata.getIndex().getUUID();
+                Index index = indexMetadata.getIndex();
+                final String indexPathId = index.uuid();
                 if (indexFolderName.equals(indexPathId)) {
                     indexMetadataList.add(indexMetadata);
                 } else {

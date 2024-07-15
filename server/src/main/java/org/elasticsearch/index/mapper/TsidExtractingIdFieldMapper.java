@@ -16,6 +16,7 @@ import org.elasticsearch.cluster.routing.IndexRouting;
 import org.elasticsearch.common.hash.MurmurHash3;
 import org.elasticsearch.common.hash.MurmurHash3.Hash128;
 import org.elasticsearch.common.util.ByteUtils;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.fielddata.FieldDataContext;
 import org.elasticsearch.index.fielddata.IndexFieldData;
 
@@ -69,23 +70,23 @@ public class TsidExtractingIdFieldMapper extends IdFieldMapper {
             id = createId(routingHash, tsid, timestamp);
         } else {
             if (context.sourceToParse().id() == null) {
+                Index index = context.indexSettings().getIndexMetadata().getIndex();
                 throw new IllegalArgumentException(
-                    "_ts_routing_hash was null but must be set because index ["
-                        + context.indexSettings().getIndexMetadata().getIndex().getName()
-                        + "] is in time_series mode"
+                    "_ts_routing_hash was null but must be set because index [" + index.name() + "] is in time_series mode"
                 );
             }
             // In Translog operations, the id has already been generated based on the routing hash while the latter is no longer available.
             id = context.sourceToParse().id();
         }
         if (context.sourceToParse().id() != null && false == context.sourceToParse().id().equals(id)) {
+            Index index = context.indexSettings().getIndexMetadata().getIndex();
             throw new IllegalArgumentException(
                 String.format(
                     Locale.ROOT,
                     "_id must be unset or set to [%s] but was [%s] because [%s] is in time_series mode",
                     id,
                     context.sourceToParse().id(),
-                    context.indexSettings().getIndexMetadata().getIndex().getName()
+                    index.name()
                 )
             );
         }

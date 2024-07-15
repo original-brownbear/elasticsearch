@@ -43,6 +43,7 @@ import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.core.UpdateForV9;
 import org.elasticsearch.gateway.PriorityComparator;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.shard.ShardId;
 
 import java.util.ArrayList;
@@ -1162,7 +1163,8 @@ public class BalancedShardsAllocator implements ShardsAllocator {
                          */
                         if (currentDecision.type() == decision.type()) {
                             final int repId = shard.id();
-                            final int nodeHigh = node.highestPrimary(shard.index().getName());
+                            Index index = shard.index();
+                            final int nodeHigh = node.highestPrimary(index.name());
                             final int minNodeHigh = minNode.highestPrimary(shard.getIndexName());
                             updateMinNode = ((((nodeHigh > repId && minNodeHigh > repId) || (nodeHigh < repId && minNodeHigh < repId))
                                 && (nodeHigh < minNodeHigh)) || (nodeHigh > repId && minNodeHigh < repId));

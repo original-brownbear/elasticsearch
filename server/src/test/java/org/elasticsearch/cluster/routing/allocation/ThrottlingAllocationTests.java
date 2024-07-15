@@ -377,27 +377,29 @@ public class ThrottlingAllocationTests extends ESAllocationTestCase {
                 case 1 -> routingTableBuilder.addAsFromCloseToOpen(indexMetadata);
                 case 2 -> routingTableBuilder.addAsFromDangling(indexMetadata);
                 case 3 -> {
-                    snapshotIndices.add(index.getName());
+                    snapshotIndices.add(index.name());
+                    Index index1 = indexMetadata.getIndex();
                     routingTableBuilder.addAsNewRestore(
                         indexMetadata,
                         new SnapshotRecoverySource(
                             restoreUUID,
                             snapshot,
                             IndexVersion.current(),
-                            new IndexId(indexMetadata.getIndex().getName(), UUIDs.randomBase64UUID(random()))
+                            new IndexId(index1.name(), UUIDs.randomBase64UUID(random()))
                         ),
                         new HashSet<>()
                     );
                 }
                 case 4 -> {
-                    snapshotIndices.add(index.getName());
+                    snapshotIndices.add(index.name());
+                    Index index1 = indexMetadata.getIndex();
                     routingTableBuilder.addAsRestore(
                         indexMetadata,
                         new SnapshotRecoverySource(
                             restoreUUID,
                             snapshot,
                             IndexVersion.current(),
-                            new IndexId(indexMetadata.getIndex().getName(), UUIDs.randomBase64UUID(random()))
+                            new IndexId(index1.name(), UUIDs.randomBase64UUID(random()))
                         )
                     );
                 }

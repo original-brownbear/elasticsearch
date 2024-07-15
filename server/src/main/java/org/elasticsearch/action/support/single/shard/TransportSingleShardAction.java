@@ -30,6 +30,7 @@ import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.logging.LoggerMessageFormat;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.core.Nullable;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -158,7 +159,8 @@ public abstract class TransportSingleShardAction<Request extends SingleShardRequ
 
             String concreteSingleIndex;
             if (resolveIndex(request)) {
-                concreteSingleIndex = indexNameExpressionResolver.concreteSingleIndex(clusterState, request).getName();
+                Index index = indexNameExpressionResolver.concreteSingleIndex(clusterState, request);
+                concreteSingleIndex = index.name();
             } else {
                 concreteSingleIndex = request.index();
             }

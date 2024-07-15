@@ -24,6 +24,7 @@ import org.elasticsearch.common.time.FormatNames;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.core.Strings;
 import org.elasticsearch.core.Tuple;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.VersionType;
 import org.elasticsearch.index.seqno.SequenceNumbers;
 import org.elasticsearch.index.shard.ShardId;
@@ -302,7 +303,7 @@ public class IndexRequestTests extends ESTestCase {
             request.source(renderSource(source, randomFrom(start1, end1, start2, end2)), XContentType.JSON);
 
             var result = request.getConcreteWriteIndex(metadata.getIndicesLookup().get(indexName), metadata);
-            assertThat(result.getName(), equalTo(indexName));
+            assertThat(result.name(), equalTo(indexName));
         }
         {
             String regularDataStream = "logs_another-app_prod";
@@ -325,7 +326,8 @@ public class IndexRequestTests extends ESTestCase {
             request.source(renderSource(source, randomFrom(start1, end1, start2, end2)), XContentType.JSON);
 
             var result = request.getConcreteWriteIndex(metadata2.getIndicesLookup().get(regularDataStream), metadata2);
-            assertThat(result.getName(), equalTo(backingIndex2.getIndex().getName()));
+            Index index = backingIndex2.getIndex();
+            assertThat(result.name(), equalTo(index.name()));
         }
         {
             // provided timestamp resolves to the first backing index

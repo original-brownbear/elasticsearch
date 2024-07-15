@@ -55,9 +55,10 @@ public class UpdateRolloverLifecycleDateStep extends ClusterStateActionStep {
             final String rolloverTarget = getRolloverTarget(index, currentState);
             RolloverInfo rolloverInfo = indexMetadata.getRolloverInfos().get(rolloverTarget);
             if (rolloverInfo == null) {
+                Index index1 = indexMetadata.getIndex();
                 throw new IllegalStateException(
                     "no rollover info found for ["
-                        + indexMetadata.getIndex().getName()
+                        + index1.name()
                         + "] with rollover target ["
                         + rolloverTarget
                         + "], the index has not yet rolled over with that target"
@@ -76,7 +77,7 @@ public class UpdateRolloverLifecycleDateStep extends ClusterStateActionStep {
     }
 
     private static String getRolloverTarget(Index index, ClusterState currentState) {
-        IndexAbstraction indexAbstraction = currentState.metadata().getIndicesLookup().get(index.getName());
+        IndexAbstraction indexAbstraction = currentState.metadata().getIndicesLookup().get(index.name());
         final String rolloverTarget;
         if (indexAbstraction.getParentDataStream() != null) {
             rolloverTarget = indexAbstraction.getParentDataStream().getName();
@@ -85,12 +86,9 @@ public class UpdateRolloverLifecycleDateStep extends ClusterStateActionStep {
             IndexMetadata indexMetadata = currentState.metadata().index(index);
             String rolloverAlias = RolloverAction.LIFECYCLE_ROLLOVER_ALIAS_SETTING.get(indexMetadata.getSettings());
             if (Strings.isNullOrEmpty(rolloverAlias)) {
+                Index index1 = indexMetadata.getIndex();
                 throw new IllegalStateException(
-                    "setting ["
-                        + RolloverAction.LIFECYCLE_ROLLOVER_ALIAS
-                        + "] is not set on index ["
-                        + indexMetadata.getIndex().getName()
-                        + "]"
+                    "setting [" + RolloverAction.LIFECYCLE_ROLLOVER_ALIAS + "] is not set on index [" + index1.name() + "]"
                 );
             }
             rolloverTarget = rolloverAlias;

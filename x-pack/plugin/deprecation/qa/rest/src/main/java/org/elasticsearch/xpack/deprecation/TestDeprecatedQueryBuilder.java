@@ -16,6 +16,7 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.logging.DeprecationCategory;
 import org.elasticsearch.common.logging.DeprecationLogger;
 import org.elasticsearch.common.lucene.search.Queries;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.query.AbstractQueryBuilder;
 import org.elasticsearch.index.query.SearchExecutionContext;
 import org.elasticsearch.xcontent.XContentBuilder;
@@ -69,13 +70,8 @@ public class TestDeprecatedQueryBuilder extends AbstractQueryBuilder<TestDepreca
 
     @Override
     protected Query doToQuery(SearchExecutionContext context) throws IOException {
-        deprecationLogger.warn(
-            DeprecationCategory.QUERIES,
-            NAME,
-            "[{}] query is deprecated, but used on [{}] index",
-            NAME,
-            context.index().getName()
-        );
+        Index index = context.index();
+        deprecationLogger.warn(DeprecationCategory.QUERIES, NAME, "[{}] query is deprecated, but used on [{}] index", NAME, index.name());
 
         return Queries.newMatchAllQuery();
     }

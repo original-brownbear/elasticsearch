@@ -146,14 +146,15 @@ public class DataStreamLifecycleDownsamplingSecurityIT extends SecurityIntegTest
             "1990-09-09T18:00:00"
         );
         List<Index> backingIndices = getDataStreamBackingIndices(dataStreamName);
-        String firstGenerationBackingIndex = backingIndices.get(0).getName();
+        String firstGenerationBackingIndex = backingIndices.get(0).name();
         String firstRoundDownsamplingIndex = "downsample-5m-" + firstGenerationBackingIndex;
         String secondRoundDownsamplingIndex = "downsample-10m-" + firstGenerationBackingIndex;
 
         Set<String> witnessedDownsamplingIndices = new HashSet<>();
         clusterService().addListener(event -> {
-            if (indicesCreated(event).contains(firstRoundDownsamplingIndex)
-                || event.indicesDeleted().stream().anyMatch(index -> index.getName().equals(firstRoundDownsamplingIndex))) {
+            if (indicesCreated(event).contains(firstRoundDownsamplingIndex) || event.indicesDeleted().stream().anyMatch(index -> {
+                return index.name().equals(firstRoundDownsamplingIndex);
+            })) {
                 witnessedDownsamplingIndices.add(firstRoundDownsamplingIndex);
             }
             if (indicesCreated(event).contains(secondRoundDownsamplingIndex)) {
@@ -185,10 +186,10 @@ public class DataStreamLifecycleDownsamplingSecurityIT extends SecurityIntegTest
             List<Index> dsBackingIndices = getDataStreamBackingIndices(dataStreamName);
 
             assertThat(dsBackingIndices.size(), is(2));
-            String writeIndex = dsBackingIndices.get(1).getName();
+            String writeIndex = dsBackingIndices.get(1).name();
             assertThat(writeIndex, backingIndexEqualTo(dataStreamName, 2));
             // the last downsampling round must remain in the data stream
-            assertThat(dsBackingIndices.get(0).getName(), is(secondRoundDownsamplingIndex));
+            assertThat(dsBackingIndices.get(0).name(), is(secondRoundDownsamplingIndex));
             assertThat(indexExists(firstGenerationBackingIndex), is(false));
             assertThat(indexExists(firstRoundDownsamplingIndex), is(false));
         }, 30, TimeUnit.SECONDS);
@@ -199,7 +200,7 @@ public class DataStreamLifecycleDownsamplingSecurityIT extends SecurityIntegTest
         String dataStreamName = SystemDataStreamWithDownsamplingConfigurationPlugin.SYSTEM_DATA_STREAM_NAME;
         indexDocuments(client(), dataStreamName, 10_000, Instant.now().toEpochMilli());
         List<Index> backingIndices = getDataStreamBackingIndices(dataStreamName);
-        String firstGenerationBackingIndex = backingIndices.get(0).getName();
+        String firstGenerationBackingIndex = backingIndices.get(0).name();
         String secondRoundDownsamplingIndex = "downsample-10m-" + firstGenerationBackingIndex;
 
         Set<String> witnessedDownsamplingIndices = new HashSet<>();
@@ -229,10 +230,10 @@ public class DataStreamLifecycleDownsamplingSecurityIT extends SecurityIntegTest
                 List<Index> dsBackingIndices = getDataStreamBackingIndices(dataStreamName);
 
                 assertThat(dsBackingIndices.size(), is(2));
-                String writeIndex = dsBackingIndices.get(1).getName();
+                String writeIndex = dsBackingIndices.get(1).name();
                 assertThat(writeIndex, backingIndexEqualTo(dataStreamName, 2));
                 // the last downsampling round must remain in the data stream
-                assertThat(dsBackingIndices.get(0).getName(), is(secondRoundDownsamplingIndex));
+                assertThat(dsBackingIndices.get(0).name(), is(secondRoundDownsamplingIndex));
             }, 30, TimeUnit.SECONDS);
         } finally {
             // restore a real nowSupplier so other tests running against this cluster succeed

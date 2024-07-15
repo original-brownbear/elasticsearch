@@ -16,6 +16,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.Strings;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.core.Tuple;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexMode;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.MapperTestUtils;
@@ -45,9 +46,10 @@ public class DataStreamIndexSettingsProviderTests extends ESTestCase {
 
     @Before
     public void setup() {
-        provider = new DataStreamIndexSettingsProvider(
-            im -> MapperTestUtils.newMapperService(xContentRegistry(), createTempDir(), im.getSettings(), im.getIndex().getName())
-        );
+        provider = new DataStreamIndexSettingsProvider(im -> {
+            Index index = im.getIndex();
+            return MapperTestUtils.newMapperService(xContentRegistry(), createTempDir(), im.getSettings(), index.name());
+        });
     }
 
     public void testGetAdditionalIndexSettings() throws Exception {

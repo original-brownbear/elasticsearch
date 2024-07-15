@@ -55,7 +55,7 @@ public class ShardId implements Comparable<ShardId>, ToXContentFragment, Writeab
     }
 
     public String getIndexName() {
-        return index.getName();
+        return index.name();
     }
 
     public int id() {
@@ -68,7 +68,7 @@ public class ShardId implements Comparable<ShardId>, ToXContentFragment, Writeab
 
     @Override
     public String toString() {
-        return "[" + index.getName() + "][" + shardId + "]";
+        return "[" + index.name() + "][" + shardId + "]";
     }
 
     /**
@@ -109,11 +109,13 @@ public class ShardId implements Comparable<ShardId>, ToXContentFragment, Writeab
     @Override
     public int compareTo(ShardId o) {
         if (o.getId() == shardId) {
-            int compare = index.getName().compareTo(o.getIndex().getName());
+            Index index1 = o.getIndex();
+            int compare = index.name().compareTo(index1.name());
             if (compare != 0) {
                 return compare;
             }
-            return index.getUUID().compareTo(o.getIndex().getUUID());
+            Index index2 = o.getIndex();
+            return index.uuid().compareTo(index2.uuid());
         }
         return Integer.compare(shardId, o.getId());
     }

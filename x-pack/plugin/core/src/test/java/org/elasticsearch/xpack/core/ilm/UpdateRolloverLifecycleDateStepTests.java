@@ -14,6 +14,7 @@ import org.elasticsearch.cluster.metadata.DataStream;
 import org.elasticsearch.cluster.metadata.DataStreamTestHelper;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.Metadata;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.xpack.core.ilm.Step.StepKey;
 
@@ -136,11 +137,12 @@ public class UpdateRolloverLifecycleDateStepTests extends AbstractStepTestCase<U
             IllegalStateException.class,
             () -> step.performAction(indexMetadata.getIndex(), clusterState)
         );
+        Index index = indexMetadata.getIndex();
         assertThat(
             exceptionThrown.getMessage(),
             equalTo(
                 "no rollover info found for ["
-                    + indexMetadata.getIndex().getName()
+                    + index.name()
                     + "] with rollover target ["
                     + alias
                     + "], the "
@@ -166,9 +168,10 @@ public class UpdateRolloverLifecycleDateStepTests extends AbstractStepTestCase<U
             IllegalStateException.class,
             () -> step.performAction(indexMetadata.getIndex(), clusterState)
         );
+        Index index = indexMetadata.getIndex();
         assertThat(
             exceptionThrown.getMessage(),
-            equalTo("setting [index.lifecycle.rollover_alias] is not set on index [" + indexMetadata.getIndex().getName() + "]")
+            equalTo("setting [index.lifecycle.rollover_alias] is not set on index [" + index.name() + "]")
         );
     }
 

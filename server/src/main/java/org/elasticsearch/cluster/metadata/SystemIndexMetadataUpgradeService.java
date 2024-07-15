@@ -18,6 +18,7 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
 import org.elasticsearch.core.SuppressForbidden;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.indices.SystemIndexMappingUpdateService;
 import org.elasticsearch.indices.SystemIndices;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -113,8 +114,9 @@ public class SystemIndexMetadataUpgradeService implements ClusterStateListener {
 
     // package-private for testing
     boolean shouldBeSystem(IndexMetadata indexMetadata) {
-        return systemIndices.isSystemIndex(indexMetadata.getIndex())
-            || systemIndices.isSystemIndexBackingDataStream(indexMetadata.getIndex().getName());
+        if (systemIndices.isSystemIndex(indexMetadata.getIndex())) return true;
+        Index index = indexMetadata.getIndex();
+        return systemIndices.isSystemIndexBackingDataStream(index.name());
     }
 
     // package-private for testing

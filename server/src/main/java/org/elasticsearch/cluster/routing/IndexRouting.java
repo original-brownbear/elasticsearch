@@ -21,6 +21,7 @@ import org.elasticsearch.common.regex.Regex;
 import org.elasticsearch.common.util.ByteUtils;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.core.Nullable;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexVersions;
 import org.elasticsearch.index.mapper.TimeSeriesRoutingHashFieldMapper;
 import org.elasticsearch.transport.Transports;
@@ -66,7 +67,8 @@ public abstract class IndexRouting {
     private final int routingFactor;
 
     private IndexRouting(IndexMetadata metadata) {
-        this.indexName = metadata.getIndex().getName();
+        Index index = metadata.getIndex();
+        this.indexName = index.name();
         this.routingNumShards = metadata.getRoutingNumShards();
         this.routingFactor = metadata.getRoutingFactor();
     }

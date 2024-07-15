@@ -96,13 +96,14 @@ public class MetadataDeleteIndexService {
         final Map<Index, DataStream> dataStreamIndices = new HashMap<>();
         for (Index index : indices) {
             IndexMetadata im = meta.getIndexSafe(index);
-            DataStream parent = meta.getIndicesLookup().get(im.getIndex().getName()).getParentDataStream();
+            Index index1 = im.getIndex();
+            DataStream parent = meta.getIndicesLookup().get(index1.name()).getParentDataStream();
             if (parent != null) {
                 boolean isFailureStoreWriteIndex = im.getIndex().equals(parent.getFailureStoreWriteIndex());
                 if (isFailureStoreWriteIndex || im.getIndex().equals(parent.getWriteIndex())) {
                     throw new IllegalArgumentException(
                         "index ["
-                            + index.getName()
+                            + index.name()
                             + "] is the "
                             + (isFailureStoreWriteIndex ? "failure store " : "")
                             + "write index for data stream ["
@@ -133,14 +134,14 @@ public class MetadataDeleteIndexService {
         final IndexGraveyard.Builder graveyardBuilder = IndexGraveyard.builder(metadataBuilder.indexGraveyard());
         final int previousGraveyardSize = graveyardBuilder.tombstones().size();
         for (final Index index : indices) {
-            String indexName = index.getName();
+            String indexName = index.name();
             logger.info("{} deleting index", index);
             routingTableBuilder.remove(indexName);
             clusterBlocksBuilder.removeIndexBlocks(indexName);
             metadataBuilder.remove(indexName);
             if (dataStreamIndices.containsKey(index)) {
                 DataStream parent = metadataBuilder.dataStream(dataStreamIndices.get(index).getName());
-                if (parent.isFailureStoreIndex(index.getName())) {
+                if (parent.isFailureStoreIndex(index.name())) {
                     metadataBuilder.put(parent.removeFailureStoreIndex(index));
                 } else {
                     metadataBuilder.put(parent.removeBackingIndex(index));

@@ -158,19 +158,17 @@ public final class DocumentParser {
         if (indexTimeScriptMappers.isEmpty()) {
             return;
         }
-        SearchLookup searchLookup = new SearchLookup(
-            context.mappingLookup().indexTimeLookup()::get,
-            (ft, lookup, fto) -> ft.fielddataBuilder(
+        SearchLookup searchLookup = new SearchLookup(context.mappingLookup().indexTimeLookup()::get, (ft, lookup, fto) -> {
+            return ft.fielddataBuilder(
                 new FieldDataContext(
-                    context.indexSettings().getIndex().getName(),
+                    context.indexSettings().getIndex().name(),
                     context.indexSettings(),
                     lookup,
                     context.mappingLookup()::sourcePaths,
                     fto
                 )
-            ).build(new IndexFieldDataCache.None(), new NoneCircuitBreakerService()),
-            (ctx, doc) -> Source.fromBytes(context.sourceToParse().source())
-        );
+            ).build(new IndexFieldDataCache.None(), new NoneCircuitBreakerService());
+        }, (ctx, doc) -> Source.fromBytes(context.sourceToParse().source()));
         // field scripts can be called both by the loop at the end of this method and via
         // the document reader, so to ensure that we don't run them multiple times we
         // guard them with an 'executed' boolean

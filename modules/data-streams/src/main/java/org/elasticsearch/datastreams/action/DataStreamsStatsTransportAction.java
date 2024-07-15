@@ -28,7 +28,6 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.unit.ByteSizeValue;
-import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexService;
 import org.elasticsearch.index.engine.Engine;
 import org.elasticsearch.index.shard.IndexShard;
@@ -167,7 +166,7 @@ public class DataStreamsStatsTransportAction extends TransportBroadcastByNodeAct
             if (indexAbstraction.getType() == IndexAbstraction.Type.DATA_STREAM) {
                 DataStream dataStream = (DataStream) indexAbstraction;
                 AggregatedStats stats = aggregatedDataStreamsStats.computeIfAbsent(dataStream.getName(), s -> new AggregatedStats());
-                dataStream.getIndices().stream().map(Index::getName).forEach(index -> {
+                dataStream.getIndices().stream().map(index1 -> index1.name()).forEach(index -> {
                     stats.backingIndices.add(index);
                     allBackingIndices.add(index);
                 });

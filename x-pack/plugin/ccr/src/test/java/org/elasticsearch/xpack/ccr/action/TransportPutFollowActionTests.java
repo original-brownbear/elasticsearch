@@ -52,9 +52,9 @@ public class TransportPutFollowActionTests extends ESTestCase {
         assertThat(result.getName(), equalTo(remoteDataStream.getName()));
         assertThat(result.getGeneration(), equalTo(remoteDataStream.getGeneration()));
         assertThat(result.getIndices().size(), equalTo(3));
-        assertThat(result.getIndices().get(0).getName(), equalTo(DataStream.getDefaultBackingIndexName("logs-foobar", 1)));
-        assertThat(result.getIndices().get(1).getName(), equalTo(DataStream.getDefaultBackingIndexName("logs-foobar", 2)));
-        assertThat(result.getIndices().get(2).getName(), equalTo(DataStream.getDefaultBackingIndexName("logs-foobar", 3)));
+        assertThat(result.getIndices().get(0).name(), equalTo(DataStream.getDefaultBackingIndexName("logs-foobar", 1)));
+        assertThat(result.getIndices().get(1).name(), equalTo(DataStream.getDefaultBackingIndexName("logs-foobar", 2)));
+        assertThat(result.getIndices().get(2).name(), equalTo(DataStream.getDefaultBackingIndexName("logs-foobar", 3)));
     }
 
     public void testUpdateLocalDataStream_followOlderBackingIndex() {
@@ -71,8 +71,8 @@ public class TransportPutFollowActionTests extends ESTestCase {
         assertThat(result.getName(), equalTo(remoteDataStream.getName()));
         assertThat(result.getGeneration(), equalTo(remoteDataStream.getGeneration()));
         assertThat(result.getIndices().size(), equalTo(2));
-        assertThat(result.getIndices().get(0).getName(), equalTo(DataStream.getDefaultBackingIndexName("logs-foobar", 1)));
-        assertThat(result.getIndices().get(1).getName(), equalTo(DataStream.getDefaultBackingIndexName("logs-foobar", 5)));
+        assertThat(result.getIndices().get(0).name(), equalTo(DataStream.getDefaultBackingIndexName("logs-foobar", 1)));
+        assertThat(result.getIndices().get(1).name(), equalTo(DataStream.getDefaultBackingIndexName("logs-foobar", 5)));
 
         // follow second last backing index:
         localDataStream = result;
@@ -86,9 +86,9 @@ public class TransportPutFollowActionTests extends ESTestCase {
         assertThat(result.getName(), equalTo(remoteDataStream.getName()));
         assertThat(result.getGeneration(), equalTo(remoteDataStream.getGeneration()));
         assertThat(result.getIndices().size(), equalTo(3));
-        assertThat(result.getIndices().get(0).getName(), equalTo(DataStream.getDefaultBackingIndexName("logs-foobar", 1)));
-        assertThat(result.getIndices().get(1).getName(), equalTo(DataStream.getDefaultBackingIndexName("logs-foobar", 4)));
-        assertThat(result.getIndices().get(2).getName(), equalTo(DataStream.getDefaultBackingIndexName("logs-foobar", 5)));
+        assertThat(result.getIndices().get(0).name(), equalTo(DataStream.getDefaultBackingIndexName("logs-foobar", 1)));
+        assertThat(result.getIndices().get(1).name(), equalTo(DataStream.getDefaultBackingIndexName("logs-foobar", 4)));
+        assertThat(result.getIndices().get(2).name(), equalTo(DataStream.getDefaultBackingIndexName("logs-foobar", 5)));
     }
 
     public void testLocalDataStreamBackingIndicesOrder() {
@@ -132,9 +132,10 @@ public class TransportPutFollowActionTests extends ESTestCase {
         assertThat(result.getGeneration(), equalTo(remoteDataStream.getGeneration()));
         assertThat(result.getIndices().size(), equalTo(initialLocalBackingIndices.size() + 1));
         // the later generation we just followed became the local data stream write index
-        assertThat(result.getWriteIndex().getName(), is(remoteDataStream.getIndices().get(6).getName()));
+        Index index1 = result.getWriteIndex();
+        assertThat(index1.name(), is(remoteDataStream.getIndices().get(6).name()));
 
-        List<String> localIndicesNames = result.getIndices().stream().map(Index::getName).collect(Collectors.toList());
+        List<String> localIndicesNames = result.getIndices().stream().map(index -> index.name()).collect(Collectors.toList());
         assertThat(
             localIndicesNames,
             is(

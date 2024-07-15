@@ -54,7 +54,8 @@ public class DanglingIndicesState {
         final Set<String> excludeIndexPathIds = Sets.newHashSetWithExpectedSize(metadata.indices().size());
 
         for (IndexMetadata indexMetadata : metadata.indices().values()) {
-            excludeIndexPathIds.add(indexMetadata.getIndex().getUUID());
+            Index index = indexMetadata.getIndex();
+            excludeIndexPathIds.add(index.uuid());
         }
 
         try {
