@@ -235,7 +235,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
             doCheckNoMissingShards(getName(), request, shardsIts);
             Version version = request.minCompatibleShardNode();
             if (version != null && Version.CURRENT.minimumCompatibilityVersion().equals(version) == false) {
-                if (checkMinimumVersion(shardsIts) == false) {
+                if (checkMinimumVersion(shardsIts, version) == false) {
                     throw new VersionMismatchException(
                         "One of the shards is incompatible with the required minimum version [{}]",
                         request.minCompatibleShardNode()
@@ -259,13 +259,18 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
         successfulShardExecution(iterator);
     }
 
-    private boolean checkMinimumVersion(GroupShardsIterator<SearchShardIterator> shardsIts) {
+    private boolean checkMinimumVersion(GroupShardsIterator<SearchShardIterator> shardsIts, Version version) {
         for (SearchShardIterator it : shardsIts) {
-            if (it.getTargetNodeIds().isEmpty() == false) {
-                boolean isCompatible = it.getTargetNodeIds().stream().anyMatch(nodeId -> {
-                    Transport.Connection conn = getConnection(it.getClusterAlias(), nodeId);
-                    return conn == null || conn.getNode().getVersion().onOrAfter(request.minCompatibleShardNode());
-                });
+            final List<String> targetNodeIds = it.getTargetNodeIds();
+            if (targetNodeIds.isEmpty() == false) {
+                boolean isCompatible = false;
+                for (String targetNodeId : targetNodeIds) {
+                    Transport.Connection conn = getConnection(it.getClusterAlias(), targetNodeId);
+                    if (conn == null || conn.getNode().getVersion().onOrAfter(version)) {
+                        isCompatible = true;
+                        break;
+                    }
+                }
                 if (isCompatible == false) {
                     return false;
                 }
@@ -590,7 +595,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
         assert result.getSearchShardTarget() != null : "search shard target must not be null";
         hasShardResponse.set(true);
         if (logger.isTraceEnabled()) {
-            logger.trace("got first-phase result from {}", result != null ? result.getSearchShardTarget() : null);
+            logger.trace("got first-phase result from {}", result.getSearchShardTarget());
         }
         results.consumeResult(result, () -> onShardResultConsumed(result, shardIt));
     }

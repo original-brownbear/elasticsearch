@@ -22,7 +22,13 @@ public class PlainShardsIterator extends PlainIterator<ShardRouting> implements 
 
     @Override
     public int sizeActive() {
-        return Math.toIntExact(getShardRoutings().stream().filter(ShardRouting::active).count());
+        long count = 0L;
+        for (ShardRouting shardRouting : this) {
+            if (shardRouting.active()) {
+                count++;
+            }
+        }
+        return Math.toIntExact(count);
     }
 
     @Override

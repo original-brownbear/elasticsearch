@@ -24,6 +24,7 @@ import org.elasticsearch.cluster.node.DiscoveryNodeRole;
 import org.elasticsearch.cluster.routing.IndexRoutingTable;
 import org.elasticsearch.cluster.routing.IndexShardRoutingTable;
 import org.elasticsearch.cluster.routing.RoutingNode;
+import org.elasticsearch.cluster.routing.ShardIterator;
 import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.routing.UnassignedInfo;
 import org.elasticsearch.cluster.routing.allocation.AllocateUnassignedDecision;
@@ -68,7 +69,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
@@ -501,14 +501,14 @@ public class ShardsAvailabilityHealthIndicatorService implements HealthIndicator
      * but if at least one is assigned, it will return false.
      */
     boolean areAllShardsOfThisTypeUnavailable(ShardRouting routing, ClusterState state) {
-        return StreamSupport.stream(
-            state.routingTable().allActiveShardsGrouped(new String[] { routing.getIndexName() }, true).spliterator(),
-            false
-        )
-            .flatMap(shardIter -> shardIter.getShardRoutings().stream())
-            .filter(sr -> sr.shardId().equals(routing.shardId()))
-            .filter(sr -> sr.primary() == routing.primary())
-            .allMatch(ShardRouting::unassigned);
+        for (ShardIterator shardIter : state.routingTable().allActiveShardsGrouped(new String[] { routing.getIndexName() }, true)) {
+            for (ShardRouting sr : shardIter) {
+                if (sr.shardId().equals(routing.shardId()) && sr.primary() == routing.primary() && sr.unassigned() == false) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     /**

@@ -19,6 +19,7 @@ import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.search.SearchShardTarget;
 import org.elasticsearch.search.internal.ShardSearchContextId;
 
+import java.util.AbstractList;
 import java.util.List;
 import java.util.Objects;
 
@@ -50,7 +51,17 @@ public final class SearchShardIterator implements Comparable<SearchShardIterator
      * @param originalIndices the indices that the search request originally related to (before any rewriting happened)
      */
     public SearchShardIterator(@Nullable String clusterAlias, ShardId shardId, List<ShardRouting> shards, OriginalIndices originalIndices) {
-        this(clusterAlias, shardId, shards.stream().map(ShardRouting::currentNodeId).toList(), originalIndices, null, null, false, false);
+        this(clusterAlias, shardId, new AbstractList<>() {
+            @Override
+            public int size() {
+                return shards.size();
+            }
+
+            @Override
+            public String get(int index) {
+                return shards.get(index).currentNodeId();
+            }
+        }, originalIndices, null, null, false, false);
     }
 
     /**

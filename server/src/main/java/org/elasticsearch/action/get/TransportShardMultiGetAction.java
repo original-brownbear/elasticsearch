@@ -26,8 +26,6 @@ import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.ClusterStateObserver;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.node.DiscoveryNode;
-import org.elasticsearch.cluster.routing.OperationRouting;
-import org.elasticsearch.cluster.routing.PlainShardIterator;
 import org.elasticsearch.cluster.routing.ShardIterator;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.inject.Inject;
@@ -106,14 +104,10 @@ public class TransportShardMultiGetAction extends TransportSingleShardAction<Mul
 
     @Override
     protected ShardIterator shards(ClusterState state, InternalRequest request) {
-        ShardIterator iterator = clusterService.operationRouting()
-            .getShards(state, request.request().index(), request.request().shardId(), request.request().preference());
-        if (iterator == null) {
-            return null;
-        }
-        return new PlainShardIterator(
-            iterator.shardId(),
-            iterator.getShardRoutings().stream().filter(shardRouting -> OperationRouting.canSearchShard(shardRouting, state)).toList()
+        return TransportGetAction.buildShardIterator(
+            state,
+            clusterService.operationRouting()
+                .getShards(state, request.request().index(), request.request().shardId(), request.request().preference())
         );
     }
 

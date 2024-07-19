@@ -29,6 +29,7 @@ import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.routing.OperationRouting;
 import org.elasticsearch.cluster.routing.PlainShardIterator;
 import org.elasticsearch.cluster.routing.ShardIterator;
+import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.stream.Writeable;
@@ -47,6 +48,8 @@ import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Executor;
 
 /**
@@ -104,13 +107,20 @@ public class TransportGetAction extends TransportSingleShardAction<GetRequest, G
                 request.request().routing(),
                 request.request().preference()
             );
+        return buildShardIterator(state, iterator);
+    }
+
+    public static ShardIterator buildShardIterator(ClusterState state, ShardIterator iterator) {
         if (iterator == null) {
             return null;
         }
-        return new PlainShardIterator(
-            iterator.shardId(),
-            iterator.getShardRoutings().stream().filter(shardRouting -> OperationRouting.canSearchShard(shardRouting, state)).toList()
-        );
+        List<ShardRouting> list = new ArrayList<>();
+        for (ShardRouting shardRouting : iterator) {
+            if (OperationRouting.canSearchShard(shardRouting, state)) {
+                list.add(shardRouting);
+            }
+        }
+        return new PlainShardIterator(iterator.shardId(), list);
     }
 
     @Override
