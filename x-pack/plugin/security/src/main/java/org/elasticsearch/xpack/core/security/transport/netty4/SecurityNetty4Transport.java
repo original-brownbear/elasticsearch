@@ -103,7 +103,7 @@ public class SecurityNetty4Transport extends Netty4Transport {
             sharedGroupFactory
         );
         this.crossClusterAccessAuthenticationService = crossClusterAccessAuthenticationService;
-        this.exceptionHandler = new SecurityTransportExceptionHandler(logger, lifecycle, (c, e) -> super.onException(c, e));
+        this.exceptionHandler = new SecurityTransportExceptionHandler(logger, lifecycle, super::onException);
         this.sslService = sslService;
         this.transportSslEnabled = XPackSettings.TRANSPORT_SSL_ENABLED.get(settings);
         this.remoteClusterServerSslEnabled = REMOTE_CLUSTER_SERVER_SSL_ENABLED.get(settings);

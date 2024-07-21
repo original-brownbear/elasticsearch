@@ -115,7 +115,7 @@ public class ZoneAwareAssignmentPlanner {
         Map<String, Integer> modelIdToTargetAllocations = modelIdToRemainingAllocations.entrySet()
             .stream()
             .filter(e -> e.getValue() > 0)
-            .collect(Collectors.toMap(e -> e.getKey(), e -> (e.getValue() - 1) / remainingZones + 1));
+            .collect(Collectors.toMap(Map.Entry::getKey, e -> (e.getValue() - 1) / remainingZones + 1));
 
         List<AssignmentPlan.Deployment> modifiedDeployments = deployments.stream()
             .filter(m -> modelIdToTargetAllocations.getOrDefault(m.id(), 0) > 0)

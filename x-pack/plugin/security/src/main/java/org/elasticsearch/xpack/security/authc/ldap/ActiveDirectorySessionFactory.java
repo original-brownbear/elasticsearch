@@ -345,7 +345,7 @@ class ActiveDirectorySessionFactory extends PoolingSessionFactory {
                                         )
                                     );
                                 }
-                            }, e -> { listener.onFailure(e); }));
+                            }, listener::onFailure));
                         }
                     };
                     final SimpleBindRequest bind = bindRequestSupplier.get();
@@ -383,7 +383,7 @@ class ActiveDirectorySessionFactory extends PoolingSessionFactory {
                                 new LdapSession(logger, realm, pool, entry.getDN(), groupsResolver, metadataResolver, timeout, null)
                             );
                         }
-                    }, e -> { listener.onFailure(e); }));
+                    }, listener::onFailure));
                 }
             });
         }

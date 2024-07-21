@@ -39,7 +39,7 @@ public interface FieldValues<T> {
      * @return the value fetcher
      */
     static ValueFetcher valueFetcher(FieldValues<?> fieldValues, SearchExecutionContext context) {
-        return valueFetcher(fieldValues, v -> v, context);
+        return valueFetcher(fieldValues, Function.identity(), context);
     }
 
     /**

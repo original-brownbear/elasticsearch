@@ -463,7 +463,7 @@ public class NativePrivilegeStore {
                 ActionListener<DeleteResponse> groupListener = new GroupedActionListener<>(names.size(), ActionListener.wrap(responses -> {
                     final Map<String, List<String>> deletedNames = responses.stream()
                         .filter(r -> r.getResult() == DocWriteResponse.Result.DELETED)
-                        .map(r -> r.getId())
+                        .map(DocWriteResponse::getId)
                         .map(NativePrivilegeStore::nameFromDocId)
                         .collect(TUPLES_TO_MAP);
                     clearCaches(listener, Collections.singleton(application), deletedNames);

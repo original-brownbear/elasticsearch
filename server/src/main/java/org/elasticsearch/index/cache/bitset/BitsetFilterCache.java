@@ -312,7 +312,7 @@ public final class BitsetFilterCache
                     });
                 }
             }
-            return () -> latch.await();
+            return latch::await;
         }
 
     }

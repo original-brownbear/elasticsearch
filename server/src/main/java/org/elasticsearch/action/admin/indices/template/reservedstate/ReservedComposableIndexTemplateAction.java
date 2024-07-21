@@ -172,7 +172,9 @@ public class ReservedComposableIndexTemplateAction
 
         // 3. delete composable index templates (this will fail on attached data streams, unless we added a higher priority one)
         if (composablesToDelete.isEmpty() == false) {
-            var composableNames = composablesToDelete.stream().map(c -> composableIndexNameFromReservedName(c)).toArray(String[]::new);
+            var composableNames = composablesToDelete.stream()
+                .map(ReservedComposableIndexTemplateAction::composableIndexNameFromReservedName)
+                .toArray(String[]::new);
             state = MetadataIndexTemplateService.innerRemoveIndexTemplateV2(state, composableNames);
         }
 
@@ -187,7 +189,9 @@ public class ReservedComposableIndexTemplateAction
 
         // 5. delete component templates (this will check if there are any related composable index templates and fail)
         if (componentsToDelete.isEmpty() == false) {
-            var componentNames = componentsToDelete.stream().map(c -> componentNameFromReservedName(c)).toArray(String[]::new);
+            var componentNames = componentsToDelete.stream()
+                .map(ReservedComposableIndexTemplateAction::componentNameFromReservedName)
+                .toArray(String[]::new);
             state = MetadataIndexTemplateService.innerRemoveComponentTemplate(state, componentNames);
         }
 

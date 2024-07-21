@@ -46,10 +46,9 @@ public class FsRepository extends BlobStoreRepository {
     public static final String TYPE = "fs";
 
     public static final Setting<String> LOCATION_SETTING = new Setting<>("location", "", Function.identity(), Property.NodeScope);
-    public static final Setting<String> REPOSITORIES_LOCATION_SETTING = new Setting<>(
+    public static final Setting<String> REPOSITORIES_LOCATION_SETTING = Setting.simpleString(
         "repositories.fs.location",
         LOCATION_SETTING,
-        Function.identity(),
         Property.NodeScope
     );
     public static final Setting<ByteSizeValue> CHUNK_SIZE_SETTING = Setting.byteSizeSetting(

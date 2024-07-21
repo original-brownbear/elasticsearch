@@ -327,7 +327,7 @@ public class LoggingAuditTrail implements AuditTrail, ClusterStateListener {
             key,
             Collections.singletonList("*"),
             Function.identity(),
-            value -> EventFilterPolicy.parsePredicate(value),
+            EventFilterPolicy::parsePredicate,
             Property.NodeScope,
             Property.Dynamic
         )
@@ -339,7 +339,7 @@ public class LoggingAuditTrail implements AuditTrail, ClusterStateListener {
             key,
             Collections.singletonList("*"),
             Function.identity(),
-            value -> EventFilterPolicy.parsePredicate(value),
+            EventFilterPolicy::parsePredicate,
             Property.NodeScope,
             Property.Dynamic
         )
@@ -351,7 +351,7 @@ public class LoggingAuditTrail implements AuditTrail, ClusterStateListener {
             key,
             Collections.singletonList("*"),
             Function.identity(),
-            value -> EventFilterPolicy.parsePredicate(value),
+            EventFilterPolicy::parsePredicate,
             Property.NodeScope,
             Property.Dynamic
         )
@@ -363,7 +363,7 @@ public class LoggingAuditTrail implements AuditTrail, ClusterStateListener {
             key,
             Collections.singletonList("*"),
             Function.identity(),
-            value -> EventFilterPolicy.parsePredicate(value),
+            EventFilterPolicy::parsePredicate,
             Property.NodeScope,
             Property.Dynamic
         )
@@ -375,7 +375,7 @@ public class LoggingAuditTrail implements AuditTrail, ClusterStateListener {
             key,
             Collections.singletonList("*"),
             Function.identity(),
-            value -> EventFilterPolicy.parsePredicate(value),
+            EventFilterPolicy::parsePredicate,
             Property.NodeScope,
             Property.Dynamic
         )
@@ -1982,7 +1982,7 @@ public class LoggingAuditTrail implements AuditTrail, ClusterStateListener {
             Optional<String[]> indices,
             Optional<String> action
         ) {
-            this.principal = user.map(u -> u.principal()).orElse("");
+            this.principal = user.map(User::principal).orElse("");
             this.realm = realm.orElse("");
             this.action = action.orElse("");
             // Supplier indirection and lazy generation of Streams serves 2 purposes:
@@ -2008,11 +2008,11 @@ public class LoggingAuditTrail implements AuditTrail, ClusterStateListener {
             Optional<String[]> indices,
             Optional<String> action
         ) {
-            this.principal = authenticationToken.map(u -> u.principal()).orElse("");
+            this.principal = authenticationToken.map(AuthenticationToken::principal).orElse("");
             this.realm = realm.orElse("");
             this.action = action.orElse("");
             this.roles = () -> Stream.of("");
-            this.indices = () -> indices.filter(r -> r.length != 0).map(i -> Arrays.stream(i)).orElse(Stream.of(""));
+            this.indices = () -> indices.filter(r -> r.length != 0).map(Arrays::stream).orElse(Stream.of(""));
         }
     }
 

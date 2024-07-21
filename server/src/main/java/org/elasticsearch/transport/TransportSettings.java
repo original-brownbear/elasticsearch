@@ -53,16 +53,11 @@ public final class TransportSettings {
         "bind_host",
         key -> listSetting(key, BIND_HOST, Function.identity(), Setting.Property.NodeScope)
     );
-    public static final Setting<String> PORT = new Setting<>(
-        "transport.port",
-        "9300-9399",
-        Function.identity(),
-        Setting.Property.NodeScope
-    );
+    public static final Setting<String> PORT = Setting.simpleString("transport.port", "9300-9399", Setting.Property.NodeScope);
     public static final Setting.AffixSetting<String> PORT_PROFILE = affixKeySetting(
         "transport.profiles.",
         "port",
-        key -> new Setting<>(key, PORT, Function.identity(), Setting.Property.NodeScope)
+        key -> Setting.simpleString(key, PORT, Setting.Property.NodeScope)
     );
     public static final Setting<Integer> PUBLISH_PORT = intSetting("transport.publish_port", -1, -1, Setting.Property.NodeScope);
     public static final Setting.AffixSetting<Integer> PUBLISH_PORT_PROFILE = affixKeySetting(

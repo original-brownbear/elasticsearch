@@ -94,7 +94,7 @@ public class ReservedPipelineAction implements ReservedClusterStateHandler<List<
             state = wrapIngestTaskExecute(task, state);
         }
 
-        Set<String> entities = requests.stream().map(r -> r.getId()).collect(Collectors.toSet());
+        Set<String> entities = requests.stream().map(PutPipelineRequest::getId).collect(Collectors.toSet());
 
         Set<String> toDelete = new HashSet<>(prevState.keys());
         toDelete.removeAll(entities);

@@ -1137,7 +1137,7 @@ public final class Analyzer extends ParameterizedRuleExecutor<LogicalPlan, Analy
                 );
             }
 
-            return plan.transformExpressionsOnly(Alias.class, a -> a.child());
+            return plan.transformExpressionsOnly(Alias.class, Alias::child);
         }
 
         private static List<NamedExpression> cleanChildrenAliases(List<? extends NamedExpression> args) {

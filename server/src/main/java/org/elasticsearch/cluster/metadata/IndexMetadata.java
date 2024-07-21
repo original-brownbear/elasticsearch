@@ -427,10 +427,8 @@ public class IndexMetadata implements Diffable<IndexMetadata>, ToXContentFragmen
     public static final String SETTING_INDEX_UUID = "index.uuid";
     public static final String SETTING_HISTORY_UUID = "index.history.uuid";
     public static final String SETTING_DATA_PATH = "index.data_path";
-    public static final Setting<String> INDEX_DATA_PATH_SETTING = new Setting<>(
+    public static final Setting<String> INDEX_DATA_PATH_SETTING = Setting.simpleString(
         SETTING_DATA_PATH,
-        "",
-        Function.identity(),
         Property.IndexScope,
         Property.DeprecatedWarning
     );
@@ -454,7 +452,7 @@ public class IndexMetadata implements Diffable<IndexMetadata>, ToXContentFragmen
     );
     public static final Setting.AffixSetting<List<String>> INDEX_ROUTING_INITIAL_RECOVERY_GROUP_SETTING = Setting.prefixKeySetting(
         "index.routing.allocation.initial_recovery.",
-        key -> Setting.stringListSetting(key)
+        Setting::stringListSetting
     );
 
     /**
@@ -1786,7 +1784,7 @@ public class IndexMetadata implements Diffable<IndexMetadata>, ToXContentFragmen
         }
         if (in.getTransportVersion().onOrAfter(TransportVersions.INFERENCE_FIELDS_METADATA)) {
             var fields = in.readCollectionAsImmutableList(InferenceFieldMetadata::new);
-            fields.stream().forEach(f -> builder.putInferenceField(f));
+            fields.forEach(builder::putInferenceField);
         }
         int aliasesSize = in.readVInt();
         for (int i = 0; i < aliasesSize; i++) {

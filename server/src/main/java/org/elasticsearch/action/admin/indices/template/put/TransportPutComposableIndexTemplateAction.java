@@ -105,7 +105,7 @@ public class TransportPutComposableIndexTemplateAction extends AcknowledgedTrans
         ComposableIndexTemplate indexTemplate = request.indexTemplate();
         Set<String> composedOfKeys = indexTemplate.composedOf()
             .stream()
-            .map(c -> ReservedComposableIndexTemplateAction.reservedComponentName(c))
+            .map(ReservedComposableIndexTemplateAction::reservedComponentName)
             .collect(Collectors.toSet());
 
         List<String> errors = new ArrayList<>();

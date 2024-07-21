@@ -60,7 +60,7 @@ public class FieldHitExtractor extends AbstractFieldHitExtractor {
                 return parseEpochMillisAsString(str);
             }
             if (values instanceof List<?> list) {
-                return list.stream().map(x -> unwrapCustomValue(x)).collect(Collectors.toList());
+                return list.stream().map(this::unwrapCustomValue).collect(Collectors.toList());
             }
         }
 

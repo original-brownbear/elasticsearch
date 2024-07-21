@@ -76,7 +76,7 @@ public class ReservedRepositoryAction implements ReservedClusterStateHandler<Lis
             state = task.execute(state);
         }
 
-        Set<String> entities = requests.stream().map(r -> r.name()).collect(Collectors.toSet());
+        Set<String> entities = requests.stream().map(PutRepositoryRequest::name).collect(Collectors.toSet());
 
         Set<String> toDelete = new HashSet<>(prevState.keys());
         toDelete.removeAll(entities);

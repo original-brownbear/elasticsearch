@@ -60,7 +60,7 @@ public class TransportPutPrivilegesAction extends HandledTransportAction<PutPriv
             List<String> createdPrivileges = privileges.entrySet()
                 .stream()
                 .filter(e -> e.getValue() == DocWriteResponse.Result.CREATED)
-                .map(e -> e.getKey())
+                .map(Map.Entry::getKey)
                 .toList();
             if (createdPrivileges.isEmpty() == false) {
                 createdPrivilegesByApplicationName.put(appName, createdPrivileges);

@@ -196,9 +196,9 @@ public final class Scripts {
 
         ParamsBuilder newParams = paramsBuilder();
         // field variables are first
-        fieldVars.forEach(v -> newParams.variable(v));
+        fieldVars.forEach(newParams::variable);
         // the rest of variables come after
-        otherVars.forEach(v -> newParams.variable(v));
+        otherVars.forEach(newParams::variable);
 
         return new ScriptTemplate(newTemplate.toString(), newParams.build(), DataTypes.BOOLEAN);
     }

@@ -156,7 +156,7 @@ public class InternalStringStats extends InternalAggregation {
         return charOccurrences.entrySet()
             .stream()
             .sorted((e1, e2) -> e2.getValue().compareTo(e1.getValue()))
-            .collect(Collectors.toMap(e -> e.getKey(), e -> (double) e.getValue() / totalLength, (e1, e2) -> e2, LinkedHashMap::new));
+            .collect(Collectors.toMap(Map.Entry::getKey, e -> (double) e.getValue() / totalLength, (e1, e2) -> e2, LinkedHashMap::new));
     }
 
     /** Calculate base 2 logarithm */

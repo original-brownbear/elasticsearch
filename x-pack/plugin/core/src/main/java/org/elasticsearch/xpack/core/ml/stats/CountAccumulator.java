@@ -10,6 +10,7 @@ package org.elasticsearch.xpack.core.ml.stats;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
+import org.elasticsearch.search.aggregations.bucket.terms.InternalTerms;
 import org.elasticsearch.search.aggregations.bucket.terms.StringTerms;
 
 import java.io.IOException;
@@ -43,7 +44,7 @@ public class CountAccumulator implements Writeable {
     public void merge(CountAccumulator other) {
         counts = Stream.of(counts, other.counts)
             .flatMap(m -> m.entrySet().stream())
-            .collect(Collectors.toMap(Entry::getKey, Entry::getValue, (x, y) -> x + y));
+            .collect(Collectors.toMap(Entry::getKey, Entry::getValue, Long::sum));
     }
 
     public void add(String key, Long count) {
@@ -58,7 +59,7 @@ public class CountAccumulator implements Writeable {
         return new CountAccumulator(
             termsAggregation.getBuckets()
                 .stream()
-                .collect(Collectors.toMap(bucket -> bucket.getKeyAsString(), bucket -> bucket.getDocCount()))
+                .collect(Collectors.toMap(StringTerms.Bucket::getKeyAsString, InternalTerms.Bucket::getDocCount))
         );
     }
 

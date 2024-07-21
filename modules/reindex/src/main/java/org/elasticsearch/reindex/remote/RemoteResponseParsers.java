@@ -31,6 +31,7 @@ import org.elasticsearch.xcontent.XContentType;
 import java.io.IOException;
 import java.util.List;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -91,7 +92,11 @@ final class RemoteResponseParsers {
     /**
      * Parser for the {@code hits} element. Parsed to an array of {@code [total (Long), hits (List<Hit>)]}.
      */
-    public static final ConstructingObjectParser<Object[], XContentType> HITS_PARSER = new ConstructingObjectParser<>("hits", true, a -> a);
+    public static final ConstructingObjectParser<Object[], XContentType> HITS_PARSER = new ConstructingObjectParser<>(
+        "hits",
+        true,
+        Function.identity()
+    );
     static {
         HITS_PARSER.declareField(constructorArg(), (p, c) -> {
             if (p.currentToken() == XContentParser.Token.START_OBJECT) {

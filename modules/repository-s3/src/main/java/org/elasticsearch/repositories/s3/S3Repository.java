@@ -148,7 +148,7 @@ class S3Repository extends MeteredBlobStoreRepository {
      */
     static final Setting<String> CANNED_ACL_SETTING = Setting.simpleString("canned_acl");
 
-    static final Setting<String> CLIENT_NAME = new Setting<>("client", "default", Function.identity());
+    static final Setting<String> CLIENT_NAME = Setting.simpleString("client", "default");
 
     /**
      * Artificial delay to introduce after a snapshot finalization or delete has finished so long as the repository is still using the

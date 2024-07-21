@@ -26,7 +26,6 @@ import org.elasticsearch.xcontent.NamedXContentRegistry;
 
 import java.util.Locale;
 import java.util.Map;
-import java.util.function.Function;
 
 import static org.elasticsearch.core.Strings.format;
 import static org.elasticsearch.repositories.azure.AzureStorageService.MAX_CHUNK_SIZE;
@@ -50,18 +49,16 @@ public class AzureRepository extends MeteredBlobStoreRepository {
 
     public static final class Repository {
         @Deprecated // Replaced by client
-        public static final Setting<String> ACCOUNT_SETTING = new Setting<>(
+        public static final Setting<String> ACCOUNT_SETTING = Setting.simpleString(
             "account",
             "default",
-            Function.identity(),
             Property.NodeScope,
             Property.DeprecatedWarning
         );
-        public static final Setting<String> CLIENT_NAME = new Setting<>("client", ACCOUNT_SETTING, Function.identity());
-        public static final Setting<String> CONTAINER_SETTING = new Setting<>(
+        public static final Setting<String> CLIENT_NAME = Setting.simpleString("client", ACCOUNT_SETTING);
+        public static final Setting<String> CONTAINER_SETTING = Setting.simpleString(
             "container",
             "elasticsearch-snapshots",
-            Function.identity(),
             Property.NodeScope
         );
         public static final Setting<String> BASE_PATH_SETTING = Setting.simpleString("base_path", Property.NodeScope);

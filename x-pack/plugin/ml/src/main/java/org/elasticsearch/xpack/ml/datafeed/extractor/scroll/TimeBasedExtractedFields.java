@@ -8,6 +8,7 @@ package org.elasticsearch.xpack.ml.datafeed.extractor.scroll;
 
 import org.elasticsearch.action.fieldcaps.FieldCapabilitiesResponse;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.xpack.core.ml.datafeed.DatafeedConfig;
 import org.elasticsearch.xpack.core.ml.job.config.Job;
 import org.elasticsearch.xpack.ml.extractor.ExtractedField;
@@ -54,7 +55,10 @@ public class TimeBasedExtractedFields extends ExtractedFields {
     }
 
     public static TimeBasedExtractedFields build(Job job, DatafeedConfig datafeed, FieldCapabilitiesResponse fieldsCapabilities) {
-        Set<String> scriptFields = datafeed.getScriptFields().stream().map(sf -> sf.fieldName()).collect(Collectors.toSet());
+        Set<String> scriptFields = datafeed.getScriptFields()
+            .stream()
+            .map(SearchSourceBuilder.ScriptField::fieldName)
+            .collect(Collectors.toSet());
         Set<String> searchRuntimeFields = datafeed.getRuntimeMappings().keySet();
 
         ExtractionMethodDetector extractionMethodDetector = new ExtractionMethodDetector(

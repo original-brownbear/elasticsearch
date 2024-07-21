@@ -72,6 +72,6 @@ public final class GroupByOptimizer {
 
         prioritizedGroups.sort(Comparator.comparing(Tuple<Entry<String, SingleGroupSource>, Integer>::v2).reversed());
 
-        return prioritizedGroups.stream().map(x -> x.v1()).collect(Collectors.toList());
+        return prioritizedGroups.stream().map(Tuple::v1).collect(Collectors.toList());
     }
 }

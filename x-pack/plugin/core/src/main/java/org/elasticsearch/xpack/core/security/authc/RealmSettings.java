@@ -221,7 +221,7 @@ public class RealmSettings {
         return realmToDomainsMap.entrySet()
             .stream()
             .map(e -> Map.entry(e.getKey(), e.getValue().stream().findAny().get()))
-            .collect(Collectors.toUnmodifiableMap(e -> e.getKey(), e -> e.getValue()));
+            .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     /**

@@ -88,7 +88,7 @@ class VersionEncoder {
                 if (first == false) {
                     encodedBytes.append((byte) DOT_SEPARATOR);
                 }
-                boolean isNumeric = preReleasePart.chars().allMatch(x -> Character.isDigit(x));
+                boolean isNumeric = preReleasePart.chars().allMatch(Character::isDigit);
                 if (isNumeric) {
                     prefixDigitGroupsWithLength(preReleasePart, encodedBytes);
                 } else {

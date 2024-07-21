@@ -46,7 +46,7 @@ public final class ConfigurableClusterPrivileges {
     public static final Writeable.Reader<ConfigurableClusterPrivilege> READER = in1 -> in1.readNamedWriteable(
         ConfigurableClusterPrivilege.class
     );
-    public static final Writeable.Writer<ConfigurableClusterPrivilege> WRITER = (out1, value) -> out1.writeNamedWriteable(value);
+    public static final Writeable.Writer<ConfigurableClusterPrivilege> WRITER = StreamOutput::writeNamedWriteable;
 
     private ConfigurableClusterPrivileges() {}
 

@@ -57,7 +57,7 @@ public final class GrokCaptureConfig {
         return nativeExtracter(new NativeExtracterMap<GrokCaptureExtracter>() {
             @Override
             public GrokCaptureExtracter forString(Function<Consumer<String>, GrokCaptureExtracter> buildExtracter) {
-                return buildExtracter.apply(str -> emit.accept(str));
+                return buildExtracter.apply(emit::accept);
             }
 
             @Override
@@ -82,7 +82,7 @@ public final class GrokCaptureConfig {
 
             @Override
             public GrokCaptureExtracter forBoolean(Function<Consumer<Boolean>, GrokCaptureExtracter> buildExtracter) {
-                return buildExtracter.apply(b -> emit.accept(b));
+                return buildExtracter.apply(emit::accept);
             }
         });
     }

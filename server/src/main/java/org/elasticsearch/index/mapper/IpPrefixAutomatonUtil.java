@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
@@ -225,7 +226,7 @@ public class IpPrefixAutomatonUtil {
         while (ip6blockMatcher.find(position)) {
             if (ip6blockMatcher.start() == position) {
                 position = ip6blockMatcher.end();
-                IntStream.rangeClosed(1, 3).mapToObj(i -> ip6blockMatcher.group(i)).filter(s -> s != null).forEach(groups::add);
+                IntStream.rangeClosed(1, 3).mapToObj(ip6blockMatcher::group).filter(Objects::nonNull).forEach(groups::add);
             } else {
                 return Collections.emptyList();
             }

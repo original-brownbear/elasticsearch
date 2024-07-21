@@ -189,7 +189,7 @@ public final class AnalyzerRules {
         // found exact match or multiple if pattern
         if (matches.size() == 1 || isPattern) {
             // NB: only add the location if the match is univocal; b/c otherwise adding the location will overwrite any preexisting one
-            matches.replaceAll(e -> fieldInspector.apply(e));
+            matches.replaceAll(fieldInspector::apply);
             return matches;
         }
 

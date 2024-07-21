@@ -20,6 +20,7 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
@@ -100,7 +101,7 @@ public class HeaderWarning {
      * the individual chars from qdText can be validated using the set of chars
      * the \\\\|\\\\\" (escaped '\' 0x20 and '"' 0x5c) which is used for quoted-pair has to be validated as strings
      */
-    private static BitSet qdTextChars = Stream.of(
+    private static final BitSet qdTextChars = Stream.of(
         IntStream.of(0x09),// HTAB
         IntStream.of(0x20), // SPACE
         IntStream.of(0x21), // !
@@ -109,7 +110,7 @@ public class HeaderWarning {
         // excluding 0x5c '\' which has to be escaped
         IntStream.rangeClosed(0x5D, 0x7E),// ascii ]-~
         IntStream.rangeClosed(0x80, 0xFF)// obs-text -bear in mind it contains 0x85 new line. Which requires DOT_ALL flag
-    ).flatMapToInt(i -> i).collect(BitSet::new, BitSet::set, BitSet::or);
+    ).flatMapToInt(Function.identity()).collect(BitSet::new, BitSet::set, BitSet::or);
     public static final Pattern WARNING_XCONTENT_LOCATION_PATTERN = Pattern.compile("^\\[.*?]\\[-?\\d+:-?\\d+] ");
 
     /*
@@ -265,7 +266,7 @@ public class HeaderWarning {
     private static boolean matchesQuotedString(String qdtext) {
         qdtext = qdtext.replace("\"", "");
         qdtext = qdtext.replace("\\", "");
-        return qdtext.chars().allMatch(c -> qdTextChars.get(c));
+        return qdtext.chars().allMatch(qdTextChars::get);
     }
 
     /**

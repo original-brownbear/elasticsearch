@@ -80,10 +80,9 @@ public interface AzureComputeService {
             AzureSeedHostsProvider.HostType::fromString,
             Property.NodeScope
         );
-        public static final Setting<String> ENDPOINT_NAME_SETTING = new Setting<>(
+        public static final Setting<String> ENDPOINT_NAME_SETTING = Setting.simpleString(
             "discovery.azure.endpoint.name",
             "elasticsearch",
-            Function.identity(),
             Property.NodeScope
         );
         public static final Setting<String> DEPLOYMENT_NAME_SETTING = Setting.simpleString(

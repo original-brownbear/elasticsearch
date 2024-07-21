@@ -27,7 +27,7 @@ public class PreserveOneAllocation extends AbstractPreserveAllocations {
 
     @Override
     protected Map<String, Integer> calculateAllocationsPerNodeToPreserve(Deployment m) {
-        return m.currentAllocationsByNodeId().entrySet().stream().collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue() - 1));
+        return m.currentAllocationsByNodeId().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue() - 1));
     }
 
     @Override

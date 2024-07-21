@@ -584,7 +584,7 @@ public final class ThreadContext implements Writeable, TraceContext {
      * @param value       the header value
      */
     public void addResponseHeader(final String key, final String value) {
-        addResponseHeader(key, value, v -> v);
+        addResponseHeader(key, value, Function.identity());
     }
 
     /**

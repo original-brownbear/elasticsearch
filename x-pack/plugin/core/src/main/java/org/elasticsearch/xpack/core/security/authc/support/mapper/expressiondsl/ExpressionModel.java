@@ -98,10 +98,7 @@ public class ExpressionModel {
             return field -> field.getAutomaton() == null ? object.equals(field.getValue()) : field.getAutomaton().run((String) object);
         }
         if (object instanceof Collection) {
-            return ((Collection<?>) object).stream()
-                .map(element -> buildPredicate(element))
-                .reduce((a, b) -> a.or(b))
-                .orElse(Predicates.never());
+            return ((Collection<?>) object).stream().map(ExpressionModel::buildPredicate).reduce(Predicate::or).orElse(Predicates.never());
         }
         throw new IllegalArgumentException("Unsupported value type " + object.getClass());
     }

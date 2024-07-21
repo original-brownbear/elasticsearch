@@ -74,7 +74,7 @@ public class MetricNameValidator {
      * NOTE: only allow skipping validation if a refactor in codebase would cause a breaking change
      */
     private static boolean skipValidationToBWC(String metricName) {
-        return SKIP_VALIDATION_METRIC_NAMES_DUE_TO_BWC.stream().anyMatch(m -> metricName.contains(m));
+        return SKIP_VALIDATION_METRIC_NAMES_DUE_TO_BWC.stream().anyMatch(metricName::contains);
     }
 
     private static void validateMaxMetricNameLength(String metricName) {

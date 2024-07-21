@@ -115,7 +115,7 @@ public final class KeyValueProcessor extends AbstractProcessor {
         if (stripBrackets) {
             bracketStrip = val -> STRIP_BRACKETS.matcher(val).replaceAll("");
         } else {
-            bracketStrip = val -> val;
+            bracketStrip = Function.identity();
         }
         final Function<String, String> valueTrimmer = buildTrimmer(trimValue);
         return document -> {
@@ -133,7 +133,7 @@ public final class KeyValueProcessor extends AbstractProcessor {
             }
             final Function<String, String> keyPrefixer;
             if (fieldPathPrefix.isEmpty()) {
-                keyPrefixer = val -> val;
+                keyPrefixer = Function.identity();
             } else {
                 keyPrefixer = val -> fieldPathPrefix + val;
             }
@@ -167,7 +167,7 @@ public final class KeyValueProcessor extends AbstractProcessor {
 
     private Function<String, String> buildTrimmer(String trim) {
         if (trim == null) {
-            return val -> val;
+            return Function.identity();
         } else {
             Pattern pattern = Pattern.compile("(^([" + trim + "]+))|([" + trim + "]+$)");
             return val -> {

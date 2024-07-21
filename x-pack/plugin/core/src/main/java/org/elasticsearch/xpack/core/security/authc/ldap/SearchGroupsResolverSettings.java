@@ -41,7 +41,7 @@ public final class SearchGroupsResolverSettings {
     public static final Setting.AffixSetting<String> FILTER = Setting.affixKeySetting(
         RealmSettings.realmSettingPrefix(LDAP_TYPE),
         "group_search.filter",
-        key -> new Setting<>(key, GROUP_SEARCH_DEFAULT_FILTER, Function.identity(), Setting.Property.NodeScope)
+        key -> Setting.simpleString(key, GROUP_SEARCH_DEFAULT_FILTER, Setting.Property.NodeScope)
     );
 
     private SearchGroupsResolverSettings() {}

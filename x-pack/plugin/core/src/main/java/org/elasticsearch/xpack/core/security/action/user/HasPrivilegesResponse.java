@@ -64,7 +64,7 @@ public class HasPrivilegesResponse extends ActionResponse implements ToXContentO
     }
 
     private static Set<ResourcePrivileges> sorted(Collection<ResourcePrivileges> resources) {
-        final Set<ResourcePrivileges> set = new TreeSet<>(Comparator.comparing(o -> o.getResource()));
+        final Set<ResourcePrivileges> set = new TreeSet<>(Comparator.comparing(ResourcePrivileges::getResource));
         set.addAll(resources);
         return set;
     }
@@ -116,7 +116,7 @@ public class HasPrivilegesResponse extends ActionResponse implements ToXContentO
 
     private static Set<ResourcePrivileges> readResourcePrivileges(StreamInput in) throws IOException {
         final int count = in.readVInt();
-        final Set<ResourcePrivileges> set = new TreeSet<>(Comparator.comparing(o -> o.getResource()));
+        final Set<ResourcePrivileges> set = new TreeSet<>(Comparator.comparing(ResourcePrivileges::getResource));
         for (int i = 0; i < count; i++) {
             final String index = in.readString();
             final Map<String, Boolean> privileges = in.readMap(StreamInput::readBoolean);

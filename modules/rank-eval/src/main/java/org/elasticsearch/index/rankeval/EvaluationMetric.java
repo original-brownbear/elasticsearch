@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.OptionalInt;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -47,7 +48,7 @@ public interface EvaluationMetric extends ToXContentObject, NamedWriteable {
      */
     static List<RatedSearchHit> joinHitsWithRatings(SearchHit[] hits, List<RatedDocument> ratedDocs) {
         Map<DocumentKey, RatedDocument> ratedDocumentMap = ratedDocs.stream()
-            .collect(Collectors.toMap(RatedDocument::getKey, item -> item));
+            .collect(Collectors.toMap(RatedDocument::getKey, Function.identity()));
         List<RatedSearchHit> ratedSearchHits = new ArrayList<>(hits.length);
         for (SearchHit hit : hits) {
             DocumentKey key = new DocumentKey(hit.getIndex(), hit.getId());

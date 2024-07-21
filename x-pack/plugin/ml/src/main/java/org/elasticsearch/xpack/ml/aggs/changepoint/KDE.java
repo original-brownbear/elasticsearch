@@ -79,11 +79,11 @@ final class KDE {
     }
 
     ValueAndMagnitude cdf(double x) {
-        return evaluate((a, b) -> a, (centre, x_) -> normCdf(centre, x_), x);
+        return evaluate((a, b) -> a, this::normCdf, x);
     }
 
     ValueAndMagnitude sf(double x) {
-        return evaluate((a, b) -> orderedValues.length - b, (centre, x_) -> normSf(centre, x_), x);
+        return evaluate((a, b) -> orderedValues.length - b, this::normSf, x);
     }
 
     double normCdf(double mean, double x) {

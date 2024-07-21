@@ -144,7 +144,7 @@ public class CustomWordEmbedding implements LenientlyParsedPreProcessor, Strictl
     public CustomWordEmbedding(StreamInput in) throws IOException {
         this.fieldName = in.readString();
         this.destField = in.readString();
-        this.embeddingsWeights = in.readArray(StreamInput::readByteArray, (length) -> new byte[length][]);
+        this.embeddingsWeights = in.readArray(StreamInput::readByteArray, byte[][]::new);
         this.embeddingsQuantScales = in.readArray((input -> {
             int length = input.readVInt();
             short[] shorts = new short[length];
@@ -152,7 +152,7 @@ public class CustomWordEmbedding implements LenientlyParsedPreProcessor, Strictl
                 shorts[i] = in.readShort();
             }
             return shorts;
-        }), (length) -> new short[length][]);
+        }), short[][]::new);
     }
 
     public CustomWordEmbedding(short[][] embeddingsQuantScales, byte[][] embeddingsWeights, String fieldName, String destField) {

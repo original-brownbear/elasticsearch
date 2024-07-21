@@ -18,6 +18,7 @@ import org.elasticsearch.xpack.core.search.action.GetAsyncStatusAction;
 import org.elasticsearch.xpack.core.security.SecurityContext;
 import org.elasticsearch.xpack.core.security.action.user.HasPrivilegesAction;
 import org.elasticsearch.xpack.core.security.action.user.HasPrivilegesRequest;
+import org.elasticsearch.xpack.core.security.action.user.HasPrivilegesResponse;
 import org.elasticsearch.xpack.core.security.authc.Authentication;
 import org.elasticsearch.xpack.core.security.authz.RoleDescriptor;
 import org.elasticsearch.xpack.core.security.authz.privilege.ClusterPrivilegeResolver;
@@ -68,7 +69,7 @@ public class AsyncSearchSecurity {
             req.indexPrivileges(new RoleDescriptor.IndicesPrivileges[] {});
             req.applicationPrivileges(new RoleDescriptor.ApplicationResourcePrivileges[] {});
             try {
-                client.execute(HasPrivilegesAction.INSTANCE, req, listener.map(resp -> resp.isCompleteMatch()));
+                client.execute(HasPrivilegesAction.INSTANCE, req, listener.map(HasPrivilegesResponse::isCompleteMatch));
             } catch (Exception exc) {
                 listener.onFailure(exc);
             }

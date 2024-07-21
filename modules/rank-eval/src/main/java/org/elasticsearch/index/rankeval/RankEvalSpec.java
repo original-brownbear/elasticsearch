@@ -140,7 +140,7 @@ public class RankEvalSpec implements Writeable, ToXContentObject {
     );
 
     static {
-        PARSER.declareObjectArray(ConstructingObjectParser.constructorArg(), (p, c) -> RatedRequest.fromXContent(p, c), REQUESTS_FIELD);
+        PARSER.declareObjectArray(ConstructingObjectParser.constructorArg(), RatedRequest::fromXContent, REQUESTS_FIELD);
         PARSER.declareObject(ConstructingObjectParser.constructorArg(), (p, c) -> parseMetric(p), METRIC_FIELD);
         PARSER.declareObjectArray(
             ConstructingObjectParser.optionalConstructorArg(),

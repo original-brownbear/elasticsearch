@@ -253,7 +253,7 @@ public class ShardsAvailabilityHealthIndicatorService implements HealthIndicator
     private static final Map<String, Diagnosis.Definition> ACTION_ENABLE_TIERS_LOOKUP = DataTier.ALL_DATA_TIERS.stream()
         .collect(
             Collectors.toUnmodifiableMap(
-                tier -> tier,
+                Function.identity(),
                 tier -> new Diagnosis.Definition(
                     NAME,
                     "enable_data_tiers:tier:" + tier,
@@ -281,7 +281,7 @@ public class ShardsAvailabilityHealthIndicatorService implements HealthIndicator
         .stream()
         .collect(
             Collectors.toUnmodifiableMap(
-                tier -> tier,
+                Function.identity(),
                 tier -> new Diagnosis.Definition(
                     NAME,
                     "increase_shard_limit_index_setting:tier:" + tier,
@@ -312,7 +312,7 @@ public class ShardsAvailabilityHealthIndicatorService implements HealthIndicator
         .stream()
         .collect(
             Collectors.toUnmodifiableMap(
-                tier -> tier,
+                Function.identity(),
                 tier -> new Diagnosis.Definition(
                     NAME,
                     "increase_shard_limit_cluster_setting:tier:" + tier,
@@ -344,7 +344,7 @@ public class ShardsAvailabilityHealthIndicatorService implements HealthIndicator
         .stream()
         .collect(
             Collectors.toUnmodifiableMap(
-                tier -> tier,
+                Function.identity(),
                 tier -> new Diagnosis.Definition(
                     NAME,
                     "migrate_data_tiers_require_data:tier:" + tier,
@@ -378,7 +378,7 @@ public class ShardsAvailabilityHealthIndicatorService implements HealthIndicator
         .stream()
         .collect(
             Collectors.toUnmodifiableMap(
-                tier -> tier,
+                Function.identity(),
                 tier -> new Diagnosis.Definition(
                     NAME,
                     "migrate_data_tiers_include_data:tier:" + tier,
@@ -410,7 +410,7 @@ public class ShardsAvailabilityHealthIndicatorService implements HealthIndicator
     public static final Map<String, Diagnosis.Definition> ACTION_INCREASE_TIER_CAPACITY_LOOKUP = DataTier.ALL_DATA_TIERS.stream()
         .collect(
             Collectors.toUnmodifiableMap(
-                tier -> tier,
+                Function.identity(),
                 tier -> new Diagnosis.Definition(
                     NAME,
                     "increase_tier_capacity_for_allocations:tier:" + tier,

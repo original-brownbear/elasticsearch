@@ -13,14 +13,23 @@ import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.admin.cluster.node.stats.NodeStats;
 import org.elasticsearch.action.admin.indices.stats.CommonStatsFlags;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
+import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.util.SingleObjectCache;
 import org.elasticsearch.core.TimeValue;
+import org.elasticsearch.index.get.GetStats;
+import org.elasticsearch.index.merge.MergeStats;
+import org.elasticsearch.index.search.stats.SearchStats;
+import org.elasticsearch.index.shard.IndexingStats;
 import org.elasticsearch.index.stats.IndexingPressureStats;
+import org.elasticsearch.index.translog.TranslogStats;
+import org.elasticsearch.indices.NodeIndicesStats;
+import org.elasticsearch.monitor.fs.FsInfo;
 import org.elasticsearch.monitor.jvm.GcNames;
 import org.elasticsearch.monitor.jvm.JvmStats;
 import org.elasticsearch.node.NodeService;
 import org.elasticsearch.telemetry.metric.LongWithAttributes;
 import org.elasticsearch.telemetry.metric.MeterRegistry;
+import org.elasticsearch.transport.TransportStats;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -72,9 +81,9 @@ public class NodeMetrics extends AbstractLifecycleComponent {
                 "operation",
                 () -> new LongWithAttributes(
                     Optional.ofNullable(stats.getOrRefresh())
-                        .map(o -> o.getIndices())
-                        .map(o -> o.getGet())
-                        .map(o -> o.getCount())
+                        .map(NodeStats::getIndices)
+                        .map(NodeIndicesStats::getGet)
+                        .map(GetStats::getCount)
                         .orElse(0L)
                 )
             )
@@ -87,9 +96,9 @@ public class NodeMetrics extends AbstractLifecycleComponent {
                 "milliseconds",
                 () -> new LongWithAttributes(
                     Optional.ofNullable(stats.getOrRefresh())
-                        .map(o -> o.getIndices())
-                        .map(o -> o.getGet())
-                        .map(o -> o.getTimeInMillis())
+                        .map(NodeStats::getIndices)
+                        .map(NodeIndicesStats::getGet)
+                        .map(GetStats::getTimeInMillis)
                         .orElse(0L)
                 )
             )
@@ -102,10 +111,10 @@ public class NodeMetrics extends AbstractLifecycleComponent {
                 "operation",
                 () -> new LongWithAttributes(
                     Optional.ofNullable(stats.getOrRefresh())
-                        .map(o -> o.getIndices())
-                        .map(o -> o.getSearch())
-                        .map(o -> o.getTotal())
-                        .map(o -> o.getFetchCount())
+                        .map(NodeStats::getIndices)
+                        .map(NodeIndicesStats::getSearch)
+                        .map(SearchStats::getTotal)
+                        .map(SearchStats.Stats::getFetchCount)
                         .orElse(0L)
                 )
             )
@@ -118,10 +127,10 @@ public class NodeMetrics extends AbstractLifecycleComponent {
                 "milliseconds",
                 () -> new LongWithAttributes(
                     Optional.ofNullable(stats.getOrRefresh())
-                        .map(o -> o.getIndices())
-                        .map(o -> o.getSearch())
-                        .map(o -> o.getTotal())
-                        .map(o -> o.getFetchTimeInMillis())
+                        .map(NodeStats::getIndices)
+                        .map(NodeIndicesStats::getSearch)
+                        .map(SearchStats::getTotal)
+                        .map(SearchStats.Stats::getFetchTimeInMillis)
                         .orElse(0L)
                 )
             )
@@ -134,9 +143,9 @@ public class NodeMetrics extends AbstractLifecycleComponent {
                 "operation",
                 () -> new LongWithAttributes(
                     Optional.ofNullable(stats.getOrRefresh())
-                        .map(o -> o.getIndices())
-                        .map(o -> o.getMerge())
-                        .map(o -> o.getTotal())
+                        .map(NodeStats::getIndices)
+                        .map(NodeIndicesStats::getMerge)
+                        .map(MergeStats::getTotal)
                         .orElse(0L)
                 )
             )
@@ -149,9 +158,9 @@ public class NodeMetrics extends AbstractLifecycleComponent {
                 "milliseconds",
                 () -> new LongWithAttributes(
                     Optional.ofNullable(stats.getOrRefresh())
-                        .map(o -> o.getIndices())
-                        .map(o -> o.getMerge())
-                        .map(o -> o.getTotalTimeInMillis())
+                        .map(NodeStats::getIndices)
+                        .map(NodeIndicesStats::getMerge)
+                        .map(MergeStats::getTotalTimeInMillis)
                         .orElse(0L)
                 )
             )
@@ -164,9 +173,9 @@ public class NodeMetrics extends AbstractLifecycleComponent {
                 "operation",
                 () -> new LongWithAttributes(
                     Optional.ofNullable(stats.getOrRefresh())
-                        .map(o -> o.getIndices())
-                        .map(o -> o.getTranslog())
-                        .map(o -> o.estimatedNumberOfOperations())
+                        .map(NodeStats::getIndices)
+                        .map(NodeIndicesStats::getTranslog)
+                        .map(TranslogStats::estimatedNumberOfOperations)
                         .orElse(0)
                 )
             )
@@ -179,9 +188,9 @@ public class NodeMetrics extends AbstractLifecycleComponent {
                 "bytes",
                 () -> new LongWithAttributes(
                     Optional.ofNullable(stats.getOrRefresh())
-                        .map(o -> o.getIndices())
-                        .map(o -> o.getTranslog())
-                        .map(o -> o.getTranslogSizeInBytes())
+                        .map(NodeStats::getIndices)
+                        .map(NodeIndicesStats::getTranslog)
+                        .map(TranslogStats::getTranslogSizeInBytes)
                         .orElse(0L)
                 )
             )
@@ -194,9 +203,9 @@ public class NodeMetrics extends AbstractLifecycleComponent {
                 "operations",
                 () -> new LongWithAttributes(
                     Optional.ofNullable(stats.getOrRefresh())
-                        .map(o -> o.getIndices())
-                        .map(o -> o.getTranslog())
-                        .map(o -> o.getUncommittedOperations())
+                        .map(NodeStats::getIndices)
+                        .map(NodeIndicesStats::getTranslog)
+                        .map(TranslogStats::getUncommittedOperations)
                         .orElse(0)
                 )
             )
@@ -209,9 +218,9 @@ public class NodeMetrics extends AbstractLifecycleComponent {
                 "bytes",
                 () -> new LongWithAttributes(
                     Optional.ofNullable(stats.getOrRefresh())
-                        .map(o -> o.getIndices())
-                        .map(o -> o.getTranslog())
-                        .map(o -> o.getUncommittedSizeInBytes())
+                        .map(NodeStats::getIndices)
+                        .map(NodeIndicesStats::getTranslog)
+                        .map(TranslogStats::getUncommittedSizeInBytes)
                         .orElse(0L)
                 )
             )
@@ -224,9 +233,9 @@ public class NodeMetrics extends AbstractLifecycleComponent {
                 "time",
                 () -> new LongWithAttributes(
                     Optional.ofNullable(stats.getOrRefresh())
-                        .map(o -> o.getIndices())
-                        .map(o -> o.getTranslog())
-                        .map(o -> o.getEarliestLastModifiedAge())
+                        .map(NodeStats::getIndices)
+                        .map(NodeIndicesStats::getTranslog)
+                        .map(TranslogStats::getEarliestLastModifiedAge)
                         .orElse(0L)
                 )
             )
@@ -239,9 +248,9 @@ public class NodeMetrics extends AbstractLifecycleComponent {
                 "bytes",
                 () -> new LongWithAttributes(
                     Optional.ofNullable(stats.getOrRefresh())
-                        .map(o -> o.getTransport())
-                        .map(o -> o.getRxSize())
-                        .map(o -> o.getBytes())
+                        .map(NodeStats::getTransport)
+                        .map(TransportStats::getRxSize)
+                        .map(ByteSizeValue::getBytes)
                         .orElse(0L)
                 )
             )
@@ -254,9 +263,9 @@ public class NodeMetrics extends AbstractLifecycleComponent {
                 "bytes",
                 () -> new LongWithAttributes(
                     Optional.ofNullable(stats.getOrRefresh())
-                        .map(o -> o.getTransport())
-                        .map(o -> o.getTxSize())
-                        .map(o -> o.getBytes())
+                        .map(NodeStats::getTransport)
+                        .map(TransportStats::getTxSize)
+                        .map(ByteSizeValue::getBytes)
                         .orElse(0L)
                 )
             )
@@ -268,7 +277,7 @@ public class NodeMetrics extends AbstractLifecycleComponent {
                 "Memory, in bytes, used by the young generation heap.",
                 "bytes",
                 () -> new LongWithAttributes(
-                    bytesUsedByGCGen(Optional.ofNullable(stats.getOrRefresh()).map(o -> o.getJvm()).map(o -> o.getMem()), GcNames.YOUNG)
+                    bytesUsedByGCGen(Optional.ofNullable(stats.getOrRefresh()).map(NodeStats::getJvm).map(JvmStats::getMem), GcNames.YOUNG)
                 )
             )
         );
@@ -279,7 +288,10 @@ public class NodeMetrics extends AbstractLifecycleComponent {
                 "Memory, in bytes, used by the survivor space.",
                 "bytes",
                 () -> new LongWithAttributes(
-                    bytesUsedByGCGen(Optional.ofNullable(stats.getOrRefresh()).map(o -> o.getJvm()).map(o -> o.getMem()), GcNames.SURVIVOR)
+                    bytesUsedByGCGen(
+                        Optional.ofNullable(stats.getOrRefresh()).map(NodeStats::getJvm).map(JvmStats::getMem),
+                        GcNames.SURVIVOR
+                    )
                 )
             )
         );
@@ -290,7 +302,7 @@ public class NodeMetrics extends AbstractLifecycleComponent {
                 "Memory, in bytes, used by the old generation heap.",
                 "bytes",
                 () -> new LongWithAttributes(
-                    bytesUsedByGCGen(Optional.ofNullable(stats.getOrRefresh()).map(o -> o.getJvm()).map(o -> o.getMem()), GcNames.OLD)
+                    bytesUsedByGCGen(Optional.ofNullable(stats.getOrRefresh()).map(NodeStats::getJvm).map(JvmStats::getMem), GcNames.OLD)
                 )
             )
         );
@@ -302,9 +314,9 @@ public class NodeMetrics extends AbstractLifecycleComponent {
                 "milliseconds",
                 () -> new LongWithAttributes(
                     Optional.ofNullable(stats.getOrRefresh())
-                        .map(o -> o.getFs())
-                        .map(o -> o.getIoStats())
-                        .map(o -> o.getTotalIOTimeMillis())
+                        .map(NodeStats::getFs)
+                        .map(FsInfo::getIoStats)
+                        .map(FsInfo.IoStats::getTotalIOTimeMillis)
                         .orElse(0L)
                 )
             )
@@ -317,10 +329,10 @@ public class NodeMetrics extends AbstractLifecycleComponent {
                 "documents",
                 () -> new LongWithAttributes(
                     Optional.ofNullable(stats.getOrRefresh())
-                        .map(o -> o.getIndices())
-                        .map(o -> o.getIndexing())
-                        .map(o -> o.getTotal())
-                        .map(o -> o.getIndexCount())
+                        .map(NodeStats::getIndices)
+                        .map(NodeIndicesStats::getIndexing)
+                        .map(IndexingStats::getTotal)
+                        .map(IndexingStats.Stats::getIndexCount)
                         .orElse(0L)
                 )
             )
@@ -333,10 +345,10 @@ public class NodeMetrics extends AbstractLifecycleComponent {
                 "documents",
                 () -> new LongWithAttributes(
                     Optional.ofNullable(stats.getOrRefresh())
-                        .map(o -> o.getIndices())
-                        .map(o -> o.getIndexing())
-                        .map(o -> o.getTotal())
-                        .map(o -> o.getIndexCurrent())
+                        .map(NodeStats::getIndices)
+                        .map(NodeIndicesStats::getIndexing)
+                        .map(IndexingStats::getTotal)
+                        .map(IndexingStats.Stats::getIndexCurrent)
                         .orElse(0L)
                 )
             )
@@ -349,10 +361,10 @@ public class NodeMetrics extends AbstractLifecycleComponent {
                 "operations",
                 () -> new LongWithAttributes(
                     Optional.ofNullable(stats.getOrRefresh())
-                        .map(o -> o.getIndices())
-                        .map(o -> o.getIndexing())
-                        .map(o -> o.getTotal())
-                        .map(o -> o.getIndexFailedCount())
+                        .map(NodeStats::getIndices)
+                        .map(NodeIndicesStats::getIndexing)
+                        .map(IndexingStats::getTotal)
+                        .map(IndexingStats.Stats::getIndexFailedCount)
                         .orElse(0L)
                 )
             )
@@ -365,10 +377,10 @@ public class NodeMetrics extends AbstractLifecycleComponent {
                 "documents",
                 () -> new LongWithAttributes(
                     Optional.ofNullable(stats.getOrRefresh())
-                        .map(o -> o.getIndices())
-                        .map(o -> o.getIndexing())
-                        .map(o -> o.getTotal())
-                        .map(o -> o.getDeleteCount())
+                        .map(NodeStats::getIndices)
+                        .map(NodeIndicesStats::getIndexing)
+                        .map(IndexingStats::getTotal)
+                        .map(IndexingStats.Stats::getDeleteCount)
                         .orElse(0L)
                 )
             )
@@ -381,10 +393,10 @@ public class NodeMetrics extends AbstractLifecycleComponent {
                 "documents",
                 () -> new LongWithAttributes(
                     Optional.ofNullable(stats.getOrRefresh())
-                        .map(o -> o.getIndices())
-                        .map(o -> o.getIndexing())
-                        .map(o -> o.getTotal())
-                        .map(o -> o.getDeleteCurrent())
+                        .map(NodeStats::getIndices)
+                        .map(NodeIndicesStats::getIndexing)
+                        .map(IndexingStats::getTotal)
+                        .map(IndexingStats.Stats::getDeleteCurrent)
                         .orElse(0L)
                 )
             )
@@ -397,11 +409,11 @@ public class NodeMetrics extends AbstractLifecycleComponent {
                 "milliseconds",
                 () -> new LongWithAttributes(
                     Optional.ofNullable(stats.getOrRefresh())
-                        .map(o -> o.getIndices())
-                        .map(o -> o.getIndexing())
-                        .map(o -> o.getTotal())
-                        .map(o -> o.getIndexTime())
-                        .map(o -> o.millis())
+                        .map(NodeStats::getIndices)
+                        .map(NodeIndicesStats::getIndexing)
+                        .map(IndexingStats::getTotal)
+                        .map(IndexingStats.Stats::getIndexTime)
+                        .map(TimeValue::millis)
                         .orElse(0L)
                 )
             )
@@ -414,11 +426,11 @@ public class NodeMetrics extends AbstractLifecycleComponent {
                 "milliseconds",
                 () -> new LongWithAttributes(
                     Optional.ofNullable(stats.getOrRefresh())
-                        .map(o -> o.getIndices())
-                        .map(o -> o.getIndexing())
-                        .map(o -> o.getTotal())
-                        .map(o -> o.getDeleteTime())
-                        .map(o -> o.millis())
+                        .map(NodeStats::getIndices)
+                        .map(NodeIndicesStats::getIndexing)
+                        .map(IndexingStats::getTotal)
+                        .map(IndexingStats.Stats::getDeleteTime)
+                        .map(TimeValue::millis)
                         .orElse(0L)
                 )
             )
@@ -431,11 +443,11 @@ public class NodeMetrics extends AbstractLifecycleComponent {
                 "milliseconds",
                 () -> new LongWithAttributes(
                     Optional.ofNullable(stats.getOrRefresh())
-                        .map(o -> o.getIndices())
-                        .map(o -> o.getIndexing())
-                        .map(o -> o.getTotal())
-                        .map(o -> o.getThrottleTime())
-                        .map(o -> o.millis())
+                        .map(NodeStats::getIndices)
+                        .map(NodeIndicesStats::getIndexing)
+                        .map(IndexingStats::getTotal)
+                        .map(IndexingStats.Stats::getThrottleTime)
+                        .map(TimeValue::millis)
                         .orElse(0L)
                 )
             )
@@ -448,10 +460,10 @@ public class NodeMetrics extends AbstractLifecycleComponent {
                 "operations",
                 () -> new LongWithAttributes(
                     Optional.ofNullable(stats.getOrRefresh())
-                        .map(o -> o.getIndices())
-                        .map(o -> o.getIndexing())
-                        .map(o -> o.getTotal())
-                        .map(o -> o.getNoopUpdateCount())
+                        .map(NodeStats::getIndices)
+                        .map(NodeIndicesStats::getIndexing)
+                        .map(IndexingStats::getTotal)
+                        .map(IndexingStats.Stats::getNoopUpdateCount)
                         .orElse(0L)
                 )
             )
@@ -464,8 +476,8 @@ public class NodeMetrics extends AbstractLifecycleComponent {
                 "bytes",
                 () -> new LongWithAttributes(
                     Optional.ofNullable(stats.getOrRefresh())
-                        .map(o -> o.getIndexingPressureStats())
-                        .map(o -> o.getTotalCoordinatingBytes())
+                        .map(NodeStats::getIndexingPressureStats)
+                        .map(IndexingPressureStats::getTotalCoordinatingBytes)
                         .orElse(0L)
                 )
             )
@@ -478,8 +490,8 @@ public class NodeMetrics extends AbstractLifecycleComponent {
                 "operations",
                 () -> new LongWithAttributes(
                     Optional.ofNullable(stats.getOrRefresh())
-                        .map(o -> o.getIndexingPressureStats())
-                        .map(o -> o.getTotalCoordinatingOps())
+                        .map(NodeStats::getIndexingPressureStats)
+                        .map(IndexingPressureStats::getTotalCoordinatingOps)
                         .orElse(0L)
                 )
             )
@@ -492,8 +504,8 @@ public class NodeMetrics extends AbstractLifecycleComponent {
                 "bytes",
                 () -> new LongWithAttributes(
                     Optional.ofNullable(stats.getOrRefresh())
-                        .map(o -> o.getIndexingPressureStats())
-                        .map(o -> o.getCurrentCoordinatingBytes())
+                        .map(NodeStats::getIndexingPressureStats)
+                        .map(IndexingPressureStats::getCurrentCoordinatingBytes)
                         .orElse(0L)
                 )
             )
@@ -506,8 +518,8 @@ public class NodeMetrics extends AbstractLifecycleComponent {
                 "operations",
                 () -> new LongWithAttributes(
                     Optional.ofNullable(stats.getOrRefresh())
-                        .map(o -> o.getIndexingPressureStats())
-                        .map(o -> o.getCurrentCoordinatingOps())
+                        .map(NodeStats::getIndexingPressureStats)
+                        .map(IndexingPressureStats::getCurrentCoordinatingOps)
                         .orElse(0L)
                 )
             )
@@ -520,8 +532,8 @@ public class NodeMetrics extends AbstractLifecycleComponent {
                 "operations",
                 () -> new LongWithAttributes(
                     Optional.ofNullable(stats.getOrRefresh())
-                        .map(o -> o.getIndexingPressureStats())
-                        .map(o -> o.getCoordinatingRejections())
+                        .map(NodeStats::getIndexingPressureStats)
+                        .map(IndexingPressureStats::getCoordinatingRejections)
                         .orElse(0L)
                 )
             )
@@ -548,8 +560,8 @@ public class NodeMetrics extends AbstractLifecycleComponent {
                 "bytes",
                 () -> new LongWithAttributes(
                     Optional.ofNullable(stats.getOrRefresh())
-                        .map(o -> o.getIndexingPressureStats())
-                        .map(o -> o.getTotalPrimaryBytes())
+                        .map(NodeStats::getIndexingPressureStats)
+                        .map(IndexingPressureStats::getTotalPrimaryBytes)
                         .orElse(0L)
                 )
             )
@@ -562,8 +574,8 @@ public class NodeMetrics extends AbstractLifecycleComponent {
                 "operations",
                 () -> new LongWithAttributes(
                     Optional.ofNullable(stats.getOrRefresh())
-                        .map(o -> o.getIndexingPressureStats())
-                        .map(o -> o.getTotalPrimaryOps())
+                        .map(NodeStats::getIndexingPressureStats)
+                        .map(IndexingPressureStats::getTotalPrimaryOps)
                         .orElse(0L)
                 )
             )
@@ -576,8 +588,8 @@ public class NodeMetrics extends AbstractLifecycleComponent {
                 "bytes",
                 () -> new LongWithAttributes(
                     Optional.ofNullable(stats.getOrRefresh())
-                        .map(o -> o.getIndexingPressureStats())
-                        .map(o -> o.getCurrentPrimaryBytes())
+                        .map(NodeStats::getIndexingPressureStats)
+                        .map(IndexingPressureStats::getCurrentPrimaryBytes)
                         .orElse(0L)
                 )
             )
@@ -590,8 +602,8 @@ public class NodeMetrics extends AbstractLifecycleComponent {
                 "operations",
                 () -> new LongWithAttributes(
                     Optional.ofNullable(stats.getOrRefresh())
-                        .map(o -> o.getIndexingPressureStats())
-                        .map(o -> o.getCurrentPrimaryOps())
+                        .map(NodeStats::getIndexingPressureStats)
+                        .map(IndexingPressureStats::getCurrentPrimaryOps)
                         .orElse(0L)
                 )
             )
@@ -604,8 +616,8 @@ public class NodeMetrics extends AbstractLifecycleComponent {
                 "operations",
                 () -> new LongWithAttributes(
                     Optional.ofNullable(stats.getOrRefresh())
-                        .map(o -> o.getIndexingPressureStats())
-                        .map(o -> o.getPrimaryRejections())
+                        .map(NodeStats::getIndexingPressureStats)
+                        .map(IndexingPressureStats::getPrimaryRejections)
                         .orElse(0L)
                 )
             )
@@ -631,7 +643,10 @@ public class NodeMetrics extends AbstractLifecycleComponent {
                 "Current memory limit for primary and coordinating operations",
                 "bytes",
                 () -> new LongWithAttributes(
-                    Optional.ofNullable(stats.getOrRefresh()).map(o -> o.getIndexingPressureStats()).map(o -> o.getMemoryLimit()).orElse(0L)
+                    Optional.ofNullable(stats.getOrRefresh())
+                        .map(NodeStats::getIndexingPressureStats)
+                        .map(IndexingPressureStats::getMemoryLimit)
+                        .orElse(0L)
                 )
             )
         );

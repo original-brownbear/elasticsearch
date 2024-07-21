@@ -269,7 +269,14 @@ public class Setting<T> implements ToXContentObject {
      * @param properties properties for this setting like scope, filtering...
      */
     public Setting(String key, String defaultValue, Function<String, T> parser, Property... properties) {
-        this(key, s -> defaultValue, parser, properties);
+        this(key, constantDefault(defaultValue), parser, properties);
+    }
+
+    private static Function<Settings, String> constantDefault(String defaultValue) {
+        if ("".equals(defaultValue)) {
+            return s -> "";
+        }
+        return s -> defaultValue;
     }
 
     /**
@@ -282,7 +289,7 @@ public class Setting<T> implements ToXContentObject {
      * @param properties   properties for this setting
      */
     public Setting(String key, String defaultValue, Function<String, T> parser, Validator<T> validator, Property... properties) {
-        this(new SimpleKey(key), s -> defaultValue, parser, validator, properties);
+        this(new SimpleKey(key), constantDefault(defaultValue), parser, validator, properties);
     }
 
     /**
@@ -1173,7 +1180,7 @@ public class Setting<T> implements ToXContentObject {
         private final Consumer<Settings> validator;
 
         private GroupSetting(String key, Consumer<Settings> validator, Property... properties) {
-            super(new GroupKey(key), (s) -> "", (s) -> null, properties);
+            super(new GroupKey(key), Setting.constantDefault(""), (s) -> null, properties);
             this.key = key;
             this.validator = validator;
         }

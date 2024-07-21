@@ -515,19 +515,17 @@ public final class IndexSettings {
         Property.IndexScope
     );
 
-    public static final Setting<String> DEFAULT_PIPELINE = new Setting<>(
+    public static final Setting<String> DEFAULT_PIPELINE = Setting.simpleString(
         "index.default_pipeline",
         IngestService.NOOP_PIPELINE_NAME,
-        Function.identity(),
         Property.Dynamic,
         Property.IndexScope,
         Property.ServerlessPublic
     );
 
-    public static final Setting<String> FINAL_PIPELINE = new Setting<>(
+    public static final Setting<String> FINAL_PIPELINE = Setting.simpleString(
         "index.final_pipeline",
         IngestService.NOOP_PIPELINE_NAME,
-        Function.identity(),
         Property.Dynamic,
         Property.IndexScope,
         Property.ServerlessPublic

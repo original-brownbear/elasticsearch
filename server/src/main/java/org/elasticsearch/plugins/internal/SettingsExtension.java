@@ -28,6 +28,6 @@ public interface SettingsExtension {
      */
     static List<SettingsExtension> load() {
         var loader = ServiceLoader.load(SettingsExtension.class);
-        return loader.stream().map(p -> p.get()).toList();
+        return loader.stream().map(ServiceLoader.Provider::get).toList();
     }
 }

@@ -160,7 +160,7 @@ public class UserPrivilegeResolver {
                 userPrivileges -> userPrivileges.getApplicationPrivileges()
                     .stream()
                     .filter(appPriv -> appPriv.getApplication().equals(service.getApplicationName()))
-                    .map(appPriv -> appPriv.getPrivileges())
+                    .map(RoleDescriptor.ApplicationResourcePrivileges::getPrivileges)
                     .flatMap(Arrays::stream)
                     .collect(Collectors.toUnmodifiableSet())
             )
