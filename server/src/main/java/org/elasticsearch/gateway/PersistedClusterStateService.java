@@ -51,6 +51,7 @@ import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.bytes.CompositeBytesReference;
 import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.compress.CompressorFactory;
+import org.elasticsearch.common.compress.DeflateCompressor;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.lucene.Lucene;
@@ -61,7 +62,6 @@ import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.common.xcontent.ChunkedToXContent;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
-import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.core.Assertions;
 import org.elasticsearch.core.CheckedConsumer;
 import org.elasticsearch.core.CheckedFunction;
@@ -81,6 +81,7 @@ import org.elasticsearch.xcontent.XContentFactory;
 import org.elasticsearch.xcontent.XContentParser;
 import org.elasticsearch.xcontent.XContentParserConfiguration;
 import org.elasticsearch.xcontent.XContentType;
+import org.elasticsearch.xcontent.smile.SmileXContent;
 
 import java.io.Closeable;
 import java.io.IOError;
@@ -351,27 +352,29 @@ public class PersistedClusterStateService {
         for (final Path dataPath : dataPaths) {
             final Path indexPath = dataPath.resolve(METADATA_DIRECTORY_NAME);
             if (Files.exists(indexPath)) {
-                try (DirectoryReader reader = DirectoryReader.open(new NIOFSDirectory(dataPath.resolve(METADATA_DIRECTORY_NAME)))) {
-                    final Map<String, String> userData = reader.getIndexCommit().getUserData();
-                    assert userData.get(NODE_VERSION_KEY) != null;
-
-                    final String thisNodeId = userData.get(NODE_ID_KEY);
-                    assert thisNodeId != null;
-                    if (nodeId != null && nodeId.equals(thisNodeId) == false) {
-                        throw new CorruptStateException(
-                            "unexpected node ID in metadata, found [" + thisNodeId + "] in [" + dataPath + "] but expected [" + nodeId + "]"
-                        );
-                    } else if (nodeId == null) {
-                        nodeId = thisNodeId;
-                        version = Version.fromId(Integer.parseInt(userData.get(NODE_VERSION_KEY)));
-                        if (userData.containsKey(OLDEST_INDEX_VERSION_KEY)) {
-                            oldestIndexVersion = IndexVersion.fromId(Integer.parseInt(userData.get(OLDEST_INDEX_VERSION_KEY)));
-                        } else {
-                            oldestIndexVersion = IndexVersions.ZERO;
-                        }
-                    }
+                final Map<String, String> userData;
+                try (DirectoryReader reader = DirectoryReader.open(new NIOFSDirectory(indexPath))) {
+                    userData = reader.getIndexCommit().getUserData();
                 } catch (IndexNotFoundException e) {
                     logger.debug(() -> format("no on-disk state at %s", indexPath), e);
+                    continue;
+                }
+                assert userData.get(NODE_VERSION_KEY) != null;
+
+                final String thisNodeId = userData.get(NODE_ID_KEY);
+                assert thisNodeId != null;
+                if (nodeId != null && nodeId.equals(thisNodeId) == false) {
+                    throw new CorruptStateException(
+                        "unexpected node ID in metadata, found [" + thisNodeId + "] in [" + dataPath + "] but expected [" + nodeId + "]"
+                    );
+                } else if (nodeId == null) {
+                    nodeId = thisNodeId;
+                    version = Version.fromId(Integer.parseInt(userData.get(NODE_VERSION_KEY)));
+                    if (userData.containsKey(OLDEST_INDEX_VERSION_KEY)) {
+                        oldestIndexVersion = IndexVersion.fromId(Integer.parseInt(userData.get(OLDEST_INDEX_VERSION_KEY)));
+                    } else {
+                        oldestIndexVersion = IndexVersions.ZERO;
+                    }
                 }
             }
         }
@@ -389,11 +392,11 @@ public class PersistedClusterStateService {
         for (final Path dataPath : dataPaths) {
             final Path indexPath = dataPath.resolve(METADATA_DIRECTORY_NAME);
             if (Files.exists(indexPath)) {
-                try (DirectoryReader reader = DirectoryReader.open(new NIOFSDirectory(dataPath.resolve(METADATA_DIRECTORY_NAME)))) {
+                try (DirectoryReader reader = DirectoryReader.open(new NIOFSDirectory(indexPath))) {
                     final Map<String, String> userData = reader.getIndexCommit().getUserData();
                     assert userData.get(NODE_VERSION_KEY) != null;
 
-                    try (IndexWriter indexWriter = createIndexWriter(new NIOFSDirectory(dataPath.resolve(METADATA_DIRECTORY_NAME)), true)) {
+                    try (IndexWriter indexWriter = createIndexWriter(new NIOFSDirectory(indexPath), true)) {
                         final Map<String, String> commitData = new HashMap<>(userData);
                         commitData.put(NODE_VERSION_KEY, Integer.toString(newVersion.id));
                         commitData.put(OVERRIDDEN_NODE_VERSION_KEY, Boolean.toString(true));
@@ -675,7 +678,12 @@ public class PersistedClusterStateService {
     }
 
     private <T> T readXContent(BytesReference bytes, CheckedFunction<XContentParser, T, IOException> reader) throws IOException {
-        try (XContentParser parser = XContentHelper.createParserNotCompressed(parserConfig, bytes, XContentType.SMILE)) {
+        try (
+            XContentParser parser = SmileXContent.smileXContent.createParser(
+                parserConfig,
+                DeflateCompressor.inputStream(bytes.streamInput(), true)
+            )
+        ) {
             return reader.apply(parser);
         } catch (Exception e) {
             throw new CorruptStateException(e);
@@ -720,7 +728,7 @@ public class PersistedClusterStateService {
 
                         if (pageIndex == 0 && isLastPage) {
                             // common case: metadata fits in a single page
-                            bytesReferenceConsumer.accept(uncompress(documentData));
+                            bytesReferenceConsumer.accept(documentData);
                             continue;
                         }
 
@@ -736,7 +744,7 @@ public class PersistedClusterStateService {
                         final BytesReference bytesReference = reader.addPage(key, documentData, pageIndex, isLastPage);
                         if (bytesReference != null) {
                             documentReaders.remove(key);
-                            bytesReferenceConsumer.accept(uncompress(bytesReference));
+                            bytesReferenceConsumer.accept(bytesReference);
                         }
                     }
                 }
@@ -747,15 +755,6 @@ public class PersistedClusterStateService {
             throw new CorruptStateException(
                 "incomplete paginated documents " + documentReaders.keySet() + " when reading cluster state index [type=" + type + "]"
             );
-        }
-    }
-
-    private static BytesReference uncompress(BytesReference bytesReference) throws IOException {
-        try {
-            return CompressorFactory.COMPRESSOR.uncompress(bytesReference);
-        } catch (IOException e) {
-            // no actual IO takes place, the data is all in-memory, so an exception indicates corruption
-            throw new CorruptStateException(e);
         }
     }
 
@@ -913,13 +912,15 @@ public class PersistedClusterStateService {
         }
 
         private void closeIfAnyIndexWriterHasTragedyOrIsClosed() {
-            if (metadataIndexWriters.stream()
-                .map(writer -> writer.indexWriter)
-                .anyMatch(iw -> iw.getTragicException() != null || iw.isOpen() == false)) {
-                try {
-                    close();
-                } catch (Exception e) {
-                    logger.warn("failed on closing cluster state writer", e);
+            for (MetadataIndexWriter writer : metadataIndexWriters) {
+                IndexWriter iw = writer.indexWriter;
+                if (iw.getTragicException() != null || iw.isOpen() == false) {
+                    try {
+                        close();
+                    } catch (Exception e) {
+                        logger.warn("failed on closing cluster state writer", e);
+                    }
+                    break;
                 }
             }
         }
@@ -1127,12 +1128,13 @@ public class PersistedClusterStateService {
             writePages(
                 (builder, params) -> builder.field("content", mappingMetadata.source().compressed()),
                 (((bytesRef, pageIndex, isLastPage) -> {
-                    final Document document = new Document();
-                    document.add(new StringField(TYPE_FIELD_NAME, MAPPING_TYPE_NAME, Field.Store.NO));
-                    document.add(new StringField(MAPPING_HASH_FIELD_NAME, key, Field.Store.YES));
-                    document.add(new StoredField(PAGE_FIELD_NAME, pageIndex));
-                    document.add(new StoredField(LAST_PAGE_FIELD_NAME, lastPageValue(isLastPage)));
-                    document.add(new StoredField(DATA_FIELD_NAME, bytesRef));
+                    final var document = List.of(
+                        new StringField(TYPE_FIELD_NAME, MAPPING_TYPE_NAME, Field.Store.NO),
+                        new StringField(MAPPING_HASH_FIELD_NAME, key, Field.Store.YES),
+                        new StoredField(PAGE_FIELD_NAME, pageIndex),
+                        new StoredField(LAST_PAGE_FIELD_NAME, lastPageValue(isLastPage)),
+                        new StoredField(DATA_FIELD_NAME, bytesRef)
+                    );
                     for (MetadataIndexWriter metadataIndexWriter : metadataIndexWriters) {
                         metadataIndexWriter.indexWriter.addDocument(document);
                     }
@@ -1145,12 +1147,13 @@ public class PersistedClusterStateService {
             assert indexUUID.equals(IndexMetadata.INDEX_UUID_NA_VALUE) == false;
             logger.trace("updating metadata for [{}]", indexMetadata.getIndex());
             writePages(indexMetadata, ((bytesRef, pageIndex, isLastPage) -> {
-                final Document document = new Document();
-                document.add(new StringField(TYPE_FIELD_NAME, INDEX_TYPE_NAME, Field.Store.NO));
-                document.add(new StringField(INDEX_UUID_FIELD_NAME, indexUUID, Field.Store.YES));
-                document.add(new StoredField(PAGE_FIELD_NAME, pageIndex));
-                document.add(new StoredField(LAST_PAGE_FIELD_NAME, lastPageValue(isLastPage)));
-                document.add(new StoredField(DATA_FIELD_NAME, bytesRef));
+                final var document = List.of(
+                    new StringField(TYPE_FIELD_NAME, INDEX_TYPE_NAME, Field.Store.NO),
+                    new StringField(INDEX_UUID_FIELD_NAME, indexUUID, Field.Store.YES),
+                    new StoredField(PAGE_FIELD_NAME, pageIndex),
+                    new StoredField(LAST_PAGE_FIELD_NAME, lastPageValue(isLastPage)),
+                    new StoredField(DATA_FIELD_NAME, bytesRef)
+                );
                 for (MetadataIndexWriter metadataIndexWriter : metadataIndexWriters) {
                     metadataIndexWriter.indexWriter.addDocument(document);
                 }
@@ -1160,11 +1163,12 @@ public class PersistedClusterStateService {
         private void addGlobalMetadataDocuments(Metadata metadata) throws IOException {
             logger.trace("updating global metadata doc");
             writePages(ChunkedToXContent.wrapAsToXContent(metadata), (bytesRef, pageIndex, isLastPage) -> {
-                final Document document = new Document();
-                document.add(new StringField(TYPE_FIELD_NAME, GLOBAL_TYPE_NAME, Field.Store.NO));
-                document.add(new StoredField(PAGE_FIELD_NAME, pageIndex));
-                document.add(new StoredField(LAST_PAGE_FIELD_NAME, lastPageValue(isLastPage)));
-                document.add(new StoredField(DATA_FIELD_NAME, bytesRef));
+                final var document = List.of(
+                    new StringField(TYPE_FIELD_NAME, GLOBAL_TYPE_NAME, Field.Store.NO),
+                    new StoredField(PAGE_FIELD_NAME, pageIndex),
+                    new StoredField(LAST_PAGE_FIELD_NAME, lastPageValue(isLastPage)),
+                    new StoredField(DATA_FIELD_NAME, bytesRef)
+                );
                 for (MetadataIndexWriter metadataIndexWriter : metadataIndexWriters) {
                     metadataIndexWriter.indexWriter.addDocument(document);
                 }
