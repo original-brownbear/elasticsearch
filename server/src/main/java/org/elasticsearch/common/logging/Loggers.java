@@ -19,16 +19,15 @@ import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.util.ArrayUtils;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.transport.NetworkTraceFlag;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
 /**
  * A set of utilities around Logging.
@@ -83,11 +82,7 @@ public class Loggers {
     }
 
     public static Logger getLogger(Class<?> clazz, ShardId shardId, String... prefixes) {
-        return getLogger(
-            clazz,
-            shardId.getIndex(),
-            Stream.concat(Stream.of(Integer.toString(shardId.id())), Arrays.stream(prefixes)).toArray(String[]::new)
-        );
+        return getLogger(clazz, shardId.getIndex(), ArrayUtils.prepend(Integer.toString(shardId.id()), prefixes));
     }
 
     /**
@@ -100,7 +95,7 @@ public class Loggers {
     }
 
     public static Logger getLogger(Class<?> clazz, Index index, String... prefixes) {
-        return getLogger(clazz, Stream.concat(Stream.of(Loggers.SPACE, index.getName()), Arrays.stream(prefixes)).toArray(String[]::new));
+        return getLogger(clazz, ArrayUtils.concat(new String[] { Loggers.SPACE, index.getName() }, prefixes));
     }
 
     public static Logger getLogger(Class<?> clazz, String... prefixes) {

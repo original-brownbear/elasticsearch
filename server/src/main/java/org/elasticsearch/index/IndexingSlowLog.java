@@ -90,7 +90,12 @@ public final class IndexingSlowLog implements IndexingOperationListener {
         Property.IndexSettingDeprecatedInV7AndRemovedInV8
     );
 
-    private final Logger indexLogger;
+    private static final Logger indexLogger = LogManager.getLogger(INDEX_INDEXING_SLOWLOG_PREFIX + ".index");
+
+    static {
+        Loggers.setLevel(indexLogger, Level.TRACE);
+    }
+
     private final Index index;
 
     private boolean reformat;
@@ -127,8 +132,6 @@ public final class IndexingSlowLog implements IndexingOperationListener {
 
     IndexingSlowLog(IndexSettings indexSettings, SlowLogFieldProvider slowLogFieldProvider) {
         this.slowLogFieldProvider = slowLogFieldProvider;
-        this.indexLogger = LogManager.getLogger(INDEX_INDEXING_SLOWLOG_PREFIX + ".index");
-        Loggers.setLevel(this.indexLogger, Level.TRACE);
         this.index = indexSettings.getIndex();
 
         indexSettings.getScopedSettings().addSettingsUpdateConsumer(INDEX_INDEXING_SLOWLOG_REFORMAT_SETTING, this::setReformat);

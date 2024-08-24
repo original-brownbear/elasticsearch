@@ -29,32 +29,39 @@ class StoredFieldSourceProvider implements SourceProvider {
 
     @Override
     public Source getSource(LeafReaderContext ctx, int doc) throws IOException {
-        LeafStoredFieldSourceProvider[] leaves = getLeavesUnderLock(findParentContext(ctx));
-        if (leaves[ctx.ord] == null) {
+        LeafStoredFieldSourceProvider[] leaves = getLeavesUnderLock(ctx);
+        final int ord = ctx.ord;
+        var leaf = leaves[ord];
+        if (leaf == null) {
             // individual segments are currently only accessed on one thread so there's no need
             // for locking here.
-            leaves[ctx.ord] = new LeafStoredFieldSourceProvider(storedFieldLoader.getLoader(ctx, null));
+            leaf = new LeafStoredFieldSourceProvider(storedFieldLoader.getLoader(ctx, null));
+            leaves[ord] = leaf;
         }
-        return leaves[ctx.ord].getSource(doc);
+        return leaf.getSource(doc);
     }
 
     private static IndexReaderContext findParentContext(LeafReaderContext ctx) {
-        if (ctx.parent != null) {
-            return ctx.parent;
+        var parent = ctx.parent;
+        if (parent != null) {
+            return parent;
         }
         assert ctx.isTopLevel;
         return ctx;
     }
 
-    private LeafStoredFieldSourceProvider[] getLeavesUnderLock(IndexReaderContext parentCtx) {
-        if (leaves == null) {
+    private LeafStoredFieldSourceProvider[] getLeavesUnderLock(LeafReaderContext ctx) {
+        var l = leaves;
+        if (l == null) {
+            final int leafCount = findParentContext(ctx).leaves().size();
             synchronized (this) {
                 if (leaves == null) {
-                    leaves = new LeafStoredFieldSourceProvider[parentCtx.leaves().size()];
+                    l = new LeafStoredFieldSourceProvider[leafCount];
+                    leaves = l;
                 }
             }
         }
-        return leaves;
+        return l;
     }
 
     private static class LeafStoredFieldSourceProvider {
@@ -72,8 +79,9 @@ class StoredFieldSourceProvider implements SourceProvider {
                 return source;
             }
             this.doc = doc;
-            leafStoredFieldLoader.advanceTo(doc);
-            return source = Source.fromBytes(leafStoredFieldLoader.source());
+            var loader = leafStoredFieldLoader;
+            loader.advanceTo(doc);
+            return source = Source.fromBytes(loader.source());
         }
     }
 }
