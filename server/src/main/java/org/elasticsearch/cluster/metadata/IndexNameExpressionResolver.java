@@ -40,6 +40,7 @@ import org.elasticsearch.indices.SystemIndices.SystemIndexAccessLevel;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -1797,18 +1798,32 @@ public class IndexNameExpressionResolver {
          * The {@param context} is used to check if wildcards ought to be considered or not.
          */
         public ExpressionList(Context context, List<String> expressionStrings) {
-            List<Expression> expressionsList = new ArrayList<>(expressionStrings.size());
             boolean wildcardSeen = false;
-            for (String expressionString : expressionStrings) {
-                boolean isExclusion = expressionString.startsWith("-") && wildcardSeen;
-                if (context.getOptions().expandWildcardExpressions() && isWildcard(expressionString)) {
-                    wildcardSeen = true;
-                    expressionsList.add(new Expression(expressionString, true, isExclusion));
-                } else {
-                    expressionsList.add(new Expression(expressionString, false, isExclusion));
+            if (context.getOptions().expandWildcardExpressions() == false) {
+                this.expressionsList = new AbstractList<>() {
+                    @Override
+                    public Expression get(int index) {
+                        return new Expression(expressionStrings.get(index), false, false);
+                    }
+
+                    @Override
+                    public int size() {
+                        return expressionStrings.size();
+                    }
+                };
+            } else {
+                List<Expression> expressionsList = new ArrayList<>(expressionStrings.size());
+                for (String expressionString : expressionStrings) {
+                    boolean isExclusion = wildcardSeen && expressionString.startsWith("-");
+                    if (isWildcard(expressionString)) {
+                        wildcardSeen = true;
+                        expressionsList.add(new Expression(expressionString, true, isExclusion));
+                    } else {
+                        expressionsList.add(new Expression(expressionString, false, isExclusion));
+                    }
                 }
+                this.expressionsList = expressionsList;
             }
-            this.expressionsList = expressionsList;
             this.hasWildcard = wildcardSeen;
         }
 
