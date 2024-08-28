@@ -98,7 +98,7 @@ public class ExpressionListTests extends ESTestCase {
             expressionIterable = new ExpressionList(getContextWithOptions(getExpandWildcardsIndicesOptions()), expressionList);
         }
         int i = 0;
-        for (Expression expression : expressionIterable) {
+        for (Expression expression : expressionIterable.getExpressionsList()) {
             assertThat(expression.isExclusion(), is(false));
             if (i != wildcardPos) {
                 assertThat(expression.isWildcard(), is(false));
@@ -127,7 +127,7 @@ public class ExpressionListTests extends ESTestCase {
                 expressionList = new ExpressionList(getContextWithOptions(getExpandWildcardsIndicesOptions()), wildcardExpression);
             }
             int i = 0;
-            for (Expression expression : expressionList) {
+            for (Expression expression : expressionList.getExpressionsList()) {
                 assertThat(expression.isExclusion(), is(false));
                 if (wildcardExpression.get(i).contains("*")) {
                     assertThat(expression.isWildcard(), is(true));
@@ -158,7 +158,7 @@ public class ExpressionListTests extends ESTestCase {
                 expressionList = new ExpressionList(getContextWithOptions(getNoExpandWildcardsIndicesOptions()), wildcardExpression);
             }
             int i = 0;
-            for (Expression expression : expressionList) {
+            for (Expression expression : expressionList.getExpressionsList()) {
                 assertThat(expression.isWildcard(), is(false));
                 assertThat(expression.isExclusion(), is(false));
                 assertThat(expression.get(), is(wildcardExpression.get(i++)));
@@ -188,7 +188,7 @@ public class ExpressionListTests extends ESTestCase {
             assertThat(expressionList.hasWildcard(), is(true));
         }
         int i = 0;
-        for (Expression expression : expressionList) {
+        for (Expression expression : expressionList.getExpressionsList()) {
             if (i == wildcardPos) {
                 assertThat(expression.isWildcard(), is(true));
                 assertThat(expression.isExclusion(), is(false));
@@ -223,7 +223,7 @@ public class ExpressionListTests extends ESTestCase {
                 assertThat(expressionList.hasWildcard(), is(true));
             }
             int i = 0;
-            for (Expression expression : expressionList) {
+            for (Expression expression : expressionList.getExpressionsList()) {
                 boolean isExclusion = exclusionExpression.v2().get(i);
                 assertThat(expression.isExclusion(), is(isExclusion));
                 assertThat(expression.isWildcard(), is(exclusionExpression.v1().get(i).contains("*")));

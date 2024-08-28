@@ -55,7 +55,6 @@ import java.util.SortedMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.LongSupplier;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class IndexNameExpressionResolver {
@@ -1029,7 +1028,7 @@ public class IndexNameExpressionResolver {
      * @return true if the provided array explicitly maps to all indices, false otherwise
      */
     static boolean isExplicitAllPattern(Collection<String> aliasesOrIndices) {
-        return aliasesOrIndices != null && aliasesOrIndices.size() == 1 && Metadata.ALL.equals(aliasesOrIndices.iterator().next());
+        return aliasesOrIndices != null && aliasesOrIndices.size() == 1 && aliasesOrIndices.contains(Metadata.ALL);
     }
 
     public SystemIndexAccessLevel getSystemIndexAccessLevel() {
@@ -1262,12 +1261,14 @@ public class IndexNameExpressionResolver {
                 .getIndicesLookup()
                 .values()
                 .stream()
-                .filter(ia -> context.getOptions().expandWildcardsHidden() || ia.isHidden() == false)
-                .filter(ia -> shouldIncludeIfDataStream(ia, context) || shouldIncludeIfAlias(ia, context))
-                .filter(ia -> ia.isSystem() == false || context.systemIndexAccessPredicate.test(ia.getName()));
+                .filter(
+                    ia -> (context.getOptions().expandWildcardsHidden() || ia.isHidden() == false)
+                        && (shouldIncludeIfDataStream(ia, context) || shouldIncludeIfAlias(ia, context))
+                        && (ia.isSystem() == false || context.systemIndexAccessPredicate.test(ia.getName()))
+                );
 
-            Set<String> resolved = expandToOpenClosed(context, ias).collect(Collectors.toSet());
-            resolved.addAll(concreteIndices);
+            var resolved = new HashSet<>(concreteIndices);
+            expandToOpenClosed(context, ias).forEach(resolved::add);
             return resolved;
         }
 
@@ -1301,7 +1302,7 @@ public class IndexNameExpressionResolver {
                 return expressions;
             }
             Set<String> result = new HashSet<>();
-            for (ExpressionList.Expression expression : expressionList) {
+            for (ExpressionList.Expression expression : expressionList.getExpressionsList()) {
                 if (expression.isWildcard()) {
                     Stream<IndexAbstraction> matchingResources = matchResourcesToWildcard(context, expression.get());
                     Stream<String> matchingOpenClosedNames = expandToOpenClosed(context, matchingResources);
@@ -1311,9 +1312,9 @@ public class IndexNameExpressionResolver {
                         matchingOpenClosedNames = matchingOpenClosedNames.peek(x -> emptyWildcardExpansion.set(false));
                     }
                     if (expression.isExclusion()) {
-                        matchingOpenClosedNames.forEachOrdered(result::remove);
+                        matchingOpenClosedNames.forEach(result::remove);
                     } else {
-                        matchingOpenClosedNames.forEachOrdered(result::add);
+                        matchingOpenClosedNames.forEach(result::add);
                     }
                     if (emptyWildcardExpansion.get()) {
                         throw notFoundException(expression.get());
@@ -1497,8 +1498,8 @@ public class IndexNameExpressionResolver {
     public static final class DateMathExpressionResolver {
 
         private static final DateFormatter DEFAULT_DATE_FORMATTER = DateFormatter.forPattern("uuuu.MM.dd");
-        private static final String EXPRESSION_LEFT_BOUND = "<";
-        private static final String EXPRESSION_RIGHT_BOUND = ">";
+        private static final char EXPRESSION_LEFT_BOUND = '<';
+        private static final char EXPRESSION_RIGHT_BOUND = '>';
         private static final char LEFT_BOUND = '{';
         private static final char RIGHT_BOUND = '}';
         private static final char ESCAPE_CHAR = '\\';
@@ -1510,8 +1511,20 @@ public class IndexNameExpressionResolver {
 
         public static List<String> resolve(Context context, List<String> expressions) {
             List<String> result = new ArrayList<>(expressions.size());
-            for (ExpressionList.Expression expression : new ExpressionList(context, expressions)) {
-                result.add(resolveExpression(expression, context::getStartTime));
+            for (ExpressionList.Expression expression : new ExpressionList(context, expressions).getExpressionsList()) {
+                final String exp = expression.expression;
+                final boolean isExclusion = expression.isExclusion();
+                String resolved;
+                if (exp.charAt(exp.length() - 1) != EXPRESSION_RIGHT_BOUND || exp.charAt(isExclusion ? 1 : 0) != EXPRESSION_LEFT_BOUND) {
+                    resolved = exp;
+                } else {
+                    resolved = doResolveExpression(expression.get(), context::getStartTime);
+                    if (isExclusion) {
+                        // accepts date-math exclusions that are of the form "-<...{}>", i.e. the "-" is outside the "<>" date-math template
+                        resolved = "-" + resolved;
+                    }
+                }
+                result.add(resolved);
             }
             return result;
         }
@@ -1520,17 +1533,8 @@ public class IndexNameExpressionResolver {
             return resolveExpression(expression, System::currentTimeMillis);
         }
 
-        static String resolveExpression(ExpressionList.Expression expression, LongSupplier getTime) {
-            if (expression.isExclusion()) {
-                // accepts date-math exclusions that are of the form "-<...{}>", i.e. the "-" is outside the "<>" date-math template
-                return "-" + resolveExpression(expression.get(), getTime);
-            } else {
-                return resolveExpression(expression.get(), getTime);
-            }
-        }
-
         static String resolveExpression(String expression, LongSupplier getTime) {
-            if (expression.startsWith(EXPRESSION_LEFT_BOUND) == false || expression.endsWith(EXPRESSION_RIGHT_BOUND) == false) {
+            if (expression.charAt(0) != EXPRESSION_LEFT_BOUND || expression.charAt(expression.length() - 1) != EXPRESSION_RIGHT_BOUND) {
                 return expression;
             }
             return doResolveExpression(expression, getTime);
@@ -1691,7 +1695,7 @@ public class IndexNameExpressionResolver {
         public static List<String> filterUnavailable(Context context, List<String> expressions) {
             ensureRemoteIndicesRequireIgnoreUnavailable(context.getOptions(), expressions);
             List<String> result = new ArrayList<>(expressions.size());
-            for (ExpressionList.Expression expression : new ExpressionList(context, expressions)) {
+            for (ExpressionList.Expression expression : new ExpressionList(context, expressions).getExpressionsList()) {
                 validateAliasOrIndex(expression);
                 if (expression.isWildcard() || expression.isExclusion() || ensureAliasOrIndexExists(context, expression.get())) {
                     result.add(expression.expression());
@@ -1777,8 +1781,8 @@ public class IndexNameExpressionResolver {
     /**
      * Used to iterate expression lists and work out which expression item is a wildcard or an exclusion.
      */
-    public static final class ExpressionList implements Iterable<ExpressionList.Expression> {
-        private final List<Expression> expressionsList;
+    public static final class ExpressionList {
+        private final Expression[] expressionsList;
         private final boolean hasWildcard;
 
         public record Expression(String expression, boolean isWildcard, boolean isExclusion) {
@@ -1797,15 +1801,16 @@ public class IndexNameExpressionResolver {
          * The {@param context} is used to check if wildcards ought to be considered or not.
          */
         public ExpressionList(Context context, List<String> expressionStrings) {
-            List<Expression> expressionsList = new ArrayList<>(expressionStrings.size());
+            Expression[] expressionsList = new Expression[expressionStrings.size()];
             boolean wildcardSeen = false;
-            for (String expressionString : expressionStrings) {
+            for (int i = 0; i < expressionStrings.size(); i++) {
+                String expressionString = expressionStrings.get(i);
                 boolean isExclusion = expressionString.startsWith("-") && wildcardSeen;
                 if (context.getOptions().expandWildcardExpressions() && isWildcard(expressionString)) {
                     wildcardSeen = true;
-                    expressionsList.add(new Expression(expressionString, true, isExclusion));
+                    expressionsList[i] = new Expression(expressionString, true, isExclusion);
                 } else {
-                    expressionsList.add(new Expression(expressionString, false, isExclusion));
+                    expressionsList[i] = new Expression(expressionString, false, isExclusion);
                 }
             }
             this.expressionsList = expressionsList;
@@ -1819,9 +1824,12 @@ public class IndexNameExpressionResolver {
             return this.hasWildcard;
         }
 
-        @Override
-        public Iterator<ExpressionList.Expression> iterator() {
-            return expressionsList.iterator();
+        public Expression[] getExpressionsList() {
+            return expressionsList;
+        }
+
+        public Iterator<Expression> iterator() {
+            return Arrays.asList(expressionsList).iterator();
         }
     }
 
