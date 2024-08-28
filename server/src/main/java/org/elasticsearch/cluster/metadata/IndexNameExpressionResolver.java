@@ -251,7 +251,7 @@ public class IndexNameExpressionResolver {
             } else {
                 return ExplicitResourceNameFilter.filterUnavailable(
                     context,
-                    DateMathExpressionResolver.resolve(context, List.of(expressions))
+                    DateMathExpressionResolver.resolve(context, Arrays.asList(expressions))
                 );
             }
         } else {
@@ -262,7 +262,10 @@ public class IndexNameExpressionResolver {
             } else {
                 return WildcardExpressionResolver.resolve(
                     context,
-                    ExplicitResourceNameFilter.filterUnavailable(context, DateMathExpressionResolver.resolve(context, List.of(expressions)))
+                    ExplicitResourceNameFilter.filterUnavailable(
+                        context,
+                        DateMathExpressionResolver.resolve(context, Arrays.asList(expressions))
+                    )
                 );
             }
         }
@@ -1443,7 +1446,7 @@ public class IndexNameExpressionResolver {
         private static List<String> resolveEmptyOrTrivialWildcard(Context context) {
             final String[] allIndices = resolveEmptyOrTrivialWildcardToAllIndices(context.getOptions(), context.getState().metadata());
             if (context.systemIndexAccessLevel == SystemIndexAccessLevel.ALL) {
-                return List.of(allIndices);
+                return Arrays.asList(allIndices);
             } else {
                 return resolveEmptyOrTrivialWildcardWithAllowedSystemIndices(context, allIndices);
             }
