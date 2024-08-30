@@ -63,7 +63,7 @@ public class AsyncSearchActionIT extends AsyncSearchIntegTestCase {
     private static float minMetric = Float.POSITIVE_INFINITY;
 
     @Override
-    public void setupSuiteScopeCluster() throws InterruptedException {
+    public void setupSuiteScopeCluster() throws Exception {
         indexName = "test-async";
         numShards = randomIntBetween(1, 20);
         int numDocs = randomIntBetween(100, 1000);

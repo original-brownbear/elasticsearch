@@ -149,7 +149,7 @@ public class NodeEnvironmentIT extends ESIntegTestCase {
         );
     }
 
-    public void testUpgradeDataFolder() throws IOException, InterruptedException {
+    public void testUpgradeDataFolder() throws Exception {
         String node = internalCluster().startNode();
         prepareCreate("test").get();
         indexRandom(true, prepareIndex("test").setId("1").setSource("{}", XContentType.JSON));

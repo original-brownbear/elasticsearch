@@ -32,7 +32,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
@@ -311,7 +310,7 @@ public class SimpleBlocksIT extends ESIntegTestCase {
         }
     }
 
-    public void testConcurrentAddBlock() throws InterruptedException, ExecutionException {
+    public void testConcurrentAddBlock() throws Exception {
         final String indexName = randomAlphaOfLength(10).toLowerCase(Locale.ROOT);
         createIndex(indexName);
 

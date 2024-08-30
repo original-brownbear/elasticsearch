@@ -98,7 +98,7 @@ public class MultiClusterRepoAccessIT extends AbstractSnapshotIntegTestCase {
         return CollectionUtils.appendToCopy(super.nodePlugins(), getTestTransportPlugin());
     }
 
-    public void testConcurrentDeleteFromOtherCluster() throws InterruptedException {
+    public void testConcurrentDeleteFromOtherCluster() throws Exception {
         internalCluster().startMasterOnlyNode();
         internalCluster().startDataOnlyNode();
         final String repoNameOnFirstCluster = "test-repo";
@@ -147,7 +147,7 @@ public class MultiClusterRepoAccessIT extends AbstractSnapshotIntegTestCase {
         createFullSnapshot(repoNameOnFirstCluster, "snap-5");
     }
 
-    public void testConcurrentWipeAndRecreateFromOtherCluster() throws InterruptedException, IOException {
+    public void testConcurrentWipeAndRecreateFromOtherCluster() throws Exception {
         internalCluster().startMasterOnlyNode();
         internalCluster().startDataOnlyNode();
         final String repoName = "test-repo";

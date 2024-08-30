@@ -1221,7 +1221,7 @@ public class IndexAliasesIT extends ESIntegTestCase {
         assertFalse(indexExists("bar_bar"));
     }
 
-    public void testRemoveIndexAndReplaceWithAlias() throws InterruptedException, ExecutionException {
+    public void testRemoveIndexAndReplaceWithAlias() throws Exception {
         assertAcked(indicesAdmin().prepareCreate("test"));
         indexRandom(true, prepareIndex("test_2").setId("test").setSource("test", "test"));
         assertAliasesVersionIncreases(

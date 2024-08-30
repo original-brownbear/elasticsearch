@@ -297,7 +297,7 @@ public class SourceOnlySnapshotIT extends AbstractSnapshotIntegTestCase {
     }
 
     private IndexRequestBuilder[] snapshotAndRestore(final String sourceIdx, final boolean requireRouting, final boolean useNested)
-        throws InterruptedException, IOException {
+        throws Exception {
         logger.info("-->  starting a master node and a data node");
         internalCluster().startMasterOnlyNode();
         internalCluster().startDataOnlyNode();

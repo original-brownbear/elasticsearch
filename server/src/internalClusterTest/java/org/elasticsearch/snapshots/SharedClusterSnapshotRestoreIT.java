@@ -75,7 +75,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -341,7 +340,7 @@ public class SharedClusterSnapshotRestoreIT extends AbstractSnapshotIntegTestCas
         assertThat(getSnapshot("test-repo", "test-snap").state(), equalTo(SnapshotState.SUCCESS));
     }
 
-    public void testSnapshotFileFailureDuringSnapshot() throws InterruptedException {
+    public void testSnapshotFileFailureDuringSnapshot() throws Exception {
         disableRepoConsistencyCheck("This test uses a purposely broken repository so it would fail consistency checks");
 
         logger.info("-->  creating repository");
@@ -1279,7 +1278,7 @@ public class SharedClusterSnapshotRestoreIT extends AbstractSnapshotIntegTestCas
         logger.info("--> done");
     }
 
-    public void testSnapshotMoreThanOnce() throws InterruptedException {
+    public void testSnapshotMoreThanOnce() throws Exception {
         Client client = client();
 
         createRepository("test-repo", "fs");
@@ -2026,7 +2025,7 @@ public class SharedClusterSnapshotRestoreIT extends AbstractSnapshotIntegTestCas
         assertThat(shardStats.getSeqNoStats().getMaxSeqNo(), equalTo(15L));
     }
 
-    public void testSnapshotDifferentIndicesBySameName() throws InterruptedException, ExecutionException {
+    public void testSnapshotDifferentIndicesBySameName() throws Exception {
         String indexName = "testindex";
         String repoName = "test-repo";
         Path absolutePath = randomRepoPath().toAbsolutePath();

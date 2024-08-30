@@ -36,7 +36,7 @@ public class AllocationFilteringIntegTests extends BaseSearchableSnapshotsIntegT
     private MountSearchableSnapshotRequest prepareMountRequest(
         Settings.Builder originalIndexSettings,
         Settings.Builder mountedIndexSettings
-    ) throws InterruptedException {
+    ) throws Exception {
 
         final String fsRepoName = randomAlphaOfLength(10);
         final String indexName = randomAlphaOfLength(10).toLowerCase(Locale.ROOT);
@@ -74,31 +74,31 @@ public class AllocationFilteringIntegTests extends BaseSearchableSnapshotsIntegT
         );
     }
 
-    public void testRemovesRequireFilter() throws InterruptedException {
+    public void testRemovesRequireFilter() throws Exception {
         runTest(INDEX_ROUTING_REQUIRE_GROUP_SETTING, true, null, true);
     }
 
-    public void testRemovesIncludeFilter() throws InterruptedException {
+    public void testRemovesIncludeFilter() throws Exception {
         runTest(INDEX_ROUTING_INCLUDE_GROUP_SETTING, true, null, true);
     }
 
-    public void testRemovesExcludeFilter() throws InterruptedException {
+    public void testRemovesExcludeFilter() throws Exception {
         runTest(INDEX_ROUTING_EXCLUDE_GROUP_SETTING, false, null, true);
     }
 
-    public void testReplacesRequireFilter() throws InterruptedException {
+    public void testReplacesRequireFilter() throws Exception {
         runTest(INDEX_ROUTING_REQUIRE_GROUP_SETTING, true, INDEX_ROUTING_REQUIRE_GROUP_SETTING, true);
     }
 
-    public void testReplacesIncludeFilter() throws InterruptedException {
+    public void testReplacesIncludeFilter() throws Exception {
         runTest(INDEX_ROUTING_INCLUDE_GROUP_SETTING, true, INDEX_ROUTING_INCLUDE_GROUP_SETTING, true);
     }
 
-    public void testReplacesExcludeFilter() throws InterruptedException {
+    public void testReplacesExcludeFilter() throws Exception {
         runTest(INDEX_ROUTING_EXCLUDE_GROUP_SETTING, false, INDEX_ROUTING_EXCLUDE_GROUP_SETTING, false);
     }
 
-    public void testReplacesIncludeFilterWithExcludeFilter() throws InterruptedException {
+    public void testReplacesIncludeFilterWithExcludeFilter() throws Exception {
         runTest(INDEX_ROUTING_INCLUDE_GROUP_SETTING, true, INDEX_ROUTING_EXCLUDE_GROUP_SETTING, false);
     }
 
@@ -116,7 +116,7 @@ public class AllocationFilteringIntegTests extends BaseSearchableSnapshotsIntegT
         boolean indexSettingIsPositive,
         @Nullable Setting.AffixSetting<List<String>> mountSetting,
         boolean mountSettingIsPositive
-    ) throws InterruptedException {
+    ) throws Exception {
         final List<String> nodes = internalCluster().startNodes(2);
 
         // apply an index setting to restrict the original index to node 0

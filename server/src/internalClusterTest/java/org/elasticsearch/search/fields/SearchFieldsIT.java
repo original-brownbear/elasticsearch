@@ -51,7 +51,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -756,7 +755,7 @@ public class SearchFieldsIT extends ESIntegTestCase {
     }
 
     // see #8203
-    public void testSingleValueFieldDatatField() throws ExecutionException, InterruptedException {
+    public void testSingleValueFieldDatatField() throws Exception {
         assertAcked(indicesAdmin().prepareCreate("test").setMapping("test_field", "type=keyword").get());
         indexRandom(true, prepareIndex("test").setId("1").setSource("test_field", "foobar"));
         refresh();

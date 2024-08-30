@@ -266,7 +266,7 @@ public class SnapshotDisruptionIT extends AbstractSnapshotIntegTestCase {
         logger.info("--> done verifying, snapshot exists");
     }
 
-    private void createRandomIndex(String idxName) throws InterruptedException {
+    private void createRandomIndex(String idxName) throws Exception {
         assertAcked(prepareCreate(idxName, 0, indexSettingsNoReplicas(between(1, 5))));
         logger.info("--> indexing some data");
         final int numdocs = randomIntBetween(10, 100);

@@ -62,7 +62,7 @@ public class WaitUntilRefreshIT extends ESIntegTestCase {
         assertSearchHits(prepareSearch("test").setQuery(matchQuery("foo", "bar")), "1");
     }
 
-    public void testDelete() throws InterruptedException, ExecutionException {
+    public void testDelete() throws Exception {
         // Index normally
         indexRandom(true, prepareIndex("test").setId("1").setSource("foo", "bar"));
         assertSearchHits(prepareSearch("test").setQuery(matchQuery("foo", "bar")), "1");
@@ -74,7 +74,7 @@ public class WaitUntilRefreshIT extends ESIntegTestCase {
         assertNoSearchHits(prepareSearch("test").setQuery(matchQuery("foo", "bar")));
     }
 
-    public void testUpdate() throws InterruptedException, ExecutionException {
+    public void testUpdate() throws Exception {
         // Index normally
         indexRandom(true, prepareIndex("test").setId("1").setSource("foo", "bar"));
         assertSearchHits(prepareSearch("test").setQuery(matchQuery("foo", "bar")), "1");

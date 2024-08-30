@@ -43,7 +43,7 @@ import static org.hamcrest.collection.IsEmptyCollection.empty;
 
 public class HotThreadsIT extends ESIntegTestCase {
 
-    public void testHotThreadsDontFail() throws InterruptedException {
+    public void testHotThreadsDontFail() throws Exception {
         // This test just checks if nothing crashes or gets stuck etc.
         createIndex("test");
         final int iters = scaledRandomIntBetween(2, 20);

@@ -56,8 +56,7 @@ public class DateHistogramOffsetIT extends ESIntegTestCase {
         internalCluster().wipeIndices("idx2");
     }
 
-    private void prepareIndex(ZonedDateTime date, int numHours, int stepSizeHours, int idxIdStart) throws IOException,
-        InterruptedException {
+    private void prepareIndex(ZonedDateTime date, int numHours, int stepSizeHours, int idxIdStart) throws Exception {
 
         IndexRequestBuilder[] reqs = new IndexRequestBuilder[numHours];
         for (int i = idxIdStart; i < idxIdStart + reqs.length; i++) {

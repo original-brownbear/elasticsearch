@@ -18,7 +18,6 @@ import org.elasticsearch.test.ESIntegTestCase;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 
 import static org.elasticsearch.common.util.set.Sets.newHashSet;
 import static org.elasticsearch.index.query.QueryBuilders.queryStringQuery;
@@ -29,7 +28,7 @@ import static org.hamcrest.Matchers.nullValue;
 public class AliasResolveRoutingIT extends ESIntegTestCase {
 
     // see https://github.com/elastic/elasticsearch/issues/13278
-    public void testSearchClosedWildcardIndex() throws ExecutionException, InterruptedException {
+    public void testSearchClosedWildcardIndex() throws Exception {
         createIndex("test-0");
         createIndex("test-1");
         ensureGreen();

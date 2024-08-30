@@ -42,7 +42,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.elasticsearch.xcontent.XContentFactory.jsonBuilder;
@@ -527,7 +526,7 @@ public class GetTermVectorsIT extends AbstractTermVectorsTestCase {
         assertThat(iterator.next(), nullValue());
     }
 
-    public void testDuelWithAndWithoutTermVectors() throws IOException, ExecutionException, InterruptedException {
+    public void testDuelWithAndWithoutTermVectors() throws Exception {
         // setup indices
         String[] indexNames = new String[] { "with_tv", "without_tv" };
         assertAcked(prepareCreate(indexNames[0]).setMapping("field1", "type=text,term_vector=with_positions_offsets,analyzer=keyword"));
@@ -633,7 +632,7 @@ public class GetTermVectorsIT extends AbstractTermVectorsTestCase {
         assertThat("All term vectors should have been generated", response.getFields().size(), equalTo(numFields));
     }
 
-    public void testArtificialVsExisting() throws ExecutionException, InterruptedException, IOException {
+    public void testArtificialVsExisting() throws Exception {
         // setup indices
         Settings.Builder settings = Settings.builder().put(indexSettings()).put("index.analysis.analyzer", "standard");
         assertAcked(prepareCreate("test").setSettings(settings).setMapping("field1", "type=text,term_vector=with_positions_offsets"));
@@ -904,7 +903,7 @@ public class GetTermVectorsIT extends AbstractTermVectorsTestCase {
         assertThat(response.getVersion(), equalTo(2L));
     }
 
-    public void testFilterLength() throws ExecutionException, InterruptedException, IOException {
+    public void testFilterLength() throws Exception {
         logger.info("Setting up the index ...");
         Settings.Builder settings = Settings.builder().put(indexSettings()).put("index.analysis.analyzer", "keyword");
         assertAcked(prepareCreate("test").setSettings(settings).setMapping("tags", "type=text"));
@@ -937,7 +936,7 @@ public class GetTermVectorsIT extends AbstractTermVectorsTestCase {
         }
     }
 
-    public void testFilterTermFreq() throws ExecutionException, InterruptedException, IOException {
+    public void testFilterTermFreq() throws Exception {
         logger.info("Setting up the index ...");
         Settings.Builder settings = Settings.builder().put(indexSettings()).put("index.analysis.analyzer", "keyword");
         assertAcked(prepareCreate("test").setSettings(settings).setMapping("tags", "type=text"));
@@ -972,7 +971,7 @@ public class GetTermVectorsIT extends AbstractTermVectorsTestCase {
         }
     }
 
-    public void testFilterDocFreq() throws ExecutionException, InterruptedException, IOException {
+    public void testFilterDocFreq() throws Exception {
         logger.info("Setting up the index ...");
         Settings.Builder settings = Settings.builder()
             .put(indexSettings())
@@ -1005,7 +1004,7 @@ public class GetTermVectorsIT extends AbstractTermVectorsTestCase {
         }
     }
 
-    public void testArtificialDocWithPreference() throws InterruptedException, IOException {
+    public void testArtificialDocWithPreference() throws Exception {
         // setup indices
         Settings.Builder settings = Settings.builder().put(indexSettings()).put("index.analysis.analyzer", "standard");
         assertAcked(prepareCreate("test").setSettings(settings).setMapping("field1", "type=text,term_vector=with_positions_offsets"));
@@ -1045,7 +1044,7 @@ public class GetTermVectorsIT extends AbstractTermVectorsTestCase {
         assertEquals("expected to find term statistics in exactly one shard!", 2, sumDocFreq);
     }
 
-    public void testTermVectorsWithIgnoredField() throws IOException, InterruptedException {
+    public void testTermVectorsWithIgnoredField() throws Exception {
         // setup indices
         assertAcked(prepareCreate("index").setMapping("field", "type=long,ignore_malformed=true"));
         ensureGreen();
@@ -1058,7 +1057,7 @@ public class GetTermVectorsIT extends AbstractTermVectorsTestCase {
         assertThat(resp.getFields().terms("_ignored").size(), greaterThan(0L));
     }
 
-    public void testWithKeywordAndNormalizer() throws IOException, ExecutionException, InterruptedException {
+    public void testWithKeywordAndNormalizer() throws Exception {
         // setup indices
         String[] indexNames = new String[] { "with_tv", "without_tv" };
         Settings.Builder builder = Settings.builder()

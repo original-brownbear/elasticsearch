@@ -642,7 +642,7 @@ public class SLMStatDisruptionIT extends AbstractSnapshotIntegTestCase {
         assertEquals(expected, policySnaps);
     }
 
-    private void createRandomIndex(String idxName, String dataNodeName) throws InterruptedException {
+    private void createRandomIndex(String idxName, String dataNodeName) throws Exception {
         Settings settings = indexSettings(1, 0).put("index.routing.allocation.require._name", dataNodeName).build();
         createIndex(idxName, settings);
 

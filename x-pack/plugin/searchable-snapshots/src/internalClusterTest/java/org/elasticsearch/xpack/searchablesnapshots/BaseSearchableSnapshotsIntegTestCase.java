@@ -200,13 +200,13 @@ public abstract class BaseSearchableSnapshotsIntegTestCase extends AbstractSnaps
         assertThat(restoreResponse.getRestoreInfo().failedShards(), equalTo(0));
     }
 
-    protected void createAndPopulateIndex(String indexName, Settings.Builder settings) throws InterruptedException {
+    protected void createAndPopulateIndex(String indexName, Settings.Builder settings) throws Exception {
         assertAcked(prepareCreate(indexName, settings));
         ensureGreen(indexName);
         populateIndex(indexName, 100);
     }
 
-    protected void populateIndex(String indexName, int maxIndexRequests) throws InterruptedException {
+    protected void populateIndex(String indexName, int maxIndexRequests) throws Exception {
         final List<IndexRequestBuilder> indexRequestBuilders = new ArrayList<>();
         // This index does not permit dynamic fields, so we can only use defined field names
         final String key = indexName.equals(SearchableSnapshots.SNAPSHOT_BLOB_CACHE_INDEX) ? "type" : "foo";

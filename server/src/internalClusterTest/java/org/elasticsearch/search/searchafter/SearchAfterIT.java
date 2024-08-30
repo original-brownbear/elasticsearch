@@ -135,7 +135,7 @@ public class SearchAfterIT extends ESIntegTestCase {
         }
     }
 
-    public void testWithNullStrings() throws InterruptedException {
+    public void testWithNullStrings() throws Exception {
         assertAcked(indicesAdmin().prepareCreate("test").setMapping("field2", "type=keyword").get());
         ensureGreen();
         indexRandom(

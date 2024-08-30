@@ -636,7 +636,7 @@ public abstract class ESBlobStoreRepositoryIntegTestCase extends ESIntegTestCase
         assertAcked(client.admin().cluster().prepareDeleteSnapshot(TEST_REQUEST_TIMEOUT, repoName, "snapshot-2"));
     }
 
-    protected void addRandomDocuments(String name, int numDocs) throws InterruptedException {
+    protected void addRandomDocuments(String name, int numDocs) throws Exception {
         IndexRequestBuilder[] indexRequestBuilders = new IndexRequestBuilder[numDocs];
         for (int i = 0; i < numDocs; i++) {
             indexRequestBuilders[i] = prepareIndex(name).setId(Integer.toString(i))

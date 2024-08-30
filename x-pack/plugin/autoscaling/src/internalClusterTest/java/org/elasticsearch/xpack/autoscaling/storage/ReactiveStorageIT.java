@@ -53,7 +53,7 @@ import static org.hamcrest.Matchers.notNullValue;
 @ESIntegTestCase.ClusterScope(scope = ESIntegTestCase.Scope.TEST, numDataNodes = 0)
 public class ReactiveStorageIT extends AutoscalingStorageIntegTestCase {
 
-    public void testScaleUp() throws InterruptedException {
+    public void testScaleUp() throws Exception {
         internalCluster().startMasterOnlyNode();
         final String dataNodeName = internalCluster().startDataOnlyNode();
         final String policyName = "test";

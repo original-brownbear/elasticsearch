@@ -91,7 +91,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -138,7 +137,7 @@ public class CorruptedFileIT extends ESIntegTestCase {
     /**
      * Tests that we can actually recover from a corruption on the primary given that we have replica shards around.
      */
-    public void testCorruptFileAndRecover() throws InterruptedException, IOException {
+    public void testCorruptFileAndRecover() throws Exception {
         int numDocs = scaledRandomIntBetween(100, 1000);
         // have enough space for 3 copies
         internalCluster().ensureAtLeastNumDataNodes(3);
@@ -252,7 +251,7 @@ public class CorruptedFileIT extends ESIntegTestCase {
      * Tests corruption that happens on a single shard when no replicas are present. We make sure that the primary stays unassigned
      * and all other replicas for the healthy shards happens
      */
-    public void testCorruptPrimaryNoReplica() throws ExecutionException, InterruptedException, IOException {
+    public void testCorruptPrimaryNoReplica() throws Exception {
         int numDocs = scaledRandomIntBetween(100, 1000);
         internalCluster().ensureAtLeastNumDataNodes(2);
 
@@ -379,7 +378,7 @@ public class CorruptedFileIT extends ESIntegTestCase {
      * Tests corruption that happens on the network layer and that the primary does not get affected by corruption that happens on the way
      * to the replica. The file on disk stays uncorrupted
      */
-    public void testCorruptionOnNetworkLayer() throws InterruptedException {
+    public void testCorruptionOnNetworkLayer() throws Exception {
         int numDocs = scaledRandomIntBetween(100, 1000);
         internalCluster().ensureAtLeastNumDataNodes(3);
 
@@ -521,7 +520,7 @@ public class CorruptedFileIT extends ESIntegTestCase {
      * TODO once checksum verification on snapshotting is implemented this test needs to be fixed or split into several
      * parts... We should also corrupt files on the actual snapshot and check that we don't restore the corrupted shard.
      */
-    public void testCorruptFileThenSnapshotAndRestore() throws InterruptedException, IOException {
+    public void testCorruptFileThenSnapshotAndRestore() throws Exception {
         int numDocs = scaledRandomIntBetween(100, 1000);
         internalCluster().ensureAtLeastNumDataNodes(2);
 

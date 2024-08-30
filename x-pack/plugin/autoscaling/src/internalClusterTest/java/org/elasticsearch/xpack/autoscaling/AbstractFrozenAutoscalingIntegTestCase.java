@@ -83,7 +83,7 @@ public abstract class AbstractFrozenAutoscalingIntegTestCase extends AbstractSna
         putAutoscalingPolicy();
     }
 
-    protected void createAndMountIndex() throws InterruptedException, java.util.concurrent.ExecutionException {
+    protected void createAndMountIndex() throws Exception {
         assertAcked(prepareCreate(indexName, Settings.builder().put(INDEX_SOFT_DELETES_SETTING.getKey(), true)));
         indexRandom(
             randomBoolean(),

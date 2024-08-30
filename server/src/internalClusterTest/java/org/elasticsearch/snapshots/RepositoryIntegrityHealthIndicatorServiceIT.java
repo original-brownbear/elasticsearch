@@ -28,7 +28,7 @@ import static org.hamcrest.Matchers.equalTo;
 
 public class RepositoryIntegrityHealthIndicatorServiceIT extends AbstractSnapshotIntegTestCase {
 
-    public void testRepositoryIntegrityHealthIndicator() throws IOException, InterruptedException {
+    public void testRepositoryIntegrityHealthIndicator() throws Exception {
 
         var client = client();
 

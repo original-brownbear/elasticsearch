@@ -147,7 +147,7 @@ public class AllocationIdIT extends ESIntegTestCase {
         assertThat(indexHealthStatus, is(healthStatus));
     }
 
-    private int indexDocs(String indexName, Object... source) throws InterruptedException {
+    private int indexDocs(String indexName, Object... source) throws Exception {
         // index some docs in several segments
         int numDocs = 0;
         for (int k = 0, attempts = randomIntBetween(5, 10); k < attempts; k++) {

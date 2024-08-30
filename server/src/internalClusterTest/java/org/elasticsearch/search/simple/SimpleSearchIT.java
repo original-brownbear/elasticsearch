@@ -36,7 +36,6 @@ import org.elasticsearch.xcontent.json.JsonXContent;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 import static org.elasticsearch.action.support.WriteRequest.RefreshPolicy.IMMEDIATE;
 import static org.elasticsearch.index.query.QueryBuilders.boolQuery;
@@ -68,7 +67,7 @@ public class SimpleSearchIT extends ESIntegTestCase {
         expectThrows(NullPointerException.class, () -> prepareSearch((String[]) null));
     }
 
-    public void testSearchRandomPreference() throws InterruptedException, ExecutionException {
+    public void testSearchRandomPreference() throws Exception {
         createIndex("test");
         indexRandom(
             true,

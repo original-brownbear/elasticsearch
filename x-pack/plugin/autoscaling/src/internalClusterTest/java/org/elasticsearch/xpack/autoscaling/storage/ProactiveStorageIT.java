@@ -38,7 +38,7 @@ import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcke
 @ESIntegTestCase.ClusterScope(scope = ESIntegTestCase.Scope.TEST, numDataNodes = 0)
 public class ProactiveStorageIT extends AutoscalingStorageIntegTestCase {
 
-    public void testScaleUp() throws IOException, InterruptedException {
+    public void testScaleUp() throws Exception {
         internalCluster().startMasterOnlyNode();
         final String dataNodeName = internalCluster().startDataOnlyNode();
         final String policyName = "test";

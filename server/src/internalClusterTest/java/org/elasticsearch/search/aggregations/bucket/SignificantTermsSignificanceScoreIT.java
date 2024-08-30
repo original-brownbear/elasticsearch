@@ -46,7 +46,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 
 import static org.elasticsearch.search.aggregations.AggregationBuilders.filter;
@@ -426,7 +425,7 @@ public class SignificantTermsSignificanceScoreIT extends ESIntegTestCase {
         });
     }
 
-    private void indexEqualTestData() throws ExecutionException, InterruptedException {
+    private void indexEqualTestData() throws Exception {
         assertAcked(
             prepareCreate("test").setSettings(indexSettings(1, 0)).setMapping("text", "type=text,fielddata=true", "class", "type=keyword")
         );
@@ -459,7 +458,7 @@ public class SignificantTermsSignificanceScoreIT extends ESIntegTestCase {
         indexRandom(true, false, indexRequestBuilders);
     }
 
-    public void testScriptScore() throws ExecutionException, InterruptedException, IOException {
+    public void testScriptScore() throws Exception {
         String type = randomBoolean() ? "text" : "long";
         indexRandomFrequencies01(type);
         ScriptHeuristic scriptHeuristic = getScriptSignificanceHeuristic();
@@ -513,7 +512,7 @@ public class SignificantTermsSignificanceScoreIT extends ESIntegTestCase {
         return new ScriptHeuristic(script);
     }
 
-    private void indexRandomFrequencies01(String type) throws ExecutionException, InterruptedException {
+    private void indexRandomFrequencies01(String type) throws Exception {
         String textMappings = "type=" + type;
         if (type.equals("text")) {
             textMappings += ",fielddata=true";
@@ -536,7 +535,7 @@ public class SignificantTermsSignificanceScoreIT extends ESIntegTestCase {
         indexRandom(true, indexRequestBuilderList);
     }
 
-    public void testReduceFromSeveralShards() throws IOException, ExecutionException, InterruptedException {
+    public void testReduceFromSeveralShards() throws Exception {
         SharedSignificantTermsTestMethods.aggregateAndCheckFromSeveralShards(this);
     }
 

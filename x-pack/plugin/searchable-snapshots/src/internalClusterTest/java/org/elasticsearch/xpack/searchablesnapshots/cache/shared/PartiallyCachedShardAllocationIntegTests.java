@@ -75,7 +75,7 @@ public class PartiallyCachedShardAllocationIntegTests extends BaseFrozenSearchab
         return CollectionUtils.appendToCopy(super.nodePlugins(), MockTransportService.TestPlugin.class);
     }
 
-    private MountSearchableSnapshotRequest prepareMountRequest() throws InterruptedException {
+    private MountSearchableSnapshotRequest prepareMountRequest() throws Exception {
         final String fsRepoName = randomAlphaOfLength(10);
         final String indexName = randomAlphaOfLength(10).toLowerCase(Locale.ROOT);
         final String snapshotName = randomAlphaOfLength(10).toLowerCase(Locale.ROOT);

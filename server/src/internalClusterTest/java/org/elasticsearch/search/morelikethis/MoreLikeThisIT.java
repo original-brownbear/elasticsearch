@@ -32,7 +32,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 import static org.elasticsearch.cluster.metadata.IndexMetadata.SETTING_NUMBER_OF_SHARDS;
 import static org.elasticsearch.index.query.QueryBuilders.moreLikeThisQuery;
@@ -595,7 +594,7 @@ public class MoreLikeThisIT extends ESIntegTestCase {
         }
     }
 
-    public void testMinimumShouldMatch() throws ExecutionException, InterruptedException {
+    public void testMinimumShouldMatch() throws Exception {
         logger.info("Creating the index ...");
         assertAcked(
             prepareCreate("test").setMapping("text", "type=text,analyzer=whitespace")
@@ -694,7 +693,7 @@ public class MoreLikeThisIT extends ESIntegTestCase {
         assertHitCountAndNoFailures(prepareSearch("test").setQuery(mltQuery), 1);
     }
 
-    public void testMoreLikeThisUnlike() throws InterruptedException, IOException {
+    public void testMoreLikeThisUnlike() throws Exception {
         createIndex("test");
         ensureGreen();
         int numFields = randomIntBetween(5, 10);
@@ -734,7 +733,7 @@ public class MoreLikeThisIT extends ESIntegTestCase {
         }
     }
 
-    public void testSelectFields() throws IOException, ExecutionException, InterruptedException {
+    public void testSelectFields() throws Exception {
         assertAcked(prepareCreate("test").setMapping("text", "type=text,analyzer=whitespace", "text1", "type=text,analyzer=whitespace"));
         ensureGreen("test");
 

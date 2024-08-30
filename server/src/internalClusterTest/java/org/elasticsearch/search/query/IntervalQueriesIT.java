@@ -38,7 +38,7 @@ public class IntervalQueriesIT extends ESIntegTestCase {
         return Arrays.asList(InternalSettingsPlugin.class, MockAnalysisPlugin.class);
     }
 
-    public void testEmptyIntervalsWithNestedMappings() throws InterruptedException {
+    public void testEmptyIntervalsWithNestedMappings() throws Exception {
         assertAcked(prepareCreate("nested").setMapping("""
             { "_doc" : {
                 "properties" : {

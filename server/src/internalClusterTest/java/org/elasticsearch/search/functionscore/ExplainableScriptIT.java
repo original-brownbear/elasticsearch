@@ -40,7 +40,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 
 import static org.elasticsearch.index.query.QueryBuilders.functionScoreQuery;
 import static org.elasticsearch.index.query.QueryBuilders.termQuery;
@@ -117,7 +116,7 @@ public class ExplainableScriptIT extends ESIntegTestCase {
         return Arrays.asList(ExplainableScriptPlugin.class);
     }
 
-    public void testExplainScript() throws InterruptedException, IOException, ExecutionException {
+    public void testExplainScript() throws Exception {
         List<IndexRequestBuilder> indexRequests = new ArrayList<>();
         for (int i = 0; i < 20; i++) {
             indexRequests.add(

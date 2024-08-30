@@ -557,7 +557,7 @@ public class SLMSnapshotBlockingIntegTests extends AbstractSnapshotIntegTestCase
         return clusterAdmin().prepareSnapshotStatus(TEST_REQUEST_TIMEOUT, REPO).setSnapshots(snapshotName).get();
     }
 
-    private void createAndPopulateIndex(String indexName) throws InterruptedException {
+    private void createAndPopulateIndex(String indexName) throws Exception {
         logger.info("--> creating and populating index [{}]", indexName);
         assertAcked(prepareCreate(indexName, 0, indexSettingsNoReplicas(6)));
         ensureGreen();

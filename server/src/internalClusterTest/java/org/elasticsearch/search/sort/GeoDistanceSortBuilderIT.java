@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
 import static org.elasticsearch.search.sort.SortBuilders.fieldSort;
@@ -46,7 +45,7 @@ public class GeoDistanceSortBuilderIT extends ESIntegTestCase {
         return false;
     }
 
-    public void testManyToManyGeoPoints() throws ExecutionException, InterruptedException, IOException {
+    public void testManyToManyGeoPoints() throws Exception {
         /**
          * | q  |  d1    |   d2
          * |    |        |
@@ -143,7 +142,7 @@ public class GeoDistanceSortBuilderIT extends ESIntegTestCase {
         );
     }
 
-    public void testSingeToManyAvgMedian() throws ExecutionException, InterruptedException, IOException {
+    public void testSingeToManyAvgMedian() throws Exception {
         /**
          * q  = (0, 0)
          *
@@ -211,7 +210,7 @@ public class GeoDistanceSortBuilderIT extends ESIntegTestCase {
         builder.endObject();
     }
 
-    public void testManyToManyGeoPointsWithDifferentFormats() throws ExecutionException, InterruptedException, IOException {
+    public void testManyToManyGeoPointsWithDifferentFormats() throws Exception {
         /**   q     d1       d2
          * |4  o|   x    |   x
          * |    |        |
@@ -279,7 +278,7 @@ public class GeoDistanceSortBuilderIT extends ESIntegTestCase {
 
     }
 
-    public void testSinglePointGeoDistanceSort() throws ExecutionException, InterruptedException, IOException {
+    public void testSinglePointGeoDistanceSort() throws Exception {
         assertAcked(prepareCreate("index").setMapping(LOCATION_FIELD, "type=geo_point"));
         indexRandom(
             true,

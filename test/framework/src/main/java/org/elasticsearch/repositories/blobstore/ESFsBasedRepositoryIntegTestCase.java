@@ -16,7 +16,6 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.repositories.fs.FsRepository;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
@@ -35,7 +34,7 @@ public abstract class ESFsBasedRepositoryIntegTestCase extends ESBlobStoreReposi
         return FsRepository.TYPE;
     }
 
-    public void testMissingDirectoriesNotCreatedInReadonlyRepository() throws IOException, InterruptedException {
+    public void testMissingDirectoriesNotCreatedInReadonlyRepository() throws Exception {
         final String repoName = randomRepositoryName();
         final Path repoPath = randomRepoPath();
 

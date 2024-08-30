@@ -156,7 +156,7 @@ public abstract class AbstractFeatureMigrationIntegTest extends ESIntegTestCase 
         return pluginsService.filterPlugins(type).findFirst().get();
     }
 
-    public void createSystemIndexForDescriptor(SystemIndexDescriptor descriptor) throws InterruptedException {
+    public void createSystemIndexForDescriptor(SystemIndexDescriptor descriptor) throws Exception {
         assertThat(
             "the strategy used below to create index names for descriptors without a primary index name only works for simple patterns",
             descriptor.getIndexPattern(),

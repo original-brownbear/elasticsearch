@@ -49,7 +49,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
 import static org.elasticsearch.search.aggregations.AggregationBuilders.avg;
@@ -1338,7 +1337,7 @@ public class DateHistogramIT extends ESIntegTestCase {
         );
     }
 
-    public void testDSTBoundaryIssue9491() throws InterruptedException, ExecutionException {
+    public void testDSTBoundaryIssue9491() throws Exception {
         assertAcked(indicesAdmin().prepareCreate("test9491").setMapping("d", "type=date").get());
         indexRandom(
             true,
@@ -1362,7 +1361,7 @@ public class DateHistogramIT extends ESIntegTestCase {
         );
     }
 
-    public void testIssue8209() throws InterruptedException, ExecutionException {
+    public void testIssue8209() throws Exception {
         assertAcked(indicesAdmin().prepareCreate("test8209").setMapping("d", "type=date").get());
         indexRandom(
             true,
@@ -1404,7 +1403,7 @@ public class DateHistogramIT extends ESIntegTestCase {
      * The error happens when the bucket from the "unmapped" index is received first in the reduce phase, however the case can
      * be recreated when aggregating about a single index with an unmapped date field and also getting "empty" buckets.
      */
-    public void testFormatIndexUnmapped() throws InterruptedException, ExecutionException {
+    public void testFormatIndexUnmapped() throws Exception {
         String indexDateUnmapped = "test31760";
         indexRandom(true, prepareIndex(indexDateUnmapped).setSource("foo", "bar"));
         ensureSearchable(indexDateUnmapped);
@@ -1432,7 +1431,7 @@ public class DateHistogramIT extends ESIntegTestCase {
      * "format" = "epoch_millis" can lead for the date histogram aggregation to throw an error if a non-UTC time zone
      * with daylight savings time is used. This test was added to check this is working now
      */
-    public void testRewriteTimeZone_EpochMillisFormat() throws InterruptedException, ExecutionException {
+    public void testRewriteTimeZone_EpochMillisFormat() throws Exception {
         String index = "test31392";
         assertAcked(indicesAdmin().prepareCreate(index).setMapping("d", "type=date,format=epoch_millis").get());
         indexRandom(true, prepareIndex(index).setSource("d", "1477954800000"));

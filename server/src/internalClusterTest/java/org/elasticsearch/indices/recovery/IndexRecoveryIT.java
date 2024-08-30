@@ -130,7 +130,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -906,8 +905,7 @@ public class IndexRecoveryIT extends AbstractIndexRecoveryIntegTestCase {
         return nodeResponses;
     }
 
-    private IndicesStatsResponse createAndPopulateIndex(String name, int nodeCount, int shardCount, int replicaCount)
-        throws ExecutionException, InterruptedException {
+    private IndicesStatsResponse createAndPopulateIndex(String name, int nodeCount, int shardCount, int replicaCount) throws Exception {
 
         logger.info("--> creating test index: {}", name);
         assertAcked(

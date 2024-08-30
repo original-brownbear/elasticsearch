@@ -14,8 +14,6 @@ import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.test.ESIntegTestCase;
 import org.elasticsearch.test.ESIntegTestCase.ClusterScope;
 
-import java.util.concurrent.ExecutionException;
-
 import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
 import static org.elasticsearch.test.ESIntegTestCase.Scope.SUITE;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHitCountAndNoFailures;
@@ -33,7 +31,7 @@ public class StressSearchServiceReaperIT extends ESIntegTestCase {
     }
 
     // see issue #5165 - this test fails each time without the fix in pull #5170
-    public void testStressReaper() throws ExecutionException, InterruptedException {
+    public void testStressReaper() throws Exception {
         int num = randomIntBetween(100, 150);
         IndexRequestBuilder[] builders = new IndexRequestBuilder[num];
         for (int i = 0; i < builders.length; i++) {

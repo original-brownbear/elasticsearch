@@ -138,7 +138,7 @@ public class SearchQueryIT extends ESIntegTestCase {
     }
 
     // see #3952
-    public void testEmptyQueryString() throws ExecutionException, InterruptedException, IOException {
+    public void testEmptyQueryString() throws Exception {
         createIndex("test");
         indexRandom(
             true,
@@ -289,7 +289,7 @@ public class SearchQueryIT extends ESIntegTestCase {
     }
 
     // see #3521
-    public void testAllDocsQueryString() throws InterruptedException, ExecutionException {
+    public void testAllDocsQueryString() throws Exception {
         createIndex("test");
         indexRandom(true, prepareIndex("test").setId("1").setSource("foo", "bar"), prepareIndex("test").setId("2").setSource("foo", "bar"));
 
@@ -771,7 +771,7 @@ public class SearchQueryIT extends ESIntegTestCase {
         value = "org.elasticsearch.search.query.SearchQueryIT:DEBUG",
         issueUrl = "https://github.com/elastic/elasticsearch/issues/43144"
     )
-    public void testQuotedQueryStringWithBoost() throws InterruptedException {
+    public void testQuotedQueryStringWithBoost() throws Exception {
         float boost = 10.0f;
         assertAcked(prepareCreate("test").setSettings(Settings.builder().put(SETTING_NUMBER_OF_SHARDS, 1)));
 
@@ -1216,7 +1216,7 @@ public class SearchQueryIT extends ESIntegTestCase {
     }
 
     // see #2926
-    public void testMustNot() throws InterruptedException {
+    public void testMustNot() throws Exception {
         assertAcked(
             prepareCreate("test")
                 // issue manifested only with shards>=2
@@ -1239,7 +1239,7 @@ public class SearchQueryIT extends ESIntegTestCase {
         );
     }
 
-    public void testIntervals() throws InterruptedException {
+    public void testIntervals() throws Exception {
         createIndex("test");
 
         indexRandom(true, prepareIndex("test").setId("1").setSource("description", "it's cold outside, there's no kind of atmosphere"));
@@ -1271,7 +1271,7 @@ public class SearchQueryIT extends ESIntegTestCase {
     }
 
     // see #2994
-    public void testSimpleSpan() throws IOException, ExecutionException, InterruptedException {
+    public void testSimpleSpan() throws Exception {
         createIndex("test");
 
         indexRandom(
@@ -1503,7 +1503,7 @@ public class SearchQueryIT extends ESIntegTestCase {
         );
     }
 
-    public void testDateProvidedAsNumber() throws InterruptedException {
+    public void testDateProvidedAsNumber() throws Exception {
         createIndex("test");
         assertAcked(indicesAdmin().preparePutMapping("test").setSource("field", "type=date,format=epoch_millis").get());
         indexRandom(
@@ -1678,7 +1678,7 @@ public class SearchQueryIT extends ESIntegTestCase {
         assertHitCount(prepareSearch().setQuery(matchAllQuery()), 1L);
     }
 
-    public void testMatchPhrasePrefixQuery() throws ExecutionException, InterruptedException {
+    public void testMatchPhrasePrefixQuery() throws Exception {
         createIndex("test1");
         indexRandom(
             true,

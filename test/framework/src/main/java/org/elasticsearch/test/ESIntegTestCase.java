@@ -21,6 +21,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.TotalHits;
 import org.apache.lucene.tests.util.LuceneTestCase;
+import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.ActionResponse;
@@ -47,6 +48,7 @@ import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest
 import org.elasticsearch.action.admin.indices.template.put.PutIndexTemplateRequestBuilder;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.search.ClearScrollResponse;
 import org.elasticsearch.action.search.SearchRequest;
@@ -1643,7 +1645,7 @@ public abstract class ESIntegTestCase extends ESTestCase {
         return admin().indices();
     }
 
-    public void indexRandom(boolean forceRefresh, String index, int numDocs) {
+    public void indexRandom(boolean forceRefresh, String index, int numDocs) throws Exception {
         IndexRequestBuilder[] builders = new IndexRequestBuilder[numDocs];
         for (int i = 0; i < builders.length; i++) {
             builders[i] = prepareIndex(index).setSource("field", "value");
@@ -1654,11 +1656,11 @@ public abstract class ESIntegTestCase extends ESTestCase {
     /**
      * Convenience method that forwards to {@link #indexRandom(boolean, List)}.
      */
-    public void indexRandom(boolean forceRefresh, IndexRequestBuilder... builders) {
+    public void indexRandom(boolean forceRefresh, IndexRequestBuilder... builders) throws Exception {
         indexRandom(forceRefresh, Arrays.asList(builders));
     }
 
-    public void indexRandom(boolean forceRefresh, boolean dummyDocuments, IndexRequestBuilder... builders) {
+    public void indexRandom(boolean forceRefresh, boolean dummyDocuments, IndexRequestBuilder... builders) throws Exception {
         indexRandom(forceRefresh, dummyDocuments, Arrays.asList(builders));
     }
 
@@ -1677,7 +1679,7 @@ public abstract class ESIntegTestCase extends ESTestCase {
      * @param builders     the documents to index.
      * @see #indexRandom(boolean, boolean, java.util.List)
      */
-    public void indexRandom(boolean forceRefresh, List<IndexRequestBuilder> builders) {
+    public void indexRandom(boolean forceRefresh, List<IndexRequestBuilder> builders) throws Exception {
         indexRandom(forceRefresh, forceRefresh, builders);
     }
 
@@ -1693,7 +1695,7 @@ public abstract class ESIntegTestCase extends ESTestCase {
      *                       all documents are indexed. This is useful to produce deleted documents on the server side.
      * @param builders       the documents to index.
      */
-    public void indexRandom(boolean forceRefresh, boolean dummyDocuments, List<IndexRequestBuilder> builders) {
+    public void indexRandom(boolean forceRefresh, boolean dummyDocuments, List<IndexRequestBuilder> builders) throws Exception {
         indexRandom(forceRefresh, dummyDocuments, true, builders);
     }
 
@@ -1710,7 +1712,8 @@ public abstract class ESIntegTestCase extends ESTestCase {
      * @param maybeFlush     if {@code true} this method may randomly execute full flushes after index operations.
      * @param builders       the documents to index.
      */
-    public void indexRandom(boolean forceRefresh, boolean dummyDocuments, boolean maybeFlush, List<IndexRequestBuilder> builders) {
+    public void indexRandom(boolean forceRefresh, boolean dummyDocuments, boolean maybeFlush, List<IndexRequestBuilder> builders)
+        throws Exception {
         Random random = random();
         Set<String> indices = new HashSet<>();
         builders = new ArrayList<>(builders);
@@ -1771,11 +1774,16 @@ public abstract class ESIntegTestCase extends ESTestCase {
         }
         if (bogusIds.isEmpty() == false) {
             // delete the bogus types again - it might trigger merges or at least holes in the segments and enforces deleted docs!
+            final List<ActionFuture<DeleteResponse>> deleteResponses = new ArrayList<>(bogusIds.size());
             for (List<String> doc : bogusIds) {
+                deleteResponses.add(client().prepareDelete(doc.get(0), doc.get(1)).setRouting(doc.get(1)).execute());
+            }
+            for (ActionFuture<DeleteResponse> deleteResponse : deleteResponses) {
+                var response = deleteResponse.get();
                 assertEquals(
-                    "failed to delete a dummy doc [" + doc.get(0) + "][" + doc.get(1) + "]",
+                    "failed to delete a dummy doc [" + response.getIndex() + "][" + response.getId() + "]",
                     DocWriteResponse.Result.DELETED,
-                    client().prepareDelete(doc.get(0), doc.get(1)).setRouting(doc.get(1)).get().getResult()
+                    response.getResult()
                 );
             }
         }

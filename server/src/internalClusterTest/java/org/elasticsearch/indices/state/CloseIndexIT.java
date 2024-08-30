@@ -43,7 +43,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.CyclicBarrier;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -170,7 +169,7 @@ public class CloseIndexIT extends ESIntegTestCase {
         assertIndexIsClosed(indexName);
     }
 
-    public void testConcurrentClose() throws InterruptedException, ExecutionException {
+    public void testConcurrentClose() throws Exception {
         final String indexName = randomAlphaOfLength(10).toLowerCase(Locale.ROOT);
         createIndex(indexName);
 

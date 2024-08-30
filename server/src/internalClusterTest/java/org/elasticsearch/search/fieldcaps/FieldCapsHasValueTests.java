@@ -386,7 +386,7 @@ public class FieldCapsHasValueTests extends ESIntegTestCase {
         );
     }
 
-    public void testWithIndexFilter() throws InterruptedException {
+    public void testWithIndexFilter() throws Exception {
 
         List<IndexRequestBuilder> reqs = new ArrayList<>();
         reqs.add(prepareIndex(INDEX1).setSource("timestamp", "2015-07-08"));

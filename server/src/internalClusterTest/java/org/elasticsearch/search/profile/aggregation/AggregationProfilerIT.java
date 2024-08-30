@@ -24,7 +24,6 @@ import org.elasticsearch.search.profile.SearchProfileShardResult;
 import org.elasticsearch.test.ESIntegTestCase;
 import org.elasticsearch.test.MapMatcher;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -633,7 +632,7 @@ public class AggregationProfilerIT extends ESIntegTestCase {
      * rather than a yaml integration test because it requires creating many many
      * documents and that is hard to express in yaml.
      */
-    public void testFilterByFilter() throws InterruptedException, IOException {
+    public void testFilterByFilter() throws Exception {
         assertAcked(indicesAdmin().prepareCreate("dateidx").setSettings(indexSettings(1, 0)).setMapping("date", "type=date"));
         List<IndexRequestBuilder> builders = new ArrayList<>();
         for (int i = 0; i < RangeAggregator.DOCS_PER_RANGE_TO_USE_FILTERS * 2; i++) {
@@ -704,7 +703,7 @@ public class AggregationProfilerIT extends ESIntegTestCase {
         );
     }
 
-    public void testDateHistogramFilterByFilterDisabled() throws InterruptedException, IOException {
+    public void testDateHistogramFilterByFilterDisabled() throws Exception {
         updateClusterSettings(Settings.builder().put(SearchService.ENABLE_REWRITE_AGGS_TO_FILTER_BY_FILTER.getKey(), false));
         try {
             assertAcked(

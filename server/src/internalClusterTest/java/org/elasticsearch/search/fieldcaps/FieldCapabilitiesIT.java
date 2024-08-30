@@ -321,7 +321,7 @@ public class FieldCapabilitiesIT extends ESIntegTestCase {
         assertEquals(response1, response2);
     }
 
-    public void testWithIndexFilter() throws InterruptedException {
+    public void testWithIndexFilter() throws Exception {
         assertAcked(prepareCreate("index-1").setMapping("timestamp", "type=date", "field1", "type=keyword"));
         assertAcked(prepareCreate("index-2").setMapping("timestamp", "type=date", "field1", "type=long"));
 

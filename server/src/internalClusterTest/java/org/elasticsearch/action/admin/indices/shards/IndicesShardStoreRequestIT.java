@@ -204,7 +204,7 @@ public class IndicesShardStoreRequestIT extends ESIntegTestCase {
         enableAllocation(index);
     }
 
-    private void indexRandomData(String index) throws InterruptedException {
+    private void indexRandomData(String index) throws Exception {
         int numDocs = scaledRandomIntBetween(10, 20);
         IndexRequestBuilder[] builders = new IndexRequestBuilder[numDocs];
         for (int i = 0; i < builders.length; i++) {

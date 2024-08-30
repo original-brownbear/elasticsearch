@@ -223,7 +223,7 @@ public abstract class BaseShapeIntegTestCase<T extends AbstractGeometryQueryBuil
         );
     }
 
-    public void testDisallowExpensiveQueries() throws InterruptedException, IOException {
+    public void testDisallowExpensiveQueries() throws Exception {
         XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject("properties").startObject("shape");
         getGeoShapeMapping(mapping);
         mapping.endObject().endObject().endObject();

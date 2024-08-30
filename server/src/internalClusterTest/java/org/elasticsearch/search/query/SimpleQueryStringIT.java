@@ -36,7 +36,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 
 import static java.util.Collections.singletonList;
 import static org.elasticsearch.index.query.QueryBuilders.boolQuery;
@@ -68,7 +67,7 @@ public class SimpleQueryStringIT extends ESIntegTestCase {
         return List.of(MockAnalysisPlugin.class);
     }
 
-    public void testSimpleQueryString() throws ExecutionException, InterruptedException {
+    public void testSimpleQueryString() throws Exception {
         Settings.Builder settings = Settings.builder();
         settings.put(indexSettings());
         settings.put("index.analysis.analyzer.mock_snowball.tokenizer", "standard");
@@ -221,7 +220,7 @@ public class SimpleQueryStringIT extends ESIntegTestCase {
         assertSearchHitsWithoutFailures(prepareSearch().setQuery(simpleQueryStringQuery("foo bar baz").field("body.sub")), "1");
     }
 
-    public void testSimpleQueryStringFlags() throws ExecutionException, InterruptedException {
+    public void testSimpleQueryStringFlags() throws Exception {
         createIndex("test");
         indexRandom(
             true,
@@ -279,7 +278,7 @@ public class SimpleQueryStringIT extends ESIntegTestCase {
         );
     }
 
-    public void testSimpleQueryStringLenient() throws ExecutionException, InterruptedException {
+    public void testSimpleQueryStringLenient() throws Exception {
         createIndex("test1", "test2");
         indexRandom(
             true,
@@ -314,7 +313,7 @@ public class SimpleQueryStringIT extends ESIntegTestCase {
         assertSearchHitsWithoutFailures(prepareSearch("test").setQuery(q), "1");
     }
 
-    public void testSimpleQueryStringAnalyzeWildcard() throws ExecutionException, InterruptedException, IOException {
+    public void testSimpleQueryStringAnalyzeWildcard() throws Exception {
         String mapping = Strings.toString(
             XContentFactory.jsonBuilder()
                 .startObject()

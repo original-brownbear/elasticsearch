@@ -44,7 +44,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 
 import static org.elasticsearch.cluster.metadata.IndexMetadata.SETTING_NUMBER_OF_SHARDS;
 import static org.elasticsearch.index.query.QueryBuilders.matchQuery;
@@ -262,7 +261,7 @@ public class SuggestSearchIT extends ESIntegTestCase {
         assertSuggestion(suggest, 0, "test", 5, "abc0");
     }
 
-    public void testUnmappedField() throws IOException, InterruptedException, ExecutionException {
+    public void testUnmappedField() throws Exception {
         CreateIndexRequestBuilder builder = prepareCreate("test").setSettings(
             Settings.builder()
                 .put(indexSettings())
@@ -998,7 +997,7 @@ public class SuggestSearchIT extends ESIntegTestCase {
         assertSuggestion(searchSuggest, 0, 0, "simple_phrase", "nobel prize");
     }
 
-    public void testSuggestWithManyCandidates() throws InterruptedException, ExecutionException, IOException {
+    public void testSuggestWithManyCandidates() throws Exception {
         CreateIndexRequestBuilder builder = prepareCreate("test").setSettings(
             Settings.builder()
                 .put(indexSettings())
@@ -1255,7 +1254,7 @@ public class SuggestSearchIT extends ESIntegTestCase {
         }
     }
 
-    public void testPhraseSuggesterCollate() throws InterruptedException, ExecutionException, IOException {
+    public void testPhraseSuggesterCollate() throws Exception {
         CreateIndexRequestBuilder builder = prepareCreate("test").setSettings(
             Settings.builder()
                 .put(indexSettings())

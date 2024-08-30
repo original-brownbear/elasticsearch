@@ -20,7 +20,6 @@ import org.junit.Assert;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 import static org.elasticsearch.search.aggregations.AggregationBuilders.significantTerms;
 import static org.elasticsearch.search.aggregations.AggregationBuilders.terms;
@@ -36,7 +35,7 @@ public class SharedSignificantTermsTestMethods {
     public static final String TEXT_FIELD = "text";
     public static final String CLASS_FIELD = "class";
 
-    public static void aggregateAndCheckFromSeveralShards(ESIntegTestCase testCase) throws ExecutionException, InterruptedException {
+    public static void aggregateAndCheckFromSeveralShards(ESIntegTestCase testCase) throws Exception {
         String type = ESTestCase.randomBoolean() ? "text" : "keyword";
         String settings = "{\"index.number_of_shards\": 7, \"index.number_of_routing_shards\": 7, \"index.number_of_replicas\": 0}";
         index01Docs(type, settings, testCase);
@@ -67,7 +66,7 @@ public class SharedSignificantTermsTestMethods {
         );
     }
 
-    public static void index01Docs(String type, String settings, ESIntegTestCase testCase) throws ExecutionException, InterruptedException {
+    public static void index01Docs(String type, String settings, ESIntegTestCase testCase) throws Exception {
         String textMappings = "type=" + type;
         if (type.equals("text")) {
             textMappings += ",fielddata=true";

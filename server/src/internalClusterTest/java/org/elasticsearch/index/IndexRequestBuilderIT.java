@@ -18,12 +18,11 @@ import org.elasticsearch.xcontent.XContentType;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 import static org.hamcrest.Matchers.containsString;
 
 public class IndexRequestBuilderIT extends ESIntegTestCase {
-    public void testSetSource() throws InterruptedException, ExecutionException {
+    public void testSetSource() throws Exception {
         createIndex("test");
         Map<String, Object> map = new HashMap<>();
         map.put("test_field", "foobar");

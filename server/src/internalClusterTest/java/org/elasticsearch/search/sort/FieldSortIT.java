@@ -150,7 +150,7 @@ public class FieldSortIT extends ESIntegTestCase {
         );
     }
 
-    public void testIssue6614() throws InterruptedException {
+    public void testIssue6614() throws Exception {
         List<IndexRequestBuilder> builders = new ArrayList<>();
         boolean strictTimeBasedIndices = randomBoolean();
         final int numIndices = randomIntBetween(2, 25); // at most 25 days in the month
@@ -239,7 +239,7 @@ public class FieldSortIT extends ESIntegTestCase {
         });
     }
 
-    public void testRandomSorting() throws IOException, InterruptedException, ExecutionException {
+    public void testRandomSorting() throws Exception {
         Random random = random();
         assertAcked(
             prepareCreate("test").setMapping(

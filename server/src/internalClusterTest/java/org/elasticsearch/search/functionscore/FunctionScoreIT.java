@@ -174,7 +174,7 @@ public class FunctionScoreIT extends ESIntegTestCase {
         );
     }
 
-    public void testMinScoreFunctionScoreManyDocsAndRandomMinScore() throws IOException, ExecutionException, InterruptedException {
+    public void testMinScoreFunctionScoreManyDocsAndRandomMinScore() throws Exception {
         List<IndexRequestBuilder> docs = new ArrayList<>();
         int numDocs = randomIntBetween(1, 100);
         int scoreOffset = randomIntBetween(0, 2 * numDocs);

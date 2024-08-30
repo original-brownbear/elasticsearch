@@ -18,7 +18,6 @@ import org.junit.Before;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 import static org.elasticsearch.index.query.QueryBuilders.matchPhraseQuery;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
@@ -40,7 +39,7 @@ public class MatchPhraseQueryIT extends ESIntegTestCase {
         ensureGreen();
     }
 
-    public void testZeroTermsQuery() throws ExecutionException, InterruptedException {
+    public void testZeroTermsQuery() throws Exception {
         List<IndexRequestBuilder> indexRequests = getIndexRequests();
         indexRandom(true, false, indexRequests);
 

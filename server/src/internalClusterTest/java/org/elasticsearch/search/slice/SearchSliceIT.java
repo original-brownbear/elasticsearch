@@ -32,11 +32,9 @@ import org.elasticsearch.test.ESIntegTestCase;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentFactory;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
@@ -47,7 +45,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.startsWith;
 
 public class SearchSliceIT extends ESIntegTestCase {
-    private void setupIndex(int numDocs, int numberOfShards) throws IOException, ExecutionException, InterruptedException {
+    private void setupIndex(int numDocs, int numberOfShards) throws Exception {
         String mapping = Strings.toString(
             XContentFactory.jsonBuilder()
                 .startObject()

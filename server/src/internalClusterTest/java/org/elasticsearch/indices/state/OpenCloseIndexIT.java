@@ -27,9 +27,7 @@ import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.test.ESIntegTestCase;
 import org.elasticsearch.xcontent.XContentFactory;
 
-import java.io.IOException;
 import java.util.Arrays;
-import java.util.concurrent.ExecutionException;
 
 import static org.elasticsearch.cluster.metadata.IndexMetadata.SETTING_BLOCKS_METADATA;
 import static org.elasticsearch.cluster.metadata.IndexMetadata.SETTING_BLOCKS_READ;
@@ -247,7 +245,7 @@ public class OpenCloseIndexIT extends ESIntegTestCase {
         ensureGreen("test");
     }
 
-    public void testOpenCloseWithDocs() throws IOException, ExecutionException, InterruptedException {
+    public void testOpenCloseWithDocs() throws Exception {
         String mapping = Strings.toString(
             XContentFactory.jsonBuilder()
                 .startObject()

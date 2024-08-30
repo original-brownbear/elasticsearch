@@ -475,13 +475,13 @@ public abstract class AbstractSnapshotIntegTestCase extends ESIntegTestCase {
         return createSnapshot(repositoryName, snapshot, indices, Collections.singletonList(NO_FEATURE_STATES_VALUE));
     }
 
-    protected void createIndexWithRandomDocs(String indexName, int docCount) {
+    protected void createIndexWithRandomDocs(String indexName, int docCount) throws Exception {
         createIndex(indexName);
         ensureGreen();
         indexRandomDocs(indexName, docCount);
     }
 
-    protected void indexRandomDocs(String index, int numdocs) {
+    protected void indexRandomDocs(String index, int numdocs) throws Exception {
         logger.info("--> indexing [{}] documents into [{}]", numdocs, index);
         IndexRequestBuilder[] builders = new IndexRequestBuilder[numdocs];
         for (int i = 0; i < builders.length; i++) {
