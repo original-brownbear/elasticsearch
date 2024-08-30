@@ -19,13 +19,7 @@ import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.analysis.AbstractTokenFilterFactory;
 import org.elasticsearch.index.analysis.Analysis;
 
-import java.util.Map;
-import java.util.Set;
-
-import static java.util.Collections.singletonMap;
-
 public class SmartChineseStopTokenFilterFactory extends AbstractTokenFilterFactory {
-    private static final Map<String, Set<?>> NAMED_STOP_WORDS = singletonMap("_smartcn_", SmartChineseAnalyzer.getDefaultStopSet());
 
     private final CharArraySet stopWords;
 
@@ -42,7 +36,7 @@ public class SmartChineseStopTokenFilterFactory extends AbstractTokenFilterFacto
             settings,
             "stopwords",
             SmartChineseAnalyzer.getDefaultStopSet(),
-            NAMED_STOP_WORDS,
+            w -> "_smartcn_".equals(w) ? SmartChineseAnalyzer.getDefaultStopSet() : null,
             ignoreCase
         );
     }

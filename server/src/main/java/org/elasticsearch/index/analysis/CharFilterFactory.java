@@ -12,6 +12,8 @@ import java.io.Reader;
 
 public interface CharFilterFactory {
 
+    CharFilterFactory[] EMPTY_ARRAY = new CharFilterFactory[0];
+
     String name();
 
     Reader create(Reader reader);

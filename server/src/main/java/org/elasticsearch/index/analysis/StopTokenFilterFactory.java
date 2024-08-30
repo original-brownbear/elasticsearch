@@ -23,13 +23,11 @@ public class StopTokenFilterFactory extends AbstractTokenFilterFactory {
 
     private final CharArraySet stopWords;
 
-    private final boolean ignoreCase;
-
     private final boolean removeTrailing;
 
     public StopTokenFilterFactory(IndexSettings indexSettings, Environment env, String name, Settings settings) {
         super(name, settings);
-        this.ignoreCase = settings.getAsBoolean("ignore_case", false);
+        boolean ignoreCase = settings.getAsBoolean("ignore_case", false);
         this.removeTrailing = settings.getAsBoolean("remove_trailing", true);
         this.stopWords = Analysis.parseStopWords(env, settings, EnglishAnalyzer.ENGLISH_STOP_WORDS_SET, ignoreCase);
         if (settings.get("enable_position_increments") != null) {
@@ -48,10 +46,6 @@ public class StopTokenFilterFactory extends AbstractTokenFilterFactory {
 
     public Set<?> stopWords() {
         return stopWords;
-    }
-
-    public boolean ignoreCase() {
-        return ignoreCase;
     }
 
 }

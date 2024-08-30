@@ -19,7 +19,7 @@ import org.elasticsearch.index.analysis.AbstractTokenFilterFactory;
  */
 public class ApostropheFilterFactory extends AbstractTokenFilterFactory {
 
-    ApostropheFilterFactory(IndexSettings indexSettings, Environment environment, String name, Settings settings) {
+    ApostropheFilterFactory(IndexSettings zxindexSettings, Environment environment, String name, Settings settings) {
         super(name, settings);
     }
 

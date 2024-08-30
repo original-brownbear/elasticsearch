@@ -19,13 +19,9 @@ import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.analysis.AbstractTokenFilterFactory;
 import org.elasticsearch.index.analysis.Analysis;
 
-import java.util.Map;
 import java.util.Set;
 
-import static java.util.Collections.singletonMap;
-
 public class PolishStopTokenFilterFactory extends AbstractTokenFilterFactory {
-    private static final Map<String, Set<?>> NAMED_STOP_WORDS = singletonMap("_polish_", PolishAnalyzer.getDefaultStopSet());
 
     private final CharArraySet stopWords;
 
@@ -37,7 +33,14 @@ public class PolishStopTokenFilterFactory extends AbstractTokenFilterFactory {
         super(name, settings);
         this.ignoreCase = settings.getAsBoolean("ignore_case", false);
         this.removeTrailing = settings.getAsBoolean("remove_trailing", true);
-        this.stopWords = Analysis.parseWords(env, settings, "stopwords", PolishAnalyzer.getDefaultStopSet(), NAMED_STOP_WORDS, ignoreCase);
+        this.stopWords = Analysis.parseWords(
+            env,
+            settings,
+            "stopwords",
+            PolishAnalyzer.getDefaultStopSet(),
+            w -> "_polish_".equalsIgnoreCase(w) ? PolishAnalyzer.getDefaultStopSet() : null,
+            ignoreCase
+        );
     }
 
     @Override

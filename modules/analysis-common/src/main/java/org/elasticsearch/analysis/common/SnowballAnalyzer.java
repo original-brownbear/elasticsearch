@@ -31,7 +31,7 @@ import org.apache.lucene.analysis.tr.TurkishLowerCaseFilter;
  */
 @Deprecated
 public final class SnowballAnalyzer extends Analyzer {
-    private String name;
+    private final String name;
     private CharArraySet stopSet;
 
     /** Builds the named analyzer with no stop words. */

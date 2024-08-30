@@ -25,7 +25,7 @@ public final class ReloadableCustomAnalyzer extends Analyzer implements Analyzer
 
     private volatile AnalyzerComponents components;
 
-    private CloseableThreadLocal<AnalyzerComponents> storedComponents = new CloseableThreadLocal<>();
+    private final CloseableThreadLocal<AnalyzerComponents> storedComponents = new CloseableThreadLocal<>();
 
     // external resources that this analyzer is based on
     private final Set<String> resources;
@@ -107,10 +107,6 @@ public final class ReloadableCustomAnalyzer extends Analyzer implements Analyzer
         return this.offsetGap;
     }
 
-    public AnalysisMode getAnalysisMode() {
-        return this.components.analysisMode();
-    }
-
     @Override
     protected Reader initReaderForNormalization(String fieldName, Reader reader) {
         final AnalyzerComponents components = getComponents();
@@ -137,7 +133,7 @@ public final class ReloadableCustomAnalyzer extends Analyzer implements Analyzer
         final Map<String, CharFilterFactory> charFilters,
         final Map<String, TokenFilterFactory> tokenFilters
     ) {
-        AnalyzerComponents components = AnalyzerComponents.createComponents(
+        this.components = AnalyzerComponents.createComponents(
             IndexCreationContext.RELOAD_ANALYZERS,
             name,
             settings,
@@ -145,7 +141,6 @@ public final class ReloadableCustomAnalyzer extends Analyzer implements Analyzer
             charFilters,
             tokenFilters
         );
-        this.components = components;
     }
 
     @Override

@@ -19,13 +19,9 @@ import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.analysis.AbstractTokenFilterFactory;
 import org.elasticsearch.index.analysis.Analysis;
 
-import java.util.Map;
 import java.util.Set;
 
-import static java.util.Collections.singletonMap;
-
 public class JapaneseStopTokenFilterFactory extends AbstractTokenFilterFactory {
-    private static final Map<String, Set<?>> NAMED_STOP_WORDS = singletonMap("_japanese_", JapaneseAnalyzer.getDefaultStopSet());
 
     private final CharArraySet stopWords;
 
@@ -42,7 +38,7 @@ public class JapaneseStopTokenFilterFactory extends AbstractTokenFilterFactory {
             settings,
             "stopwords",
             JapaneseAnalyzer.getDefaultStopSet(),
-            NAMED_STOP_WORDS,
+            w -> "_japanese_".equals(w) ? JapaneseAnalyzer.getDefaultStopSet() : null,
             ignoreCase
         );
     }

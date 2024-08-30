@@ -233,7 +233,7 @@ public class SynonymTokenFilterFactory extends AbstractTokenFilterFactory {
     ) {
         return new CustomAnalyzer(
             tokenizer,
-            charFilters.toArray(new CharFilterFactory[0]),
+            charFilters.toArray(CharFilterFactory.EMPTY_ARRAY),
             tokenFilters.stream().map(TokenFilterFactory::getSynonymFilter).toArray(TokenFilterFactory[]::new)
         );
     }

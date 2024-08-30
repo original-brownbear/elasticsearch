@@ -134,32 +134,28 @@ public final class AnalysisModule {
         NamedRegistry<AnalysisProvider<TokenFilterFactory>> tokenFilters = new NamedRegistry<>("token_filter");
         tokenFilters.register("stop", StopTokenFilterFactory::new);
         // Add "standard" for old indices (bwc)
-        tokenFilters.register("standard", new AnalysisProvider<TokenFilterFactory>() {
-            @Override
-            public TokenFilterFactory get(IndexSettings indexSettings, Environment environment, String name, Settings settings) {
-                if (indexSettings.getIndexVersionCreated().before(IndexVersions.V_7_0_0)) {
-                    deprecationLogger.warn(
-                        DeprecationCategory.ANALYSIS,
-                        "standard_deprecation",
-                        "The [standard] token filter name is deprecated and will be removed in a future version."
-                    );
-                } else {
-                    throw new IllegalArgumentException("The [standard] token filter has been removed.");
-                }
-                return new AbstractTokenFilterFactory(name, settings) {
-                    @Override
-                    public TokenStream create(TokenStream tokenStream) {
-                        return tokenStream;
-                    }
-                };
+        tokenFilters.register("standard", (indexSettings, environment, name, settings) -> {
+            if (indexSettings.getIndexVersionCreated().before(IndexVersions.V_7_0_0)) {
+                deprecationLogger.warn(
+                    DeprecationCategory.ANALYSIS,
+                    "standard_deprecation",
+                    "The [standard] token filter name is deprecated and will be removed in a future version."
+                );
+            } else {
+                throw new IllegalArgumentException("The [standard] token filter has been removed.");
             }
-
+            return new AbstractTokenFilterFactory(name, settings) {
+                @Override
+                public TokenStream create(TokenStream tokenStream) {
+                    return tokenStream;
+                }
+            };
         });
         tokenFilters.register("shingle", ShingleTokenFilterFactory::new);
         tokenFilters.register(
             "hunspell",
             requiresAnalysisSettings(
-                (indexSettings, env, name, settings) -> new HunspellTokenFilterFactory(indexSettings, name, settings, hunspellService)
+                (indexSettings, env, name, settings) -> new HunspellTokenFilterFactory(name, settings, hunspellService)
             )
         );
 

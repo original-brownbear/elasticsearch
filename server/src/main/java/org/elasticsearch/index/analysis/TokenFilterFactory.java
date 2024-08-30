@@ -18,6 +18,9 @@ import java.util.List;
 import java.util.function.Function;
 
 public interface TokenFilterFactory {
+
+    TokenFilterFactory[] EMPTY_ARRAY = new TokenFilterFactory[0];
+
     String name();
 
     TokenStream create(TokenStream tokenStream);

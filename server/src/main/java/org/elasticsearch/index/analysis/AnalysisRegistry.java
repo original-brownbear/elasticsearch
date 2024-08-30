@@ -289,8 +289,8 @@ public final class AnalysisRegistry implements Closeable {
 
         Analyzer analyzer = new CustomAnalyzer(
             tokenizerFactory,
-            charFilterFactories.toArray(new CharFilterFactory[] {}),
-            tokenFilterFactories.toArray(new TokenFilterFactory[] {})
+            charFilterFactories.toArray(CharFilterFactory.EMPTY_ARRAY),
+            tokenFilterFactories.toArray(TokenFilterFactory.EMPTY_ARRAY)
         );
         return produceAnalyzer(context, "__custom__", new AnalyzerProvider<>() {
             @Override
@@ -452,7 +452,7 @@ public final class AnalysisRegistry implements Closeable {
             public String toString() {
                 return "filter";
             }
-        };
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -473,14 +473,14 @@ public final class AnalysisRegistry implements Closeable {
                 T factory = null;
                 if (typeName == null) {
                     if (currentSettings.get("tokenizer") != null) {
-                        factory = (T) new CustomAnalyzerProvider(settings, name, currentSettings);
+                        factory = (T) new CustomAnalyzerProvider(name, currentSettings);
                     } else {
                         throw new IllegalArgumentException(
                             component + " [" + name + "] " + "must specify either an analyzer type, or a tokenizer"
                         );
                     }
                 } else if (typeName.equals("custom")) {
-                    factory = (T) new CustomAnalyzerProvider(settings, name, currentSettings);
+                    factory = (T) new CustomAnalyzerProvider(name, currentSettings);
                 }
                 if (factory != null) {
                     factories.put(name, factory);
@@ -488,16 +488,12 @@ public final class AnalysisRegistry implements Closeable {
                 }
             } else if (component == Component.NORMALIZER) {
                 if (typeName == null || typeName.equals("custom")) {
-                    T factory = (T) new CustomNormalizerProvider(settings, name, currentSettings);
+                    T factory = (T) new CustomNormalizerProvider(name, currentSettings);
                     factories.put(name, factory);
                     continue;
                 }
             }
-            AnalysisProvider<T> type = getAnalysisProvider(component, providerMap, name, typeName);
-            if (type == null) {
-                throw new IllegalArgumentException("Unknown " + component + " type [" + typeName + "] for [" + name + "]");
-            }
-            final T factory = type.get(settings, environment, name, currentSettings);
+            final T factory = getAnalysisProvider(component, providerMap, name, typeName).get(settings, environment, name, currentSettings);
             factories.put(name, factory);
 
         }
@@ -561,8 +557,7 @@ public final class AnalysisRegistry implements Closeable {
             Map<String, PreBuiltAnalyzerProviderFactory> preConfiguredAnalyzers
         ) {
 
-            Map<String, PreBuiltAnalyzerProviderFactory> analyzerProviderFactories = new HashMap<>();
-            analyzerProviderFactories.putAll(preConfiguredAnalyzers);
+            Map<String, PreBuiltAnalyzerProviderFactory> analyzerProviderFactories = new HashMap<>(preConfiguredAnalyzers);
             // Pre-build analyzers
             for (PreBuiltAnalyzers preBuiltAnalyzerEnum : PreBuiltAnalyzers.values()) {
                 String name = preBuiltAnalyzerEnum.name().toLowerCase(Locale.ROOT);

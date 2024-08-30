@@ -11,7 +11,6 @@ package org.elasticsearch.analysis.common;
 import org.apache.lucene.analysis.FilteringTokenFilter;
 import org.apache.lucene.analysis.TokenStream;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.analysis.AbstractTokenFilterFactory;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptService;
@@ -27,7 +26,7 @@ public class PredicateTokenFilterScriptFactory extends AbstractTokenFilterFactor
 
     private final AnalysisPredicateScript.Factory factory;
 
-    public PredicateTokenFilterScriptFactory(IndexSettings indexSettings, String name, Settings settings, ScriptService scriptService) {
+    public PredicateTokenFilterScriptFactory(String name, Settings settings, ScriptService scriptService) {
         super(name, settings);
         Settings scriptSettings = settings.getAsSettings("script");
         Script script = Script.parse(scriptSettings);

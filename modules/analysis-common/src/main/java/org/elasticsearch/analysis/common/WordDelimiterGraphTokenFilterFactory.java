@@ -96,9 +96,6 @@ public class WordDelimiterGraphTokenFilterFactory extends AbstractTokenFilterFac
     }
 
     private static int getFlag(int flag, Settings settings, String key, boolean defaultValue) {
-        if (settings.getAsBoolean(key, defaultValue)) {
-            return flag;
-        }
-        return 0;
+        return WordDelimiterTokenFilterFactory.getFlag(flag, settings, key, defaultValue);
     }
 }

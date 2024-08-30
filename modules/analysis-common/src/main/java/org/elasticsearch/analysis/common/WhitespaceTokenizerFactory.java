@@ -20,10 +20,10 @@ import org.elasticsearch.index.analysis.AbstractTokenizerFactory;
 public class WhitespaceTokenizerFactory extends AbstractTokenizerFactory {
 
     static final String MAX_TOKEN_LENGTH = "max_token_length";
-    private Integer maxTokenLength;
+    private final Integer maxTokenLength;
 
     WhitespaceTokenizerFactory(IndexSettings indexSettings, Environment environment, String name, Settings settings) {
-        super(indexSettings, settings, name);
+        super(settings, name);
         maxTokenLength = settings.getAsInt(MAX_TOKEN_LENGTH, StandardAnalyzer.DEFAULT_MAX_TOKEN_LENGTH);
     }
 

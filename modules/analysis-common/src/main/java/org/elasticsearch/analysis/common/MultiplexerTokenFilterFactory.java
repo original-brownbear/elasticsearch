@@ -31,7 +31,7 @@ import java.util.function.Function;
 
 public class MultiplexerTokenFilterFactory extends AbstractTokenFilterFactory {
 
-    private List<String> filterNames;
+    private final List<String> filterNames;
     private final boolean preserveOriginal;
 
     public MultiplexerTokenFilterFactory(IndexSettings indexSettings, Environment env, String name, Settings settings) throws IOException {
@@ -184,7 +184,7 @@ public class MultiplexerTokenFilterFactory extends AbstractTokenFilterFactory {
         private final class MultiplexerFilter extends TokenFilter {
 
             State state;
-            PositionIncrementAttribute posIncAtt = addAttribute(PositionIncrementAttribute.class);
+            final PositionIncrementAttribute posIncAtt = addAttribute(PositionIncrementAttribute.class);
 
             private MultiplexerFilter(TokenStream input) {
                 super(input);

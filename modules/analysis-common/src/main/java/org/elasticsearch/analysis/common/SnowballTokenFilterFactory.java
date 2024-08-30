@@ -21,7 +21,7 @@ import org.elasticsearch.index.analysis.AbstractTokenFilterFactory;
  */
 public class SnowballTokenFilterFactory extends AbstractTokenFilterFactory {
 
-    private String language;
+    private final String language;
 
     SnowballTokenFilterFactory(IndexSettings indexSettings, Environment environment, String name, Settings settings) {
         super(name, settings);
