@@ -151,15 +151,14 @@ final class CanMatchPreFilterSearchPhase extends SearchPhase {
         assert assertSearchCoordinationThread();
         final List<SearchShardIterator> matchedShardLevelRequests = new ArrayList<>();
         for (SearchShardIterator searchShardIterator : shardsIts) {
-            final CanMatchNodeRequest canMatchNodeRequest = new CanMatchNodeRequest(
-                request,
+            final ShardSearchRequest request = new CanMatchNodeRequest(
+                this.request,
                 searchShardIterator.getOriginalIndices().indicesOptions(),
                 Collections.emptyList(),
                 getNumShards(),
                 timeProvider.absoluteStartMillis(),
                 searchShardIterator.getClusterAlias()
-            );
-            final ShardSearchRequest request = canMatchNodeRequest.createShardSearchRequest(buildShardLevelRequest(searchShardIterator));
+            ).createShardSearchRequest(buildShardLevelRequest(searchShardIterator));
             if (searchShardIterator.prefiltered()) {
                 consumeResult(searchShardIterator.skip() == false, request);
                 continue;

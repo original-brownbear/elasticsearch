@@ -22,6 +22,7 @@ import org.elasticsearch.action.ActionRunnable;
 import org.elasticsearch.action.ResolvedIndices;
 import org.elasticsearch.action.search.CanMatchNodeRequest;
 import org.elasticsearch.action.search.CanMatchNodeResponse;
+import org.elasticsearch.action.search.SearchContextId;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchShardTask;
 import org.elasticsearch.action.search.SearchType;
@@ -684,11 +685,13 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
             Releasable ignored = readerContext.markAsUsed(getKeepAlive(request));
             SearchContext context = createContext(readerContext, request, task, ResultsType.QUERY, true)
         ) {
+            final QuerySearchResult queryResult;
             tracer.startTrace("executeQueryPhase", Map.of());
             final long afterQueryTime;
             try (SearchOperationListenerExecutor executor = new SearchOperationListenerExecutor(context)) {
                 loadOrExecuteQueryPhase(request, context);
-                if (context.queryResult().hasSearchContext() == false && readerContext.singleSession()) {
+                queryResult = context.queryResult();
+                if (queryResult.hasSearchContext() == false && readerContext.singleSession()) {
                     freeReaderContext(readerContext.id());
                 }
                 afterQueryTime = executor.success();
@@ -699,27 +702,30 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
                 // we already have query results, but we can run fetch at the same time
                 context.addFetchResult();
                 return executeFetchPhase(readerContext, context, afterQueryTime);
-            } else {
-                // Pass the rescoreDocIds to the queryResult to send them the coordinating node and receive them back in the fetch phase.
-                // We also pass the rescoreDocIds to the LegacyReaderContext in case the search state needs to stay in the data node.
-                final RescoreDocIds rescoreDocIds = context.rescoreDocIds();
-                context.queryResult().setRescoreDocIds(rescoreDocIds);
-                readerContext.setRescoreDocIds(rescoreDocIds);
-                // inc-ref query result because we close the SearchContext that references it in this try-with-resources block
-                context.queryResult().incRef();
-                return context.queryResult();
             }
+            // Pass the rescoreDocIds to the queryResult to send them the coordinating node and receive them back in the fetch phase.
+            // We also pass the rescoreDocIds to the LegacyReaderContext in case the search state needs to stay in the data node.
+            final RescoreDocIds rescoreDocIds = context.rescoreDocIds();
+            queryResult.setRescoreDocIds(rescoreDocIds);
+            readerContext.setRescoreDocIds(rescoreDocIds);
+            // inc-ref query result because we close the SearchContext that references it in this try-with-resources block
+            queryResult.incRef();
+            return queryResult;
         } catch (Exception e) {
-            // execution exception can happen while loading the cache, strip it
-            if (e instanceof ExecutionException) {
-                e = (e.getCause() == null || e.getCause() instanceof Exception)
-                    ? (Exception) e.getCause()
-                    : new ElasticsearchException(e.getCause());
-            }
-            logger.trace("Query phase failed", e);
-            processFailure(readerContext, e);
-            throw e;
+            throw handleQueryPhaseException(e, readerContext);
         }
+    }
+
+    private Exception handleQueryPhaseException(Exception e, ReaderContext readerContext) throws Exception {
+        // execution exception can happen while loading the cache, strip it
+        if (e instanceof ExecutionException) {
+            e = (e.getCause() == null || e.getCause() instanceof Exception)
+                ? (Exception) e.getCause()
+                : new ElasticsearchException(e.getCause());
+        }
+        logger.trace("Query phase failed", e);
+        processFailure(readerContext, e);
+        return e;
     }
 
     public void executeRankFeaturePhase(RankFeatureShardRequest request, SearchShardTask task, ActionListener<RankFeatureResult> listener) {
@@ -1687,19 +1693,19 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
         return canMatch(request, true);
     }
 
-    private CanMatchShardResponse canMatch(ShardSearchRequest request, boolean checkRefreshPending) throws IOException {
+    private CanMatchShardResponse canMatch(final ShardSearchRequest request, boolean checkRefreshPending) throws IOException {
         assert request.searchType() == SearchType.QUERY_THEN_FETCH : "unexpected search type: " + request.searchType();
         Releasable releasable = null;
         try {
             IndexService indexService;
             final boolean hasRefreshPending;
             final Engine.Searcher canMatchSearcher;
-            if (request.readerId() != null) {
+            final ShardSearchContextId readerId = request.readerId();
+            if (readerId != null) {
                 hasRefreshPending = false;
-                ReaderContext readerContext;
                 Engine.Searcher searcher;
                 try {
-                    readerContext = findReaderContext(request.readerId(), request);
+                    ReaderContext readerContext = findReaderContext(readerId, request);
                     releasable = readerContext.markAsUsed(getKeepAlive(request));
                     indexService = readerContext.indexService();
                     if (canMatchAfterRewrite(request, indexService) == false) {
@@ -1707,7 +1713,7 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
                     }
                     searcher = readerContext.acquireSearcher(Engine.CAN_MATCH_SEARCH_SOURCE);
                 } catch (SearchContextMissingException e) {
-                    final String searcherId = request.readerId().getSearcherId();
+                    final String searcherId = readerId.getSearcherId();
                     if (searcherId == null) {
                         throw e;
                     }
@@ -1781,14 +1787,12 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
     @SuppressWarnings("unchecked")
     public static boolean queryStillMatchesAfterRewrite(ShardSearchRequest request, QueryRewriteContext context) throws IOException {
         Rewriteable.rewrite(request.getRewriteable(), context, false);
-        boolean canMatch = request.getAliasFilter().getQueryBuilder() instanceof MatchNoneQueryBuilder == false;
-        if (canRewriteToMatchNone(request.source())) {
-            canMatch &= request.source()
-                .subSearches()
-                .stream()
-                .anyMatch(sqwb -> sqwb.getQueryBuilder() instanceof MatchNoneQueryBuilder == false);
+        if (request.getAliasFilter().getQueryBuilder() instanceof MatchNoneQueryBuilder) {
+            return false;
         }
-        return canMatch;
+        var source = request.source();
+        return canRewriteToMatchNone(source) == false
+            || source.subSearches().stream().anyMatch(sqwb -> sqwb.getQueryBuilder() instanceof MatchNoneQueryBuilder == false);
     }
 
     /**

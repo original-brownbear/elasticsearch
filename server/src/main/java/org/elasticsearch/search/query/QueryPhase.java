@@ -14,8 +14,6 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.Collector;
-import org.apache.lucene.search.CollectorManager;
 import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
@@ -148,7 +146,6 @@ public class QueryPhase {
      */
     static void addCollectorsAndSearch(SearchContext searchContext) throws QueryPhaseExecutionException {
         final ContextIndexSearcher searcher = searchContext.searcher();
-        final IndexReader reader = searcher.getIndexReader();
         QuerySearchResult queryResult = searchContext.queryResult();
         queryResult.searchTimedOut(false);
         try {
@@ -167,7 +164,7 @@ public class QueryPhase {
 
                 } else {
                     final ScoreDoc after = scrollContext.lastEmittedDoc;
-                    if (canEarlyTerminate(reader, searchContext.sort())) {
+                    if (canEarlyTerminate(searcher.getIndexReader(), searchContext.sort())) {
                         // now this gets interesting: since the search sort is a prefix of the index sort, we can directly
                         // skip to the desired doc
                         if (after != null) {
@@ -179,30 +176,28 @@ public class QueryPhase {
                 }
             }
 
-            final boolean hasFilterCollector = searchContext.parsedPostFilter() != null || searchContext.minimumScore() != null;
+            var parsedPostFilter = searchContext.parsedPostFilter();
+            final boolean hasFilterCollector = parsedPostFilter != null || searchContext.minimumScore() != null;
 
             Weight postFilterWeight = null;
-            if (searchContext.parsedPostFilter() != null) {
-                postFilterWeight = searcher.createWeight(
-                    searcher.rewrite(searchContext.parsedPostFilter().query()),
-                    ScoreMode.COMPLETE_NO_SCORES,
-                    1f
-                );
+            if (parsedPostFilter != null) {
+                postFilterWeight = searcher.createWeight(searcher.rewrite(parsedPostFilter.query()), ScoreMode.COMPLETE_NO_SCORES, 1f);
             }
-
-            CollectorManager<Collector, QueryPhaseResult> collectorManager = QueryPhaseCollectorManager.createQueryPhaseCollectorManager(
-                postFilterWeight,
-                searchContext.aggregations() == null ? null : searchContext.aggregations().getAggsCollectorManager(),
-                searchContext,
-                hasFilterCollector
-            );
 
             final Runnable timeoutRunnable = getTimeoutCheck(searchContext);
             if (timeoutRunnable != null) {
                 searcher.addQueryCancellation(timeoutRunnable);
             }
 
-            QueryPhaseResult queryPhaseResult = searcher.search(query, collectorManager);
+            QueryPhaseResult queryPhaseResult = searcher.search(
+                query,
+                QueryPhaseCollectorManager.createQueryPhaseCollectorManager(
+                    postFilterWeight,
+                    searchContext.aggregations() == null ? null : searchContext.aggregations().getAggsCollectorManager(),
+                    searchContext,
+                    hasFilterCollector
+                )
+            );
             if (searchContext.getProfilers() != null) {
                 searchContext.getProfilers().getCurrentQueryProfiler().setCollectorResult(queryPhaseResult.collectorResult());
             }
