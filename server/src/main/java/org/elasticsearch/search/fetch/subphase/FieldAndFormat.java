@@ -35,7 +35,7 @@ import static org.elasticsearch.core.RestApiVersion.onOrAfter;
  */
 public final class FieldAndFormat implements Writeable, ToXContentObject {
     private static final String USE_DEFAULT_FORMAT = "use_field_mapping";
-    private static final DeprecationLogger DEPRECATION_LOGGER = DeprecationLogger.getLogger(FetchDocValuesPhase.class);
+    private static final DeprecationLogger DEPRECATION_LOGGER = DeprecationLogger.getLogger(FieldAndFormat.class);
 
     public static final ParseField FIELD_FIELD = new ParseField("field");
     public static final ParseField FORMAT_FIELD = new ParseField("format");
