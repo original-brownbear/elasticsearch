@@ -761,6 +761,7 @@ public class CoordinationDiagnosticsService implements ClusterStateListener {
     public void clusterChanged(ClusterChangedEvent event) {
         DiscoveryNode currentMaster = event.state().nodes().getMasterNode();
         DiscoveryNode previousMaster = event.previousState().nodes().getMasterNode();
+        final DiscoveryNode localNode = event.state().nodes().getLocalNode();
         if ((currentMaster == null && previousMaster != null) || (currentMaster != null && previousMaster == null)) {
             if (masterHistoryService.getLocalMasterHistory().hasMasterGoneNullAtLeastNTimes(unacceptableNullTransitions)) {
                 /*
@@ -776,12 +777,12 @@ public class CoordinationDiagnosticsService implements ClusterStateListener {
                  * If the most recent master was this box, there is no point in making a transport request -- we already know what this
                  * box's view of the master history is
                  */
-                if (master != null && clusterService.localNode().equals(master) == false) {
+                if (master != null && master.equals(localNode) == false) {
                     masterHistoryService.refreshRemoteMasterHistory(master);
                 }
             }
         }
-        if (currentMaster == null && clusterService.localNode().isMasterNode()) {
+        if (currentMaster == null && localNode != null && localNode.isMasterNode()) {
             /*
              * This begins polling all master-eligible nodes for cluster formation information. However there's a 10-second delay
              * before it starts, so in the normal situation where during a master transition it flips from master1 -> null ->
@@ -791,7 +792,7 @@ public class CoordinationDiagnosticsService implements ClusterStateListener {
         } else {
             cancelPollingClusterFormationInfo();
         }
-        if (clusterService.localNode().isMasterNode() == false) {
+        if (localNode == null || localNode.isMasterNode() == false) {
             if (currentMaster == null) {
                 beginPollingRemoteMasterStabilityDiagnostic();
             } else {

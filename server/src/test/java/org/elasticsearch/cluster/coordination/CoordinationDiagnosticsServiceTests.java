@@ -1003,12 +1003,13 @@ public class CoordinationDiagnosticsServiceTests extends AbstractCoordinatorTest
     }
 
     public void testBeginPollingClusterFormationInfo() throws Exception {
-        ClusterService clusterService = createClusterService(nullMasterClusterState);
+        final ClusterState initialState = ClusterState.builder(nullMasterClusterState)
+            .nodes(DiscoveryNodes.builder(nullMasterClusterState.nodes()).localNodeId(node3.getId()))
+            .build();
+        ClusterService clusterService = createClusterService(initialState);
         MasterHistoryService masterHistoryService = createMasterHistoryService(clusterService);
-        DiscoveryNode localNode = node3;
-        when(clusterService.localNode()).thenReturn(localNode);
         Coordinator coordinator = mock(Coordinator.class);
-        when(coordinator.getFoundPeers()).thenReturn(List.of(node1, node2, localNode));
+        when(coordinator.getFoundPeers()).thenReturn(List.of(node1, node2, node3));
         DeterministicTaskQueue deterministicTaskQueue = new DeterministicTaskQueue();
         ThreadPool threadPool = deterministicTaskQueue.getThreadPool();
 
@@ -1025,13 +1026,9 @@ public class CoordinationDiagnosticsServiceTests extends AbstractCoordinatorTest
         assertThat(coordinationDiagnosticsService.clusterFormationInfoTasks.size(), equalTo(3));
         coordinationDiagnosticsService.cancelPollingClusterFormationInfo();
         assertThat(coordinationDiagnosticsService.clusterFormationInfoTasks, Matchers.nullValue());
-        coordinationDiagnosticsService.clusterChanged(
-            new ClusterChangedEvent(TEST_SOURCE, nullMasterClusterState, node1MasterClusterState)
-        );
+        coordinationDiagnosticsService.clusterChanged(new ClusterChangedEvent(TEST_SOURCE, initialState, node1MasterClusterState));
         assertThat(coordinationDiagnosticsService.clusterFormationInfoTasks.size(), equalTo(3));
-        coordinationDiagnosticsService.clusterChanged(
-            new ClusterChangedEvent(TEST_SOURCE, node1MasterClusterState, nullMasterClusterState)
-        );
+        coordinationDiagnosticsService.clusterChanged(new ClusterChangedEvent(TEST_SOURCE, node1MasterClusterState, initialState));
         assertThat(coordinationDiagnosticsService.clusterFormationInfoTasks, Matchers.nullValue());
         /*
          * Note that in this test we will never find any values in clusterFormationResponses because transportService is mocked out.
