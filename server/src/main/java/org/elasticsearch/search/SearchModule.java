@@ -1044,7 +1044,7 @@ public class SearchModule {
         registerFromPlugin(plugins, SearchPlugin::getSignificanceHeuristics, this::registerSignificanceHeuristic);
     }
 
-    private <T extends SignificanceHeuristic> void registerSignificanceHeuristic(SignificanceHeuristicSpec<?> spec) {
+    private void registerSignificanceHeuristic(SignificanceHeuristicSpec<?> spec) {
         namedXContents.add(
             new NamedXContentRegistry.Entry(SignificanceHeuristic.class, spec.getName(), p -> spec.getParser().apply(p, null))
         );
@@ -1057,7 +1057,7 @@ public class SearchModule {
         registerFromPlugin(plugins, SearchPlugin::getQueryVectorBuilders, this::registerQueryVectorBuilder);
     }
 
-    private <T extends QueryVectorBuilder> void registerQueryVectorBuilder(QueryVectorBuilderSpec<?> spec) {
+    private void registerQueryVectorBuilder(QueryVectorBuilderSpec<?> spec) {
         namedXContents.add(new NamedXContentRegistry.Entry(QueryVectorBuilder.class, spec.getName(), p -> spec.getParser().apply(p, null)));
         namedWriteables.add(
             new NamedWriteableRegistry.Entry(QueryVectorBuilder.class, spec.getName().getPreferredName(), spec.getReader())
