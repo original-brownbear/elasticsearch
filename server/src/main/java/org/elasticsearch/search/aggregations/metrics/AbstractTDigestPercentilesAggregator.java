@@ -10,6 +10,7 @@ package org.elasticsearch.search.aggregations.metrics;
 
 import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.util.ObjectArray;
+import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.Releasables;
 import org.elasticsearch.index.fielddata.NumericDoubleValues;
 import org.elasticsearch.index.fielddata.SortedNumericDoubleValues;
@@ -25,11 +26,45 @@ import java.util.Map;
 
 abstract class AbstractTDigestPercentilesAggregator extends NumericMetricsAggregator.MultiDoubleValue {
 
+    static final class TDigestStates implements Releasable {
+        private ObjectArray<TDigestState> states;
+        final double compression;
+        final TDigestExecutionHint executionHint;
+        private final BigArrays bigArrays;
+
+        TDigestStates(double compression, TDigestExecutionHint executionHint, BigArrays bigArrays) {
+            this.states = bigArrays.newObjectArray(1);
+            this.compression = compression;
+            this.executionHint = executionHint;
+            this.bigArrays = bigArrays;
+        }
+
+        TDigestState getExistingOrNewHistogram(long bucket) {
+            states = bigArrays.grow(states, bucket + 1);
+            TDigestState state = states.get(bucket);
+            if (state == null) {
+                state = TDigestState.create(compression, executionHint);
+                states.set(bucket, state);
+            }
+            return state;
+        }
+
+        TDigestState getState(long bucketOrd) {
+            if (bucketOrd >= states.size()) {
+                return null;
+            }
+            return states.get(bucketOrd);
+        }
+
+        @Override
+        public void close() {
+            states.close();
+        }
+    }
+
+    protected final TDigestStates states;
     protected final double[] keys;
     protected final DocValueFormat formatter;
-    protected ObjectArray<TDigestState> states;
-    protected final double compression;
-    protected final TDigestExecutionHint executionHint;
     protected final boolean keyed;
 
     AbstractTDigestPercentilesAggregator(
@@ -48,10 +83,8 @@ abstract class AbstractTDigestPercentilesAggregator extends NumericMetricsAggreg
         assert config.hasValues();
         this.keyed = keyed;
         this.formatter = formatter;
-        this.states = context.bigArrays().newObjectArray(1);
+        this.states = new TDigestStates(compression, executionHint, context.bigArrays());
         this.keys = keys;
-        this.compression = compression;
-        this.executionHint = executionHint;
     }
 
     @Override
@@ -60,7 +93,7 @@ abstract class AbstractTDigestPercentilesAggregator extends NumericMetricsAggreg
             @Override
             public void collect(int doc, long bucket) throws IOException {
                 if (values.advanceExact(doc)) {
-                    final TDigestState state = getExistingOrNewHistogram(bigArrays(), bucket);
+                    final TDigestState state = states.getExistingOrNewHistogram(bucket);
                     for (int i = 0; i < values.docValueCount(); i++) {
                         state.add(values.nextValue());
                     }
@@ -75,33 +108,15 @@ abstract class AbstractTDigestPercentilesAggregator extends NumericMetricsAggreg
             @Override
             public void collect(int doc, long bucket) throws IOException {
                 if (values.advanceExact(doc)) {
-                    final TDigestState state = getExistingOrNewHistogram(bigArrays(), bucket);
-                    state.add(values.doubleValue());
+                    states.getExistingOrNewHistogram(bucket).add(values.doubleValue());
                 }
             }
         };
     }
 
-    private TDigestState getExistingOrNewHistogram(final BigArrays bigArrays, long bucket) {
-        states = bigArrays.grow(states, bucket + 1);
-        TDigestState state = states.get(bucket);
-        if (state == null) {
-            state = TDigestState.create(compression, executionHint);
-            states.set(bucket, state);
-        }
-        return state;
-    }
-
     @Override
     public boolean hasMetric(String name) {
         return PercentilesConfig.indexOfKey(keys, Double.parseDouble(name)) >= 0;
-    }
-
-    protected TDigestState getState(long bucketOrd) {
-        if (bucketOrd >= states.size()) {
-            return null;
-        }
-        return states.get(bucketOrd);
     }
 
     @Override

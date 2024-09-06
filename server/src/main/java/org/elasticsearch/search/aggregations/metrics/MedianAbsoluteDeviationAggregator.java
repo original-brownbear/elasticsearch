@@ -8,8 +8,6 @@
 
 package org.elasticsearch.search.aggregations.metrics;
 
-import org.elasticsearch.common.util.BigArrays;
-import org.elasticsearch.common.util.ObjectArray;
 import org.elasticsearch.core.Releasables;
 import org.elasticsearch.index.fielddata.NumericDoubleValues;
 import org.elasticsearch.index.fielddata.SortedNumericDoubleValues;
@@ -31,11 +29,7 @@ public class MedianAbsoluteDeviationAggregator extends NumericMetricsAggregator.
 
     private final DocValueFormat format;
 
-    private final double compression;
-
-    private final TDigestExecutionHint executionHint;
-
-    private ObjectArray<TDigestState> valueSketches;
+    private final AbstractTDigestPercentilesAggregator.TDigestStates states;
 
     MedianAbsoluteDeviationAggregator(
         String name,
@@ -50,19 +44,14 @@ public class MedianAbsoluteDeviationAggregator extends NumericMetricsAggregator.
         super(name, config, context, parent, metadata);
         assert config.hasValues();
         this.format = Objects.requireNonNull(format);
-        this.compression = compression;
-        this.executionHint = executionHint;
-        this.valueSketches = context.bigArrays().newObjectArray(1);
-    }
-
-    private boolean hasDataForBucket(long bucketOrd) {
-        return bucketOrd < valueSketches.size() && valueSketches.get(bucketOrd) != null;
+        this.states = new AbstractTDigestPercentilesAggregator.TDigestStates(compression, executionHint, context.bigArrays());
     }
 
     @Override
     public double metric(long owningBucketOrd) {
-        if (hasDataForBucket(owningBucketOrd)) {
-            return computeMedianAbsoluteDeviation(valueSketches.get(owningBucketOrd));
+        var state = states.getState(owningBucketOrd);
+        if (state != null) {
+            return computeMedianAbsoluteDeviation(state);
         } else {
             return Double.NaN;
         }
@@ -74,7 +63,7 @@ public class MedianAbsoluteDeviationAggregator extends NumericMetricsAggregator.
             @Override
             public void collect(int doc, long bucket) throws IOException {
                 if (values.advanceExact(doc)) {
-                    final TDigestState valueSketch = getExistingOrNewHistogram(bigArrays(), bucket);
+                    final TDigestState valueSketch = states.getExistingOrNewHistogram(bucket);
                     for (int i = 0; i < values.docValueCount(); i++) {
                         valueSketch.add(values.nextValue());
                     }
@@ -89,28 +78,17 @@ public class MedianAbsoluteDeviationAggregator extends NumericMetricsAggregator.
             @Override
             public void collect(int doc, long bucket) throws IOException {
                 if (values.advanceExact(doc)) {
-                    final TDigestState valueSketch = getExistingOrNewHistogram(bigArrays(), bucket);
-                    valueSketch.add(values.doubleValue());
+                    states.getExistingOrNewHistogram(bucket).add(values.doubleValue());
                 }
             }
         };
     }
 
-    private TDigestState getExistingOrNewHistogram(final BigArrays bigArrays, long bucket) {
-        valueSketches = bigArrays.grow(valueSketches, bucket + 1);
-        TDigestState state = valueSketches.get(bucket);
-        if (state == null) {
-            state = TDigestState.create(compression, executionHint);
-            valueSketches.set(bucket, state);
-        }
-        return state;
-    }
-
     @Override
     public InternalAggregation buildAggregation(long bucket) throws IOException {
-        if (hasDataForBucket(bucket)) {
-            final TDigestState valueSketch = valueSketches.get(bucket);
-            return new InternalMedianAbsoluteDeviation(name, metadata(), format, valueSketch);
+        var state = states.getState(bucket);
+        if (state != null) {
+            return new InternalMedianAbsoluteDeviation(name, metadata(), format, state);
         } else {
             return buildEmptyAggregation();
         }
@@ -118,12 +96,12 @@ public class MedianAbsoluteDeviationAggregator extends NumericMetricsAggregator.
 
     @Override
     public InternalAggregation buildEmptyAggregation() {
-        return InternalMedianAbsoluteDeviation.empty(name, metadata(), format, compression, executionHint);
+        return InternalMedianAbsoluteDeviation.empty(name, metadata(), format, states.compression, states.executionHint);
     }
 
     @Override
     public void doClose() {
-        Releasables.close(valueSketches);
+        Releasables.close(states);
     }
 
 }

@@ -35,7 +35,7 @@ class TDigestPercentileRanksAggregator extends AbstractTDigestPercentilesAggrega
 
     @Override
     public InternalAggregation buildAggregation(long owningBucketOrdinal) {
-        TDigestState state = getState(owningBucketOrdinal);
+        TDigestState state = states.getState(owningBucketOrdinal);
         if (state == null) {
             return buildEmptyAggregation();
         } else {
@@ -45,12 +45,12 @@ class TDigestPercentileRanksAggregator extends AbstractTDigestPercentilesAggrega
 
     @Override
     public InternalAggregation buildEmptyAggregation() {
-        return InternalTDigestPercentileRanks.empty(name, keys, compression, executionHint, keyed, formatter, metadata());
+        return InternalTDigestPercentileRanks.empty(name, keys, states.compression, states.executionHint, keyed, formatter, metadata());
     }
 
     @Override
     public double metric(String name, long bucketOrd) {
-        TDigestState state = getState(bucketOrd);
+        TDigestState state = states.getState(bucketOrd);
         if (state == null) {
             return Double.NaN;
         } else {
