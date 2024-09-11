@@ -63,7 +63,7 @@ import org.elasticsearch.common.util.concurrent.AbstractRunnable;
 import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
-import org.elasticsearch.common.util.concurrent.EsThreadPoolExecutor;
+import org.elasticsearch.common.util.concurrent.ThrottledTaskRunner;
 import org.elasticsearch.common.util.iterable.Iterables;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
 import org.elasticsearch.common.xcontent.XContentHelper;
@@ -130,7 +130,6 @@ import org.elasticsearch.indices.fielddata.cache.IndicesFieldDataCache;
 import org.elasticsearch.indices.recovery.PeerRecoveryTargetService;
 import org.elasticsearch.indices.recovery.RecoveryState;
 import org.elasticsearch.indices.store.CompositeIndexFoldersDeletionListener;
-import org.elasticsearch.node.Node;
 import org.elasticsearch.plugins.FieldPredicate;
 import org.elasticsearch.plugins.IndexStorePlugin;
 import org.elasticsearch.plugins.PluginsService;
@@ -254,7 +253,7 @@ public class IndicesService extends AbstractLifecycleComponent
     private final Function<IndexMode, IdFieldMapper> idFieldMappers;
 
     @Nullable
-    private final EsThreadPoolExecutor danglingIndicesThreadPoolExecutor;
+    private final Executor danglingIndicesThreadPoolExecutor;
     private final Set<Index> danglingIndicesToWrite = ConcurrentCollections.newConcurrentSet();
     private final boolean nodeWriteDanglingIndicesInfo;
     private final ValuesSourceRegistry valuesSourceRegistry;
@@ -358,25 +357,39 @@ public class IndicesService extends AbstractLifecycleComponent
         }
         this.idFieldMappers = idFieldMappers::get;
 
-        final String nodeName = Objects.requireNonNull(Node.NODE_NAME_SETTING.get(settings));
         nodeWriteDanglingIndicesInfo = WRITE_DANGLING_INDICES_INFO_SETTING.get(settings);
-        danglingIndicesThreadPoolExecutor = nodeWriteDanglingIndicesInfo
-            ? EsExecutors.newScaling(
-                nodeName + "/" + DANGLING_INDICES_UPDATE_THREAD_NAME,
-                1,
-                1,
-                0,
-                TimeUnit.MILLISECONDS,
-                true,
-                daemonThreadFactory(nodeName, DANGLING_INDICES_UPDATE_THREAD_NAME),
-                threadPool.getThreadContext()
-            )
-            : null;
+        danglingIndicesThreadPoolExecutor = nodeWriteDanglingIndicesInfo ? buildDangingIndicesUpdateExecutor(threadPool) : null;
 
         this.allowExpensiveQueries = ALLOW_EXPENSIVE_QUERIES.get(clusterService.getSettings());
         clusterService.getClusterSettings().addSettingsUpdateConsumer(ALLOW_EXPENSIVE_QUERIES, this::setAllowExpensiveQueries);
 
         this.timestampFieldMapperService = new TimestampFieldMapperService(settings, threadPool, this);
+    }
+
+    private static Executor buildDangingIndicesUpdateExecutor(ThreadPool threadPool) {
+        final ThrottledTaskRunner throttledTaskRunner = new ThrottledTaskRunner(
+            DANGLING_INDICES_UPDATE_THREAD_NAME,
+            1,
+            threadPool.generic()
+        );
+        return r -> throttledTaskRunner.enqueueTask(new ActionListener<>() {
+            @Override
+            public void onResponse(Releasable releasable) {
+                try (releasable) {
+                    r.run();
+                }
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                if (r instanceof AbstractRunnable abstractRunnable) {
+                    abstractRunnable.onFailure(e);
+                }
+                // should be impossible, GENERIC pool doesn't reject anything
+                logger.error("unexpected failure running " + r, e);
+                assert false : new AssertionError("unexpected failure running " + r, e);
+            }
+        });
     }
 
     private static final String DANGLING_INDICES_UPDATE_THREAD_NAME = "DanglingIndices#updateTask";
@@ -389,9 +402,6 @@ public class IndicesService extends AbstractLifecycleComponent
     protected void doStop() {
         clusterService.removeApplier(timestampFieldMapperService);
         timestampFieldMapperService.doStop();
-
-        ThreadPool.terminate(danglingIndicesThreadPoolExecutor, 10, TimeUnit.SECONDS);
-
         ExecutorService indicesStopExecutor = Executors.newFixedThreadPool(5, daemonThreadFactory(settings, "indices_shutdown"));
 
         // Copy indices because we modify it asynchronously in the body of the loop
@@ -1843,7 +1853,6 @@ public class IndicesService extends AbstractLifecycleComponent
                 });
             } catch (EsRejectedExecutionException e) {
                 // ignore cases where we are shutting down..., there is really nothing interesting to be done here...
-                assert danglingIndicesThreadPoolExecutor.isShutdown();
             }
         } else {
             logger.trace("dangling indices update already pending for {}", index);
@@ -1856,8 +1865,7 @@ public class IndicesService extends AbstractLifecycleComponent
 
     // visible for testing
     public boolean allPendingDanglingIndicesWritten() {
-        return nodeWriteDanglingIndicesInfo == false
-            || (danglingIndicesToWrite.isEmpty() && danglingIndicesThreadPoolExecutor.getActiveCount() == 0);
+        return nodeWriteDanglingIndicesInfo == false || danglingIndicesToWrite.isEmpty();
     }
 
     /**
