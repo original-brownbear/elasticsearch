@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -294,6 +295,8 @@ public class DiscoveryNodeRole implements Comparable<DiscoveryNodeRole> {
     // a map from role names to their role representations
     private static final Map<String, DiscoveryNodeRole> ROLE_MAP;
 
+    private static final Set<String> ROLE_NAMES;
+
     static {
         final List<Field> roleFields = Arrays.stream(DiscoveryNodeRole.class.getFields())
             .filter(f -> f.getType().equals(DiscoveryNodeRole.class))
@@ -315,6 +318,7 @@ public class DiscoveryNodeRole implements Comparable<DiscoveryNodeRole> {
         assert abbreviations.size() == roleFields.size() : "role abbreviations [" + abbreviations + "], role fields [" + roleFields + "]";
         ROLES = roles;
         ROLE_MAP = roleMap;
+        ROLE_NAMES = ROLE_MAP.keySet().stream().collect(Collectors.toUnmodifiableSet());
     }
 
     /**
@@ -329,10 +333,10 @@ public class DiscoveryNodeRole implements Comparable<DiscoveryNodeRole> {
     /**
      * The set of possible role names.
      *
-     * @return an ordered, immutable set of possible role names
+     * @return an immutable set of possible role names
      */
-    public static SortedSet<String> roleNames() {
-        return ROLE_MAP.keySet().stream().collect(Sets.toUnmodifiableSortedSet());
+    public static Set<String> roleNames() {
+        return ROLE_NAMES;
     }
 
     /**

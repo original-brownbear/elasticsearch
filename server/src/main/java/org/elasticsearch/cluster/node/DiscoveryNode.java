@@ -138,6 +138,8 @@ public class DiscoveryNode implements Writeable, ToXContentFragment {
     private final SortedSet<DiscoveryNodeRole> roles;
     private final Set<String> roleNames;
     private final String externalId;
+    private final boolean canContainData;
+    private final boolean isMasterNode;
 
     /**
      * Creates a new {@link DiscoveryNode}
@@ -257,13 +259,19 @@ public class DiscoveryNode implements Writeable, ToXContentFragment {
         final TreeSet<DiscoveryNodeRole> sortedRoles = new TreeSet<>();
         final String[] roleNames = new String[roles.size()];
         int i = 0;
+        boolean canContainData = false;
+        boolean isMasterNode = false;
         for (DiscoveryNodeRole role : roles) {
+            canContainData = canContainData || role.canContainData();
+            isMasterNode = isMasterNode || role.equals(DiscoveryNodeRole.MASTER_ROLE);
             sortedRoles.add(role);
             roleNames[i++] = role.roleName();
         }
         this.roles = Collections.unmodifiableSortedSet(sortedRoles);
         this.roleNames = Set.of(roleNames);
         this.externalId = Objects.requireNonNullElse(externalId, this.nodeName);
+        this.canContainData = canContainData;
+        this.isMasterNode = isMasterNode;
     }
 
     /** Creates a DiscoveryNode representing the local node. */
@@ -319,10 +327,14 @@ public class DiscoveryNode implements Writeable, ToXContentFragment {
         int rolesSize = in.readVInt();
         final SortedSet<DiscoveryNodeRole> roles = new TreeSet<>();
         final String[] roleNames = new String[rolesSize];
+        boolean nodeCanContainData = false;
+        boolean isMasterNode = false;
         for (int i = 0; i < rolesSize; i++) {
             final String roleName = in.readString();
             final String roleNameAbbreviation = in.readString();
             final boolean canContainData = in.readBoolean();
+            nodeCanContainData = nodeCanContainData || canContainData;
+            isMasterNode = isMasterNode || roleName.equals(DiscoveryNodeRole.MASTER_ROLE.roleName());
             final Optional<DiscoveryNodeRole> maybeRole = DiscoveryNodeRole.maybeGetRoleFromRoleName(roleName);
             if (maybeRole.isEmpty()) {
                 roles.add(new DiscoveryNodeRole.UnknownRole(roleName, roleNameAbbreviation, canContainData));
@@ -348,6 +360,8 @@ public class DiscoveryNode implements Writeable, ToXContentFragment {
             this.externalId = nodeName;
         }
         this.roleNames = Set.of(roleNames);
+        this.canContainData = nodeCanContainData;
+        this.isMasterNode = isMasterNode;
     }
 
     /**
@@ -436,14 +450,14 @@ public class DiscoveryNode implements Writeable, ToXContentFragment {
      * Should this node hold data (shards) or not.
      */
     public boolean canContainData() {
-        return roles.stream().anyMatch(DiscoveryNodeRole::canContainData);
+        return canContainData;
     }
 
     /**
      * Can this node become master or not.
      */
     public boolean isMasterNode() {
-        return roles.contains(DiscoveryNodeRole.MASTER_ROLE);
+        return isMasterNode;
     }
 
     /**
