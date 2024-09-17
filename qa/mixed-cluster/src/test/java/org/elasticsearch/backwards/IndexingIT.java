@@ -73,8 +73,7 @@ public class IndexingIT extends ESRestTestCase {
         MixedClusterTestNodes nodes = buildNodeAndVersions();
         assumeFalse("new nodes is empty", nodes.getNewNodes().isEmpty());
         logger.info("cluster discovered: {}", nodes.toString());
-        final List<String> bwcNamesList = nodes.getBWCNodes().stream().map(MixedClusterTestNode::nodeName).collect(Collectors.toList());
-        final String bwcNames = bwcNamesList.stream().collect(Collectors.joining(","));
+        final String bwcNames = nodes.getBWCNodes().stream().map(MixedClusterTestNode::nodeName).collect(Collectors.joining(","));
         Settings.Builder settings = indexSettings(1, 2).put("index.routing.allocation.include._name", bwcNames);
         final String index = "indexversionprop";
         final int minUpdates = 5;
@@ -161,7 +160,7 @@ public class IndexingIT extends ESRestTestCase {
         assumeFalse("new nodes is empty", nodes.getNewNodes().isEmpty());
         logger.info("cluster discovered: {}", nodes.toString());
         final List<String> bwcNamesList = nodes.getBWCNodes().stream().map(MixedClusterTestNode::nodeName).collect(Collectors.toList());
-        final String bwcNames = bwcNamesList.stream().collect(Collectors.joining(","));
+        final String bwcNames = String.join(",", bwcNamesList);
         Settings.Builder settings = indexSettings(1, 2).put("index.routing.allocation.include._name", bwcNames);
 
         final String index = "test";

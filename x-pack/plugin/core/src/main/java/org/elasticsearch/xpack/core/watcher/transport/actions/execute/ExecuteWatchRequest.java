@@ -247,10 +247,7 @@ public class ExecuteWatchRequest extends ActionRequest {
         }
         for (String actionId : actionModes.keySet()) {
             if (actionId == null) {
-                validationException = ValidateActions.addValidationError(
-                    String.format(Locale.ROOT, "action id may not be null"),
-                    validationException
-                );
+                validationException = ValidateActions.addValidationError("action id may not be null", validationException);
             } else if (WatcherUtils.isValidId(actionId) == false) {
                 validationException = ValidateActions.addValidationError(
                     String.format(Locale.ROOT, "action id [%s] contains whitespace", actionId),

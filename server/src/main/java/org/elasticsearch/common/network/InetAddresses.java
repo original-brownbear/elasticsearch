@@ -416,7 +416,7 @@ public class InetAddresses {
      * See {@link #toAddrString} for details on how the address is represented.
      */
     public static String toCidrString(InetAddress address, int prefixLength) {
-        return new StringBuilder().append(toAddrString(address)).append("/").append(prefixLength).toString();
+        return toAddrString(address) + "/" + prefixLength;
     }
 
     /**

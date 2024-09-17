@@ -69,12 +69,8 @@ public interface PainlessScript {
                     // TODO: if this is still too long, truncate and use ellipses
                     String snippet = getSource().substring(startOffset, endOffset);
                     scriptStack.add(snippet);
-                    StringBuilder pointer = new StringBuilder();
-                    for (int i = startOffset; i < offset; i++) {
-                        pointer.append(' ');
-                    }
-                    pointer.append("^---- HERE");
-                    scriptStack.add(pointer.toString());
+                    String pointer = " ".repeat(Math.max(0, offset - startOffset)) + "^---- HERE";
+                    scriptStack.add(pointer);
                     pos = new ScriptException.Position(originalOffset, startOffset, endOffset);
                 }
                 break;

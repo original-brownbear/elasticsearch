@@ -39,7 +39,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -202,7 +201,7 @@ public abstract class DockerBuildTask extends DefaultTask {
                 spec.args("build", parameters.getDockerContext().get().getAsFile().getAbsolutePath());
 
                 if (isCrossPlatform) {
-                    spec.args("--platform", parameters.getPlatforms().get().stream().collect(Collectors.joining(",")));
+                    spec.args("--platform", String.join(",", parameters.getPlatforms().get()));
                 }
 
                 if (parameters.getNoCache().get()) {

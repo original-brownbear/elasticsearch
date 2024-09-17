@@ -50,6 +50,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -182,10 +183,10 @@ public class SourceOnlySnapshot {
         ByteArrayOutputStream output = new ByteArrayOutputStream(1024);
         try (CheckIndex checkIndex = new CheckIndex(targetDirectory)) {
             checkIndex.setFailFast(true);
-            checkIndex.setInfoStream(new PrintStream(output, false, IOUtils.UTF_8), false);
+            checkIndex.setInfoStream(new PrintStream(output, false, StandardCharsets.UTF_8), false);
             CheckIndex.Status status = checkIndex.checkIndex();
             if (status == null || status.clean == false) {
-                throw new RuntimeException("CheckIndex failed: " + output.toString(IOUtils.UTF_8));
+                throw new RuntimeException("CheckIndex failed: " + output.toString(StandardCharsets.UTF_8));
             }
             return true;
         }

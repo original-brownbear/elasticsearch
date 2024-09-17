@@ -120,16 +120,22 @@ public class IndexResponse extends DocWriteResponse {
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("IndexResponse[");
-        builder.append("index=").append(getIndex());
-        builder.append(",id=").append(getId());
-        builder.append(",version=").append(getVersion());
-        builder.append(",result=").append(getResult().getLowercase());
-        builder.append(",seqNo=").append(getSeqNo());
-        builder.append(",primaryTerm=").append(getPrimaryTerm());
-        builder.append(",shards=").append(Strings.toString(getShardInfo()));
-        return builder.append("]").toString();
+        return "IndexResponse["
+            + "index="
+            + getIndex()
+            + ",id="
+            + getId()
+            + ",version="
+            + getVersion()
+            + ",result="
+            + getResult().getLowercase()
+            + ",seqNo="
+            + getSeqNo()
+            + ",primaryTerm="
+            + getPrimaryTerm()
+            + ",shards="
+            + Strings.toString(getShardInfo())
+            + "]";
     }
 
     /**

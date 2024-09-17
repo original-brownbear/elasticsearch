@@ -29,6 +29,7 @@ import org.elasticsearch.test.ESIntegTestCase.Scope;
 import org.junit.Before;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -332,13 +333,10 @@ public class ScriptedMetricIT extends ESIntegTestCase {
             // When using the MockScriptPlugin we can map File scripts to inline scripts:
             // the name of the file script is used in test method while the source of the file script
             // must match a predefined script from CustomScriptPlugin.pluginScripts() method
-            Files.write(scripts.resolve("init_script.mockscript"), "vars.multiplier = 3".getBytes("UTF-8"));
-            Files.write(scripts.resolve("map_script.mockscript"), "state.list.add(vars.multiplier)".getBytes("UTF-8"));
-            Files.write(scripts.resolve("combine_script.mockscript"), "sum state values as a new aggregation".getBytes("UTF-8"));
-            Files.write(
-                scripts.resolve("reduce_script.mockscript"),
-                "sum all states (lists) values as a new aggregation".getBytes("UTF-8")
-            );
+            Files.writeString(scripts.resolve("init_script.mockscript"), "vars.multiplier = 3");
+            Files.writeString(scripts.resolve("map_script.mockscript"), "state.list.add(vars.multiplier)");
+            Files.writeString(scripts.resolve("combine_script.mockscript"), "sum state values as a new aggregation");
+            Files.writeString(scripts.resolve("reduce_script.mockscript"), "sum all states (lists) values as a new aggregation");
         } catch (IOException e) {
             throw new RuntimeException("failed to create scripts");
         }

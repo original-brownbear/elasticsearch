@@ -129,13 +129,16 @@ public class PutComponentTemplateAction extends ActionType<AcknowledgedResponse>
 
         @Override
         public String toString() {
-            StringBuilder sb = new StringBuilder("PutComponentRequest[");
-            sb.append("name=").append(name);
-            sb.append(", cause=").append(cause);
-            sb.append(", create=").append(create);
-            sb.append(", component_template=").append(componentTemplate);
-            sb.append("]");
-            return sb.toString();
+            return "PutComponentRequest["
+                + "name="
+                + name
+                + ", cause="
+                + cause
+                + ", create="
+                + create
+                + ", component_template="
+                + componentTemplate
+                + "]";
         }
     }
 

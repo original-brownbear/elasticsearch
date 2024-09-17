@@ -24,7 +24,6 @@ import org.junit.rules.ExpectedException;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -244,7 +243,7 @@ public class DependencyLicensesTaskTests {
         Path file = parent.toPath().resolve(name);
         file.toFile().createNewFile();
 
-        Files.write(file, content.getBytes(StandardCharsets.UTF_8));
+        Files.writeString(file, content);
     }
 
     private TaskProvider<DependencyLicensesTask> createDependencyLicensesTask(Project project) {

@@ -1420,7 +1420,7 @@ public class ElasticsearchNode implements TestClusterConfiguration {
         LOGGER.info("Tweak jvm options {}.", configFileRoot.resolve("jvm.options"));
         Path jvmOptions = configFileRoot.resolve("jvm.options");
         try {
-            String content = new String(Files.readAllBytes(jvmOptions));
+            String content = Files.readString(jvmOptions);
             Map<String, String> expansions = jvmOptionExpansions();
             for (String origin : expansions.keySet()) {
                 if (content.contains(origin) == false) {

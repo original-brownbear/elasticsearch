@@ -246,9 +246,7 @@ public class IndexableBinaryStringToolsTests extends LuceneTestCase {
         StringBuilder buf = new StringBuilder();
         for (int charNum = 0; charNum < numBytes; ++charNum) {
             String hex = Integer.toHexString(charArray[charNum]);
-            for (int digit = 0; digit < 4 - hex.length(); ++digit) {
-                buf.append('0');
-            }
+            buf.append("0".repeat(4 - hex.length()));
             buf.append(hex.toUpperCase(Locale.ROOT));
             if (charNum < numBytes - 1) {
                 buf.append(' ');

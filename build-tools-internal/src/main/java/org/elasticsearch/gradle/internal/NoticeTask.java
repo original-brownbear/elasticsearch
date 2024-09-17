@@ -10,7 +10,6 @@
 package org.elasticsearch.gradle.internal;
 
 import org.codehaus.groovy.runtime.StringGroovyMethods;
-import org.elasticsearch.gradle.util.FileUtils;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.FileTree;
@@ -31,14 +30,16 @@ import org.gradle.initialization.layout.BuildLayout;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
-
-import static org.apache.commons.io.FileUtils.readFileToString;
 
 /**
  * A task to create a notice file which includes dependencies' notices.
@@ -99,8 +100,7 @@ public abstract class NoticeTask extends DefaultTask {
 
     @TaskAction
     public void generateNotice() throws IOException {
-        StringBuilder output = new StringBuilder();
-        output.append(readFileToString(inputFile, "UTF-8"));
+        StringBuilder output = new StringBuilder(Files.readString(inputFile.toPath(), StandardCharsets.UTF_8));
         output.append("\n\n");
         // This is a map rather than a set so that the sort order is the 3rd
         // party component names, unaffected by the full path to the various files
@@ -111,8 +111,7 @@ public abstract class NoticeTask extends DefaultTask {
                 String name = file.getName().replaceFirst("-NOTICE\\.txt$", "");
                 if (seen.containsKey(name)) {
                     File prevFile = seen.get(name);
-                    String previousFileText = readFileToString(prevFile, "UTF-8");
-                    if (previousFileText.equals(readFileToString(file, "UTF-8")) == false) {
+                    if (Arrays.equals(Files.readAllBytes(prevFile.toPath()), Files.readAllBytes(file.toPath())) == false) {
                         throw new RuntimeException(
                             "Two different notices exist for dependency '" + name + "': " + prevFile + " and " + file
                         );
@@ -137,7 +136,7 @@ public abstract class NoticeTask extends DefaultTask {
             StringBuilder header = new StringBuilder();
             String packageDeclaration = null;
 
-            for (String line : FileUtils.readLines(sourceFile, "UTF-8")) {
+            for (String line : Files.readAllLines(sourceFile.toPath(), StandardCharsets.UTF_8)) {
                 if (isPackageInfo && packageDeclaration == null && line.startsWith("package")) {
                     packageDeclaration = line;
                 }
@@ -165,7 +164,7 @@ public abstract class NoticeTask extends DefaultTask {
             }
         }
 
-        FileUtils.write(outputFile, output.toString(), "UTF-8");
+        Files.writeString(outputFile.toPath(), output, StandardCharsets.UTF_8);
     }
 
     @InputFiles
@@ -195,7 +194,12 @@ public abstract class NoticeTask extends DefaultTask {
     }
 
     public static void appendFile(File file, String name, String type, StringBuilder output) {
-        String text = FileUtils.read(file, "UTF-8");
+        String text = null;
+        try {
+            text = Files.readString(file.toPath(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
         if (text.trim().isEmpty()) {
             return;
         }

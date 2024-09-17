@@ -38,7 +38,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.equalTo;
 
@@ -233,7 +232,7 @@ public class TokenCountFieldMapperTests extends MapperTestCase {
                     return new Value(null, null);
                 }
 
-                var text = randomList(0, 10, () -> randomAlphaOfLengthBetween(0, 10)).stream().collect(Collectors.joining(" "));
+                var text = String.join(" ", randomList(0, 10, () -> randomAlphaOfLengthBetween(0, 10)));
                 // with keyword analyzer token count is always 1
                 return new Value(text, 1);
             }

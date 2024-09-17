@@ -1191,15 +1191,11 @@ public final class TimestampFormatFinder {
                 switch (groupNum) {
                     case 2 -> {
                         char formatChar = isDayFirst ? 'd' : 'M';
-                        for (int count = matcher.group(groupNum).length(); count > 0; --count) {
-                            builder.append(formatChar);
-                        }
+                        builder.append(String.valueOf(formatChar).repeat(matcher.group(groupNum).length()));
                     }
                     case 4 -> {
                         char formatChar = isDayFirst ? 'M' : 'd';
-                        for (int count = matcher.group(groupNum).length(); count > 0; --count) {
-                            builder.append(formatChar);
-                        }
+                        builder.append(String.valueOf(formatChar).repeat(matcher.group(groupNum).length()));
                     }
                     default -> builder.append(matcher.group(groupNum));
                 }

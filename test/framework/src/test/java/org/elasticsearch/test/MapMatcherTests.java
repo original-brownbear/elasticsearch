@@ -173,54 +173,38 @@ public class MapMatcherTests extends ESTestCase {
     }
 
     public void testSubEmptyExpectedMap() {
-        StringBuilder mismatch = new StringBuilder();
-        mismatch.append("a map containing\n");
-        mismatch.append("foo: an empty map\n");
-        mismatch.append("  bar: <unexpected> but was <2>\n");
-        mismatch.append("baz: <2>");
-        assertMismatch(
-            Map.of("foo", Map.of("bar", 2), "baz", 2),
-            matchesMap().entry("foo", Map.of()).entry("baz", 2),
-            equalTo(mismatch.toString())
-        );
+        String mismatch = """
+            a map containing
+            foo: an empty map
+              bar: <unexpected> but was <2>
+            baz: <2>""";
+        assertMismatch(Map.of("foo", Map.of("bar", 2), "baz", 2), matchesMap().entry("foo", Map.of()).entry("baz", 2), equalTo(mismatch));
     }
 
     public void testSubEmptyActualMap() {
-        StringBuilder mismatch = new StringBuilder();
-        mismatch.append("a map containing\n");
-        mismatch.append("foo: a map containing\n");
-        mismatch.append("  bar: expected <2> but was <missing>\n");
-        mismatch.append("baz: <2>");
-        assertMismatch(
-            Map.of("foo", Map.of(), "baz", 2),
-            matchesMap().entry("foo", Map.of("bar", 2)).entry("baz", 2),
-            equalTo(mismatch.toString())
-        );
+        String mismatch = """
+            a map containing
+            foo: a map containing
+              bar: expected <2> but was <missing>
+            baz: <2>""";
+        assertMismatch(Map.of("foo", Map.of(), "baz", 2), matchesMap().entry("foo", Map.of("bar", 2)).entry("baz", 2), equalTo(mismatch));
     }
 
     public void testSubEmptyActualAndExpectedMap() {
-        StringBuilder mismatch = new StringBuilder();
-        mismatch.append("a map containing\n");
-        mismatch.append("foo: an empty map\n");
-        mismatch.append("bar: expected <2> but was <1>");
-        assertMismatch(
-            Map.of("foo", Map.of(), "bar", 1),
-            matchesMap().entry("foo", Map.of()).entry("bar", 2),
-            equalTo(mismatch.toString())
-        );
+        String mismatch = """
+            a map containing
+            foo: an empty map
+            bar: expected <2> but was <1>""";
+        assertMismatch(Map.of("foo", Map.of(), "bar", 1), matchesMap().entry("foo", Map.of()).entry("bar", 2), equalTo(mismatch));
     }
 
     public void testSubList() {
-        StringBuilder mismatch = new StringBuilder();
-        mismatch.append("a map containing\n");
-        mismatch.append("foo: a list containing\n");
-        mismatch.append("    0: expected <1> but was <2>\n");
-        mismatch.append("bar: <2>");
-        assertMismatch(
-            Map.of("foo", List.of(2), "bar", 2),
-            matchesMap().entry("foo", List.of(1)).entry("bar", 2),
-            equalTo(mismatch.toString())
-        );
+        String mismatch = """
+            a map containing
+            foo: a list containing
+                0: expected <1> but was <2>
+            bar: <2>""";
+        assertMismatch(Map.of("foo", List.of(2), "bar", 2), matchesMap().entry("foo", List.of(1)).entry("bar", 2), equalTo(mismatch));
     }
 
     public void testSubListMismatchEmpty() {
@@ -239,16 +223,12 @@ public class MapMatcherTests extends ESTestCase {
     }
 
     public void testSubEmptyList() {
-        StringBuilder mismatch = new StringBuilder();
-        mismatch.append("a map containing\n");
-        mismatch.append("foo: an empty list\n");
-        mismatch.append("    0: <unexpected> but was <2>\n");
-        mismatch.append("bar: <2>");
-        assertMismatch(
-            Map.of("foo", List.of(2), "bar", 2),
-            matchesMap().entry("foo", List.of()).entry("bar", 2),
-            equalTo(mismatch.toString())
-        );
+        String mismatch = """
+            a map containing
+            foo: an empty list
+                0: <unexpected> but was <2>
+            bar: <2>""";
+        assertMismatch(Map.of("foo", List.of(2), "bar", 2), matchesMap().entry("foo", List.of()).entry("bar", 2), equalTo(mismatch));
     }
 
     public void testSubMatcher() {

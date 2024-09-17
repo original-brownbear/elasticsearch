@@ -30,7 +30,7 @@ import org.elasticsearch.xpack.inference.services.amazonbedrock.embeddings.Amazo
 
 import java.nio.CharBuffer;
 import java.nio.charset.CharacterCodingException;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import static org.elasticsearch.xpack.inference.common.TruncatorTests.createTruncator;
@@ -148,7 +148,7 @@ public class AmazonBedrockExecutorTests extends ESTestCase {
     public static InvokeModelResult getTestInvokeResult(String resultJson) throws CharacterCodingException {
         var result = new InvokeModelResult();
         result.setContentType("application/json");
-        var encoder = Charset.forName("UTF-8").newEncoder();
+        var encoder = StandardCharsets.UTF_8.newEncoder();
         result.setBody(encoder.encode(CharBuffer.wrap(resultJson)));
         return result;
     }

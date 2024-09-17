@@ -185,15 +185,20 @@ public final class ResponseCollectorService implements ClusterStateListener {
 
         @Override
         public String toString() {
-            StringBuilder sb = new StringBuilder("ComputedNodeStats[");
-            sb.append(nodeId).append("](");
-            sb.append("nodes: ").append(clientNum);
-            sb.append(", queue: ").append(queueSize);
-            sb.append(", response time: ").append(String.format(Locale.ROOT, "%.1f", responseTime));
-            sb.append(", service time: ").append(String.format(Locale.ROOT, "%.1f", serviceTime));
-            sb.append(", rank: ").append(String.format(Locale.ROOT, "%.1f", rank(1)));
-            sb.append(")");
-            return sb.toString();
+            return "ComputedNodeStats["
+                + nodeId
+                + "]("
+                + "nodes: "
+                + clientNum
+                + ", queue: "
+                + queueSize
+                + ", response time: "
+                + String.format(Locale.ROOT, "%.1f", responseTime)
+                + ", service time: "
+                + String.format(Locale.ROOT, "%.1f", serviceTime)
+                + ", rank: "
+                + String.format(Locale.ROOT, "%.1f", rank(1))
+                + ")";
         }
     }
 

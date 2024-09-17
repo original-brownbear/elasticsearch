@@ -409,9 +409,7 @@ public class ExpressionScriptEngine implements ScriptEngine {
         StringBuilder pointer = new StringBuilder();
         if (cause instanceof ParseException) {
             int offset = ((ParseException) cause).getErrorOffset();
-            for (int i = 0; i < offset; i++) {
-                pointer.append(' ');
-            }
+            pointer.append(" ".repeat(offset));
         }
         pointer.append("^---- HERE");
         stack.add(pointer.toString());

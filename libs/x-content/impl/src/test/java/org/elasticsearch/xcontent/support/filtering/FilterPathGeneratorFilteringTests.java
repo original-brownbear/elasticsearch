@@ -815,7 +815,7 @@ public class FilterPathGeneratorFilteringTests extends ESTestCase {
             try (
                 FilteringGeneratorDelegate generator = new FilteringGeneratorDelegate(
                     JSON_FACTORY.createGenerator(os),
-                    new FilterPathBasedFilter(Arrays.asList(filter.split(",")).stream().collect(Collectors.toSet()), inclusive),
+                    new FilterPathBasedFilter(Arrays.stream(filter.split(",")).collect(Collectors.toSet()), inclusive),
                     true,
                     true
                 )

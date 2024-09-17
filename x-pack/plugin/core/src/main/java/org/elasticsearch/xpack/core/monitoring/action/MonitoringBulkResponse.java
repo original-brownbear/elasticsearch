@@ -137,11 +137,7 @@ public class MonitoringBulkResponse extends ActionResponse {
 
         @Override
         public String toString() {
-            final StringBuilder sb = new StringBuilder("Error [");
-            sb.append("cause=").append(cause);
-            sb.append(", status=").append(status);
-            sb.append(']');
-            return sb.toString();
+            return "Error [" + "cause=" + cause + ", status=" + status + ']';
         }
     }
 }

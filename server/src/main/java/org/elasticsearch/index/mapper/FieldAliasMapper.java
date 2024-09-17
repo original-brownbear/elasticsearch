@@ -100,17 +100,15 @@ public final class FieldAliasMapper extends Mapper {
         String pathScope = mappers.nestedLookup().getNestedParent(targetPath);
 
         if (Objects.equals(aliasScope, pathScope) == false) {
-            StringBuilder message = new StringBuilder(
-                "Invalid [path] value ["
-                    + targetPath
-                    + "] for field alias ["
-                    + name
-                    + "]: an alias must have the same nested scope as its target. "
-            );
-            message.append(aliasScope == null ? "The alias is not nested" : "The alias's nested scope is [" + aliasScope + "]");
-            message.append(", but ");
-            message.append(pathScope == null ? "the target is not nested." : "the target's nested scope is [" + pathScope + "].");
-            throw new IllegalArgumentException(message.toString());
+            String message = "Invalid [path] value ["
+                + targetPath
+                + "] for field alias ["
+                + name
+                + "]: an alias must have the same nested scope as its target. "
+                + (aliasScope == null ? "The alias is not nested" : "The alias's nested scope is [" + aliasScope + "]")
+                + ", but "
+                + (pathScope == null ? "the target is not nested." : "the target's nested scope is [" + pathScope + "].");
+            throw new IllegalArgumentException(message);
         }
     }
 

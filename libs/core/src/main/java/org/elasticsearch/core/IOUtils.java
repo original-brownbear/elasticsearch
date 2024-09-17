@@ -23,7 +23,6 @@ package org.elasticsearch.core;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
 import java.nio.file.Files;
@@ -38,14 +37,6 @@ import java.util.Map;
  * Utilities for common I/O methods. Borrowed heavily from Lucene (org.apache.lucene.util.IOUtils).
  */
 public final class IOUtils {
-
-    /**
-     * UTF-8 charset string.
-     * <p>Where possible, use {@link StandardCharsets#UTF_8} instead,
-     * as using the String constant may slow things down.
-     * @see StandardCharsets#UTF_8
-     */
-    public static final String UTF_8 = StandardCharsets.UTF_8.name();
 
     private IOUtils() {
         // Static utils methods

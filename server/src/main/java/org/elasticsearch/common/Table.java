@@ -93,12 +93,8 @@ public class Table {
             throw new IllegalStateException("no row started...");
         }
         if (check && (currentCells.size() != headers.size())) {
-            StringBuilder s = new StringBuilder();
-            s.append("mismatch on number of cells ");
-            s.append(currentCells.size());
-            s.append(" in a row compared to header ");
-            s.append(headers.size());
-            throw new IllegalStateException(s.toString());
+            String s = "mismatch on number of cells " + currentCells.size() + " in a row compared to header " + headers.size();
+            throw new IllegalStateException(s);
         }
         rows.add(currentCells);
         currentCells = null;

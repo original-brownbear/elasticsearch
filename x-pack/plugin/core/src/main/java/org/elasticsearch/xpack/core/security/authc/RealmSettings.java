@@ -214,9 +214,8 @@ public class RealmSettings {
         }
         // verify that domain assignment does not refer to unknown realms
         if (false == unknownRealms.isEmpty()) {
-            final StringBuilder undefinedRealmsErrorMessageBuilder = new StringBuilder("Undefined realms ").append(unknownRealms)
-                .append(" cannot be assigned to domains");
-            throw new IllegalArgumentException(undefinedRealmsErrorMessageBuilder.toString());
+            String undefinedRealmsErrorMessageBuilder = "Undefined realms " + unknownRealms + " cannot be assigned to domains";
+            throw new IllegalArgumentException(undefinedRealmsErrorMessageBuilder);
         }
         return realmToDomainsMap.entrySet()
             .stream()

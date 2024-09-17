@@ -135,16 +135,18 @@ public class S3HttpHandler implements HttpHandler {
             } else if (Regex.simpleMatch("POST /" + path + "/*?uploads", request)) {
                 final var upload = new MultipartUpload(UUIDs.randomBase64UUID(), requestComponents.path.substring(bucket.length() + 2));
                 uploads.put(upload.getUploadId(), upload);
-
-                final var uploadResult = new StringBuilder();
-                uploadResult.append("<?xml version='1.0' encoding='UTF-8'?>");
-                uploadResult.append("<InitiateMultipartUploadResult>");
-                uploadResult.append("<Bucket>").append(bucket).append("</Bucket>");
-                uploadResult.append("<Key>").append(upload.getPath()).append("</Key>");
-                uploadResult.append("<UploadId>").append(upload.getUploadId()).append("</UploadId>");
-                uploadResult.append("</InitiateMultipartUploadResult>");
-
-                byte[] response = uploadResult.toString().getBytes(StandardCharsets.UTF_8);
+                byte[] response = ("<?xml version='1.0' encoding='UTF-8'?>"
+                    + "<InitiateMultipartUploadResult>"
+                    + "<Bucket>"
+                    + bucket
+                    + "</Bucket>"
+                    + "<Key>"
+                    + upload.getPath()
+                    + "</Key>"
+                    + "<UploadId>"
+                    + upload.getUploadId()
+                    + "</UploadId>"
+                    + "</InitiateMultipartUploadResult>").getBytes(StandardCharsets.UTF_8);
                 exchange.getResponseHeaders().add("Content-Type", "application/xml");
                 exchange.sendResponseHeaders(RestStatus.OK.getStatus(), response.length);
                 exchange.getResponseBody().write(response);

@@ -2663,9 +2663,7 @@ public class DocumentParserTests extends MapperServiceTestCase {
         DocumentMapper docMapper2 = createMapperService(mappingNoSubobjects(xContentBuilder -> {})).documentMapper();
 
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < depth; i++) {
-            sb.append("obj.");
-        }
+        sb.append("obj.".repeat(depth));
         sb.append("foo");
         docMapper2.parse(source(b -> { b.field(sb.toString(), 10); }));
     }

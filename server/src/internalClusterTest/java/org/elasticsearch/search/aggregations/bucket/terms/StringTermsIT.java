@@ -744,12 +744,8 @@ public class StringTermsIT extends AbstractTermsTestCase {
     }
 
     public void testSingleValuedFieldOrderedBySubAggregationAscMultiHierarchyLevelsSpecialChars() throws Exception {
-        StringBuilder filter2NameBuilder = new StringBuilder("filt.er2");
-        filter2NameBuilder.append(randomAlphaOfLengthBetween(3, 10).replace("[", "").replace("]", "").replace(">", ""));
-        String filter2Name = filter2NameBuilder.toString();
-        StringBuilder statsNameBuilder = new StringBuilder("st.ats");
-        statsNameBuilder.append(randomAlphaOfLengthBetween(3, 10).replace("[", "").replace("]", "").replace(">", ""));
-        String statsName = statsNameBuilder.toString();
+        String filter2Name = "filt.er2" + randomAlphaOfLengthBetween(3, 10).replace("[", "").replace("]", "").replace(">", "");
+        String statsName = "st.ats" + randomAlphaOfLengthBetween(3, 10).replace("[", "").replace("]", "").replace(">", "");
         boolean asc = randomBoolean();
         assertNoFailuresAndResponse(
             prepareSearch("idx").addAggregation(
@@ -806,12 +802,8 @@ public class StringTermsIT extends AbstractTermsTestCase {
     }
 
     public void testSingleValuedFieldOrderedBySubAggregationAscMultiHierarchyLevelsSpecialCharsNoDotNotation() throws Exception {
-        StringBuilder filter2NameBuilder = new StringBuilder("filt.er2");
-        filter2NameBuilder.append(randomAlphaOfLengthBetween(3, 10).replace("[", "").replace("]", "").replace(">", ""));
-        String filter2Name = filter2NameBuilder.toString();
-        StringBuilder statsNameBuilder = new StringBuilder("st.ats");
-        statsNameBuilder.append(randomAlphaOfLengthBetween(3, 10).replace("[", "").replace("]", "").replace(">", ""));
-        String statsName = statsNameBuilder.toString();
+        String filter2Name = "filt.er2" + randomAlphaOfLengthBetween(3, 10).replace("[", "").replace("]", "").replace(">", "");
+        String statsName = "st.ats" + randomAlphaOfLengthBetween(3, 10).replace("[", "").replace("]", "").replace(">", "");
         boolean asc = randomBoolean();
         assertNoFailuresAndResponse(
             prepareSearch("idx").addAggregation(

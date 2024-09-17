@@ -694,43 +694,40 @@ public class Cron implements ToXContentFragment {
     }
 
     public String getExpressionSummary() {
-        StringBuilder buf = new StringBuilder();
 
-        buf.append("seconds: ");
-        buf.append(expressionSetSummary(seconds));
-        buf.append("\n");
-        buf.append("minutes: ");
-        buf.append(expressionSetSummary(minutes));
-        buf.append("\n");
-        buf.append("hours: ");
-        buf.append(expressionSetSummary(hours));
-        buf.append("\n");
-        buf.append("daysOfMonth: ");
-        buf.append(expressionSetSummary(daysOfMonth));
-        buf.append("\n");
-        buf.append("months: ");
-        buf.append(expressionSetSummary(months));
-        buf.append("\n");
-        buf.append("daysOfWeek: ");
-        buf.append(expressionSetSummary(daysOfWeek));
-        buf.append("\n");
-        buf.append("lastdayOfWeek: ");
-        buf.append(lastdayOfWeek);
-        buf.append("\n");
-        buf.append("nearestWeekday: ");
-        buf.append(nearestWeekday);
-        buf.append("\n");
-        buf.append("NthDayOfWeek: ");
-        buf.append(nthdayOfWeek);
-        buf.append("\n");
-        buf.append("lastdayOfMonth: ");
-        buf.append(lastdayOfMonth);
-        buf.append("\n");
-        buf.append("years: ");
-        buf.append(expressionSetSummary(years));
-        buf.append("\n");
-
-        return buf.toString();
+        return "seconds: "
+            + expressionSetSummary(seconds)
+            + "\n"
+            + "minutes: "
+            + expressionSetSummary(minutes)
+            + "\n"
+            + "hours: "
+            + expressionSetSummary(hours)
+            + "\n"
+            + "daysOfMonth: "
+            + expressionSetSummary(daysOfMonth)
+            + "\n"
+            + "months: "
+            + expressionSetSummary(months)
+            + "\n"
+            + "daysOfWeek: "
+            + expressionSetSummary(daysOfWeek)
+            + "\n"
+            + "lastdayOfWeek: "
+            + lastdayOfWeek
+            + "\n"
+            + "nearestWeekday: "
+            + nearestWeekday
+            + "\n"
+            + "NthDayOfWeek: "
+            + nthdayOfWeek
+            + "\n"
+            + "lastdayOfMonth: "
+            + lastdayOfMonth
+            + "\n"
+            + "years: "
+            + expressionSetSummary(years)
+            + "\n";
     }
 
     @Override

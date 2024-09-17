@@ -211,7 +211,7 @@ public class IpPrefixAutomatonUtil {
     }
 
     private static String padWithZeros(String input, int leadingZeros) {
-        return new StringBuilder("0".repeat(leadingZeros)).append(input).toString();
+        return "0".repeat(leadingZeros) + input;
     }
 
     private static Pattern IP6_BLOCK_MATCHER = Pattern.compile(

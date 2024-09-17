@@ -26,7 +26,6 @@ import org.elasticsearch.core.Tuple;
 import org.elasticsearch.reservedstate.action.ReservedClusterSettingsAction;
 import org.elasticsearch.test.ESIntegTestCase;
 
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -118,7 +117,7 @@ public class FileSettingsServiceIT extends ESIntegTestCase {
         Path tempFilePath = createTempFile();
 
         String settingsFileContent = Strings.format(json, version);
-        Files.write(tempFilePath, settingsFileContent.getBytes(StandardCharsets.UTF_8));
+        Files.writeString(tempFilePath, settingsFileContent);
         logger.info("--> Before writing new settings file with version [{}]", version);
         Files.move(tempFilePath, fileSettingsService.watchedFile(), StandardCopyOption.ATOMIC_MOVE);
         logger.info("--> After writing new settings file: [{}]", settingsFileContent);

@@ -153,11 +153,7 @@ public class ScriptQueryBuilder extends AbstractQueryBuilder<ScriptQueryBuilder>
 
         @Override
         public String toString(String field) {
-            StringBuilder buffer = new StringBuilder();
-            buffer.append("ScriptQuery(");
-            buffer.append(script);
-            buffer.append(")");
-            return buffer.toString();
+            return "ScriptQuery(" + script + ")";
         }
 
         @Override

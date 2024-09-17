@@ -9,7 +9,6 @@
 
 package org.elasticsearch.gradle.internal;
 
-import org.elasticsearch.gradle.util.FileUtils;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.RegularFileProperty;
@@ -19,6 +18,9 @@ import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -36,10 +38,10 @@ abstract class GenerateProviderManifest extends DefaultTask {
     abstract RegularFileProperty getManifestFile();
 
     @TaskAction
-    void generateManifest() {
+    void generateManifest() throws IOException {
         File manifestFile = getManifestFile().get().getAsFile();
         manifestFile.getParentFile().mkdirs();
-        FileUtils.write(manifestFile, generateManifestContent(), "UTF-8");
+        Files.writeString(manifestFile.toPath(), generateManifestContent(), StandardCharsets.UTF_8);
     }
 
     private String generateManifestContent() {

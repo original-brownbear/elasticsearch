@@ -225,9 +225,6 @@ public class ESJsonLayout extends AbstractStringLayout {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("ESJsonLayout{");
-        sb.append("patternLayout=").append(patternLayout);
-        sb.append('}');
-        return sb.toString();
+        return "ESJsonLayout{" + "patternLayout=" + patternLayout + '}';
     }
 }

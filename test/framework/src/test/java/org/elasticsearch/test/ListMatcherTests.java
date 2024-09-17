@@ -56,11 +56,11 @@ public class ListMatcherTests extends ESTestCase {
     }
 
     public void testExtra() {
-        StringBuilder mismatch = new StringBuilder();
-        mismatch.append("a list containing\n");
-        mismatch.append("0: <1>\n");
-        mismatch.append("1: <unexpected> but was <2>");
-        assertMismatch(List.of(1, 2), matchesList().item(1), equalTo(mismatch.toString()));
+        String mismatch = """
+            a list containing
+            0: <1>
+            1: <unexpected> but was <2>""";
+        assertMismatch(List.of(1, 2), matchesList().item(1), equalTo(mismatch));
     }
 
     public void testManyExtra() {
@@ -132,12 +132,12 @@ public class ListMatcherTests extends ESTestCase {
     }
 
     public void testSubEmptyMap() {
-        StringBuilder mismatch = new StringBuilder();
-        mismatch.append("a list containing\n");
-        mismatch.append("0: an empty map\n");
-        mismatch.append("bar: <unexpected> but was <2>\n");
-        mismatch.append("1: <2>");
-        assertMismatch(List.of(Map.of("bar", 2), 2), matchesList().item(Map.of()).item(2), equalTo(mismatch.toString()));
+        String mismatch = """
+            a list containing
+            0: an empty map
+            bar: <unexpected> but was <2>
+            1: <2>""";
+        assertMismatch(List.of(Map.of("bar", 2), 2), matchesList().item(Map.of()).item(2), equalTo(mismatch));
     }
 
     void testSubList() {
@@ -164,12 +164,12 @@ public class ListMatcherTests extends ESTestCase {
     }
 
     public void testSubEmptyList() {
-        StringBuilder mismatch = new StringBuilder();
-        mismatch.append("a list containing\n");
-        mismatch.append("0: an empty list\n");
-        mismatch.append("  0: <unexpected> but was <2>\n");
-        mismatch.append("1: <2>");
-        assertMismatch(List.of(List.of(2), 2), matchesList().item(List.of()).item(2), equalTo(mismatch.toString()));
+        String mismatch = """
+            a list containing
+            0: an empty list
+              0: <unexpected> but was <2>
+            1: <2>""";
+        assertMismatch(List.of(List.of(2), 2), matchesList().item(List.of()).item(2), equalTo(mismatch));
     }
 
     public void testSubMatcher() {

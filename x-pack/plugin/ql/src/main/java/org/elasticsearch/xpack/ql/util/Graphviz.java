@@ -306,8 +306,6 @@ public abstract class Graphviz {
     }
 
     private static void indent(StringBuilder sb, int indent) {
-        for (int i = 0; i < indent; i++) {
-            sb.append(" ");
-        }
+        sb.append(" ".repeat(indent));
     }
 }

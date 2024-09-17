@@ -101,7 +101,7 @@ public class HeaderWarning {
      * the individual chars from qdText can be validated using the set of chars
      * the \\\\|\\\\\" (escaped '\' 0x20 and '"' 0x5c) which is used for quoted-pair has to be validated as strings
      */
-    private static BitSet qdTextChars = Stream.of(
+    private static final BitSet qdTextChars = Stream.of(
         IntStream.of(0x09),// HTAB
         IntStream.of(0x20), // SPACE
         IntStream.of(0x21), // !
@@ -277,11 +277,7 @@ public class HeaderWarning {
      * @return a warning value formatted according to RFC 7234
      */
     public static String formatWarning(final String s) {
-        // Assume that the common scenario won't have a string to escape and encode.
-        int length = WARNING_PREFIX.length() + s.length() + 6;
-        final StringBuilder sb = new StringBuilder(length);
-        sb.append(WARNING_PREFIX).append(" \"").append(escapeAndEncode(s)).append("\"");
-        return sb.toString();
+        return WARNING_PREFIX + " \"" + escapeAndEncode(s) + "\"";
     }
 
     /**

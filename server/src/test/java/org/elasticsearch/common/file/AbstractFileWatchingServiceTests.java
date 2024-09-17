@@ -24,7 +24,6 @@ import org.junit.After;
 import org.junit.Before;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -198,7 +197,7 @@ public class AbstractFileWatchingServiceTests extends ESTestCase {
     private void writeTestFile(Path path, String contents) throws IOException {
         Path tempFilePath = createTempFile();
 
-        Files.write(tempFilePath, contents.getBytes(StandardCharsets.UTF_8));
+        Files.writeString(tempFilePath, contents);
         Files.move(tempFilePath, path, StandardCopyOption.ATOMIC_MOVE);
     }
 

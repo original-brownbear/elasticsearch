@@ -36,20 +36,29 @@ public class JsonLogLine {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("JsonLogLine{");
-        sb.append("dataset='").append(dataset).append('\'');
-        sb.append(", timestamp='").append(timestamp).append('\'');
-        sb.append(", level='").append(level).append('\'');
-        sb.append(", component='").append(component).append('\'');
-        sb.append(", clusterName='").append(clusterName).append('\'');
-        sb.append(", nodeName='").append(nodeName).append('\'');
-        sb.append(", clusterUuid='").append(clusterUuid).append('\'');
-        sb.append(", nodeId='").append(nodeId).append('\'');
-        sb.append(", message='").append(message).append('\'');
-        sb.append(", tags='").append(tags).append('\'');
-        sb.append(", stacktrace=").append(stacktrace);
-        sb.append('}');
-        return sb.toString();
+        return "JsonLogLine{dataset='"
+            + dataset
+            + "', timestamp='"
+            + timestamp
+            + "', level='"
+            + level
+            + "', component='"
+            + component
+            + "', clusterName='"
+            + clusterName
+            + "', nodeName='"
+            + nodeName
+            + "', clusterUuid='"
+            + clusterUuid
+            + "', nodeId='"
+            + nodeId
+            + "', message='"
+            + message
+            + "', tags='"
+            + tags
+            + "', stacktrace="
+            + stacktrace
+            + '}';
     }
 
     public String getDataset() {

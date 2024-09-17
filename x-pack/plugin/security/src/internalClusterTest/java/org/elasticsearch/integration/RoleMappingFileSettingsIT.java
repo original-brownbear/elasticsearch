@@ -175,7 +175,7 @@ public class RoleMappingFileSettingsIT extends NativeRealmIntegTestCase {
 
         logger.info("--> before writing JSON config to node {} with path {}", node, tempFilePath);
         logger.info(Strings.format(json, version));
-        Files.write(tempFilePath, Strings.format(json, version).getBytes(StandardCharsets.UTF_8));
+        Files.writeString(tempFilePath, Strings.format(json, version));
         Files.move(tempFilePath, fileSettingsService.watchedFile(), StandardCopyOption.ATOMIC_MOVE);
         logger.info("--> after writing JSON config to node {} with path {}", node, tempFilePath);
     }

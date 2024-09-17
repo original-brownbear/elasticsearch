@@ -38,9 +38,7 @@ public abstract class NodeUtils {
                 leftAvailable = false;
             }
             sb.append(leftRow);
-            for (int i = leftRow.length(); i < leftMaxPadding; i++) {
-                sb.append(" ");
-            }
+            sb.append(" ".repeat(leftMaxPadding - leftRow.length()));
             // right side still available
             if (rightIndex < rightSplit.length) {
                 rightRow = rightSplit[rightIndex];

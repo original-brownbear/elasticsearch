@@ -22,11 +22,10 @@ package org.elasticsearch.xpack.lucene.bwc.codecs.lucene40.blocktree;
 import org.apache.lucene.codecs.PostingsReaderBase;
 import org.apache.lucene.util.ArrayUtil;
 import org.apache.lucene.util.BytesRef;
-import org.elasticsearch.core.IOUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 
 /**
@@ -179,11 +178,7 @@ public class Stats {
     public String toString() {
         final ByteArrayOutputStream bos = new ByteArrayOutputStream(1024);
         PrintStream out;
-        try {
-            out = new PrintStream(bos, false, IOUtils.UTF_8);
-        } catch (UnsupportedEncodingException bogus) {
-            throw new RuntimeException(bogus);
-        }
+        out = new PrintStream(bos, false, StandardCharsets.UTF_8);
 
         out.println("  index FST:");
         out.println("    " + indexNumBytes + " bytes");
@@ -266,10 +261,6 @@ public class Stats {
             assert totalBlockCount == total;
         }
 
-        try {
-            return bos.toString(IOUtils.UTF_8);
-        } catch (UnsupportedEncodingException bogus) {
-            throw new RuntimeException(bogus);
-        }
+        return bos.toString(StandardCharsets.UTF_8);
     }
 }

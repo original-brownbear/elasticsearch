@@ -100,16 +100,22 @@ public class UpdateResponse extends DocWriteResponse {
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("UpdateResponse[");
-        builder.append("index=").append(getIndex());
-        builder.append(",id=").append(getId());
-        builder.append(",version=").append(getVersion());
-        builder.append(",seqNo=").append(getSeqNo());
-        builder.append(",primaryTerm=").append(getPrimaryTerm());
-        builder.append(",result=").append(getResult().getLowercase());
-        builder.append(",shards=").append(getShardInfo());
-        return builder.append("]").toString();
+        return "UpdateResponse["
+            + "index="
+            + getIndex()
+            + ",id="
+            + getId()
+            + ",version="
+            + getVersion()
+            + ",seqNo="
+            + getSeqNo()
+            + ",primaryTerm="
+            + getPrimaryTerm()
+            + ",result="
+            + getResult().getLowercase()
+            + ",shards="
+            + getShardInfo()
+            + "]";
     }
 
     /**

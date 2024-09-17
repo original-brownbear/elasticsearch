@@ -1650,14 +1650,14 @@ public class RoleDescriptor implements ToXContentObject, Writeable {
 
         @Override
         public String toString() {
-            StringBuilder sb = new StringBuilder(getClass().getSimpleName()).append("[application=")
-                .append(application)
-                .append(", privileges=[")
-                .append(Strings.arrayToCommaDelimitedString(privileges))
-                .append("], resources=[")
-                .append(Strings.arrayToCommaDelimitedString(resources))
-                .append("]]");
-            return sb.toString();
+            return getClass().getSimpleName()
+                + "[application="
+                + application
+                + ", privileges=["
+                + Strings.arrayToCommaDelimitedString(privileges)
+                + "], resources=["
+                + Strings.arrayToCommaDelimitedString(resources)
+                + "]]";
         }
 
         @Override
@@ -1802,10 +1802,7 @@ public class RoleDescriptor implements ToXContentObject, Writeable {
 
         @Override
         public String toString() {
-            StringBuilder sb = new StringBuilder(getClass().getSimpleName()).append("[workflows=[")
-                .append(Strings.arrayToCommaDelimitedString(workflows))
-                .append("]]");
-            return sb.toString();
+            return getClass().getSimpleName() + "[workflows=[" + Strings.arrayToCommaDelimitedString(workflows) + "]]";
         }
 
         public static Restriction parse(String roleName, XContentParser parser) throws IOException {

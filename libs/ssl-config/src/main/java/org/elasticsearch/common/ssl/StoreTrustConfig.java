@@ -155,12 +155,15 @@ public final class StoreTrustConfig implements SslTrustConfig {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("StoreTrustConfig{");
-        sb.append("path=").append(truststorePath);
-        sb.append(", password=").append(password.length == 0 ? "<empty>" : "<non-empty>");
-        sb.append(", type=").append(type);
-        sb.append(", algorithm=").append(algorithm);
-        sb.append('}');
-        return sb.toString();
+        return "StoreTrustConfig{"
+            + "path="
+            + truststorePath
+            + ", password="
+            + (password.length == 0 ? "<empty>" : "<non-empty>")
+            + ", type="
+            + type
+            + ", algorithm="
+            + algorithm
+            + '}';
     }
 }

@@ -844,9 +844,7 @@ public class SearchAsYouTypeFieldMapperTests extends MapperTestCase {
             }
 
             private Object generateValue() {
-                return rarely()
-                    ? null
-                    : randomList(0, 10, () -> randomAlphaOfLengthBetween(0, 10)).stream().collect(Collectors.joining(" "));
+                return rarely() ? null : String.join(" ", randomList(0, 10, () -> randomAlphaOfLengthBetween(0, 10)));
             }
 
             private void mapping(XContentBuilder b) throws IOException {

@@ -247,13 +247,16 @@ public class TransportPutComposableIndexTemplateAction extends AcknowledgedTrans
 
         @Override
         public String toString() {
-            StringBuilder sb = new StringBuilder("PutTemplateV2Request[");
-            sb.append("name=").append(name);
-            sb.append(", cause=").append(cause);
-            sb.append(", create=").append(create);
-            sb.append(", index_template=").append(indexTemplate);
-            sb.append("]");
-            return sb.toString();
+            return "PutTemplateV2Request["
+                + "name="
+                + name
+                + ", cause="
+                + cause
+                + ", create="
+                + create
+                + ", index_template="
+                + indexTemplate
+                + "]";
         }
 
         @Override

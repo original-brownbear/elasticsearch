@@ -50,9 +50,7 @@ final class JdbcTestUtils {
         int l = sb.length();
         logger.info(sb.toString());
         sb.setLength(0);
-        for (int i = 0; i < l; i++) {
-            sb.append("-");
-        }
+        sb.append("-".repeat(l));
 
         logger.info(sb.toString());
     }
@@ -90,9 +88,7 @@ final class JdbcTestUtils {
             buffer.setLength(MAX_WIDTH - 1);
             buffer.append("~");
         } else {
-            for (int i = buffer.length(); i < MAX_WIDTH; i++) {
-                buffer.append(" ");
-            }
+            buffer.append(" ".repeat(MAX_WIDTH - buffer.length()));
         }
         return buffer;
     }

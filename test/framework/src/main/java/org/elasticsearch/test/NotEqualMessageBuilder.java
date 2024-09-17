@@ -172,9 +172,7 @@ public class NotEqualMessageBuilder {
     }
 
     private void indent() {
-        for (int i = 0; i < indent; i++) {
-            message.append("  ");
-        }
+        message.append("  ".repeat(indent));
     }
 
     private void field(Object name, String info) {

@@ -1380,7 +1380,7 @@ public class EsqlActionIT extends AbstractEsqlIntegTestCase {
                 .setSettings(Settings.builder().put("index.routing.allocation.require._name", node2))
                 .setMapping("bar_int", "type=integer", "bar_long", "type=long", "bar_float", "type=float", "bar_double", "type=double")
         );
-        String command = String.format(Locale.ROOT, "from foo-index,bar-index");
+        String command = "from foo-index,bar-index";
         try (var resp = run(command)) {
             var valuesList = getValuesList(resp);
             assertEquals(8, resp.columns().size());

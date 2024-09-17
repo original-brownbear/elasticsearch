@@ -30,7 +30,6 @@ import org.elasticsearch.snapshots.SnapshotState;
 import org.junit.After;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -90,7 +89,7 @@ public class SnapshotsAndFileSettingsIT extends AbstractSnapshotIntegTestCase {
         Files.createDirectories(fileSettingsService.watchedFileDir());
         Path tempFilePath = createTempFile();
 
-        Files.write(tempFilePath, Strings.format(json, version).getBytes(StandardCharsets.UTF_8));
+        Files.writeString(tempFilePath, Strings.format(json, version));
         int retryCount = 0;
         do {
             try {

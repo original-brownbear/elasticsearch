@@ -13,7 +13,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 public class MetricNameValidator {
     private static final Pattern ALLOWED_CHARACTERS = Pattern.compile("[a-z][a-z0-9_]*");
@@ -96,7 +95,7 @@ public class MetricNameValidator {
         if (ALLOWED_SUFFIXES.contains(lastElement) == false) {
             throw new IllegalArgumentException(
                 "Metric name should end with one of ["
-                    + ALLOWED_SUFFIXES.stream().collect(Collectors.joining(","))
+                    + String.join(",", ALLOWED_SUFFIXES)
                     + "] "
                     + "Last element was: "
                     + lastElement

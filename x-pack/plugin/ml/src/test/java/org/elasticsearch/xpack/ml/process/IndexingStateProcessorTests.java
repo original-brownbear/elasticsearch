@@ -187,9 +187,7 @@ public class IndexingStateProcessorTests extends ESTestCase {
         StringBuilder builder = new StringBuilder(NUM_LARGE_DOCS * (LARGE_DOC_SIZE + 10)); // 10 for header and separators
         for (int docNum = 1; docNum <= NUM_LARGE_DOCS; ++docNum) {
             builder.append("{\"index\":{\"_index\":\"header").append(docNum).append("\",\"_id\":\"doc").append(docNum).append("\"}}\n");
-            for (int count = 0; count < (LARGE_DOC_SIZE / "data".length()); ++count) {
-                builder.append("data");
-            }
+            builder.append("data".repeat((LARGE_DOC_SIZE / "data".length())));
             builder.append("\n\0");
         }
 

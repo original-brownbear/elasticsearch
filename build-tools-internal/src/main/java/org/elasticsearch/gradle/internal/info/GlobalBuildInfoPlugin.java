@@ -8,7 +8,6 @@
  */
 package org.elasticsearch.gradle.internal.info;
 
-import org.apache.commons.io.IOUtils;
 import org.elasticsearch.gradle.VersionProperties;
 import org.elasticsearch.gradle.internal.BwcVersions;
 import org.elasticsearch.gradle.internal.conventions.info.GitInfo;
@@ -42,10 +41,10 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -181,9 +180,8 @@ public class GlobalBuildInfoPlugin implements Plugin<Project> {
      * compatibility. It is *super* important that this logic is the same as the
      * logic in VersionUtils.java. */
     private static BwcVersions resolveBwcVersions(File root) {
-        File versionsFile = new File(root, DEFAULT_VERSION_JAVA_FILE_PATH);
-        try (var is = new FileInputStream(versionsFile)) {
-            List<String> versionLines = IOUtils.readLines(is, "UTF-8");
+        try {
+            List<String> versionLines = Files.readAllLines(root.toPath().resolve(DEFAULT_VERSION_JAVA_FILE_PATH), StandardCharsets.UTF_8);
             return new BwcVersions(versionLines);
         } catch (IOException e) {
             throw new IllegalStateException("Unable to resolve to resolve bwc versions from versionsFile.", e);

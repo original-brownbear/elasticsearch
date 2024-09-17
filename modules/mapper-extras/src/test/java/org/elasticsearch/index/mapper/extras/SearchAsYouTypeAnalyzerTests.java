@@ -244,10 +244,6 @@ public class SearchAsYouTypeAnalyzerTests extends ESTestCase {
     }
 
     private static String spaces(int count) {
-        final StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < count; i++) {
-            builder.append(" ");
-        }
-        return builder.toString();
+        return " ".repeat(count);
     }
 }

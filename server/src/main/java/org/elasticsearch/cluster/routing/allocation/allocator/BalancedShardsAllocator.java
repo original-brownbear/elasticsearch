@@ -1336,9 +1336,7 @@ public class BalancedShardsAllocator implements ShardsAllocator {
 
         @Override
         public String toString() {
-            StringBuilder sb = new StringBuilder();
-            sb.append("Node(").append(routingNode.nodeId()).append(")");
-            return sb.toString();
+            return "Node(" + routingNode.nodeId() + ")";
         }
 
         @Override

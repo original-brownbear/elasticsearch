@@ -102,17 +102,14 @@ public class BlobStoreFormatTests extends ESTestCase {
     public void testCompressionIsApplied() throws IOException {
         BlobStore blobStore = createTestBlobStore();
         BlobContainer blobContainer = blobStore.blobContainer(BlobPath.EMPTY);
-        StringBuilder veryRedundantText = new StringBuilder();
-        for (int i = 0; i < randomIntBetween(100, 300); i++) {
-            veryRedundantText.append("Blah ");
-        }
+        String veryRedundantText = "Blah ".repeat(Math.max(0, randomIntBetween(100, 300)));
         ChecksumBlobStoreFormat<BlobObj> checksumFormat = new ChecksumBlobStoreFormat<>(
             BLOB_CODEC,
             "%s",
             (repo, parser) -> BlobObj.fromXContent(parser),
             Function.identity()
         );
-        BlobObj blobObj = new BlobObj(veryRedundantText.toString());
+        BlobObj blobObj = new BlobObj(veryRedundantText);
         checksumFormat.write(blobObj, blobContainer, "blob-comp", true);
         checksumFormat.write(blobObj, blobContainer, "blob-not-comp", false);
         Map<String, BlobMetadata> blobs = blobContainer.listBlobsByPrefix(randomPurpose(), "blob-");

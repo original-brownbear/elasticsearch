@@ -506,7 +506,7 @@ public abstract class AbstractLocalClusterFactory<S extends LocalClusterSpec, H 
             if (spec.getKeystoreFiles().isEmpty() == false) {
                 throw new IllegalStateException(
                     "Non-string secure secrets are not supported in serverless. Secrets: ["
-                        + spec.getKeystoreFiles().keySet().stream().collect(Collectors.joining(","))
+                        + String.join(",", spec.getKeystoreFiles().keySet())
                         + "]"
                 );
             }
@@ -568,9 +568,9 @@ public abstract class AbstractLocalClusterFactory<S extends LocalClusterSpec, H 
                     if (Files.exists(destination)) {
                         throw new IllegalStateException(
                             "Operator users file ["
-                                + destination.toAbsolutePath().toString()
+                                + destination.toAbsolutePath()
                                 + "] already exists, but user(s) ["
-                                + operators.stream().collect(Collectors.joining(","))
+                                + String.join(",", operators)
                                 + "] have been configured as operators. If you need to manage "
                                 + operatorUsersFileName
                                 + " yourself then you cannot not request that the cluster factory mark users as operators"

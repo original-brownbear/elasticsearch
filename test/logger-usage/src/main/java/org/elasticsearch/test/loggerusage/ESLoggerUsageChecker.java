@@ -122,22 +122,21 @@ public class ESLoggerUsageChecker {
             if (innerClassIndex > 0) {
                 simpleClassName = simpleClassName.substring(0, innerClassIndex);
             }
-            simpleClassName = simpleClassName + ".java";
-            StringBuilder sb = new StringBuilder();
-            sb.append("Bad usage of ");
-            sb.append(LOGGER_CLASS.getClassName()).append("#").append(logMethodName);
-            sb.append(": ");
-            sb.append(errorMessage);
-            sb.append("\n\tat ");
-            sb.append(fullClassName);
-            sb.append(".");
-            sb.append(methodName);
-            sb.append("(");
-            sb.append(simpleClassName);
-            sb.append(":");
-            sb.append(line);
-            sb.append(")");
-            return sb.toString();
+            return "Bad usage of "
+                + LOGGER_CLASS.getClassName()
+                + "#"
+                + logMethodName
+                + ": "
+                + errorMessage
+                + "\n\tat "
+                + fullClassName
+                + "."
+                + methodName
+                + "("
+                + simpleClassName
+                + ".java:"
+                + line
+                + ")";
         }
     }
 

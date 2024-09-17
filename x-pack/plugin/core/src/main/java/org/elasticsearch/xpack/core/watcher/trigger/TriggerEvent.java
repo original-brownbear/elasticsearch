@@ -46,17 +46,7 @@ public abstract class TriggerEvent implements ToXContentObject {
 
     @Override
     public String toString() {
-        return new StringBuilder("[").append("name=[")
-            .append(jobName)
-            .append("],")
-            .append("triggered_time=[")
-            .append(triggeredTime)
-            .append("],")
-            .append("data=[")
-            .append(data)
-            .append("]")
-            .append("]")
-            .toString();
+        return "[" + "name=[" + jobName + "]," + "triggered_time=[" + triggeredTime + "]," + "data=[" + data + "]" + "]";
     }
 
     public void recordXContent(XContentBuilder builder, Params params) throws IOException {

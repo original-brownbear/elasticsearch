@@ -12,7 +12,6 @@ package org.elasticsearch.gradle.util;
 import org.gradle.api.UncheckedIOException;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -67,27 +66,4 @@ public final class FileUtils {
         }
     }
 
-    public static String read(File file, String encoding) {
-        try {
-            return org.apache.commons.io.FileUtils.readFileToString(file, encoding);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    public static List<String> readLines(File file, String encoding) {
-        try {
-            return org.apache.commons.io.FileUtils.readLines(file, encoding);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    public static void write(File outputFile, CharSequence content, String encoding) {
-        try {
-            org.apache.commons.io.FileUtils.write(outputFile, content, encoding);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
 }

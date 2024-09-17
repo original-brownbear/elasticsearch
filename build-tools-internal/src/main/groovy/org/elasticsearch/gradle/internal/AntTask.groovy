@@ -14,9 +14,7 @@ import org.apache.tools.ant.BuildLogger
 import org.apache.tools.ant.DefaultLogger
 import org.apache.tools.ant.Project
 import org.gradle.api.DefaultTask
-import org.gradle.api.GradleException
 import org.gradle.api.file.FileSystemOperations
-import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.TaskAction
 
 import javax.inject.Inject
@@ -59,7 +57,7 @@ public abstract class AntTask extends DefaultTask {
         // ant.saveStreams = false
 
         final int outputLevel = logger.isDebugEnabled() ? Project.MSG_DEBUG : Project.MSG_INFO
-        final PrintStream stream = useStdout() ? System.out : new PrintStream(outputBuffer, true, Charset.defaultCharset().name())
+        final PrintStream stream = useStdout() ? System.out : new PrintStream(outputBuffer, true, Charset.defaultCharset())
         BuildLogger antLogger = makeLogger(stream, outputLevel)
 
         ant.project.addBuildListener(antLogger)

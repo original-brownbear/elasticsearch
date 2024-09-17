@@ -480,7 +480,7 @@ public final class PainlessScriptEngine implements ScriptEngine {
                     if (startOffset > 0) {
                         snippet.append("... ");
                     }
-                    snippet.append(scriptSource.substring(startOffset, endOffset));
+                    snippet.append(scriptSource, startOffset, endOffset);
                     if (endOffset < scriptSource.length()) {
                         snippet.append(" ...");
                     }
@@ -489,9 +489,7 @@ public final class PainlessScriptEngine implements ScriptEngine {
                     if (startOffset > 0) {
                         pointer.append("    ");
                     }
-                    for (int i = startOffset; i < offset; i++) {
-                        pointer.append(' ');
-                    }
+                    pointer.append(" ".repeat(offset - startOffset));
                     pointer.append("^---- HERE");
                     scriptStack.add(pointer.toString());
                     pos = new ScriptException.Position(originalOffset, startOffset, endOffset);
