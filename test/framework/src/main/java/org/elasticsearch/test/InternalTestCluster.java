@@ -113,6 +113,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -1757,15 +1758,14 @@ public final class InternalTestCluster extends TestCluster {
 
     private synchronized void startAndPublishNodesAndClients(List<NodeAndClient> nodeAndClients) {
         if (nodeAndClients.size() > 0) {
-            final int newMasters = (int) nodeAndClients.stream()
-                .filter(NodeAndClient::isMasterEligible)
-                .filter(nac -> nodes.containsKey(nac.name) == false) // filter out old masters
-                .count();
+            final boolean newMasters = autoManageMasterNodes
+                && nodeAndClients.stream()
+                    .anyMatch(nodeAndClient -> nodeAndClient.isMasterEligible() && nodes.containsKey(nodeAndClient.name) == false);
             rebuildUnicastHostFiles(nodeAndClients); // ensure that new nodes can find the existing nodes when they start
             runInParallel(nodeAndClients.size(), i -> nodeAndClients.get(i).startNode());
             nodeAndClients.forEach(this::publishNode);
 
-            if (autoManageMasterNodes && newMasters > 0) {
+            if (newMasters) {
                 // update once masters have joined
                 validateClusterFormed();
             }
@@ -1773,28 +1773,38 @@ public final class InternalTestCluster extends TestCluster {
     }
 
     private final Object discoveryFileMutex = new Object();
+    private final Map<Path, String> createdConfigPaths = new HashMap<>();
 
     private void rebuildUnicastHostFiles(List<NodeAndClient> newNodes) {
         // cannot be a synchronized method since it's called on other threads from within synchronized startAndPublishNodesAndClients()
         synchronized (discoveryFileMutex) {
             try {
                 final Collection<NodeAndClient> currentNodes = nodes.values();
-                Stream<NodeAndClient> unicastHosts = Stream.concat(currentNodes.stream(), newNodes.stream());
-                List<String> discoveryFileContents = unicastHosts.map(nac -> nac.node.injector().getInstance(TransportService.class))
+                String discoveryFileContents = Stream.concat(currentNodes.stream(), newNodes.stream())
+                    .map(nac -> nac.node.injector().getInstance(TransportService.class))
                     .filter(Objects::nonNull)
                     .map(TransportService::getLocalNode)
                     .filter(Objects::nonNull)
                     .filter(DiscoveryNode::isMasterNode)
                     .map(n -> n.getAddress().toString())
                     .distinct()
-                    .collect(Collectors.toList());
+                    .collect(Collectors.joining(System.lineSeparator()));
+                if (discoveryFileContents.isEmpty()) {
+                    return;
+                }
                 Set<Path> configPaths = Stream.concat(currentNodes.stream(), newNodes.stream())
                     .map(nac -> nac.node.getEnvironment().configFile())
                     .collect(Collectors.toSet());
                 logger.debug("configuring discovery with {} at {}", discoveryFileContents, configPaths);
                 for (final Path configPath : configPaths) {
-                    Files.createDirectories(configPath);
-                    Files.write(configPath.resolve(UNICAST_HOSTS_FILE), discoveryFileContents);
+                    String existing = createdConfigPaths.put(configPath, discoveryFileContents);
+                    // avoid creating existing directories and overwriting the file with its existing content to speed tests up
+                    if (existing == null) {
+                        Files.createDirectories(configPath);
+                    } else if (existing.equals(discoveryFileContents)) {
+                        continue;
+                    }
+                    Files.writeString(configPath.resolve(UNICAST_HOSTS_FILE), discoveryFileContents);
                 }
             } catch (IOException e) {
                 throw new AssertionError("failed to configure file-based discovery", e);
