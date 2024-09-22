@@ -574,14 +574,12 @@ public final class SearchPhaseController {
         int total = queryResults.size();
         final Collection<SearchPhaseResult> nonNullResults = new ArrayList<>();
         boolean hasSuggest = false;
-        boolean hasProfileResults = false;
         for (SearchPhaseResult queryResult : queryResults) {
             var res = queryResult.queryResult();
             if (res.isNull()) {
                 continue;
             }
             hasSuggest |= res.suggest() != null;
-            hasProfileResults |= res.hasProfileResults();
             nonNullResults.add(queryResult);
         }
         queryResults = nonNullResults;
@@ -594,9 +592,7 @@ public final class SearchPhaseController {
 
         // count the total (we use the query result provider here, since we might not get any hits (we scrolled past them))
         final Map<String, List<Suggestion<?>>> groupedSuggestions = hasSuggest ? new HashMap<>() : Collections.emptyMap();
-        final Map<String, SearchProfileQueryPhaseResult> profileShardResults = hasProfileResults
-            ? Maps.newMapWithExpectedSize(queryResults.size())
-            : Collections.emptyMap();
+        Map<String, SearchProfileQueryPhaseResult> profileShardResults = null;
         int from = 0;
         int size = 0;
         DocValueFormat[] sortValueFormats = null;
@@ -620,9 +616,12 @@ public final class SearchPhaseController {
                 }
             }
             assert bufferedTopDocs.isEmpty() || result.hasConsumedTopDocs() : "firstResult has no aggs but we got non null buffered aggs?";
-            if (hasProfileResults) {
-                String key = result.getSearchShardTarget().toString();
-                profileShardResults.put(key, result.consumeProfileResult());
+            var profileResult = result.consumeProfileResult();
+            if (profileResult != null) {
+                if (profileShardResults == null) {
+                    profileShardResults = Maps.newMapWithExpectedSize(queryResults.size());
+                }
+                profileShardResults.put(result.getSearchShardTarget().toString(), profileResult);
             }
         }
         final Suggest reducedSuggest;
@@ -635,7 +634,7 @@ public final class SearchPhaseController {
             reducedCompletionSuggestions = reducedSuggest.filter(CompletionSuggestion.class);
         }
         final InternalAggregations aggregations = reduceAggs(aggReduceContextBuilder, performFinalReduce, bufferedAggs);
-        final SearchProfileResultsBuilder profileBuilder = profileShardResults.isEmpty()
+        final SearchProfileResultsBuilder profileBuilder = profileShardResults == null
             ? null
             : new SearchProfileResultsBuilder(profileShardResults);
         final SortedTopDocs sortedTopDocs;

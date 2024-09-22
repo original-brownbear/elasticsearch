@@ -59,12 +59,10 @@ public final class QuerySearchResult extends SearchPhaseResult {
      * them until just before we need them.
      */
     private DelayableWriteable<InternalAggregations> aggregations;
-    private boolean hasAggs;
     private Suggest suggest;
     private boolean searchTimedOut;
     private Boolean terminatedEarly = null;
     private SearchProfileQueryPhaseResult profileShardResults;
-    private boolean hasProfileResults;
     private long serviceTimeEWMA = -1;
     private int nodeQueueSize = -1;
 
@@ -218,13 +216,6 @@ public final class QuerySearchResult extends SearchPhaseResult {
     }
 
     /**
-     * Returns <code>true</code> if this query result has unconsumed aggregations
-     */
-    public boolean hasAggs() {
-        return hasAggs;
-    }
-
-    /**
      * Returns the aggregation as a {@link DelayableWriteable} object. Callers are free to expand them whenever they wat
      * but they should call {@link #releaseAggs()} in order to free memory,
      * @throws IllegalStateException if {@link #releaseAggs()} has already being called.
@@ -254,7 +245,6 @@ public final class QuerySearchResult extends SearchPhaseResult {
     public void aggregations(InternalAggregations aggregations) {
         assert this.aggregations == null : "aggregations already set to [" + this.aggregations + "]";
         this.aggregations = aggregations == null ? null : DelayableWriteable.referencing(aggregations);
-        hasAggs = aggregations != null;
     }
 
     @Nullable
@@ -275,22 +265,13 @@ public final class QuerySearchResult extends SearchPhaseResult {
      * @throws IllegalStateException if the profiled result has already been consumed.
      */
     public SearchProfileQueryPhaseResult consumeProfileResult() {
-        if (profileShardResults == null) {
-            throw new IllegalStateException("profile results already consumed");
-        }
         SearchProfileQueryPhaseResult result = profileShardResults;
         profileShardResults = null;
         return result;
     }
 
-    public boolean hasProfileResults() {
-        return hasProfileResults;
-    }
-
     public void consumeAll() {
-        if (hasProfileResults()) {
-            consumeProfileResult();
-        }
+        consumeProfileResult();
         if (hasConsumedTopDocs() == false) {
             consumeTopDocs();
         }
@@ -303,7 +284,6 @@ public final class QuerySearchResult extends SearchPhaseResult {
      */
     public void profileResults(SearchProfileQueryPhaseResult shardResults) {
         this.profileShardResults = shardResults;
-        hasProfileResults = shardResults != null;
     }
 
     public Suggest suggest() {
@@ -382,10 +362,9 @@ public final class QuerySearchResult extends SearchPhaseResult {
             }
         }
         setTopDocs(readTopDocs(in));
-        hasAggs = in.readBoolean();
         boolean success = false;
         try {
-            if (hasAggs) {
+            if (in.readBoolean()) {
                 if (delayedAggregations) {
                     aggregations = DelayableWriteable.delayed(InternalAggregations::readFrom, in);
                 } else {
@@ -398,7 +377,6 @@ public final class QuerySearchResult extends SearchPhaseResult {
             searchTimedOut = in.readBoolean();
             terminatedEarly = in.readOptionalBoolean();
             profileShardResults = in.readOptionalWriteable(SearchProfileQueryPhaseResult::new);
-            hasProfileResults = profileShardResults != null;
             serviceTimeEWMA = in.readZLong();
             nodeQueueSize = in.readInt();
             setShardSearchRequest(in.readOptionalWriteable(ShardSearchRequest::new));

@@ -113,8 +113,7 @@ public class QuerySearchResultTests extends ESTestCase {
                 assertEquals(querySearchResult.topDocs().topDocs.totalHits, deserialized.topDocs().topDocs.totalHits);
                 assertEquals(querySearchResult.from(), deserialized.from());
                 assertEquals(querySearchResult.size(), deserialized.size());
-                assertEquals(querySearchResult.hasAggs(), deserialized.hasAggs());
-                if (deserialized.hasAggs()) {
+                if (deserialized.aggregations() != null) {
                     assertThat(deserialized.aggregations().isSerialized(), is(delayed));
                     InternalAggregations aggs = querySearchResult.getAggs().expand();
                     querySearchResult.releaseAggs();
@@ -122,6 +121,8 @@ public class QuerySearchResultTests extends ESTestCase {
                     deserialized.releaseAggs();
                     assertEquals(aggs.asList(), deserializedAggs.asList());
                     assertThat(deserialized.aggregations(), is(nullValue()));
+                } else {
+                    assertThat(querySearchResult.aggregations(), is(nullValue()));
                 }
                 assertEquals(querySearchResult.terminatedEarly(), deserialized.terminatedEarly());
             } finally {

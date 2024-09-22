@@ -122,7 +122,7 @@ public class QueryPhaseResultConsumer extends ArraySearchPhaseResults<SearchPhas
         if (pendingMerges.hasPendingMerges()) {
             throw new AssertionError("partial reduce in-flight");
         } else if (pendingMerges.hasFailure()) {
-            throw pendingMerges.getFailure();
+            throw pendingMerges.failure.get();
         }
 
         // ensure consistent ordering
@@ -264,7 +264,7 @@ public class QueryPhaseResultConsumer extends ArraySearchPhaseResults<SearchPhas
 
         private final TopDocsStats topDocsStats;
         private volatile MergeResult mergeResult;
-        private volatile boolean hasPartialReduce;
+        private boolean hasPartialReduce;
         private volatile int numReducePhases;
 
         PendingMerges(int batchReduceSize, int trackTotalHitsUpTo) {
@@ -273,12 +273,8 @@ public class QueryPhaseResultConsumer extends ArraySearchPhaseResults<SearchPhas
         }
 
         @Override
-        public synchronized void close() {
-            if (hasFailure()) {
-                assert circuitBreakerBytes == 0;
-            } else {
-                assert circuitBreakerBytes >= 0;
-            }
+        public void close() {
+            assert (hasFailure() && circuitBreakerBytes == 0) || (hasFailure() == false && circuitBreakerBytes >= 0);
 
             releaseBuffer();
             circuitBreaker.addWithoutBreaking(-circuitBreakerBytes);
@@ -288,10 +284,6 @@ public class QueryPhaseResultConsumer extends ArraySearchPhaseResults<SearchPhas
                 // This is a theoretically unreachable exception.
                 throw new IllegalStateException("Attempted to close with partial reduce in-flight");
             }
-        }
-
-        synchronized Exception getFailure() {
-            return failure.get();
         }
 
         boolean hasFailure() {
@@ -322,14 +314,6 @@ public class QueryPhaseResultConsumer extends ArraySearchPhaseResults<SearchPhas
         }
 
         /**
-         * Returns the size of the serialized aggregation that is contained in the
-         * provided {@link QuerySearchResult}.
-         */
-        long ramBytesUsedQueryResult(QuerySearchResult result) {
-            return hasAggs ? result.aggregations().getSerializedSize() : 0;
-        }
-
-        /**
          * Returns an estimation of the size that a reduce of the provided size
          * would take on memory.
          * This size is estimated as roughly 1.5 times the size of the serialized
@@ -342,42 +326,51 @@ public class QueryPhaseResultConsumer extends ArraySearchPhaseResults<SearchPhas
         }
 
         public void consume(QuerySearchResult result, Runnable next) {
+            if (result.isNull()) {
+                result.consumeAll();
+                SearchShardTarget target = result.getSearchShardTarget();
+                var searchShard = new SearchShard(target.getClusterAlias(), target.getShardId());
+                synchronized (this) {
+                    emptyResults.add(searchShard);
+                }
+                next.run();
+                return;
+            }
             boolean executeNextImmediately = true;
+            long aggsSize = hasAggs ? result.aggregations().getSerializedSize() : 0;
             synchronized (this) {
-                if (hasFailure() || result.isNull()) {
+                if (hasFailure()) {
                     result.consumeAll();
-                    if (result.isNull()) {
-                        SearchShardTarget target = result.getSearchShardTarget();
-                        emptyResults.add(new SearchShard(target.getClusterAlias(), target.getShardId()));
-                    }
                 } else {
+                    boolean breakerTripped = false;
                     if (hasAggs) {
-                        long aggsSize = ramBytesUsedQueryResult(result);
                         try {
                             addEstimateAndMaybeBreak(aggsSize);
                         } catch (Exception exc) {
                             result.releaseAggs();
                             releaseBuffer();
                             onMergeFailure(exc);
-                            next.run();
-                            return;
+                            breakerTripped = true;
+                            aggsSize = 0;
                         }
                         aggsCurrentBufferSize += aggsSize;
                     }
-                    // add one if a partial merge is pending
-                    int size = buffer.size() + (hasPartialReduce ? 1 : 0);
-                    if (size >= batchReduceSize) {
-                        hasPartialReduce = true;
-                        executeNextImmediately = false;
-                        QuerySearchResult[] clone = buffer.toArray(QuerySearchResult[]::new);
-                        MergeTask task = new MergeTask(clone, aggsCurrentBufferSize, new ArrayList<>(emptyResults), next);
-                        aggsCurrentBufferSize = 0;
-                        buffer.clear();
-                        emptyResults.clear();
-                        queue.add(task);
-                        tryExecuteNext();
+                    if (breakerTripped == false) {
+                        // add one if a partial merge is pending
+                        int size = buffer.size() + (hasPartialReduce ? 1 : 0);
+                        if (size >= batchReduceSize) {
+                            hasPartialReduce = true;
+                            executeNextImmediately = false;
+                            QuerySearchResult[] clone = buffer.toArray(QuerySearchResult[]::new);
+                            MergeTask task = new MergeTask(clone, aggsCurrentBufferSize, new ArrayList<>(emptyResults), next);
+                            aggsCurrentBufferSize = 0;
+                            buffer.clear();
+                            emptyResults.clear();
+                            queue.add(task);
+                            tryExecuteNext();
+                        }
+                        buffer.add(result);
                     }
-                    buffer.add(result);
                 }
             }
             if (executeNextImmediately) {
