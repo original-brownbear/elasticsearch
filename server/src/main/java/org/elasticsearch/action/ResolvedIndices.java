@@ -193,7 +193,7 @@ public class ResolvedIndices {
         Index[] concreteLocalIndices;
         Set<Index> localIndicesSet = indicesFromSearchContext.remove(RemoteClusterAware.LOCAL_CLUSTER_GROUP_KEY);
         if (localIndicesSet != null) {
-            concreteLocalIndices = localIndicesSet.toArray(Index[]::new);
+            concreteLocalIndices = localIndicesSet.toArray(Index.EMPTY_ARRAY);
             localIndices = new OriginalIndices(localIndicesSet.stream().map(Index::getName).toArray(String[]::new), indicesOptions);
         } else {
             concreteLocalIndices = Index.EMPTY_ARRAY;

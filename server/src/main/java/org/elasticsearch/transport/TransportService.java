@@ -827,6 +827,15 @@ public class TransportService extends AbstractLifecycleComponent
         return unwrapped;
     }
 
+    public final <T extends TransportResponse> void sendRequest(
+        final Transport.Connection connection,
+        final String action,
+        final TransportRequest request,
+        final TransportResponseHandler<T> handler
+    ) {
+        sendRequest(connection, action, request, TransportRequestOptions.EMPTY, handler);
+    }
+
     /**
      * Sends a request on the specified connection. If there is a failure sending the request, the specified handler is invoked.
      *

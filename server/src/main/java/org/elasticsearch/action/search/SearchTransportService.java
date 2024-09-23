@@ -55,7 +55,6 @@ import org.elasticsearch.transport.TransportActionProxy;
 import org.elasticsearch.transport.TransportException;
 import org.elasticsearch.transport.TransportRequest;
 import org.elasticsearch.transport.TransportRequestHandler;
-import org.elasticsearch.transport.TransportRequestOptions;
 import org.elasticsearch.transport.TransportResponse;
 import org.elasticsearch.transport.TransportResponseHandler;
 import org.elasticsearch.transport.TransportService;
@@ -150,7 +149,6 @@ public class SearchTransportService {
             connection,
             FREE_CONTEXT_ACTION_NAME,
             new SearchFreeContextRequest(originalIndices, contextId),
-            TransportRequestOptions.EMPTY,
             // no need to respond if it was freed or not
             SEND_FREE_CONTEXT_LISTENER
         );
@@ -165,7 +163,6 @@ public class SearchTransportService {
             connection,
             FREE_CONTEXT_SCROLL_ACTION_NAME,
             new ScrollFreeContextRequest(contextId),
-            TransportRequestOptions.EMPTY,
             new ActionListenerResponseHandler<>(listener, SearchFreeContextResponse::readFrom, TransportResponseHandler.TRANSPORT_WORKER)
         );
     }
@@ -190,7 +187,6 @@ public class SearchTransportService {
             connection,
             CLEAR_SCROLL_CONTEXTS_ACTION_NAME,
             new ClearScrollContextsRequest(),
-            TransportRequestOptions.EMPTY,
             new ActionListenerResponseHandler<>(listener, in -> TransportResponse.Empty.INSTANCE, TransportResponseHandler.TRANSPORT_WORKER)
         );
     }
