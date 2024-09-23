@@ -15,6 +15,7 @@ import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.OriginalIndices;
 import org.elasticsearch.action.search.CanMatchNodeResponse.ResponseOrFailure;
 import org.elasticsearch.action.support.ActionTestUtils;
+import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.DataStream;
@@ -95,7 +96,7 @@ public class CanMatchPreFilterSearchPhaseTests extends ESTestCase {
         super.tearDown();
     }
 
-    public void testFilterShards() throws InterruptedException {
+    public void testFilterShards() {
 
         final TransportSearchAction.SearchTimeProvider timeProvider = new TransportSearchAction.SearchTimeProvider(
             0,
@@ -130,8 +131,6 @@ public class CanMatchPreFilterSearchPhaseTests extends ESTestCase {
             }
         };
 
-        AtomicReference<GroupShardsIterator<SearchShardIterator>> result = new AtomicReference<>();
-        CountDownLatch latch = new CountDownLatch(1);
         GroupShardsIterator<SearchShardIterator> shardsIter = getShardsIter(
             "idx",
             new OriginalIndices(new String[] { "idx" }, SearchRequest.DEFAULT_INDICES_OPTIONS),
@@ -143,6 +142,7 @@ public class CanMatchPreFilterSearchPhaseTests extends ESTestCase {
         final SearchRequest searchRequest = new SearchRequest();
         searchRequest.allowPartialSearchResults(true);
 
+        final PlainActionFuture<GroupShardsIterator<SearchShardIterator>> future = new PlainActionFuture<>();
         CanMatchPreFilterSearchPhase canMatchPhase = new CanMatchPreFilterSearchPhase(
             logger,
             searchTransportService,
@@ -156,33 +156,30 @@ public class CanMatchPreFilterSearchPhaseTests extends ESTestCase {
             null,
             true,
             EMPTY_CONTEXT_PROVIDER,
-            ActionTestUtils.assertNoFailureListener(iter -> {
-                result.set(iter);
-                latch.countDown();
-            })
+            future
         );
 
         canMatchPhase.start();
-        latch.await();
+        var res = safeGet(future);
 
         assertThat(numRequests.get(), replicaNode == null ? equalTo(1) : lessThanOrEqualTo(2));
 
         if (shard1 && shard2) {
-            for (SearchShardIterator i : result.get()) {
+            for (SearchShardIterator i : res) {
                 assertFalse(i.skip());
             }
         } else if (shard1 == false && shard2 == false) {
-            assertFalse(result.get().get(0).skip());
-            assertTrue(result.get().get(1).skip());
+            assertFalse(res.get(0).skip());
+            assertTrue(res.get(1).skip());
         } else {
-            assertEquals(0, result.get().get(0).shardId().id());
-            assertEquals(1, result.get().get(1).shardId().id());
-            assertEquals(shard1, result.get().get(0).skip() == false);
-            assertEquals(shard2, result.get().get(1).skip() == false);
+            assertEquals(0, res.get(0).shardId().id());
+            assertEquals(1, res.get(1).shardId().id());
+            assertEquals(shard1, res.get(0).skip() == false);
+            assertEquals(shard2, res.get(1).skip() == false);
         }
     }
 
-    public void testFilterWithFailure() throws InterruptedException {
+    public void testFilterWithFailure() {
         final TransportSearchAction.SearchTimeProvider timeProvider = new TransportSearchAction.SearchTimeProvider(
             0,
             System.nanoTime(),
@@ -227,8 +224,6 @@ public class CanMatchPreFilterSearchPhaseTests extends ESTestCase {
             }
         };
 
-        AtomicReference<GroupShardsIterator<SearchShardIterator>> result = new AtomicReference<>();
-        CountDownLatch latch = new CountDownLatch(1);
         GroupShardsIterator<SearchShardIterator> shardsIter = getShardsIter(
             "idx",
             new OriginalIndices(new String[] { "idx" }, SearchRequest.DEFAULT_INDICES_OPTIONS),
@@ -241,6 +236,7 @@ public class CanMatchPreFilterSearchPhaseTests extends ESTestCase {
         final SearchRequest searchRequest = new SearchRequest();
         searchRequest.allowPartialSearchResults(true);
 
+        final PlainActionFuture<GroupShardsIterator<SearchShardIterator>> future = new PlainActionFuture<>();
         CanMatchPreFilterSearchPhase canMatchPhase = new CanMatchPreFilterSearchPhase(
             logger,
             searchTransportService,
@@ -254,23 +250,20 @@ public class CanMatchPreFilterSearchPhaseTests extends ESTestCase {
             null,
             true,
             EMPTY_CONTEXT_PROVIDER,
-            ActionTestUtils.assertNoFailureListener(iter -> {
-                result.set(iter);
-                latch.countDown();
-            })
+            future
         );
 
         canMatchPhase.start();
-        latch.await();
+        var res = safeGet(future);
 
-        assertEquals(0, result.get().get(0).shardId().id());
-        assertEquals(1, result.get().get(1).shardId().id());
+        assertEquals(0, res.get(0).shardId().id());
+        assertEquals(1, res.get(1).shardId().id());
         if (fullFailure) {
-            assertFalse(result.get().get(0).skip()); // never skip the failure
+            assertFalse(res.get(0).skip()); // never skip the failure
         } else {
-            assertEquals(shard1, result.get().get(0).skip() == false);
+            assertEquals(shard1, res.get(0).skip() == false);
         }
-        assertFalse(result.get().get(1).skip()); // never skip the failure
+        assertFalse(res.get(1).skip()); // never skip the failure
     }
 
     public void testSortShards() throws InterruptedException {
@@ -1116,8 +1109,7 @@ public class CanMatchPreFilterSearchPhaseTests extends ESTestCase {
             System::nanoTime
         );
 
-        AtomicReference<GroupShardsIterator<SearchShardIterator>> result = new AtomicReference<>();
-        CountDownLatch latch = new CountDownLatch(1);
+        final PlainActionFuture<GroupShardsIterator<SearchShardIterator>> future = new PlainActionFuture<>();
         CanMatchPreFilterSearchPhase canMatchPhase = new CanMatchPreFilterSearchPhase(
             logger,
             searchTransportService,
@@ -1131,17 +1123,13 @@ public class CanMatchPreFilterSearchPhaseTests extends ESTestCase {
             null,
             true,
             contextProvider,
-            ActionTestUtils.assertNoFailureListener(iter -> {
-                result.set(iter);
-                latch.countDown();
-            })
+            future
         );
 
         canMatchPhase.start();
-        latch.await();
 
         List<SearchShardIterator> updatedSearchShardIterators = new ArrayList<>();
-        for (SearchShardIterator updatedSearchShardIterator : result.get()) {
+        for (SearchShardIterator updatedSearchShardIterator : safeGet(future)) {
             updatedSearchShardIterators.add(updatedSearchShardIterator);
         }
 

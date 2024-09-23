@@ -134,15 +134,15 @@ final class CanMatchPreFilterSearchPhase extends SearchPhase {
     @Override
     public void run() {
         assert assertSearchCoordinationThread();
-        checkNoMissingShards();
+        doCheckNoMissingShards(getName(), request, shardsIts);
         Version version = request.minCompatibleShardNode();
-        if (version != null && Version.CURRENT.minimumCompatibilityVersion().equals(version) == false) {
-            if (checkMinimumVersion(shardsIts) == false) {
-                throw new VersionMismatchException(
-                    "One of the shards is incompatible with the required minimum version [{}]",
-                    request.minCompatibleShardNode()
-                );
-            }
+        if (version != null
+            && Version.CURRENT.minimumCompatibilityVersion().equals(version) == false
+            && checkMinimumVersion(shardsIts) == false) {
+            throw new VersionMismatchException(
+                "One of the shards is incompatible with the required minimum version [{}]",
+                request.minCompatibleShardNode()
+            );
         }
         runCoordinatorRewritePhase();
     }
@@ -200,11 +200,6 @@ final class CanMatchPreFilterSearchPhase extends SearchPhase {
         results.consumeResult(result, () -> {});
     }
 
-    private void checkNoMissingShards() {
-        assert assertSearchCoordinationThread();
-        doCheckNoMissingShards(getName(), request, shardsIts);
-    }
-
     /**
      * Sending can-match requests is round-based and grouped per target node.
      * If there are failures during a round, there will be a follow-up round
@@ -239,7 +234,7 @@ final class CanMatchPreFilterSearchPhase extends SearchPhase {
                                     onOperation(shardResponse.getShardIndex(), shardResponse);
                                 } else {
                                     assert response.getException() != null;
-                                    onOperationFailed(shardLevelRequests.get(i).getShardRequestIndex());
+                                    onOperationFailedResponse(shardLevelRequests.get(i).getShardRequestIndex());
                                 }
                             }
                         }
@@ -257,7 +252,7 @@ final class CanMatchPreFilterSearchPhase extends SearchPhase {
 
         private void failAll(CanMatchNodeRequest canMatchNodeRequest) {
             for (CanMatchNodeRequest.Shard shard : canMatchNodeRequest.getShardLevelRequests()) {
-                onOperationFailed(shard.getShardRequestIndex());
+                onOperationFailedResponse(shard.getShardRequestIndex());
             }
         }
 
@@ -287,8 +282,12 @@ final class CanMatchPreFilterSearchPhase extends SearchPhase {
             });
         }
 
-        private void onOperationFailed(int idx) {
+        private void onOperationFailedResponse(int idx) {
             failedResponses.add(idx);
+            onOperationFailed(idx);
+        }
+
+        private void onOperationFailed(int idx) {
             results.consumeShardFailure(idx);
             if (countDown.countDown()) {
                 finishRound();

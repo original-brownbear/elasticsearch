@@ -54,8 +54,7 @@ abstract class SearchPhase implements CheckedRunnable<IOException> {
         if (request.allowPartialSearchResults() == false) {
             final StringBuilder missingShards = new StringBuilder();
             // Fail-fast verification of all shards being available
-            for (int index = 0; index < shardsIts.size(); index++) {
-                final SearchShardIterator shardRoutings = shardsIts.get(index);
+            for (var shardRoutings : shardsIts) {
                 if (shardRoutings.size() == 0) {
                     if (missingShards.isEmpty() == false) {
                         missingShards.append(", ");
