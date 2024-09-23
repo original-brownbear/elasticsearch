@@ -36,8 +36,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Node-level request used during can-match phase
@@ -132,11 +136,11 @@ public class CanMatchNodeRequest extends TransportRequest implements IndicesRequ
         List<Shard> shards,
         int numberOfShards,
         long nowInMillis,
-        @Nullable String clusterAlias
+        @Nullable String clusterAlias,
+        String[] indices
     ) {
         this.source = getCanMatchSource(searchRequest);
         this.indicesOptions = indicesOptions;
-        this.shards = new ArrayList<>(shards);
         this.searchType = searchRequest.searchType();
         this.requestCache = searchRequest.requestCache();
         // If allowPartialSearchResults is unset (ie null), the cluster-level default should have been substituted
@@ -148,7 +152,14 @@ public class CanMatchNodeRequest extends TransportRequest implements IndicesRequ
         this.nowInMillis = nowInMillis;
         this.clusterAlias = clusterAlias;
         this.waitForCheckpointsTimeout = searchRequest.getWaitForCheckpointsTimeout();
-        indices = shards.stream().map(Shard::getOriginalIndices).flatMap(Arrays::stream).distinct().toArray(String[]::new);
+        this.shards = shards;
+        this.indices = indices;
+        assert assertIndicesConsistent(shards, indices);
+    }
+
+    private static boolean assertIndicesConsistent(List<Shard> shards, String[] indices) {
+        assert Set.of(indices).equals(shards.stream().map(Shard::getOriginalIndices).flatMap(Arrays::stream).collect(Collectors.toSet()));
+        return true;
     }
 
     private static void collectAggregationQueries(Collection<AggregationBuilder> aggregations, List<QueryBuilder> aggregationQueries) {
@@ -202,8 +213,16 @@ public class CanMatchNodeRequest extends TransportRequest implements IndicesRequ
         nowInMillis = in.readVLong();
         clusterAlias = in.readOptionalString();
         waitForCheckpointsTimeout = in.readTimeValue();
-        shards = in.readCollectionAsList(Shard::new);
-        indices = shards.stream().map(Shard::getOriginalIndices).flatMap(Arrays::stream).distinct().toArray(String[]::new);
+        int shardCount = in.readVInt();
+        final List<Shard> shards = new ArrayList<>(shardCount);
+        final Set<String> indicesSet = new HashSet<>();
+        for (int i = 0; i < shardCount; i++) {
+            Shard shard = new Shard(in);
+            shards.add(shard);
+            Collections.addAll(indicesSet, shard.indices);
+        }
+        this.shards = shards;
+        indices = indicesSet.toArray(Strings.EMPTY_ARRAY);
     }
 
     @Override

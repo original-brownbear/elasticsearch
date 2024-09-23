@@ -14,8 +14,10 @@ import org.apache.lucene.util.FixedBitSet;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.cluster.routing.GroupShardsIterator;
+import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
+import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
 import org.elasticsearch.common.util.concurrent.CountDown;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.index.query.CoordinatorRewriteContext;
@@ -36,13 +38,13 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.function.BiFunction;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.elasticsearch.core.Strings.format;
@@ -150,71 +152,57 @@ final class CanMatchPreFilterSearchPhase extends SearchPhase {
     private void runCoordinatorRewritePhase() {
         // TODO: the index filter (i.e, `_index:patten`) should be prefiltered on the coordinator
         assert assertSearchCoordinationThread();
-        final List<SearchShardIterator> matchedShardLevelRequests = new ArrayList<>();
+        List<SearchShardIterator> matchedShardLevelRequests = new ArrayList<>();
         for (SearchShardIterator searchShardIterator : shardsIts) {
-            final CanMatchNodeRequest canMatchNodeRequest = new CanMatchNodeRequest(
-                request,
-                searchShardIterator.getOriginalIndices().indicesOptions(),
-                Collections.emptyList(),
-                getNumShards(),
-                timeProvider.absoluteStartMillis(),
-                searchShardIterator.getClusterAlias()
-            );
-            final ShardSearchRequest request = canMatchNodeRequest.createShardSearchRequest(buildShardLevelRequest(searchShardIterator));
             if (searchShardIterator.prefiltered()) {
-                consumeResult(searchShardIterator.skip() == false, request);
+                consumeResult(searchShardIterator.skip() == false, shardItIndexMap.get(searchShardIterator));
                 continue;
             }
             boolean canMatch = true;
             CoordinatorRewriteContext coordinatorRewriteContext = coordinatorRewriteContextProvider.getCoordinatorRewriteContext(
-                request.shardId().getIndex()
+                searchShardIterator.shardId().getIndex()
             );
             if (coordinatorRewriteContext != null) {
                 try {
-                    canMatch = SearchService.queryStillMatchesAfterRewrite(request, coordinatorRewriteContext);
+                    canMatch = SearchService.queryStillMatchesAfterRewrite(
+                        new CanMatchNodeRequest(
+                            request,
+                            searchShardIterator.getOriginalIndices().indicesOptions(),
+                            Collections.emptyList(),
+                            getNumShards(),
+                            timeProvider.absoluteStartMillis(),
+                            searchShardIterator.getClusterAlias(),
+                            Strings.EMPTY_ARRAY
+                        ).createShardSearchRequest(buildShardLevelRequest(searchShardIterator)),
+                        coordinatorRewriteContext
+                    );
                 } catch (Exception e) {
                     // treat as if shard is still a potential match
                 }
             }
-            if (canMatch) {
-                matchedShardLevelRequests.add(searchShardIterator);
-            } else {
-                consumeResult(false, request);
+            if (canMatch == false) {
+                consumeResult(false, shardItIndexMap.get(searchShardIterator));
+                continue;
             }
+            matchedShardLevelRequests.add(searchShardIterator);
         }
-        if (matchedShardLevelRequests.isEmpty()) {
+        int matchedCount = matchedShardLevelRequests.size();
+        if (matchedCount == 0) {
             finishPhase();
         } else {
-            new Round(new GroupShardsIterator<>(matchedShardLevelRequests)).run();
+            new Round(matchedCount == shardsIts.size() ? shardsIts : new GroupShardsIterator<>(matchedShardLevelRequests)).run();
         }
     }
 
-    private void consumeResult(boolean canMatch, ShardSearchRequest request) {
+    private void consumeResult(boolean canMatch, int requestIndex) {
         CanMatchShardResponse result = new CanMatchShardResponse(canMatch, null);
-        result.setShardIndex(request.shardRequestIndex());
+        result.setShardIndex(requestIndex);
         results.consumeResult(result, () -> {});
     }
 
     private void checkNoMissingShards() {
         assert assertSearchCoordinationThread();
         doCheckNoMissingShards(getName(), request, shardsIts);
-    }
-
-    private Map<SendingTarget, List<SearchShardIterator>> groupByNode(GroupShardsIterator<SearchShardIterator> shards) {
-        Map<SendingTarget, List<SearchShardIterator>> requests = new HashMap<>();
-        for (int i = 0; i < shards.size(); i++) {
-            final SearchShardIterator shardRoutings = shards.get(i);
-            assert shardRoutings.skip() == false;
-            assert shardItIndexMap.containsKey(shardRoutings);
-            SearchShardTarget target = shardRoutings.nextOrNull();
-            if (target != null) {
-                requests.computeIfAbsent(new SendingTarget(target.getClusterAlias(), target.getNodeId()), t -> new ArrayList<>())
-                    .add(shardRoutings);
-            } else {
-                requests.computeIfAbsent(new SendingTarget(null, null), t -> new ArrayList<>()).add(shardRoutings);
-            }
-        }
-        return requests;
     }
 
     /**
@@ -225,36 +213,24 @@ final class CanMatchPreFilterSearchPhase extends SearchPhase {
     class Round extends AbstractRunnable {
         private final GroupShardsIterator<SearchShardIterator> shards;
         private final CountDown countDown;
-        private final AtomicReferenceArray<Exception> failedResponses;
+        private final Set<Integer> failedResponses = ConcurrentCollections.newConcurrentSet();
 
         Round(GroupShardsIterator<SearchShardIterator> shards) {
             this.shards = shards;
             this.countDown = new CountDown(shards.size());
-            this.failedResponses = new AtomicReferenceArray<>(shardsIts.size());
         }
 
         @Override
         protected void doRun() {
             assert assertSearchCoordinationThread();
-            final Map<SendingTarget, List<SearchShardIterator>> requests = groupByNode(shards);
-
-            for (Map.Entry<SendingTarget, List<SearchShardIterator>> entry : requests.entrySet()) {
-                CanMatchNodeRequest canMatchNodeRequest = createCanMatchRequest(entry);
-                List<CanMatchNodeRequest.Shard> shardLevelRequests = canMatchNodeRequest.getShardLevelRequests();
-
-                if (entry.getKey().nodeId == null) {
-                    // no target node: just mark the requests as failed
-                    for (CanMatchNodeRequest.Shard shard : shardLevelRequests) {
-                        onOperationFailed(shard.getShardRequestIndex(), null);
-                    }
-                    continue;
-                }
-
+            groupByNode(shards).forEach((target, shardsIts) -> {
+                CanMatchNodeRequest canMatchNodeRequest = createCanMatchRequest(shardsIts);
                 try {
-                    searchTransportService.sendCanMatch(getConnection(entry.getKey()), canMatchNodeRequest, task, new ActionListener<>() {
+                    searchTransportService.sendCanMatch(getConnection(target), canMatchNodeRequest, task, new ActionListener<>() {
                         @Override
                         public void onResponse(CanMatchNodeResponse canMatchNodeResponse) {
-                            assert canMatchNodeResponse.getResponses().size() == canMatchNodeRequest.getShardLevelRequests().size();
+                            List<CanMatchNodeRequest.Shard> shardLevelRequests = canMatchNodeRequest.getShardLevelRequests();
+                            assert canMatchNodeResponse.getResponses().size() == shardLevelRequests.size();
                             for (int i = 0; i < canMatchNodeResponse.getResponses().size(); i++) {
                                 CanMatchNodeResponse.ResponseOrFailure response = canMatchNodeResponse.getResponses().get(i);
                                 if (response.getResponse() != null) {
@@ -262,30 +238,48 @@ final class CanMatchPreFilterSearchPhase extends SearchPhase {
                                     shardResponse.setShardIndex(shardLevelRequests.get(i).getShardRequestIndex());
                                     onOperation(shardResponse.getShardIndex(), shardResponse);
                                 } else {
-                                    Exception failure = response.getException();
-                                    assert failure != null;
-                                    onOperationFailed(shardLevelRequests.get(i).getShardRequestIndex(), failure);
+                                    assert response.getException() != null;
+                                    onOperationFailed(shardLevelRequests.get(i).getShardRequestIndex());
                                 }
                             }
                         }
 
                         @Override
                         public void onFailure(Exception e) {
-                            for (CanMatchNodeRequest.Shard shard : shardLevelRequests) {
-                                onOperationFailed(shard.getShardRequestIndex(), e);
-                            }
+                            failAll(canMatchNodeRequest);
                         }
                     });
                 } catch (Exception e) {
-                    for (CanMatchNodeRequest.Shard shard : shardLevelRequests) {
-                        onOperationFailed(shard.getShardRequestIndex(), e);
-                    }
+                    failAll(canMatchNodeRequest);
                 }
+            });
+        }
+
+        private void failAll(CanMatchNodeRequest canMatchNodeRequest) {
+            for (CanMatchNodeRequest.Shard shard : canMatchNodeRequest.getShardLevelRequests()) {
+                onOperationFailed(shard.getShardRequestIndex());
             }
         }
 
+        private Map<SendingTarget, List<SearchShardIterator>> groupByNode(GroupShardsIterator<SearchShardIterator> shards) {
+            Map<SendingTarget, List<SearchShardIterator>> requests = new HashMap<>();
+            for (int i = 0; i < shards.size(); i++) {
+                final SearchShardIterator shardRoutings = shards.get(i);
+                assert shardRoutings.skip() == false;
+                assert shardItIndexMap.containsKey(shardRoutings);
+                SearchShardTarget target = shardRoutings.nextOrNull();
+                if (target == null || target.getNodeId() == null) {
+                    onOperationFailed(shardItIndexMap.get(shardRoutings));
+                } else {
+                    requests.computeIfAbsent(new SendingTarget(target.getClusterAlias(), target.getNodeId()), t -> new ArrayList<>())
+                        .add(shardRoutings);
+                }
+            }
+            return requests;
+        }
+
         private void onOperation(int idx, CanMatchShardResponse response) {
-            failedResponses.set(idx, null);
+            failedResponses.remove(idx);
             results.consumeResult(response, () -> {
                 if (countDown.countDown()) {
                     finishRound();
@@ -293,8 +287,8 @@ final class CanMatchPreFilterSearchPhase extends SearchPhase {
             });
         }
 
-        private void onOperationFailed(int idx, Exception e) {
-            failedResponses.set(idx, e);
+        private void onOperationFailed(int idx) {
+            failedResponses.add(idx);
             results.consumeShardFailure(idx);
             if (countDown.countDown()) {
                 finishRound();
@@ -302,17 +296,16 @@ final class CanMatchPreFilterSearchPhase extends SearchPhase {
         }
 
         private void finishRound() {
-            List<SearchShardIterator> remainingShards = new ArrayList<>();
-            for (SearchShardIterator ssi : shards) {
-                int shardIndex = shardItIndexMap.get(ssi);
-                Exception failedResponse = failedResponses.get(shardIndex);
-                if (failedResponse != null) {
-                    remainingShards.add(ssi);
-                }
-            }
-            if (remainingShards.isEmpty()) {
+            if (failedResponses.isEmpty()) {
                 finishPhase();
             } else {
+                List<SearchShardIterator> remainingShards = new ArrayList<>();
+                for (SearchShardIterator ssi : shards) {
+                    int shardIndex = shardItIndexMap.get(ssi);
+                    if (failedResponses.contains(shardIndex)) {
+                        remainingShards.add(ssi);
+                    }
+                }
                 // trigger another round, forcing execution
                 executor.execute(new Round(new GroupShardsIterator<>(remainingShards)) {
                     @Override
@@ -334,25 +327,36 @@ final class CanMatchPreFilterSearchPhase extends SearchPhase {
 
     private record SendingTarget(@Nullable String clusterAlias, @Nullable String nodeId) {}
 
-    private CanMatchNodeRequest createCanMatchRequest(Map.Entry<SendingTarget, List<SearchShardIterator>> entry) {
-        final SearchShardIterator first = entry.getValue().get(0);
-        final List<CanMatchNodeRequest.Shard> shardLevelRequests = entry.getValue()
-            .stream()
-            .map(this::buildShardLevelRequest)
-            .collect(Collectors.toCollection(ArrayList::new));
-        assert entry.getValue().stream().allMatch(Objects::nonNull);
-        assert entry.getValue()
-            .stream()
-            .allMatch(ssi -> Objects.equals(ssi.getOriginalIndices().indicesOptions(), first.getOriginalIndices().indicesOptions()));
-        assert entry.getValue().stream().allMatch(ssi -> Objects.equals(ssi.getClusterAlias(), first.getClusterAlias()));
+    private CanMatchNodeRequest createCanMatchRequest(List<SearchShardIterator> iters) {
+        final SearchShardIterator first = iters.get(0);
+        final List<CanMatchNodeRequest.Shard> shardLevelRequests = new ArrayList<>();
+        final Set<String> indices = new HashSet<>();
+        for (SearchShardIterator iter : iters) {
+            CanMatchNodeRequest.Shard shard = buildShardLevelRequest(iter);
+            shardLevelRequests.add(shard);
+            Collections.addAll(indices, shard.getOriginalIndices());
+        }
+        assert assertEntryConsistent(iters);
         return new CanMatchNodeRequest(
             request,
             first.getOriginalIndices().indicesOptions(),
             shardLevelRequests,
             getNumShards(),
             timeProvider.absoluteStartMillis(),
-            first.getClusterAlias()
+            first.getClusterAlias(),
+            indices.toArray(Strings.EMPTY_ARRAY)
+
         );
+    }
+
+    private static boolean assertEntryConsistent(List<SearchShardIterator> list) {
+        SearchShardIterator first = list.getFirst();
+        for (SearchShardIterator ssi : list) {
+            assert ssi != null;
+            assert Objects.equals(ssi.getOriginalIndices().indicesOptions(), first.getOriginalIndices().indicesOptions());
+            assert Objects.equals(ssi.getClusterAlias(), first.getClusterAlias());
+        }
+        return true;
     }
 
     private void finishPhase() {
@@ -361,7 +365,7 @@ final class CanMatchPreFilterSearchPhase extends SearchPhase {
 
     private static final float DEFAULT_INDEX_BOOST = 1.0f;
 
-    public CanMatchNodeRequest.Shard buildShardLevelRequest(SearchShardIterator shardIt) {
+    private CanMatchNodeRequest.Shard buildShardLevelRequest(SearchShardIterator shardIt) {
         AliasFilter filter = aliasFilter.get(shardIt.shardId().getIndex().getUUID());
         assert filter != null;
         float indexBoost = concreteIndexBoosts.getOrDefault(shardIt.shardId().getIndex().getUUID(), DEFAULT_INDEX_BOOST);
@@ -420,7 +424,7 @@ final class CanMatchPreFilterSearchPhase extends SearchPhase {
         listener.onFailure(new SearchPhaseExecutionException(getName(), msg, cause, ShardSearchFailure.EMPTY_ARRAY));
     }
 
-    public Transport.Connection getConnection(SendingTarget sendingTarget) {
+    private Transport.Connection getConnection(SendingTarget sendingTarget) {
         Transport.Connection conn = nodeIdToConnection.apply(sendingTarget.clusterAlias, sendingTarget.nodeId);
         Version minVersion = request.minCompatibleShardNode();
         if (minVersion != null && conn != null && conn.getNode().getVersion().before(minVersion)) {
