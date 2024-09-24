@@ -35,6 +35,7 @@ public class EsThreadPoolExecutor extends ThreadPoolExecutor {
      * Name used in error reporting.
      */
     private final String name;
+    private final String prefix;
 
     EsThreadPoolExecutor(
         String name,
@@ -63,7 +64,13 @@ public class EsThreadPoolExecutor extends ThreadPoolExecutor {
     ) {
         super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, threadFactory, handler);
         this.name = name;
+        String[] parts = name.split("/");
+        this.prefix = parts[parts.length - 1].intern();
         this.contextHolder = contextHolder;
+    }
+
+    public String name() {
+        return prefix;
     }
 
     @Override

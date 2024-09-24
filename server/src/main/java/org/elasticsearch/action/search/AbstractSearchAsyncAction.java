@@ -28,7 +28,9 @@ import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
 import org.elasticsearch.common.util.concurrent.AtomicArray;
+import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
+import org.elasticsearch.common.util.concurrent.EsThreadPoolExecutor;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.Releasables;
 import org.elasticsearch.index.shard.ShardId;
@@ -776,7 +778,13 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
 
     @Override
     public final void execute(Runnable command) {
-        executor.execute(command);
+        if (executor instanceof EsThreadPoolExecutor esThreadPoolExecutor
+            && Thread.currentThread() instanceof EsExecutors.EsThread esThread
+            && esThread.esExecutorName().equals(esThreadPoolExecutor.name())) {
+            command.run();
+        } else {
+            executor.execute(command);
+        }
     }
 
     @Override
