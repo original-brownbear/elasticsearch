@@ -126,6 +126,8 @@ public class SystemIndexDescriptor implements IndexPatternMatcher, Comparable<Sy
 
     /** Used to determine whether an index name matches the {@link #indexPattern} */
     private final CharacterRunAutomaton indexPatternAutomaton;
+    private final Automaton indexPatternAutomatonSource;
+    private final Automaton automaton;
 
     /** For internally-managed indices, contains the index mappings JSON */
     private final String mappings;
@@ -360,7 +362,8 @@ public class SystemIndexDescriptor implements IndexPatternMatcher, Comparable<Sy
         this.primaryIndex = primaryIndex;
         this.aliasName = aliasName;
 
-        final Automaton automaton = buildAutomaton(indexPattern, aliasName);
+        this.indexPatternAutomatonSource = buildAutomaton(indexPattern, null);
+        this.automaton = buildAutomaton(indexPattern, aliasName);
         this.indexPatternAutomaton = new CharacterRunAutomaton(automaton);
         if (primaryIndex != null && indexPatternAutomaton.run(primaryIndex) == false) {
             throw new IllegalArgumentException("primary index does not match the index pattern!");
@@ -411,6 +414,14 @@ public class SystemIndexDescriptor implements IndexPatternMatcher, Comparable<Sy
     @Override
     public String getIndexPattern() {
         return indexPattern;
+    }
+
+    public Automaton getIndexPatternAutomaton() {
+        return indexPatternAutomatonSource;
+    }
+
+    public Automaton getAutomaton() {
+        return automaton;
     }
 
     /**
@@ -881,10 +892,10 @@ public class SystemIndexDescriptor implements IndexPatternMatcher, Comparable<Sy
      */
     static Automaton buildAutomaton(String pattern, String alias) {
         final String patternAsRegex = patternToRegex(pattern);
-        final String aliasAsRegex = alias == null ? null : patternToRegex(alias);
 
         final Automaton patternAutomaton = new RegExp(patternAsRegex).toAutomaton();
 
+        final String aliasAsRegex = alias == null ? null : patternToRegex(alias);
         if (aliasAsRegex == null) {
             return patternAutomaton;
         }

@@ -185,15 +185,20 @@ public class SystemIndices {
         this.systemNameRunAutomaton = new CharacterRunAutomaton(systemNameAutomaton);
     }
 
+    private static final Automaton SUFFIX_PATTERN_AUTOMATON = SystemIndexDescriptor.buildAutomaton("*" + UPGRADED_INDEX_SUFFIX, null);
+
     static void ensurePatternsAllowSuffix(Map<String, Feature> featureDescriptors) {
-        String suffixPattern = "*" + UPGRADED_INDEX_SUFFIX;
         final List<String> descriptorsWithNoRoomForSuffix = featureDescriptors.values()
             .stream()
             .flatMap(
                 feature -> feature.getIndexDescriptors()
                     .stream()
                     // The below filter & map are inside the enclosing flapMap so that we have access to both the feature and the descriptor
-                    .filter(descriptor -> overlaps(descriptor.getIndexPattern(), suffixPattern) == false)
+                    .filter(
+                        descriptor -> Operations.isEmpty(
+                            Operations.intersection(descriptor.getIndexPatternAutomaton(), SUFFIX_PATTERN_AUTOMATON)
+                        )
+                    )
                     .map(descriptor -> format("pattern [%s] from feature [%s]", descriptor.getIndexPattern(), feature.getName()))
             )
             .toList();
@@ -422,30 +427,33 @@ public class SystemIndices {
     }
 
     private static Automaton buildIndexAutomaton(Map<String, Feature> featureDescriptors) {
-        Optional<Automaton> automaton = featureDescriptors.values()
-            .stream()
-            .map(SystemIndices::featureToIndexAutomaton)
-            .reduce(Operations::union);
-        return MinimizationOperations.minimize(automaton.orElse(EMPTY), Operations.DEFAULT_DETERMINIZE_WORK_LIMIT);
+        return MinimizationOperations.minimize(
+            Operations.union(featureDescriptors.values().stream().map(SystemIndices::featureToIndexAutomaton).toList()),
+            Operations.DEFAULT_DETERMINIZE_WORK_LIMIT
+        );
     }
 
     private static CharacterRunAutomaton buildNetNewIndexCharacterRunAutomaton(Map<String, Feature> featureDescriptors) {
-        Optional<Automaton> automaton = featureDescriptors.values()
-            .stream()
-            .flatMap(feature -> feature.getIndexDescriptors().stream())
-            .filter(SystemIndexDescriptor::isAutomaticallyManaged)
-            .filter(SystemIndexDescriptor::isNetNew)
-            .map(descriptor -> SystemIndexDescriptor.buildAutomaton(descriptor.getIndexPattern(), descriptor.getAliasName()))
-            .reduce(Operations::union);
         return new CharacterRunAutomaton(
-            MinimizationOperations.minimize(automaton.orElse(EMPTY), Operations.DEFAULT_DETERMINIZE_WORK_LIMIT)
+            MinimizationOperations.minimize(
+                Operations.union(
+                    featureDescriptors.values()
+                        .stream()
+                        .flatMap(feature -> feature.getIndexDescriptors().stream())
+                        .filter(SystemIndexDescriptor::isAutomaticallyManaged)
+                        .filter(SystemIndexDescriptor::isNetNew)
+                        .map(SystemIndexDescriptor::getAutomaton)
+                        .toList()
+                ),
+                Operations.DEFAULT_DETERMINIZE_WORK_LIMIT
+            )
         );
     }
 
     private static Automaton featureToIndexAutomaton(Feature feature) {
         Optional<Automaton> systemIndexAutomaton = feature.getIndexDescriptors()
             .stream()
-            .map(descriptor -> SystemIndexDescriptor.buildAutomaton(descriptor.getIndexPattern(), descriptor.getAliasName()))
+            .map(SystemIndexDescriptor::getAutomaton)
             .reduce(Operations::union);
 
         return systemIndexAutomaton.orElse(EMPTY);
@@ -636,15 +644,23 @@ public class SystemIndices {
         // This is O(n^2) with the number of system index descriptors, and each check is quadratic with the number of states in the
         // automaton, but the absolute number of system index descriptors should be quite small (~10s at most), and the number of states
         // per pattern should be low as well. If these assumptions change, this might need to be reworked.
-        sourceDescriptorPair.forEach(descriptorToCheck -> {
-            List<Tuple<String, SystemIndexDescriptor>> descriptorsMatchingThisPattern = sourceDescriptorPair.stream()
-                .filter(d -> descriptorToCheck.v2() != d.v2()) // Exclude the pattern currently being checked
-                .filter(
-                    d -> overlaps(descriptorToCheck.v2(), d.v2())
-                        || (d.v2().getAliasName() != null && descriptorToCheck.v2().matchesIndexPattern(d.v2().getAliasName()))
-                )
-                .toList();
-            if (descriptorsMatchingThisPattern.isEmpty() == false) {
+        final int descriptorCount = sourceDescriptorPair.size();
+        for (int i = 0; i < descriptorCount; i++) {
+            Tuple<String, SystemIndexDescriptor> descriptorToCheck = sourceDescriptorPair.get(i);
+            // Exclude the pattern currently being checked
+            List<Tuple<String, SystemIndexDescriptor>> descriptorsMatchingThisPattern = null;
+            for (int j = i + 1; j < descriptorCount; j++) {
+                Tuple<String, SystemIndexDescriptor> d = sourceDescriptorPair.get(j);
+                if (Operations.isEmpty(
+                    Operations.intersection(descriptorToCheck.v2().getIndexPatternAutomaton(), d.v2().getIndexPatternAutomaton())
+                ) == false || (d.v2().getAliasName() != null && descriptorToCheck.v2().matchesIndexPattern(d.v2().getAliasName()))) {
+                    if (descriptorsMatchingThisPattern == null) {
+                        descriptorsMatchingThisPattern = new ArrayList<>();
+                    }
+                    descriptorsMatchingThisPattern.add(d);
+                }
+            }
+            if (descriptorsMatchingThisPattern != null) {
                 throw new IllegalStateException(
                     "a system index descriptor ["
                         + descriptorToCheck.v2()
@@ -660,7 +676,12 @@ public class SystemIndices {
             List<Tuple<String, SystemDataStreamDescriptor>> dataStreamsMatching = sourceDataStreamDescriptorPair.stream()
                 .filter(
                     dsTuple -> descriptorToCheck.v2().matchesIndexPattern(dsTuple.v2().getDataStreamName())
-                        || overlaps(descriptorToCheck.v2().getIndexPattern(), dsTuple.v2().getBackingIndexPattern())
+                        || Operations.isEmpty(
+                            Operations.intersection(
+                                descriptorToCheck.v2().getIndexPatternAutomaton(),
+                                SystemIndexDescriptor.buildAutomaton(dsTuple.v2().getBackingIndexPattern(), null)
+                            )
+                        ) == false
                 )
                 .toList();
             if (dataStreamsMatching.isEmpty() == false) {
@@ -675,17 +696,7 @@ public class SystemIndices {
                             .collect(Collectors.joining(", "))
                 );
             }
-        });
-    }
-
-    private static boolean overlaps(SystemIndexDescriptor a1, SystemIndexDescriptor a2) {
-        return overlaps(a1.getIndexPattern(), a2.getIndexPattern());
-    }
-
-    private static boolean overlaps(String pattern1, String pattern2) {
-        Automaton a1Automaton = SystemIndexDescriptor.buildAutomaton(pattern1, null);
-        Automaton a2Automaton = SystemIndexDescriptor.buildAutomaton(pattern2, null);
-        return Operations.isEmpty(Operations.intersection(a1Automaton, a2Automaton)) == false;
+        }
     }
 
     private static Map<String, Feature> buildFeatureMap(List<Feature> features) {
