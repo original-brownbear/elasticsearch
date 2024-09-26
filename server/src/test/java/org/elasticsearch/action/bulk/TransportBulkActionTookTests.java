@@ -31,7 +31,7 @@ import org.elasticsearch.common.util.concurrent.AtomicArray;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.index.IndexVersions;
 import org.elasticsearch.index.IndexingPressure;
-import org.elasticsearch.indices.EmptySystemIndices;
+import org.elasticsearch.indices.SystemIndices;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.test.VersionUtils;
@@ -220,7 +220,7 @@ public class TransportBulkActionTookTests extends ESTestCase {
 
     static class Resolver extends IndexNameExpressionResolver {
         Resolver() {
-            super(new ThreadContext(Settings.EMPTY), EmptySystemIndices.INSTANCE);
+            super(new ThreadContext(Settings.EMPTY), SystemIndices.NO_PLUGINS);
         }
 
         @Override
@@ -250,7 +250,7 @@ public class TransportBulkActionTookTests extends ESTestCase {
                 actionFilters,
                 indexNameExpressionResolver,
                 new IndexingPressure(Settings.EMPTY),
-                EmptySystemIndices.INSTANCE,
+                SystemIndices.NO_PLUGINS,
                 relativeTimeProvider,
                 FailureStoreMetrics.NOOP
             );

@@ -63,7 +63,7 @@ import org.elasticsearch.index.shard.ShardPath;
 import org.elasticsearch.index.shard.SparseVectorStats;
 import org.elasticsearch.index.store.StoreStats;
 import org.elasticsearch.index.warmer.WarmerStats;
-import org.elasticsearch.indices.EmptySystemIndices;
+import org.elasticsearch.indices.SystemIndices;
 import org.elasticsearch.search.suggest.completion.CompletionStats;
 import org.elasticsearch.tasks.CancellableTask;
 import org.elasticsearch.telemetry.TestTelemetryPlugin;
@@ -113,7 +113,7 @@ public class TransportRolloverActionTests extends ESTestCase {
         mockThreadPool,
         mockCreateIndexService,
         mdIndexAliasesService,
-        EmptySystemIndices.INSTANCE,
+            SystemIndices.NO_PLUGINS,
         WriteLoadForecaster.DEFAULT,
         mockClusterService,
         telemetryPlugin.getTelemetryProvider(Settings.EMPTY)

@@ -1241,7 +1241,7 @@ class NodeConstruction {
             return SystemIndices.Feature.fromSystemIndexPlugin(plugin, settings);
         }).toList();
 
-        SystemIndices systemIndices = new SystemIndices(features);
+        SystemIndices systemIndices = features.isEmpty() ? SystemIndices.NO_PLUGINS : new SystemIndices(features);
         modules.add(b -> {
             b.bind(SystemIndices.class).toInstance(systemIndices);
             b.bind(ExecutorSelector.class).toInstance(systemIndices.getExecutorSelector());

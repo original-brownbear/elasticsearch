@@ -42,8 +42,8 @@ import org.elasticsearch.index.shard.ReplicationGroup;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.index.shard.ShardNotFoundException;
 import org.elasticsearch.index.translog.Translog;
-import org.elasticsearch.indices.EmptySystemIndices;
 import org.elasticsearch.indices.IndicesService;
+import org.elasticsearch.indices.SystemIndices;
 import org.elasticsearch.node.NodeClosedException;
 import org.elasticsearch.test.ClusterServiceUtils;
 import org.elasticsearch.test.ESTestCase;
@@ -429,7 +429,7 @@ public class TransportWriteActionTests extends ESTestCase {
                 (service, ignore) -> EsExecutors.DIRECT_EXECUTOR_SERVICE,
                 PrimaryActionExecution.RejectOnOverload,
                 new IndexingPressure(Settings.EMPTY),
-                EmptySystemIndices.INSTANCE,
+                SystemIndices.NO_PLUGINS,
                 ReplicaActionExecution.SubjectToCircuitBreaker
             );
             this.withDocumentFailureOnPrimary = withDocumentFailureOnPrimary;
@@ -458,7 +458,7 @@ public class TransportWriteActionTests extends ESTestCase {
                 (service, ignore) -> EsExecutors.DIRECT_EXECUTOR_SERVICE,
                 PrimaryActionExecution.RejectOnOverload,
                 new IndexingPressure(settings),
-                EmptySystemIndices.INSTANCE,
+                SystemIndices.NO_PLUGINS,
                 ReplicaActionExecution.SubjectToCircuitBreaker
             );
             this.withDocumentFailureOnPrimary = false;

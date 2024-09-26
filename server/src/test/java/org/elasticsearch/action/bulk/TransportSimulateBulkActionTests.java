@@ -32,8 +32,8 @@ import org.elasticsearch.index.IndexSettingProviders;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.IndexVersions;
 import org.elasticsearch.index.IndexingPressure;
-import org.elasticsearch.indices.EmptySystemIndices;
 import org.elasticsearch.indices.IndicesService;
+import org.elasticsearch.indices.SystemIndices;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.test.ClusterServiceUtils;
 import org.elasticsearch.test.ESTestCase;
@@ -90,7 +90,7 @@ public class TransportSimulateBulkActionTests extends ESTestCase {
                 null,
                 new ActionFilters(Set.of()),
                 new IndexingPressure(Settings.EMPTY),
-                EmptySystemIndices.INSTANCE,
+                SystemIndices.NO_PLUGINS,
                 indicesService,
                 NamedXContentRegistry.EMPTY,
                 new IndexSettingProviders(Set.of())

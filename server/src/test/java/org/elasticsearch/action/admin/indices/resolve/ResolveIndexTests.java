@@ -29,7 +29,6 @@ import org.elasticsearch.common.time.DateFormatter;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.IndexVersion;
-import org.elasticsearch.indices.EmptySystemIndices;
 import org.elasticsearch.indices.SystemIndexDescriptor;
 import org.elasticsearch.indices.SystemIndices;
 import org.elasticsearch.indices.TestIndexNameExpressionResolver;
@@ -90,7 +89,7 @@ public class ResolveIndexTests extends ESTestCase {
     public void setup() {
         epochMillis = randomLongBetween(1580536800000L, 1583042400000L);
         threadContext = createThreadContext();
-        resolver = new IndexNameExpressionResolver(threadContext, EmptySystemIndices.INSTANCE);
+        resolver = new IndexNameExpressionResolver(threadContext, SystemIndices.NO_PLUGINS);
         dateString = DataStream.DATE_FORMATTER.formatMillis(epochMillis);
         clusterState = ClusterState.builder(new ClusterName("_name")).metadata(buildMetadata(dataStreams, indices)).build();
     }

@@ -19,7 +19,6 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.IndexVersion;
-import org.elasticsearch.indices.EmptySystemIndices;
 import org.elasticsearch.indices.SystemIndexDescriptorUtils;
 import org.elasticsearch.indices.SystemIndices;
 import org.elasticsearch.indices.TestIndexNameExpressionResolver;
@@ -205,7 +204,7 @@ public class AutoCreateIndexTests extends ESTestCase {
         }
 
         ClusterSettings clusterSettings = new ClusterSettings(settings, ClusterSettings.BUILT_IN_CLUSTER_SETTINGS);
-        SystemIndices systemIndices = EmptySystemIndices.INSTANCE;
+        SystemIndices systemIndices = SystemIndices.NO_PLUGINS;
         AutoCreateIndex autoCreateIndex = new AutoCreateIndex(
             settings,
             clusterSettings,

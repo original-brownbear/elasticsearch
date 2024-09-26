@@ -26,7 +26,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.reindex.RemoteInfo;
-import org.elasticsearch.indices.EmptySystemIndices;
+import org.elasticsearch.indices.SystemIndices;
 import org.elasticsearch.indices.TestIndexNameExpressionResolver;
 import org.elasticsearch.test.ESTestCase;
 
@@ -60,7 +60,7 @@ public class ReindexSourceTargetValidationTests extends ESTestCase {
         Settings.EMPTY,
         new ClusterSettings(Settings.EMPTY, ClusterSettings.BUILT_IN_CLUSTER_SETTINGS),
         INDEX_NAME_EXPRESSION_RESOLVER,
-        EmptySystemIndices.INSTANCE
+        SystemIndices.NO_PLUGINS
     );
 
     private final BytesReference query = new BytesArray("{ \"foo\" : \"bar\" }");

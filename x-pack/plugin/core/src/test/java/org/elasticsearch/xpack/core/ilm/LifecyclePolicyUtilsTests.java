@@ -20,7 +20,7 @@ import org.elasticsearch.cluster.metadata.Template;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.index.IndexVersion;
-import org.elasticsearch.indices.EmptySystemIndices;
+import org.elasticsearch.indices.SystemIndices;
 import org.elasticsearch.test.ESTestCase;
 
 import java.util.Arrays;
@@ -32,7 +32,7 @@ public class LifecyclePolicyUtilsTests extends ESTestCase {
     public void testCalculateUsage() {
         final IndexNameExpressionResolver iner = new IndexNameExpressionResolver(
             new ThreadContext(Settings.EMPTY),
-            EmptySystemIndices.INSTANCE
+            SystemIndices.NO_PLUGINS
         );
 
         {

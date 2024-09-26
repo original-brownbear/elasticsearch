@@ -43,7 +43,7 @@ import org.elasticsearch.common.settings.Setting.Property;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.settings.SettingsModule;
 import org.elasticsearch.gateway.GatewayAllocator;
-import org.elasticsearch.indices.EmptySystemIndices;
+import org.elasticsearch.indices.SystemIndices;
 import org.elasticsearch.injection.guice.ModuleTestCase;
 import org.elasticsearch.plugins.ClusterPlugin;
 import org.elasticsearch.tasks.TaskManager;
@@ -161,7 +161,7 @@ public class ClusterModuleTests extends ModuleTestCase {
                 public Collection<AllocationDecider> createAllocationDeciders(Settings settings, ClusterSettings clusterSettings) {
                     return Collections.singletonList(new EnableAllocationDecider(clusterSettings));
                 }
-            }), clusterInfoService, null, threadPool, EmptySystemIndices.INSTANCE, WriteLoadForecaster.DEFAULT, TelemetryProvider.NOOP)
+            }), clusterInfoService, null, threadPool, SystemIndices.NO_PLUGINS, WriteLoadForecaster.DEFAULT, TelemetryProvider.NOOP)
         );
         assertEquals(e.getMessage(), "Cannot specify allocation decider [" + EnableAllocationDecider.class.getName() + "] twice");
     }
@@ -172,7 +172,7 @@ public class ClusterModuleTests extends ModuleTestCase {
             public Collection<AllocationDecider> createAllocationDeciders(Settings settings, ClusterSettings clusterSettings) {
                 return Collections.singletonList(new FakeAllocationDecider());
             }
-        }), clusterInfoService, null, threadPool, EmptySystemIndices.INSTANCE, WriteLoadForecaster.DEFAULT, TelemetryProvider.NOOP);
+        }), clusterInfoService, null, threadPool, SystemIndices.NO_PLUGINS, WriteLoadForecaster.DEFAULT, TelemetryProvider.NOOP);
         assertTrue(module.deciderList.stream().anyMatch(d -> d.getClass().equals(FakeAllocationDecider.class)));
     }
 
@@ -182,7 +182,7 @@ public class ClusterModuleTests extends ModuleTestCase {
             public Map<String, Supplier<ShardsAllocator>> getShardsAllocators(Settings settings, ClusterSettings clusterSettings) {
                 return Collections.singletonMap(name, supplier);
             }
-        }), clusterInfoService, null, threadPool, EmptySystemIndices.INSTANCE, WriteLoadForecaster.DEFAULT, TelemetryProvider.NOOP);
+        }), clusterInfoService, null, threadPool, SystemIndices.NO_PLUGINS, WriteLoadForecaster.DEFAULT, TelemetryProvider.NOOP);
     }
 
     public void testRegisterShardsAllocator() {
@@ -213,7 +213,7 @@ public class ClusterModuleTests extends ModuleTestCase {
                 clusterInfoService,
                 null,
                 threadPool,
-                EmptySystemIndices.INSTANCE,
+                SystemIndices.NO_PLUGINS,
                 WriteLoadForecaster.DEFAULT,
                 TelemetryProvider.NOOP
             )
@@ -274,7 +274,7 @@ public class ClusterModuleTests extends ModuleTestCase {
             clusterInfoService,
             null,
             threadPool,
-            EmptySystemIndices.INSTANCE,
+            SystemIndices.NO_PLUGINS,
             WriteLoadForecaster.DEFAULT,
             TelemetryProvider.NOOP
         );
@@ -289,7 +289,7 @@ public class ClusterModuleTests extends ModuleTestCase {
             clusterInfoService,
             null,
             threadPool,
-            EmptySystemIndices.INSTANCE,
+            SystemIndices.NO_PLUGINS,
             WriteLoadForecaster.DEFAULT,
             TelemetryProvider.NOOP
         );

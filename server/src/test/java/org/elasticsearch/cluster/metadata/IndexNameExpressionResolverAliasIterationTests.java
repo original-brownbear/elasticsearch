@@ -10,13 +10,13 @@
 package org.elasticsearch.cluster.metadata;
 
 import org.elasticsearch.common.util.concurrent.ThreadContext;
-import org.elasticsearch.indices.EmptySystemIndices;
+import org.elasticsearch.indices.SystemIndices;
 
 public class IndexNameExpressionResolverAliasIterationTests extends IndexNameExpressionResolverTests {
 
     @Override
     protected IndexNameExpressionResolver createIndexNameExpressionResolver(ThreadContext threadContext) {
-        return new IndexNameExpressionResolver(threadContext, EmptySystemIndices.INSTANCE) {
+        return new IndexNameExpressionResolver(threadContext, SystemIndices.NO_PLUGINS) {
             @Override
             boolean iterateIndexAliases(int indexAliasesSize, int resolvedExpressionsSize) {
                 return true;

@@ -93,9 +93,9 @@ import org.elasticsearch.index.mapper.MapperMetrics;
 import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.index.shard.IndexEventListener;
 import org.elasticsearch.index.shard.ShardLongFieldRange;
-import org.elasticsearch.indices.EmptySystemIndices;
 import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.indices.ShardLimitValidator;
+import org.elasticsearch.indices.SystemIndices;
 import org.elasticsearch.indices.TestIndexNameExpressionResolver;
 import org.elasticsearch.snapshots.EmptySnapshotsInfoService;
 import org.elasticsearch.tasks.TaskManager;
@@ -302,7 +302,7 @@ public class ClusterStateChanges {
             IndexScopedSettings.DEFAULT_SCOPED_SETTINGS,
             threadPool,
             xContentRegistry,
-            EmptySystemIndices.INSTANCE,
+            SystemIndices.NO_PLUGINS,
             true,
             new IndexSettingProviders(Set.of())
         );
@@ -332,7 +332,7 @@ public class ClusterStateChanges {
             metadataUpdateSettingsService,
             actionFilters,
             indexNameExpressionResolver,
-            EmptySystemIndices.INSTANCE
+            SystemIndices.NO_PLUGINS
         );
         transportClusterRerouteAction = new TransportClusterRerouteAction(
             transportService,
@@ -349,7 +349,7 @@ public class ClusterStateChanges {
             createIndexService,
             actionFilters,
             indexNameExpressionResolver,
-            EmptySystemIndices.INSTANCE
+            SystemIndices.NO_PLUGINS
         );
 
         nodeLeftExecutor = new NodeLeftExecutor(allocationService);

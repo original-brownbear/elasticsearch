@@ -22,8 +22,8 @@ import org.elasticsearch.env.Environment;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexService;
 import org.elasticsearch.index.IndexSettingProviders;
-import org.elasticsearch.indices.EmptySystemIndices;
 import org.elasticsearch.indices.IndicesService;
+import org.elasticsearch.indices.SystemIndices;
 import org.elasticsearch.test.ESTestCase;
 
 import java.util.HashMap;
@@ -264,7 +264,7 @@ public class DataStreamLifecycleWithRetentionWarningsTests extends ESTestCase {
             IndexScopedSettings.DEFAULT_SCOPED_SETTINGS,
             null,
             xContentRegistry(),
-            EmptySystemIndices.INSTANCE,
+            SystemIndices.NO_PLUGINS,
             true,
             new IndexSettingProviders(Set.of())
         );
@@ -279,7 +279,7 @@ public class DataStreamLifecycleWithRetentionWarningsTests extends ESTestCase {
             indicesService,
             new IndexScopedSettings(Settings.EMPTY, IndexScopedSettings.BUILT_IN_INDEX_SETTINGS),
             xContentRegistry(),
-            EmptySystemIndices.INSTANCE,
+            SystemIndices.NO_PLUGINS,
             new IndexSettingProviders(Set.of()),
             DataStreamGlobalRetentionSettings.create(
                 ClusterSettings.createBuiltInClusterSettings(settingsWithDefaultRetention),

@@ -30,10 +30,10 @@ import org.elasticsearch.index.IndexSettingProviders;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.mapper.MapperParsingException;
 import org.elasticsearch.index.mapper.MapperService;
-import org.elasticsearch.indices.EmptySystemIndices;
 import org.elasticsearch.indices.IndexTemplateMissingException;
 import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.indices.InvalidIndexTemplateException;
+import org.elasticsearch.indices.SystemIndices;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
 import org.elasticsearch.test.ClusterServiceUtils;
 import org.elasticsearch.test.ESSingleNodeTestCase;
@@ -2498,7 +2498,7 @@ public class MetadataIndexTemplateServiceTests extends ESSingleNodeTestCase {
             IndexScopedSettings.DEFAULT_SCOPED_SETTINGS,
             null,
             xContentRegistry,
-            EmptySystemIndices.INSTANCE,
+            SystemIndices.NO_PLUGINS,
             true,
             new IndexSettingProviders(Set.of())
         );
@@ -2508,7 +2508,7 @@ public class MetadataIndexTemplateServiceTests extends ESSingleNodeTestCase {
             null,
             new IndexScopedSettings(Settings.EMPTY, IndexScopedSettings.BUILT_IN_INDEX_SETTINGS),
             xContentRegistry,
-            EmptySystemIndices.INSTANCE,
+            SystemIndices.NO_PLUGINS,
             new IndexSettingProviders(Set.of()),
             DataStreamGlobalRetentionSettings.create(
                 ClusterSettings.createBuiltInClusterSettings(),
@@ -2565,7 +2565,7 @@ public class MetadataIndexTemplateServiceTests extends ESSingleNodeTestCase {
             IndexScopedSettings.DEFAULT_SCOPED_SETTINGS,
             null,
             xContentRegistry(),
-            EmptySystemIndices.INSTANCE,
+            SystemIndices.NO_PLUGINS,
             true,
             new IndexSettingProviders(Set.of())
         );
@@ -2575,7 +2575,7 @@ public class MetadataIndexTemplateServiceTests extends ESSingleNodeTestCase {
             indicesService,
             new IndexScopedSettings(Settings.EMPTY, IndexScopedSettings.BUILT_IN_INDEX_SETTINGS),
             xContentRegistry(),
-            EmptySystemIndices.INSTANCE,
+            SystemIndices.NO_PLUGINS,
             new IndexSettingProviders(Set.of()),
             DataStreamGlobalRetentionSettings.create(
                 ClusterSettings.createBuiltInClusterSettings(),

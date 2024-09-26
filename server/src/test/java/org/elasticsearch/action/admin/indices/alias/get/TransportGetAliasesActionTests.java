@@ -20,7 +20,6 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.index.IndexVersion;
-import org.elasticsearch.indices.EmptySystemIndices;
 import org.elasticsearch.indices.SystemIndexDescriptor;
 import org.elasticsearch.indices.SystemIndices;
 import org.elasticsearch.indices.SystemIndices.SystemIndexAccessLevel;
@@ -53,7 +52,7 @@ public class TransportGetAliasesActionTests extends ESTestCase {
             clusterState,
             SystemIndexAccessLevel.NONE,
             null,
-            EmptySystemIndices.INSTANCE
+            SystemIndices.NO_PLUGINS
         );
         assertThat(result.size(), equalTo(3));
         assertThat(result.get("a").size(), equalTo(0));
@@ -70,7 +69,7 @@ public class TransportGetAliasesActionTests extends ESTestCase {
             clusterState,
             SystemIndexAccessLevel.NONE,
             null,
-            EmptySystemIndices.INSTANCE
+            SystemIndices.NO_PLUGINS
         );
         assertThat(result.size(), equalTo(3));
         assertThat(result.get("a").size(), equalTo(0));
@@ -86,7 +85,7 @@ public class TransportGetAliasesActionTests extends ESTestCase {
             clusterState,
             SystemIndexAccessLevel.NONE,
             null,
-            EmptySystemIndices.INSTANCE
+            SystemIndices.NO_PLUGINS
         );
         assertThat(result.size(), equalTo(1));
         assertThat(result.get("b").size(), equalTo(1));
@@ -111,7 +110,7 @@ public class TransportGetAliasesActionTests extends ESTestCase {
             state,
             SystemIndexAccessLevel.NONE,
             null,
-            EmptySystemIndices.INSTANCE
+            SystemIndices.NO_PLUGINS
         );
         assertThat(result.size(), equalTo(3));
         assertThat(result.get("a").size(), equalTo(0));
@@ -142,7 +141,7 @@ public class TransportGetAliasesActionTests extends ESTestCase {
             state,
             SystemIndexAccessLevel.NONE,
             null,
-            EmptySystemIndices.INSTANCE
+            SystemIndices.NO_PLUGINS
         );
         assertThat(result.size(), equalTo(1));
         assertThat(result.get(".b").size(), equalTo(1));
@@ -170,7 +169,7 @@ public class TransportGetAliasesActionTests extends ESTestCase {
             state,
             SystemIndexAccessLevel.NONE,
             null,
-            EmptySystemIndices.INSTANCE
+            SystemIndices.NO_PLUGINS
         );
         assertThat(result.size(), equalTo(1));
         assertThat(result.get(".b").size(), equalTo(1));
@@ -198,7 +197,7 @@ public class TransportGetAliasesActionTests extends ESTestCase {
             state,
             SystemIndexAccessLevel.ALL,
             new ThreadContext(Settings.EMPTY),
-            EmptySystemIndices.INSTANCE
+            SystemIndices.NO_PLUGINS
         );
         assertThat(result.size(), equalTo(1));
         assertThat(result.get(".b").size(), equalTo(1));
@@ -222,7 +221,7 @@ public class TransportGetAliasesActionTests extends ESTestCase {
             state,
             SystemIndexAccessLevel.NONE,
             new ThreadContext(Settings.EMPTY),
-            EmptySystemIndices.INSTANCE
+            SystemIndices.NO_PLUGINS
         );
         assertThat(result.size(), equalTo(1));
         assertThat(result.get("c").size(), equalTo(1));

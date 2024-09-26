@@ -126,6 +126,7 @@ public class SystemIndexDescriptor implements IndexPatternMatcher, Comparable<Sy
 
     /** Used to determine whether an index name matches the {@link #indexPattern} */
     private final CharacterRunAutomaton indexPatternAutomaton;
+    private final Automaton automaton;
 
     /** For internally-managed indices, contains the index mappings JSON */
     private final String mappings;
@@ -361,6 +362,7 @@ public class SystemIndexDescriptor implements IndexPatternMatcher, Comparable<Sy
         this.aliasName = aliasName;
 
         final Automaton automaton = buildAutomaton(indexPattern, aliasName);
+        this.automaton = automaton;
         this.indexPatternAutomaton = new CharacterRunAutomaton(automaton);
         if (primaryIndex != null && indexPatternAutomaton.run(primaryIndex) == false) {
             throw new IllegalArgumentException("primary index does not match the index pattern!");
@@ -429,6 +431,10 @@ public class SystemIndexDescriptor implements IndexPatternMatcher, Comparable<Sy
      */
     public boolean matchesIndexPattern(String index) {
         return indexPatternAutomaton.run(index);
+    }
+
+    public Automaton getAutomaton() {
+        return automaton;
     }
 
     /**
@@ -892,6 +898,13 @@ public class SystemIndexDescriptor implements IndexPatternMatcher, Comparable<Sy
         final Automaton aliasAutomaton = new RegExp(aliasAsRegex).toAutomaton();
 
         return Operations.union(patternAutomaton, aliasAutomaton);
+    }
+
+    static Automaton buildAutomatonNoAlias(SystemIndexDescriptor descriptor) {
+        if (descriptor.aliasName == null) {
+            return descriptor.automaton;
+        }
+        return buildAutomaton(descriptor.indexPattern, null);
     }
 
     /**

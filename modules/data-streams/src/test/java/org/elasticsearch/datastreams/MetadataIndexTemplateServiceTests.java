@@ -28,10 +28,10 @@ import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.index.IndexSettingProviders;
-import org.elasticsearch.indices.EmptySystemIndices;
 import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.indices.InvalidIndexTemplateException;
 import org.elasticsearch.indices.ShardLimitValidator;
+import org.elasticsearch.indices.SystemIndices;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
 import org.elasticsearch.test.ESSingleNodeTestCase;
 
@@ -205,7 +205,7 @@ public class MetadataIndexTemplateServiceTests extends ESSingleNodeTestCase {
             IndexScopedSettings.DEFAULT_SCOPED_SETTINGS,
             null,
             xContentRegistry(),
-            EmptySystemIndices.INSTANCE,
+            SystemIndices.NO_PLUGINS,
             true,
             indexSettingProviders
         );
@@ -215,7 +215,7 @@ public class MetadataIndexTemplateServiceTests extends ESSingleNodeTestCase {
             indicesService,
             new IndexScopedSettings(Settings.EMPTY, IndexScopedSettings.BUILT_IN_INDEX_SETTINGS),
             xContentRegistry(),
-            EmptySystemIndices.INSTANCE,
+            SystemIndices.NO_PLUGINS,
             indexSettingProviders,
             DataStreamGlobalRetentionSettings.create(
                 ClusterSettings.createBuiltInClusterSettings(),

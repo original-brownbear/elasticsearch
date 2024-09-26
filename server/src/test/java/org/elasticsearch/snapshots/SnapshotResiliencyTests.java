@@ -146,12 +146,12 @@ import org.elasticsearch.index.mapper.MapperRegistry;
 import org.elasticsearch.index.seqno.GlobalCheckpointSyncAction;
 import org.elasticsearch.index.seqno.RetentionLeaseSyncer;
 import org.elasticsearch.index.shard.PrimaryReplicaSyncer;
-import org.elasticsearch.indices.EmptySystemIndices;
 import org.elasticsearch.indices.IndicesFeatures;
 import org.elasticsearch.indices.IndicesModule;
 import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.indices.IndicesServiceBuilder;
 import org.elasticsearch.indices.ShardLimitValidator;
+import org.elasticsearch.indices.SystemIndices;
 import org.elasticsearch.indices.TestIndexNameExpressionResolver;
 import org.elasticsearch.indices.analysis.AnalysisModule;
 import org.elasticsearch.indices.breaker.NoneCircuitBreakerService;
@@ -2186,7 +2186,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
                     repositoriesService,
                     transportService,
                     actionFilters,
-                    EmptySystemIndices.INSTANCE
+                    SystemIndices.NO_PLUGINS
                 );
                 nodeEnv = new NodeEnvironment(settings, environment);
                 final NamedXContentRegistry namedXContentRegistry = new NamedXContentRegistry(Collections.emptyList());
@@ -2319,7 +2319,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
                     new FetchPhase(Collections.emptyList()),
                     responseCollectorService,
                     new NoneCircuitBreakerService(),
-                    EmptySystemIndices.INSTANCE.getExecutorSelector(),
+                    SystemIndices.NO_PLUGINS.getExecutorSelector(),
                     Tracer.NOOP
                 );
 
@@ -2353,7 +2353,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
                             shardStateAction,
                             actionFilters,
                             new IndexingPressure(settings),
-                            EmptySystemIndices.INSTANCE
+                            SystemIndices.NO_PLUGINS
                         )
                     ),
                     RetentionLeaseSyncer.EMPTY,
@@ -2370,7 +2370,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
                     indexScopedSettings,
                     threadPool,
                     namedXContentRegistry,
-                    EmptySystemIndices.INSTANCE,
+                    SystemIndices.NO_PLUGINS,
                     false,
                     new IndexSettingProviders(Set.of())
                 );
@@ -2383,7 +2383,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
                         metadataCreateIndexService,
                         actionFilters,
                         indexNameExpressionResolver,
-                        EmptySystemIndices.INSTANCE
+                        SystemIndices.NO_PLUGINS
                     )
                 );
                 final MappingUpdatedAction mappingUpdatedAction = new MappingUpdatedAction(settings, clusterSettings);
@@ -2412,7 +2412,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
                         actionFilters,
                         indexNameExpressionResolver,
                         new IndexingPressure(settings),
-                        EmptySystemIndices.INSTANCE,
+                        SystemIndices.NO_PLUGINS,
                         FailureStoreMetrics.NOOP
                     )
                 );
@@ -2427,7 +2427,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
                     new UpdateHelper(scriptService, DocumentParsingProvider.EMPTY_INSTANCE),
                     actionFilters,
                     indexingMemoryLimits,
-                    EmptySystemIndices.INSTANCE,
+                    SystemIndices.NO_PLUGINS,
                     DocumentParsingProvider.EMPTY_INSTANCE
                 );
                 actions.put(TransportShardBulkAction.TYPE, transportShardBulkAction);
@@ -2446,7 +2446,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
                         MapperMetrics.NOOP
                     ),
                     shardLimitValidator,
-                    EmptySystemIndices.INSTANCE,
+                    SystemIndices.NO_PLUGINS,
                     indicesService,
                     mock(FileSettingsService.class),
                     threadPool
@@ -2461,7 +2461,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
                         actionFilters,
                         indexNameExpressionResolver,
                         new RequestValidators<>(Collections.emptyList()),
-                        EmptySystemIndices.INSTANCE
+                        SystemIndices.NO_PLUGINS
                     )
                 );
                 actions.put(
@@ -2473,7 +2473,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
                         metadataMappingService,
                         actionFilters,
                         indexNameExpressionResolver,
-                        EmptySystemIndices.INSTANCE
+                        SystemIndices.NO_PLUGINS
                     )
                 );
 
@@ -2491,7 +2491,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
                         actionFilters,
                         indexNameExpressionResolver,
                         namedWriteableRegistry,
-                        EmptySystemIndices.INSTANCE.getExecutorSelector(),
+                        SystemIndices.NO_PLUGINS.getExecutorSelector(),
                         new SearchTransportAPMMetrics(TelemetryProvider.NOOP.getMeterRegistry()),
                         new SearchResponseMetrics(TelemetryProvider.NOOP.getMeterRegistry()),
                         client,

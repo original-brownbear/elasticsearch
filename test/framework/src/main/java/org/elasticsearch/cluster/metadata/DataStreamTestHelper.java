@@ -44,9 +44,9 @@ import org.elasticsearch.index.mapper.ObjectMapper;
 import org.elasticsearch.index.mapper.RootObjectMapper;
 import org.elasticsearch.index.mapper.RoutingFieldMapper;
 import org.elasticsearch.index.shard.IndexEventListener;
-import org.elasticsearch.indices.EmptySystemIndices;
 import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.indices.ShardLimitValidator;
+import org.elasticsearch.indices.SystemIndices;
 import org.elasticsearch.script.ScriptCompiler;
 import org.elasticsearch.telemetry.TelemetryProvider;
 import org.elasticsearch.test.ClusterServiceUtils;
@@ -687,7 +687,7 @@ public final class DataStreamTestHelper {
             IndexScopedSettings.DEFAULT_SCOPED_SETTINGS,
             testThreadPool,
             null,
-            EmptySystemIndices.INSTANCE,
+            SystemIndices.NO_PLUGINS,
             false,
             new IndexSettingProviders(providers)
         );
@@ -696,7 +696,7 @@ public final class DataStreamTestHelper {
             testThreadPool,
             createIndexService,
             indexAliasesService,
-            EmptySystemIndices.INSTANCE,
+            SystemIndices.NO_PLUGINS,
             WriteLoadForecaster.DEFAULT,
             clusterService,
             telemetryProvider

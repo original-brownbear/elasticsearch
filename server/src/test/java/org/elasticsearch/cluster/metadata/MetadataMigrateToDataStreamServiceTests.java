@@ -19,7 +19,7 @@ import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.index.mapper.MapperServiceTestCase;
-import org.elasticsearch.indices.EmptySystemIndices;
+import org.elasticsearch.indices.SystemIndices;
 
 import java.io.IOException;
 import java.util.List;
@@ -435,7 +435,7 @@ public class MetadataMigrateToDataStreamServiceTests extends MapperServiceTestCa
 
     private MetadataCreateIndexService getMetadataCreateIndexService() {
         MetadataCreateIndexService service = mock(MetadataCreateIndexService.class);
-        when(service.getSystemIndices()).thenReturn(EmptySystemIndices.INSTANCE);
+        when(service.getSystemIndices()).thenReturn(SystemIndices.NO_PLUGINS);
         return service;
     }
 }

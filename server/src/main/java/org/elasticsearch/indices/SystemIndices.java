@@ -132,6 +132,10 @@ public class SystemIndices {
             .filter(SystemIndexDescriptor::isAutomaticallyManaged)
             .collect(Collectors.toMap(SystemIndexDescriptor::getIndexPattern, SystemIndexDescriptor::getMappingsVersion));
 
+    private static final Automaton SUFFIX_PATTERN = SystemIndexDescriptor.buildAutomaton("*" + UPGRADED_INDEX_SUFFIX, null);
+
+    public static final SystemIndices NO_PLUGINS = new SystemIndices(List.of());
+
     /**
      * The node's full list of system features is stored here. The map is keyed
      * on the value of {@link Feature#getName()}, and is used for fast lookup of
@@ -186,14 +190,13 @@ public class SystemIndices {
     }
 
     static void ensurePatternsAllowSuffix(Map<String, Feature> featureDescriptors) {
-        String suffixPattern = "*" + UPGRADED_INDEX_SUFFIX;
         final List<String> descriptorsWithNoRoomForSuffix = featureDescriptors.values()
             .stream()
             .flatMap(
                 feature -> feature.getIndexDescriptors()
                     .stream()
                     // The below filter & map are inside the enclosing flapMap so that we have access to both the feature and the descriptor
-                    .filter(descriptor -> overlaps(descriptor.getIndexPattern(), suffixPattern) == false)
+                    .filter(descriptor -> overlaps(SystemIndexDescriptor.buildAutomatonNoAlias(descriptor), SUFFIX_PATTERN) == false)
                     .map(descriptor -> format("pattern [%s] from feature [%s]", descriptor.getIndexPattern(), feature.getName()))
             )
             .toList();
@@ -237,10 +240,7 @@ public class SystemIndices {
                 if (systemIndexDescriptor.isExternal()) {
                     systemIndexDescriptor.getAllowedElasticProductOrigins()
                         .forEach(origin -> productToSystemIndicesMap.compute(origin, (key, value) -> {
-                            Automaton automaton = SystemIndexDescriptor.buildAutomaton(
-                                systemIndexDescriptor.getIndexPattern(),
-                                systemIndexDescriptor.getAliasName()
-                            );
+                            Automaton automaton = systemIndexDescriptor.getAutomaton();
                             return value == null ? automaton : Operations.union(value, automaton);
                         }));
                 }
@@ -422,11 +422,15 @@ public class SystemIndices {
     }
 
     private static Automaton buildIndexAutomaton(Map<String, Feature> featureDescriptors) {
-        Optional<Automaton> automaton = featureDescriptors.values()
-            .stream()
-            .map(SystemIndices::featureToIndexAutomaton)
-            .reduce(Operations::union);
-        return MinimizationOperations.minimize(automaton.orElse(EMPTY), Operations.DEFAULT_DETERMINIZE_WORK_LIMIT);
+        return MinimizationOperations.minimize(
+            Operations.union(
+                featureDescriptors.values()
+                    .stream()
+                    .flatMap(feature -> feature.getIndexDescriptors().stream().map(SystemIndexDescriptor::getAutomaton))
+                    .toList()
+            ),
+            Operations.DEFAULT_DETERMINIZE_WORK_LIMIT
+        );
     }
 
     private static CharacterRunAutomaton buildNetNewIndexCharacterRunAutomaton(Map<String, Feature> featureDescriptors) {
@@ -435,20 +439,11 @@ public class SystemIndices {
             .flatMap(feature -> feature.getIndexDescriptors().stream())
             .filter(SystemIndexDescriptor::isAutomaticallyManaged)
             .filter(SystemIndexDescriptor::isNetNew)
-            .map(descriptor -> SystemIndexDescriptor.buildAutomaton(descriptor.getIndexPattern(), descriptor.getAliasName()))
+            .map(SystemIndexDescriptor::getAutomaton)
             .reduce(Operations::union);
         return new CharacterRunAutomaton(
             MinimizationOperations.minimize(automaton.orElse(EMPTY), Operations.DEFAULT_DETERMINIZE_WORK_LIMIT)
         );
-    }
-
-    private static Automaton featureToIndexAutomaton(Feature feature) {
-        Optional<Automaton> systemIndexAutomaton = feature.getIndexDescriptors()
-            .stream()
-            .map(descriptor -> SystemIndexDescriptor.buildAutomaton(descriptor.getIndexPattern(), descriptor.getAliasName()))
-            .reduce(Operations::union);
-
-        return systemIndexAutomaton.orElse(EMPTY);
     }
 
     private static Automaton buildDataStreamAutomaton(Map<String, Feature> featureDescriptors) {
@@ -679,13 +674,17 @@ public class SystemIndices {
     }
 
     private static boolean overlaps(SystemIndexDescriptor a1, SystemIndexDescriptor a2) {
-        return overlaps(a1.getIndexPattern(), a2.getIndexPattern());
+        return overlaps(SystemIndexDescriptor.buildAutomatonNoAlias(a1), SystemIndexDescriptor.buildAutomatonNoAlias(a2));
     }
 
     private static boolean overlaps(String pattern1, String pattern2) {
         Automaton a1Automaton = SystemIndexDescriptor.buildAutomaton(pattern1, null);
         Automaton a2Automaton = SystemIndexDescriptor.buildAutomaton(pattern2, null);
-        return Operations.isEmpty(Operations.intersection(a1Automaton, a2Automaton)) == false;
+        return overlaps(a1Automaton, a2Automaton);
+    }
+
+    private static boolean overlaps(Automaton automaton1, Automaton automaton2) {
+        return Operations.isEmpty(Operations.intersection(automaton1, automaton2)) == false;
     }
 
     private static Map<String, Feature> buildFeatureMap(List<Feature> features) {

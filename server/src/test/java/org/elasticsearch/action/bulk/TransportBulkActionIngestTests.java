@@ -42,7 +42,7 @@ import org.elasticsearch.features.FeatureService;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.IndexingPressure;
-import org.elasticsearch.indices.EmptySystemIndices;
+import org.elasticsearch.indices.SystemIndices;
 import org.elasticsearch.indices.TestIndexNameExpressionResolver;
 import org.elasticsearch.ingest.IngestService;
 import org.elasticsearch.tasks.Task;
@@ -155,7 +155,7 @@ public class TransportBulkActionIngestTests extends ESTestCase {
                 new ActionFilters(Collections.emptySet()),
                 TestIndexNameExpressionResolver.newInstance(),
                 new IndexingPressure(SETTINGS),
-                EmptySystemIndices.INSTANCE,
+                SystemIndices.NO_PLUGINS,
                 FailureStoreMetrics.NOOP
             );
         }

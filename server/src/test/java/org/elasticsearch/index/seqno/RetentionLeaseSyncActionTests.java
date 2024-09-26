@@ -31,8 +31,8 @@ import org.elasticsearch.index.shard.IndexShardClosedException;
 import org.elasticsearch.index.shard.IndexShardState;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.index.shard.ShardNotInPrimaryModeException;
-import org.elasticsearch.indices.EmptySystemIndices;
 import org.elasticsearch.indices.IndicesService;
+import org.elasticsearch.indices.SystemIndices;
 import org.elasticsearch.node.NodeClosedException;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.test.transport.CapturingTransport;
@@ -109,7 +109,7 @@ public class RetentionLeaseSyncActionTests extends ESTestCase {
             shardStateAction,
             new ActionFilters(Collections.emptySet()),
             new IndexingPressure(Settings.EMPTY),
-            EmptySystemIndices.INSTANCE
+            SystemIndices.NO_PLUGINS
         );
         final RetentionLeases retentionLeases = mock(RetentionLeases.class);
         final RetentionLeaseSyncAction.Request request = new RetentionLeaseSyncAction.Request(indexShard.shardId(), retentionLeases);
@@ -146,7 +146,7 @@ public class RetentionLeaseSyncActionTests extends ESTestCase {
             shardStateAction,
             new ActionFilters(Collections.emptySet()),
             new IndexingPressure(Settings.EMPTY),
-            EmptySystemIndices.INSTANCE
+            SystemIndices.NO_PLUGINS
         );
         final RetentionLeases retentionLeases = mock(RetentionLeases.class);
         final RetentionLeaseSyncAction.Request request = new RetentionLeaseSyncAction.Request(indexShard.shardId(), retentionLeases);
@@ -187,7 +187,7 @@ public class RetentionLeaseSyncActionTests extends ESTestCase {
             shardStateAction,
             new ActionFilters(Collections.emptySet()),
             new IndexingPressure(Settings.EMPTY),
-            EmptySystemIndices.INSTANCE
+            SystemIndices.NO_PLUGINS
         );
 
         assertNull(action.indexBlockLevel());

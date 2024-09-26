@@ -30,8 +30,8 @@ import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.shard.ShardId;
-import org.elasticsearch.indices.EmptySystemIndices;
 import org.elasticsearch.indices.IndicesService;
+import org.elasticsearch.indices.SystemIndices;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.test.transport.MockTransport;
@@ -292,7 +292,7 @@ public class TransportAnalyzeIndexDiskUsageActionTests extends ESTestCase {
             transportService,
             mock(IndicesService.class),
             new ActionFilters(new HashSet<>()),
-            new IndexNameExpressionResolver(new ThreadContext(Settings.EMPTY), EmptySystemIndices.INSTANCE) {
+            new IndexNameExpressionResolver(new ThreadContext(Settings.EMPTY), SystemIndices.NO_PLUGINS) {
                 @Override
                 public String[] concreteIndexNames(ClusterState state, IndicesRequest request) {
                     return request.indices();

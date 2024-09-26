@@ -26,7 +26,7 @@ public class TestIndexNameExpressionResolver {
      * default {@link SystemIndices} instance
      */
     public static IndexNameExpressionResolver newInstance() {
-        return new IndexNameExpressionResolver(new ThreadContext(Settings.EMPTY), EmptySystemIndices.INSTANCE);
+        return new IndexNameExpressionResolver(new ThreadContext(Settings.EMPTY), SystemIndices.NO_PLUGINS);
     }
 
     /**
@@ -34,7 +34,7 @@ public class TestIndexNameExpressionResolver {
      * the default {@link SystemIndices} instance
      */
     public static IndexNameExpressionResolver newInstance(ThreadContext threadContext) {
-        return new IndexNameExpressionResolver(threadContext, EmptySystemIndices.INSTANCE);
+        return new IndexNameExpressionResolver(threadContext, SystemIndices.NO_PLUGINS);
     }
 
     /**

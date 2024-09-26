@@ -21,7 +21,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.index.Index;
-import org.elasticsearch.indices.EmptySystemIndices;
+import org.elasticsearch.indices.SystemIndices;
 import org.elasticsearch.indices.TestIndexNameExpressionResolver;
 import org.elasticsearch.snapshots.Snapshot;
 import org.elasticsearch.snapshots.SnapshotId;
@@ -41,7 +41,7 @@ public class DeleteDataStreamTransportActionTests extends ESTestCase {
 
     private final IndexNameExpressionResolver iner = TestIndexNameExpressionResolver.newInstance();
     private final ThreadContext threadContext = new ThreadContext(Settings.EMPTY);
-    private final Consumer<String> validator = s -> EmptySystemIndices.INSTANCE.validateDataStreamAccess(s, threadContext);
+    private final Consumer<String> validator = s -> SystemIndices.NO_PLUGINS.validateDataStreamAccess(s, threadContext);
 
     public void testDeleteDataStream() {
         final String dataStreamName = "my-data-stream";

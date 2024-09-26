@@ -46,9 +46,9 @@ import org.elasticsearch.index.mapper.MappingLookup;
 import org.elasticsearch.index.mapper.MetadataFieldMapper;
 import org.elasticsearch.index.mapper.ObjectMapper;
 import org.elasticsearch.index.mapper.RootObjectMapper;
-import org.elasticsearch.indices.EmptySystemIndices;
 import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.indices.ShardLimitValidator;
+import org.elasticsearch.indices.SystemIndices;
 import org.elasticsearch.script.ScriptCompiler;
 import org.elasticsearch.telemetry.TestTelemetryPlugin;
 import org.elasticsearch.test.ClusterServiceUtils;
@@ -263,7 +263,7 @@ public class DataStreamGetWriteIndexTests extends ESTestCase {
                 IndexScopedSettings.DEFAULT_SCOPED_SETTINGS,
                 testThreadPool,
                 null,
-                EmptySystemIndices.INSTANCE,
+                SystemIndices.NO_PLUGINS,
                 false,
                 new IndexSettingProviders(Set.of(createSettingsProvider(xContentRegistry())))
             );
@@ -279,7 +279,7 @@ public class DataStreamGetWriteIndexTests extends ESTestCase {
                 testThreadPool,
                 createIndexService,
                 indexAliasesService,
-                EmptySystemIndices.INSTANCE,
+                SystemIndices.NO_PLUGINS,
                 WriteLoadForecaster.DEFAULT,
                 clusterService,
                 telemetryPlugin.getTelemetryProvider(Settings.EMPTY)

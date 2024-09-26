@@ -37,7 +37,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexVersion;
-import org.elasticsearch.indices.EmptySystemIndices;
+import org.elasticsearch.indices.SystemIndices;
 import org.elasticsearch.telemetry.TestTelemetryPlugin;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.threadpool.TestThreadPool;
@@ -794,7 +794,7 @@ public class MetadataRolloverServiceTests extends ESTestCase {
             null,
             createIndexService,
             metadataIndexAliasesService,
-            EmptySystemIndices.INSTANCE,
+            SystemIndices.NO_PLUGINS,
             WriteLoadForecaster.DEFAULT,
             clusterService,
             telemetryPlugin.getTelemetryProvider(Settings.EMPTY)
