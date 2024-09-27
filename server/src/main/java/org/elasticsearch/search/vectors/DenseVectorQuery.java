@@ -103,7 +103,7 @@ public abstract class DenseVectorQuery extends Query {
         }
 
         @Override
-        public Weight createWeight(IndexSearcher searcher, ScoreMode scoreMode, float boost) throws IOException {
+        public Weight createWeight(IndexSearcher searcher, ScoreMode scoreMode, float boost) {
             return new DenseVectorWeight(Floats.this, boost) {
                 @Override
                 VectorScorer vectorScorer(LeafReaderContext leafReaderContext) throws IOException {
@@ -145,7 +145,7 @@ public abstract class DenseVectorQuery extends Query {
         }
 
         @Override
-        public Weight createWeight(IndexSearcher searcher, ScoreMode scoreMode, float boost) throws IOException {
+        public Weight createWeight(IndexSearcher searcher, ScoreMode scoreMode, float boost) {
             return new DenseVectorWeight(Bytes.this, boost) {
                 @Override
                 VectorScorer vectorScorer(LeafReaderContext leafReaderContext) throws IOException {
@@ -191,7 +191,7 @@ public abstract class DenseVectorQuery extends Query {
         }
 
         @Override
-        public float getMaxScore(int i) throws IOException {
+        public float getMaxScore(int i) {
             // TODO: can we optimize this at all?
             return Float.POSITIVE_INFINITY;
         }

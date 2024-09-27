@@ -466,7 +466,7 @@ public class InternalComposite extends InternalMultiBucketAggregation<InternalCo
         }
 
         @Override
-        public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
+        public XContentBuilder toXContent(XContentBuilder builder, Params params) {
             /**
              * See {@link CompositeAggregation#bucketToXContent}
              */

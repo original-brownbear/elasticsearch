@@ -67,12 +67,12 @@ public class RankDocsSortBuilder extends SortBuilder<RankDocsSortBuilder> {
     }
 
     @Override
-    public SortBuilder<?> rewrite(QueryRewriteContext ctx) throws IOException {
+    public SortBuilder<?> rewrite(QueryRewriteContext ctx) {
         return this;
     }
 
     @Override
-    protected SortFieldAndFormat build(SearchExecutionContext context) throws IOException {
+    protected SortFieldAndFormat build(SearchExecutionContext context) {
         RankDoc[] shardRankDocs = Arrays.stream(rankDocs)
             .filter(r -> r.shardIndex == context.getShardRequestIndex())
             .toArray(RankDoc[]::new);
@@ -85,13 +85,17 @@ public class RankDocsSortBuilder extends SortBuilder<RankDocsSortBuilder> {
     }
 
     @Override
-    public BucketedSort buildBucketedSort(SearchExecutionContext context, BigArrays bigArrays, int bucketSize, BucketedSort.ExtraData extra)
-        throws IOException {
+    public BucketedSort buildBucketedSort(
+        SearchExecutionContext context,
+        BigArrays bigArrays,
+        int bucketSize,
+        BucketedSort.ExtraData extra
+    ) {
         throw new UnsupportedOperationException("buildBucketedSort() is not supported for " + this.getClass());
     }
 
     @Override
-    public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
+    public XContentBuilder toXContent(XContentBuilder builder, Params params) {
         throw new UnsupportedOperationException("toXContent() is not supported for " + this.getClass());
     }
 

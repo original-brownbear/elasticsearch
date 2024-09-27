@@ -98,7 +98,7 @@ public class GeoCentroidAggregationBuilder extends ValuesSourceAggregationBuilde
     }
 
     @Override
-    public XContentBuilder doXContentBody(XContentBuilder builder, Params params) throws IOException {
+    public XContentBuilder doXContentBody(XContentBuilder builder, Params params) {
         return builder;
     }
 

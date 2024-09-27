@@ -39,7 +39,7 @@ public abstract class NonCollectingAggregator extends AggregatorBase {
     }
 
     @Override
-    public InternalAggregation[] buildAggregations(long[] owningBucketOrds) throws IOException {
+    public InternalAggregation[] buildAggregations(long[] owningBucketOrds) {
         InternalAggregation[] results = new InternalAggregation[owningBucketOrds.length];
         for (int ordIdx = 0; ordIdx < owningBucketOrds.length; ordIdx++) {
             results[ordIdx] = buildEmptyAggregation();

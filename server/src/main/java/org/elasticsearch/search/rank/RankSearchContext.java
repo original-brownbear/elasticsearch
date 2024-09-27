@@ -285,10 +285,6 @@ public class RankSearchContext extends SearchContext {
         throw new UnsupportedOperationException();
     }
 
-    public void suggest(SuggestionSearchContext suggest) {
-        throw new UnsupportedOperationException();
-    }
-
     @Override
     public QueryPhaseRankShardContext queryPhaseRankShardContext() {
         throw new UnsupportedOperationException();

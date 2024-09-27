@@ -55,7 +55,7 @@ public class UnmappedRareTerms extends InternalRareTerms<UnmappedRareTerms, Unma
     }
 
     @Override
-    protected void writeTermTypeInfoTo(StreamOutput out) throws IOException {
+    protected void writeTermTypeInfoTo(StreamOutput out) {
         // Nothing to write
     }
 

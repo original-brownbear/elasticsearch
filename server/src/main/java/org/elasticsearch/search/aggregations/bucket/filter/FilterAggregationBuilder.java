@@ -205,7 +205,7 @@ public class FilterAggregationBuilder extends AbstractAggregationBuilder<FilterA
         }
 
         @Override
-        protected InternalAggregation adapt(InternalAggregation delegateResult) throws IOException {
+        protected InternalAggregation adapt(InternalAggregation delegateResult) {
             InternalFilters innerResult = (InternalFilters) delegateResult;
             var innerBucket = innerResult.getBuckets().get(0);
             return new InternalFilter(name, innerBucket.getDocCount(), innerBucket.getAggregations(), innerResult.getMetadata());

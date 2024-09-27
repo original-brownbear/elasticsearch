@@ -42,8 +42,8 @@ final class HyperLogLogPlusPlusSparse extends AbstractHyperLogLogPlusPlus implem
     }
 
     /** Needs to be called before adding elements into a bucket */
-    protected void ensureCapacity(long bucketOrd, long size) {
-        lc.ensureCapacity(bucketOrd, size);
+    protected void ensureCapacity(long size) {
+        lc.ensureCapacity(0, size);
     }
 
     @Override
@@ -76,8 +76,8 @@ final class HyperLogLogPlusPlusSparse extends AbstractHyperLogLogPlusPlus implem
         Releasables.close(lc);
     }
 
-    protected void addEncoded(long bucket, int encoded) {
-        lc.addEncoded(bucket, encoded);
+    protected void addEncoded(int encoded) {
+        lc.addEncoded(0, encoded);
     }
 
     private static class LinearCounting extends AbstractLinearCounting implements Releasable {

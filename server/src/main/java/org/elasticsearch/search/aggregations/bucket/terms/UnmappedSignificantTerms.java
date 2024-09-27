@@ -8,7 +8,6 @@
  */
 package org.elasticsearch.search.aggregations.bucket.terms;
 
-import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.search.DocValueFormat;
@@ -41,7 +40,6 @@ public class UnmappedSignificantTerms extends InternalSignificantTerms<UnmappedS
      */
     protected abstract static class Bucket extends InternalSignificantTerms.Bucket<Bucket> {
         private Bucket(
-            BytesRef term,
             long subsetDf,
             long subsetSize,
             long supersetDf,
@@ -65,7 +63,7 @@ public class UnmappedSignificantTerms extends InternalSignificantTerms<UnmappedS
     }
 
     @Override
-    protected void writeTermTypeInfoTo(StreamOutput out) throws IOException {
+    protected void writeTermTypeInfoTo(StreamOutput out) {
         // Nothing to write
     }
 

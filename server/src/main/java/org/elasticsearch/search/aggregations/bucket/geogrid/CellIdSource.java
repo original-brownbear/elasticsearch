@@ -179,7 +179,7 @@ public abstract class CellIdSource extends ValuesSource.Numeric {
         }
 
         @Override
-        public long longValue() throws IOException {
+        public long longValue() {
             return value;
         }
 

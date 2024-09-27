@@ -75,7 +75,7 @@ public class RankDocsSortField extends SortField {
             IntToIntFunction docToRank = doc -> rankDocMap.getOrDefault(context.docBase + doc, Integer.MAX_VALUE);
             return new LeafFieldComparator() {
                 @Override
-                public void setBottom(int slot) throws IOException {
+                public void setBottom(int slot) {
                     bottom = values[slot];
                 }
 

@@ -134,9 +134,9 @@ public final class HyperLogLogPlusPlus extends AbstractHyperLogLogPlusPlus {
         Releasables.close(algorithm, hll, lc);
     }
 
-    protected void addRunLen(long bucketOrd, int register, int runLen) {
-        if (algorithm.get(bucketOrd) == LINEAR_COUNTING) {
-            upgradeToHll(bucketOrd);
+    protected void addRunLen(int register, int runLen) {
+        if (algorithm.get(0) == LINEAR_COUNTING) {
+            upgradeToHll(0);
         }
         hll.addRunLen(0, register, runLen);
     }

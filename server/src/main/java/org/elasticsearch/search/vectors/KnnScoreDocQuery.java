@@ -59,7 +59,7 @@ public class KnnScoreDocQuery extends Query {
     }
 
     @Override
-    public Query rewrite(IndexSearcher searcher) throws IOException {
+    public Query rewrite(IndexSearcher searcher) {
         if (docs.length == 0) {
             return new MatchNoDocsQuery();
         }
@@ -67,7 +67,7 @@ public class KnnScoreDocQuery extends Query {
     }
 
     @Override
-    public Weight createWeight(IndexSearcher searcher, ScoreMode scoreMode, float boost) throws IOException {
+    public Weight createWeight(IndexSearcher searcher, ScoreMode scoreMode, float boost) {
         if (searcher.getIndexReader().getContext().id() != contextIdentity) {
             throw new IllegalStateException("This KnnScoreDocQuery was created by a different reader");
         }

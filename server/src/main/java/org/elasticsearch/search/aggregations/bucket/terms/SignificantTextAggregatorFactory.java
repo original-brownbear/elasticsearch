@@ -296,7 +296,7 @@ public class SignificantTextAggregatorFactory extends AggregatorFactory {
             LeafBucketCollector sub,
             LongConsumer addRequestCircuitBreakerBytes,
             CollectConsumer consumer
-        ) throws IOException {
+        ) {
             return new LeafBucketCollectorBase(sub, null) {
                 @Override
                 public void collect(int doc, long owningBucketOrd) throws IOException {

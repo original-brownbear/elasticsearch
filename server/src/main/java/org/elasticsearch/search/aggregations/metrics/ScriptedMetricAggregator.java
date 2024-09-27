@@ -92,7 +92,7 @@ class ScriptedMetricAggregator extends MetricsAggregator {
     }
 
     @Override
-    public LeafBucketCollector getLeafCollector(AggregationExecutionContext aggCtx, LeafBucketCollector sub) throws IOException {
+    public LeafBucketCollector getLeafCollector(AggregationExecutionContext aggCtx, LeafBucketCollector sub) {
         // Clear any old leaf scripts so we rebuild them on the new leaf when we first see them.
         for (long i = 0; i < states.size(); i++) {
             State state = states.get(i);
@@ -105,12 +105,12 @@ class ScriptedMetricAggregator extends MetricsAggregator {
             private Scorable scorer;
 
             @Override
-            public void setScorer(Scorable scorer) throws IOException {
+            public void setScorer(Scorable scorer) {
                 this.scorer = scorer;
             }
 
             @Override
-            public void collect(int doc, long owningBucketOrd) throws IOException {
+            public void collect(int doc, long owningBucketOrd) {
                 states = bigArrays().grow(states, owningBucketOrd + 1);
                 State state = states.get(owningBucketOrd);
                 if (state == null) {

@@ -30,7 +30,7 @@ public class JLHScore extends SignificanceHeuristic {
     }
 
     @Override
-    public void writeTo(StreamOutput out) throws IOException {}
+    public void writeTo(StreamOutput out) {}
 
     @Override
     public String getWriteableName() {
@@ -101,12 +101,4 @@ public class JLHScore extends SignificanceHeuristic {
         return getClass().hashCode();
     }
 
-    public static class JLHScoreBuilder implements SignificanceHeuristicBuilder {
-
-        @Override
-        public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
-            builder.startObject(NAME).endObject();
-            return builder;
-        }
-    }
 }

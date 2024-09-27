@@ -44,7 +44,7 @@ public abstract class DeferableBucketAggregator extends BucketsAggregator {
     }
 
     @Override
-    protected void doPreCollection() throws IOException {
+    protected void doPreCollection() {
         List<BucketCollector> collectors = new ArrayList<>(subAggregators.length);
         List<BucketCollector> deferredAggregations = null;
         for (int i = 0; i < subAggregators.length; ++i) {

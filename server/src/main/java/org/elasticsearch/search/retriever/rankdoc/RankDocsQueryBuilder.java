@@ -54,7 +54,7 @@ public class RankDocsQueryBuilder extends AbstractQueryBuilder<RankDocsQueryBuil
     }
 
     @Override
-    protected Query doToQuery(SearchExecutionContext context) throws IOException {
+    protected Query doToQuery(SearchExecutionContext context) {
         RankDoc[] shardRankDocs = Arrays.stream(rankDocs)
             .filter(r -> r.shardIndex == context.getShardRequestIndex())
             .sorted(Comparator.comparingInt(r -> r.doc))

@@ -141,7 +141,7 @@ public class RankDocsRetrieverBuilder extends RetrieverBuilder {
     }
 
     @Override
-    protected void doToXContent(XContentBuilder builder, Params params) throws IOException {
+    protected void doToXContent(XContentBuilder builder, Params params) {
         throw new UnsupportedOperationException("toXContent() is not supported for " + this.getClass());
     }
 }

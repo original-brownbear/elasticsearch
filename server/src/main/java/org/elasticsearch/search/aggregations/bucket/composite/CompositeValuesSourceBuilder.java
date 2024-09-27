@@ -293,11 +293,11 @@ public abstract class CompositeValuesSourceBuilder<AB extends CompositeValuesSou
     /**
      * Actually build the values source and its associated configuration.
      */
-    protected abstract CompositeValuesSourceConfig innerBuild(ValuesSourceRegistry registry, ValuesSourceConfig config) throws IOException;
+    protected abstract CompositeValuesSourceConfig innerBuild(ValuesSourceRegistry registry, ValuesSourceConfig config);
 
     protected abstract ValuesSourceType getDefaultValuesSourceType();
 
-    public final CompositeValuesSourceConfig build(AggregationContext context) throws IOException {
+    public final CompositeValuesSourceConfig build(AggregationContext context) {
         if (missingBucket == false && missingOrder != MissingOrder.DEFAULT) {
             throw new IllegalArgumentException("missingOrder can only be set if missingBucket is true");
         }

@@ -97,16 +97,12 @@ public class ScriptTermStats {
         StatsSummary docFreqStats = new StatsSummary();
         TermStates[] termContexts = termContextsSupplier.get();
 
-        try {
-            for (int i = 0; i < termContexts.length; i++) {
-                if (searcher instanceof ContextIndexSearcher contextIndexSearcher) {
-                    docFreqStats.accept(contextIndexSearcher.docFreq(terms[i], termContexts[i].docFreq()));
-                } else {
-                    docFreqStats.accept(termContexts[i].docFreq());
-                }
+        for (int i = 0; i < termContexts.length; i++) {
+            if (searcher instanceof ContextIndexSearcher contextIndexSearcher) {
+                docFreqStats.accept(contextIndexSearcher.docFreq(terms[i], termContexts[i].docFreq()));
+            } else {
+                docFreqStats.accept(termContexts[i].docFreq());
             }
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
         }
 
         return docFreqStats;
@@ -125,16 +121,12 @@ public class ScriptTermStats {
         StatsSummary totalTermFreqStats = new StatsSummary();
         TermStates[] termContexts = termContextsSupplier.get();
 
-        try {
-            for (int i = 0; i < termContexts.length; i++) {
-                if (searcher instanceof ContextIndexSearcher contextIndexSearcher) {
-                    totalTermFreqStats.accept(contextIndexSearcher.totalTermFreq(terms[i], termContexts[i].totalTermFreq()));
-                } else {
-                    totalTermFreqStats.accept(termContexts[i].totalTermFreq());
-                }
+        for (int i = 0; i < termContexts.length; i++) {
+            if (searcher instanceof ContextIndexSearcher contextIndexSearcher) {
+                totalTermFreqStats.accept(contextIndexSearcher.totalTermFreq(terms[i], termContexts[i].totalTermFreq()));
+            } else {
+                totalTermFreqStats.accept(termContexts[i].totalTermFreq());
             }
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
         }
 
         return totalTermFreqStats;

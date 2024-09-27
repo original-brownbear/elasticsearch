@@ -89,7 +89,7 @@ public abstract class InternalSignificantTerms<A extends InternalSignificantTerm
         /**
          * Read from a stream.
          */
-        protected Bucket(StreamInput in, long subsetSize, long supersetSize, DocValueFormat format) {
+        protected Bucket(long subsetSize, long supersetSize, DocValueFormat format) {
             this.subsetSize = subsetSize;
             this.supersetSize = supersetSize;
             this.format = format;

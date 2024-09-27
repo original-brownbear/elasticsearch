@@ -77,10 +77,10 @@ public class TermsValuesSourceBuilder extends CompositeValuesSourceBuilder<Terms
     }
 
     @Override
-    protected void innerWriteTo(StreamOutput out) throws IOException {}
+    protected void innerWriteTo(StreamOutput out) {}
 
     @Override
-    protected void doXContentBody(XContentBuilder builder, Params params) throws IOException {}
+    protected void doXContentBody(XContentBuilder builder, Params params) {}
 
     @Override
     public String type() {
@@ -214,7 +214,7 @@ public class TermsValuesSourceBuilder extends CompositeValuesSourceBuilder<Terms
     }
 
     @Override
-    protected CompositeValuesSourceConfig innerBuild(ValuesSourceRegistry registry, ValuesSourceConfig config) throws IOException {
+    protected CompositeValuesSourceConfig innerBuild(ValuesSourceRegistry registry, ValuesSourceConfig config) {
         return registry.getAggregator(REGISTRY_KEY, config)
             .apply(config, name, script() != null, format(), missingBucket(), missingOrder(), order());
     }

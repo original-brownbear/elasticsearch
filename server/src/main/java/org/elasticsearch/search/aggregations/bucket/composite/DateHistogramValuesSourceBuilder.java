@@ -269,7 +269,7 @@ public class DateHistogramValuesSourceBuilder extends CompositeValuesSourceBuild
     }
 
     @Override
-    protected CompositeValuesSourceConfig innerBuild(ValuesSourceRegistry registry, ValuesSourceConfig config) throws IOException {
+    protected CompositeValuesSourceConfig innerBuild(ValuesSourceRegistry registry, ValuesSourceConfig config) {
         Rounding rounding = dateHistogramInterval.createRounding(timeZone(), offset);
         return registry.getAggregator(REGISTRY_KEY, config)
             .apply(config, rounding, name, config.script() != null, format(), missingBucket(), missingOrder(), order());

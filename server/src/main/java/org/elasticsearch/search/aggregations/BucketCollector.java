@@ -30,12 +30,12 @@ public abstract class BucketCollector {
         }
 
         @Override
-        public void preCollection() throws IOException {
+        public void preCollection() {
             // no-op
         }
 
         @Override
-        public void postCollection() throws IOException {
+        public void postCollection() {
             // no-op
         }
 

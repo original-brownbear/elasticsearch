@@ -233,19 +233,16 @@ public class GeoDistanceAggregationBuilder extends ValuesSourceAggregationBuilde
     private boolean keyed = false;
 
     public GeoDistanceAggregationBuilder(String name, GeoPoint origin) {
-        this(name, origin, InternalGeoDistance.FACTORY);
+        super(name);
         if (origin == null) {
             throw new IllegalArgumentException("[origin] must not be null: [" + name + "]");
         }
+        this.origin = origin;
     }
 
-    private GeoDistanceAggregationBuilder(
-        String name,
-        GeoPoint origin,
-        InternalRange.Factory<InternalGeoDistance.Bucket, InternalGeoDistance> rangeFactory
-    ) {
+    private GeoDistanceAggregationBuilder(String name) {
         super(name);
-        this.origin = origin;
+        this.origin = null;
     }
 
     /**
@@ -267,11 +264,6 @@ public class GeoDistanceAggregationBuilder extends ValuesSourceAggregationBuilde
     @Override
     public boolean supportsSampling() {
         return true;
-    }
-
-    // for parsing
-    GeoDistanceAggregationBuilder(String name) {
-        this(name, null, InternalGeoDistance.FACTORY);
     }
 
     protected GeoDistanceAggregationBuilder(GeoDistanceAggregationBuilder clone, Builder factoriesBuilder, Map<String, Object> metadata) {

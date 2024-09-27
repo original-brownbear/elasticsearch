@@ -97,7 +97,7 @@ public class MinAggregationBuilder extends ValuesSourceAggregationBuilder.Single
     }
 
     @Override
-    public XContentBuilder doXContentBody(XContentBuilder builder, Params params) throws IOException {
+    public XContentBuilder doXContentBody(XContentBuilder builder, Params params) {
         return builder;
     }
 

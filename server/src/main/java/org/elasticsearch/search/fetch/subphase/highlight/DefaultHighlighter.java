@@ -82,7 +82,7 @@ public class DefaultHighlighter implements Highlighter {
             if (fieldValues.size() == 0) {
                 return null;
             }
-            return mergeFieldValues(fieldValues, MULTIVAL_SEP_CHAR);
+            return mergeFieldValues(fieldValues);
         };
         Snippet[] fieldSnippets = highlighter.highlightField(hitContext.reader(), hitContext.docId(), loadFieldValues);
 
@@ -235,10 +235,10 @@ public class DefaultHighlighter implements Highlighter {
         }
     }
 
-    protected static String mergeFieldValues(List<Object> fieldValues, char valuesSeparator) {
+    protected static String mergeFieldValues(List<Object> fieldValues) {
         // postings highlighter accepts all values in a single string, as offsets etc. need to match with content
         // loaded from stored fields, we merge all values using a proper separator
-        String rawValue = Strings.collectionToDelimitedString(fieldValues, String.valueOf(valuesSeparator));
+        String rawValue = Strings.collectionToDelimitedString(fieldValues, String.valueOf(CustomUnifiedHighlighter.MULTIVAL_SEP_CHAR));
         return rawValue.substring(0, Math.min(rawValue.length(), Integer.MAX_VALUE - 1));
     }
 

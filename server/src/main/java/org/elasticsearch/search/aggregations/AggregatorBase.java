@@ -89,12 +89,12 @@ public abstract class AggregatorBase extends Aggregator {
             }
 
             @Override
-            public void preCollection() throws IOException {
+            public void preCollection() {
                 badState();
             }
 
             @Override
-            public void postCollection() throws IOException {
+            public void postCollection() {
                 badState();
             }
 
@@ -232,7 +232,7 @@ public abstract class AggregatorBase extends Aggregator {
     /**
      * Can be overridden by aggregator implementation to be called back when the collection phase starts.
      */
-    protected void doPreCollection() throws IOException {}
+    protected void doPreCollection() {}
 
     @Override
     public final void preCollection() throws IOException {

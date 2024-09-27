@@ -49,7 +49,7 @@ public final class NonCollectingSingleMetricAggregator extends NumericMetricsAgg
     }
 
     @Override
-    public InternalAggregation buildAggregation(long owningBucketOrd) throws IOException {
+    public InternalAggregation buildAggregation(long owningBucketOrd) {
         return buildEmptyAggregation();
     }
 

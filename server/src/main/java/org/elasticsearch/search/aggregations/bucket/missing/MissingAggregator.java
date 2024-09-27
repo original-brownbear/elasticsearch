@@ -51,7 +51,7 @@ public class MissingAggregator extends BucketsAggregator implements SingleBucket
         } else {
             docsWithValue = new DocValueBits() {
                 @Override
-                public boolean advanceExact(int doc) throws IOException {
+                public boolean advanceExact(int doc) {
                     return false;
                 }
             };

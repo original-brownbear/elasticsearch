@@ -453,22 +453,22 @@ public class IncludeExclude implements Writeable, ToXContentFragment {
         }
 
         @Override
-        public long size() throws IOException {
+        public long size() {
             return -1;
         }
 
         @Override
-        public long getSumTotalTermFreq() throws IOException {
+        public long getSumTotalTermFreq() {
             return -1;
         }
 
         @Override
-        public long getSumDocFreq() throws IOException {
+        public long getSumDocFreq() {
             return -1;
         }
 
         @Override
-        public int getDocCount() throws IOException {
+        public int getDocCount() {
             return -1;
         }
 

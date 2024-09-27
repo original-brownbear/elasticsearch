@@ -166,7 +166,7 @@ public final class DirectCandidateGenerator extends CandidateGenerator {
         }
     }
 
-    protected BytesRef preFilter(final BytesRef term, final CharsRefBuilder spare, final BytesRefBuilder byteSpare) throws IOException {
+    private BytesRef preFilter(final BytesRef term, final CharsRefBuilder spare, final BytesRefBuilder byteSpare) throws IOException {
         if (preFilter == null) {
             return term;
         }
@@ -180,7 +180,7 @@ public final class DirectCandidateGenerator extends CandidateGenerator {
         return byteSpare.get();
     }
 
-    protected void postFilter(
+    private void postFilter(
         final Candidate candidate,
         final CharsRefBuilder spare,
         BytesRefBuilder byteSpare,

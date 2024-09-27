@@ -60,7 +60,7 @@ public class UnmappedTerms extends InternalTerms<UnmappedTerms, UnmappedTerms.Bu
     }
 
     @Override
-    protected void writeTermTypeInfoTo(StreamOutput out) throws IOException {
+    protected void writeTermTypeInfoTo(StreamOutput out) {
         // Nothing to write
     }
 

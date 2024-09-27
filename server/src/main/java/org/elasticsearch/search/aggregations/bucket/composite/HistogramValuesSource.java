@@ -81,12 +81,12 @@ class HistogramValuesSource extends ValuesSource.Numeric {
     }
 
     @Override
-    public SortedBinaryDocValues bytesValues(LeafReaderContext context) throws IOException {
+    public SortedBinaryDocValues bytesValues(LeafReaderContext context) {
         throw new UnsupportedOperationException("not applicable");
     }
 
     @Override
-    public SortedNumericDocValues longValues(LeafReaderContext context) throws IOException {
+    public SortedNumericDocValues longValues(LeafReaderContext context) {
         throw new UnsupportedOperationException("not applicable");
     }
 }

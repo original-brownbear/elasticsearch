@@ -19,8 +19,6 @@ import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.Weight;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 
-import java.io.IOException;
-
 /**
  * A {@link SliceQuery} that partitions documents based on their Lucene ID. To take
  * advantage of locality, each slice holds a contiguous range of document IDs.
@@ -40,7 +38,7 @@ public final class DocIdSliceQuery extends SliceQuery {
     }
 
     @Override
-    public Weight createWeight(IndexSearcher searcher, ScoreMode scoreMode, float boost) throws IOException {
+    public Weight createWeight(IndexSearcher searcher, ScoreMode scoreMode, float boost) {
         int maxDoc = searcher.getTopReaderContext().reader().maxDoc();
 
         int remainder = maxDoc % getMax();

@@ -374,7 +374,7 @@ public abstract class BucketedSortTestCase<T extends BucketedSort> extends ESTes
         }
 
         @Override
-        public Loader loader(LeafReaderContext ctx) throws IOException {
+        public Loader loader(LeafReaderContext ctx) {
             return (index, doc) -> {
                 values = bigArrays.grow(values, index + 1);
                 values.set(index, docValues[doc]);
@@ -396,7 +396,7 @@ public abstract class BucketedSortTestCase<T extends BucketedSort> extends ESTes
         }
 
         @Override
-        public Loader loader(LeafReaderContext ctx) throws IOException {
+        public Loader loader(LeafReaderContext ctx) {
             return (index, doc) -> {};
         }
     }

@@ -109,7 +109,7 @@ class PointsSortedDocsProducer extends SortedDocsProducer {
         }
 
         @Override
-        public void visit(int docID) throws IOException {
+        public void visit(int docID) {
             throw new IllegalStateException("should never be called");
         }
 

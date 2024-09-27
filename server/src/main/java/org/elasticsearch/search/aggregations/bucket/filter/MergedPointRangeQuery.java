@@ -94,7 +94,7 @@ public class MergedPointRangeQuery extends Query {
     }
 
     @Override
-    public Weight createWeight(IndexSearcher searcher, ScoreMode scoreMode, float boost) throws IOException {
+    public Weight createWeight(IndexSearcher searcher, ScoreMode scoreMode, float boost) {
         return new ConstantScoreWeight(this, boost) {
             Weight multiValuedSegmentWeight;
             Weight singleValuedSegmentWeight;

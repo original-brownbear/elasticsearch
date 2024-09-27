@@ -73,7 +73,7 @@ public class VariableWidthHistogramAggregator extends DeferableBucketAggregator 
          * Otherwise, it will create an instance of the next phase and ask it for the i'th bucket (naturally, if that phase
          * not the last phase then it will do the same and so on...)
          */
-        abstract InternalVariableWidthHistogram.Bucket buildBucket(int bucketOrd, InternalAggregations subAggregations) throws IOException;
+        abstract InternalVariableWidthHistogram.Bucket buildBucket(int bucketOrd, InternalAggregations subAggregations);
 
     }
 
@@ -121,7 +121,7 @@ public class VariableWidthHistogramAggregator extends DeferableBucketAggregator 
         }
 
         @Override
-        InternalVariableWidthHistogram.Bucket buildBucket(int bucketOrd, InternalAggregations subAggregations) throws IOException {
+        InternalVariableWidthHistogram.Bucket buildBucket(int bucketOrd, InternalAggregations subAggregations) {
             InternalVariableWidthHistogram.Bucket bucket = getMergeBucketPhase().buildBucket(bucketOrd, subAggregations);
             return bucket;
         }

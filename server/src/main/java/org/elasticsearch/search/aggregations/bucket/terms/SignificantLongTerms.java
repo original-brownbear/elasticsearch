@@ -46,7 +46,7 @@ public class SignificantLongTerms extends InternalMappedSignificantTerms<Signifi
         }
 
         Bucket(StreamInput in, long subsetSize, long supersetSize, DocValueFormat format) throws IOException {
-            super(in, subsetSize, supersetSize, format);
+            super(subsetSize, supersetSize, format);
             subsetDf = in.readVLong();
             supersetDf = in.readVLong();
             term = in.readLong();
