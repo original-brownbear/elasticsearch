@@ -881,27 +881,7 @@ public class GlobalOrdinalsStringTermsAggregator extends AbstractStringTermsAggr
 
         @Override
         StringTerms buildResult(long owningBucketOrd, long otherDocCount, StringTerms.Bucket[] topBuckets) {
-            final BucketOrder reduceOrder;
-            if (isKeyOrder(order) == false) {
-                reduceOrder = InternalOrder.key(true);
-                Arrays.sort(topBuckets, reduceOrder.comparator());
-            } else {
-                reduceOrder = order;
-            }
-            return new StringTerms(
-                name,
-                reduceOrder,
-                order,
-                bucketCountThresholds.getRequiredSize(),
-                bucketCountThresholds.getMinDocCount(),
-                metadata(),
-                format,
-                bucketCountThresholds.getShardSize(),
-                showTermDocCountError,
-                otherDocCount,
-                Arrays.asList(topBuckets),
-                null
-            );
+            return GlobalOrdinalsStringTermsAggregator.buildResult(GlobalOrdinalsStringTermsAggregator.this, otherDocCount, topBuckets);
         }
 
         @Override
@@ -916,6 +896,34 @@ public class GlobalOrdinalsStringTermsAggregator extends AbstractStringTermsAggr
 
         @Override
         public void close() {}
+    }
+
+    static StringTerms buildResult(
+        AbstractStringTermsAggregator globalOrdinalsStringTermsAggregator,
+        long otherDocCount,
+        StringTerms.Bucket[] topBuckets
+    ) {
+        final BucketOrder reduceOrder;
+        if (isKeyOrder(globalOrdinalsStringTermsAggregator.order) == false) {
+            reduceOrder = InternalOrder.key(true);
+            Arrays.sort(topBuckets, reduceOrder.comparator());
+        } else {
+            reduceOrder = globalOrdinalsStringTermsAggregator.order;
+        }
+        return new StringTerms(
+            globalOrdinalsStringTermsAggregator.name(),
+            reduceOrder,
+            globalOrdinalsStringTermsAggregator.order,
+            globalOrdinalsStringTermsAggregator.bucketCountThresholds.getRequiredSize(),
+            globalOrdinalsStringTermsAggregator.bucketCountThresholds.getMinDocCount(),
+            globalOrdinalsStringTermsAggregator.metadata(),
+            globalOrdinalsStringTermsAggregator.format,
+            globalOrdinalsStringTermsAggregator.bucketCountThresholds.getShardSize(),
+            globalOrdinalsStringTermsAggregator.showTermDocCountError,
+            otherDocCount,
+            Arrays.asList(topBuckets),
+            null
+        );
     }
 
     /**

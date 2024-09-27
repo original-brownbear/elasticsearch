@@ -39,7 +39,7 @@ public class UnmappedSignificantTerms extends InternalSignificantTerms<UnmappedS
      * Concrete type that can't be built because Java needs a concrete type so {@link InternalTerms.Bucket} can have a self type but
      * {@linkplain UnmappedTerms} doesn't ever need to build it because it never returns any buckets.
      */
-    protected abstract static class Bucket extends InternalSignificantTerms.Bucket<Bucket> {
+    protected abstract static class Bucket extends InternalSignificantTerms.Bucket {
         private Bucket(
             BytesRef term,
             long subsetDf,

@@ -36,8 +36,8 @@ import static org.apache.lucene.misc.search.DiversifiedTopDocsCollector.ScoreDoc
  */
 public class DiversifiedBytesHashSamplerAggregator extends SamplerAggregator {
 
-    private ValuesSource valuesSource;
-    private int maxDocsPerValue;
+    private final ValuesSource valuesSource;
+    private final int maxDocsPerValue;
 
     DiversifiedBytesHashSamplerAggregator(
         String name,

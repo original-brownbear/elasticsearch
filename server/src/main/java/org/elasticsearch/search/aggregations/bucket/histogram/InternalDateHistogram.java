@@ -103,20 +103,7 @@ public final class InternalDateHistogram extends InternalMultiBucketAggregation<
 
         @Override
         public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
-            String keyAsString = format.format(key).toString();
-            if (keyed) {
-                builder.startObject(keyAsString);
-            } else {
-                builder.startObject();
-            }
-            if (format != DocValueFormat.RAW) {
-                builder.field(CommonFields.KEY_AS_STRING.getPreferredName(), keyAsString);
-            }
-            builder.field(CommonFields.KEY.getPreferredName(), key);
-            builder.field(CommonFields.DOC_COUNT.getPreferredName(), docCount);
-            aggregations.toXContentInternal(builder, params);
-            builder.endObject();
-            return builder;
+            return InternalHistogram.bucketToXContent(aggregations, docCount, format, key, keyed, builder, params);
         }
 
         @Override

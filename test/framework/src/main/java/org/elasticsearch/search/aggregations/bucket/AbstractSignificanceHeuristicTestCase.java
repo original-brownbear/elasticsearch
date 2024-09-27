@@ -240,7 +240,7 @@ public abstract class AbstractSignificanceHeuristicTestCase extends ESTestCase {
         return aggs;
     }
 
-    private abstract class TestAggFactory<A extends InternalSignificantTerms<A, B>, B extends InternalSignificantTerms.Bucket<B>> {
+    private abstract class TestAggFactory<A extends InternalSignificantTerms<A, B>, B extends InternalSignificantTerms.Bucket> {
         final A createAggregation(
             SignificanceHeuristic significanceHeuristic,
             long subsetSize,

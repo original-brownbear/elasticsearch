@@ -26,7 +26,7 @@ import java.util.Objects;
 public class SignificantLongTerms extends InternalMappedSignificantTerms<SignificantLongTerms, SignificantLongTerms.Bucket> {
     public static final String NAME = "siglterms";
 
-    public static class Bucket extends InternalSignificantTerms.Bucket<Bucket> {
+    public static class Bucket extends InternalSignificantTerms.Bucket {
 
         long term;
 
@@ -46,7 +46,7 @@ public class SignificantLongTerms extends InternalMappedSignificantTerms<Signifi
         }
 
         Bucket(StreamInput in, long subsetSize, long supersetSize, DocValueFormat format) throws IOException {
-            super(in, subsetSize, supersetSize, format);
+            super(subsetSize, supersetSize, format);
             subsetDf = in.readVLong();
             supersetDf = in.readVLong();
             term = in.readLong();

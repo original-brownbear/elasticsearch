@@ -21,6 +21,7 @@ import org.elasticsearch.search.aggregations.InternalAggregation;
 import org.elasticsearch.search.aggregations.InternalAggregations;
 import org.elasticsearch.search.aggregations.InternalMultiBucketAggregation;
 import org.elasticsearch.search.aggregations.bucket.FixedMultiBucketAggregatorsReducer;
+import org.elasticsearch.search.aggregations.bucket.histogram.InternalHistogram;
 import org.elasticsearch.search.aggregations.support.SamplingContext;
 import org.elasticsearch.xcontent.XContentBuilder;
 
@@ -284,29 +285,9 @@ public final class InternalBinaryRange extends InternalMultiBucketAggregation<In
         );
     }
 
-    private Bucket reduceBucket(List<Bucket> buckets, AggregationReduceContext context) {
-        assert buckets.isEmpty() == false;
-        final List<InternalAggregations> aggregations = new BucketAggregationList<>(buckets);
-        final InternalAggregations aggs = InternalAggregations.reduce(aggregations, context);
-        return createBucket(aggs, buckets.get(0));
-    }
-
     @Override
     public XContentBuilder doXContentBody(XContentBuilder builder, Params params) throws IOException {
-        if (keyed) {
-            builder.startObject(CommonFields.BUCKETS.getPreferredName());
-        } else {
-            builder.startArray(CommonFields.BUCKETS.getPreferredName());
-        }
-        for (Bucket range : buckets) {
-            range.toXContent(builder, params);
-        }
-        if (keyed) {
-            builder.endObject();
-        } else {
-            builder.endArray();
-        }
-        return builder;
+        return InternalHistogram.xContentBody(buckets, keyed, builder, params);
     }
 
     @Override

@@ -30,6 +30,7 @@ import org.elasticsearch.search.aggregations.InternalMultiBucketAggregation;
 import org.elasticsearch.search.aggregations.InternalOrder;
 import org.elasticsearch.search.aggregations.LeafBucketCollector;
 import org.elasticsearch.search.aggregations.LeafBucketCollectorBase;
+import org.elasticsearch.search.aggregations.bucket.BucketsAggregator;
 import org.elasticsearch.search.aggregations.bucket.terms.IncludeExclude.LongFilter;
 import org.elasticsearch.search.aggregations.bucket.terms.LongKeyedBucketOrds.BucketOrdsEnum;
 import org.elasticsearch.search.aggregations.bucket.terms.SignificanceLookup.BackgroundFrequencyForLong;
@@ -91,7 +92,9 @@ public final class NumericTermsAggregator extends TermsAggregator {
     public LeafBucketCollector getLeafCollector(AggregationExecutionContext aggCtx, LeafBucketCollector sub) throws IOException {
         final SortedNumericDocValues values = resultStrategy.getValues(aggCtx.getLeafReaderContext());
         final NumericDocValues singleton = DocValues.unwrapSingleton(values);
-        return resultStrategy.wrapCollector(singleton != null ? getLeafCollector(singleton, sub) : getLeafCollector(values, sub));
+        return resultStrategy.wrapCollector(
+            singleton != null ? getLeafCollector(this, bucketOrds, longFilter, singleton, sub) : getLeafCollector(values, sub)
+        );
     }
 
     private LeafBucketCollector getLeafCollector(SortedNumericDocValues values, LeafBucketCollector sub) {
@@ -103,7 +106,7 @@ public final class NumericTermsAggregator extends TermsAggregator {
                     for (int i = 0; i < values.docValueCount(); ++i) {
                         long val = values.nextValue();
                         if (previous != val || i == 0) {
-                            collectValue(val, doc, owningBucketOrd, sub);
+                            collectValue(NumericTermsAggregator.this, bucketOrds, longFilter, val, doc, owningBucketOrd, sub);
                             previous = val;
                         }
                     }
@@ -112,25 +115,39 @@ public final class NumericTermsAggregator extends TermsAggregator {
         };
     }
 
-    private LeafBucketCollector getLeafCollector(NumericDocValues values, LeafBucketCollector sub) {
+    public static LeafBucketCollector getLeafCollector(
+        final BucketsAggregator numericTermsAggregator,
+        final LongKeyedBucketOrds bucketOrds,
+        final LongFilter longFilter,
+        NumericDocValues values,
+        LeafBucketCollector sub
+    ) {
         return new LeafBucketCollectorBase(sub, values) {
             @Override
             public void collect(int doc, long owningBucketOrd) throws IOException {
                 if (values.advanceExact(doc)) {
-                    collectValue(values.longValue(), doc, owningBucketOrd, sub);
+                    collectValue(numericTermsAggregator, bucketOrds, longFilter, values.longValue(), doc, owningBucketOrd, sub);
                 }
             }
         };
     }
 
-    private void collectValue(long val, int doc, long owningBucketOrd, LeafBucketCollector sub) throws IOException {
-        if (longFilter == null || longFilter.accept(val)) {
+    public static void collectValue(
+        BucketsAggregator longRareTermsAggregator,
+        LongKeyedBucketOrds bucketOrds,
+        IncludeExclude.LongFilter filter,
+        long val,
+        int docId,
+        long owningBucketOrd,
+        LeafBucketCollector sub
+    ) throws IOException {
+        if (filter == null || filter.accept(val)) {
             long bucketOrdinal = bucketOrds.add(owningBucketOrd, val);
             if (bucketOrdinal < 0) { // already seen
                 bucketOrdinal = -1 - bucketOrdinal;
-                collectExistingBucket(sub, doc, bucketOrdinal);
+                longRareTermsAggregator.collectExistingBucket(sub, docId, bucketOrdinal);
             } else {
-                collectBucket(sub, doc, bucketOrdinal);
+                longRareTermsAggregator.collectBucket(sub, docId, bucketOrdinal);
             }
         }
     }
@@ -588,7 +605,7 @@ public final class NumericTermsAggregator extends TermsAggregator {
         }
 
         @Override
-        void collectZeroDocEntriesIfNeeded(long owningBucketOrd, boolean excludeDeletedDocs) throws IOException {}
+        void collectZeroDocEntriesIfNeeded(long owningBucketOrd, boolean excludeDeletedDocs) {}
 
         @Override
         SignificantLongTerms buildResult(long owningBucketOrd, long otherDocCoun, SignificantLongTerms.Bucket[] topBuckets) {

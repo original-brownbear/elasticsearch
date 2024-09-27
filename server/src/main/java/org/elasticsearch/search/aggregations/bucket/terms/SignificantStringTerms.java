@@ -27,7 +27,7 @@ import java.util.Objects;
 public class SignificantStringTerms extends InternalMappedSignificantTerms<SignificantStringTerms, SignificantStringTerms.Bucket> {
     public static final String NAME = "sigsterms";
 
-    public static class Bucket extends InternalSignificantTerms.Bucket<Bucket> {
+    public static class Bucket extends InternalSignificantTerms.Bucket {
 
         BytesRef termBytes;
 
@@ -50,7 +50,7 @@ public class SignificantStringTerms extends InternalMappedSignificantTerms<Signi
          * Read from a stream.
          */
         public Bucket(StreamInput in, long subsetSize, long supersetSize, DocValueFormat format) throws IOException {
-            super(in, subsetSize, supersetSize, format);
+            super(subsetSize, supersetSize, format);
             termBytes = in.readBytesRef();
             subsetDf = in.readVLong();
             supersetDf = in.readVLong();

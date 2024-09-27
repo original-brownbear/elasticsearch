@@ -36,8 +36,8 @@ import java.util.Optional;
 /**
  * Result of the significant terms aggregation.
  */
-public abstract class InternalSignificantTerms<A extends InternalSignificantTerms<A, B>, B extends InternalSignificantTerms.Bucket<B>>
-    extends InternalMultiBucketAggregation<A, B>
+public abstract class InternalSignificantTerms<A extends InternalSignificantTerms<A, B>, B extends InternalSignificantTerms.Bucket> extends
+    InternalMultiBucketAggregation<A, B>
     implements
         SignificantTerms {
 
@@ -45,14 +45,12 @@ public abstract class InternalSignificantTerms<A extends InternalSignificantTerm
     public static final String BG_COUNT = "bg_count";
 
     @SuppressWarnings("PMD.ConstructorCallsOverridableMethod")
-    public abstract static class Bucket<B extends Bucket<B>> extends InternalMultiBucketAggregation.InternalBucket
-        implements
-            SignificantTerms.Bucket {
+    public abstract static class Bucket extends InternalMultiBucketAggregation.InternalBucket implements SignificantTerms.Bucket {
         /**
          * Reads a bucket. Should be a constructor reference.
          */
         @FunctionalInterface
-        public interface Reader<B extends Bucket<B>> {
+        public interface Reader<B extends Bucket> {
             B read(StreamInput in, long subsetSize, long supersetSize, DocValueFormat format) throws IOException;
         }
 
@@ -89,7 +87,7 @@ public abstract class InternalSignificantTerms<A extends InternalSignificantTerm
         /**
          * Read from a stream.
          */
-        protected Bucket(StreamInput in, long subsetSize, long supersetSize, DocValueFormat format) {
+        protected Bucket(long subsetSize, long supersetSize, DocValueFormat format) {
             this.subsetSize = subsetSize;
             this.supersetSize = supersetSize;
             this.format = format;
@@ -146,7 +144,7 @@ public abstract class InternalSignificantTerms<A extends InternalSignificantTerm
                 return false;
             }
 
-            Bucket<?> that = (Bucket<?>) o;
+            Bucket that = (Bucket) o;
             return Double.compare(that.score, score) == 0
                 && Objects.equals(aggregations, that.aggregations)
                 && Objects.equals(format, that.format);

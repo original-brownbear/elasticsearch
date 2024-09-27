@@ -381,18 +381,15 @@ public class SignificantTermsAggregatorFactory extends ValuesSourceAggregatorFac
                 CardinalityUpperBound cardinality,
                 Map<String, Object> metadata
             ) throws IOException {
-
-                boolean remapGlobalOrd = true;
-                if (cardinality == CardinalityUpperBound.ONE && factories == AggregatorFactories.EMPTY && includeExclude == null) {
-                    /*
-                     * We don't need to remap global ords iff this aggregator:
-                     *    - collects from a single bucket AND
-                     *    - has no include/exclude rules AND
-                     *    - has no sub-aggregator
-                     */
-                    remapGlobalOrd = false;
-                }
-
+                /*
+                 * We don't need to remap global ords iff this aggregator:
+                 *    - collects from a single bucket AND
+                 *    - has no include/exclude rules AND
+                 *    - has no sub-aggregator
+                 */
+                boolean remapGlobalOrd = cardinality != CardinalityUpperBound.ONE
+                    || factories != AggregatorFactories.EMPTY
+                    || includeExclude != null;
                 ValuesSource.Bytes.WithOrdinals.FieldData ordinalsValuesSource =
                     (ValuesSource.Bytes.WithOrdinals.FieldData) valuesSourceConfig.getValuesSource();
                 SortedSetDocValues values = TermsAggregatorFactory.globalOrdsValues(context, ordinalsValuesSource);

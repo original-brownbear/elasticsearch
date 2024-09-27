@@ -31,8 +31,8 @@ import static org.apache.lucene.misc.search.DiversifiedTopDocsCollector.ScoreDoc
 
 public class DiversifiedNumericSamplerAggregator extends SamplerAggregator {
 
-    private ValuesSource.Numeric valuesSource;
-    private int maxDocsPerValue;
+    private final ValuesSource.Numeric valuesSource;
+    private final int maxDocsPerValue;
 
     DiversifiedNumericSamplerAggregator(
         String name,

@@ -48,8 +48,6 @@ import java.util.function.Function;
 import java.util.function.LongConsumer;
 import java.util.function.Supplier;
 
-import static org.elasticsearch.search.aggregations.InternalOrder.isKeyOrder;
-
 /**
  * An aggregator of string values that hashes the strings on the fly rather
  * than up front like the {@link GlobalOrdinalsStringTermsAggregator}.
@@ -527,27 +525,7 @@ public final class MapStringTermsAggregator extends AbstractStringTermsAggregato
 
         @Override
         StringTerms buildResult(long owningBucketOrd, long otherDocCount, StringTerms.Bucket[] topBuckets) {
-            final BucketOrder reduceOrder;
-            if (isKeyOrder(order) == false) {
-                reduceOrder = InternalOrder.key(true);
-                Arrays.sort(topBuckets, reduceOrder.comparator());
-            } else {
-                reduceOrder = order;
-            }
-            return new StringTerms(
-                name,
-                reduceOrder,
-                order,
-                bucketCountThresholds.getRequiredSize(),
-                bucketCountThresholds.getMinDocCount(),
-                metadata(),
-                format,
-                bucketCountThresholds.getShardSize(),
-                showTermDocCountError,
-                otherDocCount,
-                Arrays.asList(topBuckets),
-                null
-            );
+            return GlobalOrdinalsStringTermsAggregator.buildResult(MapStringTermsAggregator.this, otherDocCount, topBuckets);
         }
 
         @Override

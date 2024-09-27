@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 
 public abstract class InternalMappedSignificantTerms<
     A extends InternalMappedSignificantTerms<A, B>,
-    B extends InternalSignificantTerms.Bucket<B>> extends InternalSignificantTerms<A, B> {
+    B extends InternalSignificantTerms.Bucket> extends InternalSignificantTerms<A, B> {
 
     protected final DocValueFormat format;
     protected final long subsetSize;
@@ -130,7 +130,7 @@ public abstract class InternalMappedSignificantTerms<
         builder.field(CommonFields.DOC_COUNT.getPreferredName(), subsetSize);
         builder.field(BG_COUNT, supersetSize);
         builder.startArray(CommonFields.BUCKETS.getPreferredName());
-        for (Bucket<?> bucket : buckets) {
+        for (Bucket bucket : buckets) {
             // There is a condition (presumably when only one shard has a bucket?) where reduce is not called
             // and I end up with buckets that contravene the user's min_doc_count criteria in my reducer
             if (bucket.subsetDf >= minDocCount) {

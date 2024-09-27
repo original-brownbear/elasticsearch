@@ -71,7 +71,9 @@ public class LongRareTermsAggregator extends AbstractRareTermsAggregator {
     public LeafBucketCollector getLeafCollector(AggregationExecutionContext aggCtx, LeafBucketCollector sub) throws IOException {
         final SortedNumericDocValues values = getValues(valuesSource, aggCtx.getLeafReaderContext());
         final NumericDocValues singleton = DocValues.unwrapSingleton(values);
-        return singleton != null ? getLeafCollector(singleton, sub) : getLeafCollector(values, sub);
+        return singleton != null
+            ? NumericTermsAggregator.getLeafCollector(this, bucketOrds, filter, singleton, sub)
+            : getLeafCollector(values, sub);
     }
 
     private LeafBucketCollector getLeafCollector(SortedNumericDocValues values, LeafBucketCollector sub) {
@@ -85,36 +87,20 @@ public class LongRareTermsAggregator extends AbstractRareTermsAggregator {
                         if (i == 0 && previous == val) {
                             continue;
                         }
-                        collectValue(val, docId, owningBucketOrd, sub);
+                        NumericTermsAggregator.collectValue(
+                            LongRareTermsAggregator.this,
+                            bucketOrds,
+                            filter,
+                            val,
+                            docId,
+                            owningBucketOrd,
+                            sub
+                        );
                         previous = val;
                     }
                 }
             }
         };
-    }
-
-    private LeafBucketCollector getLeafCollector(NumericDocValues values, LeafBucketCollector sub) {
-        return new LeafBucketCollectorBase(sub, values) {
-            @Override
-            public void collect(int docId, long owningBucketOrd) throws IOException {
-                if (values.advanceExact(docId)) {
-                    collectValue(values.longValue(), docId, owningBucketOrd, sub);
-                }
-            }
-        };
-    }
-
-    private void collectValue(long val, int docId, long owningBucketOrd, LeafBucketCollector sub) throws IOException {
-        if (filter == null || filter.accept(val)) {
-            long bucketOrdinal = bucketOrds.add(owningBucketOrd, val);
-            if (bucketOrdinal < 0) { // already seen
-                bucketOrdinal = -1 - bucketOrdinal;
-                collectExistingBucket(sub, docId, bucketOrdinal);
-            } else {
-                collectBucket(sub, docId, bucketOrdinal);
-            }
-        }
-
     }
 
     @Override

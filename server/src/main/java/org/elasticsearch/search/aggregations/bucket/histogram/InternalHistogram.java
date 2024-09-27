@@ -26,6 +26,7 @@ import org.elasticsearch.search.aggregations.bucket.BucketReducer;
 import org.elasticsearch.search.aggregations.bucket.IteratorAndCurrent;
 import org.elasticsearch.search.aggregations.bucket.MultiBucketsAggregation;
 import org.elasticsearch.search.aggregations.support.SamplingContext;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -98,20 +99,7 @@ public class InternalHistogram extends InternalMultiBucketAggregation<InternalHi
 
         @Override
         public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
-            String keyAsString = format.format(key).toString();
-            if (keyed) {
-                builder.startObject(keyAsString);
-            } else {
-                builder.startObject();
-            }
-            if (format != DocValueFormat.RAW) {
-                builder.field(CommonFields.KEY_AS_STRING.getPreferredName(), keyAsString);
-            }
-            builder.field(CommonFields.KEY.getPreferredName(), key);
-            builder.field(CommonFields.DOC_COUNT.getPreferredName(), docCount);
-            aggregations.toXContentInternal(builder, params);
-            builder.endObject();
-            return builder;
+            return bucketToXContent(aggregations, docCount, format, key, keyed, builder, params);
         }
 
         @Override
@@ -132,6 +120,31 @@ public class InternalHistogram extends InternalMultiBucketAggregation<InternalHi
                 InternalAggregations.finalizeSampling(aggregations, samplingContext)
             );
         }
+    }
+
+    static XContentBuilder bucketToXContent(
+        InternalAggregations aggregations,
+        long docCount,
+        DocValueFormat format,
+        double key,
+        boolean keyed,
+        XContentBuilder builder,
+        Params params
+    ) throws IOException {
+        String keyAsString = format.format(key).toString();
+        if (keyed) {
+            builder.startObject(keyAsString);
+        } else {
+            builder.startObject();
+        }
+        if (format != DocValueFormat.RAW) {
+            builder.field(CommonFields.KEY_AS_STRING.getPreferredName(), keyAsString);
+        }
+        builder.field(CommonFields.KEY.getPreferredName(), key);
+        builder.field(CommonFields.DOC_COUNT.getPreferredName(), docCount);
+        aggregations.toXContentInternal(builder, params);
+        builder.endObject();
+        return builder;
     }
 
     public static class EmptyBucketInfo {
@@ -472,12 +485,17 @@ public class InternalHistogram extends InternalMultiBucketAggregation<InternalHi
 
     @Override
     public XContentBuilder doXContentBody(XContentBuilder builder, Params params) throws IOException {
+        return xContentBody(buckets, keyed, builder, params);
+    }
+
+    public static XContentBuilder xContentBody(List<? extends ToXContent> buckets, boolean keyed, XContentBuilder builder, Params params)
+        throws IOException {
         if (keyed) {
             builder.startObject(CommonFields.BUCKETS.getPreferredName());
         } else {
             builder.startArray(CommonFields.BUCKETS.getPreferredName());
         }
-        for (Bucket bucket : buckets) {
+        for (ToXContent bucket : buckets) {
             bucket.toXContent(builder, params);
         }
         if (keyed) {

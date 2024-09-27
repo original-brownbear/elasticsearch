@@ -20,6 +20,7 @@ import org.elasticsearch.search.aggregations.InternalAggregation;
 import org.elasticsearch.search.aggregations.InternalAggregations;
 import org.elasticsearch.search.aggregations.InternalMultiBucketAggregation;
 import org.elasticsearch.search.aggregations.bucket.IteratorAndCurrent;
+import org.elasticsearch.search.aggregations.bucket.histogram.InternalHistogram;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -156,20 +157,7 @@ public class InternalTimeSeries extends InternalMultiBucketAggregation<InternalT
 
     @Override
     public XContentBuilder doXContentBody(XContentBuilder builder, Params params) throws IOException {
-        if (keyed) {
-            builder.startObject(CommonFields.BUCKETS.getPreferredName());
-        } else {
-            builder.startArray(CommonFields.BUCKETS.getPreferredName());
-        }
-        for (InternalBucket bucket : buckets) {
-            bucket.toXContent(builder, params);
-        }
-        if (keyed) {
-            builder.endObject();
-        } else {
-            builder.endArray();
-        }
-        return builder;
+        return InternalHistogram.xContentBody(buckets, keyed, builder, params);
     }
 
     @Override
