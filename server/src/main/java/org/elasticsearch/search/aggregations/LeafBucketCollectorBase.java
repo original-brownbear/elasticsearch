@@ -19,9 +19,9 @@ import java.io.IOException;
  * aggregator and sets the scorer on its source of values if it implements
  * {@link ScorerAware}.
  */
-public class LeafBucketCollectorBase extends LeafBucketCollector {
+public abstract class LeafBucketCollectorBase extends LeafBucketCollector {
 
-    private final LeafBucketCollector sub;
+    protected final LeafBucketCollector sub;
     private final ScorerAware values;
 
     /**
@@ -43,11 +43,6 @@ public class LeafBucketCollectorBase extends LeafBucketCollector {
         if (values != null) {
             values.setScorer(s);
         }
-    }
-
-    @Override
-    public void collect(int doc, long bucket) throws IOException {
-        sub.collect(doc, bucket);
     }
 
 }

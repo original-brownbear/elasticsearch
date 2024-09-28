@@ -961,7 +961,7 @@ public class GlobalOrdinalsStringTermsAggregator extends AbstractStringTermsAggr
             return new LeafBucketCollectorBase(primary, null) {
                 @Override
                 public void collect(int doc, long owningBucketOrd) throws IOException {
-                    super.collect(doc, owningBucketOrd);
+                    sub.collect(doc, owningBucketOrd);
                     subsetSizes = bigArrays().grow(subsetSizes, owningBucketOrd + 1);
                     subsetSizes.increment(owningBucketOrd, 1);
                 }

@@ -71,7 +71,7 @@ public class MultiBucketCollectorTests extends ESTestCase {
                     if (count >= terminateAfter) {
                         throw new CollectionTerminatedException();
                     }
-                    super.collect(doc, bucket);
+                    sub.collect(doc, bucket);
                     count++;
                 }
             };
@@ -138,6 +138,11 @@ public class MultiBucketCollectorTests extends ESTestCase {
                 public void setScorer(Scorable scorer) throws IOException {
                     super.setScorer(scorer);
                     setScorerCalled.set(true);
+                }
+
+                @Override
+                public void collect(int doc, long owningBucketOrd) throws IOException {
+                    sub.collect(doc, owningBucketOrd);
                 }
             };
         }
