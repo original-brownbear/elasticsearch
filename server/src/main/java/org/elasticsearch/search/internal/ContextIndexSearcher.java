@@ -345,33 +345,36 @@ public class ContextIndexSearcher extends IndexSearcher implements Releasable {
      */
     private <C extends Collector, T> T search(Weight weight, CollectorManager<C, T> collectorManager, C firstCollector) throws IOException {
         LeafSlice[] leafSlices = getSlices();
-        if (leafSlices.length == 0) {
-            assert leafContexts.isEmpty();
-            doAggregationPostCollection(firstCollector);
+        if (leafSlices.length <= 1) {
+            if (leafSlices.length == 0) {
+                assert leafContexts.isEmpty();
+                doAggregationPostCollection(firstCollector);
+            } else {
+                search(leafSlices[0].partitions, weight, firstCollector);
+            }
             return collectorManager.reduce(Collections.singletonList(firstCollector));
-        } else {
-            final List<C> collectors = new ArrayList<>(leafSlices.length);
-            collectors.add(firstCollector);
-            final ScoreMode scoreMode = firstCollector.scoreMode();
-            for (int i = 1; i < leafSlices.length; ++i) {
-                final C collector = collectorManager.newCollector();
-                collectors.add(collector);
-                if (scoreMode != collector.scoreMode()) {
-                    throw new IllegalStateException("CollectorManager does not always produce collectors with the same score mode");
-                }
-            }
-            final List<Callable<C>> listTasks = new ArrayList<>(leafSlices.length);
-            for (int i = 0; i < leafSlices.length; ++i) {
-                final LeafReaderContextPartition[] leaves = leafSlices[i].partitions;
-                final C collector = collectors.get(i);
-                listTasks.add(() -> {
-                    search(leaves, weight, collector);
-                    return collector;
-                });
-            }
-            List<C> collectedCollectors = getTaskExecutor().invokeAll(listTasks);
-            return collectorManager.reduce(collectedCollectors);
         }
+        final List<C> collectors = new ArrayList<>(leafSlices.length);
+        collectors.add(firstCollector);
+        final ScoreMode scoreMode = firstCollector.scoreMode();
+        for (int i = 1; i < leafSlices.length; ++i) {
+            final C collector = collectorManager.newCollector();
+            collectors.add(collector);
+            if (scoreMode != collector.scoreMode()) {
+                throw new IllegalStateException("CollectorManager does not always produce collectors with the same score mode");
+            }
+        }
+        final List<Callable<C>> listTasks = new ArrayList<>(leafSlices.length);
+        for (int i = 0; i < leafSlices.length; ++i) {
+            final LeafReaderContextPartition[] leaves = leafSlices[i].partitions;
+            final C collector = collectors.get(i);
+            listTasks.add(() -> {
+                search(leaves, weight, collector);
+                return collector;
+            });
+        }
+        List<C> collectedCollectors = getTaskExecutor().invokeAll(listTasks);
+        return collectorManager.reduce(collectedCollectors);
     }
 
     /**
