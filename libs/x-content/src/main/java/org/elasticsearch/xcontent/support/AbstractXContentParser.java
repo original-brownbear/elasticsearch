@@ -328,7 +328,9 @@ public abstract class AbstractXContentParser implements XContentParser {
     ) throws IOException {
         do {
             Object value = readValueUnsafe(parser.nextToken(), parser, mapFactory);
-            map.put(currentFieldName, value);
+            if (map.put(currentFieldName, value) != null) {
+                throw new IllegalArgumentException("duplicate key [" + currentFieldName + "]");
+            }
         } while ((currentFieldName = parser.nextFieldName()) != null);
         return map;
     }

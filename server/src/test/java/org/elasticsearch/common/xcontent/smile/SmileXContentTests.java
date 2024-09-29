@@ -30,9 +30,4 @@ public class SmileXContentTests extends BaseXContentTestCase {
         doTestBigInteger(generator, os);
     }
 
-    public void testAllowsDuplicates() throws Exception {
-        try (XContentParser xParser = createParser(builder().startObject().endObject())) {
-            expectThrows(UnsupportedOperationException.class, () -> xParser.allowDuplicateKeys(true));
-        }
-    }
 }

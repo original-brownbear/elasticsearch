@@ -28,6 +28,7 @@ import org.elasticsearch.xcontent.support.AbstractXContentParser;
 
 import java.io.IOException;
 import java.nio.CharBuffer;
+import java.util.Map;
 
 public class JsonXContentParser extends AbstractXContentParser {
 
@@ -46,6 +47,32 @@ public class JsonXContentParser extends AbstractXContentParser {
     @Override
     public void allowDuplicateKeys(boolean allowDuplicateKeys) {
         parser.configure(JsonParser.Feature.STRICT_DUPLICATE_DETECTION, allowDuplicateKeys == false);
+    }
+
+    @Override
+    public Map<String, Object> map() throws IOException {
+        if (parser.isEnabled(JsonParser.Feature.STRICT_DUPLICATE_DETECTION) == false) {
+            return super.map();
+        }
+        try {
+            allowDuplicateKeys(true);
+            return super.map();
+        } finally {
+            allowDuplicateKeys(false);
+        }
+    }
+
+    @Override
+    public Map<String, Object> mapOrdered() throws IOException {
+        if (parser.isEnabled(JsonParser.Feature.STRICT_DUPLICATE_DETECTION) == false) {
+            return super.mapOrdered();
+        }
+        try {
+            allowDuplicateKeys(true);
+            return super.mapOrdered();
+        } finally {
+            allowDuplicateKeys(false);
+        }
     }
 
     private static XContentParseException newXContentParseException(JsonProcessingException e) {
