@@ -30,6 +30,8 @@ import org.elasticsearch.search.aggregations.InternalMultiBucketAggregation;
 import org.elasticsearch.search.aggregations.InternalOrder;
 import org.elasticsearch.search.aggregations.LeafBucketCollector;
 import org.elasticsearch.search.aggregations.LeafBucketCollectorBase;
+import org.elasticsearch.search.aggregations.LongLeafBucketCollector;
+import org.elasticsearch.search.aggregations.SortedLongLeafBucketCollector;
 import org.elasticsearch.search.aggregations.bucket.terms.IncludeExclude.LongFilter;
 import org.elasticsearch.search.aggregations.bucket.terms.LongKeyedBucketOrds.BucketOrdsEnum;
 import org.elasticsearch.search.aggregations.bucket.terms.SignificanceLookup.BackgroundFrequencyForLong;
@@ -95,17 +97,15 @@ public final class NumericTermsAggregator extends TermsAggregator {
     }
 
     private LeafBucketCollector getLeafCollector(SortedNumericDocValues values, LeafBucketCollector sub) {
-        return new LeafBucketCollectorBase(sub, values) {
+        return new SortedLongLeafBucketCollector(sub, values) {
             @Override
-            public void collect(int doc, long owningBucketOrd) throws IOException {
-                if (values.advanceExact(doc)) {
-                    long previous = Long.MAX_VALUE;
-                    for (int i = 0; i < values.docValueCount(); ++i) {
-                        long val = values.nextValue();
-                        if (previous != val || i == 0) {
-                            collectValue(val, doc, owningBucketOrd, sub);
-                            previous = val;
-                        }
+            public void collect(int doc, long owningBucketOrd, int count) throws IOException {
+                long previous = Long.MAX_VALUE;
+                for (int i = 0; i < count; ++i) {
+                    long val = values.nextValue();
+                    if (previous != val || i == 0) {
+                        collectValue(val, doc, owningBucketOrd, sub);
+                        previous = val;
                     }
                 }
             }
@@ -113,12 +113,10 @@ public final class NumericTermsAggregator extends TermsAggregator {
     }
 
     private LeafBucketCollector getLeafCollector(NumericDocValues values, LeafBucketCollector sub) {
-        return new LeafBucketCollectorBase(sub, values) {
+        return new LongLeafBucketCollector(sub, values) {
             @Override
-            public void collect(int doc, long owningBucketOrd) throws IOException {
-                if (values.advanceExact(doc)) {
-                    collectValue(values.longValue(), doc, owningBucketOrd, sub);
-                }
+            public void collect(int doc, long owningBucketOrd, long value) throws IOException {
+                collectValue(value, doc, owningBucketOrd, sub);
             }
         };
     }

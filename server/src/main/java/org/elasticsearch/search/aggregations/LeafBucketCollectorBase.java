@@ -21,7 +21,7 @@ import java.io.IOException;
  */
 public class LeafBucketCollectorBase extends LeafBucketCollector {
 
-    private final LeafBucketCollector sub;
+    protected final LeafBucketCollector sub;
     private final ScorerAware values;
 
     /**

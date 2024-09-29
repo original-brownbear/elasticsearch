@@ -22,7 +22,8 @@ import org.elasticsearch.search.aggregations.AggregatorFactories;
 import org.elasticsearch.search.aggregations.CardinalityUpperBound;
 import org.elasticsearch.search.aggregations.InternalAggregation;
 import org.elasticsearch.search.aggregations.LeafBucketCollector;
-import org.elasticsearch.search.aggregations.LeafBucketCollectorBase;
+import org.elasticsearch.search.aggregations.LongLeafBucketCollector;
+import org.elasticsearch.search.aggregations.SortedLongLeafBucketCollector;
 import org.elasticsearch.search.aggregations.bucket.BestBucketsDeferringCollector;
 import org.elasticsearch.search.aggregations.support.AggregationContext;
 import org.elasticsearch.search.aggregations.support.ValuesSource;
@@ -75,31 +76,27 @@ public class LongRareTermsAggregator extends AbstractRareTermsAggregator {
     }
 
     private LeafBucketCollector getLeafCollector(SortedNumericDocValues values, LeafBucketCollector sub) {
-        return new LeafBucketCollectorBase(sub, values) {
+        return new SortedLongLeafBucketCollector(sub, values) {
             @Override
-            public void collect(int docId, long owningBucketOrd) throws IOException {
-                if (values.advanceExact(docId)) {
-                    long previous = Long.MAX_VALUE;
-                    for (int i = 0; i < values.docValueCount(); ++i) {
-                        long val = values.nextValue();
-                        if (i == 0 && previous == val) {
-                            continue;
-                        }
-                        collectValue(val, docId, owningBucketOrd, sub);
-                        previous = val;
+            public void collect(int docId, long owningBucketOrd, int count) throws IOException {
+                long previous = Long.MAX_VALUE;
+                for (int i = 0; i < count; ++i) {
+                    long val = values.nextValue();
+                    if (i == 0 && previous == val) {
+                        continue;
                     }
+                    collectValue(val, docId, owningBucketOrd, sub);
+                    previous = val;
                 }
             }
         };
     }
 
     private LeafBucketCollector getLeafCollector(NumericDocValues values, LeafBucketCollector sub) {
-        return new LeafBucketCollectorBase(sub, values) {
+        return new LongLeafBucketCollector(sub, values) {
             @Override
-            public void collect(int docId, long owningBucketOrd) throws IOException {
-                if (values.advanceExact(docId)) {
-                    collectValue(values.longValue(), docId, owningBucketOrd, sub);
-                }
+            public void collect(int docId, long owningBucketOrd, long value) throws IOException {
+                collectValue(value, docId, owningBucketOrd, sub);
             }
         };
     }

@@ -16,9 +16,10 @@ import org.elasticsearch.index.fielddata.NumericDoubleValues;
 import org.elasticsearch.index.fielddata.SortedNumericDoubleValues;
 import org.elasticsearch.search.DocValueFormat;
 import org.elasticsearch.search.aggregations.Aggregator;
+import org.elasticsearch.search.aggregations.DoubleLeafBucketCollector;
 import org.elasticsearch.search.aggregations.InternalAggregation;
 import org.elasticsearch.search.aggregations.LeafBucketCollector;
-import org.elasticsearch.search.aggregations.LeafBucketCollectorBase;
+import org.elasticsearch.search.aggregations.SortedDoubleLeafBucketCollector;
 import org.elasticsearch.search.aggregations.support.AggregationContext;
 import org.elasticsearch.search.aggregations.support.ValuesSourceConfig;
 
@@ -52,29 +53,26 @@ class StatsAggregator extends NumericMetricsAggregator.MultiDoubleValue {
     @Override
     public LeafBucketCollector getLeafCollector(SortedNumericDoubleValues values, LeafBucketCollector sub) {
         final CompensatedSum kahanSummation = new CompensatedSum(0, 0);
-        return new LeafBucketCollectorBase(sub, values) {
+        return new SortedDoubleLeafBucketCollector(sub, values) {
             @Override
-            public void collect(int doc, long bucket) throws IOException {
-                if (values.advanceExact(doc)) {
-                    maybeGrow(bucket);
-                    final int valuesCount = values.docValueCount();
-                    counts.increment(bucket, valuesCount);
-                    double min = mins.get(bucket);
-                    double max = maxes.get(bucket);
-                    // Compute the sum of double values with Kahan summation algorithm which is more
-                    // accurate than naive summation.
-                    kahanSummation.reset(sums.get(bucket), compensations.get(bucket));
-                    for (int i = 0; i < valuesCount; i++) {
-                        double value = values.nextValue();
-                        kahanSummation.add(value);
-                        min = Math.min(min, value);
-                        max = Math.max(max, value);
-                    }
-                    sums.set(bucket, kahanSummation.value());
-                    compensations.set(bucket, kahanSummation.delta());
-                    mins.set(bucket, min);
-                    maxes.set(bucket, max);
+            public void collect(int doc, long bucket, int valuesCount) throws IOException {
+                maybeGrow(bucket);
+                counts.increment(bucket, valuesCount);
+                double min = mins.get(bucket);
+                double max = maxes.get(bucket);
+                // Compute the sum of double values with Kahan summation algorithm which is more
+                // accurate than naive summation.
+                kahanSummation.reset(sums.get(bucket), compensations.get(bucket));
+                for (int i = 0; i < valuesCount; i++) {
+                    double value = values.nextValue();
+                    kahanSummation.add(value);
+                    min = Math.min(min, value);
+                    max = Math.max(max, value);
                 }
+                sums.set(bucket, kahanSummation.value());
+                compensations.set(bucket, kahanSummation.delta());
+                mins.set(bucket, min);
+                maxes.set(bucket, max);
             }
         };
     }
@@ -82,22 +80,19 @@ class StatsAggregator extends NumericMetricsAggregator.MultiDoubleValue {
     @Override
     public LeafBucketCollector getLeafCollector(NumericDoubleValues values, LeafBucketCollector sub) {
         final CompensatedSum kahanSummation = new CompensatedSum(0, 0);
-        return new LeafBucketCollectorBase(sub, values) {
+        return new DoubleLeafBucketCollector(sub, values) {
             @Override
-            public void collect(int doc, long bucket) throws IOException {
-                if (values.advanceExact(doc)) {
-                    maybeGrow(bucket);
-                    counts.increment(bucket, 1L);
-                    // Compute the sum of double values with Kahan summation algorithm which is more
-                    // accurate than naive summation.
-                    kahanSummation.reset(sums.get(bucket), compensations.get(bucket));
-                    double value = values.doubleValue();
-                    kahanSummation.add(value);
-                    sums.set(bucket, kahanSummation.value());
-                    compensations.set(bucket, kahanSummation.delta());
-                    mins.set(bucket, Math.min(mins.get(bucket), value));
-                    maxes.set(bucket, Math.max(maxes.get(bucket), value));
-                }
+            public void collect(int doc, long bucket, double value) throws IOException {
+                maybeGrow(bucket);
+                counts.increment(bucket, 1L);
+                // Compute the sum of double values with Kahan summation algorithm which is more
+                // accurate than naive summation.
+                kahanSummation.reset(sums.get(bucket), compensations.get(bucket));
+                kahanSummation.add(value);
+                sums.set(bucket, kahanSummation.value());
+                compensations.set(bucket, kahanSummation.delta());
+                mins.set(bucket, Math.min(mins.get(bucket), value));
+                maxes.set(bucket, Math.max(maxes.get(bucket), value));
             }
         };
     }

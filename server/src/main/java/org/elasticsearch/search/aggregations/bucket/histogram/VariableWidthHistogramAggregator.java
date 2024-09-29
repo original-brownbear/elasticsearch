@@ -25,6 +25,7 @@ import org.elasticsearch.search.aggregations.AggregationExecutionContext;
 import org.elasticsearch.search.aggregations.Aggregator;
 import org.elasticsearch.search.aggregations.AggregatorFactories;
 import org.elasticsearch.search.aggregations.BucketOrder;
+import org.elasticsearch.search.aggregations.DoubleLeafBucketCollector;
 import org.elasticsearch.search.aggregations.InternalAggregation;
 import org.elasticsearch.search.aggregations.InternalAggregations;
 import org.elasticsearch.search.aggregations.LeafBucketCollector;
@@ -553,13 +554,11 @@ public class VariableWidthHistogramAggregator extends DeferableBucketAggregator 
     }
 
     private LeafBucketCollector getLeafCollector(NumericDoubleValues values, LeafBucketCollector sub) {
-        return new LeafBucketCollectorBase(sub, values) {
+        return new DoubleLeafBucketCollector(sub, values) {
             @Override
-            public void collect(int doc, long bucket) throws IOException {
+            public void collect(int doc, long bucket, double value) throws IOException {
                 assert bucket == 0;
-                if (values.advanceExact(doc)) {
-                    collector = collector.collectValue(sub, doc, values.doubleValue());
-                }
+                collector = collector.collectValue(sub, doc, value);
             }
         };
     }

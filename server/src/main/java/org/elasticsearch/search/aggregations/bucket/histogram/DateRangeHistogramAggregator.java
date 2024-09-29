@@ -10,6 +10,7 @@ package org.elasticsearch.search.aggregations.bucket.histogram;
 
 import org.apache.lucene.index.BinaryDocValues;
 import org.apache.lucene.search.ScoreMode;
+import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.CollectionUtil;
 import org.elasticsearch.common.Rounding;
 import org.elasticsearch.core.Nullable;
@@ -21,11 +22,11 @@ import org.elasticsearch.search.DocValueFormat;
 import org.elasticsearch.search.aggregations.AggregationExecutionContext;
 import org.elasticsearch.search.aggregations.Aggregator;
 import org.elasticsearch.search.aggregations.AggregatorFactories;
+import org.elasticsearch.search.aggregations.BinaryLeafBucketCollector;
 import org.elasticsearch.search.aggregations.BucketOrder;
 import org.elasticsearch.search.aggregations.CardinalityUpperBound;
 import org.elasticsearch.search.aggregations.InternalAggregation;
 import org.elasticsearch.search.aggregations.LeafBucketCollector;
-import org.elasticsearch.search.aggregations.LeafBucketCollectorBase;
 import org.elasticsearch.search.aggregations.bucket.BucketsAggregator;
 import org.elasticsearch.search.aggregations.bucket.terms.LongKeyedBucketOrds;
 import org.elasticsearch.search.aggregations.support.AggregationContext;
@@ -122,40 +123,36 @@ class DateRangeHistogramAggregator extends BucketsAggregator {
         final BinaryDocValues values = FieldData.unwrapSingleton(valuesSource.bytesValues(aggCtx.getLeafReaderContext()));
         assert values != null;
         final RangeType rangeType = valuesSource.rangeType();
-        return new LeafBucketCollectorBase(sub, values) {
+        return new BinaryLeafBucketCollector(sub, values) {
             @Override
-            public void collect(int doc, long owningBucketOrd) throws IOException {
-                if (values.advanceExact(doc)) {
-                    long previousKey = Long.MIN_VALUE;
-                    final List<RangeFieldMapper.Range> ranges = rangeType.decodeRanges(values.binaryValue());
-                    long previousFrom = Long.MIN_VALUE;
-                    for (RangeFieldMapper.Range range : ranges) {
-                        Long from = (Long) range.getFrom();
-                        // The encoding should ensure that this assert is always true.
-                        assert from >= previousFrom : "Start of range not >= previous start";
-                        final Long to = (Long) range.getTo();
-                        final long effectiveFrom = (hardBounds != null && hardBounds.getMin() != null)
-                            ? max(from, hardBounds.getMin())
-                            : from;
-                        final long effectiveTo = (hardBounds != null && hardBounds.getMax() != null) ? min(to, hardBounds.getMax()) : to;
-                        final long startKey = preparedRounding.round(effectiveFrom);
-                        final long endKey = preparedRounding.round(effectiveTo);
-                        for (long key = max(startKey, previousKey); key <= endKey; key = preparedRounding.nextRoundingValue(key)) {
-                            if (key == previousKey) {
-                                continue;
-                            }
-                            // Bucket collection identical to NumericHistogramAggregator, could be refactored
-                            long bucketOrd = bucketOrds.add(owningBucketOrd, key);
-                            if (bucketOrd < 0) { // already seen
-                                bucketOrd = -1 - bucketOrd;
-                                collectExistingBucket(sub, doc, bucketOrd);
-                            } else {
-                                collectBucket(sub, doc, bucketOrd);
-                            }
+            public void collect(int doc, long owningBucketOrd, BytesRef value) throws IOException {
+                long previousKey = Long.MIN_VALUE;
+                final List<RangeFieldMapper.Range> ranges = rangeType.decodeRanges(value);
+                long previousFrom = Long.MIN_VALUE;
+                for (RangeFieldMapper.Range range : ranges) {
+                    Long from = (Long) range.getFrom();
+                    // The encoding should ensure that this assert is always true.
+                    assert from >= previousFrom : "Start of range not >= previous start";
+                    final Long to = (Long) range.getTo();
+                    final long effectiveFrom = (hardBounds != null && hardBounds.getMin() != null) ? max(from, hardBounds.getMin()) : from;
+                    final long effectiveTo = (hardBounds != null && hardBounds.getMax() != null) ? min(to, hardBounds.getMax()) : to;
+                    final long startKey = preparedRounding.round(effectiveFrom);
+                    final long endKey = preparedRounding.round(effectiveTo);
+                    for (long key = max(startKey, previousKey); key <= endKey; key = preparedRounding.nextRoundingValue(key)) {
+                        if (key == previousKey) {
+                            continue;
                         }
-                        if (endKey > previousKey) {
-                            previousKey = endKey;
+                        // Bucket collection identical to NumericHistogramAggregator, could be refactored
+                        long bucketOrd = bucketOrds.add(owningBucketOrd, key);
+                        if (bucketOrd < 0) { // already seen
+                            bucketOrd = -1 - bucketOrd;
+                            collectExistingBucket(sub, doc, bucketOrd);
+                        } else {
+                            collectBucket(sub, doc, bucketOrd);
                         }
+                    }
+                    if (endKey > previousKey) {
+                        previousKey = endKey;
                     }
                 }
             }

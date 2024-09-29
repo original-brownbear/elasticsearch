@@ -19,12 +19,13 @@ import org.elasticsearch.search.aggregations.AggregationErrors;
 import org.elasticsearch.search.aggregations.AggregationExecutionContext;
 import org.elasticsearch.search.aggregations.Aggregator;
 import org.elasticsearch.search.aggregations.AggregatorFactories;
+import org.elasticsearch.search.aggregations.BinaryLeafBucketCollector;
 import org.elasticsearch.search.aggregations.BucketOrder;
 import org.elasticsearch.search.aggregations.CardinalityUpperBound;
 import org.elasticsearch.search.aggregations.InternalAggregation;
 import org.elasticsearch.search.aggregations.LeafBucketCollector;
-import org.elasticsearch.search.aggregations.LeafBucketCollectorBase;
 import org.elasticsearch.search.aggregations.NonCollectingAggregator;
+import org.elasticsearch.search.aggregations.SortedBinaryLeafBucketCollector;
 import org.elasticsearch.search.aggregations.bucket.BucketsAggregator;
 import org.elasticsearch.search.aggregations.bucket.terms.BytesKeyedBucketOrds;
 import org.elasticsearch.search.aggregations.support.AggregationContext;
@@ -107,20 +108,18 @@ public final class IpPrefixAggregator extends BucketsAggregator {
 
     private LeafBucketCollector getLeafCollector(SortedBinaryDocValues values, LeafBucketCollector sub) {
 
-        return new LeafBucketCollectorBase(sub, values) {
+        return new SortedBinaryLeafBucketCollector(sub, values) {
             @Override
-            public void collect(int doc, long owningBucketOrd) throws IOException {
-                if (values.advanceExact(doc)) {
-                    BytesRef previousSubnet = null;
-                    for (int i = 0; i < values.docValueCount(); ++i) {
-                        final BytesRef subnet = new BytesRef(new byte[ipPrefix.netmask.length]);
-                        maskIpAddress(values.nextValue(), ipPrefix.netmask, subnet);
-                        if (previousSubnet != null && subnet.bytesEquals(previousSubnet)) {
-                            continue;
-                        }
-                        addBucketOrd(bucketOrds.add(owningBucketOrd, subnet), doc, sub);
-                        previousSubnet = subnet;
+            public void collect(int doc, long owningBucketOrd, int count) throws IOException {
+                BytesRef previousSubnet = null;
+                for (int i = 0; i < count; ++i) {
+                    final BytesRef subnet = new BytesRef(new byte[ipPrefix.netmask.length]);
+                    maskIpAddress(values.nextValue(), ipPrefix.netmask, subnet);
+                    if (previousSubnet != null && subnet.bytesEquals(previousSubnet)) {
+                        continue;
                     }
+                    addBucketOrd(bucketOrds.add(owningBucketOrd, subnet), doc, sub);
+                    previousSubnet = subnet;
                 }
             }
         };
@@ -128,13 +127,11 @@ public final class IpPrefixAggregator extends BucketsAggregator {
 
     private LeafBucketCollector getLeafCollector(BinaryDocValues values, LeafBucketCollector sub) {
         final BytesRef subnet = new BytesRef(new byte[ipPrefix.netmask.length]);
-        return new LeafBucketCollectorBase(sub, values) {
+        return new BinaryLeafBucketCollector(sub, values) {
             @Override
-            public void collect(int doc, long owningBucketOrd) throws IOException {
-                if (values.advanceExact(doc)) {
-                    maskIpAddress(values.binaryValue(), ipPrefix.netmask, subnet);
-                    addBucketOrd(bucketOrds.add(owningBucketOrd, subnet), doc, sub);
-                }
+            public void collect(int doc, long owningBucketOrd, BytesRef value) throws IOException {
+                maskIpAddress(value, ipPrefix.netmask, subnet);
+                addBucketOrd(bucketOrds.add(owningBucketOrd, subnet), doc, sub);
             }
         };
     }

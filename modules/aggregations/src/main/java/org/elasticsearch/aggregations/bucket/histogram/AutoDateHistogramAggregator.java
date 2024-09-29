@@ -27,7 +27,8 @@ import org.elasticsearch.search.aggregations.BucketOrder;
 import org.elasticsearch.search.aggregations.CardinalityUpperBound;
 import org.elasticsearch.search.aggregations.InternalAggregation;
 import org.elasticsearch.search.aggregations.LeafBucketCollector;
-import org.elasticsearch.search.aggregations.LeafBucketCollectorBase;
+import org.elasticsearch.search.aggregations.LongLeafBucketCollector;
+import org.elasticsearch.search.aggregations.SortedLongLeafBucketCollector;
 import org.elasticsearch.search.aggregations.bucket.BestBucketsDeferringCollector;
 import org.elasticsearch.search.aggregations.bucket.DeferableBucketAggregator;
 import org.elasticsearch.search.aggregations.bucket.DeferringBucketCollector;
@@ -239,17 +240,12 @@ abstract class AutoDateHistogramAggregator extends DeferableBucketAggregator {
 
         @Override
         protected LeafBucketCollector getLeafCollector(SortedNumericDocValues values, LeafBucketCollector sub) {
-            return new LeafBucketCollectorBase(sub, values) {
+            return new SortedLongLeafBucketCollector(sub, values) {
                 @Override
-                public void collect(int doc, long owningBucketOrd) throws IOException {
+                public void collect(int doc, long owningBucketOrd, int count) throws IOException {
                     assert owningBucketOrd == 0;
-                    if (false == values.advanceExact(doc)) {
-                        return;
-                    }
-                    int valuesCount = values.docValueCount();
-
                     long previousRounded = Long.MIN_VALUE;
-                    for (int i = 0; i < valuesCount; ++i) {
+                    for (int i = 0; i < count; ++i) {
                         long value = values.nextValue();
                         long rounded = preparedRounding.round(value);
                         assert rounded >= previousRounded;
@@ -265,13 +261,11 @@ abstract class AutoDateHistogramAggregator extends DeferableBucketAggregator {
 
         @Override
         protected LeafBucketCollector getLeafCollector(NumericDocValues values, LeafBucketCollector sub) {
-            return new LeafBucketCollectorBase(sub, values) {
+            return new LongLeafBucketCollector(sub, values) {
                 @Override
-                public void collect(int doc, long owningBucketOrd) throws IOException {
+                public void collect(int doc, long owningBucketOrd, long value) throws IOException {
                     assert owningBucketOrd == 0;
-                    if (values.advanceExact(doc)) {
-                        collectValue(doc, preparedRounding.round(values.longValue()), sub);
-                    }
+                    collectValue(doc, preparedRounding.round(value), sub);
                 }
             };
         }
@@ -461,17 +455,12 @@ abstract class AutoDateHistogramAggregator extends DeferableBucketAggregator {
 
         @Override
         protected LeafBucketCollector getLeafCollector(SortedNumericDocValues values, LeafBucketCollector sub) {
-            return new LeafBucketCollectorBase(sub, values) {
+            return new SortedLongLeafBucketCollector(sub, values) {
                 @Override
-                public void collect(int doc, long owningBucketOrd) throws IOException {
-                    if (false == values.advanceExact(doc)) {
-                        return;
-                    }
-                    int valuesCount = values.docValueCount();
-
+                public void collect(int doc, long owningBucketOrd, int count) throws IOException {
                     long previousRounded = Long.MIN_VALUE;
                     int roundingIdx = roundingIndexFor(owningBucketOrd);
-                    for (int i = 0; i < valuesCount; ++i) {
+                    for (int i = 0; i < count; ++i) {
                         long value = values.nextValue();
                         long rounded = preparedRoundings[roundingIdx].round(value);
                         assert rounded >= previousRounded;
@@ -487,14 +476,12 @@ abstract class AutoDateHistogramAggregator extends DeferableBucketAggregator {
 
         @Override
         protected LeafBucketCollector getLeafCollector(NumericDocValues values, LeafBucketCollector sub) {
-            return new LeafBucketCollectorBase(sub, values) {
+            return new LongLeafBucketCollector(sub, values) {
                 @Override
-                public void collect(int doc, long owningBucketOrd) throws IOException {
-                    if (values.advanceExact(doc)) {
-                        final int roundingIdx = roundingIndexFor(owningBucketOrd);
-                        final long rounded = preparedRoundings[roundingIdx].round(values.longValue());
-                        collectValue(owningBucketOrd, roundingIdx, doc, rounded, sub);
-                    }
+                protected void collect(int doc, long owningBucketOrd, long value) throws IOException {
+                    final int roundingIdx = roundingIndexFor(owningBucketOrd);
+                    final long rounded = preparedRoundings[roundingIdx].round(value);
+                    collectValue(owningBucketOrd, roundingIdx, doc, rounded, sub);
                 }
             };
         }

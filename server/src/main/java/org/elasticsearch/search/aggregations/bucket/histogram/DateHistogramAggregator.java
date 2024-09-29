@@ -30,7 +30,8 @@ import org.elasticsearch.search.aggregations.CardinalityUpperBound;
 import org.elasticsearch.search.aggregations.InternalAggregation;
 import org.elasticsearch.search.aggregations.InternalAggregations;
 import org.elasticsearch.search.aggregations.LeafBucketCollector;
-import org.elasticsearch.search.aggregations.LeafBucketCollectorBase;
+import org.elasticsearch.search.aggregations.LongLeafBucketCollector;
+import org.elasticsearch.search.aggregations.SortedLongLeafBucketCollector;
 import org.elasticsearch.search.aggregations.bucket.BucketsAggregator;
 import org.elasticsearch.search.aggregations.bucket.filter.FiltersAggregator;
 import org.elasticsearch.search.aggregations.bucket.range.InternalDateRange;
@@ -294,32 +295,28 @@ class DateHistogramAggregator extends BucketsAggregator implements SizedBucketAg
     }
 
     private LeafBucketCollector getLeafCollector(SortedNumericDocValues values, LeafBucketCollector sub) {
-        return new LeafBucketCollectorBase(sub, values) {
+        return new SortedLongLeafBucketCollector(sub, values) {
             @Override
-            public void collect(int doc, long owningBucketOrd) throws IOException {
-                if (values.advanceExact(doc)) {
-                    long previousRounded = Long.MIN_VALUE;
-                    for (int i = 0; i < values.docValueCount(); ++i) {
-                        final long rounded = preparedRounding.round(values.nextValue());
-                        assert rounded >= previousRounded;
-                        if (rounded == previousRounded) {
-                            continue;
-                        }
-                        addRoundedValue(rounded, doc, owningBucketOrd, sub);
-                        previousRounded = rounded;
+            public void collect(int doc, long owningBucketOrd, int count) throws IOException {
+                long previousRounded = Long.MIN_VALUE;
+                for (int i = 0; i < count; ++i) {
+                    final long rounded = preparedRounding.round(values.nextValue());
+                    assert rounded >= previousRounded;
+                    if (rounded == previousRounded) {
+                        continue;
                     }
+                    addRoundedValue(rounded, doc, owningBucketOrd, sub);
+                    previousRounded = rounded;
                 }
             }
         };
     }
 
     private LeafBucketCollector getLeafCollector(NumericDocValues values, LeafBucketCollector sub) {
-        return new LeafBucketCollectorBase(sub, values) {
+        return new LongLeafBucketCollector(sub, values) {
             @Override
-            public void collect(int doc, long owningBucketOrd) throws IOException {
-                if (values.advanceExact(doc)) {
-                    addRoundedValue(preparedRounding.round(values.longValue()), doc, owningBucketOrd, sub);
-                }
+            public void collect(int doc, long owningBucketOrd, long value) throws IOException {
+                addRoundedValue(preparedRounding.round(value), doc, owningBucketOrd, sub);
             }
         };
     }

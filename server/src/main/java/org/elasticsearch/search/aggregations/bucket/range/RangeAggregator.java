@@ -33,6 +33,7 @@ import org.elasticsearch.search.aggregations.InternalAggregations;
 import org.elasticsearch.search.aggregations.LeafBucketCollector;
 import org.elasticsearch.search.aggregations.LeafBucketCollectorBase;
 import org.elasticsearch.search.aggregations.NonCollectingAggregator;
+import org.elasticsearch.search.aggregations.SortedDoubleLeafBucketCollector;
 import org.elasticsearch.search.aggregations.bucket.BucketsAggregator;
 import org.elasticsearch.search.aggregations.bucket.filter.FilterByFilterAggregator;
 import org.elasticsearch.search.aggregations.bucket.filter.FiltersAggregator;
@@ -668,15 +669,12 @@ public abstract class RangeAggregator extends BucketsAggregator {
                 };
             }
             super.nonsingletonRanges++;
-            return new LeafBucketCollectorBase(sub, values) {
+            return new SortedDoubleLeafBucketCollector(sub, values) {
                 @Override
-                public void collect(int doc, long bucket) throws IOException {
-                    if (values.advanceExact(doc)) {
-                        final int valuesCount = values.docValueCount();
-                        for (int i = 0, lo = 0; i < valuesCount; ++i) {
-                            final double value = values.nextValue();
-                            lo = NumericRangeAggregator.this.collect(sub, doc, value, bucket, lo);
-                        }
+                public void collect(int doc, long bucket, int count) throws IOException {
+                    for (int i = 0, lo = 0; i < count; ++i) {
+                        final double value = values.nextValue();
+                        lo = NumericRangeAggregator.this.collect(sub, doc, value, bucket, lo);
                     }
                 }
             };

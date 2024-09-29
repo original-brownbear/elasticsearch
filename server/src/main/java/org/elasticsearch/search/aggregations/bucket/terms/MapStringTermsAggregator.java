@@ -27,6 +27,7 @@ import org.elasticsearch.search.DocValueFormat;
 import org.elasticsearch.search.aggregations.AggregationExecutionContext;
 import org.elasticsearch.search.aggregations.Aggregator;
 import org.elasticsearch.search.aggregations.AggregatorFactories;
+import org.elasticsearch.search.aggregations.BinaryLeafBucketCollector;
 import org.elasticsearch.search.aggregations.BucketOrder;
 import org.elasticsearch.search.aggregations.CardinalityUpperBound;
 import org.elasticsearch.search.aggregations.InternalAggregation;
@@ -34,6 +35,7 @@ import org.elasticsearch.search.aggregations.InternalMultiBucketAggregation;
 import org.elasticsearch.search.aggregations.InternalOrder;
 import org.elasticsearch.search.aggregations.LeafBucketCollector;
 import org.elasticsearch.search.aggregations.LeafBucketCollectorBase;
+import org.elasticsearch.search.aggregations.SortedBinaryLeafBucketCollector;
 import org.elasticsearch.search.aggregations.bucket.terms.SignificanceLookup.BackgroundFrequencyForBytes;
 import org.elasticsearch.search.aggregations.bucket.terms.heuristic.SignificanceHeuristic;
 import org.elasticsearch.search.aggregations.support.AggregationContext;
@@ -223,20 +225,16 @@ public final class MapStringTermsAggregator extends AbstractStringTermsAggregato
             LeafBucketCollector sub,
             CollectConsumer consumer
         ) {
-            return new LeafBucketCollectorBase(sub, values) {
+            return new SortedBinaryLeafBucketCollector(sub, values) {
                 final BytesRefBuilder previous = new BytesRefBuilder();
 
                 @Override
-                public void collect(int doc, long owningBucketOrd) throws IOException {
-                    if (false == values.advanceExact(doc)) {
-                        return;
-                    }
-                    int valuesCount = values.docValueCount();
+                public void collect(int doc, long owningBucketOrd, int count) throws IOException {
 
                     // SortedBinaryDocValues don't guarantee uniqueness so we
                     // need to take care of dups
                     previous.clear();
-                    for (int i = 0; i < valuesCount; ++i) {
+                    for (int i = 0; i < count; ++i) {
                         BytesRef bytes = values.nextValue();
                         if (includeExclude != null && false == includeExclude.accept(bytes)) {
                             continue;
@@ -257,15 +255,12 @@ public final class MapStringTermsAggregator extends AbstractStringTermsAggregato
             LeafBucketCollector sub,
             CollectConsumer consumer
         ) {
-            return new LeafBucketCollectorBase(sub, values) {
+            return new BinaryLeafBucketCollector(sub, values) {
 
                 @Override
-                public void collect(int doc, long owningBucketOrd) throws IOException {
-                    if (values.advanceExact(doc)) {
-                        BytesRef bytes = values.binaryValue();
-                        if (includeExclude == null || includeExclude.accept(bytes)) {
-                            consumer.accept(sub, doc, owningBucketOrd, bytes);
-                        }
+                public void collect(int doc, long owningBucketOrd, BytesRef value) throws IOException {
+                    if (includeExclude == null || includeExclude.accept(value)) {
+                        consumer.accept(sub, doc, owningBucketOrd, value);
                     }
                 }
             };

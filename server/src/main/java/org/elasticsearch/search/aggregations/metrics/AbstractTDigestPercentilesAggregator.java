@@ -16,8 +16,9 @@ import org.elasticsearch.index.fielddata.NumericDoubleValues;
 import org.elasticsearch.index.fielddata.SortedNumericDoubleValues;
 import org.elasticsearch.search.DocValueFormat;
 import org.elasticsearch.search.aggregations.Aggregator;
+import org.elasticsearch.search.aggregations.DoubleLeafBucketCollector;
 import org.elasticsearch.search.aggregations.LeafBucketCollector;
-import org.elasticsearch.search.aggregations.LeafBucketCollectorBase;
+import org.elasticsearch.search.aggregations.SortedDoubleLeafBucketCollector;
 import org.elasticsearch.search.aggregations.support.AggregationContext;
 import org.elasticsearch.search.aggregations.support.ValuesSourceConfig;
 
@@ -57,14 +58,12 @@ abstract class AbstractTDigestPercentilesAggregator extends NumericMetricsAggreg
 
     @Override
     protected LeafBucketCollector getLeafCollector(SortedNumericDoubleValues values, final LeafBucketCollector sub) {
-        return new LeafBucketCollectorBase(sub, values) {
+        return new SortedDoubleLeafBucketCollector(sub, values) {
             @Override
-            public void collect(int doc, long bucket) throws IOException {
-                if (values.advanceExact(doc)) {
-                    final TDigestState state = getExistingOrNewHistogram(bigArrays(), bucket);
-                    for (int i = 0; i < values.docValueCount(); i++) {
-                        state.add(values.nextValue());
-                    }
+            public void collect(int doc, long bucket, int count) throws IOException {
+                final TDigestState state = getExistingOrNewHistogram(bigArrays(), bucket);
+                for (int i = 0; i < count; i++) {
+                    state.add(values.nextValue());
                 }
             }
         };
@@ -72,13 +71,10 @@ abstract class AbstractTDigestPercentilesAggregator extends NumericMetricsAggreg
 
     @Override
     protected LeafBucketCollector getLeafCollector(NumericDoubleValues values, final LeafBucketCollector sub) {
-        return new LeafBucketCollectorBase(sub, values) {
+        return new DoubleLeafBucketCollector(sub, values) {
             @Override
-            public void collect(int doc, long bucket) throws IOException {
-                if (values.advanceExact(doc)) {
-                    final TDigestState state = getExistingOrNewHistogram(bigArrays(), bucket);
-                    state.add(values.doubleValue());
-                }
+            protected void collect(int doc, long bucket, double value) {
+                getExistingOrNewHistogram(bigArrays(), bucket).add(value);
             }
         };
     }

@@ -19,7 +19,8 @@ import org.elasticsearch.search.aggregations.AggregatorFactories;
 import org.elasticsearch.search.aggregations.CardinalityUpperBound;
 import org.elasticsearch.search.aggregations.InternalAggregation;
 import org.elasticsearch.search.aggregations.LeafBucketCollector;
-import org.elasticsearch.search.aggregations.LeafBucketCollectorBase;
+import org.elasticsearch.search.aggregations.LongLeafBucketCollector;
+import org.elasticsearch.search.aggregations.SortedLongLeafBucketCollector;
 import org.elasticsearch.search.aggregations.bucket.BucketsAggregator;
 import org.elasticsearch.search.aggregations.bucket.terms.LongKeyedBucketOrds;
 import org.elasticsearch.search.aggregations.support.AggregationContext;
@@ -79,43 +80,36 @@ public abstract class GeoGridAggregator<T extends InternalGeoGrid<?>> extends Bu
     }
 
     private LeafBucketCollector getLeafCollector(final NumericDocValues values, final LeafBucketCollector sub) {
-        return new LeafBucketCollectorBase(sub, null) {
+        return new LongLeafBucketCollector(sub, values) {
             @Override
-            public void collect(int doc, long owningBucketOrd) throws IOException {
-                if (values.advanceExact(doc)) {
-                    final long val = values.longValue();
-                    long bucketOrdinal = bucketOrds.add(owningBucketOrd, val);
-                    if (bucketOrdinal < 0) { // already seen
-                        bucketOrdinal = -1 - bucketOrdinal;
-                        collectExistingBucket(sub, doc, bucketOrdinal);
-                    } else {
-                        collectBucket(sub, doc, bucketOrdinal);
-                    }
+            public void collect(int doc, long owningBucketOrd, long value) throws IOException {
+                long bucketOrdinal = bucketOrds.add(owningBucketOrd, value);
+                if (bucketOrdinal < 0) { // already seen
+                    bucketOrdinal = -1 - bucketOrdinal;
+                    collectExistingBucket(sub, doc, bucketOrdinal);
+                } else {
+                    collectBucket(sub, doc, bucketOrdinal);
                 }
             }
         };
     }
 
     private LeafBucketCollector getLeafCollector(final SortedNumericDocValues values, final LeafBucketCollector sub) {
-        return new LeafBucketCollectorBase(sub, null) {
+        return new SortedLongLeafBucketCollector(sub, values) {
             @Override
-            public void collect(int doc, long owningBucketOrd) throws IOException {
-                if (values.advanceExact(doc)) {
-                    final int valuesCount = values.docValueCount();
-
-                    long previous = Long.MAX_VALUE;
-                    for (int i = 0; i < valuesCount; ++i) {
-                        final long val = values.nextValue();
-                        if (previous != val || i == 0) {
-                            long bucketOrdinal = bucketOrds.add(owningBucketOrd, val);
-                            if (bucketOrdinal < 0) { // already seen
-                                bucketOrdinal = -1 - bucketOrdinal;
-                                collectExistingBucket(sub, doc, bucketOrdinal);
-                            } else {
-                                collectBucket(sub, doc, bucketOrdinal);
-                            }
-                            previous = val;
+            public void collect(int doc, long owningBucketOrd, int count) throws IOException {
+                long previous = Long.MAX_VALUE;
+                for (int i = 0; i < count; ++i) {
+                    final long val = values.nextValue();
+                    if (previous != val || i == 0) {
+                        long bucketOrdinal = bucketOrds.add(owningBucketOrd, val);
+                        if (bucketOrdinal < 0) { // already seen
+                            bucketOrdinal = -1 - bucketOrdinal;
+                            collectExistingBucket(sub, doc, bucketOrdinal);
+                        } else {
+                            collectBucket(sub, doc, bucketOrdinal);
                         }
+                        previous = val;
                     }
                 }
             }

@@ -20,10 +20,11 @@ import org.elasticsearch.search.DocValueFormat;
 import org.elasticsearch.search.aggregations.AggregationExecutionContext;
 import org.elasticsearch.search.aggregations.Aggregator;
 import org.elasticsearch.search.aggregations.AggregatorFactories;
+import org.elasticsearch.search.aggregations.BinaryLeafBucketCollector;
 import org.elasticsearch.search.aggregations.CardinalityUpperBound;
 import org.elasticsearch.search.aggregations.InternalAggregation;
 import org.elasticsearch.search.aggregations.LeafBucketCollector;
-import org.elasticsearch.search.aggregations.LeafBucketCollectorBase;
+import org.elasticsearch.search.aggregations.SortedBinaryLeafBucketCollector;
 import org.elasticsearch.search.aggregations.bucket.BestBucketsDeferringCollector;
 import org.elasticsearch.search.aggregations.support.AggregationContext;
 import org.elasticsearch.search.aggregations.support.ValuesSource;
@@ -72,36 +73,31 @@ public class StringRareTermsAggregator extends AbstractRareTermsAggregator {
     }
 
     private LeafBucketCollector getLeafCollector(SortedBinaryDocValues values, LeafBucketCollector sub) {
-        return new LeafBucketCollectorBase(sub, values) {
+        return new SortedBinaryLeafBucketCollector(sub, values) {
             final BytesRefBuilder previous = new BytesRefBuilder();
 
             @Override
-            public void collect(int docId, long owningBucketOrd) throws IOException {
-                if (values.advanceExact(docId)) {
-                    previous.clear();
-                    // SortedBinaryDocValues don't guarantee uniqueness so we
-                    // need to take care of dups
-                    for (int i = 0; i < values.docValueCount(); ++i) {
-                        BytesRef bytes = values.nextValue();
-                        if (i > 0 && previous.get().equals(bytes)) {
-                            continue;
-                        }
-                        collectValue(bytes, docId, owningBucketOrd, sub);
-                        previous.copyBytes(bytes);
+            public void collect(int docId, long owningBucketOrd, int count) throws IOException {
+                previous.clear();
+                // SortedBinaryDocValues don't guarantee uniqueness so we
+                // need to take care of dups
+                for (int i = 0; i < count; ++i) {
+                    BytesRef bytes = values.nextValue();
+                    if (i > 0 && previous.get().equals(bytes)) {
+                        continue;
                     }
+                    collectValue(bytes, docId, owningBucketOrd, sub);
+                    previous.copyBytes(bytes);
                 }
-
             }
         };
     }
 
     private LeafBucketCollector getLeafCollector(BinaryDocValues values, LeafBucketCollector sub) {
-        return new LeafBucketCollectorBase(sub, values) {
+        return new BinaryLeafBucketCollector(sub, values) {
             @Override
-            public void collect(int docId, long owningBucketOrd) throws IOException {
-                if (values.advanceExact(docId)) {
-                    collectValue(values.binaryValue(), docId, owningBucketOrd, sub);
-                }
+            public void collect(int docId, long owningBucketOrd, BytesRef value) throws IOException {
+                collectValue(value, docId, owningBucketOrd, sub);
             }
         };
     }

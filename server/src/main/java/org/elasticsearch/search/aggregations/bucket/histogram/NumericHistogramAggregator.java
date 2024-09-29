@@ -18,8 +18,9 @@ import org.elasticsearch.search.aggregations.Aggregator;
 import org.elasticsearch.search.aggregations.AggregatorFactories;
 import org.elasticsearch.search.aggregations.BucketOrder;
 import org.elasticsearch.search.aggregations.CardinalityUpperBound;
+import org.elasticsearch.search.aggregations.DoubleLeafBucketCollector;
 import org.elasticsearch.search.aggregations.LeafBucketCollector;
-import org.elasticsearch.search.aggregations.LeafBucketCollectorBase;
+import org.elasticsearch.search.aggregations.SortedDoubleLeafBucketCollector;
 import org.elasticsearch.search.aggregations.support.AggregationContext;
 import org.elasticsearch.search.aggregations.support.ValuesSource;
 import org.elasticsearch.search.aggregations.support.ValuesSourceConfig;
@@ -92,32 +93,28 @@ public class NumericHistogramAggregator extends AbstractHistogramAggregator {
     }
 
     private LeafBucketCollector getLeafCollector(SortedNumericDoubleValues values, LeafBucketCollector sub) {
-        return new LeafBucketCollectorBase(sub, values) {
+        return new SortedDoubleLeafBucketCollector(sub, values) {
             @Override
-            public void collect(int doc, long owningBucketOrd) throws IOException {
-                if (values.advanceExact(doc)) {
-                    double previousKey = Double.NEGATIVE_INFINITY;
-                    for (int i = 0; i < values.docValueCount(); ++i) {
-                        final double key = Math.floor((values.nextValue() - offset) / interval);
-                        assert key >= previousKey;
-                        if (key == previousKey) {
-                            continue;
-                        }
-                        addKey(key, doc, owningBucketOrd, sub);
-                        previousKey = key;
+            public void collect(int doc, long owningBucketOrd, int count) throws IOException {
+                double previousKey = Double.NEGATIVE_INFINITY;
+                for (int i = 0; i < count; ++i) {
+                    final double key = Math.floor((values.nextValue() - offset) / interval);
+                    assert key >= previousKey;
+                    if (key == previousKey) {
+                        continue;
                     }
+                    addKey(key, doc, owningBucketOrd, sub);
+                    previousKey = key;
                 }
             }
         };
     }
 
     private LeafBucketCollector getLeafCollector(NumericDoubleValues values, LeafBucketCollector sub) {
-        return new LeafBucketCollectorBase(sub, values) {
+        return new DoubleLeafBucketCollector(sub, values) {
             @Override
-            public void collect(int doc, long owningBucketOrd) throws IOException {
-                if (values.advanceExact(doc)) {
-                    addKey(Math.floor((values.doubleValue() - offset) / interval), doc, owningBucketOrd, sub);
-                }
+            protected void collect(int doc, long owningBucketOrd, double value) throws IOException {
+                addKey(Math.floor((value - offset) / interval), doc, owningBucketOrd, sub);
             }
         };
     }
