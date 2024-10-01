@@ -122,6 +122,14 @@ public class ThrowingQueryBuilder extends AbstractQueryBuilder<ThrowingQueryBuil
             public void visit(QueryVisitor visitor) {
                 visitor.visitLeaf(this);
             }
+
+            @Override
+            public Query rewrite(IndexSearcher indexSearcher) throws IOException {
+                if (context.getShardId() == shardId || shardId < 0 || context.index().getName().equals(index)) {
+                    throw failure;
+                }
+                return delegate.rewrite(indexSearcher);
+            }
         };
     }
 
