@@ -228,7 +228,7 @@ public class CloseWhileRelocatingShardsIT extends ESIntegTestCase {
             ensureGreen(indices);
 
             for (String index : acknowledgedCloses) {
-                assertResponse(prepareSearch(index).setSize(0).setTrackTotalHits(true), response -> {
+                assertResponse(response -> {
                     long docsCount = response.getHits().getTotalHits().value;
                     assertEquals(
                         "Expected "
@@ -243,7 +243,7 @@ public class CloseWhileRelocatingShardsIT extends ESIntegTestCase {
                         (long) docsPerIndex.get(index),
                         docsCount
                     );
-                });
+                }, prepareSearch(index).setSize(0).setTrackTotalHits(true));
             }
         } finally {
             updateClusterSettings(Settings.builder().putNull(EnableAllocationDecider.CLUSTER_ROUTING_REBALANCE_ENABLE_SETTING.getKey()));

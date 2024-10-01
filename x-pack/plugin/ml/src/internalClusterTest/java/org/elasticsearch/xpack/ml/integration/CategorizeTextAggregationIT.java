@@ -39,48 +39,56 @@ public class CategorizeTextAggregationIT extends BaseMlIntegTestCase {
     }
 
     public void testAggregation() {
-        assertResponse(
+        assertResponse(response -> {
+
+            InternalCategorizationAggregation agg = response.getAggregations().get("categorize");
+            assertThat(agg.getBuckets(), hasSize(3));
+
+            assertCategorizationBucket(agg.getBuckets().get(0), "Node started", 3);
+            assertCategorizationBucket(
+                agg.getBuckets().get(1),
+                "Failed to shutdown error org.aaaa.bbbb.Cccc line caused by foo exception",
+                2
+            );
+            assertCategorizationBucket(agg.getBuckets().get(2), "Node stopped", 1);
+        },
             prepareSearch(DATA_INDEX).setSize(0)
                 .setTrackTotalHits(false)
                 .addAggregation(
                     new CategorizeTextAggregationBuilder("categorize", "msg").subAggregation(AggregationBuilders.max("max").field("time"))
                         .subAggregation(AggregationBuilders.min("min").field("time"))
-                ),
-            response -> {
-
-                InternalCategorizationAggregation agg = response.getAggregations().get("categorize");
-                assertThat(agg.getBuckets(), hasSize(3));
-
-                assertCategorizationBucket(agg.getBuckets().get(0), "Node started", 3);
-                assertCategorizationBucket(
-                    agg.getBuckets().get(1),
-                    "Failed to shutdown error org.aaaa.bbbb.Cccc line caused by foo exception",
-                    2
-                );
-                assertCategorizationBucket(agg.getBuckets().get(2), "Node stopped", 1);
-            }
+                )
         );
     }
 
     public void testAggregationWithOnlyOneBucket() {
-        assertResponse(
+        assertResponse(response -> {
+            InternalCategorizationAggregation agg = response.getAggregations().get("categorize");
+            assertThat(agg.getBuckets(), hasSize(1));
+            assertCategorizationBucket(agg.getBuckets().get(0), "Node started", 3);
+        },
             prepareSearch(DATA_INDEX).setSize(0)
                 .setTrackTotalHits(false)
                 .addAggregation(
                     new CategorizeTextAggregationBuilder("categorize", "msg").size(1)
                         .subAggregation(AggregationBuilders.max("max").field("time"))
                         .subAggregation(AggregationBuilders.min("min").field("time"))
-                ),
-            response -> {
-                InternalCategorizationAggregation agg = response.getAggregations().get("categorize");
-                assertThat(agg.getBuckets(), hasSize(1));
-                assertCategorizationBucket(agg.getBuckets().get(0), "Node started", 3);
-            }
+                )
         );
     }
 
     public void testAggregationWithBroadCategories() {
-        assertResponse(
+        assertResponse(response -> {
+            InternalCategorizationAggregation agg = response.getAggregations().get("categorize");
+            assertThat(agg.getBuckets(), hasSize(2));
+
+            assertCategorizationBucket(agg.getBuckets().get(0), "Node", 4);
+            assertCategorizationBucket(
+                agg.getBuckets().get(1),
+                "Failed to shutdown error org.aaaa.bbbb.Cccc line caused by foo exception",
+                2
+            );
+        },
             prepareSearch(DATA_INDEX).setSize(0)
                 .setTrackTotalHits(false)
                 .addAggregation(
@@ -89,18 +97,7 @@ public class CategorizeTextAggregationIT extends BaseMlIntegTestCase {
                     new CategorizeTextAggregationBuilder("categorize", "msg").setSimilarityThreshold(11)
                         .subAggregation(AggregationBuilders.max("max").field("time"))
                         .subAggregation(AggregationBuilders.min("min").field("time"))
-                ),
-            response -> {
-                InternalCategorizationAggregation agg = response.getAggregations().get("categorize");
-                assertThat(agg.getBuckets(), hasSize(2));
-
-                assertCategorizationBucket(agg.getBuckets().get(0), "Node", 4);
-                assertCategorizationBucket(
-                    agg.getBuckets().get(1),
-                    "Failed to shutdown error org.aaaa.bbbb.Cccc line caused by foo exception",
-                    2
-                );
-            }
+                )
         );
     }
 

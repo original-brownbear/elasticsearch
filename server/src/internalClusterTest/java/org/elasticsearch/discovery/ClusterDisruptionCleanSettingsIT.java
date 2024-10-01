@@ -64,6 +64,6 @@ public class ClusterDisruptionCleanSettingsIT extends ESIntegTestCase {
 
         IndicesStoreIntegrationIT.relocateAndBlockCompletion(logger, "test", 0, node_1, node_2);
         // now search for the documents and see if we get a reply
-        assertHitCount(prepareSearch().setSize(0), 100);
+        assertHitCount(100, prepareSearch().setSize(0));
     }
 }

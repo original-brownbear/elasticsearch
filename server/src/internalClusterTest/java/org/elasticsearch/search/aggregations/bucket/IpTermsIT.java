@@ -61,24 +61,23 @@ public class IpTermsIT extends AbstractTermsTestCase {
         );
 
         Script script = new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "doc['ip'].value", Collections.emptyMap());
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            StringTerms terms = response.getAggregations().get("my_terms");
+            assertEquals(2, terms.getBuckets().size());
+
+            StringTerms.Bucket bucket1 = terms.getBuckets().get(0);
+            assertEquals(2, bucket1.getDocCount());
+            assertEquals("192.168.1.7", bucket1.getKey());
+            assertEquals("192.168.1.7", bucket1.getKeyAsString());
+
+            StringTerms.Bucket bucket2 = terms.getBuckets().get(1);
+            assertEquals(1, bucket2.getDocCount());
+            assertEquals("2001:db8::2:1", bucket2.getKey());
+            assertEquals("2001:db8::2:1", bucket2.getKeyAsString());
+        },
             prepareSearch("index").addAggregation(
                 new TermsAggregationBuilder("my_terms").script(script).executionHint(randomExecutionHint())
-            ),
-            response -> {
-                StringTerms terms = response.getAggregations().get("my_terms");
-                assertEquals(2, terms.getBuckets().size());
-
-                StringTerms.Bucket bucket1 = terms.getBuckets().get(0);
-                assertEquals(2, bucket1.getDocCount());
-                assertEquals("192.168.1.7", bucket1.getKey());
-                assertEquals("192.168.1.7", bucket1.getKeyAsString());
-
-                StringTerms.Bucket bucket2 = terms.getBuckets().get(1);
-                assertEquals(1, bucket2.getDocCount());
-                assertEquals("2001:db8::2:1", bucket2.getKey());
-                assertEquals("2001:db8::2:1", bucket2.getKeyAsString());
-            }
+            )
         );
     }
 
@@ -92,24 +91,23 @@ public class IpTermsIT extends AbstractTermsTestCase {
         );
 
         Script script = new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "doc['ip']", Collections.emptyMap());
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            StringTerms terms = response.getAggregations().get("my_terms");
+            assertEquals(2, terms.getBuckets().size());
+
+            StringTerms.Bucket bucket1 = terms.getBuckets().get(0);
+            assertEquals(2, bucket1.getDocCount());
+            assertEquals("192.168.1.7", bucket1.getKey());
+            assertEquals("192.168.1.7", bucket1.getKeyAsString());
+
+            StringTerms.Bucket bucket2 = terms.getBuckets().get(1);
+            assertEquals(1, bucket2.getDocCount());
+            assertEquals("2001:db8::2:1", bucket2.getKey());
+            assertEquals("2001:db8::2:1", bucket2.getKeyAsString());
+        },
             prepareSearch("index").addAggregation(
                 new TermsAggregationBuilder("my_terms").script(script).executionHint(randomExecutionHint())
-            ),
-            response -> {
-                StringTerms terms = response.getAggregations().get("my_terms");
-                assertEquals(2, terms.getBuckets().size());
-
-                StringTerms.Bucket bucket1 = terms.getBuckets().get(0);
-                assertEquals(2, bucket1.getDocCount());
-                assertEquals("192.168.1.7", bucket1.getKey());
-                assertEquals("192.168.1.7", bucket1.getKeyAsString());
-
-                StringTerms.Bucket bucket2 = terms.getBuckets().get(1);
-                assertEquals(1, bucket2.getDocCount());
-                assertEquals("2001:db8::2:1", bucket2.getKey());
-                assertEquals("2001:db8::2:1", bucket2.getKeyAsString());
-            }
+            )
         );
     }
 
@@ -122,24 +120,23 @@ public class IpTermsIT extends AbstractTermsTestCase {
             prepareIndex("index").setId("3").setSource("ip", "127.0.0.1"),
             prepareIndex("index").setId("4").setSource("not_ip", "something")
         );
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            StringTerms terms = response.getAggregations().get("my_terms");
+            assertEquals(2, terms.getBuckets().size());
+
+            StringTerms.Bucket bucket1 = terms.getBuckets().get(0);
+            assertEquals(2, bucket1.getDocCount());
+            assertEquals("127.0.0.1", bucket1.getKey());
+            assertEquals("127.0.0.1", bucket1.getKeyAsString());
+
+            StringTerms.Bucket bucket2 = terms.getBuckets().get(1);
+            assertEquals(2, bucket2.getDocCount());
+            assertEquals("192.168.1.7", bucket2.getKey());
+            assertEquals("192.168.1.7", bucket2.getKeyAsString());
+        },
             prepareSearch("index").addAggregation(
                 new TermsAggregationBuilder("my_terms").field("ip").missing("127.0.0.1").executionHint(randomExecutionHint())
-            ),
-            response -> {
-                StringTerms terms = response.getAggregations().get("my_terms");
-                assertEquals(2, terms.getBuckets().size());
-
-                StringTerms.Bucket bucket1 = terms.getBuckets().get(0);
-                assertEquals(2, bucket1.getDocCount());
-                assertEquals("127.0.0.1", bucket1.getKey());
-                assertEquals("127.0.0.1", bucket1.getKeyAsString());
-
-                StringTerms.Bucket bucket2 = terms.getBuckets().get(1);
-                assertEquals(2, bucket2.getDocCount());
-                assertEquals("192.168.1.7", bucket2.getKey());
-                assertEquals("192.168.1.7", bucket2.getKeyAsString());
-            }
+            )
         );
     }
 }

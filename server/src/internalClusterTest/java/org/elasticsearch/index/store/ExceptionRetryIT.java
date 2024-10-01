@@ -105,24 +105,21 @@ public class ExceptionRetryIT extends ESIntegTestCase {
         }
 
         refresh();
-        assertNoFailuresAndResponse(prepareSearch("index").setSize(numDocs * 2).addStoredField("_id"), response -> {
+        assertNoFailuresAndResponse(response -> {
             Set<String> uniqueIds = new HashSet<>();
             long dupCounter = 0;
             boolean found_duplicate_already = false;
             for (int i = 0; i < response.getHits().getHits().length; i++) {
                 if (uniqueIds.add(response.getHits().getHits()[i].getId()) == false) {
                     if (found_duplicate_already == false) {
-                        assertResponse(
-                            prepareSearch("index").setQuery(termQuery("_id", response.getHits().getHits()[i].getId())).setExplain(true),
-                            dupIdResponse -> {
-                                assertThat(dupIdResponse.getHits().getTotalHits().value, greaterThan(1L));
-                                logger.info("found a duplicate id:");
-                                for (SearchHit hit : dupIdResponse.getHits()) {
-                                    logger.info("Doc {} was found on shard {}", hit.getId(), hit.getShard().getShardId());
-                                }
-                                logger.info("will not print anymore in case more duplicates are found.");
+                        assertResponse(dupIdResponse -> {
+                            assertThat(dupIdResponse.getHits().getTotalHits().value, greaterThan(1L));
+                            logger.info("found a duplicate id:");
+                            for (SearchHit hit : dupIdResponse.getHits()) {
+                                logger.info("Doc {} was found on shard {}", hit.getId(), hit.getShard().getShardId());
                             }
-                        );
+                            logger.info("will not print anymore in case more duplicates are found.");
+                        }, prepareSearch("index").setQuery(termQuery("_id", response.getHits().getHits()[i].getId())).setExplain(true));
                         found_duplicate_already = true;
                     }
                     dupCounter++;
@@ -141,6 +138,6 @@ public class ExceptionRetryIT extends ESIntegTestCase {
             }
             assertTrue("exception must have been thrown otherwise setup is broken", exceptionThrown.get());
             assertTrue("maxUnsafeAutoIdTimestamp must be > than 0 we have at least one retry", maxUnsafeAutoIdTimestamp > -1);
-        });
+        }, prepareSearch("index").setSize(numDocs * 2).addStoredField("_id"));
     }
 }

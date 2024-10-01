@@ -66,146 +66,132 @@ public class ValueCountIT extends ESIntegTestCase {
     }
 
     public void testUnmapped() throws Exception {
-        assertResponse(prepareSearch("idx_unmapped").setQuery(matchAllQuery()).addAggregation(count("count").field("value")), response -> {
+        assertResponse(response -> {
             assertThat(response.getHits().getTotalHits().value, equalTo(0L));
 
             ValueCount valueCount = response.getAggregations().get("count");
             assertThat(valueCount, notNullValue());
             assertThat(valueCount.getName(), equalTo("count"));
             assertThat(valueCount.getValue(), equalTo(0L));
-        });
+        }, prepareSearch("idx_unmapped").setQuery(matchAllQuery()).addAggregation(count("count").field("value")));
     }
 
     public void testSingleValuedField() throws Exception {
-        assertResponse(prepareSearch("idx").setQuery(matchAllQuery()).addAggregation(count("count").field("value")), response -> {
+        assertResponse(response -> {
             assertHitCount(response, 10);
 
             ValueCount valueCount = response.getAggregations().get("count");
             assertThat(valueCount, notNullValue());
             assertThat(valueCount.getName(), equalTo("count"));
             assertThat(valueCount.getValue(), equalTo(10L));
-        });
+        }, prepareSearch("idx").setQuery(matchAllQuery()).addAggregation(count("count").field("value")));
     }
 
     public void testSingleValuedFieldGetProperty() throws Exception {
-        assertResponse(
-            prepareSearch("idx").setQuery(matchAllQuery()).addAggregation(global("global").subAggregation(count("count").field("value"))),
-            response -> {
+        assertResponse(response -> {
 
-                assertHitCount(response, 10);
+            assertHitCount(response, 10);
 
-                Global global = response.getAggregations().get("global");
-                assertThat(global, notNullValue());
-                assertThat(global.getName(), equalTo("global"));
-                assertThat(global.getDocCount(), equalTo(10L));
-                assertThat(global.getAggregations(), notNullValue());
-                assertThat(global.getAggregations().asList().size(), equalTo(1));
+            Global global = response.getAggregations().get("global");
+            assertThat(global, notNullValue());
+            assertThat(global.getName(), equalTo("global"));
+            assertThat(global.getDocCount(), equalTo(10L));
+            assertThat(global.getAggregations(), notNullValue());
+            assertThat(global.getAggregations().asList().size(), equalTo(1));
 
-                ValueCount valueCount = global.getAggregations().get("count");
-                assertThat(valueCount, notNullValue());
-                assertThat(valueCount.getName(), equalTo("count"));
-                assertThat(valueCount.getValue(), equalTo(10L));
-                assertThat((ValueCount) ((InternalAggregation) global).getProperty("count"), equalTo(valueCount));
-                assertThat((double) ((InternalAggregation) global).getProperty("count.value"), equalTo(10d));
-                assertThat((double) ((InternalAggregation) valueCount).getProperty("value"), equalTo(10d));
-            }
-        );
+            ValueCount valueCount = global.getAggregations().get("count");
+            assertThat(valueCount, notNullValue());
+            assertThat(valueCount.getName(), equalTo("count"));
+            assertThat(valueCount.getValue(), equalTo(10L));
+            assertThat((ValueCount) ((InternalAggregation) global).getProperty("count"), equalTo(valueCount));
+            assertThat((double) ((InternalAggregation) global).getProperty("count.value"), equalTo(10d));
+            assertThat((double) ((InternalAggregation) valueCount).getProperty("value"), equalTo(10d));
+        }, prepareSearch("idx").setQuery(matchAllQuery()).addAggregation(global("global").subAggregation(count("count").field("value"))));
     }
 
     public void testSingleValuedFieldPartiallyUnmapped() throws Exception {
-        assertResponse(
-            prepareSearch("idx", "idx_unmapped").setQuery(matchAllQuery()).addAggregation(count("count").field("value")),
-            response -> {
-                assertHitCount(response, 10);
+        assertResponse(response -> {
+            assertHitCount(response, 10);
 
-                ValueCount valueCount = response.getAggregations().get("count");
-                assertThat(valueCount, notNullValue());
-                assertThat(valueCount.getName(), equalTo("count"));
-                assertThat(valueCount.getValue(), equalTo(10L));
-            }
-        );
+            ValueCount valueCount = response.getAggregations().get("count");
+            assertThat(valueCount, notNullValue());
+            assertThat(valueCount.getName(), equalTo("count"));
+            assertThat(valueCount.getValue(), equalTo(10L));
+        }, prepareSearch("idx", "idx_unmapped").setQuery(matchAllQuery()).addAggregation(count("count").field("value")));
     }
 
     public void testMultiValuedField() throws Exception {
-        assertResponse(prepareSearch("idx").setQuery(matchAllQuery()).addAggregation(count("count").field("values")), response -> {
+        assertResponse(response -> {
             assertHitCount(response, 10);
 
             ValueCount valueCount = response.getAggregations().get("count");
             assertThat(valueCount, notNullValue());
             assertThat(valueCount.getName(), equalTo("count"));
             assertThat(valueCount.getValue(), equalTo(20L));
-        });
+        }, prepareSearch("idx").setQuery(matchAllQuery()).addAggregation(count("count").field("values")));
     }
 
     public void testSingleValuedScript() throws Exception {
-        assertResponse(
+        assertResponse(response -> {
+            assertHitCount(response, 10);
+
+            ValueCount valueCount = response.getAggregations().get("count");
+            assertThat(valueCount, notNullValue());
+            assertThat(valueCount.getName(), equalTo("count"));
+            assertThat(valueCount.getValue(), equalTo(10L));
+        },
             prepareSearch("idx").setQuery(matchAllQuery())
                 .addAggregation(
                     count("count").script(new Script(ScriptType.INLINE, METRIC_SCRIPT_ENGINE, VALUE_FIELD_SCRIPT, Collections.emptyMap()))
-                ),
-            response -> {
-                assertHitCount(response, 10);
-
-                ValueCount valueCount = response.getAggregations().get("count");
-                assertThat(valueCount, notNullValue());
-                assertThat(valueCount.getName(), equalTo("count"));
-                assertThat(valueCount.getValue(), equalTo(10L));
-            }
+                )
         );
     }
 
     public void testMultiValuedScript() throws Exception {
-        assertResponse(
+        assertResponse(response -> {
+            assertHitCount(response, 10);
+
+            ValueCount valueCount = response.getAggregations().get("count");
+            assertThat(valueCount, notNullValue());
+            assertThat(valueCount.getName(), equalTo("count"));
+            assertThat(valueCount.getValue(), equalTo(20L));
+        },
             prepareSearch("idx").setQuery(matchAllQuery())
                 .addAggregation(
                     count("count").script(
                         new Script(ScriptType.INLINE, METRIC_SCRIPT_ENGINE, SUM_VALUES_FIELD_SCRIPT, Collections.emptyMap())
                     )
-                ),
-            response -> {
-                assertHitCount(response, 10);
-
-                ValueCount valueCount = response.getAggregations().get("count");
-                assertThat(valueCount, notNullValue());
-                assertThat(valueCount.getName(), equalTo("count"));
-                assertThat(valueCount.getValue(), equalTo(20L));
-            }
+                )
         );
     }
 
     public void testSingleValuedScriptWithParams() throws Exception {
         Map<String, Object> params = Collections.singletonMap("field", "value");
-        assertResponse(
-            prepareSearch("idx").setQuery(matchAllQuery())
-                .addAggregation(
-                    count("count").script(new Script(ScriptType.INLINE, METRIC_SCRIPT_ENGINE, SUM_FIELD_PARAMS_SCRIPT, params))
-                ),
-            response -> {
-                assertHitCount(response, 10);
+        assertResponse(response -> {
+            assertHitCount(response, 10);
 
-                ValueCount valueCount = response.getAggregations().get("count");
-                assertThat(valueCount, notNullValue());
-                assertThat(valueCount.getName(), equalTo("count"));
-                assertThat(valueCount.getValue(), equalTo(10L));
-            }
+            ValueCount valueCount = response.getAggregations().get("count");
+            assertThat(valueCount, notNullValue());
+            assertThat(valueCount.getName(), equalTo("count"));
+            assertThat(valueCount.getValue(), equalTo(10L));
+        },
+            prepareSearch("idx").setQuery(matchAllQuery())
+                .addAggregation(count("count").script(new Script(ScriptType.INLINE, METRIC_SCRIPT_ENGINE, SUM_FIELD_PARAMS_SCRIPT, params)))
         );
     }
 
     public void testMultiValuedScriptWithParams() throws Exception {
         Map<String, Object> params = Collections.singletonMap("field", "values");
-        assertResponse(
-            prepareSearch("idx").setQuery(matchAllQuery())
-                .addAggregation(
-                    count("count").script(new Script(ScriptType.INLINE, METRIC_SCRIPT_ENGINE, SUM_FIELD_PARAMS_SCRIPT, params))
-                ),
-            response -> {
-                assertHitCount(response, 10);
+        assertResponse(response -> {
+            assertHitCount(response, 10);
 
-                ValueCount valueCount = response.getAggregations().get("count");
-                assertThat(valueCount, notNullValue());
-                assertThat(valueCount.getName(), equalTo("count"));
-                assertThat(valueCount.getValue(), equalTo(20L));
-            }
+            ValueCount valueCount = response.getAggregations().get("count");
+            assertThat(valueCount, notNullValue());
+            assertThat(valueCount.getName(), equalTo("count"));
+            assertThat(valueCount.getValue(), equalTo(20L));
+        },
+            prepareSearch("idx").setQuery(matchAllQuery())
+                .addAggregation(count("count").script(new Script(ScriptType.INLINE, METRIC_SCRIPT_ENGINE, SUM_FIELD_PARAMS_SCRIPT, params)))
         );
     }
 
@@ -283,35 +269,34 @@ public class ValueCountIT extends ESIntegTestCase {
     }
 
     public void testOrderByEmptyAggregation() throws Exception {
-        assertResponse(
+        assertResponse(response -> {
+            assertHitCount(response, 10);
+
+            Terms terms = response.getAggregations().get("terms");
+            assertThat(terms, notNullValue());
+            List<? extends Terms.Bucket> buckets = terms.getBuckets();
+            assertThat(buckets, notNullValue());
+            assertThat(buckets.size(), equalTo(10));
+
+            for (int i = 0; i < 10; i++) {
+                Terms.Bucket bucket = buckets.get(i);
+                assertThat(bucket, notNullValue());
+                assertThat(bucket.getKeyAsNumber(), equalTo((long) i + 1));
+                assertThat(bucket.getDocCount(), equalTo(1L));
+                Filter filter = bucket.getAggregations().get("filter");
+                assertThat(filter, notNullValue());
+                assertThat(filter.getDocCount(), equalTo(0L));
+                ValueCount count = filter.getAggregations().get("count");
+                assertThat(count, notNullValue());
+                assertThat(count.value(), equalTo(0.0));
+            }
+        },
             prepareSearch("idx").setQuery(matchAllQuery())
                 .addAggregation(
                     terms("terms").field("value")
                         .order(BucketOrder.compound(BucketOrder.aggregation("filter>count", true)))
                         .subAggregation(filter("filter", termQuery("value", 100)).subAggregation(count("count").field("value")))
-                ),
-            response -> {
-                assertHitCount(response, 10);
-
-                Terms terms = response.getAggregations().get("terms");
-                assertThat(terms, notNullValue());
-                List<? extends Terms.Bucket> buckets = terms.getBuckets();
-                assertThat(buckets, notNullValue());
-                assertThat(buckets.size(), equalTo(10));
-
-                for (int i = 0; i < 10; i++) {
-                    Terms.Bucket bucket = buckets.get(i);
-                    assertThat(bucket, notNullValue());
-                    assertThat(bucket.getKeyAsNumber(), equalTo((long) i + 1));
-                    assertThat(bucket.getDocCount(), equalTo(1L));
-                    Filter filter = bucket.getAggregations().get("filter");
-                    assertThat(filter, notNullValue());
-                    assertThat(filter.getDocCount(), equalTo(0L));
-                    ValueCount count = filter.getAggregations().get("count");
-                    assertThat(count, notNullValue());
-                    assertThat(count.value(), equalTo(0.0));
-                }
-            }
+                )
         );
     }
 }

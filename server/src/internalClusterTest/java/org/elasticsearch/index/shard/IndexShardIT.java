@@ -98,7 +98,6 @@ import static org.elasticsearch.cluster.routing.TestShardRouting.shardRoutingBui
 import static org.elasticsearch.index.shard.IndexShardTestCase.closeShardNoCheck;
 import static org.elasticsearch.index.shard.IndexShardTestCase.getTranslog;
 import static org.elasticsearch.index.shard.IndexShardTestCase.recoverFromStore;
-import static org.elasticsearch.indices.cluster.AbstractIndicesClusterStateServiceTestCase.awaitIndexShardCloseAsyncTasks;
 import static org.elasticsearch.test.LambdaMatchers.falseWith;
 import static org.elasticsearch.test.LambdaMatchers.trueWith;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
@@ -227,7 +226,7 @@ public class IndexShardIT extends ESSingleNodeTestCase {
         createIndex("test", idxSettings);
         ensureGreen("test");
         prepareIndex("test").setId("1").setSource("{}", XContentType.JSON).setRefreshPolicy(IMMEDIATE).get();
-        assertHitCount(client().prepareSearch("test"), 1L);
+        assertHitCount(1L, client().prepareSearch("test"));
         indicesAdmin().prepareDelete("test").get();
         awaitIndexShardCloseAsyncTasks();
         assertAllIndicesRemovedAndDeletionCompleted(Collections.singleton(getInstanceFromNode(IndicesService.class)));
@@ -263,7 +262,7 @@ public class IndexShardIT extends ESSingleNodeTestCase {
         prepareIndex(index).setId("1").setSource("foo", "bar").setRefreshPolicy(IMMEDIATE).get();
         ensureGreen(index);
 
-        assertHitCount(client().prepareSearch(index).setSize(0), 1L);
+        assertHitCount(1L, client().prepareSearch(index).setSize(0));
 
         logger.info("--> closing the index [{}]", index);
         assertAcked(indicesAdmin().prepareClose(index));
@@ -272,7 +271,7 @@ public class IndexShardIT extends ESSingleNodeTestCase {
         logger.info("--> index re-opened");
         ensureGreen(index);
 
-        assertHitCount(client().prepareSearch(index).setSize(0), 1L);
+        assertHitCount(1L, client().prepareSearch(index).setSize(0));
 
         // Now, try closing and changing the settings
         logger.info("--> closing the index [{}] before updating data_path", index);
@@ -309,7 +308,7 @@ public class IndexShardIT extends ESSingleNodeTestCase {
         logger.info("--> index re-opened");
         ensureGreen(index);
 
-        assertHitCount(client().prepareSearch(index).setSize(0), 1L);
+        assertHitCount(1L, client().prepareSearch(index).setSize(0));
 
         assertAcked(indicesAdmin().prepareDelete(index));
         awaitIndexShardCloseAsyncTasks();

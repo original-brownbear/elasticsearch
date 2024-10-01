@@ -32,13 +32,12 @@ public class CollapseSearchResultsIT extends ESIntegTestCase {
         index(indexName, "id_1", Map.of(collapseField, "value1"));
         index(indexName, "id_2", Map.of(collapseField, "value2"));
         refresh(indexName);
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(searchResponse -> {
+            assertEquals(collapseField, searchResponse.getHits().getCollapseField());
+            assertEquals(Set.of(new BytesRef("value1"), new BytesRef("value2")), Set.of(searchResponse.getHits().getCollapseValues()));
+        },
             prepareSearch(indexName).setQuery(new MatchAllQueryBuilder())
-                .setCollapse(new CollapseBuilder(collapseField).setInnerHits(new InnerHitBuilder("ih").setSize(2))),
-            searchResponse -> {
-                assertEquals(collapseField, searchResponse.getHits().getCollapseField());
-                assertEquals(Set.of(new BytesRef("value1"), new BytesRef("value2")), Set.of(searchResponse.getHits().getCollapseValues()));
-            }
+                .setCollapse(new CollapseBuilder(collapseField).setInnerHits(new InnerHitBuilder("ih").setSize(2)))
         );
     }
 
@@ -53,14 +52,13 @@ public class CollapseSearchResultsIT extends ESIntegTestCase {
         index(indexName, "id_2_0", Map.of(collapseField, "value2", otherField, "other_value3"));
         refresh(indexName);
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(searchResponse -> {
+            assertEquals(collapseField, searchResponse.getHits().getCollapseField());
+            assertEquals(Set.of(new BytesRef("value1"), new BytesRef("value2")), Set.of(searchResponse.getHits().getCollapseValues()));
+        },
             prepareSearch(indexName).setQuery(new MatchAllQueryBuilder())
                 .addDocValueField(otherField)
-                .setCollapse(new CollapseBuilder(collapseField).setInnerHits(new InnerHitBuilder("ih").setSize(2))),
-            searchResponse -> {
-                assertEquals(collapseField, searchResponse.getHits().getCollapseField());
-                assertEquals(Set.of(new BytesRef("value1"), new BytesRef("value2")), Set.of(searchResponse.getHits().getCollapseValues()));
-            }
+                .setCollapse(new CollapseBuilder(collapseField).setInnerHits(new InnerHitBuilder("ih").setSize(2)))
         );
     }
 
@@ -75,15 +73,14 @@ public class CollapseSearchResultsIT extends ESIntegTestCase {
         index(indexName, "id_2_0", Map.of(collapseField, "value2", otherField, "other_value3"));
         refresh(indexName);
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(searchResponse -> {
+            assertEquals(collapseField, searchResponse.getHits().getCollapseField());
+            assertEquals(Set.of(new BytesRef("value1"), new BytesRef("value2")), Set.of(searchResponse.getHits().getCollapseValues()));
+        },
             prepareSearch(indexName).setQuery(new MatchAllQueryBuilder())
                 .setFetchSource(false)
                 .addFetchField(otherField)
-                .setCollapse(new CollapseBuilder(collapseField).setInnerHits(new InnerHitBuilder("ih").setSize(2))),
-            searchResponse -> {
-                assertEquals(collapseField, searchResponse.getHits().getCollapseField());
-                assertEquals(Set.of(new BytesRef("value1"), new BytesRef("value2")), Set.of(searchResponse.getHits().getCollapseValues()));
-            }
+                .setCollapse(new CollapseBuilder(collapseField).setInnerHits(new InnerHitBuilder("ih").setSize(2)))
         );
     }
 
@@ -106,13 +103,11 @@ public class CollapseSearchResultsIT extends ESIntegTestCase {
         refresh(indexName);
 
         assertNoFailuresAndResponse(
+            searchResponse -> { assertEquals(collapseField, searchResponse.getHits().getCollapseField()); },
             prepareSearch(indexName).setQuery(new MatchAllQueryBuilder())
                 .setFetchSource(false)
                 .storedFields("*")
-                .setCollapse(new CollapseBuilder(collapseField)),
-            searchResponse -> {
-                assertEquals(collapseField, searchResponse.getHits().getCollapseField());
-            }
+                .setCollapse(new CollapseBuilder(collapseField))
         );
     }
 }

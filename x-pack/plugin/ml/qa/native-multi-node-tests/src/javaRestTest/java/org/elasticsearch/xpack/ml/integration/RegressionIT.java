@@ -117,7 +117,7 @@ public class RegressionIT extends MlNativeDataFrameAnalyticsIntegTestCase {
 
         // for debugging
         List<Map<String, Object>> badDocuments = new ArrayList<>();
-        assertResponse(prepareSearch(sourceIndex).setTrackTotalHits(true).setSize(1000), sourceData -> {
+        assertResponse(sourceData -> {
             int trainingDocsWithEmptyFeatureImportance = 0;
             int testDocsWithEmptyFeatureImportance = 0;
             for (SearchHit hit : sourceData.getHits()) {
@@ -170,7 +170,7 @@ public class RegressionIT extends MlNativeDataFrameAnalyticsIntegTestCase {
                 trainingDocsWithEmptyFeatureImportance + testDocsWithEmptyFeatureImportance,
                 equalTo(0)
             );
-        });
+        }, prepareSearch(sourceIndex).setTrackTotalHits(true).setSize(1000));
 
         assertProgressComplete(jobId);
         assertStoredProgressHits(jobId, 1);
@@ -206,7 +206,7 @@ public class RegressionIT extends MlNativeDataFrameAnalyticsIntegTestCase {
 
         startAnalytics(jobId);
         waitUntilAnalyticsIsStopped(jobId);
-        assertResponse(prepareSearch(sourceIndex).setTrackTotalHits(true).setSize(1000), sourceData -> {
+        assertResponse(sourceData -> {
             for (SearchHit hit : sourceData.getHits()) {
                 Map<String, Object> resultsObject = getMlResultsObjectFromDestDoc(getDestDoc(config, hit));
 
@@ -214,7 +214,7 @@ public class RegressionIT extends MlNativeDataFrameAnalyticsIntegTestCase {
                 assertThat(resultsObject.containsKey("is_training"), is(true));
                 assertThat(resultsObject.get("is_training"), is(true));
             }
-        });
+        }, prepareSearch(sourceIndex).setTrackTotalHits(true).setSize(1000));
 
         assertProgressComplete(jobId);
         assertStoredProgressHits(jobId, 1);
@@ -264,7 +264,7 @@ public class RegressionIT extends MlNativeDataFrameAnalyticsIntegTestCase {
         startAnalytics(jobId);
         waitUntilAnalyticsIsStopped(jobId);
 
-        assertResponse(prepareSearch(sourceIndex).setTrackTotalHits(true).setSize(1000), sourceData -> {
+        assertResponse(sourceData -> {
             int trainingRowsCount = 0;
             int nonTrainingRowsCount = 0;
             for (SearchHit hit : sourceData.getHits()) {
@@ -281,7 +281,7 @@ public class RegressionIT extends MlNativeDataFrameAnalyticsIntegTestCase {
             }
             assertThat(trainingRowsCount, greaterThan(0));
             assertThat(nonTrainingRowsCount, greaterThan(0));
-        });
+        }, prepareSearch(sourceIndex).setTrackTotalHits(true).setSize(1000));
 
         GetDataFrameAnalyticsStatsAction.Response.Stats stats = getAnalyticsStats(jobId);
         assertThat(stats.getDataCounts().getJobId(), equalTo(jobId));
@@ -345,7 +345,7 @@ public class RegressionIT extends MlNativeDataFrameAnalyticsIntegTestCase {
 
         waitUntilAnalyticsIsStopped(jobId);
 
-        assertResponse(prepareSearch(sourceIndex).setTrackTotalHits(true).setSize(1000), sourceData -> {
+        assertResponse(sourceData -> {
             for (SearchHit hit : sourceData.getHits()) {
                 Map<String, Object> resultsObject = getMlResultsObjectFromDestDoc(getDestDoc(config, hit));
 
@@ -353,7 +353,7 @@ public class RegressionIT extends MlNativeDataFrameAnalyticsIntegTestCase {
                 assertThat(resultsObject.containsKey("is_training"), is(true));
                 assertThat(resultsObject.get("is_training"), is(true));
             }
-        });
+        }, prepareSearch(sourceIndex).setTrackTotalHits(true).setSize(1000));
 
         assertProgressComplete(jobId);
         assertStoredProgressHits(jobId, 1);
@@ -441,7 +441,7 @@ public class RegressionIT extends MlNativeDataFrameAnalyticsIntegTestCase {
         // Now calling the _delete_expired_data API should remove unused state
         assertThat(deleteExpiredData().isDeleted(), is(true));
 
-        assertHitCount(prepareSearch(".ml-state*"), 0L);
+        assertHitCount(0L, prepareSearch(".ml-state*"));
     }
 
     public void testDependentVariableIsLong() throws Exception {
@@ -498,7 +498,7 @@ public class RegressionIT extends MlNativeDataFrameAnalyticsIntegTestCase {
         startAnalytics(jobId);
         waitUntilAnalyticsIsStopped(jobId);
 
-        assertResponse(prepareSearch(sourceIndex).setTrackTotalHits(true).setSize(1000), sourceData -> {
+        assertResponse(sourceData -> {
             for (SearchHit hit : sourceData.getHits()) {
                 Map<String, Object> destDoc = getDestDoc(config, hit);
                 Map<String, Object> resultsObject = getMlResultsObjectFromDestDoc(destDoc);
@@ -517,7 +517,7 @@ public class RegressionIT extends MlNativeDataFrameAnalyticsIntegTestCase {
                     )
                 );
             }
-        });
+        }, prepareSearch(sourceIndex).setTrackTotalHits(true).setSize(1000));
 
         assertProgressComplete(jobId);
         assertStoredProgressHits(jobId, 1);
@@ -617,7 +617,7 @@ public class RegressionIT extends MlNativeDataFrameAnalyticsIntegTestCase {
         int numberTrees = ensemble.getModels().size();
 
         StringBuilder targetsPredictions = new StringBuilder(); // used to investigate #90599
-        assertResponse(prepareSearch(sourceIndex).setSize(totalDocCount), sourceData -> {
+        assertResponse(sourceData -> {
             double predictionErrorSum = 0.0;
             for (SearchHit hit : sourceData.getHits()) {
                 Map<String, Object> destDoc = getDestDoc(config, hit);
@@ -642,7 +642,7 @@ public class RegressionIT extends MlNativeDataFrameAnalyticsIntegTestCase {
                 meanPredictionError,
                 lessThanOrEqualTo(3.0)
             );
-        });
+        }, prepareSearch(sourceIndex).setSize(totalDocCount));
 
         assertProgressComplete(jobId);
         assertStoredProgressHits(jobId, 1);
@@ -702,7 +702,7 @@ public class RegressionIT extends MlNativeDataFrameAnalyticsIntegTestCase {
         waitUntilAnalyticsIsStopped(jobId);
 
         // for debugging
-        assertResponse(prepareSearch(sourceIndex).setTrackTotalHits(true).setSize(1000), sourceData -> {
+        assertResponse(sourceData -> {
             for (SearchHit hit : sourceData.getHits()) {
                 Map<String, Object> destDoc = getDestDoc(config, hit);
                 Map<String, Object> resultsObject = getMlResultsObjectFromDestDoc(destDoc);
@@ -711,7 +711,7 @@ public class RegressionIT extends MlNativeDataFrameAnalyticsIntegTestCase {
                 assertThat(resultsObject.containsKey("is_training"), is(true));
                 assertThat(resultsObject.get("is_training"), is(destDoc.containsKey(DEPENDENT_VARIABLE_FIELD)));
             }
-        });
+        }, prepareSearch(sourceIndex).setTrackTotalHits(true).setSize(1000));
 
         assertProgressComplete(jobId);
         assertStoredProgressHits(jobId, 1);
@@ -793,7 +793,7 @@ public class RegressionIT extends MlNativeDataFrameAnalyticsIntegTestCase {
 
         startAnalytics(jobId);
         waitUntilAnalyticsIsStopped(jobId);
-        assertResponse(prepareSearch(destIndex).setTrackTotalHits(true).setSize(1000), destData -> {
+        assertResponse(destData -> {
             for (SearchHit hit : destData.getHits()) {
                 Map<String, Object> destDoc = hit.getSourceAsMap();
                 Map<String, Object> resultsObject = getMlResultsObjectFromDestDoc(destDoc);
@@ -806,7 +806,7 @@ public class RegressionIT extends MlNativeDataFrameAnalyticsIntegTestCase {
                 assertThat(importanceArray, hasSize(1));
                 assertThat(importanceArray.get(0), hasEntry("feature_name", numericRuntimeField));
             }
-        });
+        }, prepareSearch(destIndex).setTrackTotalHits(true).setSize(1000));
 
         assertProgressComplete(jobId);
         assertStoredProgressHits(jobId, 1);

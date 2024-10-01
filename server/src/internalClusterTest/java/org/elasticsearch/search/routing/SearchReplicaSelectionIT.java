@@ -50,18 +50,18 @@ public class SearchReplicaSelectionIT extends ESIntegTestCase {
 
         // Before we've gathered stats for all nodes, we should try each node once.
         Set<String> nodeIds = new HashSet<>();
-        assertResponse(client.prepareSearch().setQuery(matchAllQuery()), response -> {
+        assertResponse(response -> {
             assertThat(response.getHits().getTotalHits().value, equalTo(1L));
             nodeIds.add(response.getHits().getAt(0).getShard().getNodeId());
-        });
-        assertResponse(client.prepareSearch().setQuery(matchAllQuery()), response -> {
+        }, client.prepareSearch().setQuery(matchAllQuery()));
+        assertResponse(response -> {
             assertThat(response.getHits().getTotalHits().value, equalTo(1L));
             nodeIds.add(response.getHits().getAt(0).getShard().getNodeId());
-        });
-        assertResponse(client.prepareSearch().setQuery(matchAllQuery()), response -> {
+        }, client.prepareSearch().setQuery(matchAllQuery()));
+        assertResponse(response -> {
             assertThat(response.getHits().getTotalHits().value, equalTo(1L));
             nodeIds.add(response.getHits().getAt(0).getShard().getNodeId());
-        });
+        }, client.prepareSearch().setQuery(matchAllQuery()));
         assertEquals(3, nodeIds.size());
 
         // Now after more searches, we should select a node with the lowest ARS rank.
@@ -79,7 +79,7 @@ public class SearchReplicaSelectionIT extends ESIntegTestCase {
         assertNotNull(nodeStats);
         assertEquals(3, nodeStats.getAdaptiveSelectionStats().getComputedStats().size());
 
-        assertResponse(client.prepareSearch().setQuery(matchAllQuery()), response -> {
+        assertResponse(response -> {
             String selectedNodeId = response.getHits().getAt(0).getShard().getNodeId();
             double selectedRank = nodeStats.getAdaptiveSelectionStats().getRanks().get(selectedNodeId);
 
@@ -87,6 +87,6 @@ public class SearchReplicaSelectionIT extends ESIntegTestCase {
                 double rank = entry.getValue();
                 assertThat(rank, greaterThanOrEqualTo(selectedRank));
             }
-        });
+        }, client.prepareSearch().setQuery(matchAllQuery()));
     }
 }

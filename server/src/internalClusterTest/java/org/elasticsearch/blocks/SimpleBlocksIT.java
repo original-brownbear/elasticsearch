@@ -263,7 +263,7 @@ public class SimpleBlocksIT extends ESIntegTestCase {
         }
 
         indicesAdmin().prepareRefresh(indexName).get();
-        assertHitCount(prepareSearch(indexName).setSize(0), nbDocs);
+        assertHitCount(nbDocs, prepareSearch(indexName).setSize(0));
     }
 
     public void testSameBlockTwice() throws Exception {
@@ -374,7 +374,7 @@ public class SimpleBlocksIT extends ESIntegTestCase {
             disableIndexBlock(indexName, block);
         }
         refresh(indexName);
-        assertHitCount(prepareSearch(indexName).setSize(0).setTrackTotalHitsUpTo(TRACK_TOTAL_HITS_ACCURATE), nbDocs);
+        assertHitCount(nbDocs, prepareSearch(indexName).setSize(0).setTrackTotalHitsUpTo(TRACK_TOTAL_HITS_ACCURATE));
     }
 
     public void testAddBlockWhileDeletingIndices() throws Exception {

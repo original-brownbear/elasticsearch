@@ -184,7 +184,7 @@ public class BootStrapTests extends AbstractWatcherIntegrationTestCase {
             );
         }
         bulkRequestBuilder.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE).get();
-        assertHitCount(prepareSearch(Watch.INDEX).setSize(0), numWatches);
+        assertHitCount(numWatches, prepareSearch(Watch.INDEX).setSize(0));
 
         startWatcher();
 
@@ -295,13 +295,13 @@ public class BootStrapTests extends AbstractWatcherIntegrationTestCase {
             assertThat(maxSize, equalTo(0L));
             AtomicLong successfulWatchExecutions = new AtomicLong();
             refresh();
-            assertResponse(prepareSearch("output"), searchResponse -> {
+            assertResponse(searchResponse -> {
                 assertThat(searchResponse.getHits().getTotalHits().value, is(greaterThanOrEqualTo(numberOfWatches)));
                 successfulWatchExecutions.set(searchResponse.getHits().getTotalHits().value);
-            });
+            }, prepareSearch("output"));
 
             // the watch history should contain entries for each triggered watch, which a few have been marked as not executed
-            assertResponse(prepareSearch(HistoryStoreField.INDEX_PREFIX + "*").setSize(10000), historySearchResponse -> {
+            assertResponse(historySearchResponse -> {
                 assertHitCount(historySearchResponse, expectedWatchHistoryCount);
                 long notExecutedCount = Arrays.stream(historySearchResponse.getHits().getHits())
                     .filter(hit -> hit.getSourceAsMap().get("state").equals(ExecutionState.NOT_EXECUTED_ALREADY_QUEUED.id()))
@@ -313,7 +313,7 @@ public class BootStrapTests extends AbstractWatcherIntegrationTestCase {
                     successfulWatchExecutions
                 );
                 assertThat(notExecutedCount, is(expectedWatchHistoryCount - successfulWatchExecutions.get()));
-            });
+            }, prepareSearch(HistoryStoreField.INDEX_PREFIX + "*").setSize(10000));
         }, 20, TimeUnit.SECONDS);
     }
 
@@ -377,12 +377,12 @@ public class BootStrapTests extends AbstractWatcherIntegrationTestCase {
             // but even then since the execution of the watch record is async it may take a little bit before
             // the actual documents are in the output index
             refresh();
-            assertResponse(prepareSearch(HistoryStoreField.DATA_STREAM).setSize(numRecords), searchResponse -> {
+            assertResponse(searchResponse -> {
                 assertThat(searchResponse.getHits().getTotalHits().value, Matchers.equalTo((long) numRecords));
                 for (int i = 0; i < numRecords; i++) {
                     assertThat(searchResponse.getHits().getAt(i).getSourceAsMap().get("state"), is(ExecutionState.EXECUTED.id()));
                 }
-            });
+            }, prepareSearch(HistoryStoreField.DATA_STREAM).setSize(numRecords));
         });
     }
 }

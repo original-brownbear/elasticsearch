@@ -49,34 +49,31 @@ public class StatsIT extends AbstractNumericTestCase {
 
     @Override
     public void testEmptyAggregation() throws Exception {
-        assertResponse(
-            prepareSearch("empty_bucket_idx").setQuery(matchAllQuery())
-                .addAggregation(
-                    histogram("histo").field("value").interval(1L).minDocCount(0).subAggregation(stats("stats").field("value"))
-                ),
-            response -> {
-                assertShardExecutionState(response, 0);
-                assertThat(response.getHits().getTotalHits().value, equalTo(2L));
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                Histogram.Bucket bucket = histo.getBuckets().get(1);
-                assertThat(bucket, notNullValue());
+        assertResponse(response -> {
+            assertShardExecutionState(response, 0);
+            assertThat(response.getHits().getTotalHits().value, equalTo(2L));
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            Histogram.Bucket bucket = histo.getBuckets().get(1);
+            assertThat(bucket, notNullValue());
 
-                Stats stats = bucket.getAggregations().get("stats");
-                assertThat(stats, notNullValue());
-                assertThat(stats.getName(), equalTo("stats"));
-                assertThat(stats.getCount(), equalTo(0L));
-                assertThat(stats.getSum(), equalTo(0.0));
-                assertThat(stats.getMin(), equalTo(Double.POSITIVE_INFINITY));
-                assertThat(stats.getMax(), equalTo(Double.NEGATIVE_INFINITY));
-                assertThat(Double.isNaN(stats.getAvg()), is(true));
-            }
+            Stats stats = bucket.getAggregations().get("stats");
+            assertThat(stats, notNullValue());
+            assertThat(stats.getName(), equalTo("stats"));
+            assertThat(stats.getCount(), equalTo(0L));
+            assertThat(stats.getSum(), equalTo(0.0));
+            assertThat(stats.getMin(), equalTo(Double.POSITIVE_INFINITY));
+            assertThat(stats.getMax(), equalTo(Double.NEGATIVE_INFINITY));
+            assertThat(Double.isNaN(stats.getAvg()), is(true));
+        },
+            prepareSearch("empty_bucket_idx").setQuery(matchAllQuery())
+                .addAggregation(histogram("histo").field("value").interval(1L).minDocCount(0).subAggregation(stats("stats").field("value")))
         );
     }
 
     @Override
     public void testSingleValuedField() throws Exception {
-        assertResponse(prepareSearch("idx").setQuery(matchAllQuery()).addAggregation(stats("stats").field("value")), response -> {
+        assertResponse(response -> {
             assertShardExecutionState(response, 0);
 
             assertHitCount(response, 10);
@@ -89,74 +86,68 @@ public class StatsIT extends AbstractNumericTestCase {
             assertThat(stats.getMax(), equalTo(10.0));
             assertThat(stats.getSum(), equalTo((double) 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10));
             assertThat(stats.getCount(), equalTo(10L));
-        });
+        }, prepareSearch("idx").setQuery(matchAllQuery()).addAggregation(stats("stats").field("value")));
     }
 
     public void testSingleValuedField_WithFormatter() throws Exception {
 
-        assertResponse(
-            prepareSearch("idx").setQuery(matchAllQuery()).addAggregation(stats("stats").format("0000.0").field("value")),
-            response -> {
-                assertHitCount(response, 10);
+        assertResponse(response -> {
+            assertHitCount(response, 10);
 
-                Stats stats = response.getAggregations().get("stats");
-                assertThat(stats, notNullValue());
-                assertThat(stats.getName(), equalTo("stats"));
-                assertThat(stats.getAvg(), equalTo((double) (1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10) / 10));
-                assertThat(stats.getAvgAsString(), equalTo("0005.5"));
-                assertThat(stats.getMin(), equalTo(1.0));
-                assertThat(stats.getMinAsString(), equalTo("0001.0"));
-                assertThat(stats.getMax(), equalTo(10.0));
-                assertThat(stats.getMaxAsString(), equalTo("0010.0"));
-                assertThat(stats.getSum(), equalTo((double) 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10));
-                assertThat(stats.getSumAsString(), equalTo("0055.0"));
-                assertThat(stats.getCount(), equalTo(10L));
-            }
-        );
+            Stats stats = response.getAggregations().get("stats");
+            assertThat(stats, notNullValue());
+            assertThat(stats.getName(), equalTo("stats"));
+            assertThat(stats.getAvg(), equalTo((double) (1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10) / 10));
+            assertThat(stats.getAvgAsString(), equalTo("0005.5"));
+            assertThat(stats.getMin(), equalTo(1.0));
+            assertThat(stats.getMinAsString(), equalTo("0001.0"));
+            assertThat(stats.getMax(), equalTo(10.0));
+            assertThat(stats.getMaxAsString(), equalTo("0010.0"));
+            assertThat(stats.getSum(), equalTo((double) 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10));
+            assertThat(stats.getSumAsString(), equalTo("0055.0"));
+            assertThat(stats.getCount(), equalTo(10L));
+        }, prepareSearch("idx").setQuery(matchAllQuery()).addAggregation(stats("stats").format("0000.0").field("value")));
     }
 
     @Override
     public void testSingleValuedFieldGetProperty() throws Exception {
-        assertResponse(
-            prepareSearch("idx").setQuery(matchAllQuery()).addAggregation(global("global").subAggregation(stats("stats").field("value"))),
-            response -> {
-                assertHitCount(response, 10);
+        assertResponse(response -> {
+            assertHitCount(response, 10);
 
-                Global global = response.getAggregations().get("global");
-                assertThat(global, notNullValue());
-                assertThat(global.getName(), equalTo("global"));
-                assertThat(global.getDocCount(), equalTo(10L));
-                assertThat(global.getAggregations(), notNullValue());
-                assertThat(global.getAggregations().asList().size(), equalTo(1));
+            Global global = response.getAggregations().get("global");
+            assertThat(global, notNullValue());
+            assertThat(global.getName(), equalTo("global"));
+            assertThat(global.getDocCount(), equalTo(10L));
+            assertThat(global.getAggregations(), notNullValue());
+            assertThat(global.getAggregations().asList().size(), equalTo(1));
 
-                Stats stats = global.getAggregations().get("stats");
-                assertThat(stats, notNullValue());
-                assertThat(stats.getName(), equalTo("stats"));
-                Stats statsFromProperty = (Stats) ((InternalAggregation) global).getProperty("stats");
-                assertThat(statsFromProperty, notNullValue());
-                assertThat(statsFromProperty, sameInstance(stats));
-                double expectedAvgValue = (double) (1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10) / 10;
-                assertThat(stats.getAvg(), equalTo(expectedAvgValue));
-                assertThat((double) ((InternalAggregation) global).getProperty("stats.avg"), equalTo(expectedAvgValue));
-                double expectedMinValue = 1.0;
-                assertThat(stats.getMin(), equalTo(expectedMinValue));
-                assertThat((double) ((InternalAggregation) global).getProperty("stats.min"), equalTo(expectedMinValue));
-                double expectedMaxValue = 10.0;
-                assertThat(stats.getMax(), equalTo(expectedMaxValue));
-                assertThat((double) ((InternalAggregation) global).getProperty("stats.max"), equalTo(expectedMaxValue));
-                double expectedSumValue = 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10;
-                assertThat(stats.getSum(), equalTo(expectedSumValue));
-                assertThat((double) ((InternalAggregation) global).getProperty("stats.sum"), equalTo(expectedSumValue));
-                long expectedCountValue = 10;
-                assertThat(stats.getCount(), equalTo(expectedCountValue));
-                assertThat((double) ((InternalAggregation) global).getProperty("stats.count"), equalTo((double) expectedCountValue));
-            }
-        );
+            Stats stats = global.getAggregations().get("stats");
+            assertThat(stats, notNullValue());
+            assertThat(stats.getName(), equalTo("stats"));
+            Stats statsFromProperty = (Stats) ((InternalAggregation) global).getProperty("stats");
+            assertThat(statsFromProperty, notNullValue());
+            assertThat(statsFromProperty, sameInstance(stats));
+            double expectedAvgValue = (double) (1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10) / 10;
+            assertThat(stats.getAvg(), equalTo(expectedAvgValue));
+            assertThat((double) ((InternalAggregation) global).getProperty("stats.avg"), equalTo(expectedAvgValue));
+            double expectedMinValue = 1.0;
+            assertThat(stats.getMin(), equalTo(expectedMinValue));
+            assertThat((double) ((InternalAggregation) global).getProperty("stats.min"), equalTo(expectedMinValue));
+            double expectedMaxValue = 10.0;
+            assertThat(stats.getMax(), equalTo(expectedMaxValue));
+            assertThat((double) ((InternalAggregation) global).getProperty("stats.max"), equalTo(expectedMaxValue));
+            double expectedSumValue = 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10;
+            assertThat(stats.getSum(), equalTo(expectedSumValue));
+            assertThat((double) ((InternalAggregation) global).getProperty("stats.sum"), equalTo(expectedSumValue));
+            long expectedCountValue = 10;
+            assertThat(stats.getCount(), equalTo(expectedCountValue));
+            assertThat((double) ((InternalAggregation) global).getProperty("stats.count"), equalTo((double) expectedCountValue));
+        }, prepareSearch("idx").setQuery(matchAllQuery()).addAggregation(global("global").subAggregation(stats("stats").field("value"))));
     }
 
     @Override
     public void testMultiValuedField() throws Exception {
-        assertResponse(prepareSearch("idx").setQuery(matchAllQuery()).addAggregation(stats("stats").field("values")), response -> {
+        assertResponse(response -> {
             assertShardExecutionState(response, 0);
 
             assertHitCount(response, 10);
@@ -175,45 +166,44 @@ public class StatsIT extends AbstractNumericTestCase {
                 equalTo((double) 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 + 12)
             );
             assertThat(stats.getCount(), equalTo(20L));
-        });
+        }, prepareSearch("idx").setQuery(matchAllQuery()).addAggregation(stats("stats").field("values")));
     }
 
     @Override
     public void testOrderByEmptyAggregation() throws Exception {
-        assertResponse(
+        assertResponse(response -> {
+            assertHitCount(response, 10);
+
+            Terms terms = response.getAggregations().get("terms");
+            assertThat(terms, notNullValue());
+            List<? extends Terms.Bucket> buckets = terms.getBuckets();
+            assertThat(buckets, notNullValue());
+            assertThat(buckets.size(), equalTo(10));
+
+            for (int i = 0; i < 10; i++) {
+                Terms.Bucket bucket = buckets.get(i);
+                assertThat(bucket, notNullValue());
+                assertThat(bucket.getKeyAsNumber(), equalTo((long) i + 1));
+                assertThat(bucket.getDocCount(), equalTo(1L));
+                Filter filter = bucket.getAggregations().get("filter");
+                assertThat(filter, notNullValue());
+                assertThat(filter.getDocCount(), equalTo(0L));
+                Stats stats = filter.getAggregations().get("stats");
+                assertThat(stats, notNullValue());
+                assertThat(stats.getMin(), equalTo(Double.POSITIVE_INFINITY));
+                assertThat(stats.getMax(), equalTo(Double.NEGATIVE_INFINITY));
+                assertThat(stats.getAvg(), equalTo(Double.NaN));
+                assertThat(stats.getSum(), equalTo(0.0));
+                assertThat(stats.getCount(), equalTo(0L));
+
+            }
+        },
             prepareSearch("idx").setQuery(matchAllQuery())
                 .addAggregation(
                     terms("terms").field("value")
                         .order(BucketOrder.compound(BucketOrder.aggregation("filter>stats.avg", true)))
                         .subAggregation(filter("filter", termQuery("value", 100)).subAggregation(stats("stats").field("value")))
-                ),
-            response -> {
-                assertHitCount(response, 10);
-
-                Terms terms = response.getAggregations().get("terms");
-                assertThat(terms, notNullValue());
-                List<? extends Terms.Bucket> buckets = terms.getBuckets();
-                assertThat(buckets, notNullValue());
-                assertThat(buckets.size(), equalTo(10));
-
-                for (int i = 0; i < 10; i++) {
-                    Terms.Bucket bucket = buckets.get(i);
-                    assertThat(bucket, notNullValue());
-                    assertThat(bucket.getKeyAsNumber(), equalTo((long) i + 1));
-                    assertThat(bucket.getDocCount(), equalTo(1L));
-                    Filter filter = bucket.getAggregations().get("filter");
-                    assertThat(filter, notNullValue());
-                    assertThat(filter.getDocCount(), equalTo(0L));
-                    Stats stats = filter.getAggregations().get("stats");
-                    assertThat(stats, notNullValue());
-                    assertThat(stats.getMin(), equalTo(Double.POSITIVE_INFINITY));
-                    assertThat(stats.getMax(), equalTo(Double.NEGATIVE_INFINITY));
-                    assertThat(stats.getAvg(), equalTo(Double.NaN));
-                    assertThat(stats.getSum(), equalTo(0.0));
-                    assertThat(stats.getCount(), equalTo(0L));
-
-                }
-            }
+                )
         );
     }
 

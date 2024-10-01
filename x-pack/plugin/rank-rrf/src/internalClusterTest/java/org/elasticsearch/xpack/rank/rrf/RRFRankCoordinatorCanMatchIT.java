@@ -130,7 +130,12 @@ public class RRFRankCoordinatorCanMatchIT extends ESIntegTestCase {
         });
 
         // match 2 separate shard with no overlap in queries
-        assertResponse(
+        assertResponse(response -> {
+            assertNull(response.getHits().getTotalHits());
+            assertEquals(5, response.getHits().getHits().length);
+            assertEquals(5, response.getSuccessfulShards());
+            assertEquals(3, response.getSkippedShards());
+        },
             prepareSearch("time_index").setSearchType(SearchType.QUERY_THEN_FETCH)
                 .setPreFilterShardSize(1)
                 .setRankBuilder(new RRFRankBuilder(20, 1))
@@ -141,17 +146,16 @@ public class RRFRankCoordinatorCanMatchIT extends ESIntegTestCase {
                         new SubSearchSourceBuilder(QueryBuilders.rangeQuery("@timestamp").gte(500).lt(505))
                     )
                 )
-                .setSize(5),
-            response -> {
-                assertNull(response.getHits().getTotalHits());
-                assertEquals(5, response.getHits().getHits().length);
-                assertEquals(5, response.getSuccessfulShards());
-                assertEquals(3, response.getSkippedShards());
-            }
+                .setSize(5)
         );
 
         // match 2 shards with overlap in queries
-        assertResponse(
+        assertResponse(response -> {
+            assertNull(response.getHits().getTotalHits());
+            assertEquals(5, response.getHits().getHits().length);
+            assertEquals(5, response.getSuccessfulShards());
+            assertEquals(3, response.getSkippedShards());
+        },
             prepareSearch("time_index").setSearchType(SearchType.QUERY_THEN_FETCH)
                 .setPreFilterShardSize(1)
                 .setRankBuilder(new RRFRankBuilder(20, 1))
@@ -162,17 +166,16 @@ public class RRFRankCoordinatorCanMatchIT extends ESIntegTestCase {
                         new SubSearchSourceBuilder(QueryBuilders.rangeQuery("@timestamp").gte(497).lt(507))
                     )
                 )
-                .setSize(5),
-            response -> {
-                assertNull(response.getHits().getTotalHits());
-                assertEquals(5, response.getHits().getHits().length);
-                assertEquals(5, response.getSuccessfulShards());
-                assertEquals(3, response.getSkippedShards());
-            }
+                .setSize(5)
         );
 
         // match one shard with one query in range and one query out of range
-        assertResponse(
+        assertResponse(response -> {
+            assertNull(response.getHits().getTotalHits());
+            assertEquals(4, response.getHits().getHits().length);
+            assertEquals(5, response.getSuccessfulShards());
+            assertEquals(4, response.getSkippedShards());
+        },
             prepareSearch("time_index").setSearchType(SearchType.QUERY_THEN_FETCH)
                 .setPreFilterShardSize(1)
                 .setRankBuilder(new RRFRankBuilder(20, 1))
@@ -183,17 +186,16 @@ public class RRFRankCoordinatorCanMatchIT extends ESIntegTestCase {
                         new SubSearchSourceBuilder(QueryBuilders.rangeQuery("@timestamp").gte(10000).lt(10005))
                     )
                 )
-                .setSize(5),
-            response -> {
-                assertNull(response.getHits().getTotalHits());
-                assertEquals(4, response.getHits().getHits().length);
-                assertEquals(5, response.getSuccessfulShards());
-                assertEquals(4, response.getSkippedShards());
-            }
+                .setSize(5)
         );
 
         // match no shards, but still use one to generate a search response
-        assertResponse(
+        assertResponse(response -> {
+            assertNull(response.getHits().getTotalHits());
+            assertEquals(0, response.getHits().getHits().length);
+            assertEquals(5, response.getSuccessfulShards());
+            assertEquals(4, response.getSkippedShards());
+        },
             prepareSearch("time_index").setSearchType(SearchType.QUERY_THEN_FETCH)
                 .setPreFilterShardSize(1)
                 .setRankBuilder(new RRFRankBuilder(20, 1))
@@ -204,17 +206,16 @@ public class RRFRankCoordinatorCanMatchIT extends ESIntegTestCase {
                         new SubSearchSourceBuilder(QueryBuilders.rangeQuery("@timestamp").gte(10000).lt(10005))
                     )
                 )
-                .setSize(5),
-            response -> {
-                assertNull(response.getHits().getTotalHits());
-                assertEquals(0, response.getHits().getHits().length);
-                assertEquals(5, response.getSuccessfulShards());
-                assertEquals(4, response.getSkippedShards());
-            }
+                .setSize(5)
         );
 
         // match one shard with with no overlap in queries
-        assertResponse(
+        assertResponse(response -> {
+            assertNull(response.getHits().getTotalHits());
+            assertEquals(5, response.getHits().getHits().length);
+            assertEquals(5, response.getSuccessfulShards());
+            assertEquals(4, response.getSkippedShards());
+        },
             prepareSearch("time_index").setSearchType(SearchType.QUERY_THEN_FETCH)
                 .setPreFilterShardSize(1)
                 .setRankBuilder(new RRFRankBuilder(20, 1))
@@ -225,17 +226,16 @@ public class RRFRankCoordinatorCanMatchIT extends ESIntegTestCase {
                         new SubSearchSourceBuilder(QueryBuilders.rangeQuery("@timestamp").gte(700).lt(705))
                     )
                 )
-                .setSize(5),
-            response -> {
-                assertNull(response.getHits().getTotalHits());
-                assertEquals(5, response.getHits().getHits().length);
-                assertEquals(5, response.getSuccessfulShards());
-                assertEquals(4, response.getSkippedShards());
-            }
+                .setSize(5)
         );
 
         // match one shard with exact overlap in queries
-        assertResponse(
+        assertResponse(response -> {
+            assertNull(response.getHits().getTotalHits());
+            assertEquals(5, response.getHits().getHits().length);
+            assertEquals(5, response.getSuccessfulShards());
+            assertEquals(4, response.getSkippedShards());
+        },
             prepareSearch("time_index").setSearchType(SearchType.QUERY_THEN_FETCH)
                 .setPreFilterShardSize(1)
                 .setRankBuilder(new RRFRankBuilder(20, 1))
@@ -246,13 +246,7 @@ public class RRFRankCoordinatorCanMatchIT extends ESIntegTestCase {
                         new SubSearchSourceBuilder(QueryBuilders.rangeQuery("@timestamp").gte(600).lt(605))
                     )
                 )
-                .setSize(5),
-            response -> {
-                assertNull(response.getHits().getTotalHits());
-                assertEquals(5, response.getHits().getHits().length);
-                assertEquals(5, response.getSuccessfulShards());
-                assertEquals(4, response.getSkippedShards());
-            }
+                .setSize(5)
         );
     }
 }

@@ -54,10 +54,10 @@ public class DateMathIndexExpressionsIntegrationIT extends ESIntegTestCase {
             ZonedDateTime.now(ZoneOffset.UTC).getDayOfYear() == now.getDayOfYear()
         );
         try {
-            assertResponse(builder, response -> {
+            assertResponse(response -> {
                 dayChangeAssumption.run();
                 consumer.accept(response);
-            });
+            }, builder);
         } catch (IndexNotFoundException e) {
             // index resolver throws this if it does not find the exact index due to day changes
             dayChangeAssumption.run();

@@ -166,7 +166,7 @@ public class EquivalenceIT extends ESIntegTestCase {
             reqBuilder = reqBuilder.addAggregation(filter("filter" + i, filter));
         }
 
-        assertResponse(reqBuilder, response -> {
+        assertResponse(response -> {
             Range range = response.getAggregations().get("range");
             List<? extends Bucket> buckets = range.getBuckets();
 
@@ -187,14 +187,14 @@ public class EquivalenceIT extends ESIntegTestCase {
                     }
                 }
 
-                final Range.Bucket bucket = bucketMap.get(Integer.toString(i));
+                final Bucket bucket = bucketMap.get(Integer.toString(i));
                 assertEquals(bucket.getKeyAsString(), Integer.toString(i), bucket.getKeyAsString());
                 assertEquals(bucket.getKeyAsString(), count, bucket.getDocCount());
 
                 final Filter filter = response.getAggregations().get("filter" + i);
                 assertThat(filter.getDocCount(), equalTo(count));
             }
-        });
+        }, reqBuilder);
     }
 
     // test long/double/string terms aggs with high number of buckets that require array growth
@@ -257,7 +257,36 @@ public class EquivalenceIT extends ESIntegTestCase {
 
         assertNoFailures(indicesAdmin().prepareRefresh("idx").setIndicesOptions(IndicesOptions.lenientExpandOpen()).execute().get());
 
-        assertResponse(
+        assertResponse(response -> {
+            assertAllSuccessful(response);
+            assertEquals(numDocs, response.getHits().getTotalHits().value);
+
+            final Terms longTerms = response.getAggregations().get("long");
+            final Terms doubleTerms = response.getAggregations().get("double");
+            final Terms stringMapTerms = response.getAggregations().get("string_map");
+            final Terms stringGlobalOrdinalsTerms = response.getAggregations().get("string_global_ordinals");
+            final Terms stringGlobalOrdinalsDVTerms = response.getAggregations().get("string_global_ordinals_doc_values");
+
+            assertEquals(valuesSet.size(), longTerms.getBuckets().size());
+            assertEquals(valuesSet.size(), doubleTerms.getBuckets().size());
+            assertEquals(valuesSet.size(), stringMapTerms.getBuckets().size());
+            assertEquals(valuesSet.size(), stringGlobalOrdinalsTerms.getBuckets().size());
+            assertEquals(valuesSet.size(), stringGlobalOrdinalsDVTerms.getBuckets().size());
+            for (Terms.Bucket bucket : longTerms.getBuckets()) {
+                final Terms.Bucket doubleBucket = doubleTerms.getBucketByKey(Double.toString(Long.parseLong(bucket.getKeyAsString())));
+                final Terms.Bucket stringMapBucket = stringMapTerms.getBucketByKey(bucket.getKeyAsString());
+                final Terms.Bucket stringGlobalOrdinalsBucket = stringGlobalOrdinalsTerms.getBucketByKey(bucket.getKeyAsString());
+                final Terms.Bucket stringGlobalOrdinalsDVBucket = stringGlobalOrdinalsDVTerms.getBucketByKey(bucket.getKeyAsString());
+                assertNotNull(doubleBucket);
+                assertNotNull(stringMapBucket);
+                assertNotNull(stringGlobalOrdinalsBucket);
+                assertNotNull(stringGlobalOrdinalsDVBucket);
+                assertEquals(bucket.getDocCount(), doubleBucket.getDocCount());
+                assertEquals(bucket.getDocCount(), stringMapBucket.getDocCount());
+                assertEquals(bucket.getDocCount(), stringGlobalOrdinalsBucket.getDocCount());
+                assertEquals(bucket.getDocCount(), stringGlobalOrdinalsDVBucket.getDocCount());
+            }
+        },
             prepareSearch("idx").addAggregation(
                 terms("long").field("long_values")
                     .size(maxNumTerms)
@@ -290,37 +319,7 @@ public class EquivalenceIT extends ESIntegTestCase {
                         .executionHint(TermsAggregatorFactory.ExecutionMode.GLOBAL_ORDINALS.toString())
                         .size(maxNumTerms)
                         .subAggregation(extendedStats("stats").field("num"))
-                ),
-            response -> {
-                assertAllSuccessful(response);
-                assertEquals(numDocs, response.getHits().getTotalHits().value);
-
-                final Terms longTerms = response.getAggregations().get("long");
-                final Terms doubleTerms = response.getAggregations().get("double");
-                final Terms stringMapTerms = response.getAggregations().get("string_map");
-                final Terms stringGlobalOrdinalsTerms = response.getAggregations().get("string_global_ordinals");
-                final Terms stringGlobalOrdinalsDVTerms = response.getAggregations().get("string_global_ordinals_doc_values");
-
-                assertEquals(valuesSet.size(), longTerms.getBuckets().size());
-                assertEquals(valuesSet.size(), doubleTerms.getBuckets().size());
-                assertEquals(valuesSet.size(), stringMapTerms.getBuckets().size());
-                assertEquals(valuesSet.size(), stringGlobalOrdinalsTerms.getBuckets().size());
-                assertEquals(valuesSet.size(), stringGlobalOrdinalsDVTerms.getBuckets().size());
-                for (Terms.Bucket bucket : longTerms.getBuckets()) {
-                    final Terms.Bucket doubleBucket = doubleTerms.getBucketByKey(Double.toString(Long.parseLong(bucket.getKeyAsString())));
-                    final Terms.Bucket stringMapBucket = stringMapTerms.getBucketByKey(bucket.getKeyAsString());
-                    final Terms.Bucket stringGlobalOrdinalsBucket = stringGlobalOrdinalsTerms.getBucketByKey(bucket.getKeyAsString());
-                    final Terms.Bucket stringGlobalOrdinalsDVBucket = stringGlobalOrdinalsDVTerms.getBucketByKey(bucket.getKeyAsString());
-                    assertNotNull(doubleBucket);
-                    assertNotNull(stringMapBucket);
-                    assertNotNull(stringGlobalOrdinalsBucket);
-                    assertNotNull(stringGlobalOrdinalsDVBucket);
-                    assertEquals(bucket.getDocCount(), doubleBucket.getDocCount());
-                    assertEquals(bucket.getDocCount(), stringMapBucket.getDocCount());
-                    assertEquals(bucket.getDocCount(), stringGlobalOrdinalsBucket.getDocCount());
-                    assertEquals(bucket.getDocCount(), stringGlobalOrdinalsDVBucket.getDocCount());
-                }
-            }
+                )
         );
     }
 
@@ -361,25 +360,24 @@ public class EquivalenceIT extends ESIntegTestCase {
         Map<String, Object> params = new HashMap<>();
         params.put("interval", interval);
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Terms terms = response.getAggregations().get("terms");
+            assertThat(terms, notNullValue());
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            assertThat(terms.getBuckets().size(), equalTo(histo.getBuckets().size()));
+            for (Histogram.Bucket bucket : histo.getBuckets()) {
+                final double key = ((Number) bucket.getKey()).doubleValue() / interval;
+                final Terms.Bucket termsBucket = terms.getBucketByKey(String.valueOf(key));
+                assertEquals(bucket.getDocCount(), termsBucket.getDocCount());
+            }
+        },
             prepareSearch("idx").addAggregation(
                 terms("terms").field("values")
                     .collectMode(randomFrom(SubAggCollectionMode.values()))
                     .script(new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "floor(_value / interval)", params))
                     .size(maxNumTerms)
-            ).addAggregation(histogram("histo").field("values").interval(interval).minDocCount(1)),
-            response -> {
-                Terms terms = response.getAggregations().get("terms");
-                assertThat(terms, notNullValue());
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                assertThat(terms.getBuckets().size(), equalTo(histo.getBuckets().size()));
-                for (Histogram.Bucket bucket : histo.getBuckets()) {
-                    final double key = ((Number) bucket.getKey()).doubleValue() / interval;
-                    final Terms.Bucket termsBucket = terms.getBucketByKey(String.valueOf(key));
-                    assertEquals(bucket.getDocCount(), termsBucket.getDocCount());
-                }
-            }
+            ).addAggregation(histogram("histo").field("values").interval(interval).minDocCount(1))
         );
     }
 
@@ -405,16 +403,15 @@ public class EquivalenceIT extends ESIntegTestCase {
         }
         indexRandom(true, indexingRequests);
 
-        assertResponse(
+        assertResponse(response -> {
+            assertAllSuccessful(response);
+            assertEquals(numDocs, response.getHits().getTotalHits().value);
+        },
             prepareSearch("idx").addAggregation(
                 terms("terms").field("double_value")
                     .collectMode(randomFrom(SubAggCollectionMode.values()))
                     .subAggregation(percentiles("pcts").field("double_value"))
-            ),
-            response -> {
-                assertAllSuccessful(response);
-                assertEquals(numDocs, response.getHits().getTotalHits().value);
-            }
+            )
         );
     }
 
@@ -423,41 +420,40 @@ public class EquivalenceIT extends ESIntegTestCase {
         createIndex("idx");
         final int value = randomIntBetween(0, 10);
         indexRandom(true, prepareIndex("idx").setSource("f", value));
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Filter filter = response.getAggregations().get("filter");
+            assertNotNull(filter);
+            assertEquals(1, filter.getDocCount());
+
+            Range range = filter.getAggregations().get("range");
+            assertThat(range, notNullValue());
+            assertThat(range.getName(), equalTo("range"));
+            List<? extends Bucket> buckets = range.getBuckets();
+            assertThat(buckets.size(), equalTo(2));
+
+            Bucket bucket = buckets.get(0);
+            assertThat(bucket, notNullValue());
+            assertThat((String) bucket.getKey(), equalTo("*-6.0"));
+            assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(Double.NEGATIVE_INFINITY));
+            assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(6.0));
+            assertThat(bucket.getDocCount(), equalTo(value < 6 ? 1L : 0L));
+            Sum sum = bucket.getAggregations().get("sum");
+            assertEquals(value < 6 ? value : 0, sum.value(), 0d);
+
+            bucket = buckets.get(1);
+            assertThat(bucket, notNullValue());
+            assertThat((String) bucket.getKey(), equalTo("6.0-*"));
+            assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(6.0));
+            assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(Double.POSITIVE_INFINITY));
+            assertThat(bucket.getDocCount(), equalTo(value >= 6 ? 1L : 0L));
+            sum = bucket.getAggregations().get("sum");
+            assertEquals(value >= 6 ? value : 0, sum.value(), 0d);
+        },
             prepareSearch("idx").addAggregation(
                 filter("filter", QueryBuilders.matchAllQuery()).subAggregation(
                     range("range").field("f").addUnboundedTo(6).addUnboundedFrom(6).subAggregation(sum("sum").field("f"))
                 )
-            ),
-            response -> {
-                Filter filter = response.getAggregations().get("filter");
-                assertNotNull(filter);
-                assertEquals(1, filter.getDocCount());
-
-                Range range = filter.getAggregations().get("range");
-                assertThat(range, notNullValue());
-                assertThat(range.getName(), equalTo("range"));
-                List<? extends Bucket> buckets = range.getBuckets();
-                assertThat(buckets.size(), equalTo(2));
-
-                Range.Bucket bucket = buckets.get(0);
-                assertThat(bucket, notNullValue());
-                assertThat((String) bucket.getKey(), equalTo("*-6.0"));
-                assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(Double.NEGATIVE_INFINITY));
-                assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(6.0));
-                assertThat(bucket.getDocCount(), equalTo(value < 6 ? 1L : 0L));
-                Sum sum = bucket.getAggregations().get("sum");
-                assertEquals(value < 6 ? value : 0, sum.value(), 0d);
-
-                bucket = buckets.get(1);
-                assertThat(bucket, notNullValue());
-                assertThat((String) bucket.getKey(), equalTo("6.0-*"));
-                assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(6.0));
-                assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(Double.POSITIVE_INFINITY));
-                assertThat(bucket.getDocCount(), equalTo(value >= 6 ? 1L : 0L));
-                sum = bucket.getAggregations().get("sum");
-                assertEquals(value >= 6 ? value : 0, sum.value(), 0d);
-            }
+            )
         );
     }
 
@@ -485,7 +481,33 @@ public class EquivalenceIT extends ESIntegTestCase {
         }
         indexRandom(true, reqs);
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response1 -> assertNoFailuresAndResponse(response2 -> {
+            final Terms t1 = response1.getAggregations().get("f1");
+            final Terms t2 = response2.getAggregations().get("f1");
+            assertEquals(t1, t2);
+            for (Terms.Bucket b1 : t1.getBuckets()) {
+                final Terms.Bucket b2 = t2.getBucketByKey(b1.getKeyAsString());
+                final Terms sub1 = b1.getAggregations().get("f2");
+                final Terms sub2 = b2.getAggregations().get("f2");
+                assertEquals(sub1, sub2);
+                for (Terms.Bucket subB1 : sub1.getBuckets()) {
+                    final Terms.Bucket subB2 = sub2.getBucketByKey(subB1.getKeyAsString());
+                    final Terms subSub1 = subB1.getAggregations().get("f3");
+                    final Terms subSub2 = subB2.getAggregations().get("f3");
+                    assertEquals(subSub1, subSub2);
+                }
+            }
+        },
+            prepareSearch("idx").addAggregation(
+                terms("f1").field("f1")
+                    .collectMode(SubAggCollectionMode.BREADTH_FIRST)
+                    .subAggregation(
+                        terms("f2").field("f2")
+                            .collectMode(SubAggCollectionMode.BREADTH_FIRST)
+                            .subAggregation(terms("f3").field("f3").collectMode(SubAggCollectionMode.BREADTH_FIRST))
+                    )
+            )
+        ),
             prepareSearch("idx").addAggregation(
                 terms("f1").field("f1")
                     .collectMode(SubAggCollectionMode.DEPTH_FIRST)
@@ -494,34 +516,6 @@ public class EquivalenceIT extends ESIntegTestCase {
                             .collectMode(SubAggCollectionMode.DEPTH_FIRST)
                             .subAggregation(terms("f3").field("f3").collectMode(SubAggCollectionMode.DEPTH_FIRST))
                     )
-            ),
-            response1 -> assertNoFailuresAndResponse(
-                prepareSearch("idx").addAggregation(
-                    terms("f1").field("f1")
-                        .collectMode(SubAggCollectionMode.BREADTH_FIRST)
-                        .subAggregation(
-                            terms("f2").field("f2")
-                                .collectMode(SubAggCollectionMode.BREADTH_FIRST)
-                                .subAggregation(terms("f3").field("f3").collectMode(SubAggCollectionMode.BREADTH_FIRST))
-                        )
-                ),
-                response2 -> {
-                    final Terms t1 = response1.getAggregations().get("f1");
-                    final Terms t2 = response2.getAggregations().get("f1");
-                    assertEquals(t1, t2);
-                    for (Terms.Bucket b1 : t1.getBuckets()) {
-                        final Terms.Bucket b2 = t2.getBucketByKey(b1.getKeyAsString());
-                        final Terms sub1 = b1.getAggregations().get("f2");
-                        final Terms sub2 = b2.getAggregations().get("f2");
-                        assertEquals(sub1, sub2);
-                        for (Terms.Bucket subB1 : sub1.getBuckets()) {
-                            final Terms.Bucket subB2 = sub2.getBucketByKey(subB1.getKeyAsString());
-                            final Terms subSub1 = subB1.getAggregations().get("f3");
-                            final Terms subSub2 = subB2.getAggregations().get("f3");
-                            assertEquals(subSub1, subSub2);
-                        }
-                    }
-                }
             )
         );
     }

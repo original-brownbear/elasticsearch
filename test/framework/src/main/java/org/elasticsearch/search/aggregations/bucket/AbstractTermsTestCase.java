@@ -34,42 +34,40 @@ public abstract class AbstractTermsTestCase extends ESIntegTestCase {
 
     public void testOtherDocCount(String... fieldNames) {
         for (String fieldName : fieldNames) {
-            assertResponse(
+            assertResponse(allTerms -> {
+                assertNoFailures(allTerms);
+
+                Terms terms = allTerms.getAggregations().get("terms");
+                assertEquals(0, terms.getSumOfOtherDocCounts()); // size is 0
+                final long sumOfDocCounts = sumOfDocCounts(terms);
+                final int totalNumTerms = terms.getBuckets().size();
+
+                for (int size = 1; size < totalNumTerms + 2; size += randomIntBetween(1, 5)) {
+                    for (int shardSize = size; shardSize <= totalNumTerms + 2; shardSize += randomIntBetween(1, 5)) {
+                        final int finalSize = size;
+                        assertResponse(response -> {
+                            assertNoFailures(response);
+                            Terms innerTerms = response.getAggregations().get("terms");
+                            assertEquals(Math.min(finalSize, totalNumTerms), innerTerms.getBuckets().size());
+                            assertEquals(sumOfDocCounts, sumOfDocCounts(innerTerms));
+                        },
+                            prepareSearch("idx").addAggregation(
+                                new TermsAggregationBuilder("terms").executionHint(randomExecutionHint())
+                                    .field(fieldName)
+                                    .size(size)
+                                    .shardSize(shardSize)
+                                    .collectMode(randomFrom(SubAggCollectionMode.values()))
+                            )
+                        );
+                    }
+                }
+            },
                 prepareSearch("idx").addAggregation(
                     new TermsAggregationBuilder("terms").executionHint(randomExecutionHint())
                         .field(fieldName)
                         .size(10000)
                         .collectMode(randomFrom(SubAggCollectionMode.values()))
-                ),
-                allTerms -> {
-                    assertNoFailures(allTerms);
-
-                    Terms terms = allTerms.getAggregations().get("terms");
-                    assertEquals(0, terms.getSumOfOtherDocCounts()); // size is 0
-                    final long sumOfDocCounts = sumOfDocCounts(terms);
-                    final int totalNumTerms = terms.getBuckets().size();
-
-                    for (int size = 1; size < totalNumTerms + 2; size += randomIntBetween(1, 5)) {
-                        for (int shardSize = size; shardSize <= totalNumTerms + 2; shardSize += randomIntBetween(1, 5)) {
-                            final int finalSize = size;
-                            assertResponse(
-                                prepareSearch("idx").addAggregation(
-                                    new TermsAggregationBuilder("terms").executionHint(randomExecutionHint())
-                                        .field(fieldName)
-                                        .size(size)
-                                        .shardSize(shardSize)
-                                        .collectMode(randomFrom(SubAggCollectionMode.values()))
-                                ),
-                                response -> {
-                                    assertNoFailures(response);
-                                    Terms innerTerms = response.getAggregations().get("terms");
-                                    assertEquals(Math.min(finalSize, totalNumTerms), innerTerms.getBuckets().size());
-                                    assertEquals(sumOfDocCounts, sumOfDocCounts(innerTerms));
-                                }
-                            );
-                        }
-                    }
-                }
+                )
             );
         }
     }

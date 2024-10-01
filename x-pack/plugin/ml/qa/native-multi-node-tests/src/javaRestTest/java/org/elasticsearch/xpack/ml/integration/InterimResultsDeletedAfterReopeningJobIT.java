@@ -108,6 +108,6 @@ public class InterimResultsDeletedAfterReopeningJobIT extends MlNativeAutodetect
 
     private void assertNoInterimResults(String jobId) {
         String indexName = AnomalyDetectorsIndex.jobResultsAliasedName(jobId);
-        assertHitCount(prepareSearch(indexName).setSize(1000).setQuery(QueryBuilders.termQuery("is_interim", true)), 0);
+        assertHitCount(0, prepareSearch(indexName).setSize(1000).setQuery(QueryBuilders.termQuery("is_interim", true)));
     }
 }

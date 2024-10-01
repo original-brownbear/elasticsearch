@@ -39,18 +39,17 @@ public class CopyToMapperIntegrationIT extends ESIntegTestCase {
 
         SubAggCollectionMode aggCollectionMode = randomFrom(SubAggCollectionMode.values());
 
-        assertResponse(
+        assertResponse(response -> {
+            assertThat(response.getHits().getTotalHits().value, equalTo((long) recordCount));
+
+            assertThat(((Terms) response.getAggregations().get("test")).getBuckets().size(), equalTo(recordCount + 1));
+            assertThat(((Terms) response.getAggregations().get("test_raw")).getBuckets().size(), equalTo(recordCount));
+        },
             prepareSearch("test-idx").setQuery(QueryBuilders.termQuery("even", true))
                 .addAggregation(AggregationBuilders.terms("test").field("test_field").size(recordCount * 2).collectMode(aggCollectionMode))
                 .addAggregation(
                     AggregationBuilders.terms("test_raw").field("test_field_raw").size(recordCount * 2).collectMode(aggCollectionMode)
-                ),
-            response -> {
-                assertThat(response.getHits().getTotalHits().value, equalTo((long) recordCount));
-
-                assertThat(((Terms) response.getAggregations().get("test")).getBuckets().size(), equalTo(recordCount + 1));
-                assertThat(((Terms) response.getAggregations().get("test_raw")).getBuckets().size(), equalTo(recordCount));
-            }
+                )
         );
     }
 
@@ -68,7 +67,7 @@ public class CopyToMapperIntegrationIT extends ESIntegTestCase {
         assertAcked(indicesAdmin().prepareCreate("test-idx").setMapping(mapping));
         prepareIndex("test-idx").setId("1").setSource("foo", "bar").get();
         indicesAdmin().prepareRefresh("test-idx").get();
-        assertHitCount(prepareSearch("test-idx").setQuery(QueryBuilders.termQuery("root.top.child", "bar")), 1L);
+        assertHitCount(1L, prepareSearch("test-idx").setQuery(QueryBuilders.termQuery("root.top.child", "bar")));
     }
 
     private XContentBuilder createDynamicTemplateMapping() throws IOException {

@@ -114,10 +114,10 @@ public class FinalPipelineIT extends ESIntegTestCase {
             .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE)
             .get();
         assertEquals(RestStatus.CREATED, indexResponse.status());
-        assertResponse(prepareSearch("target"), response -> {
+        assertResponse(response -> {
             assertEquals(1, response.getHits().getTotalHits().value);
             assertFalse(response.getHits().getAt(0).getSourceAsMap().containsKey("final"));
-        });
+        }, prepareSearch("target"));
     }
 
     public void testFinalPipelineOfNewDestinationIsInvoked() {
@@ -138,10 +138,10 @@ public class FinalPipelineIT extends ESIntegTestCase {
             .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE)
             .get();
         assertEquals(RestStatus.CREATED, indexResponse.status());
-        assertResponse(prepareSearch("target"), response -> {
+        assertResponse(response -> {
             assertEquals(1, response.getHits().getTotalHits().value);
             assertEquals(true, response.getHits().getAt(0).getSourceAsMap().get("final"));
-        });
+        }, prepareSearch("target"));
     }
 
     public void testDefaultPipelineOfNewDestinationIsNotInvoked() {
@@ -162,10 +162,10 @@ public class FinalPipelineIT extends ESIntegTestCase {
             .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE)
             .get();
         assertEquals(RestStatus.CREATED, indexResponse.status());
-        assertResponse(prepareSearch("target"), response -> {
+        assertResponse(response -> {
             assertEquals(1, response.getHits().getTotalHits().value);
             assertFalse(response.getHits().getAt(0).getSourceAsMap().containsKey("final"));
-        });
+        }, prepareSearch("target"));
     }
 
     public void testDefaultPipelineOfRerouteDestinationIsInvoked() {
@@ -186,10 +186,10 @@ public class FinalPipelineIT extends ESIntegTestCase {
             .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE)
             .get();
         assertEquals(RestStatus.CREATED, indexResponse.status());
-        assertResponse(prepareSearch("target"), response -> {
+        assertResponse(response -> {
             assertEquals(1, response.getHits().getTotalHits().value);
             assertTrue(response.getHits().getAt(0).getSourceAsMap().containsKey("final"));
-        });
+        }, prepareSearch("target"));
     }
 
     public void testAvoidIndexingLoop() {

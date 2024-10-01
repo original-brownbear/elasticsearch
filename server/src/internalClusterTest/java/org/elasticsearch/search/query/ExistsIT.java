@@ -39,8 +39,10 @@ public class ExistsIT extends ESIntegTestCase {
     // TODO: move this to a unit test somewhere...
     public void testEmptyIndex() throws Exception {
         createIndex("test");
-        assertNoFailures(prepareSearch("test").setQuery(QueryBuilders.existsQuery("foo")));
-        assertNoFailures(prepareSearch("test").setQuery(QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("foo"))));
+        assertNoFailures(
+            prepareSearch("test").setQuery(QueryBuilders.existsQuery("foo")),
+            prepareSearch("test").setQuery(QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("foo")))
+        );
     }
 
     public void testExists() throws Exception {
@@ -115,13 +117,13 @@ public class ExistsIT extends ESIntegTestCase {
         expected.put("vec", 2);
 
         final long numDocs = sources.length;
-        assertNoFailuresAndResponse(prepareSearch("idx").setSize(sources.length), allDocs -> {
+        assertNoFailuresAndResponse(allDocs -> {
             assertHitCount(allDocs, numDocs);
             for (Map.Entry<String, Integer> entry : expected.entrySet()) {
                 final String fieldName = entry.getKey();
                 final int count = entry.getValue();
                 // exists
-                assertNoFailuresAndResponse(prepareSearch("idx").setQuery(QueryBuilders.existsQuery(fieldName)), response -> {
+                assertNoFailuresAndResponse(response -> {
                     try {
                         assertEquals(
                             String.format(
@@ -152,9 +154,9 @@ public class ExistsIT extends ESIntegTestCase {
                         }
                         throw e;
                     }
-                });
+                }, prepareSearch("idx").setQuery(QueryBuilders.existsQuery(fieldName)));
             }
-        });
+        }, prepareSearch("idx").setSize(sources.length));
     }
 
     public void testFieldAlias() throws Exception {

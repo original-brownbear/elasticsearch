@@ -134,7 +134,7 @@ public class LegacyGeoShapeWithDocValuesQueryTests extends GeoShapeQueryTestCase
             .get();
 
         // test that point was inserted
-        assertHitCount(client().prepareSearch("geo_points_only").setQuery(matchAllQuery()), 2L);
+        assertHitCount(2L, client().prepareSearch("geo_points_only").setQuery(matchAllQuery()));
     }
 
     public void testPointsOnly() throws Exception {
@@ -183,7 +183,7 @@ public class LegacyGeoShapeWithDocValuesQueryTests extends GeoShapeQueryTestCase
         }
 
         // test that point was inserted
-        assertHitCount(client().prepareSearch("geo_points_only").setQuery(geoIntersectionQuery(defaultFieldName, geometry)), 1L);
+        assertHitCount(1L, client().prepareSearch("geo_points_only").setQuery(geoIntersectionQuery(defaultFieldName, geometry)));
     }
 
     public void testFieldAlias() throws IOException {
@@ -223,7 +223,7 @@ public class LegacyGeoShapeWithDocValuesQueryTests extends GeoShapeQueryTestCase
             .setRefreshPolicy(IMMEDIATE)
             .get();
 
-        assertHitCount(client().prepareSearch(defaultIndexName).setQuery(geoShapeQuery("alias", multiPoint)), 1L);
+        assertHitCount(1L, client().prepareSearch(defaultIndexName).setQuery(geoShapeQuery("alias", multiPoint)));
     }
 
     protected boolean ignoreLons(double[] lons) {

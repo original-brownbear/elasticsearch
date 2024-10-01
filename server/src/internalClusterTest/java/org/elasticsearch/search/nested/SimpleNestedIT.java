@@ -55,8 +55,8 @@ public class SimpleNestedIT extends ESIntegTestCase {
         ensureGreen();
 
         // check on no data, see it works
-        assertHitCount(prepareSearch("test"), 0L);
-        assertHitCount(prepareSearch("test").setQuery(termQuery("n_field1", "n_value1_1")), 0L);
+        assertHitCount(0L, prepareSearch("test"));
+        assertHitCount(0L, prepareSearch("test").setQuery(termQuery("n_field1", "n_value1_1")));
 
         prepareIndex("test").setId("1")
             .setSource(
@@ -84,11 +84,11 @@ public class SimpleNestedIT extends ESIntegTestCase {
         // check the numDocs
         assertDocumentCount("test", 3);
 
-        assertHitCount(prepareSearch("test").setQuery(termQuery("n_field1", "n_value1_1")), 0L);
+        assertHitCount(0L, prepareSearch("test").setQuery(termQuery("n_field1", "n_value1_1")));
 
         // search for something that matches the nested doc, and see that we don't find the nested doc
-        assertHitCount(prepareSearch("test"), 1L);
-        assertHitCount(prepareSearch("test").setQuery(termQuery("n_field1", "n_value1_1")), 0L);
+        assertHitCount(1L, prepareSearch("test"));
+        assertHitCount(0L, prepareSearch("test").setQuery(termQuery("n_field1", "n_value1_1")));
 
         // now, do a nested query
         assertHitCountAndNoFailures(
@@ -421,16 +421,15 @@ public class SimpleNestedIT extends ESIntegTestCase {
             .setRefreshPolicy(IMMEDIATE)
             .get();
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            assertNoFailures(response);
+            assertThat(response.getHits().getTotalHits().value, equalTo(1L));
+            Explanation explanation = response.getHits().getHits()[0].getExplanation();
+            assertThat(explanation.getValue(), equalTo(response.getHits().getHits()[0].getScore()));
+            assertThat(explanation.toString(), startsWith("0.36464313 = Score based on 2 child docs in range from 0 to 1"));
+        },
             prepareSearch("test").setQuery(nestedQuery("nested1", termQuery("nested1.n_field1", "n_value1"), ScoreMode.Total))
-                .setExplain(true),
-            response -> {
-                assertNoFailures(response);
-                assertThat(response.getHits().getTotalHits().value, equalTo(1L));
-                Explanation explanation = response.getHits().getHits()[0].getExplanation();
-                assertThat(explanation.getValue(), equalTo(response.getHits().getHits()[0].getScore()));
-                assertThat(explanation.toString(), startsWith("0.36464313 = Score based on 2 child docs in range from 0 to 1"));
-            }
+                .setExplain(true)
         );
     }
 
@@ -504,31 +503,29 @@ public class SimpleNestedIT extends ESIntegTestCase {
             .get();
         refresh();
 
-        assertResponse(
+        assertResponse(response -> {
+            assertHitCount(response, 3);
+            assertThat(response.getHits().getHits()[0].getId(), equalTo("2"));
+            assertThat(response.getHits().getHits()[0].getSortValues()[0].toString(), equalTo("1"));
+            assertThat(response.getHits().getHits()[1].getId(), equalTo("3"));
+            assertThat(response.getHits().getHits()[1].getSortValues()[0].toString(), equalTo("3"));
+            assertThat(response.getHits().getHits()[2].getId(), equalTo("1"));
+            assertThat(response.getHits().getHits()[2].getSortValues()[0].toString(), equalTo("4"));
+        },
             prepareSearch("test").setQuery(QueryBuilders.matchAllQuery())
-                .addSort(SortBuilders.fieldSort("nested1.field1").order(SortOrder.ASC).setNestedSort(new NestedSortBuilder("nested1"))),
-            response -> {
-                assertHitCount(response, 3);
-                assertThat(response.getHits().getHits()[0].getId(), equalTo("2"));
-                assertThat(response.getHits().getHits()[0].getSortValues()[0].toString(), equalTo("1"));
-                assertThat(response.getHits().getHits()[1].getId(), equalTo("3"));
-                assertThat(response.getHits().getHits()[1].getSortValues()[0].toString(), equalTo("3"));
-                assertThat(response.getHits().getHits()[2].getId(), equalTo("1"));
-                assertThat(response.getHits().getHits()[2].getSortValues()[0].toString(), equalTo("4"));
-            }
+                .addSort(SortBuilders.fieldSort("nested1.field1").order(SortOrder.ASC).setNestedSort(new NestedSortBuilder("nested1")))
         );
-        assertResponse(
+        assertResponse(response -> {
+            assertHitCount(response, 3);
+            assertThat(response.getHits().getHits()[0].getId(), equalTo("1"));
+            assertThat(response.getHits().getHits()[0].getSortValues()[0].toString(), equalTo("5"));
+            assertThat(response.getHits().getHits()[1].getId(), equalTo("3"));
+            assertThat(response.getHits().getHits()[1].getSortValues()[0].toString(), equalTo("4"));
+            assertThat(response.getHits().getHits()[2].getId(), equalTo("2"));
+            assertThat(response.getHits().getHits()[2].getSortValues()[0].toString(), equalTo("2"));
+        },
             prepareSearch("test").setQuery(QueryBuilders.matchAllQuery())
-                .addSort(SortBuilders.fieldSort("nested1.field1").order(SortOrder.DESC).setNestedSort(new NestedSortBuilder("nested1"))),
-            response -> {
-                assertHitCount(response, 3);
-                assertThat(response.getHits().getHits()[0].getId(), equalTo("1"));
-                assertThat(response.getHits().getHits()[0].getSortValues()[0].toString(), equalTo("5"));
-                assertThat(response.getHits().getHits()[1].getId(), equalTo("3"));
-                assertThat(response.getHits().getHits()[1].getSortValues()[0].toString(), equalTo("4"));
-                assertThat(response.getHits().getHits()[2].getId(), equalTo("2"));
-                assertThat(response.getHits().getHits()[2].getSortValues()[0].toString(), equalTo("2"));
-            }
+                .addSort(SortBuilders.fieldSort("nested1.field1").order(SortOrder.DESC).setNestedSort(new NestedSortBuilder("nested1")))
         );
     }
 
@@ -624,7 +621,7 @@ public class SimpleNestedIT extends ESIntegTestCase {
             searchRequestBuilder.setScroll(TimeValue.timeValueMinutes(10));
         }
 
-        assertResponse(searchRequestBuilder, response -> {
+        assertResponse(response -> {
             assertHitCount(response, 3);
             assertThat(response.getHits().getHits()[0].getId(), equalTo("2"));
             assertThat(response.getHits().getHits()[0].getSortValues()[0].toString(), equalTo("1"));
@@ -632,7 +629,7 @@ public class SimpleNestedIT extends ESIntegTestCase {
             assertThat(response.getHits().getHits()[1].getSortValues()[0].toString(), equalTo("4"));
             assertThat(response.getHits().getHits()[2].getId(), equalTo("3"));
             assertThat(response.getHits().getHits()[2].getSortValues()[0].toString(), equalTo("10"));
-        });
+        }, searchRequestBuilder);
         searchRequestBuilder = prepareSearch("test").setQuery(QueryBuilders.matchAllQuery())
             .addSort(
                 SortBuilders.fieldSort("nested1.field1")
@@ -645,7 +642,7 @@ public class SimpleNestedIT extends ESIntegTestCase {
             searchRequestBuilder.setScroll(TimeValue.timeValueMinutes(10));
         }
 
-        assertResponse(searchRequestBuilder, response -> {
+        assertResponse(response -> {
             assertHitCount(response, 3);
             assertThat(response.getHits().getHits()[0].getId(), equalTo("3"));
             assertThat(response.getHits().getHits()[0].getSortValues()[0].toString(), equalTo("10"));
@@ -654,7 +651,7 @@ public class SimpleNestedIT extends ESIntegTestCase {
             assertThat(response.getHits().getHits()[2].getId(), equalTo("2"));
             assertThat(response.getHits().getHits()[2].getSortValues()[0].toString(), equalTo("2"));
             client().prepareClearScroll().addScrollId("_all").get();
-        });
+        }, searchRequestBuilder);
     }
 
     public void testNestedSortWithMultiLevelFiltering() throws Exception {
@@ -783,7 +780,14 @@ public class SimpleNestedIT extends ESIntegTestCase {
         refresh();
 
         // access id = 1, read, max value, asc, should use matt and shay
-        assertResponse(
+        assertResponse(response -> {
+            assertHitCount(response, 2);
+            assertThat(response.getHits().getHits().length, equalTo(2));
+            assertThat(response.getHits().getHits()[0].getId(), equalTo("2"));
+            assertThat(response.getHits().getHits()[0].getSortValues()[0].toString(), equalTo("matt"));
+            assertThat(response.getHits().getHits()[1].getId(), equalTo("1"));
+            assertThat(response.getHits().getHits()[1].getSortValues()[0].toString(), equalTo("shay"));
+        },
             prepareSearch().setQuery(matchAllQuery())
                 .addSort(
                     SortBuilders.fieldSort("acl.operation.user.username")
@@ -796,18 +800,17 @@ public class SimpleNestedIT extends ESIntegTestCase {
                         )
                         .sortMode(SortMode.MAX)
                         .order(SortOrder.ASC)
-                ),
-            response -> {
-                assertHitCount(response, 2);
-                assertThat(response.getHits().getHits().length, equalTo(2));
-                assertThat(response.getHits().getHits()[0].getId(), equalTo("2"));
-                assertThat(response.getHits().getHits()[0].getSortValues()[0].toString(), equalTo("matt"));
-                assertThat(response.getHits().getHits()[1].getId(), equalTo("1"));
-                assertThat(response.getHits().getHits()[1].getSortValues()[0].toString(), equalTo("shay"));
-            }
+                )
         );
         // access id = 1, read, min value, asc, should now use adrien and luca
-        assertResponse(
+        assertResponse(response -> {
+            assertHitCount(response, 2);
+            assertThat(response.getHits().getHits().length, equalTo(2));
+            assertThat(response.getHits().getHits()[0].getId(), equalTo("1"));
+            assertThat(response.getHits().getHits()[0].getSortValues()[0].toString(), equalTo("adrien"));
+            assertThat(response.getHits().getHits()[1].getId(), equalTo("2"));
+            assertThat(response.getHits().getHits()[1].getSortValues()[0].toString(), equalTo("luca"));
+        },
             prepareSearch().setQuery(matchAllQuery())
                 .addSort(
                     SortBuilders.fieldSort("acl.operation.user.username")
@@ -820,18 +823,16 @@ public class SimpleNestedIT extends ESIntegTestCase {
                         )
                         .sortMode(SortMode.MIN)
                         .order(SortOrder.ASC)
-                ),
-            response -> {
-                assertHitCount(response, 2);
-                assertThat(response.getHits().getHits().length, equalTo(2));
-                assertThat(response.getHits().getHits()[0].getId(), equalTo("1"));
-                assertThat(response.getHits().getHits()[0].getSortValues()[0].toString(), equalTo("adrien"));
-                assertThat(response.getHits().getHits()[1].getId(), equalTo("2"));
-                assertThat(response.getHits().getHits()[1].getSortValues()[0].toString(), equalTo("luca"));
-            }
+                )
         );
         // execute, by matt or luca, by user id, sort missing first
-        assertResponse(
+        assertResponse(response -> {
+            assertHitCount(response, 2);
+            assertThat(response.getHits().getHits().length, equalTo(2));
+            assertThat(response.getHits().getHits()[0].getId(), equalTo("1")); // missing first
+            assertThat(response.getHits().getHits()[1].getId(), equalTo("2"));
+            assertThat(response.getHits().getHits()[1].getSortValues()[0].toString(), equalTo("1"));
+        },
             prepareSearch().setQuery(matchAllQuery())
                 .addSort(
                     SortBuilders.fieldSort("acl.operation.user.id")
@@ -848,17 +849,16 @@ public class SimpleNestedIT extends ESIntegTestCase {
                         .missing("_first")
                         .sortMode(SortMode.MIN)
                         .order(SortOrder.DESC)
-                ),
-            response -> {
-                assertHitCount(response, 2);
-                assertThat(response.getHits().getHits().length, equalTo(2));
-                assertThat(response.getHits().getHits()[0].getId(), equalTo("1")); // missing first
-                assertThat(response.getHits().getHits()[1].getId(), equalTo("2"));
-                assertThat(response.getHits().getHits()[1].getSortValues()[0].toString(), equalTo("1"));
-            }
+                )
         );
         // execute, by matt or luca, by username, sort missing last (default)
-        assertResponse(
+        assertResponse(response -> {
+            assertHitCount(response, 2);
+            assertThat(response.getHits().getHits().length, equalTo(2));
+            assertThat(response.getHits().getHits()[0].getId(), equalTo("2"));
+            assertThat(response.getHits().getHits()[0].getSortValues()[0].toString(), equalTo("luca"));
+            assertThat(response.getHits().getHits()[1].getId(), equalTo("1")); // missing last
+        },
             prepareSearch().setQuery(matchAllQuery())
                 .addSort(
                     SortBuilders.fieldSort("acl.operation.user.username")
@@ -874,14 +874,7 @@ public class SimpleNestedIT extends ESIntegTestCase {
                         )
                         .sortMode(SortMode.MIN)
                         .order(SortOrder.DESC)
-                ),
-            response -> {
-                assertHitCount(response, 2);
-                assertThat(response.getHits().getHits().length, equalTo(2));
-                assertThat(response.getHits().getHits()[0].getId(), equalTo("2"));
-                assertThat(response.getHits().getHits()[0].getSortValues()[0].toString(), equalTo("luca"));
-                assertThat(response.getHits().getHits()[1].getId(), equalTo("1")); // missing last
-            }
+                )
         );
     }
 
@@ -944,7 +937,12 @@ public class SimpleNestedIT extends ESIntegTestCase {
 
         refresh();
 
-        assertResponse(
+        assertResponse(response -> {
+            assertHitCount(response, 1);
+            assertThat(response.getHits().getHits().length, equalTo(1));
+            assertThat(response.getHits().getHits()[0].getId(), equalTo("2"));
+            assertThat(response.getHits().getHits()[0].getSortValues()[0].toString(), equalTo("2"));
+        },
             prepareSearch().setQuery(termQuery("_id", 2))
                 .addSort(
                     SortBuilders.fieldSort("nested1.nested2.sortVal")
@@ -955,13 +953,7 @@ public class SimpleNestedIT extends ESIntegTestCase {
                                 )
                             )
                         )
-                ),
-            response -> {
-                assertHitCount(response, 1);
-                assertThat(response.getHits().getHits().length, equalTo(1));
-                assertThat(response.getHits().getHits()[0].getId(), equalTo("2"));
-                assertThat(response.getHits().getHits()[0].getSortValues()[0].toString(), equalTo("2"));
-            }
+                )
         );
     }
 
@@ -1126,72 +1118,77 @@ public class SimpleNestedIT extends ESIntegTestCase {
         refresh();
 
         // Without nested filter
-        assertResponse(
+        assertResponse(response -> {
+            assertHitCount(response, 3);
+            assertThat(response.getHits().getHits().length, equalTo(3));
+            assertThat(response.getHits().getHits()[0].getId(), equalTo("3"));
+            assertThat(response.getHits().getHits()[0].getSortValues()[0].toString(), equalTo("-3"));
+            assertThat(response.getHits().getHits()[1].getId(), equalTo("2"));
+            assertThat(response.getHits().getHits()[1].getSortValues()[0].toString(), equalTo("-2"));
+            assertThat(response.getHits().getHits()[2].getId(), equalTo("1"));
+            assertThat(response.getHits().getHits()[2].getSortValues()[0].toString(), equalTo("-1"));
+        },
             prepareSearch().setQuery(matchAllQuery())
                 .addSort(
                     SortBuilders.fieldSort("parent.child.child_values")
                         .setNestedSort(new NestedSortBuilder("parent.child"))
                         .order(SortOrder.ASC)
-                ),
-            response -> {
-                assertHitCount(response, 3);
-                assertThat(response.getHits().getHits().length, equalTo(3));
-                assertThat(response.getHits().getHits()[0].getId(), equalTo("3"));
-                assertThat(response.getHits().getHits()[0].getSortValues()[0].toString(), equalTo("-3"));
-                assertThat(response.getHits().getHits()[1].getId(), equalTo("2"));
-                assertThat(response.getHits().getHits()[1].getSortValues()[0].toString(), equalTo("-2"));
-                assertThat(response.getHits().getHits()[2].getId(), equalTo("1"));
-                assertThat(response.getHits().getHits()[2].getSortValues()[0].toString(), equalTo("-1"));
-            }
+                )
         );
         // With nested filter
         NestedSortBuilder nestedSort = new NestedSortBuilder("parent.child");
         nestedSort.setFilter(QueryBuilders.termQuery("parent.child.filter", true));
-        assertResponse(
+        assertResponse(response -> {
+            assertHitCount(response, 3);
+            assertThat(response.getHits().getHits().length, equalTo(3));
+            assertThat(response.getHits().getHits()[0].getId(), equalTo("1"));
+            assertThat(response.getHits().getHits()[0].getSortValues()[0].toString(), equalTo("1"));
+            assertThat(response.getHits().getHits()[1].getId(), equalTo("2"));
+            assertThat(response.getHits().getHits()[1].getSortValues()[0].toString(), equalTo("2"));
+            assertThat(response.getHits().getHits()[2].getId(), equalTo("3"));
+            assertThat(response.getHits().getHits()[2].getSortValues()[0].toString(), equalTo("3"));
+        },
             prepareSearch().setQuery(matchAllQuery())
-                .addSort(SortBuilders.fieldSort("parent.child.child_values").setNestedSort(nestedSort).order(SortOrder.ASC)),
-            response -> {
-                assertHitCount(response, 3);
-                assertThat(response.getHits().getHits().length, equalTo(3));
-                assertThat(response.getHits().getHits()[0].getId(), equalTo("1"));
-                assertThat(response.getHits().getHits()[0].getSortValues()[0].toString(), equalTo("1"));
-                assertThat(response.getHits().getHits()[1].getId(), equalTo("2"));
-                assertThat(response.getHits().getHits()[1].getSortValues()[0].toString(), equalTo("2"));
-                assertThat(response.getHits().getHits()[2].getId(), equalTo("3"));
-                assertThat(response.getHits().getHits()[2].getSortValues()[0].toString(), equalTo("3"));
-            }
+                .addSort(SortBuilders.fieldSort("parent.child.child_values").setNestedSort(nestedSort).order(SortOrder.ASC))
         );
         // Nested path should be automatically detected, expect same results as above search request
-        assertResponse(
+        assertResponse(response -> {
+            assertHitCount(response, 3);
+            assertThat(response.getHits().getHits().length, equalTo(3));
+            assertThat(response.getHits().getHits()[0].getId(), equalTo("1"));
+            assertThat(response.getHits().getHits()[0].getSortValues()[0].toString(), equalTo("1"));
+            assertThat(response.getHits().getHits()[1].getId(), equalTo("2"));
+            assertThat(response.getHits().getHits()[1].getSortValues()[0].toString(), equalTo("2"));
+            assertThat(response.getHits().getHits()[2].getId(), equalTo("3"));
+            assertThat(response.getHits().getHits()[2].getSortValues()[0].toString(), equalTo("3"));
+        },
             prepareSearch().setQuery(matchAllQuery())
-                .addSort(SortBuilders.fieldSort("parent.child.child_values").setNestedSort(nestedSort).order(SortOrder.ASC)),
-            response -> {
-                assertHitCount(response, 3);
-                assertThat(response.getHits().getHits().length, equalTo(3));
-                assertThat(response.getHits().getHits()[0].getId(), equalTo("1"));
-                assertThat(response.getHits().getHits()[0].getSortValues()[0].toString(), equalTo("1"));
-                assertThat(response.getHits().getHits()[1].getId(), equalTo("2"));
-                assertThat(response.getHits().getHits()[1].getSortValues()[0].toString(), equalTo("2"));
-                assertThat(response.getHits().getHits()[2].getId(), equalTo("3"));
-                assertThat(response.getHits().getHits()[2].getSortValues()[0].toString(), equalTo("3"));
-            }
+                .addSort(SortBuilders.fieldSort("parent.child.child_values").setNestedSort(nestedSort).order(SortOrder.ASC))
         );
         nestedSort.setFilter(QueryBuilders.termQuery("parent.filter", false));
-        assertResponse(
+        assertResponse(response -> {
+            assertHitCount(response, 3);
+            assertThat(response.getHits().getHits().length, equalTo(3));
+            assertThat(response.getHits().getHits()[0].getId(), equalTo("1"));
+            assertThat(response.getHits().getHits()[0].getSortValues()[0].toString(), equalTo("1"));
+            assertThat(response.getHits().getHits()[1].getId(), equalTo("2"));
+            assertThat(response.getHits().getHits()[1].getSortValues()[0].toString(), equalTo("2"));
+            assertThat(response.getHits().getHits()[2].getId(), equalTo("3"));
+            assertThat(response.getHits().getHits()[2].getSortValues()[0].toString(), equalTo("3"));
+        },
             prepareSearch().setQuery(matchAllQuery())
-                .addSort(SortBuilders.fieldSort("parent.parent_values").setNestedSort(nestedSort).order(SortOrder.ASC)),
-            response -> {
-                assertHitCount(response, 3);
-                assertThat(response.getHits().getHits().length, equalTo(3));
-                assertThat(response.getHits().getHits()[0].getId(), equalTo("1"));
-                assertThat(response.getHits().getHits()[0].getSortValues()[0].toString(), equalTo("1"));
-                assertThat(response.getHits().getHits()[1].getId(), equalTo("2"));
-                assertThat(response.getHits().getHits()[1].getSortValues()[0].toString(), equalTo("2"));
-                assertThat(response.getHits().getHits()[2].getId(), equalTo("3"));
-                assertThat(response.getHits().getHits()[2].getSortValues()[0].toString(), equalTo("3"));
-            }
+                .addSort(SortBuilders.fieldSort("parent.parent_values").setNestedSort(nestedSort).order(SortOrder.ASC))
         );
-        assertResponse(
+        assertResponse(response -> {
+            assertHitCount(response, 3);
+            assertThat(response.getHits().getHits().length, equalTo(3));
+            assertThat(response.getHits().getHits()[0].getId(), equalTo("3"));
+            assertThat(response.getHits().getHits()[0].getSortValues()[0].toString(), equalTo("3"));
+            assertThat(response.getHits().getHits()[1].getId(), equalTo("2"));
+            assertThat(response.getHits().getHits()[1].getSortValues()[0].toString(), equalTo("4"));
+            assertThat(response.getHits().getHits()[2].getId(), equalTo("1"));
+            assertThat(response.getHits().getHits()[2].getSortValues()[0].toString(), equalTo("6"));
+        },
             prepareSearch().setQuery(matchAllQuery())
                 .addSort(
                     SortBuilders.fieldSort("parent.child.child_values")
@@ -1201,20 +1198,19 @@ public class SimpleNestedIT extends ESIntegTestCase {
                         )
                         .sortMode(SortMode.MAX)
                         .order(SortOrder.ASC)
-                ),
-            response -> {
-                assertHitCount(response, 3);
-                assertThat(response.getHits().getHits().length, equalTo(3));
-                assertThat(response.getHits().getHits()[0].getId(), equalTo("3"));
-                assertThat(response.getHits().getHits()[0].getSortValues()[0].toString(), equalTo("3"));
-                assertThat(response.getHits().getHits()[1].getId(), equalTo("2"));
-                assertThat(response.getHits().getHits()[1].getSortValues()[0].toString(), equalTo("4"));
-                assertThat(response.getHits().getHits()[2].getId(), equalTo("1"));
-                assertThat(response.getHits().getHits()[2].getSortValues()[0].toString(), equalTo("6"));
-            }
+                )
         );
         // Check if closest nested type is resolved
-        assertResponse(
+        assertResponse(response -> {
+            assertHitCount(response, 3);
+            assertThat(response.getHits().getHits().length, equalTo(3));
+            assertThat(response.getHits().getHits()[0].getId(), equalTo("1"));
+            assertThat(response.getHits().getHits()[0].getSortValues()[0].toString(), equalTo("1"));
+            assertThat(response.getHits().getHits()[1].getId(), equalTo("2"));
+            assertThat(response.getHits().getHits()[1].getSortValues()[0].toString(), equalTo("2"));
+            assertThat(response.getHits().getHits()[2].getId(), equalTo("3"));
+            assertThat(response.getHits().getHits()[2].getSortValues()[0].toString(), equalTo("3"));
+        },
             prepareSearch().setQuery(matchAllQuery())
                 .addSort(
                     SortBuilders.fieldSort("parent.child.child_obj.value")
@@ -1222,59 +1218,56 @@ public class SimpleNestedIT extends ESIntegTestCase {
                             new NestedSortBuilder("parent.child").setFilter(QueryBuilders.termQuery("parent.child.filter", true))
                         )
                         .order(SortOrder.ASC)
-                ),
-            response -> {
-                assertHitCount(response, 3);
-                assertThat(response.getHits().getHits().length, equalTo(3));
-                assertThat(response.getHits().getHits()[0].getId(), equalTo("1"));
-                assertThat(response.getHits().getHits()[0].getSortValues()[0].toString(), equalTo("1"));
-                assertThat(response.getHits().getHits()[1].getId(), equalTo("2"));
-                assertThat(response.getHits().getHits()[1].getSortValues()[0].toString(), equalTo("2"));
-                assertThat(response.getHits().getHits()[2].getId(), equalTo("3"));
-                assertThat(response.getHits().getHits()[2].getSortValues()[0].toString(), equalTo("3"));
-            }
+                )
         );
         // Sort mode: sum
-        assertResponse(
+        assertResponse(response -> {
+            assertHitCount(response, 3);
+            assertThat(response.getHits().getHits().length, equalTo(3));
+            assertThat(response.getHits().getHits()[0].getId(), equalTo("3"));
+            assertThat(response.getHits().getHits()[0].getSortValues()[0].toString(), equalTo("2"));
+            assertThat(response.getHits().getHits()[1].getId(), equalTo("2"));
+            assertThat(response.getHits().getHits()[1].getSortValues()[0].toString(), equalTo("7"));
+            assertThat(response.getHits().getHits()[2].getId(), equalTo("1"));
+            assertThat(response.getHits().getHits()[2].getSortValues()[0].toString(), equalTo("11"));
+        },
             prepareSearch().setQuery(matchAllQuery())
                 .addSort(
                     SortBuilders.fieldSort("parent.child.child_values")
                         .setNestedSort(new NestedSortBuilder("parent.child"))
                         .sortMode(SortMode.SUM)
                         .order(SortOrder.ASC)
-                ),
-            response -> {
-                assertHitCount(response, 3);
-                assertThat(response.getHits().getHits().length, equalTo(3));
-                assertThat(response.getHits().getHits()[0].getId(), equalTo("3"));
-                assertThat(response.getHits().getHits()[0].getSortValues()[0].toString(), equalTo("2"));
-                assertThat(response.getHits().getHits()[1].getId(), equalTo("2"));
-                assertThat(response.getHits().getHits()[1].getSortValues()[0].toString(), equalTo("7"));
-                assertThat(response.getHits().getHits()[2].getId(), equalTo("1"));
-                assertThat(response.getHits().getHits()[2].getSortValues()[0].toString(), equalTo("11"));
-            }
+                )
         );
-        assertResponse(
+        assertResponse(response -> {
+            assertHitCount(response, 3);
+            assertThat(response.getHits().getHits().length, equalTo(3));
+            assertThat(response.getHits().getHits()[0].getId(), equalTo("1"));
+            assertThat(response.getHits().getHits()[0].getSortValues()[0].toString(), equalTo("11"));
+            assertThat(response.getHits().getHits()[1].getId(), equalTo("2"));
+            assertThat(response.getHits().getHits()[1].getSortValues()[0].toString(), equalTo("7"));
+            assertThat(response.getHits().getHits()[2].getId(), equalTo("3"));
+            assertThat(response.getHits().getHits()[2].getSortValues()[0].toString(), equalTo("2"));
+        },
             prepareSearch().setQuery(matchAllQuery())
                 .addSort(
                     SortBuilders.fieldSort("parent.child.child_values")
                         .setNestedSort(new NestedSortBuilder("parent.child"))
                         .sortMode(SortMode.SUM)
                         .order(SortOrder.DESC)
-                ),
-            response -> {
-                assertHitCount(response, 3);
-                assertThat(response.getHits().getHits().length, equalTo(3));
-                assertThat(response.getHits().getHits()[0].getId(), equalTo("1"));
-                assertThat(response.getHits().getHits()[0].getSortValues()[0].toString(), equalTo("11"));
-                assertThat(response.getHits().getHits()[1].getId(), equalTo("2"));
-                assertThat(response.getHits().getHits()[1].getSortValues()[0].toString(), equalTo("7"));
-                assertThat(response.getHits().getHits()[2].getId(), equalTo("3"));
-                assertThat(response.getHits().getHits()[2].getSortValues()[0].toString(), equalTo("2"));
-            }
+                )
         );
         // Sort mode: sum with filter
-        assertResponse(
+        assertResponse(response -> {
+            assertHitCount(response, 3);
+            assertThat(response.getHits().getHits().length, equalTo(3));
+            assertThat(response.getHits().getHits()[0].getId(), equalTo("1"));
+            assertThat(response.getHits().getHits()[0].getSortValues()[0].toString(), equalTo("1"));
+            assertThat(response.getHits().getHits()[1].getId(), equalTo("2"));
+            assertThat(response.getHits().getHits()[1].getSortValues()[0].toString(), equalTo("2"));
+            assertThat(response.getHits().getHits()[2].getId(), equalTo("3"));
+            assertThat(response.getHits().getHits()[2].getSortValues()[0].toString(), equalTo("3"));
+        },
             prepareSearch().setQuery(matchAllQuery())
                 .addSort(
                     SortBuilders.fieldSort("parent.child.child_values")
@@ -1283,59 +1276,56 @@ public class SimpleNestedIT extends ESIntegTestCase {
                         )
                         .sortMode(SortMode.SUM)
                         .order(SortOrder.ASC)
-                ),
-            response -> {
-                assertHitCount(response, 3);
-                assertThat(response.getHits().getHits().length, equalTo(3));
-                assertThat(response.getHits().getHits()[0].getId(), equalTo("1"));
-                assertThat(response.getHits().getHits()[0].getSortValues()[0].toString(), equalTo("1"));
-                assertThat(response.getHits().getHits()[1].getId(), equalTo("2"));
-                assertThat(response.getHits().getHits()[1].getSortValues()[0].toString(), equalTo("2"));
-                assertThat(response.getHits().getHits()[2].getId(), equalTo("3"));
-                assertThat(response.getHits().getHits()[2].getSortValues()[0].toString(), equalTo("3"));
-            }
+                )
         );
         // Sort mode: avg
-        assertResponse(
+        assertResponse(response -> {
+            assertHitCount(response, 3);
+            assertThat(response.getHits().getHits().length, equalTo(3));
+            assertThat(response.getHits().getHits()[0].getId(), equalTo("3"));
+            assertThat(response.getHits().getHits()[0].getSortValues()[0].toString(), equalTo("1"));
+            assertThat(response.getHits().getHits()[1].getId(), equalTo("2"));
+            assertThat(response.getHits().getHits()[1].getSortValues()[0].toString(), equalTo("2"));
+            assertThat(response.getHits().getHits()[2].getId(), equalTo("1"));
+            assertThat(response.getHits().getHits()[2].getSortValues()[0].toString(), equalTo("3"));
+        },
             prepareSearch().setQuery(matchAllQuery())
                 .addSort(
                     SortBuilders.fieldSort("parent.child.child_values")
                         .setNestedSort(new NestedSortBuilder("parent.child"))
                         .sortMode(SortMode.AVG)
                         .order(SortOrder.ASC)
-                ),
-            response -> {
-                assertHitCount(response, 3);
-                assertThat(response.getHits().getHits().length, equalTo(3));
-                assertThat(response.getHits().getHits()[0].getId(), equalTo("3"));
-                assertThat(response.getHits().getHits()[0].getSortValues()[0].toString(), equalTo("1"));
-                assertThat(response.getHits().getHits()[1].getId(), equalTo("2"));
-                assertThat(response.getHits().getHits()[1].getSortValues()[0].toString(), equalTo("2"));
-                assertThat(response.getHits().getHits()[2].getId(), equalTo("1"));
-                assertThat(response.getHits().getHits()[2].getSortValues()[0].toString(), equalTo("3"));
-            }
+                )
         );
-        assertResponse(
+        assertResponse(response -> {
+            assertHitCount(response, 3);
+            assertThat(response.getHits().getHits().length, equalTo(3));
+            assertThat(response.getHits().getHits()[0].getId(), equalTo("1"));
+            assertThat(response.getHits().getHits()[0].getSortValues()[0].toString(), equalTo("3"));
+            assertThat(response.getHits().getHits()[1].getId(), equalTo("2"));
+            assertThat(response.getHits().getHits()[1].getSortValues()[0].toString(), equalTo("2"));
+            assertThat(response.getHits().getHits()[2].getId(), equalTo("3"));
+            assertThat(response.getHits().getHits()[2].getSortValues()[0].toString(), equalTo("1"));
+        },
             prepareSearch().setQuery(matchAllQuery())
                 .addSort(
                     SortBuilders.fieldSort("parent.child.child_values")
                         .setNestedSort(new NestedSortBuilder("parent.child"))
                         .sortMode(SortMode.AVG)
                         .order(SortOrder.DESC)
-                ),
-            response -> {
-                assertHitCount(response, 3);
-                assertThat(response.getHits().getHits().length, equalTo(3));
-                assertThat(response.getHits().getHits()[0].getId(), equalTo("1"));
-                assertThat(response.getHits().getHits()[0].getSortValues()[0].toString(), equalTo("3"));
-                assertThat(response.getHits().getHits()[1].getId(), equalTo("2"));
-                assertThat(response.getHits().getHits()[1].getSortValues()[0].toString(), equalTo("2"));
-                assertThat(response.getHits().getHits()[2].getId(), equalTo("3"));
-                assertThat(response.getHits().getHits()[2].getSortValues()[0].toString(), equalTo("1"));
-            }
+                )
         );
         // Sort mode: avg with filter
-        assertResponse(
+        assertResponse(response -> {
+            assertHitCount(response, 3);
+            assertThat(response.getHits().getHits().length, equalTo(3));
+            assertThat(response.getHits().getHits()[0].getId(), equalTo("1"));
+            assertThat(response.getHits().getHits()[0].getSortValues()[0].toString(), equalTo("1"));
+            assertThat(response.getHits().getHits()[1].getId(), equalTo("2"));
+            assertThat(response.getHits().getHits()[1].getSortValues()[0].toString(), equalTo("2"));
+            assertThat(response.getHits().getHits()[2].getId(), equalTo("3"));
+            assertThat(response.getHits().getHits()[2].getSortValues()[0].toString(), equalTo("3"));
+        },
             prepareSearch().setQuery(matchAllQuery())
                 .addSort(
                     SortBuilders.fieldSort("parent.child.child_values")
@@ -1344,17 +1334,7 @@ public class SimpleNestedIT extends ESIntegTestCase {
                         )
                         .sortMode(SortMode.AVG)
                         .order(SortOrder.ASC)
-                ),
-            response -> {
-                assertHitCount(response, 3);
-                assertThat(response.getHits().getHits().length, equalTo(3));
-                assertThat(response.getHits().getHits()[0].getId(), equalTo("1"));
-                assertThat(response.getHits().getHits()[0].getSortValues()[0].toString(), equalTo("1"));
-                assertThat(response.getHits().getHits()[1].getId(), equalTo("2"));
-                assertThat(response.getHits().getHits()[1].getSortValues()[0].toString(), equalTo("2"));
-                assertThat(response.getHits().getHits()[2].getId(), equalTo("3"));
-                assertThat(response.getHits().getHits()[2].getSortValues()[0].toString(), equalTo("3"));
-            }
+                )
         );
     }
 
@@ -1501,7 +1481,16 @@ public class SimpleNestedIT extends ESIntegTestCase {
         assertTrue(indexResponse2.getShardInfo().getSuccessful() > 0);
         refresh();
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            assertNoFailures(response);
+            assertHitCount(response, 2);
+            assertThat(response.getHits().getAt(0).getId(), equalTo("2"));
+            assertThat(response.getHits().getAt(0).getSortValues()[0].toString(), equalTo("fname1"));
+            assertThat(response.getHits().getAt(0).getSortValues()[1].toString(), equalTo("fname1"));
+            assertThat(response.getHits().getAt(1).getId(), equalTo("1"));
+            assertThat(response.getHits().getAt(1).getSortValues()[0].toString(), equalTo("fname1"));
+            assertThat(response.getHits().getAt(1).getSortValues()[1].toString(), equalTo("fname3"));
+        },
             prepareSearch("test").addSort(
                 SortBuilders.fieldSort("users.first").setNestedSort(new NestedSortBuilder("users")).order(SortOrder.ASC)
             )
@@ -1513,17 +1502,7 @@ public class SimpleNestedIT extends ESIntegTestCase {
                                 nestedQuery("users.workstations", termQuery("users.workstations.stationid", "s5"), ScoreMode.Avg)
                             )
                         )
-                ),
-            response -> {
-                assertNoFailures(response);
-                assertHitCount(response, 2);
-                assertThat(response.getHits().getAt(0).getId(), equalTo("2"));
-                assertThat(response.getHits().getAt(0).getSortValues()[0].toString(), equalTo("fname1"));
-                assertThat(response.getHits().getAt(0).getSortValues()[1].toString(), equalTo("fname1"));
-                assertThat(response.getHits().getAt(1).getId(), equalTo("1"));
-                assertThat(response.getHits().getAt(1).getSortValues()[0].toString(), equalTo("fname1"));
-                assertThat(response.getHits().getAt(1).getSortValues()[1].toString(), equalTo("fname3"));
-            }
+                )
         );
     }
 

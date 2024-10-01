@@ -167,7 +167,7 @@ public abstract class ESMockAPIBasedRepositoryIntegTestCase extends ESBlobStoreR
         flushAndRefresh(index);
         BroadcastResponse forceMerge = client().admin().indices().prepareForceMerge(index).setFlush(true).setMaxNumSegments(1).get();
         assertThat(forceMerge.getSuccessfulShards(), equalTo(1));
-        assertHitCount(prepareSearch(index).setSize(0).setTrackTotalHits(true), nbDocs);
+        assertHitCount(nbDocs, prepareSearch(index).setSize(0).setTrackTotalHits(true));
 
         final String snapshot = "snapshot";
         assertSuccessfulSnapshot(
@@ -180,7 +180,7 @@ public abstract class ESMockAPIBasedRepositoryIntegTestCase extends ESBlobStoreR
             clusterAdmin().prepareRestoreSnapshot(TEST_REQUEST_TIMEOUT, repository, snapshot).setWaitForCompletion(true)
         );
         ensureGreen(index);
-        assertHitCount(prepareSearch(index).setSize(0).setTrackTotalHits(true), nbDocs);
+        assertHitCount(nbDocs, prepareSearch(index).setSize(0).setTrackTotalHits(true));
 
         assertAcked(clusterAdmin().prepareDeleteSnapshot(TEST_REQUEST_TIMEOUT, repository, snapshot).get());
     }
@@ -200,7 +200,7 @@ public abstract class ESMockAPIBasedRepositoryIntegTestCase extends ESBlobStoreR
         flushAndRefresh(index);
         BroadcastResponse forceMerge = client().admin().indices().prepareForceMerge(index).setFlush(true).setMaxNumSegments(1).get();
         assertThat(forceMerge.getSuccessfulShards(), equalTo(1));
-        assertHitCount(prepareSearch(index).setSize(0).setTrackTotalHits(true), nbDocs);
+        assertHitCount(nbDocs, prepareSearch(index).setSize(0).setTrackTotalHits(true));
 
         final String snapshot = "snapshot";
         assertSuccessfulSnapshot(
@@ -213,7 +213,7 @@ public abstract class ESMockAPIBasedRepositoryIntegTestCase extends ESBlobStoreR
             clusterAdmin().prepareRestoreSnapshot(TEST_REQUEST_TIMEOUT, repository, snapshot).setWaitForCompletion(true)
         );
         ensureGreen(index);
-        assertHitCount(prepareSearch(index).setSize(0).setTrackTotalHits(true), nbDocs);
+        assertHitCount(nbDocs, prepareSearch(index).setSize(0).setTrackTotalHits(true));
 
         assertAcked(clusterAdmin().prepareDeleteSnapshot(TEST_REQUEST_TIMEOUT, repository, snapshot).get());
 

@@ -194,22 +194,19 @@ public class DetectionRulesIT extends MlNativeAutodetectIntegTestCase {
         client().execute(UpdateFilterAction.INSTANCE, updateFilterRequest).get();
 
         // Wait until the notification that the filter was updated is indexed
-        assertBusy(
-            () -> assertResponse(
-                prepareSearch(NotificationsIndex.NOTIFICATIONS_INDEX).setSize(1)
-                    .addSort("timestamp", SortOrder.DESC)
-                    .setQuery(
-                        QueryBuilders.boolQuery()
-                            .filter(QueryBuilders.termQuery("job_id", job.getId()))
-                            .filter(QueryBuilders.termQuery("level", "info"))
-                    ),
-                searchResponse -> {
-                    SearchHit[] hits = searchResponse.getHits().getHits();
-                    assertThat(hits.length, equalTo(1));
-                    assertThat((String) hits[0].getSourceAsMap().get("message"), containsString("Filter [safe_ips] has been modified"));
-                }
-            )
-        );
+        assertBusy(() -> assertResponse(searchResponse -> {
+            SearchHit[] hits = searchResponse.getHits().getHits();
+            assertThat(hits.length, equalTo(1));
+            assertThat((String) hits[0].getSourceAsMap().get("message"), containsString("Filter [safe_ips] has been modified"));
+        },
+            prepareSearch(NotificationsIndex.NOTIFICATIONS_INDEX).setSize(1)
+                .addSort("timestamp", SortOrder.DESC)
+                .setQuery(
+                    QueryBuilders.boolQuery()
+                        .filter(QueryBuilders.termQuery("job_id", job.getId()))
+                        .filter(QueryBuilders.termQuery("level", "info"))
+                )
+        ));
 
         long secondAnomalyTime = timestamp;
         // Send another anomalous bucket

@@ -89,7 +89,7 @@ public class OutlierDetectionWithMissingFieldsIT extends MlNativeDataFrameAnalyt
         assertThat(stats.getDataCounts().getTestDocsCount(), equalTo(0L));
         assertThat(stats.getDataCounts().getSkippedDocsCount(), equalTo(2L));
 
-        assertResponse(prepareSearch(sourceIndex), sourceData -> {
+        assertResponse(sourceData -> {
             for (SearchHit hit : sourceData.getHits()) {
                 GetResponse destDocGetResponse = client().prepareGet().setIndex(config.getDest().getIndex()).setId(hit.getId()).get();
                 assertThat(destDocGetResponse.isExists(), is(true));
@@ -111,7 +111,7 @@ public class OutlierDetectionWithMissingFieldsIT extends MlNativeDataFrameAnalyt
                     assertThat(destDoc.containsKey("ml"), is(false));
                 }
             }
-        });
+        }, prepareSearch(sourceIndex));
 
         assertProgressComplete(id);
         assertStoredProgressHits(id, 1);

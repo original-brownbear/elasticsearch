@@ -144,7 +144,12 @@ public class RRFRankShardCanMatchIT extends ESIntegTestCase {
         indicesAdmin().prepareRefresh("value_index").get();
 
         // match 2 separate shard with no overlap in queries
-        assertResponse(
+        assertResponse(response -> {
+            assertNull(response.getHits().getTotalHits());
+            assertEquals(2, response.getHits().getHits().length);
+            assertEquals(5, response.getSuccessfulShards());
+            assertEquals(3, response.getSkippedShards());
+        },
             prepareSearch("value_index").setSearchType(SearchType.QUERY_THEN_FETCH)
                 .setPreFilterShardSize(1)
                 .setRankBuilder(new RRFRankBuilder(20, 1))
@@ -155,17 +160,16 @@ public class RRFRankShardCanMatchIT extends ESIntegTestCase {
                         new SubSearchSourceBuilder(new SkipShardPlugin.SkipShardQueryBuilder(shardA, shardB, "value", "19"))
                     )
                 )
-                .setSize(5),
-            response -> {
-                assertNull(response.getHits().getTotalHits());
-                assertEquals(2, response.getHits().getHits().length);
-                assertEquals(5, response.getSuccessfulShards());
-                assertEquals(3, response.getSkippedShards());
-            }
+                .setSize(5)
         );
 
         // match one shard with one query and do not match the other shard with one query
-        assertResponse(
+        assertResponse(response -> {
+            assertNull(response.getHits().getTotalHits());
+            assertEquals(1, response.getHits().getHits().length);
+            assertEquals(5, response.getSuccessfulShards());
+            assertEquals(4, response.getSkippedShards());
+        },
             prepareSearch("value_index").setSearchType(SearchType.QUERY_THEN_FETCH)
                 .setPreFilterShardSize(1)
                 .setRankBuilder(new RRFRankBuilder(20, 1))
@@ -176,17 +180,16 @@ public class RRFRankShardCanMatchIT extends ESIntegTestCase {
                         new SubSearchSourceBuilder(new SkipShardPlugin.SkipShardQueryBuilder(shardA, shardB, "value", "19"))
                     )
                 )
-                .setSize(5),
-            response -> {
-                assertNull(response.getHits().getTotalHits());
-                assertEquals(1, response.getHits().getHits().length);
-                assertEquals(5, response.getSuccessfulShards());
-                assertEquals(4, response.getSkippedShards());
-            }
+                .setSize(5)
         );
 
         // match no shards, but still use one to generate a search response
-        assertResponse(
+        assertResponse(response -> {
+            assertNull(response.getHits().getTotalHits());
+            assertEquals(0, response.getHits().getHits().length);
+            assertEquals(5, response.getSuccessfulShards());
+            assertEquals(4, response.getSkippedShards());
+        },
             prepareSearch("value_index").setSearchType(SearchType.QUERY_THEN_FETCH)
                 .setPreFilterShardSize(1)
                 .setRankBuilder(new RRFRankBuilder(20, 1))
@@ -197,17 +200,16 @@ public class RRFRankShardCanMatchIT extends ESIntegTestCase {
                         new SubSearchSourceBuilder(new SkipShardPlugin.SkipShardQueryBuilder(shardA, shardB, "value", "40"))
                     )
                 )
-                .setSize(5),
-            response -> {
-                assertNull(response.getHits().getTotalHits());
-                assertEquals(0, response.getHits().getHits().length);
-                assertEquals(5, response.getSuccessfulShards());
-                assertEquals(4, response.getSkippedShards());
-            }
+                .setSize(5)
         );
 
         // match the same shard for both queries
-        assertResponse(
+        assertResponse(response -> {
+            assertNull(response.getHits().getTotalHits());
+            assertEquals(2, response.getHits().getHits().length);
+            assertEquals(5, response.getSuccessfulShards());
+            assertEquals(4, response.getSkippedShards());
+        },
             prepareSearch("value_index").setSearchType(SearchType.QUERY_THEN_FETCH)
                 .setPreFilterShardSize(1)
                 .setRankBuilder(new RRFRankBuilder(20, 1))
@@ -218,17 +220,16 @@ public class RRFRankShardCanMatchIT extends ESIntegTestCase {
                         new SubSearchSourceBuilder(new SkipShardPlugin.SkipShardQueryBuilder(shardA, shardB, "value", "16"))
                     )
                 )
-                .setSize(5),
-            response -> {
-                assertNull(response.getHits().getTotalHits());
-                assertEquals(2, response.getHits().getHits().length);
-                assertEquals(5, response.getSuccessfulShards());
-                assertEquals(4, response.getSkippedShards());
-            }
+                .setSize(5)
         );
 
         // match one shard with the exact same query
-        assertResponse(
+        assertResponse(response -> {
+            assertNull(response.getHits().getTotalHits());
+            assertEquals(1, response.getHits().getHits().length);
+            assertEquals(5, response.getSuccessfulShards());
+            assertEquals(4, response.getSkippedShards());
+        },
             prepareSearch("value_index").setSearchType(SearchType.QUERY_THEN_FETCH)
                 .setPreFilterShardSize(1)
                 .setRankBuilder(new RRFRankBuilder(20, 1))
@@ -239,13 +240,7 @@ public class RRFRankShardCanMatchIT extends ESIntegTestCase {
                         new SubSearchSourceBuilder(new SkipShardPlugin.SkipShardQueryBuilder(shardA, shardB, "value", "8"))
                     )
                 )
-                .setSize(5),
-            response -> {
-                assertNull(response.getHits().getTotalHits());
-                assertEquals(1, response.getHits().getHits().length);
-                assertEquals(5, response.getSuccessfulShards());
-                assertEquals(4, response.getSkippedShards());
-            }
+                .setSize(5)
         );
     }
 }

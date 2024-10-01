@@ -44,7 +44,7 @@ public class WriteAckDelayIT extends ESIntegTestCase {
         for (int j = 0; j < numOfChecks; j++) {
             try {
                 logger.debug("running search");
-                assertResponse(prepareSearch("test"), response -> {
+                assertResponse(response -> {
                     if (response.getHits().getTotalHits().value != numOfDocs) {
                         final String message = "Count is "
                             + response.getHits().getTotalHits().value
@@ -55,7 +55,7 @@ public class WriteAckDelayIT extends ESIntegTestCase {
                         logger.error("{}. search response: \n{}", message, response);
                         fail(message);
                     }
-                });
+                }, prepareSearch("test"));
             } catch (Exception e) {
                 logger.error("search failed", e);
                 throw e;

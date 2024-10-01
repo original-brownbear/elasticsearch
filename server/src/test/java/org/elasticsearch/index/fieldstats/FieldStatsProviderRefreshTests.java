@@ -43,21 +43,21 @@ public class FieldStatsProviderRefreshTests extends ESSingleNodeTestCase {
         // Search for a range and check that it missed the cache (since its the
         // first time it has run)
         assertNoFailuresAndResponse(
+            r1 -> assertThat(r1.getHits().getTotalHits().value, equalTo(3L)),
             client().prepareSearch("index")
                 .setSearchType(SearchType.QUERY_THEN_FETCH)
                 .setSize(0)
-                .setQuery(QueryBuilders.rangeQuery("s").gte("a").lte("g")),
-            r1 -> assertThat(r1.getHits().getTotalHits().value, equalTo(3L))
+                .setQuery(QueryBuilders.rangeQuery("s").gte("a").lte("g"))
         );
         assertRequestCacheStats(0, 1);
 
         // Search again and check it hits the cache
         assertNoFailuresAndResponse(
+            r2 -> assertThat(r2.getHits().getTotalHits().value, equalTo(3L)),
             client().prepareSearch("index")
                 .setSearchType(SearchType.QUERY_THEN_FETCH)
                 .setSize(0)
-                .setQuery(QueryBuilders.rangeQuery("s").gte("a").lte("g")),
-            r2 -> assertThat(r2.getHits().getTotalHits().value, equalTo(3L))
+                .setQuery(QueryBuilders.rangeQuery("s").gte("a").lte("g"))
         );
         assertRequestCacheStats(1, 1);
 
@@ -68,11 +68,11 @@ public class FieldStatsProviderRefreshTests extends ESSingleNodeTestCase {
 
         // Search again and check the request cache for another miss since request cache should be invalidated by refresh
         assertNoFailuresAndResponse(
+            r3 -> assertThat(r3.getHits().getTotalHits().value, equalTo(5L)),
             client().prepareSearch("index")
                 .setSearchType(SearchType.QUERY_THEN_FETCH)
                 .setSize(0)
-                .setQuery(QueryBuilders.rangeQuery("s").gte("a").lte("g")),
-            r3 -> assertThat(r3.getHits().getTotalHits().value, equalTo(5L))
+                .setQuery(QueryBuilders.rangeQuery("s").gte("a").lte("g"))
         );
         assertRequestCacheStats(1, 2);
     }

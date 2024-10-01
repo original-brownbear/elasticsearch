@@ -43,10 +43,10 @@ public class CustomQueryParserIT extends ESIntegTestCase {
     }
 
     public void testCustomDummyQuery() {
-        assertHitCount(prepareSearch("index").setQuery(new DummyQueryBuilder()), 1L);
+        assertHitCount(1L, prepareSearch("index").setQuery(new DummyQueryBuilder()));
     }
 
     public void testCustomDummyQueryWithinBooleanQuery() {
-        assertHitCount(prepareSearch("index").setQuery(new BoolQueryBuilder().must(new DummyQueryBuilder())), 1L);
+        assertHitCount(1L, prepareSearch("index").setQuery(new BoolQueryBuilder().must(new DummyQueryBuilder())));
     }
 }

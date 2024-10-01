@@ -90,9 +90,9 @@ public class FunctionScoreFieldValueIT extends ESIntegTestCase {
         // doc 3 doesn't have a "test" field, so an exception will be thrown
         try {
             assertResponse(
+                ElasticsearchAssertions::assertFailures,
                 prepareSearch("test").setExplain(randomBoolean())
-                    .setQuery(functionScoreQuery(matchAllQuery(), fieldValueFactorFunction("test"))),
-                ElasticsearchAssertions::assertFailures
+                    .setQuery(functionScoreQuery(matchAllQuery(), fieldValueFactorFunction("test")))
             );
         } catch (SearchPhaseExecutionException e) {
             // We are expecting an exception, because 3 has no field
@@ -114,14 +114,14 @@ public class FunctionScoreFieldValueIT extends ESIntegTestCase {
 
         // field is not mapped but we're defaulting it to 100 so all documents should have the same score
         assertResponse(
+            response -> assertEquals(response.getHits().getAt(0).getScore(), response.getHits().getAt(2).getScore(), 0),
             prepareSearch("test").setExplain(randomBoolean())
                 .setQuery(
                     functionScoreQuery(
                         matchAllQuery(),
                         fieldValueFactorFunction("notmapped").modifier(FieldValueFactorFunction.Modifier.RECIPROCAL).missing(100)
                     )
-                ),
-            response -> assertEquals(response.getHits().getAt(0).getScore(), response.getHits().getAt(2).getScore(), 0)
+                )
         );
 
         prepareIndex("test").setId("2").setSource("test", -1, "body", "foo").get();
@@ -130,14 +130,14 @@ public class FunctionScoreFieldValueIT extends ESIntegTestCase {
         // -1 divided by 0 is infinity, which should provoke an exception.
         try {
             assertResponse(
+                ElasticsearchAssertions::assertFailures,
                 prepareSearch("test").setExplain(randomBoolean())
                     .setQuery(
                         functionScoreQuery(
                             simpleQueryStringQuery("foo"),
                             fieldValueFactorFunction("test").modifier(FieldValueFactorFunction.Modifier.RECIPROCAL).factor(0)
                         )
-                    ),
-                ElasticsearchAssertions::assertFailures
+                    )
             );
         } catch (SearchPhaseExecutionException e) {
             // This is fine, the query will throw an exception if executed

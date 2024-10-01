@@ -48,53 +48,51 @@ public class CompareConditionSearchTests extends AbstractWatcherIntegrationTestC
             Clock.systemUTC()
         );
 
-        assertResponse(
+        assertResponse(response -> {
+            WatchExecutionContext ctx = null;
+            try {
+                ctx = mockExecutionContext("_name", new Payload.XContent(response, ToXContent.EMPTY_PARAMS));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            CompareCondition.Result result = condition.execute(ctx);
+            assertThat(result.met(), is(false));
+            Map<String, Object> resolvedValues = result.getResolvedValues();
+            assertThat(resolvedValues, notNullValue());
+            assertThat(resolvedValues.size(), is(1));
+            assertThat(resolvedValues, hasEntry("ctx.payload.aggregations.rate.buckets.0.doc_count", (Object) 4));
+        },
             prepareSearch("my-index").addAggregation(
                 AggregationBuilders.dateHistogram("rate")
                     .field("@timestamp")
                     .fixedInterval(DateHistogramInterval.HOUR)
                     .order(BucketOrder.count(false))
-            ),
-            response -> {
-                WatchExecutionContext ctx = null;
-                try {
-                    ctx = mockExecutionContext("_name", new Payload.XContent(response, ToXContent.EMPTY_PARAMS));
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-                CompareCondition.Result result = condition.execute(ctx);
-                assertThat(result.met(), is(false));
-                Map<String, Object> resolvedValues = result.getResolvedValues();
-                assertThat(resolvedValues, notNullValue());
-                assertThat(resolvedValues.size(), is(1));
-                assertThat(resolvedValues, hasEntry("ctx.payload.aggregations.rate.buckets.0.doc_count", (Object) 4));
-            }
+            )
         );
 
         prepareIndex("my-index").setSource("@timestamp", "2005-01-01T00:40").get();
         refresh();
 
-        assertResponse(
+        assertResponse(response -> {
+            WatchExecutionContext ctx = null;
+            try {
+                ctx = mockExecutionContext("_name", new Payload.XContent(response, ToXContent.EMPTY_PARAMS));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            CompareCondition.Result result = condition.execute(ctx);
+            assertThat(result.met(), is(true));
+            Map<String, Object> resolvedValues = result.getResolvedValues();
+            assertThat(resolvedValues, notNullValue());
+            assertThat(resolvedValues.size(), is(1));
+            assertThat(resolvedValues, hasEntry("ctx.payload.aggregations.rate.buckets.0.doc_count", (Object) 5));
+        },
             prepareSearch("my-index").addAggregation(
                 AggregationBuilders.dateHistogram("rate")
                     .field("@timestamp")
                     .fixedInterval(DateHistogramInterval.HOUR)
                     .order(BucketOrder.count(false))
-            ),
-            response -> {
-                WatchExecutionContext ctx = null;
-                try {
-                    ctx = mockExecutionContext("_name", new Payload.XContent(response, ToXContent.EMPTY_PARAMS));
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-                CompareCondition.Result result = condition.execute(ctx);
-                assertThat(result.met(), is(true));
-                Map<String, Object> resolvedValues = result.getResolvedValues();
-                assertThat(resolvedValues, notNullValue());
-                assertThat(resolvedValues.size(), is(1));
-                assertThat(resolvedValues, hasEntry("ctx.payload.aggregations.rate.buckets.0.doc_count", (Object) 5));
-            }
+            )
         );
     }
 

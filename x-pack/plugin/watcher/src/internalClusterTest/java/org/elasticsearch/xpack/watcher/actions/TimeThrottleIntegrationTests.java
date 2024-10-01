@@ -96,19 +96,18 @@ public class TimeThrottleIntegrationTests extends AbstractWatcherIntegrationTest
         assertBusy(() -> {
             ensureGreen(HistoryStoreField.DATA_STREAM);
             refresh(HistoryStoreField.DATA_STREAM + "*");
-            assertResponse(
+            assertResponse(searchResponse -> {
+                assertThat(searchResponse.getHits().getHits().length, greaterThan(0));
+                Map<String, Object> map = searchResponse.getHits().getHits()[0].getSourceAsMap();
+                assertNotNull(map);
+                String actionId = ObjectPath.eval("result.actions.0.id", map);
+                assertThat(actionId, is("my-logging-action"));
+                String actionStatus = ObjectPath.eval("result.actions.0.status", map);
+                assertThat(actionStatus, is(expectedValue));
+            },
                 prepareSearch(HistoryStoreField.DATA_STREAM + "*").setSize(1)
                     .setSource(new SearchSourceBuilder().query(QueryBuilders.boolQuery().must(termQuery("watch_id", id))))
-                    .addSort(SortBuilders.fieldSort("result.execution_time").order(SortOrder.DESC)),
-                searchResponse -> {
-                    assertThat(searchResponse.getHits().getHits().length, greaterThan(0));
-                    Map<String, Object> map = searchResponse.getHits().getHits()[0].getSourceAsMap();
-                    assertNotNull(map);
-                    String actionId = ObjectPath.eval("result.actions.0.id", map);
-                    assertThat(actionId, is("my-logging-action"));
-                    String actionStatus = ObjectPath.eval("result.actions.0.status", map);
-                    assertThat(actionStatus, is(expectedValue));
-                }
+                    .addSort(SortBuilders.fieldSort("result.execution_time").order(SortOrder.DESC))
             );
         });
     }
@@ -118,9 +117,9 @@ public class TimeThrottleIntegrationTests extends AbstractWatcherIntegrationTest
             // Watcher history is now written asynchronously, so we check this in an assertBusy
             ensureGreen(HistoryStoreField.DATA_STREAM);
             assertResponse(
+                searchResponse -> assertThat(searchResponse.getHits().getTotalHits().value, is(oneOf(expectedCount, expectedCount + 1))),
                 prepareSearch(HistoryStoreField.DATA_STREAM + "*").setSize(0)
-                    .setSource(new SearchSourceBuilder().query(QueryBuilders.boolQuery().must(termQuery("watch_id", id)))),
-                searchResponse -> assertThat(searchResponse.getHits().getTotalHits().value, is(oneOf(expectedCount, expectedCount + 1)))
+                    .setSource(new SearchSourceBuilder().query(QueryBuilders.boolQuery().must(termQuery("watch_id", id))))
             );
         });
 

@@ -47,24 +47,23 @@ public class SharedSignificantTermsTestMethods {
     }
 
     private static void checkSignificantTermsAggregationCorrect(ESIntegTestCase testCase) {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            StringTerms classes = response.getAggregations().get("class");
+            Assert.assertThat(classes.getBuckets().size(), equalTo(2));
+            for (Terms.Bucket classBucket : classes.getBuckets()) {
+                InternalAggregations aggs = classBucket.getAggregations();
+                Assert.assertNotNull(aggs.get("sig_terms"));
+                SignificantTerms agg = aggs.get("sig_terms");
+                Assert.assertThat(agg.getBuckets().size(), equalTo(1));
+                SignificantTerms.Bucket sigBucket = agg.iterator().next();
+                String term = sigBucket.getKeyAsString();
+                String classTerm = classBucket.getKeyAsString();
+                Assert.assertTrue(term.equals(classTerm));
+            }
+        },
             prepareSearch(INDEX_NAME).addAggregation(
                 terms("class").field(CLASS_FIELD).subAggregation(significantTerms("sig_terms").field(TEXT_FIELD))
-            ),
-            response -> {
-                StringTerms classes = response.getAggregations().get("class");
-                Assert.assertThat(classes.getBuckets().size(), equalTo(2));
-                for (Terms.Bucket classBucket : classes.getBuckets()) {
-                    InternalAggregations aggs = classBucket.getAggregations();
-                    Assert.assertNotNull(aggs.get("sig_terms"));
-                    SignificantTerms agg = aggs.get("sig_terms");
-                    Assert.assertThat(agg.getBuckets().size(), equalTo(1));
-                    SignificantTerms.Bucket sigBucket = agg.iterator().next();
-                    String term = sigBucket.getKeyAsString();
-                    String classTerm = classBucket.getKeyAsString();
-                    Assert.assertTrue(term.equals(classTerm));
-                }
-            }
+            )
         );
     }
 

@@ -48,8 +48,8 @@ public class MultiFieldsIntegrationIT extends ESIntegTestCase {
 
         prepareIndex("my-index").setId("1").setSource("title", "Multi fields").setRefreshPolicy(IMMEDIATE).get();
 
-        assertHitCount(prepareSearch("my-index").setQuery(matchQuery("title", "multi")), 1);
-        assertHitCount(prepareSearch("my-index").setQuery(matchQuery("title.not_analyzed", "Multi fields")), 1);
+        assertHitCount(1, prepareSearch("my-index").setQuery(matchQuery("title", "multi")));
+        assertHitCount(1, prepareSearch("my-index").setQuery(matchQuery("title.not_analyzed", "Multi fields")));
 
         assertAcked(indicesAdmin().preparePutMapping("my-index").setSource(createPutMappingSource()));
 
@@ -67,7 +67,7 @@ public class MultiFieldsIntegrationIT extends ESIntegTestCase {
 
         prepareIndex("my-index").setId("1").setSource("title", "Multi fields").setRefreshPolicy(IMMEDIATE).get();
 
-        assertHitCount(prepareSearch("my-index").setQuery(matchQuery("title.uncased", "Multi")), 1);
+        assertHitCount(1, prepareSearch("my-index").setQuery(matchQuery("title.uncased", "Multi")));
     }
 
     @SuppressWarnings("unchecked")
@@ -91,11 +91,11 @@ public class MultiFieldsIntegrationIT extends ESIntegTestCase {
         GeoPoint point = new GeoPoint(51, 19);
         prepareIndex("my-index").setId("1").setSource("a", point.toString()).setRefreshPolicy(IMMEDIATE).get();
         assertHitCount(
+            1L,
             prepareSearch("my-index").setSize(0)
-                .setQuery(constantScoreQuery(geoDistanceQuery("a").point(51, 19).distance(50, DistanceUnit.KILOMETERS))),
-            1L
+                .setQuery(constantScoreQuery(geoDistanceQuery("a").point(51, 19).distance(50, DistanceUnit.KILOMETERS)))
         );
-        assertHitCount(prepareSearch("my-index").setSize(0).setQuery(matchQuery("a.b", point.geohash())), 1L);
+        assertHitCount(1L, prepareSearch("my-index").setSize(0).setQuery(matchQuery("a.b", point.geohash())));
     }
 
     @SuppressWarnings("unchecked")
@@ -116,7 +116,7 @@ public class MultiFieldsIntegrationIT extends ESIntegTestCase {
         assertThat(bField.get("type").toString(), equalTo("keyword"));
 
         prepareIndex("my-index").setId("1").setSource("a", "complete me").setRefreshPolicy(IMMEDIATE).get();
-        assertHitCount(prepareSearch("my-index").setSize(0).setQuery(matchQuery("a.b", "complete me")), 1L);
+        assertHitCount(1L, prepareSearch("my-index").setSize(0).setQuery(matchQuery("a.b", "complete me")));
     }
 
     @SuppressWarnings("unchecked")
@@ -137,7 +137,7 @@ public class MultiFieldsIntegrationIT extends ESIntegTestCase {
         assertThat(bField.get("type").toString(), equalTo("keyword"));
 
         prepareIndex("my-index").setId("1").setSource("a", "127.0.0.1").setRefreshPolicy(IMMEDIATE).get();
-        assertHitCount(prepareSearch("my-index").setSize(0).setQuery(matchQuery("a.b", "127.0.0.1")), 1L);
+        assertHitCount(1L, prepareSearch("my-index").setSize(0).setQuery(matchQuery("a.b", "127.0.0.1")));
     }
 
     private XContentBuilder createMappingSource(String fieldType) throws IOException {

@@ -247,8 +247,8 @@ public class SuggestSearchIT extends ESIntegTestCase {
         refresh();
 
         assertResponse(
-            prepareSearch().setQuery(matchQuery("text", "spellchecker")),
-            response -> assertThat("didn't ask for suggestions but got some", response.getSuggest(), nullValue())
+            response -> assertThat("didn't ask for suggestions but got some", response.getSuggest(), nullValue()),
+            prepareSearch().setQuery(matchQuery("text", "spellchecker"))
         );
 
         TermSuggestionBuilder termSuggestion = termSuggestion("text").suggestMode(SuggestMode.ALWAYS) // Always, otherwise the results can
@@ -333,8 +333,8 @@ public class SuggestSearchIT extends ESIntegTestCase {
         refresh();
 
         assertResponse(
-            prepareSearch().setQuery(matchQuery("text", "spellcecker")),
-            response -> assertThat("didn't ask for suggestions but got some", response.getSuggest(), nullValue())
+            response -> assertThat("didn't ask for suggestions but got some", response.getSuggest(), nullValue()),
+            prepareSearch().setQuery(matchQuery("text", "spellcecker"))
         );
 
         TermSuggestionBuilder termSuggest = termSuggestion("text").suggestMode(SuggestMode.ALWAYS) // Always, otherwise the results can vary
@@ -842,12 +842,12 @@ public class SuggestSearchIT extends ESIntegTestCase {
 
         // When searching on a shard which does not hold yet any document of an existing type, we should not fail
         assertNoFailuresAndResponse(
+            response -> assertSuggestion(response.getSuggest(), 0, 0, "did_you_mean", "testing suggestions"),
             prepareSearch().setSize(0)
                 .suggest(
                     new SuggestBuilder().setGlobalText("tetsting sugestion")
                         .addSuggestion("did_you_mean", phraseSuggestion("name").maxErrors(5.0f))
-                ),
-            response -> assertSuggestion(response.getSuggest(), 0, 0, "did_you_mean", "testing suggestions")
+                )
         );
     }
 
@@ -881,18 +881,17 @@ public class SuggestSearchIT extends ESIntegTestCase {
         ensureGreen();
 
         // test phrase suggestion on completely empty index
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            assertNoFailures(response);
+            Suggest suggest = response.getSuggest();
+            assertSuggestionSize(suggest, 0, 0, "did_you_mean");
+            assertThat(suggest.getSuggestion("did_you_mean").getEntries().get(0).getText().string(), equalTo("tetsting sugestion"));
+        },
             prepareSearch().setSize(0)
                 .suggest(
                     new SuggestBuilder().setGlobalText("tetsting sugestion")
                         .addSuggestion("did_you_mean", phraseSuggestion("name").maxErrors(5.0f))
-                ),
-            response -> {
-                assertNoFailures(response);
-                Suggest suggest = response.getSuggest();
-                assertSuggestionSize(suggest, 0, 0, "did_you_mean");
-                assertThat(suggest.getSuggestion("did_you_mean").getEntries().get(0).getText().string(), equalTo("tetsting sugestion"));
-            }
+                )
         );
 
         indexDoc("test", "11", "foo", "bar");
@@ -901,33 +900,31 @@ public class SuggestSearchIT extends ESIntegTestCase {
         refresh();
 
         // test phrase suggestion but nothing matches
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Suggest suggest = response.getSuggest();
+            assertSuggestionSize(suggest, 0, 0, "did_you_mean");
+            assertThat(suggest.getSuggestion("did_you_mean").getEntries().get(0).getText().string(), equalTo("tetsting sugestion"));
+        },
             prepareSearch().setSize(0)
                 .suggest(
                     new SuggestBuilder().setGlobalText("tetsting sugestion")
                         .addSuggestion("did_you_mean", phraseSuggestion("name").maxErrors(5.0f))
-                ),
-            response -> {
-                Suggest suggest = response.getSuggest();
-                assertSuggestionSize(suggest, 0, 0, "did_you_mean");
-                assertThat(suggest.getSuggestion("did_you_mean").getEntries().get(0).getText().string(), equalTo("tetsting sugestion"));
-            }
+                )
         );
         // finally indexing a document that will produce some meaningful suggestion
         indexDoc("test", "1", "name", "Just testing the suggestions api");
         refresh();
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Suggest suggest = response.getSuggest();
+            assertSuggestionSize(suggest, 0, 3, "did_you_mean");
+            assertSuggestion(suggest, 0, 0, "did_you_mean", "testing suggestions");
+        },
             prepareSearch().setSize(0)
                 .suggest(
                     new SuggestBuilder().setGlobalText("tetsting sugestion")
                         .addSuggestion("did_you_mean", phraseSuggestion("name").maxErrors(5.0f))
-                ),
-            response -> {
-                Suggest suggest = response.getSuggest();
-                assertSuggestionSize(suggest, 0, 3, "did_you_mean");
-                assertSuggestion(suggest, 0, 0, "did_you_mean", "testing suggestions");
-            }
+                )
         );
     }
 
@@ -1429,10 +1426,10 @@ public class SuggestSearchIT extends ESIntegTestCase {
         }
         builder.suggest(suggestBuilder);
         Suggest[] suggest = new Suggest[1];
-        assertResponse(builder, response -> {
+        assertResponse(response -> {
             assertThat(Arrays.toString(response.getShardFailures()), response.getFailedShards(), equalTo(expectShardsFailed));
             suggest[0] = response.getSuggest();
-        });
+        }, builder);
         return suggest[0];
     }
 }

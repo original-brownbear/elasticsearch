@@ -98,6 +98,7 @@ public class DataFrameAnalyticsCRUDIT extends MlSingleNodeTestCase {
         client().execute(DeleteDataFrameAnalyticsAction.INSTANCE, new DeleteDataFrameAnalyticsAction.Request(configId)).actionGet();
 
         assertHitCount(
+            0,
             originSettingClient.prepareSearch(".ml-state-*")
                 .setQuery(
                     QueryBuilders.idsQuery()
@@ -106,15 +107,14 @@ public class DataFrameAnalyticsCRUDIT extends MlSingleNodeTestCase {
                             "data_frame_analytics-delete-config-with-state-and-stats-progress"
                         )
                 )
-                .setTrackTotalHits(true),
-            0
+                .setTrackTotalHits(true)
         );
 
         assertHitCount(
+            0,
             originSettingClient.prepareSearch(".ml-stats-*")
                 .setQuery(QueryBuilders.idsQuery().addIds("delete-config-with-state-and-stats_1", "delete-config-with-state-and-stats_2"))
-                .setTrackTotalHits(true),
-            0
+                .setTrackTotalHits(true)
         );
     }
 

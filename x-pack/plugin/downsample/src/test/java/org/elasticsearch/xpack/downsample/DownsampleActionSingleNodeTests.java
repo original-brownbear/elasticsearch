@@ -1135,7 +1135,7 @@ public class DownsampleActionSingleNodeTests extends ESSingleNodeTestCase {
         }
         int docsIndexed = docCount - duplicates;
         logger.info("Indexed [{}] documents. Dropped [{}] duplicates.", docsIndexed, duplicates);
-        assertHitCount(client().prepareSearch(indexName).setSize(0), docsIndexed);
+        assertHitCount(docsIndexed, client().prepareSearch(indexName).setSize(0));
     }
 
     private void prepareSourceIndex(final String sourceIndex, boolean blockWrite) {

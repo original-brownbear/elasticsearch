@@ -72,84 +72,81 @@ public class BooleanTermsIT extends ESIntegTestCase {
     }
 
     public void testSingleValueField() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            LongTerms terms = response.getAggregations().get("terms");
+            assertThat(terms, notNullValue());
+            assertThat(terms.getName(), equalTo("terms"));
+            final int bucketCount = numSingleFalses > 0 && numSingleTrues > 0 ? 2 : numSingleFalses + numSingleTrues > 0 ? 1 : 0;
+            assertThat(terms.getBuckets().size(), equalTo(bucketCount));
+
+            LongTerms.Bucket bucket = terms.getBucketByKey("false");
+            if (numSingleFalses == 0) {
+                assertNull(bucket);
+            } else {
+                assertNotNull(bucket);
+                assertEquals(numSingleFalses, bucket.getDocCount());
+                assertEquals("false", bucket.getKeyAsString());
+            }
+
+            bucket = terms.getBucketByKey("true");
+            if (numSingleTrues == 0) {
+                assertNull(bucket);
+            } else {
+                assertNotNull(bucket);
+                assertEquals(numSingleTrues, bucket.getDocCount());
+                assertEquals("true", bucket.getKeyAsString());
+            }
+        },
             prepareSearch("idx").addAggregation(
                 new TermsAggregationBuilder("terms").field(SINGLE_VALUED_FIELD_NAME).collectMode(randomFrom(SubAggCollectionMode.values()))
-            ),
-            response -> {
-                LongTerms terms = response.getAggregations().get("terms");
-                assertThat(terms, notNullValue());
-                assertThat(terms.getName(), equalTo("terms"));
-                final int bucketCount = numSingleFalses > 0 && numSingleTrues > 0 ? 2 : numSingleFalses + numSingleTrues > 0 ? 1 : 0;
-                assertThat(terms.getBuckets().size(), equalTo(bucketCount));
-
-                LongTerms.Bucket bucket = terms.getBucketByKey("false");
-                if (numSingleFalses == 0) {
-                    assertNull(bucket);
-                } else {
-                    assertNotNull(bucket);
-                    assertEquals(numSingleFalses, bucket.getDocCount());
-                    assertEquals("false", bucket.getKeyAsString());
-                }
-
-                bucket = terms.getBucketByKey("true");
-                if (numSingleTrues == 0) {
-                    assertNull(bucket);
-                } else {
-                    assertNotNull(bucket);
-                    assertEquals(numSingleTrues, bucket.getDocCount());
-                    assertEquals("true", bucket.getKeyAsString());
-                }
-            }
+            )
         );
     }
 
     public void testMultiValueField() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            LongTerms terms = response.getAggregations().get("terms");
+            assertThat(terms, notNullValue());
+            assertThat(terms.getName(), equalTo("terms"));
+            final int bucketCount = numMultiFalses > 0 && numMultiTrues > 0 ? 2 : numMultiFalses + numMultiTrues > 0 ? 1 : 0;
+            assertThat(terms.getBuckets(), hasSize(bucketCount));
+
+            LongTerms.Bucket bucket = terms.getBucketByKey("false");
+            if (numMultiFalses == 0) {
+                assertNull(bucket);
+            } else {
+                assertNotNull(bucket);
+                assertEquals(numMultiFalses, bucket.getDocCount());
+                assertEquals("false", bucket.getKeyAsString());
+            }
+
+            bucket = terms.getBucketByKey("true");
+            if (numMultiTrues == 0) {
+                assertNull(bucket);
+            } else {
+                assertNotNull(bucket);
+                assertEquals(numMultiTrues, bucket.getDocCount());
+                assertEquals("true", bucket.getKeyAsString());
+            }
+        },
             prepareSearch("idx").addAggregation(
                 new TermsAggregationBuilder("terms").field(MULTI_VALUED_FIELD_NAME).collectMode(randomFrom(SubAggCollectionMode.values()))
-            ),
-            response -> {
-                LongTerms terms = response.getAggregations().get("terms");
-                assertThat(terms, notNullValue());
-                assertThat(terms.getName(), equalTo("terms"));
-                final int bucketCount = numMultiFalses > 0 && numMultiTrues > 0 ? 2 : numMultiFalses + numMultiTrues > 0 ? 1 : 0;
-                assertThat(terms.getBuckets(), hasSize(bucketCount));
-
-                LongTerms.Bucket bucket = terms.getBucketByKey("false");
-                if (numMultiFalses == 0) {
-                    assertNull(bucket);
-                } else {
-                    assertNotNull(bucket);
-                    assertEquals(numMultiFalses, bucket.getDocCount());
-                    assertEquals("false", bucket.getKeyAsString());
-                }
-
-                bucket = terms.getBucketByKey("true");
-                if (numMultiTrues == 0) {
-                    assertNull(bucket);
-                } else {
-                    assertNotNull(bucket);
-                    assertEquals(numMultiTrues, bucket.getDocCount());
-                    assertEquals("true", bucket.getKeyAsString());
-                }
-            }
+            )
         );
     }
 
     public void testUnmapped() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            UnmappedTerms terms = response.getAggregations().get("terms");
+            assertThat(terms, notNullValue());
+            assertThat(terms.getName(), equalTo("terms"));
+            assertThat(terms.getBuckets().size(), equalTo(0));
+        },
             prepareSearch("idx_unmapped").addAggregation(
                 new TermsAggregationBuilder("terms").field(SINGLE_VALUED_FIELD_NAME)
                     .size(between(1, 5))
                     .collectMode(randomFrom(SubAggCollectionMode.values()))
-            ),
-            response -> {
-                UnmappedTerms terms = response.getAggregations().get("terms");
-                assertThat(terms, notNullValue());
-                assertThat(terms.getName(), equalTo("terms"));
-                assertThat(terms.getBuckets().size(), equalTo(0));
-            }
+            )
         );
     }
 }

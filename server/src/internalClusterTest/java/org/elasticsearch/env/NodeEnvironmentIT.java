@@ -239,7 +239,7 @@ public class NodeEnvironmentIT extends ESIntegTestCase {
         assertEquals(nodeId, clusterAdmin().prepareState(TEST_REQUEST_TIMEOUT).get().getState().nodes().getMasterNodeId());
         assertTrue(indexExists("test"));
         ensureYellow("test");
-        assertHitCount(prepareSearch().setQuery(matchAllQuery()), 1L);
+        assertHitCount(1L, prepareSearch().setQuery(matchAllQuery()));
     }
 
     public void testFailsToStartOnDataPathsFromMultipleNodes() throws IOException {

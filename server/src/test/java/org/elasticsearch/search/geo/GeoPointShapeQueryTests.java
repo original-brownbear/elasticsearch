@@ -79,7 +79,7 @@ public class GeoPointShapeQueryTests extends BasePointShapeQueryTestCase<GeoShap
             .setRefreshPolicy(IMMEDIATE)
             .get();
 
-        assertHitCount(client().prepareSearch(defaultIndexName).setQuery(geoShapeQuery("alias", point)), 1);
+        assertHitCount(1, client().prepareSearch(defaultIndexName).setQuery(geoShapeQuery("alias", point)));
     }
 
     private final DatelinePointShapeQueryTestCase dateline = new DatelinePointShapeQueryTestCase();

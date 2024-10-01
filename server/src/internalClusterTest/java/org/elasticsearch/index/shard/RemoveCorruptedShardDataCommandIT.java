@@ -236,7 +236,7 @@ public class RemoveCorruptedShardDataCommandIT extends ESIntegTestCase {
 
         ensureGreen(indexName);
 
-        assertHitCount(prepareSearch(indexName).setQuery(matchAllQuery()), expectedNumDocs);
+        assertHitCount(expectedNumDocs, prepareSearch(indexName).setQuery(matchAllQuery()));
     }
 
     public void testCorruptTranslogTruncation() throws Exception {
@@ -386,14 +386,14 @@ public class RemoveCorruptedShardDataCommandIT extends ESIntegTestCase {
         ensureYellow(indexName);
 
         // Run a search and make sure it succeeds
-        assertHitCount(prepareSearch(indexName).setQuery(matchAllQuery()), numDocsToKeep);
+        assertHitCount(numDocsToKeep, prepareSearch(indexName).setQuery(matchAllQuery()));
 
         logger.info("--> starting the replica node to test recovery");
         internalCluster().startNode(node2PathSettings);
         ensureGreen(indexName);
         for (String node : internalCluster().nodesInclude(indexName)) {
             SearchRequestBuilder q = prepareSearch(indexName).setPreference("_only_nodes:" + node).setQuery(matchAllQuery());
-            assertHitCount(q, numDocsToKeep);
+            assertHitCount(numDocsToKeep, q);
         }
         final RecoveryResponse recoveryResponse = indicesAdmin().prepareRecoveries(indexName).setActiveOnly(false).get();
         final RecoveryState replicaRecoveryState = recoveryResponse.shardRecoveryStates()
@@ -475,7 +475,7 @@ public class RemoveCorruptedShardDataCommandIT extends ESIntegTestCase {
         ensureYellow();
 
         // Run a search and make sure it succeeds
-        assertHitCount(prepareSearch(indexName).setQuery(matchAllQuery()), totalDocs);
+        assertHitCount(totalDocs, prepareSearch(indexName).setQuery(matchAllQuery()));
 
         // check replica corruption
         final RemoveCorruptedShardDataCommand command = new RemoveCorruptedShardDataCommand();
@@ -496,7 +496,7 @@ public class RemoveCorruptedShardDataCommandIT extends ESIntegTestCase {
         internalCluster().startNode(node2PathSettings);
         ensureGreen(indexName);
         for (String node : internalCluster().nodesInclude(indexName)) {
-            assertHitCount(prepareSearch(indexName).setPreference("_only_nodes:" + node).setQuery(matchAllQuery()), totalDocs);
+            assertHitCount(totalDocs, prepareSearch(indexName).setPreference("_only_nodes:" + node).setQuery(matchAllQuery()));
         }
 
         final RecoveryResponse recoveryResponse = indicesAdmin().prepareRecoveries(indexName).setActiveOnly(false).get();

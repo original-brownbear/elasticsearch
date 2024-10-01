@@ -342,8 +342,8 @@ public class NativeRealmIntegTests extends NativeRealmIntegTestCase {
 
         String token = basicAuthHeaderValue(username, new SecureString("s3krit-password"));
         assertResponse(
-            client().filterWithHeader(Collections.singletonMap("Authorization", token)).prepareSearch("idx"),
-            searchResp -> assertEquals(1L, searchResp.getHits().getTotalHits().value)
+            searchResp -> assertEquals(1L, searchResp.getHits().getTotalHits().value),
+            client().filterWithHeader(Collections.singletonMap("Authorization", token)).prepareSearch("idx")
         );
 
         assertClusterHealthOnlyAuthorizesWhenAnonymousRoleActive(token);
@@ -365,8 +365,8 @@ public class NativeRealmIntegTests extends NativeRealmIntegTestCase {
         prepareIndex("idx").setId("1").setSource("body", "foo").setRefreshPolicy(IMMEDIATE).get();
         String token = basicAuthHeaderValue("joe", new SecureString("s3krit-password"));
         assertResponse(
-            client().filterWithHeader(Collections.singletonMap("Authorization", token)).prepareSearch("idx"),
-            searchResp -> assertEquals(1L, searchResp.getHits().getTotalHits().value)
+            searchResp -> assertEquals(1L, searchResp.getHits().getTotalHits().value),
+            client().filterWithHeader(Collections.singletonMap("Authorization", token)).prepareSearch("idx")
         );
 
         preparePutUser("joe", "s3krit-password2", hasher, SecuritySettingsSource.TEST_ROLE).get();
@@ -381,8 +381,8 @@ public class NativeRealmIntegTests extends NativeRealmIntegTestCase {
 
         token = basicAuthHeaderValue("joe", new SecureString("s3krit-password2"));
         assertResponse(
-            client().filterWithHeader(Collections.singletonMap("Authorization", token)).prepareSearch("idx"),
-            searchResp -> assertEquals(1L, searchResp.getHits().getTotalHits().value)
+            searchResp -> assertEquals(1L, searchResp.getHits().getTotalHits().value),
+            client().filterWithHeader(Collections.singletonMap("Authorization", token)).prepareSearch("idx")
         );
     }
 
@@ -402,8 +402,8 @@ public class NativeRealmIntegTests extends NativeRealmIntegTestCase {
         prepareIndex("idx").setId("1").setSource("body", "foo").setRefreshPolicy(IMMEDIATE).get();
         String token = basicAuthHeaderValue("joe", new SecureString("s3krit-password"));
         assertResponse(
-            client().filterWithHeader(Collections.singletonMap("Authorization", token)).prepareSearch("idx"),
-            searchResp -> assertEquals(1L, searchResp.getHits().getTotalHits().value)
+            searchResp -> assertEquals(1L, searchResp.getHits().getTotalHits().value),
+            client().filterWithHeader(Collections.singletonMap("Authorization", token)).prepareSearch("idx")
         );
 
         DeleteUserResponse response = new DeleteUserRequestBuilder(client()).username("joe").get();

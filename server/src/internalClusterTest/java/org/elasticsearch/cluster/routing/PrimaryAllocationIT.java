@@ -185,7 +185,7 @@ public class PrimaryAllocationIT extends ESIntegTestCase {
 
         logger.info("--> check that the up-to-date primary shard gets promoted and that documents are available");
         ensureYellow("test");
-        assertHitCount(prepareSearch().setSize(0).setQuery(matchAllQuery()), 2L);
+        assertHitCount(2L, prepareSearch().setSize(0).setQuery(matchAllQuery()));
     }
 
     public void testFailedAllocationOfStalePrimaryToDataNodeWithNoData() throws Exception {
@@ -539,7 +539,7 @@ public class PrimaryAllocationIT extends ESIntegTestCase {
         internalCluster().restartRandomDataNode();
         logger.info("--> checking that index still gets allocated with only 1 shard copy being available");
         ensureYellow("test");
-        assertHitCount(prepareSearch().setSize(0).setQuery(matchAllQuery()), 1L);
+        assertHitCount(1L, prepareSearch().setSize(0).setQuery(matchAllQuery()));
     }
 
     /**

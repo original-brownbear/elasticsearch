@@ -90,30 +90,28 @@ public class SimpleQueryStringIT extends ESIntegTestCase {
 
         // Tests boost value setting. In this case doc 1 should always be ranked above the other
         // two matches.
-        assertResponse(
+        assertResponse(response -> {
+            assertHitCount(response, 2L);
+            assertFirstHit(response, hasId("3"));
+        },
             prepareSearch().setQuery(
                 boolQuery().should(simpleQueryStringQuery("\"foo bar\"").boost(10.0f)).should(termQuery("body", "eggplant"))
-            ),
-            response -> {
-                assertHitCount(response, 2L);
-                assertFirstHit(response, hasId("3"));
-            }
+            )
         );
         assertSearchHitsWithoutFailures(prepareSearch().setQuery(simpleQueryStringQuery("foo bar").defaultOperator(Operator.AND)), "3");
 
         assertSearchHitsWithoutFailures(prepareSearch().setQuery(simpleQueryStringQuery("\"quux baz\" +(eggplant | spaghetti)")), "4", "5");
         assertSearchHitsWithoutFailures(prepareSearch().setQuery(simpleQueryStringQuery("eggplants").analyzer("mock_snowball")), "4");
 
-        assertResponse(
+        assertResponse(response -> {
+            assertHitCount(response, 2L);
+            assertFirstHit(response, hasId("5"));
+            assertSearchHits(response, "5", "6");
+            assertThat(response.getHits().getAt(0).getMatchedQueries()[0], equalTo("myquery"));
+        },
             prepareSearch().setQuery(
                 simpleQueryStringQuery("spaghetti").field("body", 1000.0f).field("otherbody", 2.0f).queryName("myquery")
-            ),
-            response -> {
-                assertHitCount(response, 2L);
-                assertFirstHit(response, hasId("5"));
-                assertSearchHits(response, "5", "6");
-                assertThat(response.getHits().getAt(0).getMatchedQueries()[0], equalTo("myquery"));
-            }
+            )
         );
 
         assertSearchHitsWithoutFailures(prepareSearch().setQuery(simpleQueryStringQuery("spaghetti").field("*body")), "5", "6");
@@ -254,17 +252,17 @@ public class SimpleQueryStringIT extends ESIntegTestCase {
         );
 
         assertHitCount(
-            prepareSearch().setQuery(simpleQueryStringQuery("baz | egg*").defaultOperator(Operator.AND).flags(SimpleQueryStringFlag.NONE)),
-            0L
+            0L,
+            prepareSearch().setQuery(simpleQueryStringQuery("baz | egg*").defaultOperator(Operator.AND).flags(SimpleQueryStringFlag.NONE))
         );
 
         assertHitCount(
+            1L,
             prepareSearch().setSource(
                 new SearchSourceBuilder().query(
                     QueryBuilders.simpleQueryStringQuery("foo|bar").defaultOperator(Operator.AND).flags(SimpleQueryStringFlag.NONE)
                 )
-            ),
-            1L
+            )
         );
 
         assertSearchHitsWithoutFailures(
@@ -289,14 +287,11 @@ public class SimpleQueryStringIT extends ESIntegTestCase {
         );
         refresh();
 
-        assertResponse(
-            prepareSearch().setAllowPartialSearchResults(true).setQuery(simpleQueryStringQuery("foo").field("field")),
-            response -> {
-                assertFailures(response);
-                assertHitCount(response, 1L);
-                assertSearchHits(response, "1");
-            }
-        );
+        assertResponse(response -> {
+            assertFailures(response);
+            assertHitCount(response, 1L);
+            assertSearchHits(response, "1");
+        }, prepareSearch().setAllowPartialSearchResults(true).setQuery(simpleQueryStringQuery("foo").field("field")));
 
         assertSearchHitsWithoutFailures(prepareSearch().setQuery(simpleQueryStringQuery("foo").field("field").lenient(true)), "1");
     }
@@ -383,18 +378,18 @@ public class SimpleQueryStringIT extends ESIntegTestCase {
         reqs.add(prepareIndex("test").setId("3").setSource("f3", "foo bar baz"));
         indexRandom(true, false, reqs);
 
-        assertResponse(prepareSearch("test").setQuery(simpleQueryStringQuery("foo")), response -> {
+        assertResponse(response -> {
             assertHitCount(response, 2L);
             assertHits(response.getHits(), "1", "3");
-        });
-        assertResponse(prepareSearch("test").setQuery(simpleQueryStringQuery("bar")), response -> {
+        }, prepareSearch("test").setQuery(simpleQueryStringQuery("foo")));
+        assertResponse(response -> {
             assertHitCount(response, 2L);
             assertHits(response.getHits(), "1", "3");
-        });
-        assertResponse(prepareSearch("test").setQuery(simpleQueryStringQuery("Bar")), response -> {
+        }, prepareSearch("test").setQuery(simpleQueryStringQuery("bar")));
+        assertResponse(response -> {
             assertHitCount(response, 3L);
             assertHits(response.getHits(), "1", "2", "3");
-        });
+        }, prepareSearch("test").setQuery(simpleQueryStringQuery("Bar")));
     }
 
     public void testWithDate() throws Exception {
@@ -407,22 +402,22 @@ public class SimpleQueryStringIT extends ESIntegTestCase {
         reqs.add(prepareIndex("test").setId("2").setSource("f1", "bar", "f_date", "2015/09/01"));
         indexRandom(true, false, reqs);
 
-        assertResponse(prepareSearch("test").setQuery(simpleQueryStringQuery("foo bar")), response -> {
+        assertResponse(response -> {
             assertHits(response.getHits(), "1", "2");
             assertHitCount(response, 2L);
-        });
-        assertResponse(prepareSearch("test").setQuery(simpleQueryStringQuery("\"2015/09/02\"")), response -> {
+        }, prepareSearch("test").setQuery(simpleQueryStringQuery("foo bar")));
+        assertResponse(response -> {
             assertHits(response.getHits(), "1");
             assertHitCount(response, 1L);
-        });
-        assertResponse(prepareSearch("test").setQuery(simpleQueryStringQuery("bar \"2015/09/02\"")), response -> {
+        }, prepareSearch("test").setQuery(simpleQueryStringQuery("\"2015/09/02\"")));
+        assertResponse(response -> {
             assertHits(response.getHits(), "1", "2");
             assertHitCount(response, 2L);
-        });
-        assertResponse(prepareSearch("test").setQuery(simpleQueryStringQuery("\"2015/09/02\" \"2015/09/01\"")), response -> {
+        }, prepareSearch("test").setQuery(simpleQueryStringQuery("bar \"2015/09/02\"")));
+        assertResponse(response -> {
             assertHits(response.getHits(), "1", "2");
             assertHitCount(response, 2L);
-        });
+        }, prepareSearch("test").setQuery(simpleQueryStringQuery("\"2015/09/02\" \"2015/09/01\"")));
     }
 
     public void testWithLotsOfTypes() throws Exception {
@@ -435,22 +430,22 @@ public class SimpleQueryStringIT extends ESIntegTestCase {
         reqs.add(prepareIndex("test").setId("2").setSource("f1", "bar", "f_date", "2015/09/01", "f_float", "1.8", "f_ip", "127.0.0.2"));
         indexRandom(true, false, reqs);
 
-        assertResponse(prepareSearch("test").setQuery(simpleQueryStringQuery("foo bar")), response -> {
+        assertResponse(response -> {
             assertHits(response.getHits(), "1", "2");
             assertHitCount(response, 2L);
-        });
-        assertResponse(prepareSearch("test").setQuery(simpleQueryStringQuery("\"2015/09/02\"")), response -> {
+        }, prepareSearch("test").setQuery(simpleQueryStringQuery("foo bar")));
+        assertResponse(response -> {
             assertHits(response.getHits(), "1");
             assertHitCount(response, 1L);
-        });
-        assertResponse(prepareSearch("test").setQuery(simpleQueryStringQuery("127.0.0.2 \"2015/09/02\"")), response -> {
+        }, prepareSearch("test").setQuery(simpleQueryStringQuery("\"2015/09/02\"")));
+        assertResponse(response -> {
             assertHits(response.getHits(), "1", "2");
             assertHitCount(response, 2L);
-        });
-        assertResponse(prepareSearch("test").setQuery(simpleQueryStringQuery("127.0.0.1 1.8")), response -> {
+        }, prepareSearch("test").setQuery(simpleQueryStringQuery("127.0.0.2 \"2015/09/02\"")));
+        assertResponse(response -> {
             assertHits(response.getHits(), "1", "2");
             assertHitCount(response, 2L);
-        });
+        }, prepareSearch("test").setQuery(simpleQueryStringQuery("127.0.0.1 1.8")));
     }
 
     public void testDocWithAllTypes() throws Exception {
@@ -463,25 +458,25 @@ public class SimpleQueryStringIT extends ESIntegTestCase {
         reqs.add(prepareIndex("test").setId("1").setSource(docBody, XContentType.JSON));
         indexRandom(true, false, reqs);
 
-        assertResponse(prepareSearch("test").setQuery(simpleQueryStringQuery("foo")), response -> assertHits(response.getHits(), "1"));
-        assertResponse(prepareSearch("test").setQuery(simpleQueryStringQuery("Bar")), response -> assertHits(response.getHits(), "1"));
-        assertResponse(prepareSearch("test").setQuery(simpleQueryStringQuery("Baz")), response -> assertHits(response.getHits(), "1"));
-        assertResponse(prepareSearch("test").setQuery(simpleQueryStringQuery("19")), response -> assertHits(response.getHits(), "1"));
+        assertResponse(response -> assertHits(response.getHits(), "1"), prepareSearch("test").setQuery(simpleQueryStringQuery("foo")));
+        assertResponse(response -> assertHits(response.getHits(), "1"), prepareSearch("test").setQuery(simpleQueryStringQuery("Bar")));
+        assertResponse(response -> assertHits(response.getHits(), "1"), prepareSearch("test").setQuery(simpleQueryStringQuery("Baz")));
+        assertResponse(response -> assertHits(response.getHits(), "1"), prepareSearch("test").setQuery(simpleQueryStringQuery("19")));
         // nested doesn't match because it's hidden
         assertResponse(
-            prepareSearch("test").setQuery(simpleQueryStringQuery("1476383971")),
-            response -> assertHits(response.getHits(), "1")
+            response -> assertHits(response.getHits(), "1"),
+            prepareSearch("test").setQuery(simpleQueryStringQuery("1476383971"))
         );
         // bool doesn't match
-        assertResponse(prepareSearch("test").setQuery(simpleQueryStringQuery("7")), response -> assertHits(response.getHits(), "1"));
-        assertResponse(prepareSearch("test").setQuery(simpleQueryStringQuery("23")), response -> assertHits(response.getHits(), "1"));
-        assertResponse(prepareSearch("test").setQuery(simpleQueryStringQuery("1293")), response -> assertHits(response.getHits(), "1"));
-        assertResponse(prepareSearch("test").setQuery(simpleQueryStringQuery("42")), response -> assertHits(response.getHits(), "1"));
-        assertResponse(prepareSearch("test").setQuery(simpleQueryStringQuery("1.7")), response -> assertHits(response.getHits(), "1"));
-        assertResponse(prepareSearch("test").setQuery(simpleQueryStringQuery("1.5")), response -> assertHits(response.getHits(), "1"));
+        assertResponse(response -> assertHits(response.getHits(), "1"), prepareSearch("test").setQuery(simpleQueryStringQuery("7")));
+        assertResponse(response -> assertHits(response.getHits(), "1"), prepareSearch("test").setQuery(simpleQueryStringQuery("23")));
+        assertResponse(response -> assertHits(response.getHits(), "1"), prepareSearch("test").setQuery(simpleQueryStringQuery("1293")));
+        assertResponse(response -> assertHits(response.getHits(), "1"), prepareSearch("test").setQuery(simpleQueryStringQuery("42")));
+        assertResponse(response -> assertHits(response.getHits(), "1"), prepareSearch("test").setQuery(simpleQueryStringQuery("1.7")));
+        assertResponse(response -> assertHits(response.getHits(), "1"), prepareSearch("test").setQuery(simpleQueryStringQuery("1.5")));
         assertResponse(
-            prepareSearch("test").setQuery(simpleQueryStringQuery("127.0.0.1")),
-            response -> assertHits(response.getHits(), "1")
+            response -> assertHits(response.getHits(), "1"),
+            prepareSearch("test").setQuery(simpleQueryStringQuery("127.0.0.1"))
         );
         // binary doesn't match
         // suggest doesn't match
@@ -489,8 +484,8 @@ public class SimpleQueryStringIT extends ESIntegTestCase {
         // geo_shape doesn't match
 
         assertResponse(
-            prepareSearch("test").setQuery(simpleQueryStringQuery("foo Bar 19 127.0.0.1").defaultOperator(Operator.AND)),
-            response -> assertHits(response.getHits(), "1")
+            response -> assertHits(response.getHits(), "1"),
+            prepareSearch("test").setQuery(simpleQueryStringQuery("foo Bar 19 127.0.0.1").defaultOperator(Operator.AND))
         );
     }
 
@@ -505,14 +500,14 @@ public class SimpleQueryStringIT extends ESIntegTestCase {
         reqs.add(prepareIndex("test").setId("3").setSource("f1", "foo bar"));
         indexRandom(true, false, reqs);
 
-        assertResponse(prepareSearch("test").setQuery(simpleQueryStringQuery("foo")), response -> {
+        assertResponse(response -> {
             assertHits(response.getHits(), "3");
             assertHitCount(response, 1L);
-        });
-        assertResponse(prepareSearch("test").setQuery(simpleQueryStringQuery("bar")), response -> {
+        }, prepareSearch("test").setQuery(simpleQueryStringQuery("foo")));
+        assertResponse(response -> {
             assertHits(response.getHits(), "2", "3");
             assertHitCount(response, 2L);
-        });
+        }, prepareSearch("test").setQuery(simpleQueryStringQuery("bar")));
     }
 
     public void testAllFieldsWithSpecifiedLeniency() throws Exception {
@@ -542,10 +537,10 @@ public class SimpleQueryStringIT extends ESIntegTestCase {
         indexRequests.add(prepareIndex("test").setId("3").setSource("f3", "another value", "f2", "three"));
         indexRandom(true, false, indexRequests);
 
-        assertNoFailuresAndResponse(prepareSearch("test").setQuery(simpleQueryStringQuery("value").field("f3_alias")), response -> {
+        assertNoFailuresAndResponse(response -> {
             assertHitCount(response, 2);
             assertHits(response.getHits(), "2", "3");
-        });
+        }, prepareSearch("test").setQuery(simpleQueryStringQuery("value").field("f3_alias")));
     }
 
     public void testFieldAliasWithWildcardField() throws Exception {
@@ -559,10 +554,10 @@ public class SimpleQueryStringIT extends ESIntegTestCase {
         indexRequests.add(prepareIndex("test").setId("3").setSource("f3", "another value", "f2", "three"));
         indexRandom(true, false, indexRequests);
 
-        assertNoFailuresAndResponse(prepareSearch("test").setQuery(simpleQueryStringQuery("value").field("f3_*")), response -> {
+        assertNoFailuresAndResponse(response -> {
             assertHitCount(response, 2);
             assertHits(response.getHits(), "2", "3");
-        });
+        }, prepareSearch("test").setQuery(simpleQueryStringQuery("value").field("f3_*")));
     }
 
     public void testFieldAliasOnDisallowedFieldType() throws Exception {
@@ -576,10 +571,10 @@ public class SimpleQueryStringIT extends ESIntegTestCase {
 
         // The wildcard field matches aliases for both a text and boolean field.
         // By default, the boolean field should be ignored when building the query.
-        assertNoFailuresAndResponse(prepareSearch("test").setQuery(queryStringQuery("text").field("f*_alias")), response -> {
+        assertNoFailuresAndResponse(response -> {
             assertHitCount(response, 1);
             assertHits(response.getHits(), "1");
-        });
+        }, prepareSearch("test").setQuery(queryStringQuery("text").field("f*_alias")));
     }
 
     private void assertHits(SearchHits hits, String... ids) {

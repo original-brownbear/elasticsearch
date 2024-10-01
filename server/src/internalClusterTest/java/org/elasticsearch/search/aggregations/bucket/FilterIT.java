@@ -76,65 +76,61 @@ public class FilterIT extends ESIntegTestCase {
     }
 
     public void testSimple() throws Exception {
-        assertNoFailuresAndResponse(prepareSearch("idx").addAggregation(filter("tag1", termQuery("tag", "tag1"))), response -> {
+        assertNoFailuresAndResponse(response -> {
             Filter filter = response.getAggregations().get("tag1");
             assertThat(filter, notNullValue());
             assertThat(filter.getName(), equalTo("tag1"));
             assertThat(filter.getDocCount(), equalTo((long) numTag1Docs));
-        });
+        }, prepareSearch("idx").addAggregation(filter("tag1", termQuery("tag", "tag1"))));
     }
 
     // See NullPointer issue when filters are empty:
     // https://github.com/elastic/elasticsearch/issues/8438
     public void testEmptyFilterDeclarations() throws Exception {
         QueryBuilder emptyFilter = new BoolQueryBuilder();
-        assertNoFailuresAndResponse(prepareSearch("idx").addAggregation(filter("tag1", emptyFilter)), response -> {
+        assertNoFailuresAndResponse(response -> {
             Filter filter = response.getAggregations().get("tag1");
             assertThat(filter, notNullValue());
             assertThat(filter.getDocCount(), equalTo((long) numDocs));
-        });
+        }, prepareSearch("idx").addAggregation(filter("tag1", emptyFilter)));
     }
 
     public void testWithSubAggregation() throws Exception {
-        assertNoFailuresAndResponse(
-            prepareSearch("idx").addAggregation(filter("tag1", termQuery("tag", "tag1")).subAggregation(avg("avg_value").field("value"))),
-            response -> {
-                Filter filter = response.getAggregations().get("tag1");
-                assertThat(filter, notNullValue());
-                assertThat(filter.getName(), equalTo("tag1"));
-                assertThat(filter.getDocCount(), equalTo((long) numTag1Docs));
-                assertThat((long) ((InternalAggregation) filter).getProperty("_count"), equalTo((long) numTag1Docs));
+        assertNoFailuresAndResponse(response -> {
+            Filter filter = response.getAggregations().get("tag1");
+            assertThat(filter, notNullValue());
+            assertThat(filter.getName(), equalTo("tag1"));
+            assertThat(filter.getDocCount(), equalTo((long) numTag1Docs));
+            assertThat((long) ((InternalAggregation) filter).getProperty("_count"), equalTo((long) numTag1Docs));
 
-                long sum = 0;
-                for (int i = 0; i < numTag1Docs; ++i) {
-                    sum += i + 1;
-                }
-                assertThat(filter.getAggregations().asList().isEmpty(), is(false));
-                Avg avgValue = filter.getAggregations().get("avg_value");
-                assertThat(avgValue, notNullValue());
-                assertThat(avgValue.getName(), equalTo("avg_value"));
-                assertThat(avgValue.getValue(), equalTo((double) sum / numTag1Docs));
-                assertThat((double) ((InternalAggregation) filter).getProperty("avg_value.value"), equalTo((double) sum / numTag1Docs));
+            long sum = 0;
+            for (int i = 0; i < numTag1Docs; ++i) {
+                sum += i + 1;
             }
-        );
+            assertThat(filter.getAggregations().asList().isEmpty(), is(false));
+            Avg avgValue = filter.getAggregations().get("avg_value");
+            assertThat(avgValue, notNullValue());
+            assertThat(avgValue.getName(), equalTo("avg_value"));
+            assertThat(avgValue.getValue(), equalTo((double) sum / numTag1Docs));
+            assertThat((double) ((InternalAggregation) filter).getProperty("avg_value.value"), equalTo((double) sum / numTag1Docs));
+        }, prepareSearch("idx").addAggregation(filter("tag1", termQuery("tag", "tag1")).subAggregation(avg("avg_value").field("value"))));
     }
 
     public void testAsSubAggregation() {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            assertThat(histo.getBuckets().size(), greaterThanOrEqualTo(1));
+
+            for (Histogram.Bucket bucket : histo.getBuckets()) {
+                Filter filter = bucket.getAggregations().get("filter");
+                assertThat(filter, notNullValue());
+                assertEquals(bucket.getDocCount(), filter.getDocCount());
+            }
+        },
             prepareSearch("idx").addAggregation(
                 histogram("histo").field("value").interval(2L).subAggregation(filter("filter", matchAllQuery()))
-            ),
-            response -> {
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                assertThat(histo.getBuckets().size(), greaterThanOrEqualTo(1));
-
-                for (Histogram.Bucket bucket : histo.getBuckets()) {
-                    Filter filter = bucket.getAggregations().get("filter");
-                    assertThat(filter, notNullValue());
-                    assertEquals(bucket.getDocCount(), filter.getDocCount());
-                }
-            }
+            )
         );
     }
 
@@ -153,23 +149,22 @@ public class FilterIT extends ESIntegTestCase {
     }
 
     public void testEmptyAggregation() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            assertThat(response.getHits().getTotalHits().value, equalTo(2L));
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, Matchers.notNullValue());
+            Histogram.Bucket bucket = histo.getBuckets().get(1);
+            assertThat(bucket, Matchers.notNullValue());
+
+            Filter filter = bucket.getAggregations().get("filter");
+            assertThat(filter, Matchers.notNullValue());
+            assertThat(filter.getName(), equalTo("filter"));
+            assertThat(filter.getDocCount(), is(0L));
+        },
             prepareSearch("empty_bucket_idx").setQuery(matchAllQuery())
                 .addAggregation(
                     histogram("histo").field("value").interval(1L).minDocCount(0).subAggregation(filter("filter", matchAllQuery()))
-                ),
-            response -> {
-                assertThat(response.getHits().getTotalHits().value, equalTo(2L));
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, Matchers.notNullValue());
-                Histogram.Bucket bucket = histo.getBuckets().get(1);
-                assertThat(bucket, Matchers.notNullValue());
-
-                Filter filter = bucket.getAggregations().get("filter");
-                assertThat(filter, Matchers.notNullValue());
-                assertThat(filter.getName(), equalTo("filter"));
-                assertThat(filter.getDocCount(), is(0L));
-            }
+                )
         );
     }
 }

@@ -107,7 +107,7 @@ public class GraphTests extends ESSingleNodeTestCase {
             }
         }
 
-        assertHitCount(client().prepareSearch().setQuery(matchAllQuery()), numDocs);
+        assertHitCount(numDocs, client().prepareSearch().setQuery(matchAllQuery()));
     }
 
     @Override

@@ -365,14 +365,14 @@ abstract class MlNativeAutodetectIntegTestCase extends MlNativeIntegTestCase {
     protected long countForecastDocs(String jobId, String forecastId) {
         SetOnce<Long> count = new SetOnce<>();
         assertResponse(
+            searchResponse -> count.set(searchResponse.getHits().getTotalHits().value),
             prepareSearch(AnomalyDetectorsIndex.jobResultsIndexPrefix() + "*").setSize(0)
                 .setQuery(
                     QueryBuilders.boolQuery()
                         .filter(QueryBuilders.termQuery(Result.RESULT_TYPE.getPreferredName(), Forecast.RESULT_TYPE_VALUE))
                         .filter(QueryBuilders.termQuery(Job.ID.getPreferredName(), jobId))
                         .filter(QueryBuilders.termQuery(Forecast.FORECAST_ID.getPreferredName(), forecastId))
-                ),
-            searchResponse -> count.set(searchResponse.getHits().getTotalHits().value)
+                )
         );
         return count.get();
     }

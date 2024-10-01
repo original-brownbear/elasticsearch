@@ -354,38 +354,37 @@ public class ScriptedMetricIT extends ESIntegTestCase {
         Script combineScript = new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "no-op aggregation", Collections.emptyMap());
         Script reduceScript = new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "no-op list aggregation", Collections.emptyMap());
 
-        assertNoFailuresAndResponse(
-            prepareSearch("idx").setQuery(matchAllQuery())
-                .addAggregation(scriptedMetric("scripted").mapScript(mapScript).combineScript(combineScript).reduceScript(reduceScript)),
-            response -> {
-                assertThat(response.getHits().getTotalHits().value, equalTo(numDocs));
+        assertNoFailuresAndResponse(response -> {
+            assertThat(response.getHits().getTotalHits().value, equalTo(numDocs));
 
-                Aggregation aggregation = response.getAggregations().get("scripted");
-                assertThat(aggregation, notNullValue());
-                assertThat(aggregation, instanceOf(ScriptedMetric.class));
-                ScriptedMetric scriptedMetricAggregation = (ScriptedMetric) aggregation;
-                assertThat(scriptedMetricAggregation.getName(), equalTo("scripted"));
-                assertThat(scriptedMetricAggregation.aggregation(), notNullValue());
-                assertThat(scriptedMetricAggregation.aggregation(), instanceOf(ArrayList.class));
-                List<?> aggregationList = (List<?>) scriptedMetricAggregation.aggregation();
-                assertThat(aggregationList.size(), greaterThanOrEqualTo(getNumShards("idx").numPrimaries));
-                int numShardsRun = 0;
-                for (Object object : aggregationList) {
-                    assertThat(object, notNullValue());
-                    assertThat(object, instanceOf(Map.class));
-                    Map<?, ?> map = (Map<?, ?>) object;
-                    assertThat(map.size(), lessThanOrEqualTo(1));
-                    if (map.size() == 1) {
-                        assertThat(map.get("count"), notNullValue());
-                        assertThat(map.get("count"), instanceOf(Number.class));
-                        assertThat(map.get("count"), equalTo(1));
-                        numShardsRun++;
-                    }
+            Aggregation aggregation = response.getAggregations().get("scripted");
+            assertThat(aggregation, notNullValue());
+            assertThat(aggregation, instanceOf(ScriptedMetric.class));
+            ScriptedMetric scriptedMetricAggregation = (ScriptedMetric) aggregation;
+            assertThat(scriptedMetricAggregation.getName(), equalTo("scripted"));
+            assertThat(scriptedMetricAggregation.aggregation(), notNullValue());
+            assertThat(scriptedMetricAggregation.aggregation(), instanceOf(ArrayList.class));
+            List<?> aggregationList = (List<?>) scriptedMetricAggregation.aggregation();
+            assertThat(aggregationList.size(), greaterThanOrEqualTo(getNumShards("idx").numPrimaries));
+            int numShardsRun = 0;
+            for (Object object : aggregationList) {
+                assertThat(object, notNullValue());
+                assertThat(object, instanceOf(Map.class));
+                Map<?, ?> map = (Map<?, ?>) object;
+                assertThat(map.size(), lessThanOrEqualTo(1));
+                if (map.size() == 1) {
+                    assertThat(map.get("count"), notNullValue());
+                    assertThat(map.get("count"), instanceOf(Number.class));
+                    assertThat(map.get("count"), equalTo(1));
+                    numShardsRun++;
                 }
-                // We don't know how many shards will have documents but we need to make
-                // sure that at least one shard ran the map script
-                assertThat(numShardsRun, greaterThan(0));
             }
+            // We don't know how many shards will have documents but we need to make
+            // sure that at least one shard ran the map script
+            assertThat(numShardsRun, greaterThan(0));
+        },
+            prepareSearch("idx").setQuery(matchAllQuery())
+                .addAggregation(scriptedMetric("scripted").mapScript(mapScript).combineScript(combineScript).reduceScript(reduceScript))
         );
     }
 
@@ -398,46 +397,45 @@ public class ScriptedMetricIT extends ESIntegTestCase {
         Script combineScript = new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "no-op aggregation", Collections.emptyMap());
         Script reduceScript = new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "no-op list aggregation", Collections.emptyMap());
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            assertThat(response.getHits().getTotalHits().value, equalTo(numDocs));
+
+            Aggregation aggregation = response.getAggregations().get("scripted");
+            assertThat(aggregation, notNullValue());
+            assertThat(aggregation, instanceOf(ScriptedMetric.class));
+            ScriptedMetric scriptedMetricAggregation = (ScriptedMetric) aggregation;
+            assertThat(scriptedMetricAggregation.getName(), equalTo("scripted"));
+            assertThat(scriptedMetricAggregation.aggregation(), notNullValue());
+            assertThat(scriptedMetricAggregation.aggregation(), instanceOf(ArrayList.class));
+            List<?> aggregationList = (List<?>) scriptedMetricAggregation.aggregation();
+            assertThat(aggregationList.size(), greaterThanOrEqualTo(getNumShards("idx").numPrimaries));
+            int numShardsRun = 0;
+            for (Object object : aggregationList) {
+                assertThat(object, notNullValue());
+                assertThat(object, instanceOf(Map.class));
+                Map<?, ?> map = (Map<?, ?>) object;
+                for (Map.Entry<?, ?> entry : map.entrySet()) {
+                    assertThat(entry, notNullValue());
+                    assertThat(entry.getKey(), notNullValue());
+                    assertThat(entry.getKey(), instanceOf(String.class));
+                    assertThat(entry.getValue(), notNullValue());
+                    assertThat(entry.getValue(), instanceOf(Number.class));
+                    String stringValue = (String) entry.getKey();
+                    assertThat(stringValue, equalTo("12"));
+                    Number numberValue = (Number) entry.getValue();
+                    assertThat(numberValue, equalTo(1));
+                    numShardsRun++;
+                }
+            }
+            assertThat(numShardsRun, greaterThan(0));
+        },
             prepareSearch("idx").setQuery(matchAllQuery())
                 .addAggregation(
                     scriptedMetric("scripted").params(aggregationParams)
                         .mapScript(mapScript)
                         .combineScript(combineScript)
                         .reduceScript(reduceScript)
-                ),
-            response -> {
-                assertThat(response.getHits().getTotalHits().value, equalTo(numDocs));
-
-                Aggregation aggregation = response.getAggregations().get("scripted");
-                assertThat(aggregation, notNullValue());
-                assertThat(aggregation, instanceOf(ScriptedMetric.class));
-                ScriptedMetric scriptedMetricAggregation = (ScriptedMetric) aggregation;
-                assertThat(scriptedMetricAggregation.getName(), equalTo("scripted"));
-                assertThat(scriptedMetricAggregation.aggregation(), notNullValue());
-                assertThat(scriptedMetricAggregation.aggregation(), instanceOf(ArrayList.class));
-                List<?> aggregationList = (List<?>) scriptedMetricAggregation.aggregation();
-                assertThat(aggregationList.size(), greaterThanOrEqualTo(getNumShards("idx").numPrimaries));
-                int numShardsRun = 0;
-                for (Object object : aggregationList) {
-                    assertThat(object, notNullValue());
-                    assertThat(object, instanceOf(Map.class));
-                    Map<?, ?> map = (Map<?, ?>) object;
-                    for (Map.Entry<?, ?> entry : map.entrySet()) {
-                        assertThat(entry, notNullValue());
-                        assertThat(entry.getKey(), notNullValue());
-                        assertThat(entry.getKey(), instanceOf(String.class));
-                        assertThat(entry.getValue(), notNullValue());
-                        assertThat(entry.getValue(), instanceOf(Number.class));
-                        String stringValue = (String) entry.getKey();
-                        assertThat(stringValue, equalTo("12"));
-                        Number numberValue = (Number) entry.getValue();
-                        assertThat(numberValue, equalTo(1));
-                        numShardsRun++;
-                    }
-                }
-                assertThat(numShardsRun, greaterThan(0));
-            }
+                )
         );
     }
 
@@ -448,7 +446,37 @@ public class ScriptedMetricIT extends ESIntegTestCase {
         Map<String, Object> params = new HashMap<>();
         params.put("vars", varsMap);
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            assertThat(response.getHits().getTotalHits().value, equalTo(numDocs));
+
+            Aggregation aggregation = response.getAggregations().get("scripted");
+            assertThat(aggregation, notNullValue());
+            assertThat(aggregation, instanceOf(ScriptedMetric.class));
+            ScriptedMetric scriptedMetricAggregation = (ScriptedMetric) aggregation;
+            assertThat(scriptedMetricAggregation.getName(), equalTo("scripted"));
+            assertThat(scriptedMetricAggregation.aggregation(), notNullValue());
+            assertThat(scriptedMetricAggregation.aggregation(), instanceOf(ArrayList.class));
+            List<?> aggregationList = (List<?>) scriptedMetricAggregation.aggregation();
+            assertThat(aggregationList.size(), greaterThanOrEqualTo(getNumShards("idx").numPrimaries));
+            long totalCount = 0;
+            for (Object object : aggregationList) {
+                assertThat(object, notNullValue());
+                assertThat(object, instanceOf(HashMap.class));
+                @SuppressWarnings("unchecked")
+                Map<String, Object> map = (Map<String, Object>) object;
+                assertThat(map, hasKey("list"));
+                assertThat(map.get("list"), instanceOf(List.class));
+                List<?> list = (List<?>) map.get("list");
+                for (Object o : list) {
+                    assertThat(o, notNullValue());
+                    assertThat(o, instanceOf(Number.class));
+                    Number numberValue = (Number) o;
+                    assertThat(numberValue, equalTo(3));
+                    totalCount += numberValue.longValue();
+                }
+            }
+            assertThat(totalCount, equalTo(numDocs * 3));
+        },
             prepareSearch("idx").setQuery(matchAllQuery())
                 .addAggregation(
                     scriptedMetric("scripted").params(params)
@@ -465,38 +493,7 @@ public class ScriptedMetricIT extends ESIntegTestCase {
                         .reduceScript(
                             new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "no-op list aggregation", Collections.emptyMap())
                         )
-                ),
-            response -> {
-                assertThat(response.getHits().getTotalHits().value, equalTo(numDocs));
-
-                Aggregation aggregation = response.getAggregations().get("scripted");
-                assertThat(aggregation, notNullValue());
-                assertThat(aggregation, instanceOf(ScriptedMetric.class));
-                ScriptedMetric scriptedMetricAggregation = (ScriptedMetric) aggregation;
-                assertThat(scriptedMetricAggregation.getName(), equalTo("scripted"));
-                assertThat(scriptedMetricAggregation.aggregation(), notNullValue());
-                assertThat(scriptedMetricAggregation.aggregation(), instanceOf(ArrayList.class));
-                List<?> aggregationList = (List<?>) scriptedMetricAggregation.aggregation();
-                assertThat(aggregationList.size(), greaterThanOrEqualTo(getNumShards("idx").numPrimaries));
-                long totalCount = 0;
-                for (Object object : aggregationList) {
-                    assertThat(object, notNullValue());
-                    assertThat(object, instanceOf(HashMap.class));
-                    @SuppressWarnings("unchecked")
-                    Map<String, Object> map = (Map<String, Object>) object;
-                    assertThat(map, hasKey("list"));
-                    assertThat(map.get("list"), instanceOf(List.class));
-                    List<?> list = (List<?>) map.get("list");
-                    for (Object o : list) {
-                        assertThat(o, notNullValue());
-                        assertThat(o, instanceOf(Number.class));
-                        Number numberValue = (Number) o;
-                        assertThat(numberValue, equalTo(3));
-                        totalCount += numberValue.longValue();
-                    }
-                }
-                assertThat(totalCount, equalTo(numDocs * 3));
-            }
+                )
         );
     }
 
@@ -516,41 +513,40 @@ public class ScriptedMetricIT extends ESIntegTestCase {
         );
         Script reduceScript = new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "no-op list aggregation", Collections.emptyMap());
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            assertThat(response.getHits().getTotalHits().value, equalTo(numDocs));
+
+            Aggregation aggregation = response.getAggregations().get("scripted");
+            assertThat(aggregation, notNullValue());
+            assertThat(aggregation, instanceOf(ScriptedMetric.class));
+            ScriptedMetric scriptedMetricAggregation = (ScriptedMetric) aggregation;
+            assertThat(scriptedMetricAggregation.getName(), equalTo("scripted"));
+            assertThat(scriptedMetricAggregation.aggregation(), notNullValue());
+            assertThat(scriptedMetricAggregation.aggregation(), instanceOf(ArrayList.class));
+            List<?> aggregationList = (List<?>) scriptedMetricAggregation.aggregation();
+            assertThat(aggregationList.size(), greaterThanOrEqualTo(getNumShards("idx").numPrimaries));
+            long totalCount = 0;
+            for (Object object : aggregationList) {
+                assertThat(object, notNullValue());
+                assertThat(object, instanceOf(List.class));
+                List<?> list = (List<?>) object;
+                for (Object o : list) {
+                    assertThat(o, notNullValue());
+                    assertThat(o, instanceOf(Number.class));
+                    Number numberValue = (Number) o;
+                    // A particular shard may not have any documents stored on it so
+                    // we have to assume the lower bound may be 0. The check at the
+                    // bottom of the test method will make sure the count is correct
+                    assertThat(numberValue.longValue(), allOf(greaterThanOrEqualTo(0L), lessThanOrEqualTo(numDocs)));
+                    totalCount += numberValue.longValue();
+                }
+            }
+            assertThat(totalCount, equalTo(numDocs));
+        },
             prepareSearch("idx").setQuery(matchAllQuery())
                 .addAggregation(
                     scriptedMetric("scripted").params(params).mapScript(mapScript).combineScript(combineScript).reduceScript(reduceScript)
-                ),
-            response -> {
-                assertThat(response.getHits().getTotalHits().value, equalTo(numDocs));
-
-                Aggregation aggregation = response.getAggregations().get("scripted");
-                assertThat(aggregation, notNullValue());
-                assertThat(aggregation, instanceOf(ScriptedMetric.class));
-                ScriptedMetric scriptedMetricAggregation = (ScriptedMetric) aggregation;
-                assertThat(scriptedMetricAggregation.getName(), equalTo("scripted"));
-                assertThat(scriptedMetricAggregation.aggregation(), notNullValue());
-                assertThat(scriptedMetricAggregation.aggregation(), instanceOf(ArrayList.class));
-                List<?> aggregationList = (List<?>) scriptedMetricAggregation.aggregation();
-                assertThat(aggregationList.size(), greaterThanOrEqualTo(getNumShards("idx").numPrimaries));
-                long totalCount = 0;
-                for (Object object : aggregationList) {
-                    assertThat(object, notNullValue());
-                    assertThat(object, instanceOf(List.class));
-                    List<?> list = (List<?>) object;
-                    for (Object o : list) {
-                        assertThat(o, notNullValue());
-                        assertThat(o, instanceOf(Number.class));
-                        Number numberValue = (Number) o;
-                        // A particular shard may not have any documents stored on it so
-                        // we have to assume the lower bound may be 0. The check at the
-                        // bottom of the test method will make sure the count is correct
-                        assertThat(numberValue.longValue(), allOf(greaterThanOrEqualTo(0L), lessThanOrEqualTo(numDocs)));
-                        totalCount += numberValue.longValue();
-                    }
-                }
-                assertThat(totalCount, equalTo(numDocs));
-            }
+                )
         );
     }
 
@@ -576,7 +572,36 @@ public class ScriptedMetricIT extends ESIntegTestCase {
         );
         Script reduceScript = new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "no-op list aggregation", Collections.emptyMap());
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            assertThat(response.getHits().getTotalHits().value, equalTo(numDocs));
+
+            Aggregation aggregation = response.getAggregations().get("scripted");
+            assertThat(aggregation, notNullValue());
+            assertThat(aggregation, instanceOf(ScriptedMetric.class));
+            ScriptedMetric scriptedMetricAggregation = (ScriptedMetric) aggregation;
+            assertThat(scriptedMetricAggregation.getName(), equalTo("scripted"));
+            assertThat(scriptedMetricAggregation.aggregation(), notNullValue());
+            assertThat(scriptedMetricAggregation.aggregation(), instanceOf(ArrayList.class));
+            List<?> aggregationList = (List<?>) scriptedMetricAggregation.aggregation();
+            assertThat(aggregationList.size(), greaterThanOrEqualTo(getNumShards("idx").numPrimaries));
+            long totalCount = 0;
+            for (Object object : aggregationList) {
+                assertThat(object, notNullValue());
+                assertThat(object, instanceOf(List.class));
+                List<?> list = (List<?>) object;
+                for (Object o : list) {
+                    assertThat(o, notNullValue());
+                    assertThat(o, instanceOf(Number.class));
+                    Number numberValue = (Number) o;
+                    // A particular shard may not have any documents stored on it so
+                    // we have to assume the lower bound may be 0. The check at the
+                    // bottom of the test method will make sure the count is correct
+                    assertThat(numberValue.longValue(), allOf(greaterThanOrEqualTo(0L), lessThanOrEqualTo(numDocs * 3)));
+                    totalCount += numberValue.longValue();
+                }
+            }
+            assertThat(totalCount, equalTo(numDocs * 3));
+        },
             prepareSearch("idx").setQuery(matchAllQuery())
                 .addAggregation(
                     scriptedMetric("scripted").params(params)
@@ -584,37 +609,7 @@ public class ScriptedMetricIT extends ESIntegTestCase {
                         .mapScript(mapScript)
                         .combineScript(combineScript)
                         .reduceScript(reduceScript)
-                ),
-            response -> {
-                assertThat(response.getHits().getTotalHits().value, equalTo(numDocs));
-
-                Aggregation aggregation = response.getAggregations().get("scripted");
-                assertThat(aggregation, notNullValue());
-                assertThat(aggregation, instanceOf(ScriptedMetric.class));
-                ScriptedMetric scriptedMetricAggregation = (ScriptedMetric) aggregation;
-                assertThat(scriptedMetricAggregation.getName(), equalTo("scripted"));
-                assertThat(scriptedMetricAggregation.aggregation(), notNullValue());
-                assertThat(scriptedMetricAggregation.aggregation(), instanceOf(ArrayList.class));
-                List<?> aggregationList = (List<?>) scriptedMetricAggregation.aggregation();
-                assertThat(aggregationList.size(), greaterThanOrEqualTo(getNumShards("idx").numPrimaries));
-                long totalCount = 0;
-                for (Object object : aggregationList) {
-                    assertThat(object, notNullValue());
-                    assertThat(object, instanceOf(List.class));
-                    List<?> list = (List<?>) object;
-                    for (Object o : list) {
-                        assertThat(o, notNullValue());
-                        assertThat(o, instanceOf(Number.class));
-                        Number numberValue = (Number) o;
-                        // A particular shard may not have any documents stored on it so
-                        // we have to assume the lower bound may be 0. The check at the
-                        // bottom of the test method will make sure the count is correct
-                        assertThat(numberValue.longValue(), allOf(greaterThanOrEqualTo(0L), lessThanOrEqualTo(numDocs * 3)));
-                        totalCount += numberValue.longValue();
-                    }
-                }
-                assertThat(totalCount, equalTo(numDocs * 3));
-            }
+                )
         );
     }
 
@@ -645,7 +640,23 @@ public class ScriptedMetricIT extends ESIntegTestCase {
             Collections.emptyMap()
         );
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            assertThat(response.getHits().getTotalHits().value, equalTo(numDocs));
+
+            Aggregation aggregation = response.getAggregations().get("scripted");
+            assertThat(aggregation, notNullValue());
+            assertThat(aggregation, instanceOf(ScriptedMetric.class));
+            ScriptedMetric scriptedMetricAggregation = (ScriptedMetric) aggregation;
+            assertThat(scriptedMetricAggregation.getName(), equalTo("scripted"));
+            assertThat(scriptedMetricAggregation.aggregation(), notNullValue());
+            assertThat(scriptedMetricAggregation.aggregation(), instanceOf(ArrayList.class));
+            List<?> aggregationList = (List<?>) scriptedMetricAggregation.aggregation();
+            assertThat(aggregationList.size(), equalTo(1));
+            Object object = aggregationList.get(0);
+            assertThat(object, notNullValue());
+            assertThat(object, instanceOf(Number.class));
+            assertThat(((Number) object).longValue(), equalTo(numDocs * 3));
+        },
             prepareSearch("idx").setQuery(matchAllQuery())
                 .addAggregation(
                     scriptedMetric("scripted").params(params)
@@ -653,24 +664,7 @@ public class ScriptedMetricIT extends ESIntegTestCase {
                         .mapScript(mapScript)
                         .combineScript(combineScript)
                         .reduceScript(reduceScript)
-                ),
-            response -> {
-                assertThat(response.getHits().getTotalHits().value, equalTo(numDocs));
-
-                Aggregation aggregation = response.getAggregations().get("scripted");
-                assertThat(aggregation, notNullValue());
-                assertThat(aggregation, instanceOf(ScriptedMetric.class));
-                ScriptedMetric scriptedMetricAggregation = (ScriptedMetric) aggregation;
-                assertThat(scriptedMetricAggregation.getName(), equalTo("scripted"));
-                assertThat(scriptedMetricAggregation.aggregation(), notNullValue());
-                assertThat(scriptedMetricAggregation.aggregation(), instanceOf(ArrayList.class));
-                List<?> aggregationList = (List<?>) scriptedMetricAggregation.aggregation();
-                assertThat(aggregationList.size(), equalTo(1));
-                Object object = aggregationList.get(0);
-                assertThat(object, notNullValue());
-                assertThat(object, instanceOf(Number.class));
-                assertThat(((Number) object).longValue(), equalTo(numDocs * 3));
-            }
+                )
         );
     }
 
@@ -702,7 +696,31 @@ public class ScriptedMetricIT extends ESIntegTestCase {
             Collections.emptyMap()
         );
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            assertThat(response.getHits().getTotalHits().value, equalTo(numDocs));
+
+            Global global = response.getAggregations().get("global");
+            assertThat(global, notNullValue());
+            assertThat(global.getName(), equalTo("global"));
+            assertThat(global.getDocCount(), equalTo(numDocs));
+            assertThat(global.getAggregations(), notNullValue());
+            assertThat(global.getAggregations().asList().size(), equalTo(1));
+
+            ScriptedMetric scriptedMetricAggregation = global.getAggregations().get("scripted");
+            assertThat(scriptedMetricAggregation, notNullValue());
+            assertThat(scriptedMetricAggregation.getName(), equalTo("scripted"));
+            assertThat(scriptedMetricAggregation.aggregation(), notNullValue());
+            assertThat(scriptedMetricAggregation.aggregation(), instanceOf(ArrayList.class));
+            List<?> aggregationList = (List<?>) scriptedMetricAggregation.aggregation();
+            assertThat(aggregationList.size(), equalTo(1));
+            Object object = aggregationList.get(0);
+            assertThat(object, notNullValue());
+            assertThat(object, instanceOf(Number.class));
+            assertThat(((Number) object).longValue(), equalTo(numDocs * 3));
+            assertThat(((InternalAggregation) global).getProperty("scripted"), sameInstance(scriptedMetricAggregation));
+            assertThat((List) ((InternalAggregation) global).getProperty("scripted.value"), sameInstance(aggregationList));
+            assertThat((List) ((InternalAggregation) scriptedMetricAggregation).getProperty("value"), sameInstance(aggregationList));
+        },
             prepareSearch("idx").setQuery(matchAllQuery())
                 .addAggregation(
                     global("global").subAggregation(
@@ -712,32 +730,7 @@ public class ScriptedMetricIT extends ESIntegTestCase {
                             .combineScript(combineScript)
                             .reduceScript(reduceScript)
                     )
-                ),
-            response -> {
-                assertThat(response.getHits().getTotalHits().value, equalTo(numDocs));
-
-                Global global = response.getAggregations().get("global");
-                assertThat(global, notNullValue());
-                assertThat(global.getName(), equalTo("global"));
-                assertThat(global.getDocCount(), equalTo(numDocs));
-                assertThat(global.getAggregations(), notNullValue());
-                assertThat(global.getAggregations().asList().size(), equalTo(1));
-
-                ScriptedMetric scriptedMetricAggregation = global.getAggregations().get("scripted");
-                assertThat(scriptedMetricAggregation, notNullValue());
-                assertThat(scriptedMetricAggregation.getName(), equalTo("scripted"));
-                assertThat(scriptedMetricAggregation.aggregation(), notNullValue());
-                assertThat(scriptedMetricAggregation.aggregation(), instanceOf(ArrayList.class));
-                List<?> aggregationList = (List<?>) scriptedMetricAggregation.aggregation();
-                assertThat(aggregationList.size(), equalTo(1));
-                Object object = aggregationList.get(0);
-                assertThat(object, notNullValue());
-                assertThat(object, instanceOf(Number.class));
-                assertThat(((Number) object).longValue(), equalTo(numDocs * 3));
-                assertThat(((InternalAggregation) global).getProperty("scripted"), sameInstance(scriptedMetricAggregation));
-                assertThat((List) ((InternalAggregation) global).getProperty("scripted.value"), sameInstance(aggregationList));
-                assertThat((List) ((InternalAggregation) scriptedMetricAggregation).getProperty("value"), sameInstance(aggregationList));
-            }
+                )
         );
     }
 
@@ -767,28 +760,27 @@ public class ScriptedMetricIT extends ESIntegTestCase {
             Collections.emptyMap()
         );
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            assertThat(response.getHits().getTotalHits().value, equalTo(numDocs));
+
+            Aggregation aggregation = response.getAggregations().get("scripted");
+            assertThat(aggregation, notNullValue());
+            assertThat(aggregation, instanceOf(ScriptedMetric.class));
+            ScriptedMetric scriptedMetricAggregation = (ScriptedMetric) aggregation;
+            assertThat(scriptedMetricAggregation.getName(), equalTo("scripted"));
+            assertThat(scriptedMetricAggregation.aggregation(), notNullValue());
+            assertThat(scriptedMetricAggregation.aggregation(), instanceOf(ArrayList.class));
+            List<?> aggregationList = (List<?>) scriptedMetricAggregation.aggregation();
+            assertThat(aggregationList.size(), equalTo(1));
+            Object object = aggregationList.get(0);
+            assertThat(object, notNullValue());
+            assertThat(object, instanceOf(Number.class));
+            assertThat(((Number) object).longValue(), equalTo(numDocs));
+        },
             prepareSearch("idx").setQuery(matchAllQuery())
                 .addAggregation(
                     scriptedMetric("scripted").params(params).mapScript(mapScript).combineScript(combineScript).reduceScript(reduceScript)
-                ),
-            response -> {
-                assertThat(response.getHits().getTotalHits().value, equalTo(numDocs));
-
-                Aggregation aggregation = response.getAggregations().get("scripted");
-                assertThat(aggregation, notNullValue());
-                assertThat(aggregation, instanceOf(ScriptedMetric.class));
-                ScriptedMetric scriptedMetricAggregation = (ScriptedMetric) aggregation;
-                assertThat(scriptedMetricAggregation.getName(), equalTo("scripted"));
-                assertThat(scriptedMetricAggregation.aggregation(), notNullValue());
-                assertThat(scriptedMetricAggregation.aggregation(), instanceOf(ArrayList.class));
-                List<?> aggregationList = (List<?>) scriptedMetricAggregation.aggregation();
-                assertThat(aggregationList.size(), equalTo(1));
-                Object object = aggregationList.get(0);
-                assertThat(object, notNullValue());
-                assertThat(object, instanceOf(Number.class));
-                assertThat(((Number) object).longValue(), equalTo(numDocs));
-            }
+                )
         );
     }
 
@@ -814,7 +806,23 @@ public class ScriptedMetricIT extends ESIntegTestCase {
             Collections.emptyMap()
         );
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            assertThat(response.getHits().getTotalHits().value, equalTo(numDocs));
+
+            Aggregation aggregation = response.getAggregations().get("scripted");
+            assertThat(aggregation, notNullValue());
+            assertThat(aggregation, instanceOf(ScriptedMetric.class));
+            ScriptedMetric scriptedMetricAggregation = (ScriptedMetric) aggregation;
+            assertThat(scriptedMetricAggregation.getName(), equalTo("scripted"));
+            assertThat(scriptedMetricAggregation.aggregation(), notNullValue());
+            assertThat(scriptedMetricAggregation.aggregation(), instanceOf(ArrayList.class));
+            List<?> aggregationList = (List<?>) scriptedMetricAggregation.aggregation();
+            assertThat(aggregationList.size(), equalTo(1));
+            Object object = aggregationList.get(0);
+            assertThat(object, notNullValue());
+            assertThat(object, instanceOf(Number.class));
+            assertThat(((Number) object).longValue(), equalTo(numDocs * 3));
+        },
             prepareSearch("idx").setQuery(matchAllQuery())
                 .addAggregation(
                     scriptedMetric("scripted").params(params)
@@ -822,24 +830,7 @@ public class ScriptedMetricIT extends ESIntegTestCase {
                         .mapScript(mapScript)
                         .combineScript(combineScript)
                         .reduceScript(reduceScript)
-                ),
-            response -> {
-                assertThat(response.getHits().getTotalHits().value, equalTo(numDocs));
-
-                Aggregation aggregation = response.getAggregations().get("scripted");
-                assertThat(aggregation, notNullValue());
-                assertThat(aggregation, instanceOf(ScriptedMetric.class));
-                ScriptedMetric scriptedMetricAggregation = (ScriptedMetric) aggregation;
-                assertThat(scriptedMetricAggregation.getName(), equalTo("scripted"));
-                assertThat(scriptedMetricAggregation.aggregation(), notNullValue());
-                assertThat(scriptedMetricAggregation.aggregation(), instanceOf(ArrayList.class));
-                List<?> aggregationList = (List<?>) scriptedMetricAggregation.aggregation();
-                assertThat(aggregationList.size(), equalTo(1));
-                Object object = aggregationList.get(0);
-                assertThat(object, notNullValue());
-                assertThat(object, instanceOf(Number.class));
-                assertThat(((Number) object).longValue(), equalTo(numDocs * 3));
-            }
+                )
         );
     }
 
@@ -863,28 +854,27 @@ public class ScriptedMetricIT extends ESIntegTestCase {
             Collections.emptyMap()
         );
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            assertThat(response.getHits().getTotalHits().value, equalTo(numDocs));
+
+            Aggregation aggregation = response.getAggregations().get("scripted");
+            assertThat(aggregation, notNullValue());
+            assertThat(aggregation, instanceOf(ScriptedMetric.class));
+            ScriptedMetric scriptedMetricAggregation = (ScriptedMetric) aggregation;
+            assertThat(scriptedMetricAggregation.getName(), equalTo("scripted"));
+            assertThat(scriptedMetricAggregation.aggregation(), notNullValue());
+            assertThat(scriptedMetricAggregation.aggregation(), instanceOf(ArrayList.class));
+            List<?> aggregationList = (List<?>) scriptedMetricAggregation.aggregation();
+            assertThat(aggregationList.size(), equalTo(1));
+            Object object = aggregationList.get(0);
+            assertThat(object, notNullValue());
+            assertThat(object, instanceOf(Number.class));
+            assertThat(((Number) object).longValue(), equalTo(numDocs));
+        },
             prepareSearch("idx").setQuery(matchAllQuery())
                 .addAggregation(
                     scriptedMetric("scripted").params(params).mapScript(mapScript).combineScript(combineScript).reduceScript(reduceScript)
-                ),
-            response -> {
-                assertThat(response.getHits().getTotalHits().value, equalTo(numDocs));
-
-                Aggregation aggregation = response.getAggregations().get("scripted");
-                assertThat(aggregation, notNullValue());
-                assertThat(aggregation, instanceOf(ScriptedMetric.class));
-                ScriptedMetric scriptedMetricAggregation = (ScriptedMetric) aggregation;
-                assertThat(scriptedMetricAggregation.getName(), equalTo("scripted"));
-                assertThat(scriptedMetricAggregation.aggregation(), notNullValue());
-                assertThat(scriptedMetricAggregation.aggregation(), instanceOf(ArrayList.class));
-                List<?> aggregationList = (List<?>) scriptedMetricAggregation.aggregation();
-                assertThat(aggregationList.size(), equalTo(1));
-                Object object = aggregationList.get(0);
-                assertThat(object, notNullValue());
-                assertThat(object, instanceOf(Number.class));
-                assertThat(((Number) object).longValue(), equalTo(numDocs));
-            }
+                )
         );
     }
 
@@ -918,7 +908,23 @@ public class ScriptedMetricIT extends ESIntegTestCase {
             reduceParams
         );
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            assertThat(response.getHits().getTotalHits().value, equalTo(numDocs));
+
+            Aggregation aggregation = response.getAggregations().get("scripted");
+            assertThat(aggregation, notNullValue());
+            assertThat(aggregation, instanceOf(ScriptedMetric.class));
+            ScriptedMetric scriptedMetricAggregation = (ScriptedMetric) aggregation;
+            assertThat(scriptedMetricAggregation.getName(), equalTo("scripted"));
+            assertThat(scriptedMetricAggregation.aggregation(), notNullValue());
+            assertThat(scriptedMetricAggregation.aggregation(), instanceOf(ArrayList.class));
+            List<?> aggregationList = (List<?>) scriptedMetricAggregation.aggregation();
+            assertThat(aggregationList.size(), equalTo(1));
+            Object object = aggregationList.get(0);
+            assertThat(object, notNullValue());
+            assertThat(object, instanceOf(Number.class));
+            assertThat(((Number) object).longValue(), equalTo(numDocs * 12));
+        },
             prepareSearch("idx").setQuery(matchAllQuery())
                 .addAggregation(
                     scriptedMetric("scripted").params(params)
@@ -926,24 +932,7 @@ public class ScriptedMetricIT extends ESIntegTestCase {
                         .mapScript(mapScript)
                         .combineScript(combineScript)
                         .reduceScript(reduceScript)
-                ),
-            response -> {
-                assertThat(response.getHits().getTotalHits().value, equalTo(numDocs));
-
-                Aggregation aggregation = response.getAggregations().get("scripted");
-                assertThat(aggregation, notNullValue());
-                assertThat(aggregation, instanceOf(ScriptedMetric.class));
-                ScriptedMetric scriptedMetricAggregation = (ScriptedMetric) aggregation;
-                assertThat(scriptedMetricAggregation.getName(), equalTo("scripted"));
-                assertThat(scriptedMetricAggregation.aggregation(), notNullValue());
-                assertThat(scriptedMetricAggregation.aggregation(), instanceOf(ArrayList.class));
-                List<?> aggregationList = (List<?>) scriptedMetricAggregation.aggregation();
-                assertThat(aggregationList.size(), equalTo(1));
-                Object object = aggregationList.get(0);
-                assertThat(object, notNullValue());
-                assertThat(object, instanceOf(Number.class));
-                assertThat(((Number) object).longValue(), equalTo(numDocs * 12));
-            }
+                )
         );
     }
 
@@ -954,7 +943,23 @@ public class ScriptedMetricIT extends ESIntegTestCase {
         Map<String, Object> params = new HashMap<>();
         params.put("vars", varsMap);
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            assertThat(response.getHits().getTotalHits().value, equalTo(numDocs));
+
+            Aggregation aggregation = response.getAggregations().get("scripted");
+            assertThat(aggregation, notNullValue());
+            assertThat(aggregation, instanceOf(ScriptedMetric.class));
+            ScriptedMetric scriptedMetricAggregation = (ScriptedMetric) aggregation;
+            assertThat(scriptedMetricAggregation.getName(), equalTo("scripted"));
+            assertThat(scriptedMetricAggregation.aggregation(), notNullValue());
+            assertThat(scriptedMetricAggregation.aggregation(), instanceOf(ArrayList.class));
+            List<?> aggregationList = (List<?>) scriptedMetricAggregation.aggregation();
+            assertThat(aggregationList.size(), equalTo(1));
+            Object object = aggregationList.get(0);
+            assertThat(object, notNullValue());
+            assertThat(object, instanceOf(Number.class));
+            assertThat(((Number) object).longValue(), equalTo(numDocs * 3));
+        },
             prepareSearch("idx").setQuery(matchAllQuery())
                 .addAggregation(
                     scriptedMetric("scripted").params(params)
@@ -962,24 +967,7 @@ public class ScriptedMetricIT extends ESIntegTestCase {
                         .mapScript(new Script(ScriptType.STORED, null, "mapScript_stored", Collections.emptyMap()))
                         .combineScript(new Script(ScriptType.STORED, null, "combineScript_stored", Collections.emptyMap()))
                         .reduceScript(new Script(ScriptType.STORED, null, "reduceScript_stored", Collections.emptyMap()))
-                ),
-            response -> {
-                assertThat(response.getHits().getTotalHits().value, equalTo(numDocs));
-
-                Aggregation aggregation = response.getAggregations().get("scripted");
-                assertThat(aggregation, notNullValue());
-                assertThat(aggregation, instanceOf(ScriptedMetric.class));
-                ScriptedMetric scriptedMetricAggregation = (ScriptedMetric) aggregation;
-                assertThat(scriptedMetricAggregation.getName(), equalTo("scripted"));
-                assertThat(scriptedMetricAggregation.aggregation(), notNullValue());
-                assertThat(scriptedMetricAggregation.aggregation(), instanceOf(ArrayList.class));
-                List<?> aggregationList = (List<?>) scriptedMetricAggregation.aggregation();
-                assertThat(aggregationList.size(), equalTo(1));
-                Object object = aggregationList.get(0);
-                assertThat(object, notNullValue());
-                assertThat(object, instanceOf(Number.class));
-                assertThat(((Number) object).longValue(), equalTo(numDocs * 3));
-            }
+                )
         );
     }
 
@@ -1010,7 +998,36 @@ public class ScriptedMetricIT extends ESIntegTestCase {
             Collections.emptyMap()
         );
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            assertThat(response.getHits().getTotalHits().value, equalTo(numDocs));
+            Aggregation aggregation = response.getAggregations().get("histo");
+            assertThat(aggregation, notNullValue());
+            assertThat(aggregation, instanceOf(Histogram.class));
+            Histogram histoAgg = (Histogram) aggregation;
+            assertThat(histoAgg.getName(), equalTo("histo"));
+            List<? extends Bucket> buckets = histoAgg.getBuckets();
+            assertThat(buckets, notNullValue());
+            for (Bucket b : buckets) {
+                assertThat(b, notNullValue());
+                assertThat(b.getDocCount(), equalTo(1L));
+                InternalAggregations subAggs = b.getAggregations();
+                assertThat(subAggs, notNullValue());
+                assertThat(subAggs.asList().size(), equalTo(1));
+                Aggregation subAgg = subAggs.get("scripted");
+                assertThat(subAgg, notNullValue());
+                assertThat(subAgg, instanceOf(ScriptedMetric.class));
+                ScriptedMetric scriptedMetricAggregation = (ScriptedMetric) subAgg;
+                assertThat(scriptedMetricAggregation.getName(), equalTo("scripted"));
+                assertThat(scriptedMetricAggregation.aggregation(), notNullValue());
+                assertThat(scriptedMetricAggregation.aggregation(), instanceOf(ArrayList.class));
+                List<?> aggregationList = (List<?>) scriptedMetricAggregation.aggregation();
+                assertThat(aggregationList.size(), equalTo(1));
+                Object object = aggregationList.get(0);
+                assertThat(object, notNullValue());
+                assertThat(object, instanceOf(Number.class));
+                assertThat(((Number) object).longValue(), equalTo(3L));
+            }
+        },
             prepareSearch("idx").setQuery(matchAllQuery())
                 .setSize(1000)
                 .addAggregation(
@@ -1023,37 +1040,7 @@ public class ScriptedMetricIT extends ESIntegTestCase {
                                 .combineScript(combineScript)
                                 .reduceScript(reduceScript)
                         )
-                ),
-            response -> {
-                assertThat(response.getHits().getTotalHits().value, equalTo(numDocs));
-                Aggregation aggregation = response.getAggregations().get("histo");
-                assertThat(aggregation, notNullValue());
-                assertThat(aggregation, instanceOf(Histogram.class));
-                Histogram histoAgg = (Histogram) aggregation;
-                assertThat(histoAgg.getName(), equalTo("histo"));
-                List<? extends Bucket> buckets = histoAgg.getBuckets();
-                assertThat(buckets, notNullValue());
-                for (Bucket b : buckets) {
-                    assertThat(b, notNullValue());
-                    assertThat(b.getDocCount(), equalTo(1L));
-                    InternalAggregations subAggs = b.getAggregations();
-                    assertThat(subAggs, notNullValue());
-                    assertThat(subAggs.asList().size(), equalTo(1));
-                    Aggregation subAgg = subAggs.get("scripted");
-                    assertThat(subAgg, notNullValue());
-                    assertThat(subAgg, instanceOf(ScriptedMetric.class));
-                    ScriptedMetric scriptedMetricAggregation = (ScriptedMetric) subAgg;
-                    assertThat(scriptedMetricAggregation.getName(), equalTo("scripted"));
-                    assertThat(scriptedMetricAggregation.aggregation(), notNullValue());
-                    assertThat(scriptedMetricAggregation.aggregation(), instanceOf(ArrayList.class));
-                    List<?> aggregationList = (List<?>) scriptedMetricAggregation.aggregation();
-                    assertThat(aggregationList.size(), equalTo(1));
-                    Object object = aggregationList.get(0);
-                    assertThat(object, notNullValue());
-                    assertThat(object, instanceOf(Number.class));
-                    assertThat(((Number) object).longValue(), equalTo(3L));
-                }
-            }
+                )
         );
     }
 
@@ -1084,7 +1071,23 @@ public class ScriptedMetricIT extends ESIntegTestCase {
             Collections.emptyMap()
         );
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            assertThat(response.getHits().getTotalHits().value, equalTo(2L));
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            Bucket bucket = histo.getBuckets().get(1);
+            assertThat(bucket, notNullValue());
+
+            ScriptedMetric scriptedMetric = bucket.getAggregations().get("scripted");
+            assertThat(scriptedMetric, notNullValue());
+            assertThat(scriptedMetric.getName(), equalTo("scripted"));
+            assertThat(scriptedMetric.aggregation(), notNullValue());
+            assertThat(scriptedMetric.aggregation(), instanceOf(List.class));
+            @SuppressWarnings("unchecked") // We'll just get a ClassCastException a couple lines down if we're wrong, its ok.
+            List<Integer> aggregationResult = (List<Integer>) scriptedMetric.aggregation();
+            assertThat(aggregationResult.size(), equalTo(1));
+            assertThat(aggregationResult.get(0), equalTo(0));
+        },
             prepareSearch("empty_bucket_idx").setQuery(matchAllQuery())
                 .addAggregation(
                     histogram("histo").field("value")
@@ -1097,24 +1100,7 @@ public class ScriptedMetricIT extends ESIntegTestCase {
                                 .combineScript(combineScript)
                                 .reduceScript(reduceScript)
                         )
-                ),
-            response -> {
-                assertThat(response.getHits().getTotalHits().value, equalTo(2L));
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                Bucket bucket = histo.getBuckets().get(1);
-                assertThat(bucket, notNullValue());
-
-                ScriptedMetric scriptedMetric = bucket.getAggregations().get("scripted");
-                assertThat(scriptedMetric, notNullValue());
-                assertThat(scriptedMetric.getName(), equalTo("scripted"));
-                assertThat(scriptedMetric.aggregation(), notNullValue());
-                assertThat(scriptedMetric.aggregation(), instanceOf(List.class));
-                @SuppressWarnings("unchecked") // We'll just get a ClassCastException a couple lines down if we're wrong, its ok.
-                List<Integer> aggregationResult = (List<Integer>) scriptedMetric.aggregation();
-                assertThat(aggregationResult.size(), equalTo(1));
-                assertThat(aggregationResult.get(0), equalTo(0));
-            }
+                )
         );
     }
 

@@ -73,17 +73,16 @@ public class FieldUsageStatsIT extends ESIntegTestCase {
         assertFalse(stats.hasField("field2"));
         assertFalse(stats.hasField("date_field"));
 
-        assertResponse(
+        assertResponse(response -> {
+            assertHitCount(response, 30);
+            assertAllSuccessful(response);
+        },
             prepareSearch().setSearchType(SearchType.DEFAULT)
                 .setQuery(QueryBuilders.termQuery("field", "value"))
                 .addAggregation(AggregationBuilders.terms("agg1").field("field.keyword"))
                 .addAggregation(AggregationBuilders.filter("agg2", QueryBuilders.spanTermQuery("field2", "value2")))
                 .setSize(between(5, 100))
-                .setPreference("fixed"),
-            response -> {
-                assertHitCount(response, 30);
-                assertAllSuccessful(response);
-            }
+                .setPreference("fixed")
         );
 
         stats = aggregated(client().execute(FieldUsageStatsAction.INSTANCE, new FieldUsageStatsRequest()).get().getStats().get("test"));

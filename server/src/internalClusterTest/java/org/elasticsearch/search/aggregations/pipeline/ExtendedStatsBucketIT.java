@@ -100,53 +100,52 @@ public class ExtendedStatsBucketIT extends BucketMetricsPipeLineAggregationTestC
      */
     public void testGappyIndexWithSigma() {
         double sigma = randomDoubleBetween(1.0, 6.0, true);
-        assertNoFailuresAndResponse(
-            prepareSearch("idx_gappy").addAggregation(histogram("histo").field(SINGLE_VALUED_FIELD_NAME).interval(1L))
-                .addAggregation(extendedStatsBucket("extended_stats_bucket", "histo>_count").sigma(sigma)),
-            response -> {
-                assertNoFailures(response);
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                assertThat(histo.getName(), equalTo("histo"));
-                List<? extends Bucket> buckets = histo.getBuckets();
-                assertThat(buckets.size(), equalTo(6));
+        assertNoFailuresAndResponse(response -> {
+            assertNoFailures(response);
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            assertThat(histo.getName(), equalTo("histo"));
+            List<? extends Bucket> buckets = histo.getBuckets();
+            assertThat(buckets.size(), equalTo(6));
 
-                for (int i = 0; i < 6; ++i) {
-                    long expectedDocCount;
-                    if (i == 3) {
-                        expectedDocCount = 2;
-                    } else if (i == 4) {
-                        expectedDocCount = 0;
-                    } else {
-                        expectedDocCount = 1;
-                    }
-                    Bucket bucket = buckets.get(i);
-                    assertThat("i: " + i, bucket, notNullValue());
-                    assertThat("i: " + i, ((Number) bucket.getKey()).longValue(), equalTo((long) i));
-                    assertThat("i: " + i, bucket.getDocCount(), equalTo(expectedDocCount));
+            for (int i = 0; i < 6; ++i) {
+                long expectedDocCount;
+                if (i == 3) {
+                    expectedDocCount = 2;
+                } else if (i == 4) {
+                    expectedDocCount = 0;
+                } else {
+                    expectedDocCount = 1;
                 }
-
-                ExtendedStatsBucket extendedStatsBucketValue = response.getAggregations().get("extended_stats_bucket");
-                long count = 6L;
-                double sum = 1.0 + 1.0 + 1.0 + 2.0 + 0.0 + 1.0;
-                double sumOfSqrs = 1.0 + 1.0 + 1.0 + 4.0 + 0.0 + 1.0;
-                double avg = sum / count;
-                double var = (sumOfSqrs - ((sum * sum) / count)) / count;
-                var = var < 0 ? 0 : var;
-                double stdDev = Math.sqrt(var);
-                assertThat(extendedStatsBucketValue, notNullValue());
-                assertThat(extendedStatsBucketValue.getName(), equalTo("extended_stats_bucket"));
-                assertThat(extendedStatsBucketValue.getMin(), equalTo(0.0));
-                assertThat(extendedStatsBucketValue.getMax(), equalTo(2.0));
-                assertThat(extendedStatsBucketValue.getCount(), equalTo(count));
-                assertThat(extendedStatsBucketValue.getSum(), equalTo(sum));
-                assertThat(extendedStatsBucketValue.getAvg(), equalTo(avg));
-                assertThat(extendedStatsBucketValue.getSumOfSquares(), equalTo(sumOfSqrs));
-                assertThat(extendedStatsBucketValue.getVariance(), equalTo(var));
-                assertThat(extendedStatsBucketValue.getStdDeviation(), equalTo(stdDev));
-                assertThat(extendedStatsBucketValue.getStdDeviationBound(Bounds.LOWER), equalTo(avg - (sigma * stdDev)));
-                assertThat(extendedStatsBucketValue.getStdDeviationBound(Bounds.UPPER), equalTo(avg + (sigma * stdDev)));
+                Bucket bucket = buckets.get(i);
+                assertThat("i: " + i, bucket, notNullValue());
+                assertThat("i: " + i, ((Number) bucket.getKey()).longValue(), equalTo((long) i));
+                assertThat("i: " + i, bucket.getDocCount(), equalTo(expectedDocCount));
             }
+
+            ExtendedStatsBucket extendedStatsBucketValue = response.getAggregations().get("extended_stats_bucket");
+            long count = 6L;
+            double sum = 1.0 + 1.0 + 1.0 + 2.0 + 0.0 + 1.0;
+            double sumOfSqrs = 1.0 + 1.0 + 1.0 + 4.0 + 0.0 + 1.0;
+            double avg = sum / count;
+            double var = (sumOfSqrs - ((sum * sum) / count)) / count;
+            var = var < 0 ? 0 : var;
+            double stdDev = Math.sqrt(var);
+            assertThat(extendedStatsBucketValue, notNullValue());
+            assertThat(extendedStatsBucketValue.getName(), equalTo("extended_stats_bucket"));
+            assertThat(extendedStatsBucketValue.getMin(), equalTo(0.0));
+            assertThat(extendedStatsBucketValue.getMax(), equalTo(2.0));
+            assertThat(extendedStatsBucketValue.getCount(), equalTo(count));
+            assertThat(extendedStatsBucketValue.getSum(), equalTo(sum));
+            assertThat(extendedStatsBucketValue.getAvg(), equalTo(avg));
+            assertThat(extendedStatsBucketValue.getSumOfSquares(), equalTo(sumOfSqrs));
+            assertThat(extendedStatsBucketValue.getVariance(), equalTo(var));
+            assertThat(extendedStatsBucketValue.getStdDeviation(), equalTo(stdDev));
+            assertThat(extendedStatsBucketValue.getStdDeviationBound(Bounds.LOWER), equalTo(avg - (sigma * stdDev)));
+            assertThat(extendedStatsBucketValue.getStdDeviationBound(Bounds.UPPER), equalTo(avg + (sigma * stdDev)));
+        },
+            prepareSearch("idx_gappy").addAggregation(histogram("histo").field(SINGLE_VALUED_FIELD_NAME).interval(1L))
+                .addAggregation(extendedStatsBucket("extended_stats_bucket", "histo>_count").sigma(sigma))
         );
     }
 

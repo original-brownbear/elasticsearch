@@ -89,7 +89,7 @@ public class SimpleSearchIT extends ESIntegTestCase {
                 randomPreference = randomUnicodeOfLengthBetween(0, 4);
             }
             // id is not indexed, but lets see that we automatically convert to
-            assertHitCount(prepareSearch().setQuery(QueryBuilders.matchAllQuery()).setPreference(randomPreference), 6L);
+            assertHitCount(6L, prepareSearch().setQuery(QueryBuilders.matchAllQuery()).setPreference(randomPreference));
         }
     }
 
@@ -116,8 +116,8 @@ public class SimpleSearchIT extends ESIntegTestCase {
 
         prepareIndex("test").setId("1").setSource("from", "192.168.0.5", "to", "192.168.0.10").setRefreshPolicy(IMMEDIATE).get();
         assertHitCount(
-            prepareSearch().setQuery(boolQuery().must(rangeQuery("from").lte("192.168.0.7")).must(rangeQuery("to").gte("192.168.0.7"))),
-            1L
+            1L,
+            prepareSearch().setQuery(boolQuery().must(rangeQuery("from").lte("192.168.0.7")).must(rangeQuery("to").gte("192.168.0.7")))
         );
     }
 
@@ -147,16 +147,16 @@ public class SimpleSearchIT extends ESIntegTestCase {
         prepareIndex("test").setId("5").setSource("ip", "2001:db8::ff00:42:8329").get();
         refresh();
 
-        assertHitCount(prepareSearch().setQuery(boolQuery().must(QueryBuilders.termQuery("ip", "192.168.0.1"))), 1L);
-        assertHitCount(prepareSearch().setQuery(queryStringQuery("ip: 192.168.0.1")), 1L);
-        assertHitCount(prepareSearch().setQuery(boolQuery().must(QueryBuilders.termQuery("ip", "192.168.0.1/32"))), 1L);
-        assertHitCount(prepareSearch().setQuery(boolQuery().must(QueryBuilders.termQuery("ip", "192.168.0.0/24"))), 3L);
-        assertHitCount(prepareSearch().setQuery(boolQuery().must(QueryBuilders.termQuery("ip", "192.0.0.0/8"))), 4L);
-        assertHitCount(prepareSearch().setQuery(boolQuery().must(QueryBuilders.termQuery("ip", "0.0.0.0/0"))), 4L);
-        assertHitCount(prepareSearch().setQuery(boolQuery().must(QueryBuilders.termQuery("ip", "2001:db8::ff00:42:8329/128"))), 1L);
-        assertHitCount(prepareSearch().setQuery(boolQuery().must(QueryBuilders.termQuery("ip", "2001:db8::/64"))), 1L);
-        assertHitCount(prepareSearch().setQuery(boolQuery().must(QueryBuilders.termQuery("ip", "::/0"))), 5L);
-        assertHitCount(prepareSearch().setQuery(boolQuery().must(QueryBuilders.termQuery("ip", "192.168.1.5/32"))), 0L);
+        assertHitCount(1L, prepareSearch().setQuery(boolQuery().must(QueryBuilders.termQuery("ip", "192.168.0.1"))));
+        assertHitCount(1L, prepareSearch().setQuery(queryStringQuery("ip: 192.168.0.1")));
+        assertHitCount(1L, prepareSearch().setQuery(boolQuery().must(QueryBuilders.termQuery("ip", "192.168.0.1/32"))));
+        assertHitCount(3L, prepareSearch().setQuery(boolQuery().must(QueryBuilders.termQuery("ip", "192.168.0.0/24"))));
+        assertHitCount(4L, prepareSearch().setQuery(boolQuery().must(QueryBuilders.termQuery("ip", "192.0.0.0/8"))));
+        assertHitCount(4L, prepareSearch().setQuery(boolQuery().must(QueryBuilders.termQuery("ip", "0.0.0.0/0"))));
+        assertHitCount(1L, prepareSearch().setQuery(boolQuery().must(QueryBuilders.termQuery("ip", "2001:db8::ff00:42:8329/128"))));
+        assertHitCount(1L, prepareSearch().setQuery(boolQuery().must(QueryBuilders.termQuery("ip", "2001:db8::/64"))));
+        assertHitCount(5L, prepareSearch().setQuery(boolQuery().must(QueryBuilders.termQuery("ip", "::/0"))));
+        assertHitCount(0L, prepareSearch().setQuery(boolQuery().must(QueryBuilders.termQuery("ip", "192.168.1.5/32"))));
 
         assertFailures(
             prepareSearch().setQuery(boolQuery().must(QueryBuilders.termQuery("ip", "0/0/0/0/0"))),
@@ -170,8 +170,8 @@ public class SimpleSearchIT extends ESIntegTestCase {
 
         prepareIndex("test").setId("XXX1").setSource("field", "value").setRefreshPolicy(IMMEDIATE).get();
         // id is not indexed, but lets see that we automatically convert to
-        assertHitCount(prepareSearch().setQuery(QueryBuilders.termQuery("_id", "XXX1")), 1L);
-        assertHitCount(prepareSearch().setQuery(QueryBuilders.queryStringQuery("_id:XXX1")), 1L);
+        assertHitCount(1L, prepareSearch().setQuery(QueryBuilders.termQuery("_id", "XXX1")));
+        assertHitCount(1L, prepareSearch().setQuery(QueryBuilders.queryStringQuery("_id:XXX1")));
     }
 
     public void testSimpleDateRange() throws Exception {
@@ -201,18 +201,18 @@ public class SimpleSearchIT extends ESIntegTestCase {
             0L
         );
 
-        assertHitCount(prepareSearch("test").setQuery(QueryBuilders.queryStringQuery("field:[2010-01-03||+2d TO 2010-01-04||+2d/d]")), 2L);
+        assertHitCount(2L, prepareSearch("test").setQuery(QueryBuilders.queryStringQuery("field:[2010-01-03||+2d TO 2010-01-04||+2d/d]")));
 
         // a string value of "1000" should be parsed as the year 1000 and return all three docs
         assertHitCountAndNoFailures(prepareSearch("test").setQuery(QueryBuilders.rangeQuery("field").gt("1000")), 3L);
 
         // a numeric value of 1000 should be parsed as 1000 millis since epoch and return only docs after 1970
-        assertNoFailuresAndResponse(prepareSearch("test").setQuery(QueryBuilders.rangeQuery("field").gt(1000)), response -> {
+        assertNoFailuresAndResponse(response -> {
             assertHitCount(response, 2L);
             String[] expectedIds = new String[] { "1", "2" };
             assertThat(response.getHits().getHits()[0].getId(), is(oneOf(expectedIds)));
             assertThat(response.getHits().getHits()[1].getId(), is(oneOf(expectedIds)));
-        });
+        }, prepareSearch("test").setQuery(QueryBuilders.rangeQuery("field").gt(1000)));
     }
 
     public void testRangeQueryKeyword() throws Exception {
@@ -254,21 +254,15 @@ public class SimpleSearchIT extends ESIntegTestCase {
 
         for (int i = 1; i < max; i++) {
             final int finalI = i;
-            assertResponse(
-                prepareSearch("test").setQuery(QueryBuilders.rangeQuery("field").gte(1).lte(max)).setTerminateAfter(i),
-                response -> {
-                    assertHitCount(response, finalI);
-                    assertTrue(response.isTerminatedEarly());
-                }
-            );
+            assertResponse(response -> {
+                assertHitCount(response, finalI);
+                assertTrue(response.isTerminatedEarly());
+            }, prepareSearch("test").setQuery(QueryBuilders.rangeQuery("field").gte(1).lte(max)).setTerminateAfter(i));
         }
-        assertResponse(
-            prepareSearch("test").setQuery(QueryBuilders.rangeQuery("field").gte(1).lte(max)).setTerminateAfter(2 * max),
-            response -> {
-                assertHitCount(response, max);
-                assertFalse(response.isTerminatedEarly());
-            }
-        );
+        assertResponse(response -> {
+            assertHitCount(response, max);
+            assertFalse(response.isTerminatedEarly());
+        }, prepareSearch("test").setQuery(QueryBuilders.rangeQuery("field").gte(1).lte(max)).setTerminateAfter(2 * max));
     }
 
     public void testSimpleIndexSortEarlyTerminate() throws Exception {
@@ -288,15 +282,12 @@ public class SimpleSearchIT extends ESIntegTestCase {
 
         for (int i = 1; i < max; i++) {
             final int finalI = i;
-            assertResponse(
-                prepareSearch("test").addDocValueField("rank").setTrackTotalHits(false).addSort("rank", SortOrder.ASC).setSize(i),
-                response -> {
-                    assertNull(response.getHits().getTotalHits());
-                    for (int j = 0; j < finalI; j++) {
-                        assertThat(response.getHits().getAt(j).field("rank").getValue(), equalTo((long) j));
-                    }
+            assertResponse(response -> {
+                assertNull(response.getHits().getTotalHits());
+                for (int j = 0; j < finalI; j++) {
+                    assertThat(response.getHits().getAt(j).field("rank").getValue(), equalTo((long) j));
                 }
-            );
+            }, prepareSearch("test").addDocValueField("rank").setTrackTotalHits(false).addSort("rank", SortOrder.ASC).setSize(i));
         }
     }
 
@@ -324,12 +315,12 @@ public class SimpleSearchIT extends ESIntegTestCase {
         createIndex("idx");
         indexRandom(true, prepareIndex("idx").setSource("{}", XContentType.JSON));
 
-        assertHitCount(prepareSearch("idx").setFrom(IndexSettings.MAX_RESULT_WINDOW_SETTING.get(Settings.EMPTY) - 10), 1);
-        assertHitCount(prepareSearch("idx").setSize(IndexSettings.MAX_RESULT_WINDOW_SETTING.get(Settings.EMPTY)), 1);
+        assertHitCount(1, prepareSearch("idx").setFrom(IndexSettings.MAX_RESULT_WINDOW_SETTING.get(Settings.EMPTY) - 10));
+        assertHitCount(1, prepareSearch("idx").setSize(IndexSettings.MAX_RESULT_WINDOW_SETTING.get(Settings.EMPTY)));
         assertHitCount(
+            1,
             prepareSearch("idx").setSize(IndexSettings.MAX_RESULT_WINDOW_SETTING.get(Settings.EMPTY) / 2)
-                .setFrom(IndexSettings.MAX_RESULT_WINDOW_SETTING.get(Settings.EMPTY) / 2 - 1),
-            1
+                .setFrom(IndexSettings.MAX_RESULT_WINDOW_SETTING.get(Settings.EMPTY) / 2 - 1)
         );
     }
 
@@ -340,12 +331,12 @@ public class SimpleSearchIT extends ESIntegTestCase {
         ).get();
         indexRandom(true, prepareIndex("idx").setSource("{}", XContentType.JSON));
 
-        assertHitCount(prepareSearch("idx").setFrom(IndexSettings.MAX_RESULT_WINDOW_SETTING.get(Settings.EMPTY)), 1);
-        assertHitCount(prepareSearch("idx").setSize(IndexSettings.MAX_RESULT_WINDOW_SETTING.get(Settings.EMPTY) + 1), 1);
+        assertHitCount(1, prepareSearch("idx").setFrom(IndexSettings.MAX_RESULT_WINDOW_SETTING.get(Settings.EMPTY)));
+        assertHitCount(1, prepareSearch("idx").setSize(IndexSettings.MAX_RESULT_WINDOW_SETTING.get(Settings.EMPTY) + 1));
         assertHitCount(
+            1,
             prepareSearch("idx").setSize(IndexSettings.MAX_RESULT_WINDOW_SETTING.get(Settings.EMPTY))
-                .setFrom(IndexSettings.MAX_RESULT_WINDOW_SETTING.get(Settings.EMPTY)),
-            1
+                .setFrom(IndexSettings.MAX_RESULT_WINDOW_SETTING.get(Settings.EMPTY))
         );
     }
 
@@ -358,12 +349,12 @@ public class SimpleSearchIT extends ESIntegTestCase {
         );
         indexRandom(true, prepareIndex("idx").setSource("{}", XContentType.JSON));
 
-        assertHitCount(prepareSearch("idx").setFrom(IndexSettings.MAX_RESULT_WINDOW_SETTING.get(Settings.EMPTY)), 1);
-        assertHitCount(prepareSearch("idx").setSize(IndexSettings.MAX_RESULT_WINDOW_SETTING.get(Settings.EMPTY) + 1), 1);
+        assertHitCount(1, prepareSearch("idx").setFrom(IndexSettings.MAX_RESULT_WINDOW_SETTING.get(Settings.EMPTY)));
+        assertHitCount(1, prepareSearch("idx").setSize(IndexSettings.MAX_RESULT_WINDOW_SETTING.get(Settings.EMPTY) + 1));
         assertHitCount(
+            1,
             prepareSearch("idx").setSize(IndexSettings.MAX_RESULT_WINDOW_SETTING.get(Settings.EMPTY))
-                .setFrom(IndexSettings.MAX_RESULT_WINDOW_SETTING.get(Settings.EMPTY)),
-            1
+                .setFrom(IndexSettings.MAX_RESULT_WINDOW_SETTING.get(Settings.EMPTY))
         );
     }
 
@@ -371,12 +362,12 @@ public class SimpleSearchIT extends ESIntegTestCase {
         prepareCreate("idx").setSettings(Settings.builder().put(IndexSettings.MAX_RESULT_WINDOW_SETTING.getKey(), Integer.MAX_VALUE)).get();
         indexRandom(true, prepareIndex("idx").setSource("{}", XContentType.JSON));
 
-        assertHitCount(prepareSearch("idx").setFrom(IndexSettings.MAX_RESULT_WINDOW_SETTING.get(Settings.EMPTY) * 10), 1);
-        assertHitCount(prepareSearch("idx").setSize(IndexSettings.MAX_RESULT_WINDOW_SETTING.get(Settings.EMPTY) * 10), 1);
+        assertHitCount(1, prepareSearch("idx").setFrom(IndexSettings.MAX_RESULT_WINDOW_SETTING.get(Settings.EMPTY) * 10));
+        assertHitCount(1, prepareSearch("idx").setSize(IndexSettings.MAX_RESULT_WINDOW_SETTING.get(Settings.EMPTY) * 10));
         assertHitCount(
+            1,
             prepareSearch("idx").setSize(IndexSettings.MAX_RESULT_WINDOW_SETTING.get(Settings.EMPTY) * 10)
-                .setFrom(IndexSettings.MAX_RESULT_WINDOW_SETTING.get(Settings.EMPTY) * 10),
-            1
+                .setFrom(IndexSettings.MAX_RESULT_WINDOW_SETTING.get(Settings.EMPTY) * 10)
         );
     }
 
@@ -394,7 +385,7 @@ public class SimpleSearchIT extends ESIntegTestCase {
             .get();
         indexRandom(true, prepareIndex("idx").setSource("{}", XContentType.JSON));
 
-        assertHitCount(prepareSearch("idx").addRescorer(new QueryRescorerBuilder(matchAllQuery()).windowSize(defaultMaxWindow + 1)), 1);
+        assertHitCount(1, prepareSearch("idx").addRescorer(new QueryRescorerBuilder(matchAllQuery()).windowSize(defaultMaxWindow + 1)));
     }
 
     public void testTooLargeRescoreOkByResultWindowSetting() throws Exception {
@@ -408,7 +399,7 @@ public class SimpleSearchIT extends ESIntegTestCase {
         ).get();
         indexRandom(true, prepareIndex("idx").setSource("{}", XContentType.JSON));
 
-        assertHitCount(prepareSearch("idx").addRescorer(new QueryRescorerBuilder(matchAllQuery()).windowSize(defaultMaxWindow + 1)), 1);
+        assertHitCount(1, prepareSearch("idx").addRescorer(new QueryRescorerBuilder(matchAllQuery()).windowSize(defaultMaxWindow + 1)));
     }
 
     public void testTooLargeRescoreOkByDynamicSetting() throws Exception {
@@ -417,7 +408,7 @@ public class SimpleSearchIT extends ESIntegTestCase {
         updateIndexSettings(Settings.builder().put(IndexSettings.MAX_RESCORE_WINDOW_SETTING.getKey(), defaultMaxWindow * 2), "idx");
         indexRandom(true, prepareIndex("idx").setSource("{}", XContentType.JSON));
 
-        assertHitCount(prepareSearch("idx").addRescorer(new QueryRescorerBuilder(matchAllQuery()).windowSize(defaultMaxWindow + 1)), 1);
+        assertHitCount(1, prepareSearch("idx").addRescorer(new QueryRescorerBuilder(matchAllQuery()).windowSize(defaultMaxWindow + 1)));
     }
 
     public void testTooLargeRescoreOkByDynamicResultWindowSetting() throws Exception {
@@ -430,7 +421,7 @@ public class SimpleSearchIT extends ESIntegTestCase {
         );
         indexRandom(true, prepareIndex("idx").setSource("{}", XContentType.JSON));
 
-        assertHitCount(prepareSearch("idx").addRescorer(new QueryRescorerBuilder(matchAllQuery()).windowSize(defaultMaxWindow + 1)), 1);
+        assertHitCount(1, prepareSearch("idx").addRescorer(new QueryRescorerBuilder(matchAllQuery()).windowSize(defaultMaxWindow + 1)));
     }
 
     public void testQueryNumericFieldWithRegex() throws Exception {
@@ -458,7 +449,7 @@ public class SimpleSearchIT extends ESIntegTestCase {
         try (XContentParser parser = createParser(JsonXContent.jsonXContent, queryJson)) {
             parser.nextToken();
             TermQueryBuilder query = TermQueryBuilder.fromXContent(parser);
-            assertHitCount(prepareSearch("idx").setQuery(query), 1);
+            assertHitCount(1, prepareSearch("idx").setQuery(query));
         }
     }
 
@@ -552,13 +543,10 @@ public class SimpleSearchIT extends ESIntegTestCase {
             prepareIndex("test_count_2").setId("4").setSource("field", "value_2"),
             prepareIndex("test_count_2").setId("6").setSource("field", "value_2")
         );
-        assertNoFailuresAndResponse(
-            prepareSearch("test_count_1", "test_count_2").setTrackTotalHits(true).setSearchType(SearchType.QUERY_THEN_FETCH).setSize(0),
-            response -> {
-                assertThat(response.getHits().getTotalHits().value, equalTo(11L));
-                assertThat(response.getHits().getHits().length, equalTo(0));
-            }
-        );
+        assertNoFailuresAndResponse(response -> {
+            assertThat(response.getHits().getTotalHits().value, equalTo(11L));
+            assertThat(response.getHits().getHits().length, equalTo(0));
+        }, prepareSearch("test_count_1", "test_count_2").setTrackTotalHits(true).setSearchType(SearchType.QUERY_THEN_FETCH).setSize(0));
 
     }
 

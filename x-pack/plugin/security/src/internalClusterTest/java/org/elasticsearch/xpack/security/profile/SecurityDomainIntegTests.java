@@ -374,7 +374,7 @@ public class SecurityDomainIntegTests extends AbstractProfileIntegTestCase {
             .cluster()
             .prepareHealth(TEST_REQUEST_TIMEOUT)
             .get();
-        assertResponse(prepareSearch(SecuritySystemIndices.SECURITY_TOKENS_ALIAS), searchResponse -> {
+        assertResponse(searchResponse -> {
             final String encodedAuthentication;
             try {
                 encodedAuthentication = createTokenResponse.getAuthentication().encode();
@@ -393,6 +393,6 @@ public class SecurityDomainIntegTests extends AbstractProfileIntegTestCase {
                     }
                 }
             }
-        });
+        }, prepareSearch(SecuritySystemIndices.SECURITY_TOKENS_ALIAS));
     }
 }

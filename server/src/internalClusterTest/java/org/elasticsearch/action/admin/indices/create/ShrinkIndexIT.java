@@ -105,7 +105,7 @@ public class ShrinkIndexIT extends ESIntegTestCase {
                 .setSettings(indexSettings(shardSplits[1], 0).putNull("index.blocks.write").build())
         );
         ensureGreen();
-        assertHitCount(prepareSearch("first_shrink").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")), 20);
+        assertHitCount(20, prepareSearch("first_shrink").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")));
 
         for (int i = 0; i < 20; i++) { // now update
             prepareIndex("first_shrink").setId(Integer.toString(i))
@@ -113,8 +113,8 @@ public class ShrinkIndexIT extends ESIntegTestCase {
                 .get();
         }
         flushAndRefresh();
-        assertHitCount(prepareSearch("first_shrink").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")), 20);
-        assertHitCount(prepareSearch("source").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")), 20);
+        assertHitCount(20, prepareSearch("first_shrink").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")));
+        assertHitCount(20, prepareSearch("source").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")));
 
         // relocate all shards to one node such that we can merge it.
         updateIndexSettings(
@@ -130,14 +130,14 @@ public class ShrinkIndexIT extends ESIntegTestCase {
                 )
         );
         ensureGreen();
-        assertHitCount(prepareSearch("second_shrink").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")), 20);
+        assertHitCount(20, prepareSearch("second_shrink").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")));
         // let it be allocated anywhere and bump replicas
         updateIndexSettings(
             Settings.builder().putNull("index.routing.allocation.include._id").put("index.number_of_replicas", 1),
             "second_shrink"
         );
         ensureGreen();
-        assertHitCount(prepareSearch("second_shrink").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")), 20);
+        assertHitCount(20, prepareSearch("second_shrink").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")));
 
         for (int i = 0; i < 20; i++) { // now update
             prepareIndex("second_shrink").setId(Integer.toString(i))
@@ -145,9 +145,9 @@ public class ShrinkIndexIT extends ESIntegTestCase {
                 .get();
         }
         flushAndRefresh();
-        assertHitCount(prepareSearch("second_shrink").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")), 20);
-        assertHitCount(prepareSearch("first_shrink").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")), 20);
-        assertHitCount(prepareSearch("source").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")), 20);
+        assertHitCount(20, prepareSearch("second_shrink").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")));
+        assertHitCount(20, prepareSearch("first_shrink").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")));
+        assertHitCount(20, prepareSearch("source").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")));
 
         assertNoResizeSourceIndexSettings("first_shrink");
         assertNoResizeSourceIndexSettings("second_shrink");
@@ -312,21 +312,21 @@ public class ShrinkIndexIT extends ESIntegTestCase {
         }
 
         final int size = docs > 0 ? 2 * docs : 1;
-        assertHitCount(prepareSearch("target").setSize(size).setQuery(new TermsQueryBuilder("foo", "bar")), docs);
+        assertHitCount(docs, prepareSearch("target").setSize(size).setQuery(new TermsQueryBuilder("foo", "bar")));
 
         if (createWithReplicas == false) {
             // bump replicas
             setReplicaCount(1, "target");
             ensureGreen();
-            assertHitCount(prepareSearch("target").setSize(size).setQuery(new TermsQueryBuilder("foo", "bar")), docs);
+            assertHitCount(docs, prepareSearch("target").setSize(size).setQuery(new TermsQueryBuilder("foo", "bar")));
         }
 
         for (int i = docs; i < 2 * docs; i++) {
             prepareIndex("target").setSource("{\"foo\" : \"bar\", \"i\" : " + i + "}", XContentType.JSON).get();
         }
         flushAndRefresh();
-        assertHitCount(prepareSearch("target").setSize(2 * size).setQuery(new TermsQueryBuilder("foo", "bar")), 2 * docs);
-        assertHitCount(prepareSearch("source").setSize(size).setQuery(new TermsQueryBuilder("foo", "bar")), docs);
+        assertHitCount(2 * docs, prepareSearch("target").setSize(2 * size).setQuery(new TermsQueryBuilder("foo", "bar")));
+        assertHitCount(docs, prepareSearch("source").setSize(size).setQuery(new TermsQueryBuilder("foo", "bar")));
         GetSettingsResponse target = indicesAdmin().prepareGetSettings("target").get();
         assertThat(
             target.getIndexToSettings().get("target").getAsVersionId("index.version.created", IndexVersion::fromId),
@@ -415,7 +415,7 @@ public class ShrinkIndexIT extends ESIntegTestCase {
         // we support the expected shard size in the allocator to sum up over the source index shards
         assertTrue("expected shard size must be set but wasn't: " + expectedShardSize, expectedShardSize > 0);
         ensureGreen();
-        assertHitCount(prepareSearch("target").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")), 20);
+        assertHitCount(20, prepareSearch("target").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")));
         assertNoResizeSourceIndexSettings("target");
     }
 

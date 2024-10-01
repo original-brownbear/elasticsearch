@@ -205,14 +205,13 @@ public class BulkByScrollUsesAllScrollDocumentsAfterConflictsIntegTests extends 
         int conflictingOps = randomIntBetween(maxDocs, numDocs);
         final int finalConflictingOps = conflictingOps;
         final List<SearchHit> docsModifiedConcurrently = new ArrayList<>();
-        assertResponse(
+        assertResponse(response -> {
+            // Modify a subset of the target documents concurrently
+            final List<SearchHit> originalDocs = Arrays.asList(response.getHits().asUnpooled().getHits());
+            docsModifiedConcurrently.addAll(randomSubsetOf(finalConflictingOps, originalDocs));
+        },
             prepareSearch(sourceIndex).setSize(numDocs) // Get all indexed docs
-                .addSort(SORTING_FIELD, SortOrder.DESC),
-            response -> {
-                // Modify a subset of the target documents concurrently
-                final List<SearchHit> originalDocs = Arrays.asList(response.getHits().asUnpooled().getHits());
-                docsModifiedConcurrently.addAll(randomSubsetOf(finalConflictingOps, originalDocs));
-            }
+                .addSort(SORTING_FIELD, SortOrder.DESC)
         );
         BulkRequest conflictingUpdatesBulkRequest = new BulkRequest();
         for (SearchHit searchHit : docsModifiedConcurrently) {

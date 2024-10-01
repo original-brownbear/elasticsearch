@@ -63,13 +63,12 @@ public class RareTermsIT extends ESSingleNodeTestCase {
     }
 
     private void assertNumRareTerms(int maxDocs, int rareTerms) {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            final RareTerms terms = response.getAggregations().get("rareTerms");
+            assertThat(terms.getBuckets().size(), Matchers.equalTo(rareTerms));
+        },
             client().prepareSearch(index)
-                .addAggregation(new RareTermsAggregationBuilder("rareTerms").field("str_value.keyword").maxDocCount(maxDocs)),
-            response -> {
-                final RareTerms terms = response.getAggregations().get("rareTerms");
-                assertThat(terms.getBuckets().size(), Matchers.equalTo(rareTerms));
-            }
+                .addAggregation(new RareTermsAggregationBuilder("rareTerms").field("str_value.keyword").maxDocCount(maxDocs))
         );
     }
 
@@ -85,7 +84,7 @@ public class RareTermsIT extends ESSingleNodeTestCase {
                         .subAggregation(new TopHitsAggregationBuilder("top_hits").storedField("_none_"))
                 )
         );
-        assertNoFailuresAndResponse(client().prepareSearch("global").addAggregation(globalBuilder), response -> {
+        assertNoFailuresAndResponse(response -> {
             InternalGlobal result = response.getAggregations().get("global");
             InternalMultiBucketAggregation<?, ?> terms = result.getAggregations().get("terms");
             assertThat(terms.getBuckets().size(), equalTo(3));
@@ -99,6 +98,6 @@ public class RareTermsIT extends ESSingleNodeTestCase {
                     assertThat(hit.getScore(), greaterThan(0f));
                 }
             }
-        });
+        }, client().prepareSearch("global").addAggregation(globalBuilder));
     }
 }

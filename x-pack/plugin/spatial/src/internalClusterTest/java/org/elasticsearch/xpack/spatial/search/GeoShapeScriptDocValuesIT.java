@@ -320,12 +320,12 @@ public class GeoShapeScriptDocValuesIT extends ESSingleNodeTestCase {
             .addScriptField("lon", new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "lon", Collections.emptyMap()))
             .addScriptField("height", new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "height", Collections.emptyMap()))
             .addScriptField("width", new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "width", Collections.emptyMap()));
-        assertNoFailuresAndResponse(searchRequestBuilder, response -> {
+        assertNoFailuresAndResponse(response -> {
             Map<String, DocumentField> fields = response.getHits().getHits()[0].getFields();
             assertThat(fields.get("lat").getValue(), equalTo(Double.NaN));
             assertThat(fields.get("lon").getValue(), equalTo(Double.NaN));
             assertThat(fields.get("height").getValue(), equalTo(Double.NaN));
             assertThat(fields.get("width").getValue(), equalTo(Double.NaN));
-        });
+        }, searchRequestBuilder);
     }
 }

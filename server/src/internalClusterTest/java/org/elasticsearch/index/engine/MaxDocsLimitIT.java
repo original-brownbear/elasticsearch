@@ -106,8 +106,8 @@ public class MaxDocsLimitIT extends ESIntegTestCase {
         assertThat(deleteError.getMessage(), containsString("Number of documents in the shard cannot exceed [" + maxDocs.get() + "]"));
         indicesAdmin().prepareRefresh("test").get();
         assertNoFailuresAndResponse(
-            prepareSearch("test").setQuery(new MatchAllQueryBuilder()).setTrackTotalHitsUpTo(Integer.MAX_VALUE).setSize(0),
-            response -> assertThat(response.getHits().getTotalHits().value, equalTo((long) maxDocs.get()))
+            response -> assertThat(response.getHits().getTotalHits().value, equalTo((long) maxDocs.get())),
+            prepareSearch("test").setQuery(new MatchAllQueryBuilder()).setTrackTotalHitsUpTo(Integer.MAX_VALUE).setSize(0)
         );
         if (randomBoolean()) {
             indicesAdmin().prepareFlush("test").get();
@@ -116,8 +116,8 @@ public class MaxDocsLimitIT extends ESIntegTestCase {
         internalCluster().ensureAtLeastNumDataNodes(2);
         ensureGreen("test");
         assertNoFailuresAndResponse(
-            prepareSearch("test").setQuery(new MatchAllQueryBuilder()).setTrackTotalHitsUpTo(Integer.MAX_VALUE).setSize(0),
-            response -> assertThat(response.getHits().getTotalHits().value, equalTo((long) maxDocs.get()))
+            response -> assertThat(response.getHits().getTotalHits().value, equalTo((long) maxDocs.get())),
+            prepareSearch("test").setQuery(new MatchAllQueryBuilder()).setTrackTotalHitsUpTo(Integer.MAX_VALUE).setSize(0)
         );
     }
 

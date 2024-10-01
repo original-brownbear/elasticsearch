@@ -109,7 +109,7 @@ public class MinimumMasterNodesIT extends ESIntegTestCase {
 
         logger.info("--> verify we get the data back");
         for (int i = 0; i < 10; i++) {
-            assertHitCount(prepareSearch().setSize(0).setQuery(QueryBuilders.matchAllQuery()), 100);
+            assertHitCount(100, prepareSearch().setSize(0).setQuery(QueryBuilders.matchAllQuery()));
         }
 
         String masterNode = internalCluster().getMasterName();
@@ -157,7 +157,7 @@ public class MinimumMasterNodesIT extends ESIntegTestCase {
 
         logger.info("--> verify we get the data back after cluster reform");
         for (int i = 0; i < 10; i++) {
-            assertHitCount(prepareSearch().setSize(0).setQuery(QueryBuilders.matchAllQuery()), 100);
+            assertHitCount(100, prepareSearch().setSize(0).setQuery(QueryBuilders.matchAllQuery()));
         }
 
         logger.info("--> clearing voting config exclusions");
@@ -206,7 +206,7 @@ public class MinimumMasterNodesIT extends ESIntegTestCase {
 
         logger.info("--> verify we the data back");
         for (int i = 0; i < 10; i++) {
-            assertHitCount(prepareSearch().setSize(0).setQuery(QueryBuilders.matchAllQuery()), 100);
+            assertHitCount(100, prepareSearch().setSize(0).setQuery(QueryBuilders.matchAllQuery()));
         }
     }
 
@@ -258,7 +258,7 @@ public class MinimumMasterNodesIT extends ESIntegTestCase {
         refresh();
         logger.info("--> verify we get the data back");
         for (int i = 0; i < 10; i++) {
-            assertHitCount(prepareSearch().setSize(0).setQuery(QueryBuilders.matchAllQuery()), 100);
+            assertHitCount(100, prepareSearch().setSize(0).setQuery(QueryBuilders.matchAllQuery()));
         }
 
         List<String> nonMasterNodes = new ArrayList<>(
@@ -287,7 +287,7 @@ public class MinimumMasterNodesIT extends ESIntegTestCase {
 
         logger.info("--> verify we the data back");
         for (int i = 0; i < 10; i++) {
-            assertHitCount(prepareSearch().setSize(0).setQuery(QueryBuilders.matchAllQuery()), 100);
+            assertHitCount(100, prepareSearch().setSize(0).setQuery(QueryBuilders.matchAllQuery()));
         }
     }
 

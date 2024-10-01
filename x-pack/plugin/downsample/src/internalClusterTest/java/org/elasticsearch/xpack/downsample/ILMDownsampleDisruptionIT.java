@@ -242,14 +242,12 @@ public class ILMDownsampleDisruptionIT extends ESIntegTestCase {
             .actionGet();
         assertEquals(1, getIndexResponse.indices().length);
         assertResponse(
+            targetIndexSearch -> { assertTrue(targetIndexSearch.getHits().getHits().length > 0); },
             cluster.client()
                 .prepareSearch(targetIndex)
                 .setQuery(new MatchAllQueryBuilder())
                 .setSize(Math.min(DOC_COUNT, indexedDocs))
-                .setTrackTotalHitsUpTo(Integer.MAX_VALUE),
-            targetIndexSearch -> {
-                assertTrue(targetIndexSearch.getHits().getHits().length > 0);
-            }
+                .setTrackTotalHitsUpTo(Integer.MAX_VALUE)
         );
     }
 

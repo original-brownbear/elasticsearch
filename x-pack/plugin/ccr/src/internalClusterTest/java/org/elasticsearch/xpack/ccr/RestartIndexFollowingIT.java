@@ -79,7 +79,7 @@ public class RestartIndexFollowingIT extends CcrIntegTestCase {
             leaderClient().prepareIndex("index1").setId(Integer.toString(i)).setSource(source, XContentType.JSON).get();
         }
 
-        assertBusy(() -> assertHitCount(followerClient().prepareSearch("index2"), firstBatchNumDocs));
+        assertBusy(() -> assertHitCount(firstBatchNumDocs, followerClient().prepareSearch("index2")));
 
         getFollowerCluster().fullRestart();
         ensureFollowerGreen("index2");
@@ -114,7 +114,7 @@ public class RestartIndexFollowingIT extends CcrIntegTestCase {
                     followerClient().execute(PutFollowAction.INSTANCE, putFollow("index1", "index2", ActiveShardCount.ALL)).actionGet();
                 }
             }
-            assertHitCount(followerClient().prepareSearch("index2"), totalDocs);
+            assertHitCount(totalDocs, followerClient().prepareSearch("index2"));
         }, 30L, TimeUnit.SECONDS);
 
         cleanRemoteCluster();

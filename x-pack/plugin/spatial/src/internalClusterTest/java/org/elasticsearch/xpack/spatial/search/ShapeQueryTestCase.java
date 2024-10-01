@@ -108,56 +108,50 @@ public abstract class ShapeQueryTestCase extends ESSingleNodeTestCase {
     public void testIndexPointsFilterRectangle() {
         Rectangle rectangle = new Rectangle(-45, 45, 45, -45);
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            assertThat(response.getHits().getTotalHits().value, equalTo(2L));
+            assertThat(response.getHits().getHits().length, equalTo(2));
+            assertThat(response.getHits().getAt(0).getId(), anyOf(equalTo("1"), equalTo("4")));
+            assertThat(response.getHits().getAt(1).getId(), anyOf(equalTo("1"), equalTo("4")));
+        },
             client().prepareSearch(defaultIndexName)
-                .setQuery(new ShapeQueryBuilder(defaultFieldName, rectangle).relation(ShapeRelation.INTERSECTS)),
-            response -> {
-                assertThat(response.getHits().getTotalHits().value, equalTo(2L));
-                assertThat(response.getHits().getHits().length, equalTo(2));
-                assertThat(response.getHits().getAt(0).getId(), anyOf(equalTo("1"), equalTo("4")));
-                assertThat(response.getHits().getAt(1).getId(), anyOf(equalTo("1"), equalTo("4")));
-            }
+                .setQuery(new ShapeQueryBuilder(defaultFieldName, rectangle).relation(ShapeRelation.INTERSECTS))
         );
 
         // default query, without specifying relation (expect intersects)
-        assertNoFailuresAndResponse(
-            client().prepareSearch(defaultIndexName).setQuery(new ShapeQueryBuilder(defaultFieldName, rectangle)),
-            response -> {
-                assertThat(response.getHits().getTotalHits().value, equalTo(2L));
-                assertThat(response.getHits().getHits().length, equalTo(2));
-                assertThat(response.getHits().getAt(0).getId(), anyOf(equalTo("1"), equalTo("4")));
-                assertThat(response.getHits().getAt(1).getId(), anyOf(equalTo("1"), equalTo("4")));
-            }
-        );
+        assertNoFailuresAndResponse(response -> {
+            assertThat(response.getHits().getTotalHits().value, equalTo(2L));
+            assertThat(response.getHits().getHits().length, equalTo(2));
+            assertThat(response.getHits().getAt(0).getId(), anyOf(equalTo("1"), equalTo("4")));
+            assertThat(response.getHits().getAt(1).getId(), anyOf(equalTo("1"), equalTo("4")));
+        }, client().prepareSearch(defaultIndexName).setQuery(new ShapeQueryBuilder(defaultFieldName, rectangle)));
     }
 
     public void testIndexPointsCircle() {
         Circle circle = new Circle(-30, -30, 1);
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            assertThat(response.getHits().getTotalHits().value, equalTo(2L));
+            assertThat(response.getHits().getHits().length, equalTo(2));
+            assertThat(response.getHits().getAt(0).getId(), anyOf(equalTo("1"), equalTo("4")));
+            assertThat(response.getHits().getAt(1).getId(), anyOf(equalTo("1"), equalTo("4")));
+        },
             client().prepareSearch(defaultIndexName)
-                .setQuery(new ShapeQueryBuilder(defaultFieldName, circle).relation(ShapeRelation.INTERSECTS)),
-            response -> {
-                assertThat(response.getHits().getTotalHits().value, equalTo(2L));
-                assertThat(response.getHits().getHits().length, equalTo(2));
-                assertThat(response.getHits().getAt(0).getId(), anyOf(equalTo("1"), equalTo("4")));
-                assertThat(response.getHits().getAt(1).getId(), anyOf(equalTo("1"), equalTo("4")));
-            }
+                .setQuery(new ShapeQueryBuilder(defaultFieldName, circle).relation(ShapeRelation.INTERSECTS))
         );
     }
 
     public void testIndexPointsPolygon() {
         Polygon polygon = new Polygon(new LinearRing(new double[] { -35, -35, -25, -25, -35 }, new double[] { -35, -25, -25, -35, -35 }));
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            SearchHits searchHits = response.getHits();
+            assertThat(searchHits.getTotalHits().value, equalTo(2L));
+            assertThat(searchHits.getAt(0).getId(), anyOf(equalTo("1"), equalTo("4")));
+            assertThat(searchHits.getAt(1).getId(), anyOf(equalTo("1"), equalTo("4")));
+        },
             client().prepareSearch(defaultIndexName)
-                .setQuery(new ShapeQueryBuilder(defaultFieldName, polygon).relation(ShapeRelation.INTERSECTS)),
-            response -> {
-                SearchHits searchHits = response.getHits();
-                assertThat(searchHits.getTotalHits().value, equalTo(2L));
-                assertThat(searchHits.getAt(0).getId(), anyOf(equalTo("1"), equalTo("4")));
-                assertThat(searchHits.getAt(1).getId(), anyOf(equalTo("1"), equalTo("4")));
-            }
+                .setQuery(new ShapeQueryBuilder(defaultFieldName, polygon).relation(ShapeRelation.INTERSECTS))
         );
     }
 
@@ -171,30 +165,28 @@ public abstract class ShapeQueryTestCase extends ESSingleNodeTestCase {
 
         MultiPolygon mp = new MultiPolygon(List.of(encloseDocument1Shape, encloseDocument2Shape));
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            assertThat(response.getHits().getTotalHits().value, equalTo(3L));
+            assertThat(response.getHits().getHits().length, equalTo(3));
+            assertThat(response.getHits().getAt(0).getId(), not(equalTo("3")));
+            assertThat(response.getHits().getAt(1).getId(), not(equalTo("3")));
+            assertThat(response.getHits().getAt(2).getId(), not(equalTo("3")));
+        },
             client().prepareSearch(defaultIndexName)
-                .setQuery(new ShapeQueryBuilder(defaultFieldName, mp).relation(ShapeRelation.INTERSECTS)),
-            response -> {
-                assertThat(response.getHits().getTotalHits().value, equalTo(3L));
-                assertThat(response.getHits().getHits().length, equalTo(3));
-                assertThat(response.getHits().getAt(0).getId(), not(equalTo("3")));
-                assertThat(response.getHits().getAt(1).getId(), not(equalTo("3")));
-                assertThat(response.getHits().getAt(2).getId(), not(equalTo("3")));
-            }
+                .setQuery(new ShapeQueryBuilder(defaultFieldName, mp).relation(ShapeRelation.INTERSECTS))
         );
     }
 
     public void testIndexPointsRectangle() {
         Rectangle rectangle = new Rectangle(-50, -40, -45, -55);
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            assertThat(response.getHits().getTotalHits().value, equalTo(1L));
+            assertThat(response.getHits().getHits().length, equalTo(1));
+            assertThat(response.getHits().getAt(0).getId(), equalTo("2"));
+        },
             client().prepareSearch(defaultIndexName)
-                .setQuery(new ShapeQueryBuilder(defaultFieldName, rectangle).relation(ShapeRelation.INTERSECTS)),
-            response -> {
-                assertThat(response.getHits().getTotalHits().value, equalTo(1L));
-                assertThat(response.getHits().getHits().length, equalTo(1));
-                assertThat(response.getHits().getAt(0).getId(), equalTo("2"));
-            }
+                .setQuery(new ShapeQueryBuilder(defaultFieldName, rectangle).relation(ShapeRelation.INTERSECTS))
         );
     }
 
@@ -224,18 +216,17 @@ public abstract class ShapeQueryTestCase extends ESSingleNodeTestCase {
             .setRefreshPolicy(IMMEDIATE)
             .get();
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            assertThat(response.getHits().getTotalHits().value, equalTo(1L));
+            assertThat(response.getHits().getHits().length, equalTo(1));
+            assertThat(response.getHits().getAt(0).getId(), equalTo("2"));
+        },
             client().prepareSearch(defaultIndexName)
                 .setQuery(
                     new ShapeQueryBuilder(defaultFieldName, "shape1").relation(ShapeRelation.INTERSECTS)
                         .indexedShapeIndex(indexedShapeIndex)
                         .indexedShapePath(indexedShapePath)
-                ),
-            response -> {
-                assertThat(response.getHits().getTotalHits().value, equalTo(1L));
-                assertThat(response.getHits().getHits().length, equalTo(1));
-                assertThat(response.getHits().getAt(0).getId(), equalTo("2"));
-            }
+                )
         );
 
         assertHitCountAndNoFailures(
@@ -254,27 +245,27 @@ public abstract class ShapeQueryTestCase extends ESSingleNodeTestCase {
         Circle circle = new Circle(-25, -25, 10);
 
         assertHitCount(
+            2L,
             client().prepareSearch(defaultIndexName)
-                .setQuery(new ShapeQueryBuilder(defaultFieldName, circle).relation(ShapeRelation.INTERSECTS)),
-            2L
+                .setQuery(new ShapeQueryBuilder(defaultFieldName, circle).relation(ShapeRelation.INTERSECTS))
         );
 
         assertHitCount(
+            1L,
             client().prepareSearch(defaultIndexName)
-                .setQuery(new ShapeQueryBuilder(defaultFieldName, circle).relation(ShapeRelation.WITHIN)),
-            1L
+                .setQuery(new ShapeQueryBuilder(defaultFieldName, circle).relation(ShapeRelation.WITHIN))
         );
 
         assertHitCount(
+            3L,
             client().prepareSearch(defaultIndexName)
-                .setQuery(new ShapeQueryBuilder(defaultFieldName, circle).relation(ShapeRelation.DISJOINT)),
-            3L
+                .setQuery(new ShapeQueryBuilder(defaultFieldName, circle).relation(ShapeRelation.DISJOINT))
         );
 
         assertHitCount(
+            0L,
             client().prepareSearch(defaultIndexName)
-                .setQuery(new ShapeQueryBuilder(defaultFieldName, circle).relation(ShapeRelation.CONTAINS)),
-            0L
+                .setQuery(new ShapeQueryBuilder(defaultFieldName, circle).relation(ShapeRelation.CONTAINS))
         );
     }
 
@@ -297,9 +288,9 @@ public abstract class ShapeQueryTestCase extends ESSingleNodeTestCase {
     public void testIndexPointsQueryLine() {
         Line line = new Line(new double[] { 100, -30 }, new double[] { -100, -30 });
         assertHitCount(
+            2L,
             client().prepareSearch(defaultIndexName)
-                .setQuery(new ShapeQueryBuilder(defaultFieldName, line).relation(ShapeRelation.INTERSECTS)),
-            2L
+                .setQuery(new ShapeQueryBuilder(defaultFieldName, line).relation(ShapeRelation.INTERSECTS))
         );
     }
 
@@ -312,57 +303,56 @@ public abstract class ShapeQueryTestCase extends ESSingleNodeTestCase {
         );
 
         assertHitCount(
+            2L,
             client().prepareSearch(defaultIndexName)
-                .setQuery(new ShapeQueryBuilder(defaultFieldName, multiLine).relation(ShapeRelation.INTERSECTS)),
-            2L
+                .setQuery(new ShapeQueryBuilder(defaultFieldName, multiLine).relation(ShapeRelation.INTERSECTS))
         );
     }
 
     public void testIndexPointsQueryPoint() {
         Point point = new Point(-30, -30);
         assertHitCount(
+            2L,
             client().prepareSearch(defaultIndexName)
-                .setQuery(new ShapeQueryBuilder(defaultFieldName, point).relation(ShapeRelation.INTERSECTS)),
-            2L
+                .setQuery(new ShapeQueryBuilder(defaultFieldName, point).relation(ShapeRelation.INTERSECTS))
         );
         assertHitCount(
-            client().prepareSearch(defaultIndexName)
-                .setQuery(new ShapeQueryBuilder(defaultFieldName, point).relation(ShapeRelation.WITHIN)),
-            1L
+            1L,
+            client().prepareSearch(defaultIndexName).setQuery(new ShapeQueryBuilder(defaultFieldName, point).relation(ShapeRelation.WITHIN))
         );
         assertHitCount(
+            2L,
             client().prepareSearch(defaultIndexName)
-                .setQuery(new ShapeQueryBuilder(defaultFieldName, point).relation(ShapeRelation.CONTAINS)),
-            2L
+                .setQuery(new ShapeQueryBuilder(defaultFieldName, point).relation(ShapeRelation.CONTAINS))
         );
         assertHitCount(
+            3L,
             client().prepareSearch(defaultIndexName)
-                .setQuery(new ShapeQueryBuilder(defaultFieldName, point).relation(ShapeRelation.DISJOINT)),
-            3L
+                .setQuery(new ShapeQueryBuilder(defaultFieldName, point).relation(ShapeRelation.DISJOINT))
         );
     }
 
     public void testIndexPointsQueryMultiPoint() {
         MultiPoint multiPoint = new MultiPoint(List.of(new Point(-30, -30), new Point(50, 50)));
         assertHitCount(
+            4L,
             client().prepareSearch(defaultIndexName)
-                .setQuery(new ShapeQueryBuilder(defaultFieldName, multiPoint).relation(ShapeRelation.INTERSECTS)),
-            4L
+                .setQuery(new ShapeQueryBuilder(defaultFieldName, multiPoint).relation(ShapeRelation.INTERSECTS))
         );
         assertHitCount(
+            3L,
             client().prepareSearch(defaultIndexName)
-                .setQuery(new ShapeQueryBuilder(defaultFieldName, multiPoint).relation(ShapeRelation.WITHIN)),
-            3L
+                .setQuery(new ShapeQueryBuilder(defaultFieldName, multiPoint).relation(ShapeRelation.WITHIN))
         );
         assertHitCount(
+            1L,
             client().prepareSearch(defaultIndexName)
-                .setQuery(new ShapeQueryBuilder(defaultFieldName, multiPoint).relation(ShapeRelation.CONTAINS)),
-            1L
+                .setQuery(new ShapeQueryBuilder(defaultFieldName, multiPoint).relation(ShapeRelation.CONTAINS))
         );
         assertHitCount(
+            1L,
             client().prepareSearch(defaultIndexName)
-                .setQuery(new ShapeQueryBuilder(defaultFieldName, multiPoint).relation(ShapeRelation.DISJOINT)),
-            1L
+                .setQuery(new ShapeQueryBuilder(defaultFieldName, multiPoint).relation(ShapeRelation.DISJOINT))
         );
     }
 }

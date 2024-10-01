@@ -92,7 +92,7 @@ public abstract class BaseShapeQueryTestCase<T extends AbstractGeometryQueryBuil
             .setSource(GeoJson.toXContent(multiPoint, jsonBuilder().startObject().field(defaultFieldName), null).endObject())
             .setRefreshPolicy(IMMEDIATE)
             .get();
-        assertHitCount(client().prepareSearch(defaultIndexName).setQuery(queryBuilder().shapeQuery("alias", multiPoint)), 1L);
+        assertHitCount(1L, client().prepareSearch(defaultIndexName).setQuery(queryBuilder().shapeQuery("alias", multiPoint)));
     }
 
     public void testShapeFetchingPath() throws Exception {
@@ -205,9 +205,9 @@ public abstract class BaseShapeQueryTestCase<T extends AbstractGeometryQueryBuil
         GeometryCollection<Geometry> queryCollection = new GeometryCollection<>(queryGeometries);
 
         QueryBuilder intersects = queryBuilder().intersectionQuery(defaultFieldName, queryCollection);
-        assertNoFailuresAndResponse(client().prepareSearch(defaultIndexName).setQuery(intersects), response -> {
+        assertNoFailuresAndResponse(response -> {
             assertTrue("query: " + intersects + " doc: " + Strings.toString(docSource), response.getHits().getTotalHits().value > 0);
-        });
+        }, client().prepareSearch(defaultIndexName).setQuery(intersects));
     }
 
     public void testGeometryCollectionRelations() throws Exception {
@@ -231,21 +231,17 @@ public abstract class BaseShapeQueryTestCase<T extends AbstractGeometryQueryBuil
             GeometryCollection<Geometry> collection = new GeometryCollection<>(geometries);
 
             assertHitCount(
+                1L,
                 client().prepareSearch(defaultIndexName)
                     .setQuery(queryBuilder().shapeQuery(defaultFieldName, collection).relation(ShapeRelation.CONTAINS)),
-                1L
+                client().prepareSearch(defaultIndexName)
+                    .setQuery(queryBuilder().shapeQuery(defaultFieldName, collection).relation(ShapeRelation.INTERSECTS))
             );
 
             assertHitCount(
+                0L,
                 client().prepareSearch(defaultIndexName)
-                    .setQuery(queryBuilder().shapeQuery(defaultFieldName, collection).relation(ShapeRelation.INTERSECTS)),
-                1L
-            );
-
-            assertHitCount(
-                client().prepareSearch(defaultIndexName)
-                    .setQuery(queryBuilder().shapeQuery(defaultFieldName, collection).relation(ShapeRelation.DISJOINT)),
-                0L
+                    .setQuery(queryBuilder().shapeQuery(defaultFieldName, collection).relation(ShapeRelation.DISJOINT))
             );
         }
         {
@@ -256,21 +252,17 @@ public abstract class BaseShapeQueryTestCase<T extends AbstractGeometryQueryBuil
             GeometryCollection<Geometry> collection = new GeometryCollection<>(geometries);
 
             assertHitCount(
+                0L,
                 client().prepareSearch(defaultIndexName)
                     .setQuery(queryBuilder().shapeQuery(defaultFieldName, collection).relation(ShapeRelation.CONTAINS)),
-                0L
+                client().prepareSearch(defaultIndexName)
+                    .setQuery(queryBuilder().shapeQuery(defaultFieldName, collection).relation(ShapeRelation.DISJOINT))
             );
 
             assertHitCount(
+                1L,
                 client().prepareSearch(defaultIndexName)
-                    .setQuery(queryBuilder().shapeQuery(defaultFieldName, collection).relation(ShapeRelation.INTERSECTS)),
-                1L
-            );
-
-            assertHitCount(
-                client().prepareSearch(defaultIndexName)
-                    .setQuery(queryBuilder().shapeQuery(defaultFieldName, collection).relation(ShapeRelation.DISJOINT)),
-                0L
+                    .setQuery(queryBuilder().shapeQuery(defaultFieldName, collection).relation(ShapeRelation.INTERSECTS))
             );
         }
         {
@@ -281,21 +273,17 @@ public abstract class BaseShapeQueryTestCase<T extends AbstractGeometryQueryBuil
             GeometryCollection<Geometry> collection = new GeometryCollection<>(geometries);
 
             assertHitCount(
+                0L,
                 client().prepareSearch(defaultIndexName)
                     .setQuery(queryBuilder().shapeQuery(defaultFieldName, collection).relation(ShapeRelation.CONTAINS)),
-                0L
+                client().prepareSearch(defaultIndexName)
+                    .setQuery(queryBuilder().shapeQuery(defaultFieldName, collection).relation(ShapeRelation.INTERSECTS))
             );
 
             assertHitCount(
+                1L,
                 client().prepareSearch(defaultIndexName)
-                    .setQuery(queryBuilder().shapeQuery(defaultFieldName, collection).relation(ShapeRelation.INTERSECTS)),
-                0L
-            );
-
-            assertHitCount(
-                client().prepareSearch(defaultIndexName)
-                    .setQuery(queryBuilder().shapeQuery(defaultFieldName, collection).relation(ShapeRelation.DISJOINT)),
-                1L
+                    .setQuery(queryBuilder().shapeQuery(defaultFieldName, collection).relation(ShapeRelation.DISJOINT))
             );
         }
     }
@@ -349,14 +337,11 @@ public abstract class BaseShapeQueryTestCase<T extends AbstractGeometryQueryBuil
 
         // This search would fail if both geoshape indexing and geoshape filtering
         // used the bottom-level optimization in SpatialPrefixTree#recursiveGetNodes.
-        assertNoFailuresAndResponse(
-            client().prepareSearch(defaultIndexName).setQuery(queryBuilder().intersectionQuery(defaultFieldName, query)),
-            response -> {
-                assertThat(response.getHits().getTotalHits().value, equalTo(1L));
-                assertThat(response.getHits().getHits().length, equalTo(1));
-                assertThat(response.getHits().getAt(0).getId(), equalTo("blakely"));
-            }
-        );
+        assertNoFailuresAndResponse(response -> {
+            assertThat(response.getHits().getTotalHits().value, equalTo(1L));
+            assertThat(response.getHits().getHits().length, equalTo(1));
+            assertThat(response.getHits().getAt(0).getId(), equalTo("blakely"));
+        }, client().prepareSearch(defaultIndexName).setQuery(queryBuilder().intersectionQuery(defaultFieldName, query)));
 
     }
 
@@ -454,22 +439,13 @@ public abstract class BaseShapeQueryTestCase<T extends AbstractGeometryQueryBuil
             .setRefreshPolicy(IMMEDIATE)
             .get();
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            assertThat(response.getHits().getTotalHits().value, equalTo(1L));
+            assertThat(response.getHits().getHits().length, equalTo(1));
+            assertThat(response.getHits().getAt(0).getId(), equalTo("1"));
+        },
             client().prepareSearch(defaultIndexName).setQuery(queryBuilder().intersectionQuery(defaultFieldName, "Big_Rectangle")),
-            response -> {
-                assertThat(response.getHits().getTotalHits().value, equalTo(1L));
-                assertThat(response.getHits().getHits().length, equalTo(1));
-                assertThat(response.getHits().getAt(0).getId(), equalTo("1"));
-            }
-        );
-
-        assertNoFailuresAndResponse(
-            client().prepareSearch(defaultIndexName).setQuery(queryBuilder().shapeQuery(defaultFieldName, "Big_Rectangle")),
-            response -> {
-                assertThat(response.getHits().getTotalHits().value, equalTo(1L));
-                assertThat(response.getHits().getHits().length, equalTo(1));
-                assertThat(response.getHits().getAt(0).getId(), equalTo("1"));
-            }
+            client().prepareSearch(defaultIndexName).setQuery(queryBuilder().shapeQuery(defaultFieldName, "Big_Rectangle"))
         );
     }
 
@@ -581,27 +557,27 @@ public abstract class BaseShapeQueryTestCase<T extends AbstractGeometryQueryBuil
         ).actionGet();
 
         assertHitCount(
+            2L,
             client().prepareSearch(defaultIndexName)
-                .setQuery(queryBuilder().shapeQuery(defaultFieldName, circle).relation(ShapeRelation.WITHIN)),
-            2L
+                .setQuery(queryBuilder().shapeQuery(defaultFieldName, circle).relation(ShapeRelation.WITHIN))
         );
 
         assertHitCount(
+            2L,
             client().prepareSearch(defaultIndexName)
-                .setQuery(queryBuilder().shapeQuery(defaultFieldName, circle).relation(ShapeRelation.INTERSECTS)),
-            2L
+                .setQuery(queryBuilder().shapeQuery(defaultFieldName, circle).relation(ShapeRelation.INTERSECTS))
         );
 
         assertHitCount(
+            2L,
             client().prepareSearch(defaultIndexName)
-                .setQuery(queryBuilder().shapeQuery(defaultFieldName, circle).relation(ShapeRelation.DISJOINT)),
-            2L
+                .setQuery(queryBuilder().shapeQuery(defaultFieldName, circle).relation(ShapeRelation.DISJOINT))
         );
 
         assertHitCount(
+            0L,
             client().prepareSearch(defaultIndexName)
-                .setQuery(queryBuilder().shapeQuery(defaultFieldName, circle).relation(ShapeRelation.CONTAINS)),
-            0L
+                .setQuery(queryBuilder().shapeQuery(defaultFieldName, circle).relation(ShapeRelation.CONTAINS))
         );
     }
 

@@ -221,7 +221,35 @@ public class SerialDiffIT extends AggregationIntegTestCase {
     }
 
     public void testBasicDiff() {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            assertThat(histo.getName(), equalTo("histo"));
+            List<? extends Bucket> buckets = histo.getBuckets();
+            assertThat("Size of buckets array is not correct.", buckets.size(), equalTo(mockHisto.size()));
+
+            List<Double> expectedCounts = testValues.get(MetricTarget.COUNT.toString());
+            List<Double> expectedValues = testValues.get(MetricTarget.VALUE.toString());
+
+            Iterator<? extends Bucket> actualIter = buckets.iterator();
+            Iterator<PipelineAggregationHelperTests.MockBucket> expectedBucketIter = mockHisto.iterator();
+            Iterator<Double> expectedCountsIter = expectedCounts.iterator();
+            Iterator<Double> expectedValuesIter = expectedValues.iterator();
+
+            while (actualIter.hasNext()) {
+                assertValidIterators(expectedBucketIter, expectedCountsIter, expectedValuesIter);
+
+                Bucket actual = actualIter.next();
+                PipelineAggregationHelperTests.MockBucket expected = expectedBucketIter.next();
+                Double expectedCount = expectedCountsIter.next();
+                Double expectedValue = expectedValuesIter.next();
+
+                assertThat("keys do not match", ((Number) actual.getKey()).longValue(), equalTo(expected.key));
+                assertThat("doc counts do not match", actual.getDocCount(), equalTo((long) expected.count));
+
+                assertBucketContents(actual, expectedCount, expectedValue);
+            }
+        },
             prepareSearch("idx").addAggregation(
                 histogram("histo").field(INTERVAL_FIELD)
                     .interval(interval)
@@ -229,36 +257,7 @@ public class SerialDiffIT extends AggregationIntegTestCase {
                     .subAggregation(metric)
                     .subAggregation(diff("diff_counts", "_count").lag(lag).gapPolicy(gapPolicy))
                     .subAggregation(diff("diff_values", "the_metric").lag(lag).gapPolicy(gapPolicy))
-            ),
-            response -> {
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                assertThat(histo.getName(), equalTo("histo"));
-                List<? extends Bucket> buckets = histo.getBuckets();
-                assertThat("Size of buckets array is not correct.", buckets.size(), equalTo(mockHisto.size()));
-
-                List<Double> expectedCounts = testValues.get(MetricTarget.COUNT.toString());
-                List<Double> expectedValues = testValues.get(MetricTarget.VALUE.toString());
-
-                Iterator<? extends Bucket> actualIter = buckets.iterator();
-                Iterator<PipelineAggregationHelperTests.MockBucket> expectedBucketIter = mockHisto.iterator();
-                Iterator<Double> expectedCountsIter = expectedCounts.iterator();
-                Iterator<Double> expectedValuesIter = expectedValues.iterator();
-
-                while (actualIter.hasNext()) {
-                    assertValidIterators(expectedBucketIter, expectedCountsIter, expectedValuesIter);
-
-                    Bucket actual = actualIter.next();
-                    PipelineAggregationHelperTests.MockBucket expected = expectedBucketIter.next();
-                    Double expectedCount = expectedCountsIter.next();
-                    Double expectedValue = expectedValuesIter.next();
-
-                    assertThat("keys do not match", ((Number) actual.getKey()).longValue(), equalTo(expected.key));
-                    assertThat("doc counts do not match", actual.getDocCount(), equalTo((long) expected.count));
-
-                    assertBucketContents(actual, expectedCount, expectedValue);
-                }
-            }
+            )
         );
     }
 

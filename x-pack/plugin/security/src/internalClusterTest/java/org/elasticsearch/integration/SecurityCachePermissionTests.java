@@ -47,14 +47,13 @@ public class SecurityCachePermissionTests extends SecurityIntegTestCase {
     }
 
     public void testThatTermsFilterQueryDoesntLeakData() {
-        assertResponse(
+        assertResponse(response -> {
+            assertThat(response.isTimedOut(), is(false));
+            assertThat(response.getHits().getHits().length, is(1));
+        },
             prepareSearch("data").setQuery(
                 QueryBuilders.constantScoreQuery(QueryBuilders.termsLookupQuery("token", new TermsLookup("tokens", "1", "tokens")))
-            ),
-            response -> {
-                assertThat(response.isTimedOut(), is(false));
-                assertThat(response.getHits().getHits().length, is(1));
-            }
+            )
         );
 
         // Repeat with unauthorized user!!!!

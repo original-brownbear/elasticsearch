@@ -145,15 +145,12 @@ public class GeoShapeWithDocValuesIT extends GeoShapeIntegTestCase {
         refresh();
 
         BytesReference source = BytesReference.bytes(jsonBuilder().startObject().field("field1", "POINT(4.51 52.20)").endObject());
-        assertNoFailuresAndResponse(
-            client().prepareSearch().setQuery(new PercolateQueryBuilder("query", source, XContentType.JSON)).addSort("id", SortOrder.ASC),
-            response -> {
-                assertHitCount(response, 3);
-                assertThat(response.getHits().getAt(0).getId(), equalTo("1"));
-                assertThat(response.getHits().getAt(1).getId(), equalTo("2"));
-                assertThat(response.getHits().getAt(2).getId(), equalTo("3"));
-            }
-        );
+        assertNoFailuresAndResponse(response -> {
+            assertHitCount(response, 3);
+            assertThat(response.getHits().getAt(0).getId(), equalTo("1"));
+            assertThat(response.getHits().getAt(1).getId(), equalTo("2"));
+            assertThat(response.getHits().getAt(2).getId(), equalTo("3"));
+        }, prepareSearch().setQuery(new PercolateQueryBuilder("query", source, XContentType.JSON)).addSort("id", SortOrder.ASC));
     }
 
     // make sure we store the normalised geometry
@@ -174,7 +171,7 @@ public class GeoShapeWithDocValuesIT extends GeoShapeIntegTestCase {
 
         indexRandom(true, prepareIndex("test").setId("0").setSource(source, XContentType.JSON));
 
-        assertNoFailuresAndResponse(client().prepareSearch("test").setFetchSource(false).addStoredField("shape"), response -> {
+        assertNoFailuresAndResponse(response -> {
             assertThat(response.getHits().getTotalHits().value, equalTo(1L));
             SearchHit searchHit = response.getHits().getAt(0);
             assertThat(searchHit.field("shape").getValue(), instanceOf(BytesRef.class));
@@ -187,6 +184,6 @@ public class GeoShapeWithDocValuesIT extends GeoShapeIntegTestCase {
                 bytesRef.length
             );
             assertThat(geometry.type(), equalTo(ShapeType.MULTIPOLYGON));
-        });
+        }, client().prepareSearch("test").setFetchSource(false).addStoredField("shape"));
     }
 }

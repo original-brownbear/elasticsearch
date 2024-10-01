@@ -104,6 +104,6 @@ public class LegacyGeoShapeWithDocValuesIT extends GeoShapeIntegTestCase {
         }));
 
         // test self crossing of circles
-        assertHitCount(client().prepareSearch("test").setQuery(geoShapeQuery("shape", new Circle(30, 50, 77000))), 1L);
+        assertHitCount(1L, client().prepareSearch("test").setQuery(geoShapeQuery("shape", new Circle(30, 50, 77000))));
     }
 }

@@ -104,34 +104,33 @@ public class CCSPointInTimeIT extends AbstractMultiClustersTestCase {
                 remoteClient.prepareIndex("remote_test").setId("remote_new").setSource().get();
                 remoteClient.admin().indices().prepareRefresh().get();
             }
-            assertNoFailuresAndResponse(
+            assertNoFailuresAndResponse(resp -> {
+                assertHitCount(resp, (includeLocalIndex ? localNumDocs : 0) + remoteNumDocs);
+
+                SearchResponse.Clusters clusters = resp.getClusters();
+                int expectedNumClusters = 1 + (includeLocalIndex ? 1 : 0);
+                MatcherAssert.assertThat(clusters.getTotal(), equalTo(expectedNumClusters));
+                MatcherAssert.assertThat(
+                    clusters.getClusterStateCount(SearchResponse.Cluster.Status.SUCCESSFUL),
+                    equalTo(expectedNumClusters)
+                );
+                MatcherAssert.assertThat(clusters.getClusterStateCount(SearchResponse.Cluster.Status.SKIPPED), equalTo(0));
+
+                if (includeLocalIndex) {
+                    SearchResponse.Cluster localCluster = clusters.getCluster(RemoteClusterAware.LOCAL_CLUSTER_GROUP_KEY);
+                    assertNotNull(localCluster);
+                    assertAllSuccessfulShards(localCluster, 3, 0);
+                }
+
+                SearchResponse.Cluster remoteCluster = clusters.getCluster(REMOTE_CLUSTER);
+                assertNotNull(remoteCluster);
+                assertAllSuccessfulShards(remoteCluster, 3, 0);
+            },
                 localClient.prepareSearch()
                     .setPreference(null)
                     .setQuery(new MatchAllQueryBuilder())
                     .setPointInTime(new PointInTimeBuilder(pitId))
-                    .setSize(1000),
-                resp -> {
-                    assertHitCount(resp, (includeLocalIndex ? localNumDocs : 0) + remoteNumDocs);
-
-                    SearchResponse.Clusters clusters = resp.getClusters();
-                    int expectedNumClusters = 1 + (includeLocalIndex ? 1 : 0);
-                    MatcherAssert.assertThat(clusters.getTotal(), equalTo(expectedNumClusters));
-                    MatcherAssert.assertThat(
-                        clusters.getClusterStateCount(SearchResponse.Cluster.Status.SUCCESSFUL),
-                        equalTo(expectedNumClusters)
-                    );
-                    MatcherAssert.assertThat(clusters.getClusterStateCount(SearchResponse.Cluster.Status.SKIPPED), equalTo(0));
-
-                    if (includeLocalIndex) {
-                        SearchResponse.Cluster localCluster = clusters.getCluster(RemoteClusterAware.LOCAL_CLUSTER_GROUP_KEY);
-                        assertNotNull(localCluster);
-                        assertAllSuccessfulShards(localCluster, 3, 0);
-                    }
-
-                    SearchResponse.Cluster remoteCluster = clusters.getCluster(REMOTE_CLUSTER);
-                    assertNotNull(remoteCluster);
-                    assertAllSuccessfulShards(remoteCluster, 3, 0);
-                }
+                    .setSize(1000)
             );
         } finally {
             closePointInTime(pitId);
@@ -176,60 +175,58 @@ public class CCSPointInTimeIT extends AbstractMultiClustersTestCase {
         }
 
         try {
-            assertNoFailuresAndResponse(
+            assertNoFailuresAndResponse(resp -> {
+                assertHitCount(resp, 2);
+
+                SearchResponse.Clusters clusters = resp.getClusters();
+                int expectedNumClusters = 2;
+                MatcherAssert.assertThat(clusters.getTotal(), equalTo(expectedNumClusters));
+                MatcherAssert.assertThat(
+                    clusters.getClusterStateCount(SearchResponse.Cluster.Status.SUCCESSFUL),
+                    equalTo(expectedNumClusters)
+                );
+                MatcherAssert.assertThat(clusters.getClusterStateCount(SearchResponse.Cluster.Status.SKIPPED), equalTo(0));
+
+                // both indices (local and remote) have shards, but there is a single shard left after can match
+                SearchResponse.Cluster localCluster = clusters.getCluster(RemoteClusterAware.LOCAL_CLUSTER_GROUP_KEY);
+                assertNotNull(localCluster);
+                assertAllSuccessfulShards(localCluster, 1, 0);
+                SearchResponse.Cluster remoteCluster = clusters.getCluster(REMOTE_CLUSTER);
+                assertNotNull(remoteCluster);
+                assertAllSuccessfulShards(remoteCluster, 1, 0);
+            },
                 localClient.prepareSearch()
                     .setPreference(null)
                     .setQuery(new MatchAllQueryBuilder())
-                    .setPointInTime(new PointInTimeBuilder(pitId)),
-                resp -> {
-                    assertHitCount(resp, 2);
-
-                    SearchResponse.Clusters clusters = resp.getClusters();
-                    int expectedNumClusters = 2;
-                    MatcherAssert.assertThat(clusters.getTotal(), equalTo(expectedNumClusters));
-                    MatcherAssert.assertThat(
-                        clusters.getClusterStateCount(SearchResponse.Cluster.Status.SUCCESSFUL),
-                        equalTo(expectedNumClusters)
-                    );
-                    MatcherAssert.assertThat(clusters.getClusterStateCount(SearchResponse.Cluster.Status.SKIPPED), equalTo(0));
-
-                    // both indices (local and remote) have shards, but there is a single shard left after can match
-                    SearchResponse.Cluster localCluster = clusters.getCluster(RemoteClusterAware.LOCAL_CLUSTER_GROUP_KEY);
-                    assertNotNull(localCluster);
-                    assertAllSuccessfulShards(localCluster, 1, 0);
-                    SearchResponse.Cluster remoteCluster = clusters.getCluster(REMOTE_CLUSTER);
-                    assertNotNull(remoteCluster);
-                    assertAllSuccessfulShards(remoteCluster, 1, 0);
-                }
+                    .setPointInTime(new PointInTimeBuilder(pitId))
             );
 
-            assertNoFailuresAndResponse(
+            assertNoFailuresAndResponse(resp -> {
+                assertHitCount(resp, 1);
+
+                SearchResponse.Clusters clusters = resp.getClusters();
+                int expectedNumClusters = 2;
+                MatcherAssert.assertThat(clusters.getTotal(), equalTo(expectedNumClusters));
+                MatcherAssert.assertThat(
+                    clusters.getClusterStateCount(SearchResponse.Cluster.Status.SUCCESSFUL),
+                    equalTo(expectedNumClusters)
+                );
+                MatcherAssert.assertThat(clusters.getClusterStateCount(SearchResponse.Cluster.Status.SKIPPED), equalTo(0));
+
+                // both indices (local and remote) have shards, but there is a single shard left after can match
+                SearchResponse.Cluster localCluster = clusters.getCluster(RemoteClusterAware.LOCAL_CLUSTER_GROUP_KEY);
+                assertNotNull(localCluster);
+                assertAllSuccessfulShards(localCluster, 1, 0);
+                SearchResponse.Cluster remoteCluster = clusters.getCluster(REMOTE_CLUSTER);
+                assertNotNull(remoteCluster);
+                assertAllSuccessfulShards(remoteCluster, 1, 1);
+            },
                 localClient.prepareSearch()
                     .setPreference(null)
                     // test the scenario where search also runs can match and filters additional shards out
                     .setPreFilterShardSize(1)
                     .setQuery(new RangeQueryBuilder("@timestamp").gte("2024-02-01"))
-                    .setPointInTime(new PointInTimeBuilder(pitId)),
-                resp -> {
-                    assertHitCount(resp, 1);
-
-                    SearchResponse.Clusters clusters = resp.getClusters();
-                    int expectedNumClusters = 2;
-                    MatcherAssert.assertThat(clusters.getTotal(), equalTo(expectedNumClusters));
-                    MatcherAssert.assertThat(
-                        clusters.getClusterStateCount(SearchResponse.Cluster.Status.SUCCESSFUL),
-                        equalTo(expectedNumClusters)
-                    );
-                    MatcherAssert.assertThat(clusters.getClusterStateCount(SearchResponse.Cluster.Status.SKIPPED), equalTo(0));
-
-                    // both indices (local and remote) have shards, but there is a single shard left after can match
-                    SearchResponse.Cluster localCluster = clusters.getCluster(RemoteClusterAware.LOCAL_CLUSTER_GROUP_KEY);
-                    assertNotNull(localCluster);
-                    assertAllSuccessfulShards(localCluster, 1, 0);
-                    SearchResponse.Cluster remoteCluster = clusters.getCluster(REMOTE_CLUSTER);
-                    assertNotNull(remoteCluster);
-                    assertAllSuccessfulShards(remoteCluster, 1, 1);
-                }
+                    .setPointInTime(new PointInTimeBuilder(pitId))
             );
         } finally {
             closePointInTime(pitId);

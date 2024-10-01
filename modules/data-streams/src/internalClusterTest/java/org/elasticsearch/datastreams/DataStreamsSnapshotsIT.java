@@ -208,11 +208,11 @@ public class DataStreamsSnapshotsIT extends AbstractSnapshotIntegTestCase {
         assertEquals(1, restoreSnapshotResponse.getRestoreInfo().successfulShards());
 
         assertEquals(DOCUMENT_SOURCE, client.prepareGet(dsBackingIndexName, id).get().getSourceAsMap());
-        assertResponse(client.prepareSearch("ds"), response -> {
+        assertResponse(response -> {
             SearchHit[] hits = response.getHits().getHits();
             assertEquals(1, hits.length);
             assertEquals(DOCUMENT_SOURCE, hits[0].getSourceAsMap());
-        });
+        }, client.prepareSearch("ds"));
 
         GetDataStreamAction.Response ds = client.execute(
             GetDataStreamAction.INSTANCE,
@@ -268,11 +268,11 @@ public class DataStreamsSnapshotsIT extends AbstractSnapshotIntegTestCase {
         assertEquals(1, restoreSnapshotResponse.getRestoreInfo().successfulShards());
 
         assertEquals(DOCUMENT_SOURCE, client.prepareGet(dsBackingIndexName, id).get().getSourceAsMap());
-        assertResponse(client.prepareSearch("ds"), response -> {
+        assertResponse(response -> {
             SearchHit[] hits = response.getHits().getHits();
             assertEquals(1, hits.length);
             assertEquals(DOCUMENT_SOURCE, hits[0].getSourceAsMap());
-        });
+        }, client.prepareSearch("ds"));
 
         GetDataStreamAction.Request getDataSteamRequest = new GetDataStreamAction.Request(TEST_REQUEST_TIMEOUT, new String[] { "*" });
         GetDataStreamAction.Response ds = client.execute(GetDataStreamAction.INSTANCE, getDataSteamRequest).get();
@@ -327,11 +327,11 @@ public class DataStreamsSnapshotsIT extends AbstractSnapshotIntegTestCase {
 
         assertEquals(DOCUMENT_SOURCE, client.prepareGet(dsBackingIndexName, id).get().getSourceAsMap());
 
-        assertResponse(client.prepareSearch("ds"), response -> {
+        assertResponse(response -> {
             SearchHit[] hits = response.getHits().getHits();
             assertEquals(1, hits.length);
             assertEquals(DOCUMENT_SOURCE, hits[0].getSourceAsMap());
-        });
+        }, client.prepareSearch("ds"));
 
         GetDataStreamAction.Request getDataSteamRequest = new GetDataStreamAction.Request(TEST_REQUEST_TIMEOUT, new String[] { "ds" });
         GetDataStreamAction.Response ds = client.execute(GetDataStreamAction.INSTANCE, getDataSteamRequest).actionGet();
@@ -467,11 +467,11 @@ public class DataStreamsSnapshotsIT extends AbstractSnapshotIntegTestCase {
         assertEquals(1, restoreSnapshotResponse.getRestoreInfo().successfulShards());
 
         assertEquals(DOCUMENT_SOURCE, client.prepareGet(backingIndexName, idToGet).get().getSourceAsMap());
-        assertResponse(client.prepareSearch(backingIndexName), response -> {
+        assertResponse(response -> {
             SearchHit[] hits = response.getHits().getHits();
             assertEquals(1, hits.length);
             assertEquals(DOCUMENT_SOURCE, hits[0].getSourceAsMap());
-        });
+        }, client.prepareSearch(backingIndexName));
 
         GetDataStreamAction.Response ds = client.execute(
             GetDataStreamAction.INSTANCE,
@@ -526,11 +526,11 @@ public class DataStreamsSnapshotsIT extends AbstractSnapshotIntegTestCase {
         assertEquals(4, restoreSnapshotResponse.getRestoreInfo().successfulShards());
 
         assertEquals(DOCUMENT_SOURCE, client.prepareGet(dsBackingIndexName, id).get().getSourceAsMap());
-        assertResponse(client.prepareSearch("ds"), response -> {
+        assertResponse(response -> {
             SearchHit[] hits = response.getHits().getHits();
             assertEquals(1, hits.length);
             assertEquals(DOCUMENT_SOURCE, hits[0].getSourceAsMap());
-        });
+        }, client.prepareSearch("ds"));
 
         GetDataStreamAction.Response ds = client.execute(
             GetDataStreamAction.INSTANCE,
@@ -586,11 +586,11 @@ public class DataStreamsSnapshotsIT extends AbstractSnapshotIntegTestCase {
         assertEquals(4, restoreSnapshotResponse.getRestoreInfo().successfulShards());
 
         assertEquals(DOCUMENT_SOURCE, client.prepareGet(dsBackingIndexName, id).get().getSourceAsMap());
-        assertResponse(client.prepareSearch("ds"), response -> {
+        assertResponse(response -> {
             SearchHit[] hits = response.getHits().getHits();
             assertEquals(1, hits.length);
             assertEquals(DOCUMENT_SOURCE, hits[0].getSourceAsMap());
-        });
+        }, client.prepareSearch("ds"));
 
         GetDataStreamAction.Response ds = client.execute(
             GetDataStreamAction.INSTANCE,
@@ -657,11 +657,11 @@ public class DataStreamsSnapshotsIT extends AbstractSnapshotIntegTestCase {
         assertEquals(4, restoreSnapshotResponse.getRestoreInfo().successfulShards());
 
         assertEquals(DOCUMENT_SOURCE, client.prepareGet(dsBackingIndexName, id).get().getSourceAsMap());
-        assertResponse(client.prepareSearch("ds"), response -> {
+        assertResponse(response -> {
             SearchHit[] hits = response.getHits().getHits();
             assertEquals(1, hits.length);
             assertEquals(DOCUMENT_SOURCE, hits[0].getSourceAsMap());
-        });
+        }, client.prepareSearch("ds"));
 
         GetDataStreamAction.Response ds = client.execute(
             GetDataStreamAction.INSTANCE,
@@ -725,8 +725,8 @@ public class DataStreamsSnapshotsIT extends AbstractSnapshotIntegTestCase {
         assertEquals(1, ds.getDataStreams().get(0).getDataStream().getIndices().size());
         assertEquals(ds2BackingIndexName, ds.getDataStreams().get(0).getDataStream().getIndices().get(0).getName());
         assertResponse(
-            client.prepareSearch("ds2"),
-            response -> assertEquals(DOCUMENT_SOURCE, response.getHits().getHits()[0].getSourceAsMap())
+            response -> assertEquals(DOCUMENT_SOURCE, response.getHits().getHits()[0].getSourceAsMap()),
+            client.prepareSearch("ds2")
         );
         assertEquals(DOCUMENT_SOURCE, client.prepareGet(ds2BackingIndexName, id).get().getSourceAsMap());
 

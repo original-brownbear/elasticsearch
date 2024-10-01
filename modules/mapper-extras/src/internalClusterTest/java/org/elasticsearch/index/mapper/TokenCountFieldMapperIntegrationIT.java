@@ -74,12 +74,12 @@ public class TokenCountFieldMapperIntegrationIT extends ESIntegTestCase {
     public void testSearchReturnsTokenCount() throws IOException {
         init();
 
-        assertResponse(searchById("single"), resp -> assertSearchReturns(resp, "single"));
-        assertResponse(searchById("bulk1"), resp -> assertSearchReturns(resp, "bulk1"));
-        assertResponse(searchById("bulk2"), resp -> assertSearchReturns(resp, "bulk2"));
-        assertResponse(searchById("multi"), resp -> assertSearchReturns(resp, "multi"));
-        assertResponse(searchById("multibulk1"), resp -> assertSearchReturns(resp, "multibulk1"));
-        assertResponse(searchById("multibulk2"), resp -> assertSearchReturns(resp, "multibulk2"));
+        assertResponse(resp -> assertSearchReturns(resp, "single"), searchById("single"));
+        assertResponse(resp -> assertSearchReturns(resp, "bulk1"), searchById("bulk1"));
+        assertResponse(resp -> assertSearchReturns(resp, "bulk2"), searchById("bulk2"));
+        assertResponse(resp -> assertSearchReturns(resp, "multi"), searchById("multi"));
+        assertResponse(resp -> assertSearchReturns(resp, "multibulk1"), searchById("multibulk1"));
+        assertResponse(resp -> assertSearchReturns(resp, "multibulk2"), searchById("multibulk2"));
     }
 
     /**
@@ -88,14 +88,14 @@ public class TokenCountFieldMapperIntegrationIT extends ESIntegTestCase {
     public void testSearchByTokenCount() throws IOException {
         init();
 
-        assertResponse(searchByNumericRange(4, 4), response -> assertSearchReturns(response, "single"));
-        assertResponse(searchByNumericRange(10, 10), response -> assertSearchReturns(response, "multibulk2"));
-        assertResponse(searchByNumericRange(7, 10), response -> assertSearchReturns(response, "multi", "multibulk1", "multibulk2"));
+        assertResponse(response -> assertSearchReturns(response, "single"), searchByNumericRange(4, 4));
+        assertResponse(response -> assertSearchReturns(response, "multibulk2"), searchByNumericRange(10, 10));
+        assertResponse(response -> assertSearchReturns(response, "multi", "multibulk1", "multibulk2"), searchByNumericRange(7, 10));
         assertResponse(
-            searchByNumericRange(1, 10),
-            response -> assertSearchReturns(response, "single", "bulk1", "bulk2", "multi", "multibulk1", "multibulk2")
+            response -> assertSearchReturns(response, "single", "bulk1", "bulk2", "multi", "multibulk1", "multibulk2"),
+            searchByNumericRange(1, 10)
         );
-        assertResponse(searchByNumericRange(12, 12), this::assertSearchReturns);
+        assertResponse(this::assertSearchReturns, searchByNumericRange(12, 12));
     }
 
     /**
@@ -105,12 +105,12 @@ public class TokenCountFieldMapperIntegrationIT extends ESIntegTestCase {
         init();
 
         String facetField = randomFrom(Arrays.asList("foo.token_count", "foo.token_count_unstored", "foo.token_count_with_doc_values"));
-        assertResponse(searchByNumericRange(1, 10).addAggregation(AggregationBuilders.terms("facet").field(facetField)), result -> {
+        assertResponse(result -> {
             assertSearchReturns(result, "single", "bulk1", "bulk2", "multi", "multibulk1", "multibulk2");
             assertThat(result.getAggregations().asList().size(), equalTo(1));
             Terms terms = (Terms) result.getAggregations().asList().get(0);
             assertThat(terms.getBuckets().size(), equalTo(9));
-        });
+        }, searchByNumericRange(1, 10).addAggregation(AggregationBuilders.terms("facet").field(facetField)));
     }
 
     private void init() throws IOException {

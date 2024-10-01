@@ -207,35 +207,31 @@ public class ReadActionsTests extends SecurityIntegTestCase {
         // index1 is not authorized, only that specific item fails
         createIndicesWithRandomAliases("test1", "test2", "test3", "index1");
         {
-            assertResponse(
-                client().prepareMultiSearch().add(new SearchRequest(new String[] {})).add(new SearchRequest("index1")),
-                multiSearchResponse -> {
-                    assertEquals(2, multiSearchResponse.getResponses().length);
-                    assertFalse(multiSearchResponse.getResponses()[0].isFailure());
-                    SearchResponse searchResponse = multiSearchResponse.getResponses()[0].getResponse();
-                    assertThat(searchResponse.getHits().getTotalHits().value, greaterThan(0L));
-                    assertReturnedIndices(searchResponse, "test1", "test2", "test3");
-                    assertTrue(multiSearchResponse.getResponses()[1].isFailure());
-                    Exception exception = multiSearchResponse.getResponses()[1].getFailure();
-                    assertThat(exception, instanceOf(ElasticsearchSecurityException.class));
-                    assertAuthorizationExceptionDefaultUsers(exception, TransportSearchAction.TYPE.name());
-                }
-            );
+            assertResponse(multiSearchResponse -> {
+                assertEquals(2, multiSearchResponse.getResponses().length);
+                assertFalse(multiSearchResponse.getResponses()[0].isFailure());
+                SearchResponse searchResponse = multiSearchResponse.getResponses()[0].getResponse();
+                assertThat(searchResponse.getHits().getTotalHits().value, greaterThan(0L));
+                assertReturnedIndices(searchResponse, "test1", "test2", "test3");
+                assertTrue(multiSearchResponse.getResponses()[1].isFailure());
+                Exception exception = multiSearchResponse.getResponses()[1].getFailure();
+                assertThat(exception, instanceOf(ElasticsearchSecurityException.class));
+                assertAuthorizationExceptionDefaultUsers(exception, TransportSearchAction.TYPE.name());
+            }, client().prepareMultiSearch().add(new SearchRequest(new String[] {})).add(new SearchRequest("index1")));
         }
         {
-            assertResponse(
+            assertResponse(multiSearchResponse -> {
+                assertEquals(2, multiSearchResponse.getResponses().length);
+                assertFalse(multiSearchResponse.getResponses()[0].isFailure());
+                SearchResponse searchResponse = multiSearchResponse.getResponses()[0].getResponse();
+                assertThat(searchResponse.getHits().getTotalHits().value, greaterThan(0L));
+                assertReturnedIndices(searchResponse, "test1", "test2", "test3");
+                assertFalse(multiSearchResponse.getResponses()[1].isFailure());
+                assertNoSearchHits(multiSearchResponse.getResponses()[1].getResponse());
+            },
                 client().prepareMultiSearch()
                     .add(new SearchRequest(new String[] {}))
-                    .add(new SearchRequest("index1").indicesOptions(IndicesOptions.fromOptions(true, true, true, randomBoolean()))),
-                multiSearchResponse -> {
-                    assertEquals(2, multiSearchResponse.getResponses().length);
-                    assertFalse(multiSearchResponse.getResponses()[0].isFailure());
-                    SearchResponse searchResponse = multiSearchResponse.getResponses()[0].getResponse();
-                    assertThat(searchResponse.getHits().getTotalHits().value, greaterThan(0L));
-                    assertReturnedIndices(searchResponse, "test1", "test2", "test3");
-                    assertFalse(multiSearchResponse.getResponses()[1].isFailure());
-                    assertNoSearchHits(multiSearchResponse.getResponses()[1].getResponse());
-                }
+                    .add(new SearchRequest("index1").indicesOptions(IndicesOptions.fromOptions(true, true, true, randomBoolean())))
             );
         }
     }
@@ -243,35 +239,31 @@ public class ReadActionsTests extends SecurityIntegTestCase {
     public void testMultiSearchMissingUnauthorizedIndex() {
         createIndicesWithRandomAliases("test1", "test2", "test3", "index1");
         {
-            assertResponse(
-                client().prepareMultiSearch().add(new SearchRequest(new String[] {})).add(new SearchRequest("missing")),
-                multiSearchResponse -> {
-                    assertEquals(2, multiSearchResponse.getResponses().length);
-                    assertFalse(multiSearchResponse.getResponses()[0].isFailure());
-                    SearchResponse searchResponse = multiSearchResponse.getResponses()[0].getResponse();
-                    assertThat(searchResponse.getHits().getTotalHits().value, greaterThan(0L));
-                    assertReturnedIndices(searchResponse, "test1", "test2", "test3");
-                    assertTrue(multiSearchResponse.getResponses()[1].isFailure());
-                    Exception exception = multiSearchResponse.getResponses()[1].getFailure();
-                    assertThat(exception, instanceOf(ElasticsearchSecurityException.class));
-                    assertAuthorizationExceptionDefaultUsers(exception, TransportSearchAction.TYPE.name());
-                }
-            );
+            assertResponse(multiSearchResponse -> {
+                assertEquals(2, multiSearchResponse.getResponses().length);
+                assertFalse(multiSearchResponse.getResponses()[0].isFailure());
+                SearchResponse searchResponse = multiSearchResponse.getResponses()[0].getResponse();
+                assertThat(searchResponse.getHits().getTotalHits().value, greaterThan(0L));
+                assertReturnedIndices(searchResponse, "test1", "test2", "test3");
+                assertTrue(multiSearchResponse.getResponses()[1].isFailure());
+                Exception exception = multiSearchResponse.getResponses()[1].getFailure();
+                assertThat(exception, instanceOf(ElasticsearchSecurityException.class));
+                assertAuthorizationExceptionDefaultUsers(exception, TransportSearchAction.TYPE.name());
+            }, client().prepareMultiSearch().add(new SearchRequest(new String[] {})).add(new SearchRequest("missing")));
         }
         {
-            assertResponse(
+            assertResponse(multiSearchResponse -> {
+                assertEquals(2, multiSearchResponse.getResponses().length);
+                assertFalse(multiSearchResponse.getResponses()[0].isFailure());
+                SearchResponse searchResponse = multiSearchResponse.getResponses()[0].getResponse();
+                assertThat(searchResponse.getHits().getTotalHits().value, greaterThan(0L));
+                assertReturnedIndices(searchResponse, "test1", "test2", "test3");
+                assertFalse(multiSearchResponse.getResponses()[1].isFailure());
+                assertNoSearchHits(multiSearchResponse.getResponses()[1].getResponse());
+            },
                 client().prepareMultiSearch()
                     .add(new SearchRequest(new String[] {}))
-                    .add(new SearchRequest("missing").indicesOptions(IndicesOptions.fromOptions(true, true, true, randomBoolean()))),
-                multiSearchResponse -> {
-                    assertEquals(2, multiSearchResponse.getResponses().length);
-                    assertFalse(multiSearchResponse.getResponses()[0].isFailure());
-                    SearchResponse searchResponse = multiSearchResponse.getResponses()[0].getResponse();
-                    assertThat(searchResponse.getHits().getTotalHits().value, greaterThan(0L));
-                    assertReturnedIndices(searchResponse, "test1", "test2", "test3");
-                    assertFalse(multiSearchResponse.getResponses()[1].isFailure());
-                    assertNoSearchHits(multiSearchResponse.getResponses()[1].getResponse());
-                }
+                    .add(new SearchRequest("missing").indicesOptions(IndicesOptions.fromOptions(true, true, true, randomBoolean())))
             );
         }
     }
@@ -281,29 +273,25 @@ public class ReadActionsTests extends SecurityIntegTestCase {
         createIndicesWithRandomAliases("test1", "test2", "test3", "index1");
         {
             // default indices options for search request don't ignore unavailable indices, only individual items fail.
-            assertResponse(
-                client().prepareMultiSearch().add(new SearchRequest(new String[] {})).add(new SearchRequest("test4")),
-                multiSearchResponse -> {
-                    assertFalse(multiSearchResponse.getResponses()[0].isFailure());
-                    assertReturnedIndices(multiSearchResponse.getResponses()[0].getResponse(), "test1", "test2", "test3");
-                    assertTrue(multiSearchResponse.getResponses()[1].isFailure());
-                    assertThat(
-                        multiSearchResponse.getResponses()[1].getFailure().toString(),
-                        equalTo("[test4] org.elasticsearch.index.IndexNotFoundException: no such index [test4]")
-                    );
-                }
-            );
+            assertResponse(multiSearchResponse -> {
+                assertFalse(multiSearchResponse.getResponses()[0].isFailure());
+                assertReturnedIndices(multiSearchResponse.getResponses()[0].getResponse(), "test1", "test2", "test3");
+                assertTrue(multiSearchResponse.getResponses()[1].isFailure());
+                assertThat(
+                    multiSearchResponse.getResponses()[1].getFailure().toString(),
+                    equalTo("[test4] org.elasticsearch.index.IndexNotFoundException: no such index [test4]")
+                );
+            }, client().prepareMultiSearch().add(new SearchRequest(new String[] {})).add(new SearchRequest("test4")));
         }
         {
             // we set ignore_unavailable and allow_no_indices to true, no errors returned, second item doesn't have hits.
-            assertResponse(
+            assertResponse(multiSearchResponse -> {
+                assertReturnedIndices(multiSearchResponse.getResponses()[0].getResponse(), "test1", "test2", "test3");
+                assertNoSearchHits(multiSearchResponse.getResponses()[1].getResponse());
+            },
                 client().prepareMultiSearch()
                     .add(new SearchRequest(new String[] {}))
-                    .add(new SearchRequest("test4").indicesOptions(IndicesOptions.fromOptions(true, true, true, randomBoolean()))),
-                multiSearchResponse -> {
-                    assertReturnedIndices(multiSearchResponse.getResponses()[0].getResponse(), "test1", "test2", "test3");
-                    assertNoSearchHits(multiSearchResponse.getResponses()[1].getResponse());
-                }
+                    .add(new SearchRequest("test4").indicesOptions(IndicesOptions.fromOptions(true, true, true, randomBoolean())))
             );
         }
     }
@@ -311,37 +299,33 @@ public class ReadActionsTests extends SecurityIntegTestCase {
     public void testMultiSearchWildcard() {
         createIndicesWithRandomAliases("test1", "test2", "test3", "index1");
         {
-            assertResponse(
-                client().prepareMultiSearch().add(new SearchRequest(new String[] {})).add(new SearchRequest("index*")),
-                multiSearchResponse -> {
-                    assertEquals(2, multiSearchResponse.getResponses().length);
-                    assertFalse(multiSearchResponse.getResponses()[0].isFailure());
-                    SearchResponse searchResponse = multiSearchResponse.getResponses()[0].getResponse();
-                    assertThat(searchResponse.getHits().getTotalHits().value, greaterThan(0L));
-                    assertReturnedIndices(searchResponse, "test1", "test2", "test3");
-                    assertNoSearchHits(multiSearchResponse.getResponses()[1].getResponse());
-                }
-            );
+            assertResponse(multiSearchResponse -> {
+                assertEquals(2, multiSearchResponse.getResponses().length);
+                assertFalse(multiSearchResponse.getResponses()[0].isFailure());
+                SearchResponse searchResponse = multiSearchResponse.getResponses()[0].getResponse();
+                assertThat(searchResponse.getHits().getTotalHits().value, greaterThan(0L));
+                assertReturnedIndices(searchResponse, "test1", "test2", "test3");
+                assertNoSearchHits(multiSearchResponse.getResponses()[1].getResponse());
+            }, client().prepareMultiSearch().add(new SearchRequest(new String[] {})).add(new SearchRequest("index*")));
         }
         {
-            assertResponse(
+            assertResponse(multiSearchResponse -> {
+                assertEquals(2, multiSearchResponse.getResponses().length);
+                assertFalse(multiSearchResponse.getResponses()[0].isFailure());
+                SearchResponse searchResponse = multiSearchResponse.getResponses()[0].getResponse();
+                assertThat(searchResponse.getHits().getTotalHits().value, greaterThan(0L));
+                assertReturnedIndices(searchResponse, "test1", "test2", "test3");
+                assertTrue(multiSearchResponse.getResponses()[1].isFailure());
+                Exception exception = multiSearchResponse.getResponses()[1].getFailure();
+                assertThat(exception, instanceOf(IndexNotFoundException.class));
+            },
                 client().prepareMultiSearch()
                     .add(new SearchRequest(new String[] {}))
                     .add(
                         new SearchRequest("index*").indicesOptions(
                             IndicesOptions.fromOptions(randomBoolean(), false, true, randomBoolean())
                         )
-                    ),
-                multiSearchResponse -> {
-                    assertEquals(2, multiSearchResponse.getResponses().length);
-                    assertFalse(multiSearchResponse.getResponses()[0].isFailure());
-                    SearchResponse searchResponse = multiSearchResponse.getResponses()[0].getResponse();
-                    assertThat(searchResponse.getHits().getTotalHits().value, greaterThan(0L));
-                    assertReturnedIndices(searchResponse, "test1", "test2", "test3");
-                    assertTrue(multiSearchResponse.getResponses()[1].isFailure());
-                    Exception exception = multiSearchResponse.getResponses()[1].getFailure();
-                    assertThat(exception, instanceOf(IndexNotFoundException.class));
-                }
+                    )
             );
         }
     }
@@ -442,7 +426,7 @@ public class ReadActionsTests extends SecurityIntegTestCase {
     }
 
     private static void assertReturnedIndices(SearchRequestBuilder searchRequestBuilder, String... indices) {
-        assertResponse(searchRequestBuilder, searchResponse -> assertReturnedIndices(searchResponse, indices));
+        assertResponse(searchResponse -> assertReturnedIndices(searchResponse, indices), searchRequestBuilder);
     }
 
     private static void assertReturnedIndices(SearchResponse searchResponse, String... indices) {

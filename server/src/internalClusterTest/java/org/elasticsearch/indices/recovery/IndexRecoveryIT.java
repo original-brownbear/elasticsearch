@@ -402,7 +402,7 @@ public class IndexRecoveryIT extends AbstractIndexRecoveryIntegTestCase {
         }
 
         refresh(INDEX_NAME);
-        assertHitCount(prepareSearch(INDEX_NAME).setSize(0), numOfDocs);
+        assertHitCount(numOfDocs, prepareSearch(INDEX_NAME).setSize(0));
 
         final boolean closedIndex = randomBoolean();
         if (closedIndex) {
@@ -447,7 +447,7 @@ public class IndexRecoveryIT extends AbstractIndexRecoveryIntegTestCase {
         if (closedIndex) {
             assertAcked(indicesAdmin().prepareOpen(INDEX_NAME));
         }
-        assertHitCount(prepareSearch(INDEX_NAME).setSize(0), numOfDocs);
+        assertHitCount(numOfDocs, prepareSearch(INDEX_NAME).setSize(0));
     }
 
     public void testCancelNewShardRecoveryAndUsesExistingShardCopy() throws Exception {
@@ -947,7 +947,7 @@ public class IndexRecoveryIT extends AbstractIndexRecoveryIntegTestCase {
 
         indexRandom(true, docs);
         flush();
-        assertHitCount(prepareSearch(name).setSize(0), numDocs);
+        assertHitCount(numDocs, prepareSearch(name).setSize(0));
         return indicesAdmin().prepareStats(name).get();
     }
 
@@ -1089,7 +1089,7 @@ public class IndexRecoveryIT extends AbstractIndexRecoveryIntegTestCase {
         }
 
         indicesAdmin().prepareRefresh("test").get();
-        assertHitCount(prepareSearch(), numDocs);
+        assertHitCount(numDocs, prepareSearch());
     }
 
     /** Makes sure the new master does not repeatedly fetch index metadata from recovering replicas */

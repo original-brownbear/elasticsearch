@@ -279,8 +279,8 @@ public class CircuitBreakerServiceIT extends ESIntegTestCase {
         // A terms aggregation on the "test" field should trip the bucket circuit breaker
         try {
             assertResponse(
-                client.prepareSearch("cb-test").setQuery(matchAllQuery()).addAggregation(terms("my_terms").field("test")),
-                response -> assertTrue("there should be shard failures", response.getFailedShards() > 0)
+                response -> assertTrue("there should be shard failures", response.getFailedShards() > 0),
+                client.prepareSearch("cb-test").setQuery(matchAllQuery()).addAggregation(terms("my_terms").field("test"))
             );
             fail("aggregation should have tripped the breaker");
         } catch (Exception e) {

@@ -94,7 +94,7 @@ public class AllocationIdIT extends ESIntegTestCase {
 
         // index more docs to node2 that marks node1 as stale
         int numExtraDocs = indexDocs(indexName, "foo", "bar2");
-        assertHitCount(client(node2).prepareSearch(indexName).setQuery(matchAllQuery()), numDocs + numExtraDocs);
+        assertHitCount(numDocs + numExtraDocs, client(node2).prepareSearch(indexName).setQuery(matchAllQuery()));
 
         internalCluster().stopNode(node2);
 

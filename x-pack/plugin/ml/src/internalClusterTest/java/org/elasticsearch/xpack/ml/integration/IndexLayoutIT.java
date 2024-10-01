@@ -141,7 +141,7 @@ public class IndexLayoutIT extends BaseMlIntegTestCase {
             arrayContaining(".ml-state-000001")
         );
 
-        assertHitCount(client.prepareSearch(AnomalyDetectorsIndex.jobStateIndexPattern()).setTrackTotalHits(true), 0);
+        assertHitCount(0, client.prepareSearch(AnomalyDetectorsIndex.jobStateIndexPattern()).setTrackTotalHits(true));
     }
 
 }

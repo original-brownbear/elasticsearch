@@ -77,8 +77,8 @@ public class ReloadSynonymAnalyzerIT extends ESIntegTestCase {
         prepareIndex("test").setId("1").setSource("field", "foo").get();
         assertNoFailures(indicesAdmin().prepareRefresh("test").get());
 
-        assertHitCount(prepareSearch("test").setQuery(QueryBuilders.matchQuery("field", "baz")), 1L);
-        assertHitCount(prepareSearch("test").setQuery(QueryBuilders.matchQuery("field", "buzz")), 0L);
+        assertHitCount(1L, prepareSearch("test").setQuery(QueryBuilders.matchQuery("field", "baz")));
+        assertHitCount(0L, prepareSearch("test").setQuery(QueryBuilders.matchQuery("field", "buzz")));
         assertAnalysis("test", "my_synonym_analyzer", "foo", Set.of("foo", "baz"));
 
         // now update synonyms file several times and trigger reloading
@@ -95,9 +95,9 @@ public class ReloadSynonymAnalyzerIT extends ESIntegTestCase {
             Set<String> expectedTokens = preview ? Set.of("foo", "baz") : Set.of("foo", "baz", testTerm);
             assertAnalysis("test", "my_synonym_analyzer", "foo", expectedTokens);
 
-            assertHitCount(prepareSearch("test").setQuery(QueryBuilders.matchQuery("field", "baz")), 1L);
+            assertHitCount(1L, prepareSearch("test").setQuery(QueryBuilders.matchQuery("field", "baz")));
             long expectedHitCount = preview ? 0L : 1L;
-            assertHitCount(prepareSearch("test").setQuery(QueryBuilders.matchQuery("field", testTerm)), expectedHitCount);
+            assertHitCount(expectedHitCount, prepareSearch("test").setQuery(QueryBuilders.matchQuery("field", testTerm)));
         }
     }
 
@@ -128,8 +128,8 @@ public class ReloadSynonymAnalyzerIT extends ESIntegTestCase {
         prepareIndex(indexName).setId("1").setSource(fieldName, "foo").get();
         assertNoFailures(indicesAdmin().prepareRefresh(indexName).get());
 
-        assertHitCount(prepareSearch(indexName).setQuery(QueryBuilders.matchQuery(fieldName, "baz")), 1);
-        assertHitCount(prepareSearch(indexName).setQuery(QueryBuilders.matchQuery(fieldName, "buzz")), 0);
+        assertHitCount(1, prepareSearch(indexName).setQuery(QueryBuilders.matchQuery(fieldName, "baz")));
+        assertHitCount(0, prepareSearch(indexName).setQuery(QueryBuilders.matchQuery(fieldName, "buzz")));
         assertAnalysis(indexName, "my_synonym_analyzer", "foo", Set.of("foo", "baz"));
 
         // Add an invalid synonym to the file and reload analyzers
@@ -141,15 +141,21 @@ public class ReloadSynonymAnalyzerIT extends ESIntegTestCase {
         assertReloadAnalyzers(reloadResponse, cluster().numDataNodes(), Map.of(indexName, Set.of("my_synonym_analyzer")));
 
         ensureGreen(indexName);
-        assertHitCount(prepareSearch(indexName).setQuery(QueryBuilders.matchQuery(fieldName, "baz")), 1);
-        assertHitCount(prepareSearch(indexName).setQuery(QueryBuilders.matchQuery(fieldName, "buzz")), 1);
+        assertHitCount(
+            1,
+            prepareSearch(indexName).setQuery(QueryBuilders.matchQuery(fieldName, "baz")),
+            prepareSearch(indexName).setQuery(QueryBuilders.matchQuery(fieldName, "buzz"))
+        );
         assertAnalysis(indexName, "my_synonym_analyzer", "foo", Set.of("foo", "baz", "buzz"));
 
         // Reload the index
         reloadIndex(indexName);
         ensureGreen(indexName);
-        assertHitCount(prepareSearch(indexName).setQuery(QueryBuilders.matchQuery(fieldName, "baz")), 1);
-        assertHitCount(prepareSearch(indexName).setQuery(QueryBuilders.matchQuery(fieldName, "buzz")), 1);
+        assertHitCount(
+            1,
+            prepareSearch(indexName).setQuery(QueryBuilders.matchQuery(fieldName, "baz")),
+            prepareSearch(indexName).setQuery(QueryBuilders.matchQuery(fieldName, "buzz"))
+        );
         assertAnalysis(indexName, "my_synonym_analyzer", "foo", Set.of("foo", "baz", "buzz"));
     }
 

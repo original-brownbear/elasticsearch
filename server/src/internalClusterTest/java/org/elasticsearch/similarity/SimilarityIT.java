@@ -53,14 +53,14 @@ public class SimilarityIT extends ESIntegTestCase {
             .setRefreshPolicy(IMMEDIATE)
             .get();
 
-        assertResponse(prepareSearch().setQuery(matchQuery("field1", "quick brown fox")), bm25SearchResponse -> {
+        assertResponse(bm25SearchResponse -> {
             assertThat(bm25SearchResponse.getHits().getTotalHits().value, equalTo(1L));
             float bm25Score = bm25SearchResponse.getHits().getHits()[0].getScore();
-            assertResponse(prepareSearch().setQuery(matchQuery("field2", "quick brown fox")), booleanSearchResponse -> {
+            assertResponse(booleanSearchResponse -> {
                 assertThat(booleanSearchResponse.getHits().getTotalHits().value, equalTo(1L));
                 float defaultScore = booleanSearchResponse.getHits().getHits()[0].getScore();
                 assertThat(bm25Score, not(equalTo(defaultScore)));
-            });
-        });
+            }, prepareSearch().setQuery(matchQuery("field2", "quick brown fox")));
+        }, prepareSearch().setQuery(matchQuery("field1", "quick brown fox")));
     }
 }

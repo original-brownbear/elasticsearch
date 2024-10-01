@@ -137,38 +137,50 @@ public class RRFRankMultiShardIT extends ESIntegTestCase {
     public void testTotalDocsSmallerThanSize() {
         float[] queryVector = { 0.0f };
         KnnSearchBuilder knnSearch = new KnnSearchBuilder("vector", queryVector, 3, 3, null);
-        assertResponse(
+        assertResponse(response -> {
+            // we cast to Number when looking at values in vector fields because different xContentTypes may return Float or Double
+            assertEquals(3, response.getHits().getHits().length);
+
+            SearchHit hit = response.getHits().getAt(0);
+            assertEquals(1, hit.getRank());
+            assertEquals(0.0, ((Number) hit.field("vector").getValue()).doubleValue(), 0.0);
+            assertEquals("term term", hit.field("text").getValue());
+
+            hit = response.getHits().getAt(1);
+            assertEquals(2, hit.getRank());
+            assertEquals(2.0, ((Number) hit.field("vector").getValue()).doubleValue(), 0.0);
+            assertEquals("term", hit.field("text").getValue());
+
+            hit = response.getHits().getAt(2);
+            assertEquals(3, hit.getRank());
+            assertEquals(1.0, ((Number) hit.field("vector").getValue()).doubleValue(), 0.0);
+            assertEquals("other", hit.field("text").getValue());
+        },
             prepareSearch("tiny_index").setRankBuilder(new RRFRankBuilder(100, 1))
                 .setKnnSearch(List.of(knnSearch))
                 .setQuery(QueryBuilders.termQuery("text", "term"))
                 .addFetchField("vector")
-                .addFetchField("text"),
-            response -> {
-                // we cast to Number when looking at values in vector fields because different xContentTypes may return Float or Double
-                assertEquals(3, response.getHits().getHits().length);
-
-                SearchHit hit = response.getHits().getAt(0);
-                assertEquals(1, hit.getRank());
-                assertEquals(0.0, ((Number) hit.field("vector").getValue()).doubleValue(), 0.0);
-                assertEquals("term term", hit.field("text").getValue());
-
-                hit = response.getHits().getAt(1);
-                assertEquals(2, hit.getRank());
-                assertEquals(2.0, ((Number) hit.field("vector").getValue()).doubleValue(), 0.0);
-                assertEquals("term", hit.field("text").getValue());
-
-                hit = response.getHits().getAt(2);
-                assertEquals(3, hit.getRank());
-                assertEquals(1.0, ((Number) hit.field("vector").getValue()).doubleValue(), 0.0);
-                assertEquals("other", hit.field("text").getValue());
-            }
+                .addFetchField("text")
         );
     }
 
     public void testBM25AndKnn() {
         float[] queryVector = { 500.0f };
         KnnSearchBuilder knnSearch = new KnnSearchBuilder("vector_asc", queryVector, 101, 1001, null);
-        assertResponse(
+        assertResponse(response -> {
+            assertNull(response.getHits().getTotalHits());
+            assertEquals(11, response.getHits().getHits().length);
+
+            SearchHit hit = response.getHits().getAt(0);
+            assertEquals(1, hit.getRank());
+            assertEquals(500.0, ((Number) hit.field("vector_asc").getValue()).doubleValue(), 0.0);
+            assertEquals("term 500", hit.field("text0").getValue());
+
+            Set<Double> vectors = Arrays.stream(response.getHits().getHits())
+                .map(h -> ((Number) h.field("vector_asc").getValue()).doubleValue())
+                .collect(Collectors.toSet());
+            assertEquals(Set.of(492.0, 493.0, 494.0, 495.0, 496.0, 497.0, 498.0, 499.0, 500.0, 501.0, 502.0), vectors);
+        },
             prepareSearch("nrd_index").setRankBuilder(new RRFRankBuilder(101, 1))
                 .setTrackTotalHits(false)
                 .setKnnSearch(List.of(knnSearch))
@@ -187,21 +199,7 @@ public class RRFRankMultiShardIT extends ESIntegTestCase {
                 )
                 .addFetchField("vector_asc")
                 .addFetchField("text0")
-                .setSize(11),
-            response -> {
-                assertNull(response.getHits().getTotalHits());
-                assertEquals(11, response.getHits().getHits().length);
-
-                SearchHit hit = response.getHits().getAt(0);
-                assertEquals(1, hit.getRank());
-                assertEquals(500.0, ((Number) hit.field("vector_asc").getValue()).doubleValue(), 0.0);
-                assertEquals("term 500", hit.field("text0").getValue());
-
-                Set<Double> vectors = Arrays.stream(response.getHits().getHits())
-                    .map(h -> ((Number) h.field("vector_asc").getValue()).doubleValue())
-                    .collect(Collectors.toSet());
-                assertEquals(Set.of(492.0, 493.0, 494.0, 495.0, 496.0, 497.0, 498.0, 499.0, 500.0, 501.0, 502.0), vectors);
-            }
+                .setSize(11)
         );
     }
 
@@ -210,50 +208,49 @@ public class RRFRankMultiShardIT extends ESIntegTestCase {
         float[] queryVectorDesc = { 500.0f };
         KnnSearchBuilder knnSearchAsc = new KnnSearchBuilder("vector_asc", queryVectorAsc, 51, 1001, null);
         KnnSearchBuilder knnSearchDesc = new KnnSearchBuilder("vector_desc", queryVectorDesc, 51, 1001, null);
-        assertResponse(
+        assertResponse(response -> {
+            assertEquals(51, response.getHits().getTotalHits().value);
+            assertEquals(19, response.getHits().getHits().length);
+
+            SearchHit hit = response.getHits().getAt(0);
+            assertEquals(1, hit.getRank());
+            assertEquals(500.0, ((Number) hit.field("vector_asc").getValue()).doubleValue(), 0.0);
+            assertEquals("term 500", hit.field("text0").getValue());
+
+            Set<Double> vectors = Arrays.stream(response.getHits().getHits())
+                .map(h -> ((Number) h.field("vector_asc").getValue()).doubleValue())
+                .collect(Collectors.toSet());
+            assertEquals(
+                Set.of(
+                    491.0,
+                    492.0,
+                    493.0,
+                    494.0,
+                    495.0,
+                    496.0,
+                    497.0,
+                    498.0,
+                    499.0,
+                    500.0,
+                    501.0,
+                    502.0,
+                    503.0,
+                    504.0,
+                    505.0,
+                    506.0,
+                    507.0,
+                    508.0,
+                    509.0
+                ),
+                vectors
+            );
+        },
             prepareSearch("nrd_index").setRankBuilder(new RRFRankBuilder(51, 1))
                 .setTrackTotalHits(true)
                 .setKnnSearch(List.of(knnSearchAsc, knnSearchDesc))
                 .addFetchField("vector_asc")
                 .addFetchField("text0")
-                .setSize(19),
-            response -> {
-                assertEquals(51, response.getHits().getTotalHits().value);
-                assertEquals(19, response.getHits().getHits().length);
-
-                SearchHit hit = response.getHits().getAt(0);
-                assertEquals(1, hit.getRank());
-                assertEquals(500.0, ((Number) hit.field("vector_asc").getValue()).doubleValue(), 0.0);
-                assertEquals("term 500", hit.field("text0").getValue());
-
-                Set<Double> vectors = Arrays.stream(response.getHits().getHits())
-                    .map(h -> ((Number) h.field("vector_asc").getValue()).doubleValue())
-                    .collect(Collectors.toSet());
-                assertEquals(
-                    Set.of(
-                        491.0,
-                        492.0,
-                        493.0,
-                        494.0,
-                        495.0,
-                        496.0,
-                        497.0,
-                        498.0,
-                        499.0,
-                        500.0,
-                        501.0,
-                        502.0,
-                        503.0,
-                        504.0,
-                        505.0,
-                        506.0,
-                        507.0,
-                        508.0,
-                        509.0
-                    ),
-                    vectors
-                );
-            }
+                .setSize(19)
         );
     }
 
@@ -262,7 +259,50 @@ public class RRFRankMultiShardIT extends ESIntegTestCase {
         float[] queryVectorDesc = { 500.0f };
         KnnSearchBuilder knnSearchAsc = new KnnSearchBuilder("vector_asc", queryVectorAsc, 51, 1001, null);
         KnnSearchBuilder knnSearchDesc = new KnnSearchBuilder("vector_desc", queryVectorDesc, 51, 1001, null);
-        assertResponse(
+        assertResponse(response -> {
+            assertNull(response.getHits().getTotalHits());
+            assertEquals(19, response.getHits().getHits().length);
+
+            SearchHit hit = response.getHits().getAt(0);
+            assertEquals(1, hit.getRank());
+            assertEquals(500.0, ((Number) hit.field("vector_asc").getValue()).doubleValue(), 0.0);
+            assertEquals(500.0, ((Number) hit.field("vector_desc").getValue()).doubleValue(), 0.0);
+            assertEquals("term 500", hit.field("text0").getValue());
+
+            hit = response.getHits().getAt(1);
+            assertEquals(2, hit.getRank());
+            assertEquals(499.0, ((Number) hit.field("vector_asc").getValue()).doubleValue(), 0.0);
+            assertEquals(501.0, ((Number) hit.field("vector_desc").getValue()).doubleValue(), 0.0);
+            assertEquals("term 499", hit.field("text0").getValue());
+
+            Set<Double> vectors = Arrays.stream(response.getHits().getHits())
+                .map(h -> ((Number) h.field("vector_asc").getValue()).doubleValue())
+                .collect(Collectors.toSet());
+            assertEquals(
+                Set.of(
+                    485.0,
+                    492.0,
+                    493.0,
+                    494.0,
+                    495.0,
+                    496.0,
+                    497.0,
+                    498.0,
+                    499.0,
+                    500.0,
+                    501.0,
+                    502.0,
+                    503.0,
+                    504.0,
+                    505.0,
+                    506.0,
+                    507.0,
+                    508.0,
+                    511.0
+                ),
+                vectors
+            );
+        },
             prepareSearch("nrd_index").setRankBuilder(new RRFRankBuilder(51, 1))
                 .setTrackTotalHits(false)
                 .setKnnSearch(List.of(knnSearchAsc, knnSearchDesc))
@@ -282,58 +322,42 @@ public class RRFRankMultiShardIT extends ESIntegTestCase {
                 .addFetchField("vector_asc")
                 .addFetchField("vector_desc")
                 .addFetchField("text0")
-                .setSize(19),
-            response -> {
-                assertNull(response.getHits().getTotalHits());
-                assertEquals(19, response.getHits().getHits().length);
-
-                SearchHit hit = response.getHits().getAt(0);
-                assertEquals(1, hit.getRank());
-                assertEquals(500.0, ((Number) hit.field("vector_asc").getValue()).doubleValue(), 0.0);
-                assertEquals(500.0, ((Number) hit.field("vector_desc").getValue()).doubleValue(), 0.0);
-                assertEquals("term 500", hit.field("text0").getValue());
-
-                hit = response.getHits().getAt(1);
-                assertEquals(2, hit.getRank());
-                assertEquals(499.0, ((Number) hit.field("vector_asc").getValue()).doubleValue(), 0.0);
-                assertEquals(501.0, ((Number) hit.field("vector_desc").getValue()).doubleValue(), 0.0);
-                assertEquals("term 499", hit.field("text0").getValue());
-
-                Set<Double> vectors = Arrays.stream(response.getHits().getHits())
-                    .map(h -> ((Number) h.field("vector_asc").getValue()).doubleValue())
-                    .collect(Collectors.toSet());
-                assertEquals(
-                    Set.of(
-                        485.0,
-                        492.0,
-                        493.0,
-                        494.0,
-                        495.0,
-                        496.0,
-                        497.0,
-                        498.0,
-                        499.0,
-                        500.0,
-                        501.0,
-                        502.0,
-                        503.0,
-                        504.0,
-                        505.0,
-                        506.0,
-                        507.0,
-                        508.0,
-                        511.0
-                    ),
-                    vectors
-                );
-            }
+                .setSize(19)
         );
     }
 
     public void testBM25AndKnnWithBucketAggregation() {
         float[] queryVector = { 500.0f };
         KnnSearchBuilder knnSearch = new KnnSearchBuilder("vector_asc", queryVector, 101, 1001, null);
-        assertResponse(
+        assertResponse(response -> {
+            assertEquals(101, response.getHits().getTotalHits().value);
+            assertEquals(11, response.getHits().getHits().length);
+
+            SearchHit hit = response.getHits().getAt(0);
+            assertEquals(1, hit.getRank());
+            assertEquals(500.0, ((Number) hit.field("vector_asc").getValue()).doubleValue(), 0.0);
+            assertEquals("term 500", hit.field("text0").getValue());
+
+            Set<Double> vectors = Arrays.stream(response.getHits().getHits())
+                .map(h -> ((Number) h.field("vector_asc").getValue()).doubleValue())
+                .collect(Collectors.toSet());
+            assertEquals(Set.of(492.0, 493.0, 494.0, 495.0, 496.0, 497.0, 498.0, 499.0, 500.0, 501.0, 502.0), vectors);
+
+            LongTerms aggregation = response.getAggregations().get("sums");
+            assertEquals(3, aggregation.getBuckets().size());
+
+            for (LongTerms.Bucket bucket : aggregation.getBuckets()) {
+                if (0L == (long) bucket.getKey()) {
+                    assertEquals(34, bucket.getDocCount());
+                } else if (1L == (long) bucket.getKey()) {
+                    assertEquals(34, bucket.getDocCount());
+                } else if (2L == (long) bucket.getKey()) {
+                    assertEquals(33, bucket.getDocCount());
+                } else {
+                    throw new IllegalArgumentException("unexpected bucket key [" + bucket.getKey() + "]");
+                }
+            }
+        },
             prepareSearch("nrd_index").setRankBuilder(new RRFRankBuilder(101, 1))
                 .setTrackTotalHits(true)
                 .setKnnSearch(List.of(knnSearch))
@@ -353,36 +377,7 @@ public class RRFRankMultiShardIT extends ESIntegTestCase {
                 .addFetchField("vector_asc")
                 .addFetchField("text0")
                 .setSize(11)
-                .addAggregation(AggregationBuilders.terms("sums").field("int")),
-            response -> {
-                assertEquals(101, response.getHits().getTotalHits().value);
-                assertEquals(11, response.getHits().getHits().length);
-
-                SearchHit hit = response.getHits().getAt(0);
-                assertEquals(1, hit.getRank());
-                assertEquals(500.0, ((Number) hit.field("vector_asc").getValue()).doubleValue(), 0.0);
-                assertEquals("term 500", hit.field("text0").getValue());
-
-                Set<Double> vectors = Arrays.stream(response.getHits().getHits())
-                    .map(h -> ((Number) h.field("vector_asc").getValue()).doubleValue())
-                    .collect(Collectors.toSet());
-                assertEquals(Set.of(492.0, 493.0, 494.0, 495.0, 496.0, 497.0, 498.0, 499.0, 500.0, 501.0, 502.0), vectors);
-
-                LongTerms aggregation = response.getAggregations().get("sums");
-                assertEquals(3, aggregation.getBuckets().size());
-
-                for (LongTerms.Bucket bucket : aggregation.getBuckets()) {
-                    if (0L == (long) bucket.getKey()) {
-                        assertEquals(34, bucket.getDocCount());
-                    } else if (1L == (long) bucket.getKey()) {
-                        assertEquals(34, bucket.getDocCount());
-                    } else if (2L == (long) bucket.getKey()) {
-                        assertEquals(33, bucket.getDocCount());
-                    } else {
-                        throw new IllegalArgumentException("unexpected bucket key [" + bucket.getKey() + "]");
-                    }
-                }
-            }
+                .addAggregation(AggregationBuilders.terms("sums").field("int"))
         );
     }
 
@@ -391,66 +386,65 @@ public class RRFRankMultiShardIT extends ESIntegTestCase {
         float[] queryVectorDesc = { 500.0f };
         KnnSearchBuilder knnSearchAsc = new KnnSearchBuilder("vector_asc", queryVectorAsc, 51, 1001, null);
         KnnSearchBuilder knnSearchDesc = new KnnSearchBuilder("vector_desc", queryVectorDesc, 51, 1001, null);
-        assertResponse(
+        assertResponse(response -> {
+            assertNull(response.getHits().getTotalHits());
+            assertEquals(19, response.getHits().getHits().length);
+
+            SearchHit hit = response.getHits().getAt(0);
+            assertEquals(1, hit.getRank());
+            assertEquals(500.0, ((Number) hit.field("vector_asc").getValue()).doubleValue(), 0.0);
+            assertEquals("term 500", hit.field("text0").getValue());
+
+            Set<Double> vectors = Arrays.stream(response.getHits().getHits())
+                .map(h -> ((Number) h.field("vector_asc").getValue()).doubleValue())
+                .collect(Collectors.toSet());
+            assertEquals(
+                Set.of(
+                    491.0,
+                    492.0,
+                    493.0,
+                    494.0,
+                    495.0,
+                    496.0,
+                    497.0,
+                    498.0,
+                    499.0,
+                    500.0,
+                    501.0,
+                    502.0,
+                    503.0,
+                    504.0,
+                    505.0,
+                    506.0,
+                    507.0,
+                    508.0,
+                    509.0
+                ),
+                vectors
+            );
+
+            LongTerms aggregation = response.getAggregations().get("sums");
+            assertEquals(3, aggregation.getBuckets().size());
+
+            for (LongTerms.Bucket bucket : aggregation.getBuckets()) {
+                if (0L == (long) bucket.getKey()) {
+                    assertEquals(17, bucket.getDocCount());
+                } else if (1L == (long) bucket.getKey()) {
+                    assertEquals(17, bucket.getDocCount());
+                } else if (2L == (long) bucket.getKey()) {
+                    assertEquals(17, bucket.getDocCount());
+                } else {
+                    throw new IllegalArgumentException("unexpected bucket key [" + bucket.getKey() + "]");
+                }
+            }
+        },
             prepareSearch("nrd_index").setRankBuilder(new RRFRankBuilder(51, 1))
                 .setTrackTotalHits(false)
                 .setKnnSearch(List.of(knnSearchAsc, knnSearchDesc))
                 .addFetchField("vector_asc")
                 .addFetchField("text0")
                 .setSize(19)
-                .addAggregation(AggregationBuilders.terms("sums").field("int")),
-            response -> {
-                assertNull(response.getHits().getTotalHits());
-                assertEquals(19, response.getHits().getHits().length);
-
-                SearchHit hit = response.getHits().getAt(0);
-                assertEquals(1, hit.getRank());
-                assertEquals(500.0, ((Number) hit.field("vector_asc").getValue()).doubleValue(), 0.0);
-                assertEquals("term 500", hit.field("text0").getValue());
-
-                Set<Double> vectors = Arrays.stream(response.getHits().getHits())
-                    .map(h -> ((Number) h.field("vector_asc").getValue()).doubleValue())
-                    .collect(Collectors.toSet());
-                assertEquals(
-                    Set.of(
-                        491.0,
-                        492.0,
-                        493.0,
-                        494.0,
-                        495.0,
-                        496.0,
-                        497.0,
-                        498.0,
-                        499.0,
-                        500.0,
-                        501.0,
-                        502.0,
-                        503.0,
-                        504.0,
-                        505.0,
-                        506.0,
-                        507.0,
-                        508.0,
-                        509.0
-                    ),
-                    vectors
-                );
-
-                LongTerms aggregation = response.getAggregations().get("sums");
-                assertEquals(3, aggregation.getBuckets().size());
-
-                for (LongTerms.Bucket bucket : aggregation.getBuckets()) {
-                    if (0L == (long) bucket.getKey()) {
-                        assertEquals(17, bucket.getDocCount());
-                    } else if (1L == (long) bucket.getKey()) {
-                        assertEquals(17, bucket.getDocCount());
-                    } else if (2L == (long) bucket.getKey()) {
-                        assertEquals(17, bucket.getDocCount());
-                    } else {
-                        throw new IllegalArgumentException("unexpected bucket key [" + bucket.getKey() + "]");
-                    }
-                }
-            }
+                .addAggregation(AggregationBuilders.terms("sums").field("int"))
         );
     }
 
@@ -459,7 +453,65 @@ public class RRFRankMultiShardIT extends ESIntegTestCase {
         float[] queryVectorDesc = { 500.0f };
         KnnSearchBuilder knnSearchAsc = new KnnSearchBuilder("vector_asc", queryVectorAsc, 51, 1001, null);
         KnnSearchBuilder knnSearchDesc = new KnnSearchBuilder("vector_desc", queryVectorDesc, 51, 1001, null);
-        assertResponse(
+        assertResponse(response -> {
+            assertEquals(51, response.getHits().getTotalHits().value);
+            assertEquals(19, response.getHits().getHits().length);
+
+            SearchHit hit = response.getHits().getAt(0);
+            assertEquals(1, hit.getRank());
+            assertEquals(500.0, ((Number) hit.field("vector_asc").getValue()).doubleValue(), 0.0);
+            assertEquals(500.0, ((Number) hit.field("vector_desc").getValue()).doubleValue(), 0.0);
+            assertEquals("term 500", hit.field("text0").getValue());
+
+            hit = response.getHits().getAt(1);
+            assertEquals(2, hit.getRank());
+            assertEquals(499.0, ((Number) hit.field("vector_asc").getValue()).doubleValue(), 0.0);
+            assertEquals(501.0, ((Number) hit.field("vector_desc").getValue()).doubleValue(), 0.0);
+            assertEquals("term 499", hit.field("text0").getValue());
+
+            Set<Double> vectors = Arrays.stream(response.getHits().getHits())
+                .map(h -> ((Number) h.field("vector_asc").getValue()).doubleValue())
+                .collect(Collectors.toSet());
+            assertEquals(
+                Set.of(
+                    485.0,
+                    492.0,
+                    493.0,
+                    494.0,
+                    495.0,
+                    496.0,
+                    497.0,
+                    498.0,
+                    499.0,
+                    500.0,
+                    501.0,
+                    502.0,
+                    503.0,
+                    504.0,
+                    505.0,
+                    506.0,
+                    507.0,
+                    508.0,
+                    511.0
+                ),
+                vectors
+            );
+
+            LongTerms aggregation = response.getAggregations().get("sums");
+            assertEquals(3, aggregation.getBuckets().size());
+
+            for (LongTerms.Bucket bucket : aggregation.getBuckets()) {
+                if (0L == (long) bucket.getKey()) {
+                    assertEquals(17, bucket.getDocCount());
+                } else if (1L == (long) bucket.getKey()) {
+                    assertEquals(17, bucket.getDocCount());
+                } else if (2L == (long) bucket.getKey()) {
+                    assertEquals(17, bucket.getDocCount());
+                } else {
+                    throw new IllegalArgumentException("unexpected bucket key [" + bucket.getKey() + "]");
+                }
+            }
+        },
             prepareSearch("nrd_index").setRankBuilder(new RRFRankBuilder(51, 1))
                 .setTrackTotalHits(true)
                 .setKnnSearch(List.of(knnSearchAsc, knnSearchDesc))
@@ -481,72 +533,41 @@ public class RRFRankMultiShardIT extends ESIntegTestCase {
                 .addFetchField("text0")
                 .setSize(19)
                 .addAggregation(AggregationBuilders.terms("sums").field("int"))
-                .setStats("search"),
-            response -> {
-                assertEquals(51, response.getHits().getTotalHits().value);
-                assertEquals(19, response.getHits().getHits().length);
-
-                SearchHit hit = response.getHits().getAt(0);
-                assertEquals(1, hit.getRank());
-                assertEquals(500.0, ((Number) hit.field("vector_asc").getValue()).doubleValue(), 0.0);
-                assertEquals(500.0, ((Number) hit.field("vector_desc").getValue()).doubleValue(), 0.0);
-                assertEquals("term 500", hit.field("text0").getValue());
-
-                hit = response.getHits().getAt(1);
-                assertEquals(2, hit.getRank());
-                assertEquals(499.0, ((Number) hit.field("vector_asc").getValue()).doubleValue(), 0.0);
-                assertEquals(501.0, ((Number) hit.field("vector_desc").getValue()).doubleValue(), 0.0);
-                assertEquals("term 499", hit.field("text0").getValue());
-
-                Set<Double> vectors = Arrays.stream(response.getHits().getHits())
-                    .map(h -> ((Number) h.field("vector_asc").getValue()).doubleValue())
-                    .collect(Collectors.toSet());
-                assertEquals(
-                    Set.of(
-                        485.0,
-                        492.0,
-                        493.0,
-                        494.0,
-                        495.0,
-                        496.0,
-                        497.0,
-                        498.0,
-                        499.0,
-                        500.0,
-                        501.0,
-                        502.0,
-                        503.0,
-                        504.0,
-                        505.0,
-                        506.0,
-                        507.0,
-                        508.0,
-                        511.0
-                    ),
-                    vectors
-                );
-
-                LongTerms aggregation = response.getAggregations().get("sums");
-                assertEquals(3, aggregation.getBuckets().size());
-
-                for (LongTerms.Bucket bucket : aggregation.getBuckets()) {
-                    if (0L == (long) bucket.getKey()) {
-                        assertEquals(17, bucket.getDocCount());
-                    } else if (1L == (long) bucket.getKey()) {
-                        assertEquals(17, bucket.getDocCount());
-                    } else if (2L == (long) bucket.getKey()) {
-                        assertEquals(17, bucket.getDocCount());
-                    } else {
-                        throw new IllegalArgumentException("unexpected bucket key [" + bucket.getKey() + "]");
-                    }
-                }
-            }
+                .setStats("search")
         );
     }
 
     public void testMultiBM25() {
         for (SearchType searchType : SearchType.CURRENTLY_SUPPORTED) {
-            assertResponse(
+            assertResponse(response -> {
+                assertNull(response.getHits().getTotalHits());
+                assertEquals(5, response.getHits().getHits().length);
+
+                SearchHit hit = response.getHits().getAt(0);
+                assertEquals(1, hit.getRank());
+                assertEquals("term 492", hit.field("text0").getValue());
+                assertEquals("term 508", hit.field("text1").getValue());
+
+                hit = response.getHits().getAt(1);
+                assertEquals(2, hit.getRank());
+                assertEquals("term 499", hit.field("text0").getValue());
+                assertEquals("term 501", hit.field("text1").getValue());
+
+                hit = response.getHits().getAt(2);
+                assertEquals(3, hit.getRank());
+                assertEquals("term 500", hit.field("text0").getValue());
+                assertEquals("term 500", hit.field("text1").getValue());
+
+                hit = response.getHits().getAt(3);
+                assertEquals(4, hit.getRank());
+                assertEquals("term 498", hit.field("text0").getValue());
+                assertEquals("term 502", hit.field("text1").getValue());
+
+                hit = response.getHits().getAt(4);
+                assertEquals(5, hit.getRank());
+                assertEquals("term 496", hit.field("text0").getValue());
+                assertEquals("term 504", hit.field("text1").getValue());
+            },
                 prepareSearch("nrd_index").setSearchType(searchType)
                     .setRankBuilder(new RRFRankBuilder(8, 1))
                     .setTrackTotalHits(false)
@@ -581,43 +602,57 @@ public class RRFRankMultiShardIT extends ESIntegTestCase {
                     )
                     .addFetchField("text0")
                     .addFetchField("text1")
-                    .setSize(5),
-                response -> {
-                    assertNull(response.getHits().getTotalHits());
-                    assertEquals(5, response.getHits().getHits().length);
-
-                    SearchHit hit = response.getHits().getAt(0);
-                    assertEquals(1, hit.getRank());
-                    assertEquals("term 492", hit.field("text0").getValue());
-                    assertEquals("term 508", hit.field("text1").getValue());
-
-                    hit = response.getHits().getAt(1);
-                    assertEquals(2, hit.getRank());
-                    assertEquals("term 499", hit.field("text0").getValue());
-                    assertEquals("term 501", hit.field("text1").getValue());
-
-                    hit = response.getHits().getAt(2);
-                    assertEquals(3, hit.getRank());
-                    assertEquals("term 500", hit.field("text0").getValue());
-                    assertEquals("term 500", hit.field("text1").getValue());
-
-                    hit = response.getHits().getAt(3);
-                    assertEquals(4, hit.getRank());
-                    assertEquals("term 498", hit.field("text0").getValue());
-                    assertEquals("term 502", hit.field("text1").getValue());
-
-                    hit = response.getHits().getAt(4);
-                    assertEquals(5, hit.getRank());
-                    assertEquals("term 496", hit.field("text0").getValue());
-                    assertEquals("term 504", hit.field("text1").getValue());
-                }
+                    .setSize(5)
             );
         }
     }
 
     public void testMultiBM25WithAggregation() {
         for (SearchType searchType : SearchType.CURRENTLY_SUPPORTED) {
-            assertResponse(
+            assertResponse(response -> {
+                assertNull(response.getHits().getTotalHits());
+                assertEquals(5, response.getHits().getHits().length);
+
+                SearchHit hit = response.getHits().getAt(0);
+                assertEquals(1, hit.getRank());
+                assertEquals("term 492", hit.field("text0").getValue());
+                assertEquals("term 508", hit.field("text1").getValue());
+
+                hit = response.getHits().getAt(1);
+                assertEquals(2, hit.getRank());
+                assertEquals("term 499", hit.field("text0").getValue());
+                assertEquals("term 501", hit.field("text1").getValue());
+
+                hit = response.getHits().getAt(2);
+                assertEquals(3, hit.getRank());
+                assertEquals("term 500", hit.field("text0").getValue());
+                assertEquals("term 500", hit.field("text1").getValue());
+
+                hit = response.getHits().getAt(3);
+                assertEquals(4, hit.getRank());
+                assertEquals("term 498", hit.field("text0").getValue());
+                assertEquals("term 502", hit.field("text1").getValue());
+
+                hit = response.getHits().getAt(4);
+                assertEquals(5, hit.getRank());
+                assertEquals("term 496", hit.field("text0").getValue());
+                assertEquals("term 504", hit.field("text1").getValue());
+
+                LongTerms aggregation = response.getAggregations().get("sums");
+                assertEquals(3, aggregation.getBuckets().size());
+
+                for (LongTerms.Bucket bucket : aggregation.getBuckets()) {
+                    if (0L == (long) bucket.getKey()) {
+                        assertEquals(5, bucket.getDocCount());
+                    } else if (1L == (long) bucket.getKey()) {
+                        assertEquals(6, bucket.getDocCount());
+                    } else if (2L == (long) bucket.getKey()) {
+                        assertEquals(4, bucket.getDocCount());
+                    } else {
+                        throw new IllegalArgumentException("unexpected bucket key [" + bucket.getKey() + "]");
+                    }
+                }
+            },
                 prepareSearch("nrd_index").setSearchType(searchType)
                     .setRankBuilder(new RRFRankBuilder(8, 1))
                     .setTrackTotalHits(false)
@@ -653,51 +688,7 @@ public class RRFRankMultiShardIT extends ESIntegTestCase {
                     .addFetchField("text0")
                     .addFetchField("text1")
                     .setSize(5)
-                    .addAggregation(AggregationBuilders.terms("sums").field("int")),
-                response -> {
-                    assertNull(response.getHits().getTotalHits());
-                    assertEquals(5, response.getHits().getHits().length);
-
-                    SearchHit hit = response.getHits().getAt(0);
-                    assertEquals(1, hit.getRank());
-                    assertEquals("term 492", hit.field("text0").getValue());
-                    assertEquals("term 508", hit.field("text1").getValue());
-
-                    hit = response.getHits().getAt(1);
-                    assertEquals(2, hit.getRank());
-                    assertEquals("term 499", hit.field("text0").getValue());
-                    assertEquals("term 501", hit.field("text1").getValue());
-
-                    hit = response.getHits().getAt(2);
-                    assertEquals(3, hit.getRank());
-                    assertEquals("term 500", hit.field("text0").getValue());
-                    assertEquals("term 500", hit.field("text1").getValue());
-
-                    hit = response.getHits().getAt(3);
-                    assertEquals(4, hit.getRank());
-                    assertEquals("term 498", hit.field("text0").getValue());
-                    assertEquals("term 502", hit.field("text1").getValue());
-
-                    hit = response.getHits().getAt(4);
-                    assertEquals(5, hit.getRank());
-                    assertEquals("term 496", hit.field("text0").getValue());
-                    assertEquals("term 504", hit.field("text1").getValue());
-
-                    LongTerms aggregation = response.getAggregations().get("sums");
-                    assertEquals(3, aggregation.getBuckets().size());
-
-                    for (LongTerms.Bucket bucket : aggregation.getBuckets()) {
-                        if (0L == (long) bucket.getKey()) {
-                            assertEquals(5, bucket.getDocCount());
-                        } else if (1L == (long) bucket.getKey()) {
-                            assertEquals(6, bucket.getDocCount());
-                        } else if (2L == (long) bucket.getKey()) {
-                            assertEquals(4, bucket.getDocCount());
-                        } else {
-                            throw new IllegalArgumentException("unexpected bucket key [" + bucket.getKey() + "]");
-                        }
-                    }
-                }
+                    .addAggregation(AggregationBuilders.terms("sums").field("int"))
             );
         }
     }
@@ -705,65 +696,21 @@ public class RRFRankMultiShardIT extends ESIntegTestCase {
     public void testMultiBM25AndSingleKnn() {
         float[] queryVector = { 500.0f };
         KnnSearchBuilder knnSearch = new KnnSearchBuilder("vector_asc", queryVector, 101, 1001, null);
-        assertResponse(
-            prepareSearch("nrd_index").setRankBuilder(new RRFRankBuilder(101, 1))
-                .setTrackTotalHits(false)
-                .setKnnSearch(List.of(knnSearch))
-                .setSubSearches(
-                    List.of(
-                        new SubSearchSourceBuilder(
-                            QueryBuilders.boolQuery()
-                                .should(QueryBuilders.termQuery("text0", "500").boost(10.0f))
-                                .should(QueryBuilders.termQuery("text0", "499").boost(9.0f))
-                                .should(QueryBuilders.termQuery("text0", "498").boost(8.0f))
-                                .should(QueryBuilders.termQuery("text0", "497").boost(7.0f))
-                                .should(QueryBuilders.termQuery("text0", "496").boost(6.0f))
-                                .should(QueryBuilders.termQuery("text0", "495").boost(5.0f))
-                                .should(QueryBuilders.termQuery("text0", "494").boost(4.0f))
-                                .should(QueryBuilders.termQuery("text0", "492").boost(3.0f))
-                                .should(QueryBuilders.termQuery("text0", "491").boost(2.0f))
-                                .should(QueryBuilders.termQuery("text0", "490").boost(1.0f))
-                        ),
-                        new SubSearchSourceBuilder(
-                            QueryBuilders.boolQuery()
-                                .should(QueryBuilders.termQuery("text1", "508").boost(9.0f))
-                                .should(QueryBuilders.termQuery("text1", "304").boost(8.0f))
-                                .should(QueryBuilders.termQuery("text1", "501").boost(7.0f))
-                                .should(QueryBuilders.termQuery("text1", "504").boost(6.0f))
-                                .should(QueryBuilders.termQuery("text1", "492").boost(5.0f))
-                                .should(QueryBuilders.termQuery("text1", "502").boost(4.0f))
-                                .should(QueryBuilders.termQuery("text1", "499").boost(3.0f))
-                                .should(QueryBuilders.termQuery("text1", "800").boost(2.0f))
-                                .should(QueryBuilders.termQuery("text1", "201").boost(1.0f))
-                        )
-                    )
-                )
-                .addFetchField("text0")
-                .addFetchField("text1")
-                .addFetchField("vector_asc")
-                .setSize(5),
-            response -> {
-                assertNull(response.getHits().getTotalHits());
-                assertEquals(5, response.getHits().getHits().length);
+        assertResponse(response -> {
+            assertNull(response.getHits().getTotalHits());
+            assertEquals(5, response.getHits().getHits().length);
 
-                SearchHit hit = response.getHits().getAt(0);
-                assertEquals(1, hit.getRank());
-                assertEquals("term 500", hit.field("text0").getValue());
-                assertEquals("term 500", hit.field("text1").getValue());
-                assertEquals(500.0, ((Number) hit.field("vector_asc").getValue()).doubleValue(), 0.0);
+            SearchHit hit = response.getHits().getAt(0);
+            assertEquals(1, hit.getRank());
+            assertEquals("term 500", hit.field("text0").getValue());
+            assertEquals("term 500", hit.field("text1").getValue());
+            assertEquals(500.0, ((Number) hit.field("vector_asc").getValue()).doubleValue(), 0.0);
 
-                Set<Double> vectors = Arrays.stream(response.getHits().getHits())
-                    .map(h -> ((Number) h.field("vector_asc").getValue()).doubleValue())
-                    .collect(Collectors.toSet());
-                assertEquals(Set.of(492.0, 496.0, 498.0, 499.0, 500.0), vectors);
-            }
-        );
-    }
-
-    public void testMultiBM25AndSingleKnnWithAggregation() {
-        float[] queryVector = { 500.0f };
-        KnnSearchBuilder knnSearch = new KnnSearchBuilder("vector_asc", queryVector, 101, 1001, null);
-        assertResponse(
+            Set<Double> vectors = Arrays.stream(response.getHits().getHits())
+                .map(h -> ((Number) h.field("vector_asc").getValue()).doubleValue())
+                .collect(Collectors.toSet());
+            assertEquals(Set.of(492.0, 496.0, 498.0, 499.0, 500.0), vectors);
+        },
             prepareSearch("nrd_index").setRankBuilder(new RRFRankBuilder(101, 1))
                 .setTrackTotalHits(false)
                 .setKnnSearch(List.of(knnSearch))
@@ -800,37 +747,79 @@ public class RRFRankMultiShardIT extends ESIntegTestCase {
                 .addFetchField("text1")
                 .addFetchField("vector_asc")
                 .setSize(5)
-                .addAggregation(AggregationBuilders.terms("sums").field("int")),
-            response -> {
-                assertNull(response.getHits().getTotalHits());
-                assertEquals(5, response.getHits().getHits().length);
+        );
+    }
 
-                SearchHit hit = response.getHits().getAt(0);
-                assertEquals(1, hit.getRank());
-                assertEquals("term 500", hit.field("text0").getValue());
-                assertEquals("term 500", hit.field("text1").getValue());
-                assertEquals(500.0, ((Number) hit.field("vector_asc").getValue()).doubleValue(), 0.0);
+    public void testMultiBM25AndSingleKnnWithAggregation() {
+        float[] queryVector = { 500.0f };
+        KnnSearchBuilder knnSearch = new KnnSearchBuilder("vector_asc", queryVector, 101, 1001, null);
+        assertResponse(response -> {
+            assertNull(response.getHits().getTotalHits());
+            assertEquals(5, response.getHits().getHits().length);
 
-                Set<Double> vectors = Arrays.stream(response.getHits().getHits())
-                    .map(h -> ((Number) h.field("vector_asc").getValue()).doubleValue())
-                    .collect(Collectors.toSet());
-                assertEquals(Set.of(492.0, 496.0, 498.0, 499.0, 500.0), vectors);
+            SearchHit hit = response.getHits().getAt(0);
+            assertEquals(1, hit.getRank());
+            assertEquals("term 500", hit.field("text0").getValue());
+            assertEquals("term 500", hit.field("text1").getValue());
+            assertEquals(500.0, ((Number) hit.field("vector_asc").getValue()).doubleValue(), 0.0);
 
-                LongTerms aggregation = response.getAggregations().get("sums");
-                assertEquals(3, aggregation.getBuckets().size());
+            Set<Double> vectors = Arrays.stream(response.getHits().getHits())
+                .map(h -> ((Number) h.field("vector_asc").getValue()).doubleValue())
+                .collect(Collectors.toSet());
+            assertEquals(Set.of(492.0, 496.0, 498.0, 499.0, 500.0), vectors);
 
-                for (LongTerms.Bucket bucket : aggregation.getBuckets()) {
-                    if (0L == (long) bucket.getKey()) {
-                        assertEquals(35, bucket.getDocCount());
-                    } else if (1L == (long) bucket.getKey()) {
-                        assertEquals(35, bucket.getDocCount());
-                    } else if (2L == (long) bucket.getKey()) {
-                        assertEquals(34, bucket.getDocCount());
-                    } else {
-                        throw new IllegalArgumentException("unexpected bucket key [" + bucket.getKey() + "]");
-                    }
+            LongTerms aggregation = response.getAggregations().get("sums");
+            assertEquals(3, aggregation.getBuckets().size());
+
+            for (LongTerms.Bucket bucket : aggregation.getBuckets()) {
+                if (0L == (long) bucket.getKey()) {
+                    assertEquals(35, bucket.getDocCount());
+                } else if (1L == (long) bucket.getKey()) {
+                    assertEquals(35, bucket.getDocCount());
+                } else if (2L == (long) bucket.getKey()) {
+                    assertEquals(34, bucket.getDocCount());
+                } else {
+                    throw new IllegalArgumentException("unexpected bucket key [" + bucket.getKey() + "]");
                 }
             }
+        },
+            prepareSearch("nrd_index").setRankBuilder(new RRFRankBuilder(101, 1))
+                .setTrackTotalHits(false)
+                .setKnnSearch(List.of(knnSearch))
+                .setSubSearches(
+                    List.of(
+                        new SubSearchSourceBuilder(
+                            QueryBuilders.boolQuery()
+                                .should(QueryBuilders.termQuery("text0", "500").boost(10.0f))
+                                .should(QueryBuilders.termQuery("text0", "499").boost(9.0f))
+                                .should(QueryBuilders.termQuery("text0", "498").boost(8.0f))
+                                .should(QueryBuilders.termQuery("text0", "497").boost(7.0f))
+                                .should(QueryBuilders.termQuery("text0", "496").boost(6.0f))
+                                .should(QueryBuilders.termQuery("text0", "495").boost(5.0f))
+                                .should(QueryBuilders.termQuery("text0", "494").boost(4.0f))
+                                .should(QueryBuilders.termQuery("text0", "492").boost(3.0f))
+                                .should(QueryBuilders.termQuery("text0", "491").boost(2.0f))
+                                .should(QueryBuilders.termQuery("text0", "490").boost(1.0f))
+                        ),
+                        new SubSearchSourceBuilder(
+                            QueryBuilders.boolQuery()
+                                .should(QueryBuilders.termQuery("text1", "508").boost(9.0f))
+                                .should(QueryBuilders.termQuery("text1", "304").boost(8.0f))
+                                .should(QueryBuilders.termQuery("text1", "501").boost(7.0f))
+                                .should(QueryBuilders.termQuery("text1", "504").boost(6.0f))
+                                .should(QueryBuilders.termQuery("text1", "492").boost(5.0f))
+                                .should(QueryBuilders.termQuery("text1", "502").boost(4.0f))
+                                .should(QueryBuilders.termQuery("text1", "499").boost(3.0f))
+                                .should(QueryBuilders.termQuery("text1", "800").boost(2.0f))
+                                .should(QueryBuilders.termQuery("text1", "201").boost(1.0f))
+                        )
+                    )
+                )
+                .addFetchField("text0")
+                .addFetchField("text1")
+                .addFetchField("vector_asc")
+                .setSize(5)
+                .addAggregation(AggregationBuilders.terms("sums").field("int"))
         );
     }
 
@@ -839,69 +828,22 @@ public class RRFRankMultiShardIT extends ESIntegTestCase {
         float[] queryVectorDesc = { 500.0f };
         KnnSearchBuilder knnSearchAsc = new KnnSearchBuilder("vector_asc", queryVectorAsc, 101, 1001, null);
         KnnSearchBuilder knnSearchDesc = new KnnSearchBuilder("vector_desc", queryVectorDesc, 101, 1001, null);
-        assertResponse(
-            prepareSearch("nrd_index").setRankBuilder(new RRFRankBuilder(101, 1))
-                .setTrackTotalHits(false)
-                .setKnnSearch(List.of(knnSearchAsc, knnSearchDesc))
-                .setSubSearches(
-                    List.of(
-                        new SubSearchSourceBuilder(
-                            QueryBuilders.boolQuery()
-                                .should(QueryBuilders.termQuery("text0", "500").boost(10.0f))
-                                .should(QueryBuilders.termQuery("text0", "499").boost(9.0f))
-                                .should(QueryBuilders.termQuery("text0", "498").boost(8.0f))
-                                .should(QueryBuilders.termQuery("text0", "497").boost(7.0f))
-                                .should(QueryBuilders.termQuery("text0", "496").boost(6.0f))
-                                .should(QueryBuilders.termQuery("text0", "495").boost(5.0f))
-                                .should(QueryBuilders.termQuery("text0", "494").boost(4.0f))
-                                .should(QueryBuilders.termQuery("text0", "492").boost(3.0f))
-                                .should(QueryBuilders.termQuery("text0", "491").boost(2.0f))
-                                .should(QueryBuilders.termQuery("text0", "490").boost(1.0f))
-                        ),
-                        new SubSearchSourceBuilder(
-                            QueryBuilders.boolQuery()
-                                .should(QueryBuilders.termQuery("text1", "508").boost(9.0f))
-                                .should(QueryBuilders.termQuery("text1", "304").boost(8.0f))
-                                .should(QueryBuilders.termQuery("text1", "501").boost(7.0f))
-                                .should(QueryBuilders.termQuery("text1", "504").boost(6.0f))
-                                .should(QueryBuilders.termQuery("text1", "492").boost(5.0f))
-                                .should(QueryBuilders.termQuery("text1", "502").boost(4.0f))
-                                .should(QueryBuilders.termQuery("text1", "499").boost(3.0f))
-                                .should(QueryBuilders.termQuery("text1", "800").boost(2.0f))
-                                .should(QueryBuilders.termQuery("text1", "201").boost(1.0f))
-                        )
-                    )
-                )
-                .addFetchField("text0")
-                .addFetchField("text1")
-                .addFetchField("vector_asc")
-                .addFetchField("vector_desc")
-                .setSize(5),
-            response -> {
-                assertNull(response.getHits().getTotalHits());
-                assertEquals(5, response.getHits().getHits().length);
+        assertResponse(response -> {
+            assertNull(response.getHits().getTotalHits());
+            assertEquals(5, response.getHits().getHits().length);
 
-                SearchHit hit = response.getHits().getAt(0);
-                assertEquals(1, hit.getRank());
-                assertEquals("term 500", hit.field("text0").getValue());
-                assertEquals("term 500", hit.field("text1").getValue());
-                assertEquals(500.0, ((Number) hit.field("vector_asc").getValue()).doubleValue(), 0.0);
-                assertEquals(500.0, ((Number) hit.field("vector_desc").getValue()).doubleValue(), 0.0);
+            SearchHit hit = response.getHits().getAt(0);
+            assertEquals(1, hit.getRank());
+            assertEquals("term 500", hit.field("text0").getValue());
+            assertEquals("term 500", hit.field("text1").getValue());
+            assertEquals(500.0, ((Number) hit.field("vector_asc").getValue()).doubleValue(), 0.0);
+            assertEquals(500.0, ((Number) hit.field("vector_desc").getValue()).doubleValue(), 0.0);
 
-                Set<Double> vectors = Arrays.stream(response.getHits().getHits())
-                    .map(h -> ((Number) h.field("vector_asc").getValue()).doubleValue())
-                    .collect(Collectors.toSet());
-                assertEquals(Set.of(492.0, 498.0, 499.0, 500.0, 501.0), vectors);
-            }
-        );
-    }
-
-    public void testMultiBM25AndMultipleKnnWithAggregation() {
-        float[] queryVectorAsc = { 500.0f };
-        float[] queryVectorDesc = { 500.0f };
-        KnnSearchBuilder knnSearchAsc = new KnnSearchBuilder("vector_asc", queryVectorAsc, 101, 1001, null);
-        KnnSearchBuilder knnSearchDesc = new KnnSearchBuilder("vector_desc", queryVectorDesc, 101, 1001, null);
-        assertResponse(
+            Set<Double> vectors = Arrays.stream(response.getHits().getHits())
+                .map(h -> ((Number) h.field("vector_asc").getValue()).doubleValue())
+                .collect(Collectors.toSet());
+            assertEquals(Set.of(492.0, 498.0, 499.0, 500.0, 501.0), vectors);
+        },
             prepareSearch("nrd_index").setRankBuilder(new RRFRankBuilder(101, 1))
                 .setTrackTotalHits(false)
                 .setKnnSearch(List.of(knnSearchAsc, knnSearchDesc))
@@ -939,38 +881,83 @@ public class RRFRankMultiShardIT extends ESIntegTestCase {
                 .addFetchField("vector_asc")
                 .addFetchField("vector_desc")
                 .setSize(5)
-                .addAggregation(AggregationBuilders.terms("sums").field("int")),
-            response -> {
-                assertNull(response.getHits().getTotalHits());
-                assertEquals(5, response.getHits().getHits().length);
+        );
+    }
 
-                SearchHit hit = response.getHits().getAt(0);
-                assertEquals(1, hit.getRank());
-                assertEquals("term 500", hit.field("text0").getValue());
-                assertEquals("term 500", hit.field("text1").getValue());
-                assertEquals(500.0, ((Number) hit.field("vector_asc").getValue()).doubleValue(), 0.0);
-                assertEquals(500.0, ((Number) hit.field("vector_desc").getValue()).doubleValue(), 0.0);
+    public void testMultiBM25AndMultipleKnnWithAggregation() {
+        float[] queryVectorAsc = { 500.0f };
+        float[] queryVectorDesc = { 500.0f };
+        KnnSearchBuilder knnSearchAsc = new KnnSearchBuilder("vector_asc", queryVectorAsc, 101, 1001, null);
+        KnnSearchBuilder knnSearchDesc = new KnnSearchBuilder("vector_desc", queryVectorDesc, 101, 1001, null);
+        assertResponse(response -> {
+            assertNull(response.getHits().getTotalHits());
+            assertEquals(5, response.getHits().getHits().length);
 
-                Set<Double> vectors = Arrays.stream(response.getHits().getHits())
-                    .map(h -> ((Number) h.field("vector_asc").getValue()).doubleValue())
-                    .collect(Collectors.toSet());
-                assertEquals(Set.of(492.0, 498.0, 499.0, 500.0, 501.0), vectors);
+            SearchHit hit = response.getHits().getAt(0);
+            assertEquals(1, hit.getRank());
+            assertEquals("term 500", hit.field("text0").getValue());
+            assertEquals("term 500", hit.field("text1").getValue());
+            assertEquals(500.0, ((Number) hit.field("vector_asc").getValue()).doubleValue(), 0.0);
+            assertEquals(500.0, ((Number) hit.field("vector_desc").getValue()).doubleValue(), 0.0);
 
-                LongTerms aggregation = response.getAggregations().get("sums");
-                assertEquals(3, aggregation.getBuckets().size());
+            Set<Double> vectors = Arrays.stream(response.getHits().getHits())
+                .map(h -> ((Number) h.field("vector_asc").getValue()).doubleValue())
+                .collect(Collectors.toSet());
+            assertEquals(Set.of(492.0, 498.0, 499.0, 500.0, 501.0), vectors);
 
-                for (LongTerms.Bucket bucket : aggregation.getBuckets()) {
-                    if (0L == (long) bucket.getKey()) {
-                        assertEquals(35, bucket.getDocCount());
-                    } else if (1L == (long) bucket.getKey()) {
-                        assertEquals(35, bucket.getDocCount());
-                    } else if (2L == (long) bucket.getKey()) {
-                        assertEquals(34, bucket.getDocCount());
-                    } else {
-                        throw new IllegalArgumentException("unexpected bucket key [" + bucket.getKey() + "]");
-                    }
+            LongTerms aggregation = response.getAggregations().get("sums");
+            assertEquals(3, aggregation.getBuckets().size());
+
+            for (LongTerms.Bucket bucket : aggregation.getBuckets()) {
+                if (0L == (long) bucket.getKey()) {
+                    assertEquals(35, bucket.getDocCount());
+                } else if (1L == (long) bucket.getKey()) {
+                    assertEquals(35, bucket.getDocCount());
+                } else if (2L == (long) bucket.getKey()) {
+                    assertEquals(34, bucket.getDocCount());
+                } else {
+                    throw new IllegalArgumentException("unexpected bucket key [" + bucket.getKey() + "]");
                 }
             }
+        },
+            prepareSearch("nrd_index").setRankBuilder(new RRFRankBuilder(101, 1))
+                .setTrackTotalHits(false)
+                .setKnnSearch(List.of(knnSearchAsc, knnSearchDesc))
+                .setSubSearches(
+                    List.of(
+                        new SubSearchSourceBuilder(
+                            QueryBuilders.boolQuery()
+                                .should(QueryBuilders.termQuery("text0", "500").boost(10.0f))
+                                .should(QueryBuilders.termQuery("text0", "499").boost(9.0f))
+                                .should(QueryBuilders.termQuery("text0", "498").boost(8.0f))
+                                .should(QueryBuilders.termQuery("text0", "497").boost(7.0f))
+                                .should(QueryBuilders.termQuery("text0", "496").boost(6.0f))
+                                .should(QueryBuilders.termQuery("text0", "495").boost(5.0f))
+                                .should(QueryBuilders.termQuery("text0", "494").boost(4.0f))
+                                .should(QueryBuilders.termQuery("text0", "492").boost(3.0f))
+                                .should(QueryBuilders.termQuery("text0", "491").boost(2.0f))
+                                .should(QueryBuilders.termQuery("text0", "490").boost(1.0f))
+                        ),
+                        new SubSearchSourceBuilder(
+                            QueryBuilders.boolQuery()
+                                .should(QueryBuilders.termQuery("text1", "508").boost(9.0f))
+                                .should(QueryBuilders.termQuery("text1", "304").boost(8.0f))
+                                .should(QueryBuilders.termQuery("text1", "501").boost(7.0f))
+                                .should(QueryBuilders.termQuery("text1", "504").boost(6.0f))
+                                .should(QueryBuilders.termQuery("text1", "492").boost(5.0f))
+                                .should(QueryBuilders.termQuery("text1", "502").boost(4.0f))
+                                .should(QueryBuilders.termQuery("text1", "499").boost(3.0f))
+                                .should(QueryBuilders.termQuery("text1", "800").boost(2.0f))
+                                .should(QueryBuilders.termQuery("text1", "201").boost(1.0f))
+                        )
+                    )
+                )
+                .addFetchField("text0")
+                .addFetchField("text1")
+                .addFetchField("vector_asc")
+                .addFetchField("vector_desc")
+                .setSize(5)
+                .addAggregation(AggregationBuilders.terms("sums").field("int"))
         );
     }
 
@@ -980,64 +967,57 @@ public class RRFRankMultiShardIT extends ESIntegTestCase {
         // should only match the knn query
         float[] queryVector = { 9f };
         KnnSearchBuilder knnSearch = new KnnSearchBuilder("vector_asc", queryVector, 101, 1001, null).queryName("my_knn_search");
-        assertResponse(
+        assertResponse(response -> {
+            // we cast to Number when looking at values in vector fields because different xContentTypes may return Float or Double
+            assertEquals(3, response.getHits().getHits().length);
+
+            // first result is the one which matches the term (10) so we should expect an explanation for both queries
+            SearchHit hit = response.getHits().getAt(0);
+            assertEquals(1, hit.getRank());
+            assertTrue(hit.getExplanation().isMatch());
+            assertTrue(hit.getExplanation().getDescription().contains("initial ranks"));
+            assertEquals(2, hit.getExplanation().getDetails().length);
+            assertTrue(hit.getExplanation().getDetails()[0].isMatch());
+            assertEquals(1, hit.getExplanation().getDetails()[0].getValue().intValue());
+            assertTrue(hit.getExplanation().getDetails()[0].getDescription().contains("query at index [0]"));
+            assertTrue(hit.getExplanation().getDetails()[0].getDetails().length > 0);
+            assertTrue(hit.getExplanation().getDetails()[1].isMatch());
+            assertTrue(hit.getExplanation().getDetails()[1].getDescription().contains("[my_knn_search]"));
+            assertTrue(hit.getExplanation().getDetails()[1].getDetails().length > 0);
+
+            // second result matched only on the knn query so no match should be expected for the term query
+            hit = response.getHits().getAt(1);
+            assertEquals(2, hit.getRank());
+            assertTrue(hit.getExplanation().isMatch());
+            assertTrue(hit.getExplanation().getDescription().contains("initial ranks"));
+            assertEquals(2, hit.getExplanation().getDetails().length);
+            assertFalse(hit.getExplanation().getDetails()[0].isMatch());
+            assertEquals(0, hit.getExplanation().getDetails()[0].getValue().intValue());
+            assertEquals("rrf score: [0], result not found in query at index [0]", hit.getExplanation().getDetails()[0].getDescription());
+            assertEquals(0, hit.getExplanation().getDetails()[0].getDetails().length);
+            assertTrue(hit.getExplanation().getDetails()[1].isMatch());
+            assertTrue(hit.getExplanation().getDetails()[1].getDescription().contains("[my_knn_search]"));
+            assertTrue(hit.getExplanation().getDetails()[1].getDetails().length > 0);
+
+            // third result matched only on the knn query so no match should be expected for the term query
+            hit = response.getHits().getAt(2);
+            assertEquals(3, hit.getRank());
+            assertTrue(hit.getExplanation().isMatch());
+            assertTrue(hit.getExplanation().getDescription().contains("initial ranks"));
+            assertEquals(2, hit.getExplanation().getDetails().length);
+            assertFalse(hit.getExplanation().getDetails()[0].isMatch());
+            assertEquals(0, hit.getExplanation().getDetails()[0].getValue().intValue());
+            assertEquals("rrf score: [0], result not found in query at index [0]", hit.getExplanation().getDetails()[0].getDescription());
+            assertEquals(0, hit.getExplanation().getDetails()[0].getDetails().length);
+            assertTrue(hit.getExplanation().getDetails()[1].isMatch());
+            assertTrue(hit.getExplanation().getDetails()[1].getDescription().contains("[my_knn_search]"));
+            assertTrue(hit.getExplanation().getDetails()[1].getDetails().length > 0);
+        },
             prepareSearch("nrd_index").setRankBuilder(new RRFRankBuilder(100, 1))
                 .setKnnSearch(List.of(knnSearch))
                 .setQuery(QueryBuilders.termQuery("text0", "10"))
                 .setExplain(true)
-                .setSize(3),
-            response -> {
-                // we cast to Number when looking at values in vector fields because different xContentTypes may return Float or Double
-                assertEquals(3, response.getHits().getHits().length);
-
-                // first result is the one which matches the term (10) so we should expect an explanation for both queries
-                SearchHit hit = response.getHits().getAt(0);
-                assertEquals(1, hit.getRank());
-                assertTrue(hit.getExplanation().isMatch());
-                assertTrue(hit.getExplanation().getDescription().contains("initial ranks"));
-                assertEquals(2, hit.getExplanation().getDetails().length);
-                assertTrue(hit.getExplanation().getDetails()[0].isMatch());
-                assertEquals(1, hit.getExplanation().getDetails()[0].getValue().intValue());
-                assertTrue(hit.getExplanation().getDetails()[0].getDescription().contains("query at index [0]"));
-                assertTrue(hit.getExplanation().getDetails()[0].getDetails().length > 0);
-                assertTrue(hit.getExplanation().getDetails()[1].isMatch());
-                assertTrue(hit.getExplanation().getDetails()[1].getDescription().contains("[my_knn_search]"));
-                assertTrue(hit.getExplanation().getDetails()[1].getDetails().length > 0);
-
-                // second result matched only on the knn query so no match should be expected for the term query
-                hit = response.getHits().getAt(1);
-                assertEquals(2, hit.getRank());
-                assertTrue(hit.getExplanation().isMatch());
-                assertTrue(hit.getExplanation().getDescription().contains("initial ranks"));
-                assertEquals(2, hit.getExplanation().getDetails().length);
-                assertFalse(hit.getExplanation().getDetails()[0].isMatch());
-                assertEquals(0, hit.getExplanation().getDetails()[0].getValue().intValue());
-                assertEquals(
-                    "rrf score: [0], result not found in query at index [0]",
-                    hit.getExplanation().getDetails()[0].getDescription()
-                );
-                assertEquals(0, hit.getExplanation().getDetails()[0].getDetails().length);
-                assertTrue(hit.getExplanation().getDetails()[1].isMatch());
-                assertTrue(hit.getExplanation().getDetails()[1].getDescription().contains("[my_knn_search]"));
-                assertTrue(hit.getExplanation().getDetails()[1].getDetails().length > 0);
-
-                // third result matched only on the knn query so no match should be expected for the term query
-                hit = response.getHits().getAt(2);
-                assertEquals(3, hit.getRank());
-                assertTrue(hit.getExplanation().isMatch());
-                assertTrue(hit.getExplanation().getDescription().contains("initial ranks"));
-                assertEquals(2, hit.getExplanation().getDetails().length);
-                assertFalse(hit.getExplanation().getDetails()[0].isMatch());
-                assertEquals(0, hit.getExplanation().getDetails()[0].getValue().intValue());
-                assertEquals(
-                    "rrf score: [0], result not found in query at index [0]",
-                    hit.getExplanation().getDetails()[0].getDescription()
-                );
-                assertEquals(0, hit.getExplanation().getDetails()[0].getDetails().length);
-                assertTrue(hit.getExplanation().getDetails()[1].isMatch());
-                assertTrue(hit.getExplanation().getDetails()[1].getDescription().contains("[my_knn_search]"));
-                assertTrue(hit.getExplanation().getDetails()[1].getDetails().length > 0);
-            }
+                .setSize(3)
         );
     }
 
@@ -1046,64 +1026,54 @@ public class RRFRankMultiShardIT extends ESIntegTestCase {
         // so we expect results and explanations only for the first part
         float[] queryVector = { 9f };
         KnnSearchBuilder knnSearch = new KnnSearchBuilder("vector_asc", queryVector, 101, 1001, null).queryName("my_knn_search");
-        assertResponse(
+        assertResponse(response -> {
+            // we cast to Number when looking at values in vector fields because different xContentTypes may return Float or Double
+            assertEquals(3, response.getHits().getHits().length);
+
+            SearchHit hit = response.getHits().getAt(0);
+            assertEquals(1, hit.getRank());
+            assertTrue(hit.getExplanation().isMatch());
+            assertTrue(hit.getExplanation().getDescription().contains("initial ranks"));
+            assertEquals(2, hit.getExplanation().getDetails().length);
+            assertFalse(hit.getExplanation().getDetails()[0].isMatch());
+            assertEquals(0, hit.getExplanation().getDetails()[0].getValue().intValue());
+            assertEquals("rrf score: [0], result not found in query at index [0]", hit.getExplanation().getDetails()[0].getDescription());
+            assertEquals(0, hit.getExplanation().getDetails()[0].getDetails().length);
+            assertTrue(hit.getExplanation().getDetails()[1].isMatch());
+            assertTrue(hit.getExplanation().getDetails()[1].getDescription().contains("[my_knn_search]"));
+            assertTrue(hit.getExplanation().getDetails()[1].getDetails().length > 0);
+
+            hit = response.getHits().getAt(1);
+            assertEquals(2, hit.getRank());
+            assertTrue(hit.getExplanation().isMatch());
+            assertTrue(hit.getExplanation().getDescription().contains("initial ranks"));
+            assertEquals(2, hit.getExplanation().getDetails().length);
+            assertFalse(hit.getExplanation().getDetails()[0].isMatch());
+            assertEquals(0, hit.getExplanation().getDetails()[0].getValue().intValue());
+            assertEquals("rrf score: [0], result not found in query at index [0]", hit.getExplanation().getDetails()[0].getDescription());
+            assertEquals(0, hit.getExplanation().getDetails()[0].getDetails().length);
+            assertTrue(hit.getExplanation().getDetails()[1].isMatch());
+            assertTrue(hit.getExplanation().getDetails()[1].getDescription().contains("[my_knn_search]"));
+            assertTrue(hit.getExplanation().getDetails()[1].getDetails().length > 0);
+
+            hit = response.getHits().getAt(2);
+            assertEquals(3, hit.getRank());
+            assertTrue(hit.getExplanation().isMatch());
+            assertTrue(hit.getExplanation().getDescription().contains("initial ranks"));
+            assertEquals(2, hit.getExplanation().getDetails().length);
+            assertFalse(hit.getExplanation().getDetails()[0].isMatch());
+            assertEquals(0, hit.getExplanation().getDetails()[0].getValue().intValue());
+            assertEquals("rrf score: [0], result not found in query at index [0]", hit.getExplanation().getDetails()[0].getDescription());
+            assertEquals(0, hit.getExplanation().getDetails()[0].getDetails().length, 0);
+            assertTrue(hit.getExplanation().getDetails()[1].isMatch());
+            assertTrue(hit.getExplanation().getDetails()[1].getDescription().contains("[my_knn_search]"));
+            assertTrue(hit.getExplanation().getDetails()[1].getDetails().length > 0);
+        },
             prepareSearch("nrd_index").setRankBuilder(new RRFRankBuilder(100, 1))
                 .setKnnSearch(List.of(knnSearch))
                 .setQuery(QueryBuilders.termQuery("unknown_field", "10"))
                 .setExplain(true)
-                .setSize(3),
-            response -> {
-                // we cast to Number when looking at values in vector fields because different xContentTypes may return Float or Double
-                assertEquals(3, response.getHits().getHits().length);
-
-                SearchHit hit = response.getHits().getAt(0);
-                assertEquals(1, hit.getRank());
-                assertTrue(hit.getExplanation().isMatch());
-                assertTrue(hit.getExplanation().getDescription().contains("initial ranks"));
-                assertEquals(2, hit.getExplanation().getDetails().length);
-                assertFalse(hit.getExplanation().getDetails()[0].isMatch());
-                assertEquals(0, hit.getExplanation().getDetails()[0].getValue().intValue());
-                assertEquals(
-                    "rrf score: [0], result not found in query at index [0]",
-                    hit.getExplanation().getDetails()[0].getDescription()
-                );
-                assertEquals(0, hit.getExplanation().getDetails()[0].getDetails().length);
-                assertTrue(hit.getExplanation().getDetails()[1].isMatch());
-                assertTrue(hit.getExplanation().getDetails()[1].getDescription().contains("[my_knn_search]"));
-                assertTrue(hit.getExplanation().getDetails()[1].getDetails().length > 0);
-
-                hit = response.getHits().getAt(1);
-                assertEquals(2, hit.getRank());
-                assertTrue(hit.getExplanation().isMatch());
-                assertTrue(hit.getExplanation().getDescription().contains("initial ranks"));
-                assertEquals(2, hit.getExplanation().getDetails().length);
-                assertFalse(hit.getExplanation().getDetails()[0].isMatch());
-                assertEquals(0, hit.getExplanation().getDetails()[0].getValue().intValue());
-                assertEquals(
-                    "rrf score: [0], result not found in query at index [0]",
-                    hit.getExplanation().getDetails()[0].getDescription()
-                );
-                assertEquals(0, hit.getExplanation().getDetails()[0].getDetails().length);
-                assertTrue(hit.getExplanation().getDetails()[1].isMatch());
-                assertTrue(hit.getExplanation().getDetails()[1].getDescription().contains("[my_knn_search]"));
-                assertTrue(hit.getExplanation().getDetails()[1].getDetails().length > 0);
-
-                hit = response.getHits().getAt(2);
-                assertEquals(3, hit.getRank());
-                assertTrue(hit.getExplanation().isMatch());
-                assertTrue(hit.getExplanation().getDescription().contains("initial ranks"));
-                assertEquals(2, hit.getExplanation().getDetails().length);
-                assertFalse(hit.getExplanation().getDetails()[0].isMatch());
-                assertEquals(0, hit.getExplanation().getDetails()[0].getValue().intValue());
-                assertEquals(
-                    "rrf score: [0], result not found in query at index [0]",
-                    hit.getExplanation().getDetails()[0].getDescription()
-                );
-                assertEquals(0, hit.getExplanation().getDetails()[0].getDetails().length, 0);
-                assertTrue(hit.getExplanation().getDetails()[1].isMatch());
-                assertTrue(hit.getExplanation().getDetails()[1].getDescription().contains("[my_knn_search]"));
-                assertTrue(hit.getExplanation().getDetails()[1].getDetails().length > 0);
-            }
+                .setSize(3)
         );
     }
 
@@ -1113,7 +1083,68 @@ public class RRFRankMultiShardIT extends ESIntegTestCase {
         // So, we'd have a total of 3 queries, a (rewritten) MatchNoneQuery, a TermQuery, and a kNN query
         float[] queryVector = { 9f };
         KnnSearchBuilder knnSearch = new KnnSearchBuilder("vector_asc", queryVector, 101, 1001, null).queryName("my_knn_search");
-        assertResponse(
+        assertResponse(response -> {
+            // we cast to Number when looking at values in vector fields because different xContentTypes may return Float or Double
+            assertEquals(3, response.getHits().getHits().length);
+
+            // first result is the one which matches the term (10) and is 3rd closest to our query vector (9)
+            SearchHit hit = response.getHits().getAt(0);
+            assertEquals(1, hit.getRank());
+            assertTrue(hit.getExplanation().isMatch());
+            assertTrue(hit.getExplanation().getDescription().contains("initial ranks"));
+            assertEquals(3, hit.getExplanation().getDetails().length);
+            // MatchNone query
+            assertFalse(hit.getExplanation().getDetails()[0].isMatch());
+            assertEquals(0, hit.getExplanation().getDetails()[0].getValue().intValue());
+            assertEquals("rrf score: [0], result not found in query at index [0]", hit.getExplanation().getDetails()[0].getDescription());
+            assertEquals(0, hit.getExplanation().getDetails()[0].getDetails().length);
+            // Term query
+            assertTrue(hit.getExplanation().getDetails()[1].isMatch());
+            assertTrue(hit.getExplanation().getDetails()[1].getDescription().contains("query at index [1]"));
+            assertTrue(hit.getExplanation().getDetails()[1].getDetails().length > 0);
+            // knn query
+            assertTrue(hit.getExplanation().getDetails()[2].isMatch());
+            assertTrue(hit.getExplanation().getDetails()[2].getDescription().contains("[my_knn_search]"));
+            assertTrue(hit.getExplanation().getDetails()[2].getDetails().length > 0);
+
+            // rest of hits match only on the knn query so no match should be expected for the term query either
+            hit = response.getHits().getAt(1);
+            assertEquals(2, hit.getRank());
+            assertTrue(hit.getExplanation().isMatch());
+            assertTrue(hit.getExplanation().getDescription().contains("initial ranks"));
+            assertEquals(3, hit.getExplanation().getDetails().length);
+            // MatchNone query
+            assertFalse(hit.getExplanation().getDetails()[0].isMatch());
+            assertEquals(0, hit.getExplanation().getDetails()[0].getValue().intValue());
+            assertEquals("rrf score: [0], result not found in query at index [0]", hit.getExplanation().getDetails()[0].getDescription());
+            // term query - should not match
+            assertFalse(hit.getExplanation().getDetails()[1].isMatch());
+            assertEquals("rrf score: [0], result not found in query at index [1]", hit.getExplanation().getDetails()[1].getDescription());
+            assertEquals(0, hit.getExplanation().getDetails()[1].getDetails().length);
+            // knn query
+            assertTrue(hit.getExplanation().getDetails()[2].isMatch());
+            assertTrue(hit.getExplanation().getDetails()[2].getDescription().contains("[my_knn_search]"));
+            assertTrue(hit.getExplanation().getDetails()[2].getDetails().length > 0);
+
+            // rest of hits match only on the knn query so no match should be expected for the term query either
+            hit = response.getHits().getAt(2);
+            assertEquals(3, hit.getRank());
+            assertTrue(hit.getExplanation().isMatch());
+            assertTrue(hit.getExplanation().getDescription().contains("initial ranks"));
+            assertEquals(3, hit.getExplanation().getDetails().length);
+            // MatchNone query
+            assertFalse(hit.getExplanation().getDetails()[0].isMatch());
+            assertEquals(0, hit.getExplanation().getDetails()[0].getValue().intValue());
+            assertEquals("rrf score: [0], result not found in query at index [0]", hit.getExplanation().getDetails()[0].getDescription());
+            // term query - should not match
+            assertFalse(hit.getExplanation().getDetails()[1].isMatch());
+            assertEquals("rrf score: [0], result not found in query at index [1]", hit.getExplanation().getDetails()[1].getDescription());
+            assertEquals(0, hit.getExplanation().getDetails()[1].getDetails().length);
+            // knn query
+            assertTrue(hit.getExplanation().getDetails()[2].isMatch());
+            assertTrue(hit.getExplanation().getDetails()[2].getDescription().contains("[my_knn_search]"));
+            assertTrue(hit.getExplanation().getDetails()[2].getDetails().length > 0);
+        },
             prepareSearch("nrd_index").setRankBuilder(new RRFRankBuilder(100, 1))
                 .setKnnSearch(List.of(knnSearch))
                 .setSubSearches(
@@ -1123,84 +1154,7 @@ public class RRFRankMultiShardIT extends ESIntegTestCase {
                     )
                 )
                 .setExplain(true)
-                .setSize(3),
-            response -> {
-                // we cast to Number when looking at values in vector fields because different xContentTypes may return Float or Double
-                assertEquals(3, response.getHits().getHits().length);
-
-                // first result is the one which matches the term (10) and is 3rd closest to our query vector (9)
-                SearchHit hit = response.getHits().getAt(0);
-                assertEquals(1, hit.getRank());
-                assertTrue(hit.getExplanation().isMatch());
-                assertTrue(hit.getExplanation().getDescription().contains("initial ranks"));
-                assertEquals(3, hit.getExplanation().getDetails().length);
-                // MatchNone query
-                assertFalse(hit.getExplanation().getDetails()[0].isMatch());
-                assertEquals(0, hit.getExplanation().getDetails()[0].getValue().intValue());
-                assertEquals(
-                    "rrf score: [0], result not found in query at index [0]",
-                    hit.getExplanation().getDetails()[0].getDescription()
-                );
-                assertEquals(0, hit.getExplanation().getDetails()[0].getDetails().length);
-                // Term query
-                assertTrue(hit.getExplanation().getDetails()[1].isMatch());
-                assertTrue(hit.getExplanation().getDetails()[1].getDescription().contains("query at index [1]"));
-                assertTrue(hit.getExplanation().getDetails()[1].getDetails().length > 0);
-                // knn query
-                assertTrue(hit.getExplanation().getDetails()[2].isMatch());
-                assertTrue(hit.getExplanation().getDetails()[2].getDescription().contains("[my_knn_search]"));
-                assertTrue(hit.getExplanation().getDetails()[2].getDetails().length > 0);
-
-                // rest of hits match only on the knn query so no match should be expected for the term query either
-                hit = response.getHits().getAt(1);
-                assertEquals(2, hit.getRank());
-                assertTrue(hit.getExplanation().isMatch());
-                assertTrue(hit.getExplanation().getDescription().contains("initial ranks"));
-                assertEquals(3, hit.getExplanation().getDetails().length);
-                // MatchNone query
-                assertFalse(hit.getExplanation().getDetails()[0].isMatch());
-                assertEquals(0, hit.getExplanation().getDetails()[0].getValue().intValue());
-                assertEquals(
-                    "rrf score: [0], result not found in query at index [0]",
-                    hit.getExplanation().getDetails()[0].getDescription()
-                );
-                // term query - should not match
-                assertFalse(hit.getExplanation().getDetails()[1].isMatch());
-                assertEquals(
-                    "rrf score: [0], result not found in query at index [1]",
-                    hit.getExplanation().getDetails()[1].getDescription()
-                );
-                assertEquals(0, hit.getExplanation().getDetails()[1].getDetails().length);
-                // knn query
-                assertTrue(hit.getExplanation().getDetails()[2].isMatch());
-                assertTrue(hit.getExplanation().getDetails()[2].getDescription().contains("[my_knn_search]"));
-                assertTrue(hit.getExplanation().getDetails()[2].getDetails().length > 0);
-
-                // rest of hits match only on the knn query so no match should be expected for the term query either
-                hit = response.getHits().getAt(2);
-                assertEquals(3, hit.getRank());
-                assertTrue(hit.getExplanation().isMatch());
-                assertTrue(hit.getExplanation().getDescription().contains("initial ranks"));
-                assertEquals(3, hit.getExplanation().getDetails().length);
-                // MatchNone query
-                assertFalse(hit.getExplanation().getDetails()[0].isMatch());
-                assertEquals(0, hit.getExplanation().getDetails()[0].getValue().intValue());
-                assertEquals(
-                    "rrf score: [0], result not found in query at index [0]",
-                    hit.getExplanation().getDetails()[0].getDescription()
-                );
-                // term query - should not match
-                assertFalse(hit.getExplanation().getDetails()[1].isMatch());
-                assertEquals(
-                    "rrf score: [0], result not found in query at index [1]",
-                    hit.getExplanation().getDetails()[1].getDescription()
-                );
-                assertEquals(0, hit.getExplanation().getDetails()[1].getDetails().length);
-                // knn query
-                assertTrue(hit.getExplanation().getDetails()[2].isMatch());
-                assertTrue(hit.getExplanation().getDetails()[2].getDescription().contains("[my_knn_search]"));
-                assertTrue(hit.getExplanation().getDetails()[2].getDetails().length > 0);
-            }
+                .setSize(3)
         );
     }
 }

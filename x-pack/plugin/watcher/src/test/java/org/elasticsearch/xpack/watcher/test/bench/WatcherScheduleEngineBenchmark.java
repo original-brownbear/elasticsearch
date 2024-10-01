@@ -222,30 +222,29 @@ public class WatcherScheduleEngineBenchmark {
                     "doc['trigger_event.schedule.triggered_time'].value - doc['trigger_event.schedule.scheduled_time'].value",
                     emptyMap()
                 );
-                assertResponse(
+                assertResponse(searchResponse -> {
+                    Terms terms = searchResponse.getAggregations().get("state");
+                    stats.setStateStats(terms);
+                    Histogram histogram = searchResponse.getAggregations().get("delay");
+                    stats.setDelayStats(histogram);
+                    System.out.println("===> State");
+                    for (Terms.Bucket bucket : terms.getBuckets()) {
+                        System.out.println("\t" + bucket.getKey() + "=" + bucket.getDocCount());
+                    }
+                    System.out.println("===> Delay");
+                    for (Histogram.Bucket bucket : histogram.getBuckets()) {
+                        System.out.println("\t" + bucket.getKey() + "=" + bucket.getDocCount());
+                    }
+                    Percentiles percentiles = searchResponse.getAggregations().get("percentile_delay");
+                    stats.setDelayPercentiles(percentiles);
+                    stats.setAvgJvmUsed(jvmUsedHeapSpace);
+                    new WatcherServiceRequestBuilder(ESTestCase.TEST_REQUEST_TIMEOUT, client).stop().get();
+                },
                     client.prepareSearch(HistoryStoreField.DATA_STREAM + "*")
                         .setQuery(QueryBuilders.rangeQuery("trigger_event.schedule.scheduled_time").gte(startTime).lte(endTime))
                         .addAggregation(terms("state").field("state"))
                         .addAggregation(histogram("delay").script(script).interval(10))
-                        .addAggregation(percentiles("percentile_delay").script(script).percentiles(1.0, 20.0, 50.0, 80.0, 99.0)),
-                    searchResponse -> {
-                        Terms terms = searchResponse.getAggregations().get("state");
-                        stats.setStateStats(terms);
-                        Histogram histogram = searchResponse.getAggregations().get("delay");
-                        stats.setDelayStats(histogram);
-                        System.out.println("===> State");
-                        for (Terms.Bucket bucket : terms.getBuckets()) {
-                            System.out.println("\t" + bucket.getKey() + "=" + bucket.getDocCount());
-                        }
-                        System.out.println("===> Delay");
-                        for (Histogram.Bucket bucket : histogram.getBuckets()) {
-                            System.out.println("\t" + bucket.getKey() + "=" + bucket.getDocCount());
-                        }
-                        Percentiles percentiles = searchResponse.getAggregations().get("percentile_delay");
-                        stats.setDelayPercentiles(percentiles);
-                        stats.setAvgJvmUsed(jvmUsedHeapSpace);
-                        new WatcherServiceRequestBuilder(ESTestCase.TEST_REQUEST_TIMEOUT, client).stop().get();
-                    }
+                        .addAggregation(percentiles("percentile_delay").script(script).percentiles(1.0, 20.0, 50.0, 80.0, 99.0))
                 );
             }
         }

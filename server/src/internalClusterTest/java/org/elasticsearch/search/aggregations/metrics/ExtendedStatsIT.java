@@ -91,131 +91,121 @@ public class ExtendedStatsIT extends AbstractNumericTestCase {
 
     @Override
     public void testEmptyAggregation() throws Exception {
-        assertResponse(
+        assertResponse(response -> {
+            assertThat(response.getHits().getTotalHits().value, equalTo(2L));
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            Histogram.Bucket bucket = histo.getBuckets().get(1);
+            assertThat(bucket, notNullValue());
+
+            ExtendedStats stats = bucket.getAggregations().get("stats");
+            assertThat(stats, notNullValue());
+            assertThat(stats.getName(), equalTo("stats"));
+            assertThat(stats.getSumOfSquares(), equalTo(0.0));
+            assertThat(stats.getCount(), equalTo(0L));
+            assertThat(stats.getSum(), equalTo(0.0));
+            assertThat(stats.getMin(), equalTo(Double.POSITIVE_INFINITY));
+            assertThat(stats.getMax(), equalTo(Double.NEGATIVE_INFINITY));
+            assertThat(Double.isNaN(stats.getStdDeviation()), is(true));
+            assertThat(Double.isNaN(stats.getStdDeviationPopulation()), is(true));
+            assertThat(Double.isNaN(stats.getStdDeviationSampling()), is(true));
+            assertThat(Double.isNaN(stats.getAvg()), is(true));
+            assertThat(Double.isNaN(stats.getStdDeviationBound(Bounds.UPPER)), is(true));
+            assertThat(Double.isNaN(stats.getStdDeviationBound(Bounds.LOWER)), is(true));
+            assertThat(Double.isNaN(stats.getStdDeviationBound(Bounds.UPPER_POPULATION)), is(true));
+            assertThat(Double.isNaN(stats.getStdDeviationBound(Bounds.LOWER_POPULATION)), is(true));
+            assertThat(Double.isNaN(stats.getStdDeviationBound(Bounds.UPPER_SAMPLING)), is(true));
+            assertThat(Double.isNaN(stats.getStdDeviationBound(Bounds.LOWER_SAMPLING)), is(true));
+        },
             prepareSearch("empty_bucket_idx").setQuery(matchAllQuery())
                 .addAggregation(
                     histogram("histo").field("value").interval(1L).minDocCount(0).subAggregation(extendedStats("stats").field("value"))
-                ),
-            response -> {
-                assertThat(response.getHits().getTotalHits().value, equalTo(2L));
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                Histogram.Bucket bucket = histo.getBuckets().get(1);
-                assertThat(bucket, notNullValue());
-
-                ExtendedStats stats = bucket.getAggregations().get("stats");
-                assertThat(stats, notNullValue());
-                assertThat(stats.getName(), equalTo("stats"));
-                assertThat(stats.getSumOfSquares(), equalTo(0.0));
-                assertThat(stats.getCount(), equalTo(0L));
-                assertThat(stats.getSum(), equalTo(0.0));
-                assertThat(stats.getMin(), equalTo(Double.POSITIVE_INFINITY));
-                assertThat(stats.getMax(), equalTo(Double.NEGATIVE_INFINITY));
-                assertThat(Double.isNaN(stats.getStdDeviation()), is(true));
-                assertThat(Double.isNaN(stats.getStdDeviationPopulation()), is(true));
-                assertThat(Double.isNaN(stats.getStdDeviationSampling()), is(true));
-                assertThat(Double.isNaN(stats.getAvg()), is(true));
-                assertThat(Double.isNaN(stats.getStdDeviationBound(Bounds.UPPER)), is(true));
-                assertThat(Double.isNaN(stats.getStdDeviationBound(Bounds.LOWER)), is(true));
-                assertThat(Double.isNaN(stats.getStdDeviationBound(Bounds.UPPER_POPULATION)), is(true));
-                assertThat(Double.isNaN(stats.getStdDeviationBound(Bounds.LOWER_POPULATION)), is(true));
-                assertThat(Double.isNaN(stats.getStdDeviationBound(Bounds.UPPER_SAMPLING)), is(true));
-                assertThat(Double.isNaN(stats.getStdDeviationBound(Bounds.LOWER_SAMPLING)), is(true));
-            }
+                )
         );
     }
 
     @Override
     public void testUnmapped() throws Exception {
-        assertResponse(
-            prepareSearch("idx_unmapped").setQuery(matchAllQuery()).addAggregation(extendedStats("stats").field("value")),
-            response -> {
-                assertThat(response.getHits().getTotalHits().value, equalTo(0L));
+        assertResponse(response -> {
+            assertThat(response.getHits().getTotalHits().value, equalTo(0L));
 
-                ExtendedStats stats = response.getAggregations().get("stats");
-                assertThat(stats, notNullValue());
-                assertThat(stats.getName(), equalTo("stats"));
-                assertThat(stats.getAvg(), equalTo(Double.NaN));
-                assertThat(stats.getMin(), equalTo(Double.POSITIVE_INFINITY));
-                assertThat(stats.getMax(), equalTo(Double.NEGATIVE_INFINITY));
-                assertThat(stats.getSum(), equalTo(0.0));
-                assertThat(stats.getCount(), equalTo(0L));
-                assertThat(stats.getSumOfSquares(), equalTo(0.0));
-                assertThat(stats.getVariance(), equalTo(Double.NaN));
-                assertThat(stats.getVariancePopulation(), equalTo(Double.NaN));
-                assertThat(stats.getVarianceSampling(), equalTo(Double.NaN));
-                assertThat(stats.getStdDeviation(), equalTo(Double.NaN));
-                assertThat(stats.getStdDeviationPopulation(), equalTo(Double.NaN));
-                assertThat(stats.getStdDeviationSampling(), equalTo(Double.NaN));
-                assertThat(Double.isNaN(stats.getStdDeviationBound(Bounds.UPPER)), is(true));
-                assertThat(Double.isNaN(stats.getStdDeviationBound(Bounds.LOWER)), is(true));
-                assertThat(Double.isNaN(stats.getStdDeviationBound(Bounds.UPPER_POPULATION)), is(true));
-                assertThat(Double.isNaN(stats.getStdDeviationBound(Bounds.LOWER_POPULATION)), is(true));
-                assertThat(Double.isNaN(stats.getStdDeviationBound(Bounds.UPPER_SAMPLING)), is(true));
-                assertThat(Double.isNaN(stats.getStdDeviationBound(Bounds.LOWER_SAMPLING)), is(true));
-            }
-        );
+            ExtendedStats stats = response.getAggregations().get("stats");
+            assertThat(stats, notNullValue());
+            assertThat(stats.getName(), equalTo("stats"));
+            assertThat(stats.getAvg(), equalTo(Double.NaN));
+            assertThat(stats.getMin(), equalTo(Double.POSITIVE_INFINITY));
+            assertThat(stats.getMax(), equalTo(Double.NEGATIVE_INFINITY));
+            assertThat(stats.getSum(), equalTo(0.0));
+            assertThat(stats.getCount(), equalTo(0L));
+            assertThat(stats.getSumOfSquares(), equalTo(0.0));
+            assertThat(stats.getVariance(), equalTo(Double.NaN));
+            assertThat(stats.getVariancePopulation(), equalTo(Double.NaN));
+            assertThat(stats.getVarianceSampling(), equalTo(Double.NaN));
+            assertThat(stats.getStdDeviation(), equalTo(Double.NaN));
+            assertThat(stats.getStdDeviationPopulation(), equalTo(Double.NaN));
+            assertThat(stats.getStdDeviationSampling(), equalTo(Double.NaN));
+            assertThat(Double.isNaN(stats.getStdDeviationBound(Bounds.UPPER)), is(true));
+            assertThat(Double.isNaN(stats.getStdDeviationBound(Bounds.LOWER)), is(true));
+            assertThat(Double.isNaN(stats.getStdDeviationBound(Bounds.UPPER_POPULATION)), is(true));
+            assertThat(Double.isNaN(stats.getStdDeviationBound(Bounds.LOWER_POPULATION)), is(true));
+            assertThat(Double.isNaN(stats.getStdDeviationBound(Bounds.UPPER_SAMPLING)), is(true));
+            assertThat(Double.isNaN(stats.getStdDeviationBound(Bounds.LOWER_SAMPLING)), is(true));
+        }, prepareSearch("idx_unmapped").setQuery(matchAllQuery()).addAggregation(extendedStats("stats").field("value")));
     }
 
     public void testPartiallyUnmapped() {
         double sigma = randomDouble() * 5;
-        assertResponse(prepareSearch("idx").addAggregation(extendedStats("stats").field("value").sigma(sigma)), response1 -> {
+        assertResponse(response1 -> {
             ExtendedStats s1 = response1.getAggregations().get("stats");
-            assertResponse(
-                prepareSearch("idx", "idx_unmapped").addAggregation(extendedStats("stats").field("value").sigma(sigma)),
-                response2 -> {
-                    ExtendedStats s2 = response2.getAggregations().get("stats");
-                    assertEquals(s1.getAvg(), s2.getAvg(), 1e-10);
-                    assertEquals(s1.getCount(), s2.getCount());
-                    assertEquals(s1.getMin(), s2.getMin(), 0d);
-                    assertEquals(s1.getMax(), s2.getMax(), 0d);
-                    assertEquals(s1.getStdDeviation(), s2.getStdDeviation(), 1e-10);
-                    assertEquals(s1.getStdDeviationPopulation(), s2.getStdDeviationPopulation(), 1e-10);
-                    assertEquals(s1.getStdDeviationSampling(), s2.getStdDeviationSampling(), 1e-10);
-                    assertEquals(s1.getSumOfSquares(), s2.getSumOfSquares(), 1e-10);
-                    assertEquals(s1.getStdDeviationBound(Bounds.LOWER), s2.getStdDeviationBound(Bounds.LOWER), 1e-10);
-                    assertEquals(s1.getStdDeviationBound(Bounds.UPPER), s2.getStdDeviationBound(Bounds.UPPER), 1e-10);
-                    assertEquals(s1.getStdDeviationBound(Bounds.LOWER_POPULATION), s2.getStdDeviationBound(Bounds.LOWER_POPULATION), 1e-10);
-                    assertEquals(s1.getStdDeviationBound(Bounds.UPPER_POPULATION), s2.getStdDeviationBound(Bounds.UPPER_POPULATION), 1e-10);
-                    assertEquals(s1.getStdDeviationBound(Bounds.LOWER_SAMPLING), s2.getStdDeviationBound(Bounds.LOWER_SAMPLING), 1e-10);
-                    assertEquals(s1.getStdDeviationBound(Bounds.UPPER_SAMPLING), s2.getStdDeviationBound(Bounds.UPPER_SAMPLING), 1e-10);
-                }
-            );
-        });
+            assertResponse(response2 -> {
+                ExtendedStats s2 = response2.getAggregations().get("stats");
+                assertEquals(s1.getAvg(), s2.getAvg(), 1e-10);
+                assertEquals(s1.getCount(), s2.getCount());
+                assertEquals(s1.getMin(), s2.getMin(), 0d);
+                assertEquals(s1.getMax(), s2.getMax(), 0d);
+                assertEquals(s1.getStdDeviation(), s2.getStdDeviation(), 1e-10);
+                assertEquals(s1.getStdDeviationPopulation(), s2.getStdDeviationPopulation(), 1e-10);
+                assertEquals(s1.getStdDeviationSampling(), s2.getStdDeviationSampling(), 1e-10);
+                assertEquals(s1.getSumOfSquares(), s2.getSumOfSquares(), 1e-10);
+                assertEquals(s1.getStdDeviationBound(Bounds.LOWER), s2.getStdDeviationBound(Bounds.LOWER), 1e-10);
+                assertEquals(s1.getStdDeviationBound(Bounds.UPPER), s2.getStdDeviationBound(Bounds.UPPER), 1e-10);
+                assertEquals(s1.getStdDeviationBound(Bounds.LOWER_POPULATION), s2.getStdDeviationBound(Bounds.LOWER_POPULATION), 1e-10);
+                assertEquals(s1.getStdDeviationBound(Bounds.UPPER_POPULATION), s2.getStdDeviationBound(Bounds.UPPER_POPULATION), 1e-10);
+                assertEquals(s1.getStdDeviationBound(Bounds.LOWER_SAMPLING), s2.getStdDeviationBound(Bounds.LOWER_SAMPLING), 1e-10);
+                assertEquals(s1.getStdDeviationBound(Bounds.UPPER_SAMPLING), s2.getStdDeviationBound(Bounds.UPPER_SAMPLING), 1e-10);
+            }, prepareSearch("idx", "idx_unmapped").addAggregation(extendedStats("stats").field("value").sigma(sigma)));
+        }, prepareSearch("idx").addAggregation(extendedStats("stats").field("value").sigma(sigma)));
     }
 
     @Override
     public void testSingleValuedField() throws Exception {
         double sigma = randomDouble() * randomIntBetween(1, 10);
-        assertResponse(
-            prepareSearch("idx").setQuery(matchAllQuery()).addAggregation(extendedStats("stats").field("value").sigma(sigma)),
-            response -> {
-                assertHitCount(response, 10);
+        assertResponse(response -> {
+            assertHitCount(response, 10);
 
-                ExtendedStats stats = response.getAggregations().get("stats");
-                assertThat(stats, notNullValue());
-                assertThat(stats.getName(), equalTo("stats"));
-                assertThat(stats.getAvg(), equalTo((double) (1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10) / 10));
-                assertThat(stats.getMin(), equalTo(1.0));
-                assertThat(stats.getMax(), equalTo(10.0));
-                assertThat(stats.getSum(), equalTo((double) 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10));
-                assertThat(stats.getCount(), equalTo(10L));
-                assertThat(stats.getSumOfSquares(), equalTo((double) 1 + 4 + 9 + 16 + 25 + 36 + 49 + 64 + 81 + 100));
-                assertThat(stats.getVariance(), equalTo(variance(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
-                assertThat(stats.getVariancePopulation(), equalTo(variancePopulation(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
-                assertThat(stats.getVarianceSampling(), equalTo(varianceSampling(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
-                assertThat(stats.getStdDeviation(), equalTo(stdDev(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
-                assertThat(stats.getStdDeviationPopulation(), equalTo(stdDevPopulation(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
-                assertThat(stats.getStdDeviationSampling(), equalTo(stdDevSampling(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
-                checkUpperLowerBounds(stats, sigma);
-            }
-        );
+            ExtendedStats stats = response.getAggregations().get("stats");
+            assertThat(stats, notNullValue());
+            assertThat(stats.getName(), equalTo("stats"));
+            assertThat(stats.getAvg(), equalTo((double) (1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10) / 10));
+            assertThat(stats.getMin(), equalTo(1.0));
+            assertThat(stats.getMax(), equalTo(10.0));
+            assertThat(stats.getSum(), equalTo((double) 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10));
+            assertThat(stats.getCount(), equalTo(10L));
+            assertThat(stats.getSumOfSquares(), equalTo((double) 1 + 4 + 9 + 16 + 25 + 36 + 49 + 64 + 81 + 100));
+            assertThat(stats.getVariance(), equalTo(variance(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
+            assertThat(stats.getVariancePopulation(), equalTo(variancePopulation(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
+            assertThat(stats.getVarianceSampling(), equalTo(varianceSampling(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
+            assertThat(stats.getStdDeviation(), equalTo(stdDev(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
+            assertThat(stats.getStdDeviationPopulation(), equalTo(stdDevPopulation(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
+            assertThat(stats.getStdDeviationSampling(), equalTo(stdDevSampling(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
+            checkUpperLowerBounds(stats, sigma);
+        }, prepareSearch("idx").setQuery(matchAllQuery()).addAggregation(extendedStats("stats").field("value").sigma(sigma)));
     }
 
     public void testSingleValuedFieldDefaultSigma() throws Exception {
         // Same as previous test, but uses a default value for sigma
 
-        assertResponse(prepareSearch("idx").setQuery(matchAllQuery()).addAggregation(extendedStats("stats").field("value")), response -> {
+        assertResponse(response -> {
 
             assertHitCount(response, 10);
 
@@ -235,180 +225,176 @@ public class ExtendedStatsIT extends AbstractNumericTestCase {
             assertThat(stats.getStdDeviationPopulation(), equalTo(stdDevPopulation(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
             assertThat(stats.getStdDeviationSampling(), equalTo(stdDevSampling(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
             checkUpperLowerBounds(stats, 2);
-        });
+        }, prepareSearch("idx").setQuery(matchAllQuery()).addAggregation(extendedStats("stats").field("value")));
     }
 
     public void testSingleValuedField_WithFormatter() throws Exception {
         double sigma = randomDouble() * randomIntBetween(1, 10);
-        assertResponse(
-            prepareSearch("idx").setQuery(matchAllQuery())
-                .addAggregation(extendedStats("stats").format("0000.0").field("value").sigma(sigma)),
-            response -> {
-                assertHitCount(response, 10);
+        assertResponse(response -> {
+            assertHitCount(response, 10);
 
-                ExtendedStats stats = response.getAggregations().get("stats");
-                assertThat(stats, notNullValue());
-                assertThat(stats.getName(), equalTo("stats"));
-                assertThat(stats.getAvg(), equalTo((double) (1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10) / 10));
-                assertThat(stats.getAvgAsString(), equalTo("0005.5"));
-                assertThat(stats.getMin(), equalTo(1.0));
-                assertThat(stats.getMinAsString(), equalTo("0001.0"));
-                assertThat(stats.getMax(), equalTo(10.0));
-                assertThat(stats.getMaxAsString(), equalTo("0010.0"));
-                assertThat(stats.getSum(), equalTo((double) 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10));
-                assertThat(stats.getSumAsString(), equalTo("0055.0"));
-                assertThat(stats.getCount(), equalTo(10L));
-                assertThat(stats.getSumOfSquares(), equalTo((double) 1 + 4 + 9 + 16 + 25 + 36 + 49 + 64 + 81 + 100));
-                assertThat(stats.getSumOfSquaresAsString(), equalTo("0385.0"));
-                assertThat(stats.getVariance(), equalTo(variance(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
-                assertThat(stats.getVariancePopulation(), equalTo(variancePopulation(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
-                assertThat(stats.getVarianceSampling(), equalTo(varianceSampling(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
-                assertThat(stats.getVarianceAsString(), equalTo("0008.2"));
-                assertThat(stats.getVariancePopulationAsString(), equalTo("0008.2"));
-                assertThat(stats.getVarianceSamplingAsString(), equalTo("0009.2"));
-                assertThat(stats.getStdDeviation(), equalTo(stdDev(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
-                assertThat(stats.getStdDeviationPopulation(), equalTo(stdDevPopulation(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
-                assertThat(stats.getStdDeviationSampling(), equalTo(stdDevSampling(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
-                assertThat(stats.getStdDeviationAsString(), equalTo("0002.9"));
-                assertThat(stats.getStdDeviationPopulationAsString(), equalTo("0002.9"));
-                assertThat(stats.getStdDeviationSamplingAsString(), equalTo("0003.0"));
-                checkUpperLowerBounds(stats, sigma);
-            }
+            ExtendedStats stats = response.getAggregations().get("stats");
+            assertThat(stats, notNullValue());
+            assertThat(stats.getName(), equalTo("stats"));
+            assertThat(stats.getAvg(), equalTo((double) (1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10) / 10));
+            assertThat(stats.getAvgAsString(), equalTo("0005.5"));
+            assertThat(stats.getMin(), equalTo(1.0));
+            assertThat(stats.getMinAsString(), equalTo("0001.0"));
+            assertThat(stats.getMax(), equalTo(10.0));
+            assertThat(stats.getMaxAsString(), equalTo("0010.0"));
+            assertThat(stats.getSum(), equalTo((double) 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10));
+            assertThat(stats.getSumAsString(), equalTo("0055.0"));
+            assertThat(stats.getCount(), equalTo(10L));
+            assertThat(stats.getSumOfSquares(), equalTo((double) 1 + 4 + 9 + 16 + 25 + 36 + 49 + 64 + 81 + 100));
+            assertThat(stats.getSumOfSquaresAsString(), equalTo("0385.0"));
+            assertThat(stats.getVariance(), equalTo(variance(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
+            assertThat(stats.getVariancePopulation(), equalTo(variancePopulation(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
+            assertThat(stats.getVarianceSampling(), equalTo(varianceSampling(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
+            assertThat(stats.getVarianceAsString(), equalTo("0008.2"));
+            assertThat(stats.getVariancePopulationAsString(), equalTo("0008.2"));
+            assertThat(stats.getVarianceSamplingAsString(), equalTo("0009.2"));
+            assertThat(stats.getStdDeviation(), equalTo(stdDev(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
+            assertThat(stats.getStdDeviationPopulation(), equalTo(stdDevPopulation(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
+            assertThat(stats.getStdDeviationSampling(), equalTo(stdDevSampling(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
+            assertThat(stats.getStdDeviationAsString(), equalTo("0002.9"));
+            assertThat(stats.getStdDeviationPopulationAsString(), equalTo("0002.9"));
+            assertThat(stats.getStdDeviationSamplingAsString(), equalTo("0003.0"));
+            checkUpperLowerBounds(stats, sigma);
+        },
+            prepareSearch("idx").setQuery(matchAllQuery())
+                .addAggregation(extendedStats("stats").format("0000.0").field("value").sigma(sigma))
         );
     }
 
     @Override
     public void testSingleValuedFieldGetProperty() throws Exception {
-        assertResponse(
+        assertResponse(response -> {
+            assertHitCount(response, 10);
+
+            Global global = response.getAggregations().get("global");
+            assertThat(global, notNullValue());
+            assertThat(global.getName(), equalTo("global"));
+            assertThat(global.getDocCount(), equalTo(10L));
+            assertThat(global.getAggregations(), notNullValue());
+            assertThat(global.getAggregations().asList().size(), equalTo(1));
+
+            ExtendedStats stats = global.getAggregations().get("stats");
+            assertThat(stats, notNullValue());
+            assertThat(stats.getName(), equalTo("stats"));
+            ExtendedStats statsFromProperty = (ExtendedStats) ((InternalAggregation) global).getProperty("stats");
+            assertThat(statsFromProperty, notNullValue());
+            assertThat(statsFromProperty, sameInstance(stats));
+            double expectedAvgValue = (double) (1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10) / 10;
+            assertThat(stats.getAvg(), equalTo(expectedAvgValue));
+            assertThat((double) ((InternalAggregation) global).getProperty("stats.avg"), equalTo(expectedAvgValue));
+            double expectedMinValue = 1.0;
+            assertThat(stats.getMin(), equalTo(expectedMinValue));
+            assertThat((double) ((InternalAggregation) global).getProperty("stats.min"), equalTo(expectedMinValue));
+            double expectedMaxValue = 10.0;
+            assertThat(stats.getMax(), equalTo(expectedMaxValue));
+            assertThat((double) ((InternalAggregation) global).getProperty("stats.max"), equalTo(expectedMaxValue));
+            double expectedSumValue = 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10;
+            assertThat(stats.getSum(), equalTo(expectedSumValue));
+            assertThat((double) ((InternalAggregation) global).getProperty("stats.sum"), equalTo(expectedSumValue));
+            long expectedCountValue = 10;
+            assertThat(stats.getCount(), equalTo(expectedCountValue));
+            assertThat((double) ((InternalAggregation) global).getProperty("stats.count"), equalTo((double) expectedCountValue));
+            double expectedSumOfSquaresValue = (double) 1 + 4 + 9 + 16 + 25 + 36 + 49 + 64 + 81 + 100;
+            assertThat(stats.getSumOfSquares(), equalTo(expectedSumOfSquaresValue));
+            assertThat((double) ((InternalAggregation) global).getProperty("stats.sum_of_squares"), equalTo(expectedSumOfSquaresValue));
+            double expectedVarianceValue = variance(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+            assertThat(stats.getVariance(), equalTo(expectedVarianceValue));
+            assertThat((double) ((InternalAggregation) global).getProperty("stats.variance"), equalTo(expectedVarianceValue));
+            double expectedVariancePopulationValue = variancePopulation(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+            assertThat(stats.getVariancePopulation(), equalTo(expectedVariancePopulationValue));
+            assertThat(
+                (double) ((InternalAggregation) global).getProperty("stats.variance_population"),
+                equalTo(expectedVariancePopulationValue)
+            );
+            double expectedVarianceSamplingValue = varianceSampling(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+            assertThat(stats.getVarianceSampling(), equalTo(expectedVarianceSamplingValue));
+            assertThat(
+                (double) ((InternalAggregation) global).getProperty("stats.variance_sampling"),
+                equalTo(expectedVarianceSamplingValue)
+            );
+            double expectedStdDevValue = stdDev(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+            assertThat(stats.getStdDeviation(), equalTo(expectedStdDevValue));
+            assertThat((double) ((InternalAggregation) global).getProperty("stats.std_deviation"), equalTo(expectedStdDevValue));
+            double expectedStdDevPopulationValue = stdDevPopulation(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+            assertThat(stats.getStdDeviationPopulation(), equalTo(expectedStdDevValue));
+            assertThat(
+                (double) ((InternalAggregation) global).getProperty("stats.std_deviation_population"),
+                equalTo(expectedStdDevPopulationValue)
+            );
+            double expectedStdDevSamplingValue = stdDevSampling(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+            assertThat(stats.getStdDeviationSampling(), equalTo(expectedStdDevSamplingValue));
+            assertThat(
+                (double) ((InternalAggregation) global).getProperty("stats.std_deviation_sampling"),
+                equalTo(expectedStdDevSamplingValue)
+            );
+        },
             prepareSearch("idx").setQuery(matchAllQuery())
-                .addAggregation(global("global").subAggregation(extendedStats("stats").field("value"))),
-            response -> {
-                assertHitCount(response, 10);
-
-                Global global = response.getAggregations().get("global");
-                assertThat(global, notNullValue());
-                assertThat(global.getName(), equalTo("global"));
-                assertThat(global.getDocCount(), equalTo(10L));
-                assertThat(global.getAggregations(), notNullValue());
-                assertThat(global.getAggregations().asList().size(), equalTo(1));
-
-                ExtendedStats stats = global.getAggregations().get("stats");
-                assertThat(stats, notNullValue());
-                assertThat(stats.getName(), equalTo("stats"));
-                ExtendedStats statsFromProperty = (ExtendedStats) ((InternalAggregation) global).getProperty("stats");
-                assertThat(statsFromProperty, notNullValue());
-                assertThat(statsFromProperty, sameInstance(stats));
-                double expectedAvgValue = (double) (1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10) / 10;
-                assertThat(stats.getAvg(), equalTo(expectedAvgValue));
-                assertThat((double) ((InternalAggregation) global).getProperty("stats.avg"), equalTo(expectedAvgValue));
-                double expectedMinValue = 1.0;
-                assertThat(stats.getMin(), equalTo(expectedMinValue));
-                assertThat((double) ((InternalAggregation) global).getProperty("stats.min"), equalTo(expectedMinValue));
-                double expectedMaxValue = 10.0;
-                assertThat(stats.getMax(), equalTo(expectedMaxValue));
-                assertThat((double) ((InternalAggregation) global).getProperty("stats.max"), equalTo(expectedMaxValue));
-                double expectedSumValue = 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10;
-                assertThat(stats.getSum(), equalTo(expectedSumValue));
-                assertThat((double) ((InternalAggregation) global).getProperty("stats.sum"), equalTo(expectedSumValue));
-                long expectedCountValue = 10;
-                assertThat(stats.getCount(), equalTo(expectedCountValue));
-                assertThat((double) ((InternalAggregation) global).getProperty("stats.count"), equalTo((double) expectedCountValue));
-                double expectedSumOfSquaresValue = (double) 1 + 4 + 9 + 16 + 25 + 36 + 49 + 64 + 81 + 100;
-                assertThat(stats.getSumOfSquares(), equalTo(expectedSumOfSquaresValue));
-                assertThat((double) ((InternalAggregation) global).getProperty("stats.sum_of_squares"), equalTo(expectedSumOfSquaresValue));
-                double expectedVarianceValue = variance(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
-                assertThat(stats.getVariance(), equalTo(expectedVarianceValue));
-                assertThat((double) ((InternalAggregation) global).getProperty("stats.variance"), equalTo(expectedVarianceValue));
-                double expectedVariancePopulationValue = variancePopulation(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
-                assertThat(stats.getVariancePopulation(), equalTo(expectedVariancePopulationValue));
-                assertThat(
-                    (double) ((InternalAggregation) global).getProperty("stats.variance_population"),
-                    equalTo(expectedVariancePopulationValue)
-                );
-                double expectedVarianceSamplingValue = varianceSampling(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
-                assertThat(stats.getVarianceSampling(), equalTo(expectedVarianceSamplingValue));
-                assertThat(
-                    (double) ((InternalAggregation) global).getProperty("stats.variance_sampling"),
-                    equalTo(expectedVarianceSamplingValue)
-                );
-                double expectedStdDevValue = stdDev(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
-                assertThat(stats.getStdDeviation(), equalTo(expectedStdDevValue));
-                assertThat((double) ((InternalAggregation) global).getProperty("stats.std_deviation"), equalTo(expectedStdDevValue));
-                double expectedStdDevPopulationValue = stdDevPopulation(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
-                assertThat(stats.getStdDeviationPopulation(), equalTo(expectedStdDevValue));
-                assertThat(
-                    (double) ((InternalAggregation) global).getProperty("stats.std_deviation_population"),
-                    equalTo(expectedStdDevPopulationValue)
-                );
-                double expectedStdDevSamplingValue = stdDevSampling(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
-                assertThat(stats.getStdDeviationSampling(), equalTo(expectedStdDevSamplingValue));
-                assertThat(
-                    (double) ((InternalAggregation) global).getProperty("stats.std_deviation_sampling"),
-                    equalTo(expectedStdDevSamplingValue)
-                );
-            }
+                .addAggregation(global("global").subAggregation(extendedStats("stats").field("value")))
         );
     }
 
     @Override
     public void testSingleValuedFieldPartiallyUnmapped() throws Exception {
         double sigma = randomDouble() * randomIntBetween(1, 10);
-        assertResponse(
-            prepareSearch("idx", "idx_unmapped").setQuery(matchAllQuery())
-                .addAggregation(extendedStats("stats").field("value").sigma(sigma)),
-            response -> {
-                assertHitCount(response, 10);
+        assertResponse(response -> {
+            assertHitCount(response, 10);
 
-                ExtendedStats stats = response.getAggregations().get("stats");
-                assertThat(stats, notNullValue());
-                assertThat(stats.getName(), equalTo("stats"));
-                assertThat(stats.getAvg(), equalTo((double) (1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10) / 10));
-                assertThat(stats.getMin(), equalTo(1.0));
-                assertThat(stats.getMax(), equalTo(10.0));
-                assertThat(stats.getSum(), equalTo((double) 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10));
-                assertThat(stats.getCount(), equalTo(10L));
-                assertThat(stats.getSumOfSquares(), equalTo((double) 1 + 4 + 9 + 16 + 25 + 36 + 49 + 64 + 81 + 100));
-                assertThat(stats.getVariance(), equalTo(variance(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
-                assertThat(stats.getVariancePopulation(), equalTo(variancePopulation(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
-                assertThat(stats.getVarianceSampling(), equalTo(varianceSampling(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
-                assertThat(stats.getStdDeviation(), equalTo(stdDev(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
-                assertThat(stats.getStdDeviationPopulation(), equalTo(stdDevPopulation(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
-                assertThat(stats.getStdDeviationSampling(), equalTo(stdDevSampling(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
-                checkUpperLowerBounds(stats, sigma);
-            }
+            ExtendedStats stats = response.getAggregations().get("stats");
+            assertThat(stats, notNullValue());
+            assertThat(stats.getName(), equalTo("stats"));
+            assertThat(stats.getAvg(), equalTo((double) (1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10) / 10));
+            assertThat(stats.getMin(), equalTo(1.0));
+            assertThat(stats.getMax(), equalTo(10.0));
+            assertThat(stats.getSum(), equalTo((double) 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10));
+            assertThat(stats.getCount(), equalTo(10L));
+            assertThat(stats.getSumOfSquares(), equalTo((double) 1 + 4 + 9 + 16 + 25 + 36 + 49 + 64 + 81 + 100));
+            assertThat(stats.getVariance(), equalTo(variance(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
+            assertThat(stats.getVariancePopulation(), equalTo(variancePopulation(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
+            assertThat(stats.getVarianceSampling(), equalTo(varianceSampling(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
+            assertThat(stats.getStdDeviation(), equalTo(stdDev(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
+            assertThat(stats.getStdDeviationPopulation(), equalTo(stdDevPopulation(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
+            assertThat(stats.getStdDeviationSampling(), equalTo(stdDevSampling(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
+            checkUpperLowerBounds(stats, sigma);
+        },
+            prepareSearch("idx", "idx_unmapped").setQuery(matchAllQuery())
+                .addAggregation(extendedStats("stats").field("value").sigma(sigma))
         );
     }
 
     @Override
     public void testSingleValuedFieldWithValueScript() throws Exception {
         double sigma = randomDouble() * randomIntBetween(1, 10);
-        assertResponse(
+        assertResponse(response -> {
+            assertHitCount(response, 10);
+
+            ExtendedStats stats = response.getAggregations().get("stats");
+            assertThat(stats, notNullValue());
+            assertThat(stats.getName(), equalTo("stats"));
+            assertThat(stats.getAvg(), equalTo((double) (2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11) / 10));
+            assertThat(stats.getMin(), equalTo(2.0));
+            assertThat(stats.getMax(), equalTo(11.0));
+            assertThat(stats.getSum(), equalTo((double) 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11));
+            assertThat(stats.getCount(), equalTo(10L));
+            assertThat(stats.getSumOfSquares(), equalTo((double) 4 + 9 + 16 + 25 + 36 + 49 + 64 + 81 + 100 + 121));
+            assertThat(stats.getVariance(), equalTo(variance(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
+            assertThat(stats.getVariancePopulation(), equalTo(variancePopulation(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
+            assertThat(stats.getVarianceSampling(), equalTo(varianceSampling(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
+            assertThat(stats.getStdDeviation(), equalTo(stdDev(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
+            assertThat(stats.getStdDeviationPopulation(), equalTo(stdDevPopulation(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
+            assertThat(stats.getStdDeviationSampling(), equalTo(stdDevSampling(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
+            checkUpperLowerBounds(stats, sigma);
+        },
             prepareSearch("idx").setQuery(matchAllQuery())
                 .addAggregation(
                     extendedStats("stats").field("value")
                         .script(new Script(ScriptType.INLINE, AggregationTestScriptsPlugin.NAME, "_value + 1", Collections.emptyMap()))
                         .sigma(sigma)
-                ),
-            response -> {
-                assertHitCount(response, 10);
-
-                ExtendedStats stats = response.getAggregations().get("stats");
-                assertThat(stats, notNullValue());
-                assertThat(stats.getName(), equalTo("stats"));
-                assertThat(stats.getAvg(), equalTo((double) (2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11) / 10));
-                assertThat(stats.getMin(), equalTo(2.0));
-                assertThat(stats.getMax(), equalTo(11.0));
-                assertThat(stats.getSum(), equalTo((double) 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11));
-                assertThat(stats.getCount(), equalTo(10L));
-                assertThat(stats.getSumOfSquares(), equalTo((double) 4 + 9 + 16 + 25 + 36 + 49 + 64 + 81 + 100 + 121));
-                assertThat(stats.getVariance(), equalTo(variance(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
-                assertThat(stats.getVariancePopulation(), equalTo(variancePopulation(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
-                assertThat(stats.getVarianceSampling(), equalTo(varianceSampling(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
-                assertThat(stats.getStdDeviation(), equalTo(stdDev(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
-                assertThat(stats.getStdDeviationPopulation(), equalTo(stdDevPopulation(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
-                assertThat(stats.getStdDeviationSampling(), equalTo(stdDevSampling(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
-                checkUpperLowerBounds(stats, sigma);
-            }
+                )
         );
     }
 
@@ -417,138 +403,130 @@ public class ExtendedStatsIT extends AbstractNumericTestCase {
         Map<String, Object> params = new HashMap<>();
         params.put("inc", 1);
         double sigma = randomDouble() * randomIntBetween(1, 10);
-        assertResponse(
+        assertResponse(response -> {
+            assertHitCount(response, 10);
+
+            ExtendedStats stats = response.getAggregations().get("stats");
+            assertThat(stats, notNullValue());
+            assertThat(stats.getName(), equalTo("stats"));
+            assertThat(stats.getAvg(), equalTo((double) (2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11) / 10));
+            assertThat(stats.getMin(), equalTo(2.0));
+            assertThat(stats.getMax(), equalTo(11.0));
+            assertThat(stats.getSum(), equalTo((double) 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11));
+            assertThat(stats.getCount(), equalTo(10L));
+            assertThat(stats.getSumOfSquares(), equalTo((double) 4 + 9 + 16 + 25 + 36 + 49 + 64 + 81 + 100 + 121));
+            assertThat(stats.getVariance(), equalTo(variance(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
+            assertThat(stats.getVariancePopulation(), equalTo(variancePopulation(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
+            assertThat(stats.getVarianceSampling(), equalTo(varianceSampling(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
+            assertThat(stats.getStdDeviation(), equalTo(stdDev(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
+            assertThat(stats.getStdDeviationPopulation(), equalTo(stdDevPopulation(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
+            assertThat(stats.getStdDeviationSampling(), equalTo(stdDevSampling(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
+            checkUpperLowerBounds(stats, sigma);
+        },
             prepareSearch("idx").setQuery(matchAllQuery())
                 .addAggregation(
                     extendedStats("stats").field("value")
                         .script(new Script(ScriptType.INLINE, AggregationTestScriptsPlugin.NAME, "_value + inc", params))
                         .sigma(sigma)
-                ),
-            response -> {
-                assertHitCount(response, 10);
-
-                ExtendedStats stats = response.getAggregations().get("stats");
-                assertThat(stats, notNullValue());
-                assertThat(stats.getName(), equalTo("stats"));
-                assertThat(stats.getAvg(), equalTo((double) (2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11) / 10));
-                assertThat(stats.getMin(), equalTo(2.0));
-                assertThat(stats.getMax(), equalTo(11.0));
-                assertThat(stats.getSum(), equalTo((double) 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11));
-                assertThat(stats.getCount(), equalTo(10L));
-                assertThat(stats.getSumOfSquares(), equalTo((double) 4 + 9 + 16 + 25 + 36 + 49 + 64 + 81 + 100 + 121));
-                assertThat(stats.getVariance(), equalTo(variance(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
-                assertThat(stats.getVariancePopulation(), equalTo(variancePopulation(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
-                assertThat(stats.getVarianceSampling(), equalTo(varianceSampling(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
-                assertThat(stats.getStdDeviation(), equalTo(stdDev(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
-                assertThat(stats.getStdDeviationPopulation(), equalTo(stdDevPopulation(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
-                assertThat(stats.getStdDeviationSampling(), equalTo(stdDevSampling(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
-                checkUpperLowerBounds(stats, sigma);
-            }
+                )
         );
     }
 
     @Override
     public void testMultiValuedField() throws Exception {
         double sigma = randomDouble() * randomIntBetween(1, 10);
-        assertResponse(
-            prepareSearch("idx").setQuery(matchAllQuery()).addAggregation(extendedStats("stats").field("values").sigma(sigma)),
-            response -> {
+        assertResponse(response -> {
 
-                assertHitCount(response, 10);
+            assertHitCount(response, 10);
 
-                ExtendedStats stats = response.getAggregations().get("stats");
-                assertThat(stats, notNullValue());
-                assertThat(stats.getName(), equalTo("stats"));
-                assertThat(
-                    stats.getAvg(),
-                    equalTo((double) (2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 + 12) / 20)
-                );
-                assertThat(stats.getMin(), equalTo(2.0));
-                assertThat(stats.getMax(), equalTo(12.0));
-                assertThat(
-                    stats.getSum(),
-                    equalTo((double) 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 + 12)
-                );
-                assertThat(stats.getCount(), equalTo(20L));
-                assertThat(
-                    stats.getSumOfSquares(),
-                    equalTo((double) 4 + 9 + 16 + 25 + 36 + 49 + 64 + 81 + 100 + 121 + 9 + 16 + 25 + 36 + 49 + 64 + 81 + 100 + 121 + 144)
-                );
-                assertThat(stats.getVariance(), equalTo(variance(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)));
-                assertThat(
-                    stats.getVariancePopulation(),
-                    equalTo(variancePopulation(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12))
-                );
-                assertThat(
-                    stats.getVarianceSampling(),
-                    equalTo(varianceSampling(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12))
-                );
-                assertThat(stats.getStdDeviation(), equalTo(stdDev(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)));
-                assertThat(
-                    stats.getStdDeviationPopulation(),
-                    equalTo(stdDevPopulation(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12))
-                );
-                assertThat(
-                    stats.getStdDeviationSampling(),
-                    equalTo(stdDevSampling(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12))
-                );
-                checkUpperLowerBounds(stats, sigma);
-            }
-        );
+            ExtendedStats stats = response.getAggregations().get("stats");
+            assertThat(stats, notNullValue());
+            assertThat(stats.getName(), equalTo("stats"));
+            assertThat(
+                stats.getAvg(),
+                equalTo((double) (2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 + 12) / 20)
+            );
+            assertThat(stats.getMin(), equalTo(2.0));
+            assertThat(stats.getMax(), equalTo(12.0));
+            assertThat(
+                stats.getSum(),
+                equalTo((double) 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 + 12)
+            );
+            assertThat(stats.getCount(), equalTo(20L));
+            assertThat(
+                stats.getSumOfSquares(),
+                equalTo((double) 4 + 9 + 16 + 25 + 36 + 49 + 64 + 81 + 100 + 121 + 9 + 16 + 25 + 36 + 49 + 64 + 81 + 100 + 121 + 144)
+            );
+            assertThat(stats.getVariance(), equalTo(variance(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)));
+            assertThat(
+                stats.getVariancePopulation(),
+                equalTo(variancePopulation(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12))
+            );
+            assertThat(
+                stats.getVarianceSampling(),
+                equalTo(varianceSampling(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12))
+            );
+            assertThat(stats.getStdDeviation(), equalTo(stdDev(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)));
+            assertThat(
+                stats.getStdDeviationPopulation(),
+                equalTo(stdDevPopulation(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12))
+            );
+            assertThat(
+                stats.getStdDeviationSampling(),
+                equalTo(stdDevSampling(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12))
+            );
+            checkUpperLowerBounds(stats, sigma);
+        }, prepareSearch("idx").setQuery(matchAllQuery()).addAggregation(extendedStats("stats").field("values").sigma(sigma)));
     }
 
     @Override
     public void testMultiValuedFieldWithValueScript() throws Exception {
         double sigma = randomDouble() * randomIntBetween(1, 10);
-        assertResponse(
+        assertResponse(response -> {
+            assertHitCount(response, 10);
+
+            ExtendedStats stats = response.getAggregations().get("stats");
+            assertThat(stats, notNullValue());
+            assertThat(stats.getName(), equalTo("stats"));
+            assertThat(
+                stats.getAvg(),
+                equalTo((double) (1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11) / 20)
+            );
+            assertThat(stats.getMin(), equalTo(1.0));
+            assertThat(stats.getMax(), equalTo(11.0));
+            assertThat(stats.getSum(), equalTo((double) 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11));
+            assertThat(stats.getCount(), equalTo(20L));
+            assertThat(
+                stats.getSumOfSquares(),
+                equalTo((double) 1 + 4 + 9 + 16 + 25 + 36 + 49 + 64 + 81 + 100 + 4 + 9 + 16 + 25 + 36 + 49 + 64 + 81 + 100 + 121)
+            );
+            assertThat(stats.getVariance(), equalTo(variance(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
+            assertThat(
+                stats.getVariancePopulation(),
+                equalTo(variancePopulation(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11))
+            );
+            assertThat(
+                stats.getVarianceSampling(),
+                equalTo(varianceSampling(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11))
+            );
+            assertThat(stats.getStdDeviation(), equalTo(stdDev(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
+            assertThat(
+                stats.getStdDeviationPopulation(),
+                equalTo(stdDevPopulation(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11))
+            );
+            assertThat(
+                stats.getStdDeviationSampling(),
+                equalTo(stdDevSampling(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11))
+            );
+
+            checkUpperLowerBounds(stats, sigma);
+        },
             prepareSearch("idx").setQuery(matchAllQuery())
                 .addAggregation(
                     extendedStats("stats").field("values")
                         .script(new Script(ScriptType.INLINE, AggregationTestScriptsPlugin.NAME, "_value - 1", Collections.emptyMap()))
                         .sigma(sigma)
-                ),
-            response -> {
-                assertHitCount(response, 10);
-
-                ExtendedStats stats = response.getAggregations().get("stats");
-                assertThat(stats, notNullValue());
-                assertThat(stats.getName(), equalTo("stats"));
-                assertThat(
-                    stats.getAvg(),
-                    equalTo((double) (1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11) / 20)
-                );
-                assertThat(stats.getMin(), equalTo(1.0));
-                assertThat(stats.getMax(), equalTo(11.0));
-                assertThat(
-                    stats.getSum(),
-                    equalTo((double) 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11)
-                );
-                assertThat(stats.getCount(), equalTo(20L));
-                assertThat(
-                    stats.getSumOfSquares(),
-                    equalTo((double) 1 + 4 + 9 + 16 + 25 + 36 + 49 + 64 + 81 + 100 + 4 + 9 + 16 + 25 + 36 + 49 + 64 + 81 + 100 + 121)
-                );
-                assertThat(stats.getVariance(), equalTo(variance(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
-                assertThat(
-                    stats.getVariancePopulation(),
-                    equalTo(variancePopulation(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11))
-                );
-                assertThat(
-                    stats.getVarianceSampling(),
-                    equalTo(varianceSampling(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11))
-                );
-                assertThat(stats.getStdDeviation(), equalTo(stdDev(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
-                assertThat(
-                    stats.getStdDeviationPopulation(),
-                    equalTo(stdDevPopulation(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11))
-                );
-                assertThat(
-                    stats.getStdDeviationSampling(),
-                    equalTo(stdDevSampling(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11))
-                );
-
-                checkUpperLowerBounds(stats, sigma);
-            }
+                )
         );
     }
 
@@ -557,87 +535,82 @@ public class ExtendedStatsIT extends AbstractNumericTestCase {
         Map<String, Object> params = new HashMap<>();
         params.put("dec", 1);
         double sigma = randomDouble() * randomIntBetween(1, 10);
-        assertResponse(
+        assertResponse(response -> {
+            assertHitCount(response, 10);
+
+            ExtendedStats stats = response.getAggregations().get("stats");
+            assertThat(stats, notNullValue());
+            assertThat(stats.getName(), equalTo("stats"));
+            assertThat(
+                stats.getAvg(),
+                equalTo((double) (1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11) / 20)
+            );
+            assertThat(stats.getMin(), equalTo(1.0));
+            assertThat(stats.getMax(), equalTo(11.0));
+            assertThat(stats.getSum(), equalTo((double) 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11));
+            assertThat(stats.getCount(), equalTo(20L));
+            assertThat(
+                stats.getSumOfSquares(),
+                equalTo((double) 1 + 4 + 9 + 16 + 25 + 36 + 49 + 64 + 81 + 100 + 4 + 9 + 16 + 25 + 36 + 49 + 64 + 81 + 100 + 121)
+            );
+            assertThat(stats.getVariance(), equalTo(variance(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
+            assertThat(
+                stats.getVariancePopulation(),
+                equalTo(variancePopulation(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11))
+            );
+            assertThat(
+                stats.getVarianceSampling(),
+                equalTo(varianceSampling(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11))
+            );
+            assertThat(stats.getStdDeviation(), equalTo(stdDev(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
+            assertThat(
+                stats.getStdDeviationPopulation(),
+                equalTo(stdDevPopulation(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11))
+            );
+            assertThat(
+                stats.getStdDeviationSampling(),
+                equalTo(stdDevSampling(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11))
+            );
+            checkUpperLowerBounds(stats, sigma);
+        },
             prepareSearch("idx").setQuery(matchAllQuery())
                 .addAggregation(
                     extendedStats("stats").field("values")
                         .script(new Script(ScriptType.INLINE, AggregationTestScriptsPlugin.NAME, "_value - dec", params))
                         .sigma(sigma)
-                ),
-            response -> {
-                assertHitCount(response, 10);
-
-                ExtendedStats stats = response.getAggregations().get("stats");
-                assertThat(stats, notNullValue());
-                assertThat(stats.getName(), equalTo("stats"));
-                assertThat(
-                    stats.getAvg(),
-                    equalTo((double) (1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11) / 20)
-                );
-                assertThat(stats.getMin(), equalTo(1.0));
-                assertThat(stats.getMax(), equalTo(11.0));
-                assertThat(
-                    stats.getSum(),
-                    equalTo((double) 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11)
-                );
-                assertThat(stats.getCount(), equalTo(20L));
-                assertThat(
-                    stats.getSumOfSquares(),
-                    equalTo((double) 1 + 4 + 9 + 16 + 25 + 36 + 49 + 64 + 81 + 100 + 4 + 9 + 16 + 25 + 36 + 49 + 64 + 81 + 100 + 121)
-                );
-                assertThat(stats.getVariance(), equalTo(variance(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
-                assertThat(
-                    stats.getVariancePopulation(),
-                    equalTo(variancePopulation(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11))
-                );
-                assertThat(
-                    stats.getVarianceSampling(),
-                    equalTo(varianceSampling(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11))
-                );
-                assertThat(stats.getStdDeviation(), equalTo(stdDev(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
-                assertThat(
-                    stats.getStdDeviationPopulation(),
-                    equalTo(stdDevPopulation(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11))
-                );
-                assertThat(
-                    stats.getStdDeviationSampling(),
-                    equalTo(stdDevSampling(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11))
-                );
-                checkUpperLowerBounds(stats, sigma);
-            }
+                )
         );
     }
 
     @Override
     public void testScriptSingleValued() throws Exception {
         double sigma = randomDouble() * randomIntBetween(1, 10);
-        assertResponse(
+        assertResponse(response -> {
+            assertHitCount(response, 10);
+
+            ExtendedStats stats = response.getAggregations().get("stats");
+            assertThat(stats, notNullValue());
+            assertThat(stats.getName(), equalTo("stats"));
+            assertThat(stats.getAvg(), equalTo((double) (1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10) / 10));
+            assertThat(stats.getMin(), equalTo(1.0));
+            assertThat(stats.getMax(), equalTo(10.0));
+            assertThat(stats.getSum(), equalTo((double) 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10));
+            assertThat(stats.getCount(), equalTo(10L));
+            assertThat(stats.getSumOfSquares(), equalTo((double) 1 + 4 + 9 + 16 + 25 + 36 + 49 + 64 + 81 + 100));
+            assertThat(stats.getVariance(), equalTo(variance(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
+            assertThat(stats.getVariancePopulation(), equalTo(variancePopulation(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
+            assertThat(stats.getVarianceSampling(), equalTo(varianceSampling(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
+            assertThat(stats.getStdDeviation(), equalTo(stdDev(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
+            assertThat(stats.getStdDeviationPopulation(), equalTo(stdDevPopulation(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
+            assertThat(stats.getStdDeviationSampling(), equalTo(stdDevSampling(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
+            checkUpperLowerBounds(stats, sigma);
+        },
             prepareSearch("idx").setQuery(matchAllQuery())
                 .addAggregation(
                     extendedStats("stats").script(
                         new Script(ScriptType.INLINE, AggregationTestScriptsPlugin.NAME, "doc['value'].value", Collections.emptyMap())
                     ).sigma(sigma)
-                ),
-            response -> {
-                assertHitCount(response, 10);
-
-                ExtendedStats stats = response.getAggregations().get("stats");
-                assertThat(stats, notNullValue());
-                assertThat(stats.getName(), equalTo("stats"));
-                assertThat(stats.getAvg(), equalTo((double) (1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10) / 10));
-                assertThat(stats.getMin(), equalTo(1.0));
-                assertThat(stats.getMax(), equalTo(10.0));
-                assertThat(stats.getSum(), equalTo((double) 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10));
-                assertThat(stats.getCount(), equalTo(10L));
-                assertThat(stats.getSumOfSquares(), equalTo((double) 1 + 4 + 9 + 16 + 25 + 36 + 49 + 64 + 81 + 100));
-                assertThat(stats.getVariance(), equalTo(variance(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
-                assertThat(stats.getVariancePopulation(), equalTo(variancePopulation(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
-                assertThat(stats.getVarianceSampling(), equalTo(varianceSampling(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
-                assertThat(stats.getStdDeviation(), equalTo(stdDev(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
-                assertThat(stats.getStdDeviationPopulation(), equalTo(stdDevPopulation(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
-                assertThat(stats.getStdDeviationSampling(), equalTo(stdDevSampling(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
-                checkUpperLowerBounds(stats, sigma);
-            }
+                )
         );
     }
 
@@ -649,82 +622,78 @@ public class ExtendedStatsIT extends AbstractNumericTestCase {
         Script script = new Script(ScriptType.INLINE, AggregationTestScriptsPlugin.NAME, "doc['value'].value + inc", params);
 
         double sigma = randomDouble() * randomIntBetween(1, 10);
-        assertResponse(
-            prepareSearch("idx").setQuery(matchAllQuery()).addAggregation(extendedStats("stats").script(script).sigma(sigma)),
-            response -> {
-                assertHitCount(response, 10);
+        assertResponse(response -> {
+            assertHitCount(response, 10);
 
-                ExtendedStats stats = response.getAggregations().get("stats");
-                assertThat(stats, notNullValue());
-                assertThat(stats.getName(), equalTo("stats"));
-                assertThat(stats.getAvg(), equalTo((double) (2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11) / 10));
-                assertThat(stats.getMin(), equalTo(2.0));
-                assertThat(stats.getMax(), equalTo(11.0));
-                assertThat(stats.getSum(), equalTo((double) 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11));
-                assertThat(stats.getCount(), equalTo(10L));
-                assertThat(stats.getSumOfSquares(), equalTo((double) 4 + 9 + 16 + 25 + 36 + 49 + 64 + 81 + 100 + 121));
-                assertThat(stats.getVariance(), equalTo(variance(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
-                assertThat(stats.getVariancePopulation(), equalTo(variancePopulation(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
-                assertThat(stats.getVarianceSampling(), equalTo(varianceSampling(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
-                assertThat(stats.getStdDeviation(), equalTo(stdDev(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
-                assertThat(stats.getStdDeviationPopulation(), equalTo(stdDevPopulation(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
-                assertThat(stats.getStdDeviationSampling(), equalTo(stdDevSampling(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
-                checkUpperLowerBounds(stats, sigma);
-            }
-        );
+            ExtendedStats stats = response.getAggregations().get("stats");
+            assertThat(stats, notNullValue());
+            assertThat(stats.getName(), equalTo("stats"));
+            assertThat(stats.getAvg(), equalTo((double) (2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11) / 10));
+            assertThat(stats.getMin(), equalTo(2.0));
+            assertThat(stats.getMax(), equalTo(11.0));
+            assertThat(stats.getSum(), equalTo((double) 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11));
+            assertThat(stats.getCount(), equalTo(10L));
+            assertThat(stats.getSumOfSquares(), equalTo((double) 4 + 9 + 16 + 25 + 36 + 49 + 64 + 81 + 100 + 121));
+            assertThat(stats.getVariance(), equalTo(variance(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
+            assertThat(stats.getVariancePopulation(), equalTo(variancePopulation(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
+            assertThat(stats.getVarianceSampling(), equalTo(varianceSampling(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
+            assertThat(stats.getStdDeviation(), equalTo(stdDev(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
+            assertThat(stats.getStdDeviationPopulation(), equalTo(stdDevPopulation(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
+            assertThat(stats.getStdDeviationSampling(), equalTo(stdDevSampling(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)));
+            checkUpperLowerBounds(stats, sigma);
+        }, prepareSearch("idx").setQuery(matchAllQuery()).addAggregation(extendedStats("stats").script(script).sigma(sigma)));
     }
 
     @Override
     public void testScriptMultiValued() throws Exception {
         double sigma = randomDouble() * randomIntBetween(1, 10);
-        assertResponse(
+        assertResponse(response -> {
+            assertHitCount(response, 10);
+
+            ExtendedStats stats = response.getAggregations().get("stats");
+            assertThat(stats, notNullValue());
+            assertThat(stats.getName(), equalTo("stats"));
+            assertThat(
+                stats.getAvg(),
+                equalTo((double) (2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 + 12) / 20)
+            );
+            assertThat(stats.getMin(), equalTo(2.0));
+            assertThat(stats.getMax(), equalTo(12.0));
+            assertThat(
+                stats.getSum(),
+                equalTo((double) 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 + 12)
+            );
+            assertThat(stats.getCount(), equalTo(20L));
+            assertThat(
+                stats.getSumOfSquares(),
+                equalTo((double) 4 + 9 + 16 + 25 + 36 + 49 + 64 + 81 + 100 + 121 + 9 + 16 + 25 + 36 + 49 + 64 + 81 + 100 + 121 + 144)
+            );
+            assertThat(stats.getVariance(), equalTo(variance(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)));
+            assertThat(
+                stats.getVariancePopulation(),
+                equalTo(variancePopulation(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12))
+            );
+            assertThat(
+                stats.getVarianceSampling(),
+                equalTo(varianceSampling(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12))
+            );
+            assertThat(stats.getStdDeviation(), equalTo(stdDev(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)));
+            assertThat(
+                stats.getStdDeviationPopulation(),
+                equalTo(stdDevPopulation(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12))
+            );
+            assertThat(
+                stats.getStdDeviationSampling(),
+                equalTo(stdDevSampling(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12))
+            );
+            checkUpperLowerBounds(stats, sigma);
+        },
             prepareSearch("idx").setQuery(matchAllQuery())
                 .addAggregation(
                     extendedStats("stats").script(
                         new Script(ScriptType.INLINE, AggregationTestScriptsPlugin.NAME, "doc['values']", Collections.emptyMap())
                     ).sigma(sigma)
-                ),
-            response -> {
-                assertHitCount(response, 10);
-
-                ExtendedStats stats = response.getAggregations().get("stats");
-                assertThat(stats, notNullValue());
-                assertThat(stats.getName(), equalTo("stats"));
-                assertThat(
-                    stats.getAvg(),
-                    equalTo((double) (2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 + 12) / 20)
-                );
-                assertThat(stats.getMin(), equalTo(2.0));
-                assertThat(stats.getMax(), equalTo(12.0));
-                assertThat(
-                    stats.getSum(),
-                    equalTo((double) 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 + 12)
-                );
-                assertThat(stats.getCount(), equalTo(20L));
-                assertThat(
-                    stats.getSumOfSquares(),
-                    equalTo((double) 4 + 9 + 16 + 25 + 36 + 49 + 64 + 81 + 100 + 121 + 9 + 16 + 25 + 36 + 49 + 64 + 81 + 100 + 121 + 144)
-                );
-                assertThat(stats.getVariance(), equalTo(variance(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)));
-                assertThat(
-                    stats.getVariancePopulation(),
-                    equalTo(variancePopulation(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12))
-                );
-                assertThat(
-                    stats.getVarianceSampling(),
-                    equalTo(varianceSampling(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12))
-                );
-                assertThat(stats.getStdDeviation(), equalTo(stdDev(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)));
-                assertThat(
-                    stats.getStdDeviationPopulation(),
-                    equalTo(stdDevPopulation(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12))
-                );
-                assertThat(
-                    stats.getStdDeviationSampling(),
-                    equalTo(stdDevSampling(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12))
-                );
-                checkUpperLowerBounds(stats, sigma);
-            }
+                )
         );
     }
 
@@ -741,99 +710,127 @@ public class ExtendedStatsIT extends AbstractNumericTestCase {
         );
 
         double sigma = randomDouble() * randomIntBetween(1, 10);
-        assertResponse(
-            prepareSearch("idx").setQuery(matchAllQuery()).addAggregation(extendedStats("stats").script(script).sigma(sigma)),
-            response -> {
-                assertHitCount(response, 10);
+        assertResponse(response -> {
+            assertHitCount(response, 10);
 
-                ExtendedStats stats = response.getAggregations().get("stats");
-                assertThat(stats, notNullValue());
-                assertThat(stats.getName(), equalTo("stats"));
-                assertThat(
-                    stats.getAvg(),
-                    equalTo((double) (1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 0 + 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9) / 20)
-                );
-                assertThat(stats.getMin(), equalTo(0.0));
-                assertThat(stats.getMax(), equalTo(10.0));
-                assertThat(
-                    stats.getSum(),
-                    equalTo((double) 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 0 + 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9)
-                );
-                assertThat(stats.getCount(), equalTo(20L));
-                assertThat(
-                    stats.getSumOfSquares(),
-                    equalTo((double) 1 + 4 + 9 + 16 + 25 + 36 + 49 + 64 + 81 + 100 + 0 + 1 + 4 + 9 + 16 + 25 + 36 + 49 + 64 + 81)
-                );
-                assertThat(stats.getVariance(), equalTo(variance(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9)));
-                assertThat(
-                    stats.getVariancePopulation(),
-                    equalTo(variancePopulation(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9))
-                );
-                assertThat(
-                    stats.getVarianceSampling(),
-                    equalTo(varianceSampling(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9))
-                );
-                assertThat(stats.getStdDeviation(), equalTo(stdDev(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9)));
-                assertThat(
-                    stats.getStdDeviationPopulation(),
-                    equalTo(stdDevPopulation(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9))
-                );
-                assertThat(
-                    stats.getStdDeviationSampling(),
-                    equalTo(stdDevSampling(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9))
-                );
-                checkUpperLowerBounds(stats, sigma);
-            }
-        );
+            ExtendedStats stats = response.getAggregations().get("stats");
+            assertThat(stats, notNullValue());
+            assertThat(stats.getName(), equalTo("stats"));
+            assertThat(
+                stats.getAvg(),
+                equalTo((double) (1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 0 + 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9) / 20)
+            );
+            assertThat(stats.getMin(), equalTo(0.0));
+            assertThat(stats.getMax(), equalTo(10.0));
+            assertThat(stats.getSum(), equalTo((double) 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 0 + 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9));
+            assertThat(stats.getCount(), equalTo(20L));
+            assertThat(
+                stats.getSumOfSquares(),
+                equalTo((double) 1 + 4 + 9 + 16 + 25 + 36 + 49 + 64 + 81 + 100 + 0 + 1 + 4 + 9 + 16 + 25 + 36 + 49 + 64 + 81)
+            );
+            assertThat(stats.getVariance(), equalTo(variance(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9)));
+            assertThat(
+                stats.getVariancePopulation(),
+                equalTo(variancePopulation(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9))
+            );
+            assertThat(stats.getVarianceSampling(), equalTo(varianceSampling(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9)));
+            assertThat(stats.getStdDeviation(), equalTo(stdDev(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9)));
+            assertThat(
+                stats.getStdDeviationPopulation(),
+                equalTo(stdDevPopulation(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9))
+            );
+            assertThat(
+                stats.getStdDeviationSampling(),
+                equalTo(stdDevSampling(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9))
+            );
+            checkUpperLowerBounds(stats, sigma);
+        }, prepareSearch("idx").setQuery(matchAllQuery()).addAggregation(extendedStats("stats").script(script).sigma(sigma)));
     }
 
     public void testEmptySubAggregation() {
-        assertResponse(
+        assertResponse(response -> {
+            assertHitCount(response, 10);
+
+            Terms terms = response.getAggregations().get("value");
+            assertThat(terms, notNullValue());
+            assertThat(terms.getBuckets().size(), equalTo(10));
+
+            for (Terms.Bucket bucket : terms.getBuckets()) {
+                assertThat(bucket.getDocCount(), equalTo(1L));
+
+                Missing missing = bucket.getAggregations().get("values");
+                assertThat(missing, notNullValue());
+                assertThat(missing.getDocCount(), equalTo(0L));
+
+                ExtendedStats stats = missing.getAggregations().get("stats");
+                assertThat(stats, notNullValue());
+                assertThat(stats.getName(), equalTo("stats"));
+                assertThat(stats.getSumOfSquares(), equalTo(0.0));
+                assertThat(stats.getCount(), equalTo(0L));
+                assertThat(stats.getSum(), equalTo(0.0));
+                assertThat(stats.getMin(), equalTo(Double.POSITIVE_INFINITY));
+                assertThat(stats.getMax(), equalTo(Double.NEGATIVE_INFINITY));
+                assertThat(Double.isNaN(stats.getStdDeviation()), is(true));
+                assertThat(Double.isNaN(stats.getStdDeviationPopulation()), is(true));
+                assertThat(Double.isNaN(stats.getStdDeviationSampling()), is(true));
+                assertThat(Double.isNaN(stats.getAvg()), is(true));
+                assertThat(Double.isNaN(stats.getStdDeviationBound(Bounds.UPPER)), is(true));
+                assertThat(Double.isNaN(stats.getStdDeviationBound(Bounds.LOWER)), is(true));
+                assertThat(Double.isNaN(stats.getStdDeviationBound(Bounds.UPPER_POPULATION)), is(true));
+                assertThat(Double.isNaN(stats.getStdDeviationBound(Bounds.LOWER_POPULATION)), is(true));
+                assertThat(Double.isNaN(stats.getStdDeviationBound(Bounds.UPPER_SAMPLING)), is(true));
+                assertThat(Double.isNaN(stats.getStdDeviationBound(Bounds.LOWER_SAMPLING)), is(true));
+            }
+        },
             prepareSearch("idx").setQuery(matchAllQuery())
                 .addAggregation(
                     terms("value").field("value")
                         .subAggregation(missing("values").field("values").subAggregation(extendedStats("stats").field("value")))
-                ),
-            response -> {
-                assertHitCount(response, 10);
-
-                Terms terms = response.getAggregations().get("value");
-                assertThat(terms, notNullValue());
-                assertThat(terms.getBuckets().size(), equalTo(10));
-
-                for (Terms.Bucket bucket : terms.getBuckets()) {
-                    assertThat(bucket.getDocCount(), equalTo(1L));
-
-                    Missing missing = bucket.getAggregations().get("values");
-                    assertThat(missing, notNullValue());
-                    assertThat(missing.getDocCount(), equalTo(0L));
-
-                    ExtendedStats stats = missing.getAggregations().get("stats");
-                    assertThat(stats, notNullValue());
-                    assertThat(stats.getName(), equalTo("stats"));
-                    assertThat(stats.getSumOfSquares(), equalTo(0.0));
-                    assertThat(stats.getCount(), equalTo(0L));
-                    assertThat(stats.getSum(), equalTo(0.0));
-                    assertThat(stats.getMin(), equalTo(Double.POSITIVE_INFINITY));
-                    assertThat(stats.getMax(), equalTo(Double.NEGATIVE_INFINITY));
-                    assertThat(Double.isNaN(stats.getStdDeviation()), is(true));
-                    assertThat(Double.isNaN(stats.getStdDeviationPopulation()), is(true));
-                    assertThat(Double.isNaN(stats.getStdDeviationSampling()), is(true));
-                    assertThat(Double.isNaN(stats.getAvg()), is(true));
-                    assertThat(Double.isNaN(stats.getStdDeviationBound(Bounds.UPPER)), is(true));
-                    assertThat(Double.isNaN(stats.getStdDeviationBound(Bounds.LOWER)), is(true));
-                    assertThat(Double.isNaN(stats.getStdDeviationBound(Bounds.UPPER_POPULATION)), is(true));
-                    assertThat(Double.isNaN(stats.getStdDeviationBound(Bounds.LOWER_POPULATION)), is(true));
-                    assertThat(Double.isNaN(stats.getStdDeviationBound(Bounds.UPPER_SAMPLING)), is(true));
-                    assertThat(Double.isNaN(stats.getStdDeviationBound(Bounds.LOWER_SAMPLING)), is(true));
-                }
-            }
+                )
         );
     }
 
     @Override
     public void testOrderByEmptyAggregation() throws Exception {
-        assertResponse(
+        assertResponse(response -> {
+            assertHitCount(response, 10);
+
+            Terms terms = response.getAggregations().get("terms");
+            assertThat(terms, notNullValue());
+            List<? extends Terms.Bucket> buckets = terms.getBuckets();
+            assertThat(buckets, notNullValue());
+            assertThat(buckets.size(), equalTo(10));
+
+            for (int i = 0; i < 10; i++) {
+                Terms.Bucket bucket = buckets.get(i);
+                assertThat(bucket, notNullValue());
+                assertThat(bucket.getKeyAsNumber(), equalTo((long) i + 1));
+                assertThat(bucket.getDocCount(), equalTo(1L));
+                Filter filter = bucket.getAggregations().get("filter");
+                assertThat(filter, notNullValue());
+                assertThat(filter.getDocCount(), equalTo(0L));
+                ExtendedStats extendedStats = filter.getAggregations().get("extendedStats");
+                assertThat(extendedStats, notNullValue());
+                assertThat(extendedStats.getMin(), equalTo(Double.POSITIVE_INFINITY));
+                assertThat(extendedStats.getMax(), equalTo(Double.NEGATIVE_INFINITY));
+                assertThat(extendedStats.getAvg(), equalTo(Double.NaN));
+                assertThat(extendedStats.getSum(), equalTo(0.0));
+                assertThat(extendedStats.getCount(), equalTo(0L));
+                assertThat(extendedStats.getStdDeviation(), equalTo(Double.NaN));
+                assertThat(extendedStats.getStdDeviationPopulation(), equalTo(Double.NaN));
+                assertThat(extendedStats.getStdDeviationSampling(), equalTo(Double.NaN));
+                assertThat(extendedStats.getSumOfSquares(), equalTo(0.0));
+                assertThat(extendedStats.getVariance(), equalTo(Double.NaN));
+                assertThat(extendedStats.getVariancePopulation(), equalTo(Double.NaN));
+                assertThat(extendedStats.getVarianceSampling(), equalTo(Double.NaN));
+                assertThat(extendedStats.getStdDeviationBound(Bounds.LOWER), equalTo(Double.NaN));
+                assertThat(extendedStats.getStdDeviationBound(Bounds.UPPER), equalTo(Double.NaN));
+                assertThat(extendedStats.getStdDeviationBound(Bounds.LOWER_POPULATION), equalTo(Double.NaN));
+                assertThat(extendedStats.getStdDeviationBound(Bounds.UPPER_POPULATION), equalTo(Double.NaN));
+                assertThat(extendedStats.getStdDeviationBound(Bounds.LOWER_SAMPLING), equalTo(Double.NaN));
+                assertThat(extendedStats.getStdDeviationBound(Bounds.UPPER_SAMPLING), equalTo(Double.NaN));
+            }
+        },
             prepareSearch("idx").setQuery(matchAllQuery())
                 .addAggregation(
                     terms("terms").field("value")
@@ -841,46 +838,7 @@ public class ExtendedStatsIT extends AbstractNumericTestCase {
                         .subAggregation(
                             filter("filter", termQuery("value", 100)).subAggregation(extendedStats("extendedStats").field("value"))
                         )
-                ),
-            response -> {
-                assertHitCount(response, 10);
-
-                Terms terms = response.getAggregations().get("terms");
-                assertThat(terms, notNullValue());
-                List<? extends Terms.Bucket> buckets = terms.getBuckets();
-                assertThat(buckets, notNullValue());
-                assertThat(buckets.size(), equalTo(10));
-
-                for (int i = 0; i < 10; i++) {
-                    Terms.Bucket bucket = buckets.get(i);
-                    assertThat(bucket, notNullValue());
-                    assertThat(bucket.getKeyAsNumber(), equalTo((long) i + 1));
-                    assertThat(bucket.getDocCount(), equalTo(1L));
-                    Filter filter = bucket.getAggregations().get("filter");
-                    assertThat(filter, notNullValue());
-                    assertThat(filter.getDocCount(), equalTo(0L));
-                    ExtendedStats extendedStats = filter.getAggregations().get("extendedStats");
-                    assertThat(extendedStats, notNullValue());
-                    assertThat(extendedStats.getMin(), equalTo(Double.POSITIVE_INFINITY));
-                    assertThat(extendedStats.getMax(), equalTo(Double.NEGATIVE_INFINITY));
-                    assertThat(extendedStats.getAvg(), equalTo(Double.NaN));
-                    assertThat(extendedStats.getSum(), equalTo(0.0));
-                    assertThat(extendedStats.getCount(), equalTo(0L));
-                    assertThat(extendedStats.getStdDeviation(), equalTo(Double.NaN));
-                    assertThat(extendedStats.getStdDeviationPopulation(), equalTo(Double.NaN));
-                    assertThat(extendedStats.getStdDeviationSampling(), equalTo(Double.NaN));
-                    assertThat(extendedStats.getSumOfSquares(), equalTo(0.0));
-                    assertThat(extendedStats.getVariance(), equalTo(Double.NaN));
-                    assertThat(extendedStats.getVariancePopulation(), equalTo(Double.NaN));
-                    assertThat(extendedStats.getVarianceSampling(), equalTo(Double.NaN));
-                    assertThat(extendedStats.getStdDeviationBound(Bounds.LOWER), equalTo(Double.NaN));
-                    assertThat(extendedStats.getStdDeviationBound(Bounds.UPPER), equalTo(Double.NaN));
-                    assertThat(extendedStats.getStdDeviationBound(Bounds.LOWER_POPULATION), equalTo(Double.NaN));
-                    assertThat(extendedStats.getStdDeviationBound(Bounds.UPPER_POPULATION), equalTo(Double.NaN));
-                    assertThat(extendedStats.getStdDeviationBound(Bounds.LOWER_SAMPLING), equalTo(Double.NaN));
-                    assertThat(extendedStats.getStdDeviationBound(Bounds.UPPER_SAMPLING), equalTo(Double.NaN));
-                }
-            }
+                )
         );
     }
 

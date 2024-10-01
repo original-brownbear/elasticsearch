@@ -87,11 +87,11 @@ public class SearchTemplateIT extends ESSingleNodeTestCase {
         );
 
         assertResponse(
+            searchResponse -> assertThat(searchResponse.getResponse().getHits().getHits().length, equalTo(1)),
             new SearchTemplateRequestBuilder(client()).setRequest(searchRequest)
                 .setScript(query)
                 .setScriptType(ScriptType.INLINE)
-                .setScriptParams(Collections.singletonMap("my_size", 1)),
-            searchResponse -> assertThat(searchResponse.getResponse().getHits().getHits().length, equalTo(1))
+                .setScriptParams(Collections.singletonMap("my_size", 1))
         );
     }
 
@@ -463,7 +463,7 @@ public class SearchTemplateIT extends ESSingleNodeTestCase {
     }
 
     public static void assertHitCount(SearchTemplateRequestBuilder requestBuilder, long expectedHitCount) {
-        assertResponse(requestBuilder, response -> ElasticsearchAssertions.assertHitCount(response.getResponse(), expectedHitCount));
+        assertResponse(response -> ElasticsearchAssertions.assertHitCount(response.getResponse(), expectedHitCount), requestBuilder);
     }
 
     private void putJsonStoredScript(String id, String jsonContent) {

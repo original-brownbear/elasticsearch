@@ -58,31 +58,30 @@ public class GlobalIT extends ESIntegTestCase {
     }
 
     public void testWithStatsSubAggregator() throws Exception {
-        assertNoFailuresAndResponse(
-            prepareSearch("idx").setQuery(QueryBuilders.termQuery("tag", "tag1"))
-                .addAggregation(global("global").subAggregation(stats("value_stats").field("value"))),
-            response -> {
-                Global global = response.getAggregations().get("global");
-                assertThat(global, notNullValue());
-                assertThat(global.getName(), equalTo("global"));
-                assertThat(global.getDocCount(), equalTo((long) numDocs));
-                assertThat((long) ((InternalAggregation) global).getProperty("_count"), equalTo((long) numDocs));
-                assertThat(global.getAggregations().asList().isEmpty(), is(false));
+        assertNoFailuresAndResponse(response -> {
+            Global global = response.getAggregations().get("global");
+            assertThat(global, notNullValue());
+            assertThat(global.getName(), equalTo("global"));
+            assertThat(global.getDocCount(), equalTo((long) numDocs));
+            assertThat((long) ((InternalAggregation) global).getProperty("_count"), equalTo((long) numDocs));
+            assertThat(global.getAggregations().asList().isEmpty(), is(false));
 
-                Stats stats = global.getAggregations().get("value_stats");
-                assertThat((Stats) ((InternalAggregation) global).getProperty("value_stats"), sameInstance(stats));
-                assertThat(stats, notNullValue());
-                assertThat(stats.getName(), equalTo("value_stats"));
-                long sum = 0;
-                for (int i = 0; i < numDocs; ++i) {
-                    sum += i + 1;
-                }
-                assertThat(stats.getAvg(), equalTo((double) sum / numDocs));
-                assertThat(stats.getMin(), equalTo(1.0));
-                assertThat(stats.getMax(), equalTo((double) numDocs));
-                assertThat(stats.getCount(), equalTo((long) numDocs));
-                assertThat(stats.getSum(), equalTo((double) sum));
+            Stats stats = global.getAggregations().get("value_stats");
+            assertThat((Stats) ((InternalAggregation) global).getProperty("value_stats"), sameInstance(stats));
+            assertThat(stats, notNullValue());
+            assertThat(stats.getName(), equalTo("value_stats"));
+            long sum = 0;
+            for (int i = 0; i < numDocs; ++i) {
+                sum += i + 1;
             }
+            assertThat(stats.getAvg(), equalTo((double) sum / numDocs));
+            assertThat(stats.getMin(), equalTo(1.0));
+            assertThat(stats.getMax(), equalTo((double) numDocs));
+            assertThat(stats.getCount(), equalTo((long) numDocs));
+            assertThat(stats.getSum(), equalTo((double) sum));
+        },
+            prepareSearch("idx").setQuery(QueryBuilders.termQuery("tag", "tag1"))
+                .addAggregation(global("global").subAggregation(stats("value_stats").field("value")))
         );
     }
 

@@ -273,17 +273,14 @@ public class SLMSnapshotBlockingIntegTests extends AbstractSnapshotIntegTestCase
 
             // Assert that the history document has been written for taking the snapshot and deleting it
             assertBusy(() -> {
-                assertResponse(
-                    prepareSearch(".slm-history*").setQuery(QueryBuilders.matchQuery("snapshot_name", completedSnapshotName)),
-                    resp -> {
-                        logger.info(
-                            "--> checking history written for {}, got: {}",
-                            completedSnapshotName,
-                            Strings.arrayToCommaDelimitedString(resp.getHits().getHits())
-                        );
-                        assertThat(resp.getHits().getTotalHits().value, equalTo(2L));
-                    }
-                );
+                assertResponse(resp -> {
+                    logger.info(
+                        "--> checking history written for {}, got: {}",
+                        completedSnapshotName,
+                        Strings.arrayToCommaDelimitedString(resp.getHits().getHits())
+                    );
+                    assertThat(resp.getHits().getTotalHits().value, equalTo(2L));
+                }, prepareSearch(".slm-history*").setQuery(QueryBuilders.matchQuery("snapshot_name", completedSnapshotName)));
             });
         } finally {
             unblockNode(REPO, internalCluster().getMasterName());

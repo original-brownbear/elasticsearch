@@ -68,62 +68,60 @@ public class PercentilesBucketIT extends BucketMetricsPipeLineAggregationTestCas
     }
 
     public void testMetricTopLevelDefaultPercents() throws Exception {
-        assertNoFailuresAndResponse(
-            prepareSearch("idx").addAggregation(terms(termsName).field("tag").subAggregation(sum("sum").field(SINGLE_VALUED_FIELD_NAME)))
-                .addAggregation(percentilesBucket("percentiles_bucket", termsName + ">sum")),
-            response -> {
-                Terms terms = response.getAggregations().get(termsName);
-                assertThat(terms, notNullValue());
-                assertThat(terms.getName(), equalTo(termsName));
-                List<? extends Terms.Bucket> buckets = terms.getBuckets();
-                assertThat(buckets.size(), equalTo(interval));
+        assertNoFailuresAndResponse(response -> {
+            Terms terms = response.getAggregations().get(termsName);
+            assertThat(terms, notNullValue());
+            assertThat(terms.getName(), equalTo(termsName));
+            List<? extends Terms.Bucket> buckets = terms.getBuckets();
+            assertThat(buckets.size(), equalTo(interval));
 
-                double[] values = new double[interval];
-                for (int i = 0; i < interval; ++i) {
-                    Terms.Bucket bucket = buckets.get(i);
-                    assertThat(bucket, notNullValue());
-                    assertThat((String) bucket.getKey(), equalTo("tag" + (i % interval)));
-                    assertThat(bucket.getDocCount(), greaterThan(0L));
-                    Sum sum = bucket.getAggregations().get("sum");
-                    assertThat(sum, notNullValue());
-                    values[i] = sum.value();
-                }
-
-                Arrays.sort(values);
-
-                PercentilesBucket percentilesBucketValue = response.getAggregations().get("percentiles_bucket");
-                assertThat(percentilesBucketValue, notNullValue());
-                assertThat(percentilesBucketValue.getName(), equalTo("percentiles_bucket"));
-                assertPercentileBucket(values, percentilesBucketValue);
+            double[] values = new double[interval];
+            for (int i = 0; i < interval; ++i) {
+                Terms.Bucket bucket = buckets.get(i);
+                assertThat(bucket, notNullValue());
+                assertThat((String) bucket.getKey(), equalTo("tag" + (i % interval)));
+                assertThat(bucket.getDocCount(), greaterThan(0L));
+                Sum sum = bucket.getAggregations().get("sum");
+                assertThat(sum, notNullValue());
+                values[i] = sum.value();
             }
+
+            Arrays.sort(values);
+
+            PercentilesBucket percentilesBucketValue = response.getAggregations().get("percentiles_bucket");
+            assertThat(percentilesBucketValue, notNullValue());
+            assertThat(percentilesBucketValue.getName(), equalTo("percentiles_bucket"));
+            assertPercentileBucket(values, percentilesBucketValue);
+        },
+            prepareSearch("idx").addAggregation(terms(termsName).field("tag").subAggregation(sum("sum").field(SINGLE_VALUED_FIELD_NAME)))
+                .addAggregation(percentilesBucket("percentiles_bucket", termsName + ">sum"))
         );
     }
 
     public void testWrongPercents() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Terms terms = response.getAggregations().get(termsName);
+            assertThat(terms, notNullValue());
+            assertThat(terms.getName(), equalTo(termsName));
+            List<? extends Terms.Bucket> buckets = terms.getBuckets();
+            assertThat(buckets.size(), equalTo(0));
+
+            PercentilesBucket percentilesBucketValue = response.getAggregations().get("percentiles_bucket");
+            assertThat(percentilesBucketValue, notNullValue());
+            assertThat(percentilesBucketValue.getName(), equalTo("percentiles_bucket"));
+
+            try {
+                percentilesBucketValue.percentile(2.0);
+                fail("2.0 was not a valid percent, should have thrown exception");
+            } catch (IllegalArgumentException exception) {
+                // All good
+            }
+        },
             prepareSearch("idx").addAggregation(
                 terms(termsName).field("tag")
                     .includeExclude(new IncludeExclude(null, "tag.*", null, null))
                     .subAggregation(sum("sum").field(SINGLE_VALUED_FIELD_NAME))
-            ).addAggregation(percentilesBucket("percentiles_bucket", termsName + ">sum").setPercents(PERCENTS)),
-            response -> {
-                Terms terms = response.getAggregations().get(termsName);
-                assertThat(terms, notNullValue());
-                assertThat(terms.getName(), equalTo(termsName));
-                List<? extends Terms.Bucket> buckets = terms.getBuckets();
-                assertThat(buckets.size(), equalTo(0));
-
-                PercentilesBucket percentilesBucketValue = response.getAggregations().get("percentiles_bucket");
-                assertThat(percentilesBucketValue, notNullValue());
-                assertThat(percentilesBucketValue.getName(), equalTo("percentiles_bucket"));
-
-                try {
-                    percentilesBucketValue.percentile(2.0);
-                    fail("2.0 was not a valid percent, should have thrown exception");
-                } catch (IllegalArgumentException exception) {
-                    // All good
-                }
-            }
+            ).addAggregation(percentilesBucket("percentiles_bucket", termsName + ">sum").setPercents(PERCENTS))
         );
     }
 
@@ -187,7 +185,51 @@ public class PercentilesBucketIT extends BucketMetricsPipeLineAggregationTestCas
 
     public void testNestedWithDecimal() throws Exception {
         double[] percent = { 99.9 };
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Terms terms = response.getAggregations().get(termsName);
+            assertThat(terms, notNullValue());
+            assertThat(terms.getName(), equalTo(termsName));
+            List<? extends Terms.Bucket> termsBuckets = terms.getBuckets();
+            assertThat(termsBuckets.size(), equalTo(interval));
+
+            double[] values = new double[termsBuckets.size()];
+            for (int i = 0; i < interval; ++i) {
+                Terms.Bucket termsBucket = termsBuckets.get(i);
+                assertThat(termsBucket, notNullValue());
+                assertThat((String) termsBucket.getKey(), equalTo("tag" + (i % interval)));
+
+                Histogram histo = termsBucket.getAggregations().get(histoName);
+                assertThat(histo, notNullValue());
+                assertThat(histo.getName(), equalTo(histoName));
+                List<? extends Histogram.Bucket> buckets = histo.getBuckets();
+
+                double[] innerValues = new double[numValueBuckets];
+                for (int j = 0; j < numValueBuckets; ++j) {
+                    Histogram.Bucket bucket = buckets.get(j);
+                    assertThat(bucket, notNullValue());
+                    assertThat(((Number) bucket.getKey()).longValue(), equalTo((long) j * interval));
+
+                    innerValues[j] = bucket.getDocCount();
+                }
+                Arrays.sort(innerValues);
+
+                PercentilesBucket percentilesBucketValue = termsBucket.getAggregations().get("percentile_histo_bucket");
+                assertThat(percentilesBucketValue, notNullValue());
+                assertThat(percentilesBucketValue.getName(), equalTo("percentile_histo_bucket"));
+                assertPercentileBucket(innerValues, percentilesBucketValue);
+                values[i] = percentilesBucketValue.percentile(99.9);
+            }
+
+            Arrays.sort(values);
+
+            PercentilesBucket percentilesBucketValue = response.getAggregations().get("percentile_terms_bucket");
+            assertThat(percentilesBucketValue, notNullValue());
+            assertThat(percentilesBucketValue.getName(), equalTo("percentile_terms_bucket"));
+            for (Double p : percent) {
+                double expected = values[(int) ((p / 100) * values.length)];
+                assertThat(percentilesBucketValue.percentile(p), equalTo(expected));
+            }
+        },
             prepareSearch("idx").addAggregation(
                 terms(termsName).field("tag")
                     .order(BucketOrder.key(true))
@@ -200,52 +242,7 @@ public class PercentilesBucketIT extends BucketMetricsPipeLineAggregationTestCas
             )
                 .addAggregation(
                     percentilesBucket("percentile_terms_bucket", termsName + ">percentile_histo_bucket[99.9]").setPercents(percent)
-                ),
-            response -> {
-                Terms terms = response.getAggregations().get(termsName);
-                assertThat(terms, notNullValue());
-                assertThat(terms.getName(), equalTo(termsName));
-                List<? extends Terms.Bucket> termsBuckets = terms.getBuckets();
-                assertThat(termsBuckets.size(), equalTo(interval));
-
-                double[] values = new double[termsBuckets.size()];
-                for (int i = 0; i < interval; ++i) {
-                    Terms.Bucket termsBucket = termsBuckets.get(i);
-                    assertThat(termsBucket, notNullValue());
-                    assertThat((String) termsBucket.getKey(), equalTo("tag" + (i % interval)));
-
-                    Histogram histo = termsBucket.getAggregations().get(histoName);
-                    assertThat(histo, notNullValue());
-                    assertThat(histo.getName(), equalTo(histoName));
-                    List<? extends Histogram.Bucket> buckets = histo.getBuckets();
-
-                    double[] innerValues = new double[numValueBuckets];
-                    for (int j = 0; j < numValueBuckets; ++j) {
-                        Histogram.Bucket bucket = buckets.get(j);
-                        assertThat(bucket, notNullValue());
-                        assertThat(((Number) bucket.getKey()).longValue(), equalTo((long) j * interval));
-
-                        innerValues[j] = bucket.getDocCount();
-                    }
-                    Arrays.sort(innerValues);
-
-                    PercentilesBucket percentilesBucketValue = termsBucket.getAggregations().get("percentile_histo_bucket");
-                    assertThat(percentilesBucketValue, notNullValue());
-                    assertThat(percentilesBucketValue.getName(), equalTo("percentile_histo_bucket"));
-                    assertPercentileBucket(innerValues, percentilesBucketValue);
-                    values[i] = percentilesBucketValue.percentile(99.9);
-                }
-
-                Arrays.sort(values);
-
-                PercentilesBucket percentilesBucketValue = response.getAggregations().get("percentile_terms_bucket");
-                assertThat(percentilesBucketValue, notNullValue());
-                assertThat(percentilesBucketValue.getName(), equalTo("percentile_terms_bucket"));
-                for (Double p : percent) {
-                    double expected = values[(int) ((p / 100) * values.length)];
-                    assertThat(percentilesBucketValue.percentile(p), equalTo(expected));
-                }
-            }
+                )
         );
     }
 

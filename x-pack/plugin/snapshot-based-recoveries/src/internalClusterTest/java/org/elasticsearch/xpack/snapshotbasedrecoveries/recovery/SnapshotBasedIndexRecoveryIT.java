@@ -1588,12 +1588,13 @@ public class SnapshotBasedIndexRecoveryIT extends AbstractSnapshotIntegTestCase 
 
             // SearchResponse searchResponse;
             switch (testCase) {
-                case 0 -> assertResponse(searchRequestBuilder.setQuery(QueryBuilders.matchAllQuery()), searchResponse -> {
-                    assertSearchResponseContainsAllIndexedDocs(searchResponse, docCount);
-                });
+                case 0 -> assertResponse(
+                    searchResponse -> { assertSearchResponseContainsAllIndexedDocs(searchResponse, docCount); },
+                    searchRequestBuilder.setQuery(QueryBuilders.matchAllQuery())
+                );
                 case 1 -> {
                     int docIdToMatch = randomIntBetween(0, docCount - 1);
-                    assertResponse(searchRequestBuilder.setQuery(QueryBuilders.termQuery("field", docIdToMatch)), searchResponse -> {
+                    assertResponse(searchResponse -> {
                         assertThat(searchResponse.getSuccessfulShards(), equalTo(1));
                         assertThat(searchResponse.getHits().getTotalHits().value, equalTo(1L));
                         SearchHit searchHit = searchResponse.getHits().getAt(0);
@@ -1601,11 +1602,12 @@ public class SnapshotBasedIndexRecoveryIT extends AbstractSnapshotIntegTestCase 
                         assertThat(source, is(notNullValue()));
                         assertThat(source.get("field"), is(equalTo(docIdToMatch)));
                         assertThat(source.get("field2"), is(equalTo("Some text " + docIdToMatch)));
-                    });
+                    }, searchRequestBuilder.setQuery(QueryBuilders.termQuery("field", docIdToMatch)));
                 }
-                case 2 -> assertResponse(searchRequestBuilder.setQuery(QueryBuilders.matchQuery("field2", "text")), searchResponse -> {
-                    assertSearchResponseContainsAllIndexedDocs(searchResponse, docCount);
-                });
+                case 2 -> assertResponse(
+                    searchResponse -> { assertSearchResponseContainsAllIndexedDocs(searchResponse, docCount); },
+                    searchRequestBuilder.setQuery(QueryBuilders.matchQuery("field2", "text"))
+                );
                 default -> throw new IllegalStateException("Unexpected value: " + testCase);
             }
         }

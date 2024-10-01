@@ -74,20 +74,17 @@ public class ScriptScoreQueryIT extends ESIntegTestCase {
         Map<String, Object> params = new HashMap<>();
         params.put("param1", 0.1);
         Script script = new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "doc['field2'].value * param1", params);
-        assertNoFailuresAndResponse(
-            prepareSearch("test-index").setQuery(scriptScoreQuery(matchQuery("field1", "text0"), script)),
-            response -> {
-                assertOrderedSearchHits(response, "10", "8", "6", "4", "2");
-                assertFirstHit(response, hasScore(1.0f));
-                assertSecondHit(response, hasScore(0.8f));
-                assertThirdHit(response, hasScore(0.6f));
-            }
-        );
+        assertNoFailuresAndResponse(response -> {
+            assertOrderedSearchHits(response, "10", "8", "6", "4", "2");
+            assertFirstHit(response, hasScore(1.0f));
+            assertSecondHit(response, hasScore(0.8f));
+            assertThirdHit(response, hasScore(0.6f));
+        }, prepareSearch("test-index").setQuery(scriptScoreQuery(matchQuery("field1", "text0"), script)));
 
         // applying min score
         assertNoFailuresAndResponse(
-            prepareSearch("test-index").setQuery(scriptScoreQuery(matchQuery("field1", "text0"), script).setMinScore(0.6f)),
-            response -> assertOrderedSearchHits(response, "10", "8", "6")
+            response -> assertOrderedSearchHits(response, "10", "8", "6"),
+            prepareSearch("test-index").setQuery(scriptScoreQuery(matchQuery("field1", "text0"), script).setMinScore(0.6f))
         );
     }
 
@@ -103,11 +100,11 @@ public class ScriptScoreQueryIT extends ESIntegTestCase {
         params.put("param1", 0.1);
         Script script = new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "doc['field2'].value * param1", params);
         QueryBuilder boolQuery = boolQuery().should(matchQuery("field1", "text1")).should(matchQuery("field1", "text10"));
-        assertNoFailuresAndResponse(prepareSearch("test-index").setQuery(scriptScoreQuery(boolQuery, script)), response -> {
+        assertNoFailuresAndResponse(response -> {
             assertOrderedSearchHits(response, "10", "1");
             assertFirstHit(response, hasScore(1.0f));
             assertSecondHit(response, hasScore(0.1f));
-        });
+        }, prepareSearch("test-index").setQuery(scriptScoreQuery(boolQuery, script)));
     }
 
     // test that when the internal query is rewritten script_score works well
@@ -124,8 +121,8 @@ public class ScriptScoreQueryIT extends ESIntegTestCase {
         RangeQueryBuilder rangeQB = new RangeQueryBuilder("field1").from("2019-01-01"); // the query should be rewritten to from:null
         Script script = new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "doc['field2'].value * param1", Map.of("param1", 0.1));
         assertNoFailuresAndResponse(
-            prepareSearch("test-index2").setQuery(scriptScoreQuery(rangeQB, script)),
-            response -> assertOrderedSearchHits(response, "3", "2", "1")
+            response -> assertOrderedSearchHits(response, "3", "2", "1"),
+            prepareSearch("test-index2").setQuery(scriptScoreQuery(rangeQB, script))
         );
     }
 

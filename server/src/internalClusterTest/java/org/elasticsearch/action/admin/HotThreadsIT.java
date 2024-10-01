@@ -107,12 +107,12 @@ public class HotThreadsIT extends ESIntegTestCase {
             ensureSearchable();
             while (latch.getCount() > 0) {
                 assertHitCount(
+                    3L,
                     prepareSearch().setQuery(matchAllQuery())
                         .setPostFilter(
                             boolQuery().must(matchAllQuery())
                                 .mustNot(boolQuery().must(termQuery("field1", "value1")).must(termQuery("field1", "value2")))
-                        ),
-                    3L
+                        )
                 );
             }
             safeAwait(latch);

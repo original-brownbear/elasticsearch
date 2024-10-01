@@ -137,7 +137,7 @@ public class RelocationIT extends ESIntegTestCase {
 
         logger.info("--> verifying count");
         indicesAdmin().prepareRefresh().get();
-        assertHitCount(prepareSearch("test").setSize(0), 20L);
+        assertHitCount(20L, prepareSearch("test").setSize(0));
 
         logger.info("--> start another node");
         final String node_2 = internalCluster().startNode();
@@ -159,7 +159,7 @@ public class RelocationIT extends ESIntegTestCase {
 
         logger.info("--> verifying count again...");
         indicesAdmin().prepareRefresh().get();
-        assertHitCount(prepareSearch("test").setSize(0), 20);
+        assertHitCount(20, prepareSearch("test").setSize(0));
     }
 
     public void testRelocationWhileIndexingRandom() throws Exception {
@@ -236,28 +236,25 @@ public class RelocationIT extends ESIntegTestCase {
             for (int i = 0; i < 10; i++) {
                 final int idx = i;
                 logger.info("--> START search test round {}", i + 1);
-                assertResponse(
-                    prepareSearch("test").setQuery(matchAllQuery()).setSize((int) indexer.totalIndexedDocs()).storedFields(),
-                    response -> {
-                        var hits = response.getHits();
-                        if (hits.getTotalHits().value != indexer.totalIndexedDocs()) {
-                            int[] hitIds = new int[(int) indexer.totalIndexedDocs()];
-                            for (int hit = 0; hit < indexer.totalIndexedDocs(); hit++) {
-                                hitIds[hit] = hit + 1;
-                            }
-                            Set<Integer> set = Arrays.stream(hitIds).boxed().collect(Collectors.toSet());
-                            for (SearchHit hit : hits.getHits()) {
-                                int id = Integer.parseInt(hit.getId());
-                                if (set.remove(id) == false) {
-                                    logger.error("Extra id [{}]", id);
-                                }
-                            }
-                            set.forEach(value -> logger.error("Missing id [{}]", value));
+                assertResponse(response -> {
+                    var hits = response.getHits();
+                    if (hits.getTotalHits().value != indexer.totalIndexedDocs()) {
+                        int[] hitIds = new int[(int) indexer.totalIndexedDocs()];
+                        for (int hit = 0; hit < indexer.totalIndexedDocs(); hit++) {
+                            hitIds[hit] = hit + 1;
                         }
-                        assertThat(hits.getTotalHits().value, equalTo(indexer.totalIndexedDocs()));
-                        logger.info("--> DONE search test round {}", idx + 1);
+                        Set<Integer> set = Arrays.stream(hitIds).boxed().collect(Collectors.toSet());
+                        for (SearchHit hit : hits.getHits()) {
+                            int id = Integer.parseInt(hit.getId());
+                            if (set.remove(id) == false) {
+                                logger.error("Extra id [{}]", id);
+                            }
+                        }
+                        set.forEach(value -> logger.error("Missing id [{}]", value));
                     }
-                );
+                    assertThat(hits.getTotalHits().value, equalTo(indexer.totalIndexedDocs()));
+                    logger.info("--> DONE search test round {}", idx + 1);
+                }, prepareSearch("test").setQuery(matchAllQuery()).setSize((int) indexer.totalIndexedDocs()).storedFields());
             }
         }
     }
@@ -362,13 +359,13 @@ public class RelocationIT extends ESIntegTestCase {
             logger.debug("--> verifying all searches return the same number of docs");
             long[] expectedCount = new long[] { -1 };
             for (Client client : clients()) {
-                assertNoFailuresAndResponse(client.prepareSearch("test").setPreference("_local").setSize(0), response -> {
+                assertNoFailuresAndResponse(response -> {
                     if (expectedCount[0] < 0) {
                         expectedCount[0] = response.getHits().getTotalHits().value;
                     } else {
                         assertEquals(expectedCount[0], response.getHits().getTotalHits().value);
                     }
-                });
+                }, client.prepareSearch("test").setPreference("_local").setSize(0));
             }
 
         }
@@ -494,7 +491,7 @@ public class RelocationIT extends ESIntegTestCase {
             docs[i] = prepareIndex("test").setId(id).setSource("field1", English.intToEnglish(i));
         }
         indexRandom(true, docs);
-        assertHitCount(prepareSearch("test"), numDocs);
+        assertHitCount(numDocs, prepareSearch("test"));
 
         logger.info(" --> moving index to new nodes");
         updateIndexSettings(
@@ -570,7 +567,7 @@ public class RelocationIT extends ESIntegTestCase {
 
         logger.info("--> verifying count");
         indicesAdmin().prepareRefresh().get();
-        assertHitCount(prepareSearch("test").setSize(0), 20);
+        assertHitCount(20, prepareSearch("test").setSize(0));
     }
 
     public void testRelocateWhileContinuouslyIndexingAndWaitingForRefresh() throws Exception {
@@ -637,7 +634,7 @@ public class RelocationIT extends ESIntegTestCase {
             assertTrue(pendingIndexResponses.stream().allMatch(ActionFuture::isDone));
         }, 1, TimeUnit.MINUTES);
 
-        assertHitCount(prepareSearch("test").setSize(0), 120);
+        assertHitCount(120, prepareSearch("test").setSize(0));
     }
 
     public void testRelocationEstablishedPeerRecoveryRetentionLeases() throws Exception {

@@ -78,21 +78,20 @@ public class SumIT extends AbstractNumericTestCase {
     @Override
     public void testEmptyAggregation() throws Exception {
 
-        assertResponse(
-            prepareSearch("empty_bucket_idx").setQuery(matchAllQuery())
-                .addAggregation(histogram("histo").field("value").interval(1L).minDocCount(0).subAggregation(sum("sum").field("value"))),
-            response -> {
-                assertThat(response.getHits().getTotalHits().value, equalTo(2L));
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                Histogram.Bucket bucket = histo.getBuckets().get(1);
-                assertThat(bucket, notNullValue());
+        assertResponse(response -> {
+            assertThat(response.getHits().getTotalHits().value, equalTo(2L));
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            Histogram.Bucket bucket = histo.getBuckets().get(1);
+            assertThat(bucket, notNullValue());
 
-                Sum sum = bucket.getAggregations().get("sum");
-                assertThat(sum, notNullValue());
-                assertThat(sum.getName(), equalTo("sum"));
-                assertThat(sum.value(), equalTo(0.0));
-            }
+            Sum sum = bucket.getAggregations().get("sum");
+            assertThat(sum, notNullValue());
+            assertThat(sum.getName(), equalTo("sum"));
+            assertThat(sum.value(), equalTo(0.0));
+        },
+            prepareSearch("empty_bucket_idx").setQuery(matchAllQuery())
+                .addAggregation(histogram("histo").field("value").interval(1L).minDocCount(0).subAggregation(sum("sum").field("value")))
         );
     }
 
@@ -102,103 +101,96 @@ public class SumIT extends AbstractNumericTestCase {
 
     @Override
     public void testSingleValuedField() throws Exception {
-        assertResponse(prepareSearch("idx").setQuery(matchAllQuery()).addAggregation(sum("sum").field("value")), response -> {
+        assertResponse(response -> {
             assertHitCount(response, 10);
 
             Sum sum = response.getAggregations().get("sum");
             assertThat(sum, notNullValue());
             assertThat(sum.getName(), equalTo("sum"));
             assertThat(sum.value(), equalTo((double) 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10));
-        });
+        }, prepareSearch("idx").setQuery(matchAllQuery()).addAggregation(sum("sum").field("value")));
     }
 
     public void testSingleValuedFieldWithFormatter() throws Exception {
-        assertResponse(
-            prepareSearch("idx").setQuery(matchAllQuery()).addAggregation(sum("sum").format("0000.0").field("value")),
-            response -> {
-                assertHitCount(response, 10);
+        assertResponse(response -> {
+            assertHitCount(response, 10);
 
-                Sum sum = response.getAggregations().get("sum");
-                assertThat(sum, notNullValue());
-                assertThat(sum.getName(), equalTo("sum"));
-                assertThat(sum.value(), equalTo((double) 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10));
-                assertThat(sum.getValueAsString(), equalTo("0055.0"));
-            }
-        );
+            Sum sum = response.getAggregations().get("sum");
+            assertThat(sum, notNullValue());
+            assertThat(sum.getName(), equalTo("sum"));
+            assertThat(sum.value(), equalTo((double) 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10));
+            assertThat(sum.getValueAsString(), equalTo("0055.0"));
+        }, prepareSearch("idx").setQuery(matchAllQuery()).addAggregation(sum("sum").format("0000.0").field("value")));
     }
 
     @Override
     public void testSingleValuedFieldGetProperty() throws Exception {
 
-        assertResponse(
-            prepareSearch("idx").setQuery(matchAllQuery()).addAggregation(global("global").subAggregation(sum("sum").field("value"))),
-            response -> {
-                assertHitCount(response, 10);
+        assertResponse(response -> {
+            assertHitCount(response, 10);
 
-                Global global = response.getAggregations().get("global");
-                assertThat(global, notNullValue());
-                assertThat(global.getName(), equalTo("global"));
-                assertThat(global.getDocCount(), equalTo(10L));
-                assertThat(global.getAggregations(), notNullValue());
-                assertThat(global.getAggregations().asList().size(), equalTo(1));
+            Global global = response.getAggregations().get("global");
+            assertThat(global, notNullValue());
+            assertThat(global.getName(), equalTo("global"));
+            assertThat(global.getDocCount(), equalTo(10L));
+            assertThat(global.getAggregations(), notNullValue());
+            assertThat(global.getAggregations().asList().size(), equalTo(1));
 
-                Sum sum = global.getAggregations().get("sum");
-                assertThat(sum, notNullValue());
-                assertThat(sum.getName(), equalTo("sum"));
-                double expectedSumValue = (double) 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10;
-                assertThat(sum.value(), equalTo(expectedSumValue));
-                assertThat((Sum) ((InternalAggregation) global).getProperty("sum"), equalTo(sum));
-                assertThat((double) ((InternalAggregation) global).getProperty("sum.value"), equalTo(expectedSumValue));
-                assertThat((double) ((InternalAggregation) sum).getProperty("value"), equalTo(expectedSumValue));
-            }
-        );
+            Sum sum = global.getAggregations().get("sum");
+            assertThat(sum, notNullValue());
+            assertThat(sum.getName(), equalTo("sum"));
+            double expectedSumValue = (double) 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10;
+            assertThat(sum.value(), equalTo(expectedSumValue));
+            assertThat((Sum) ((InternalAggregation) global).getProperty("sum"), equalTo(sum));
+            assertThat((double) ((InternalAggregation) global).getProperty("sum.value"), equalTo(expectedSumValue));
+            assertThat((double) ((InternalAggregation) sum).getProperty("value"), equalTo(expectedSumValue));
+        }, prepareSearch("idx").setQuery(matchAllQuery()).addAggregation(global("global").subAggregation(sum("sum").field("value"))));
     }
 
     @Override
     public void testMultiValuedField() throws Exception {
 
-        assertResponse(prepareSearch("idx").setQuery(matchAllQuery()).addAggregation(sum("sum").field("values")), response -> {
+        assertResponse(response -> {
             assertHitCount(response, 10);
 
             Sum sum = response.getAggregations().get("sum");
             assertThat(sum, notNullValue());
             assertThat(sum.getName(), equalTo("sum"));
             assertThat(sum.value(), equalTo((double) 2 + 3 + 3 + 4 + 4 + 5 + 5 + 6 + 6 + 7 + 7 + 8 + 8 + 9 + 9 + 10 + 10 + 11 + 11 + 12));
-        });
+        }, prepareSearch("idx").setQuery(matchAllQuery()).addAggregation(sum("sum").field("values")));
     }
 
     @Override
     public void testOrderByEmptyAggregation() throws Exception {
-        assertResponse(
+        assertResponse(response -> {
+            assertHitCount(response, 10);
+
+            Terms terms = response.getAggregations().get("terms");
+            assertThat(terms, notNullValue());
+            List<? extends Terms.Bucket> buckets = terms.getBuckets();
+            assertThat(buckets, notNullValue());
+            assertThat(buckets.size(), equalTo(10));
+
+            for (int i = 0; i < 10; i++) {
+                Terms.Bucket bucket = buckets.get(i);
+                assertThat(bucket, notNullValue());
+                assertThat(bucket.getKeyAsNumber(), equalTo((long) i + 1));
+                assertThat(bucket.getDocCount(), equalTo(1L));
+                Filter filter = bucket.getAggregations().get("filter");
+                assertThat(filter, notNullValue());
+                assertThat(filter.getDocCount(), equalTo(0L));
+                Sum sum = filter.getAggregations().get("sum");
+                assertThat(sum, notNullValue());
+                assertThat(sum.value(), equalTo(0.0));
+
+            }
+        },
             prepareSearch("idx").setQuery(matchAllQuery())
                 .addAggregation(
                     terms("terms").field("value")
                         .order(BucketOrder.compound(BucketOrder.aggregation("filter>sum", true)))
                         .subAggregation(filter("filter", termQuery("value", 100)).subAggregation(sum("sum").field("value")))
-                ),
-            response -> {
-                assertHitCount(response, 10);
-
-                Terms terms = response.getAggregations().get("terms");
-                assertThat(terms, notNullValue());
-                List<? extends Terms.Bucket> buckets = terms.getBuckets();
-                assertThat(buckets, notNullValue());
-                assertThat(buckets.size(), equalTo(10));
-
-                for (int i = 0; i < 10; i++) {
-                    Terms.Bucket bucket = buckets.get(i);
-                    assertThat(bucket, notNullValue());
-                    assertThat(bucket.getKeyAsNumber(), equalTo((long) i + 1));
-                    assertThat(bucket.getDocCount(), equalTo(1L));
-                    Filter filter = bucket.getAggregations().get("filter");
-                    assertThat(filter, notNullValue());
-                    assertThat(filter.getDocCount(), equalTo(0L));
-                    Sum sum = filter.getAggregations().get("sum");
-                    assertThat(sum, notNullValue());
-                    assertThat(sum.value(), equalTo(0.0));
-
-                }
-            }
+                )
         );
     }
 
@@ -274,48 +266,44 @@ public class SumIT extends AbstractNumericTestCase {
     }
 
     public void testFieldAlias() {
-        assertNoFailuresAndResponse(
-            prepareSearch("old_index", "new_index").addAggregation(sum("sum").field("route_length_miles")),
-            response -> {
-                Sum sum = response.getAggregations().get("sum");
-                assertThat(sum, IsNull.notNullValue());
-                assertThat(sum.getName(), equalTo("sum"));
-                assertThat(sum.value(), equalTo(192.7));
-            }
-        );
+        assertNoFailuresAndResponse(response -> {
+            Sum sum = response.getAggregations().get("sum");
+            assertThat(sum, IsNull.notNullValue());
+            assertThat(sum.getName(), equalTo("sum"));
+            assertThat(sum.value(), equalTo(192.7));
+        }, prepareSearch("old_index", "new_index").addAggregation(sum("sum").field("route_length_miles")));
     }
 
     public void testFieldAliasInSubAggregation() {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Terms terms = response.getAggregations().get("terms");
+            assertThat(terms, notNullValue());
+            assertThat(terms.getName(), equalTo("terms"));
+
+            List<? extends Terms.Bucket> buckets = terms.getBuckets();
+            assertThat(buckets.size(), equalTo(2));
+
+            Terms.Bucket bucket = buckets.get(0);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("train"));
+            assertThat(bucket.getDocCount(), equalTo(2L));
+
+            Sum sum = bucket.getAggregations().get("sum");
+            assertThat(sum, notNullValue());
+            assertThat(sum.value(), equalTo(142.2));
+
+            bucket = buckets.get(1);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("bus"));
+            assertThat(bucket.getDocCount(), equalTo(1L));
+
+            sum = bucket.getAggregations().get("sum");
+            assertThat(sum, notNullValue());
+            assertThat(sum.value(), equalTo(50.5));
+        },
             prepareSearch("old_index", "new_index").addAggregation(
                 terms("terms").field("transit_mode").subAggregation(sum("sum").field("route_length_miles"))
-            ),
-            response -> {
-                Terms terms = response.getAggregations().get("terms");
-                assertThat(terms, notNullValue());
-                assertThat(terms.getName(), equalTo("terms"));
-
-                List<? extends Terms.Bucket> buckets = terms.getBuckets();
-                assertThat(buckets.size(), equalTo(2));
-
-                Terms.Bucket bucket = buckets.get(0);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("train"));
-                assertThat(bucket.getDocCount(), equalTo(2L));
-
-                Sum sum = bucket.getAggregations().get("sum");
-                assertThat(sum, notNullValue());
-                assertThat(sum.value(), equalTo(142.2));
-
-                bucket = buckets.get(1);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("bus"));
-                assertThat(bucket.getDocCount(), equalTo(1L));
-
-                sum = bucket.getAggregations().get("sum");
-                assertThat(sum, notNullValue());
-                assertThat(sum.value(), equalTo(50.5));
-            }
+            )
         );
     }
 }

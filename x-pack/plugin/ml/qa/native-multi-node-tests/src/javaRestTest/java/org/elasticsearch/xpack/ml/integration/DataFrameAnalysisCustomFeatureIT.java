@@ -134,7 +134,7 @@ public class DataFrameAnalysisCustomFeatureIT extends MlNativeDataFrameAnalytics
         waitUntilAnalyticsIsStopped(jobId);
 
         client().admin().indices().refresh(new RefreshRequest(destIndex));
-        assertResponse(prepareSearch(sourceIndex).setTrackTotalHits(true).setSize(1000), sourceData -> {
+        assertResponse(sourceData -> {
             for (SearchHit hit : sourceData.getHits()) {
                 Map<String, Object> destDoc = getDestDoc(config, hit);
                 Map<String, Object> resultsObject = getFieldValue(destDoc, "ml");
@@ -145,7 +145,7 @@ public class DataFrameAnalysisCustomFeatureIT extends MlNativeDataFrameAnalytics
                     everyItem(anyOf(startsWith("f."), startsWith("ngram"), equalTo("is_cat"), equalTo("frequency")))
                 );
             }
-        });
+        }, prepareSearch(sourceIndex).setTrackTotalHits(true).setSize(1000));
 
         assertProgressComplete(jobId);
         assertStoredProgressHits(jobId, 1);

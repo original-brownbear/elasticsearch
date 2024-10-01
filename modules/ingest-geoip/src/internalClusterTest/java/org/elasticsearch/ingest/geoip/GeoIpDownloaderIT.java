@@ -246,41 +246,40 @@ public class GeoIpDownloaderIT extends AbstractGeoIpIT {
                     );
                     GeoIpTaskState.Metadata metadata = state.getDatabases().get(id);
                     int size = metadata.lastChunk() - metadata.firstChunk() + 1;
-                    assertResponse(
+                    assertResponse(res -> {
+                        try {
+                            TotalHits totalHits = res.getHits().getTotalHits();
+                            assertEquals(TotalHits.Relation.EQUAL_TO, totalHits.relation);
+                            assertEquals(size, totalHits.value);
+                            assertEquals(size, res.getHits().getHits().length);
+
+                            List<byte[]> data = new ArrayList<>();
+
+                            for (SearchHit hit : res.getHits().getHits()) {
+                                data.add((byte[]) hit.getSourceAsMap().get("data"));
+                            }
+
+                            TarInputStream stream = new TarInputStream(new GZIPInputStream(new MultiByteArrayInputStream(data)));
+                            TarInputStream.TarEntry entry;
+                            while ((entry = stream.getNextEntry()) != null) {
+                                if (entry.name().endsWith(".mmdb")) {
+                                    break;
+                                }
+                            }
+
+                            Path tempFile = createTempFile();
+                            Files.copy(stream, tempFile, StandardCopyOption.REPLACE_EXISTING);
+                            parseDatabase(tempFile);
+                        } catch (Exception e) {
+                            fail(e);
+                        }
+                    },
                         prepareSearch(GeoIpDownloader.DATABASES_INDEX).setSize(size)
                             .setQuery(
                                 new BoolQueryBuilder().filter(new MatchQueryBuilder("name", id))
                                     .filter(new RangeQueryBuilder("chunk").from(metadata.firstChunk()).to(metadata.lastChunk(), true))
                             )
-                            .addSort("chunk", SortOrder.ASC),
-                        res -> {
-                            try {
-                                TotalHits totalHits = res.getHits().getTotalHits();
-                                assertEquals(TotalHits.Relation.EQUAL_TO, totalHits.relation);
-                                assertEquals(size, totalHits.value);
-                                assertEquals(size, res.getHits().getHits().length);
-
-                                List<byte[]> data = new ArrayList<>();
-
-                                for (SearchHit hit : res.getHits().getHits()) {
-                                    data.add((byte[]) hit.getSourceAsMap().get("data"));
-                                }
-
-                                TarInputStream stream = new TarInputStream(new GZIPInputStream(new MultiByteArrayInputStream(data)));
-                                TarInputStream.TarEntry entry;
-                                while ((entry = stream.getNextEntry()) != null) {
-                                    if (entry.name().endsWith(".mmdb")) {
-                                        break;
-                                    }
-                                }
-
-                                Path tempFile = createTempFile();
-                                Files.copy(stream, tempFile, StandardCopyOption.REPLACE_EXISTING);
-                                parseDatabase(tempFile);
-                            } catch (Exception e) {
-                                fail(e);
-                            }
-                        }
+                            .addSort("chunk", SortOrder.ASC)
                     );
                 } catch (Exception e) {
                     throw new AssertionError(e);

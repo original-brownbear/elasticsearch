@@ -250,10 +250,10 @@ abstract class MlNativeDataFrameAnalyticsIntegTestCase extends MlNativeIntegTest
 
     protected void assertStoredProgressHits(String jobId, int hitCount) {
         assertHitCount(
+            hitCount,
             prepareSearch(AnomalyDetectorsIndex.jobStateIndexPattern()).setQuery(
                 QueryBuilders.idsQuery().addIds(StoredProgress.documentId(jobId))
-            ),
-            hitCount
+            )
         );
     }
 
@@ -267,16 +267,16 @@ abstract class MlNativeDataFrameAnalyticsIntegTestCase extends MlNativeIntegTest
 
     private void assertInferenceModelPersisted(String jobId, Matcher<? super Integer> modelHitsArraySizeMatcher) {
         assertResponse(
-            prepareSearch(InferenceIndexConstants.LATEST_INDEX_NAME).setQuery(
-                QueryBuilders.boolQuery().filter(QueryBuilders.termQuery(TrainedModelConfig.TAGS.getPreferredName(), jobId))
-            ),
-            // If the job is stopped during writing_results phase and it is then restarted, there is a chance two trained models
-            // were persisted as there is no way currently for the process to be certain the model was persisted.
             searchResponse -> assertThat(
                 "Hits were: " + Strings.toString(searchResponse.getHits()),
                 searchResponse.getHits().getHits(),
                 is(arrayWithSize(modelHitsArraySizeMatcher))
+            ),
+            prepareSearch(InferenceIndexConstants.LATEST_INDEX_NAME).setQuery(
+                QueryBuilders.boolQuery().filter(QueryBuilders.termQuery(TrainedModelConfig.TAGS.getPreferredName(), jobId))
             )
+            // If the job is stopped during writing_results phase and it is then restarted, there is a chance two trained models
+            // were persisted as there is no way currently for the process to be certain the model was persisted.
         );
     }
 
@@ -303,40 +303,38 @@ abstract class MlNativeDataFrameAnalyticsIntegTestCase extends MlNativeIntegTest
 
     protected String getModelId(String jobId) {
         SetOnce<String> modelId = new SetOnce<>();
-        assertResponse(
+        assertResponse(searchResponse -> {
+            assertThat(searchResponse.getHits().getHits(), arrayWithSize(1));
+            modelId.set(searchResponse.getHits().getHits()[0].getId());
+        },
             prepareSearch(InferenceIndexConstants.LATEST_INDEX_NAME).setQuery(
                 QueryBuilders.boolQuery().filter(QueryBuilders.termQuery(TrainedModelConfig.TAGS.getPreferredName(), jobId))
-            ),
-            searchResponse -> {
-                assertThat(searchResponse.getHits().getHits(), arrayWithSize(1));
-                modelId.set(searchResponse.getHits().getHits()[0].getId());
-            }
+            )
         );
         return modelId.get();
     }
 
     protected TrainedModelMetadata getModelMetadata(String modelId) {
         SetOnce<TrainedModelMetadata> trainedModelMetadataSetOnce = new SetOnce<>();
-        assertResponse(
+        assertResponse(response -> {
+            assertThat(response.getHits().getHits(), arrayWithSize(1));
+            try (
+                XContentParser parser = XContentHelper.createParser(
+                    XContentParserConfiguration.EMPTY,
+                    response.getHits().getHits()[0].getSourceRef(),
+                    XContentType.JSON
+                )
+            ) {
+                trainedModelMetadataSetOnce.set(TrainedModelMetadata.LENIENT_PARSER.apply(parser, null));
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        },
             prepareSearch(InferenceIndexConstants.INDEX_PATTERN).setQuery(
                 QueryBuilders.boolQuery()
                     .filter(QueryBuilders.termQuery("model_id", modelId))
                     .filter(QueryBuilders.termQuery(InferenceIndexConstants.DOC_TYPE.getPreferredName(), TrainedModelMetadata.NAME))
-            ).setSize(1),
-            response -> {
-                assertThat(response.getHits().getHits(), arrayWithSize(1));
-                try (
-                    XContentParser parser = XContentHelper.createParser(
-                        XContentParserConfiguration.EMPTY,
-                        response.getHits().getHits()[0].getSourceRef(),
-                        XContentType.JSON
-                    )
-                ) {
-                    trainedModelMetadataSetOnce.set(TrainedModelMetadata.LENIENT_PARSER.apply(parser, null));
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-            }
+            ).setSize(1)
         );
         return trainedModelMetadataSetOnce.get();
     }
@@ -379,7 +377,7 @@ abstract class MlNativeDataFrameAnalyticsIntegTestCase extends MlNativeIntegTest
 
     protected static Set<String> getTrainingRowsIds(String index) {
         Set<String> trainingRowsIds = new HashSet<>();
-        assertResponse(prepareSearch(index).setSize(10000), hits -> {
+        assertResponse(hits -> {
             for (SearchHit hit : hits.getHits()) {
                 Map<String, Object> sourceAsMap = hit.getSourceAsMap();
                 assertThat(sourceAsMap.containsKey("ml"), is(true));
@@ -391,15 +389,15 @@ abstract class MlNativeDataFrameAnalyticsIntegTestCase extends MlNativeIntegTest
                     trainingRowsIds.add(hit.getId());
                 }
             }
-        });
+        }, prepareSearch(index).setSize(10000));
         assertThat(trainingRowsIds.isEmpty(), is(false));
         return trainingRowsIds;
     }
 
     protected static void assertModelStatePersisted(String stateDocId) {
         assertHitCount(
-            prepareSearch(AnomalyDetectorsIndex.jobStateIndexPattern()).setQuery(QueryBuilders.idsQuery().addIds(stateDocId)),
-            1
+            1,
+            prepareSearch(AnomalyDetectorsIndex.jobStateIndexPattern()).setQuery(QueryBuilders.idsQuery().addIds(stateDocId))
         );
     }
 

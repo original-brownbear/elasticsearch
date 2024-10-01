@@ -132,29 +132,19 @@ public class SearchWithRandomExceptionsIT extends ESIntegTestCase {
                 int docToQuery = between(0, numDocs - 1);
                 int expectedResults = added[docToQuery] ? 1 : 0;
                 logger.info("Searching for [test:{}]", English.intToEnglish(docToQuery));
-                assertResponse(
-                    prepareSearch().setQuery(QueryBuilders.matchQuery("test", English.intToEnglish(docToQuery))).setSize(expectedResults),
-                    response -> {
-                        logger.info("Successful shards: [{}]  numShards: [{}]", response.getSuccessfulShards(), test.numPrimaries);
-                        if (response.getSuccessfulShards() == test.numPrimaries && refreshFailed == false) {
-                            assertResultsAndLogOnFailure(expectedResults, response);
-                        }
+                assertResponse(response -> {
+                    logger.info("Successful shards: [{}]  numShards: [{}]", response.getSuccessfulShards(), test.numPrimaries);
+                    if (response.getSuccessfulShards() == test.numPrimaries && refreshFailed == false) {
+                        assertResultsAndLogOnFailure(expectedResults, response);
                     }
-                );
+                }, prepareSearch().setQuery(QueryBuilders.matchQuery("test", English.intToEnglish(docToQuery))).setSize(expectedResults));
                 // check match all
-                assertResponse(
-                    prepareSearch().setQuery(QueryBuilders.matchAllQuery()).setSize(numCreated).addSort("_id", SortOrder.ASC),
-                    response -> {
-                        logger.info(
-                            "Match all Successful shards: [{}]  numShards: [{}]",
-                            response.getSuccessfulShards(),
-                            test.numPrimaries
-                        );
-                        if (response.getSuccessfulShards() == test.numPrimaries && refreshFailed == false) {
-                            assertResultsAndLogOnFailure(finalNumCreated, response);
-                        }
+                assertResponse(response -> {
+                    logger.info("Match all Successful shards: [{}]  numShards: [{}]", response.getSuccessfulShards(), test.numPrimaries);
+                    if (response.getSuccessfulShards() == test.numPrimaries && refreshFailed == false) {
+                        assertResultsAndLogOnFailure(finalNumCreated, response);
                     }
-                );
+                }, prepareSearch().setQuery(QueryBuilders.matchAllQuery()).setSize(numCreated).addSort("_id", SortOrder.ASC));
 
             } catch (SearchPhaseExecutionException ex) {
                 logger.info("expected SearchPhaseException: [{}]", ex.getMessage());

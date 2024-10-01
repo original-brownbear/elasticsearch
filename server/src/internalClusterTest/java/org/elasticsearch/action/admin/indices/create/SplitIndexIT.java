@@ -189,7 +189,7 @@ public class SplitIndexIT extends ESIntegTestCase {
                 .setSettings(firstSplitSettingsBuilder.build())
         );
         ensureGreen();
-        assertHitCount(prepareSearch("first_split").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")), numDocs);
+        assertHitCount(numDocs, prepareSearch("first_split").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")));
         assertNoResizeSourceIndexSettings("first_split");
 
         for (int i = 0; i < numDocs; i++) { // now update
@@ -200,8 +200,8 @@ public class SplitIndexIT extends ESIntegTestCase {
             builder.get();
         }
         flushAndRefresh();
-        assertHitCount(prepareSearch("first_split").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")), numDocs);
-        assertHitCount(prepareSearch("source").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")), numDocs);
+        assertHitCount(numDocs, prepareSearch("first_split").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")));
+        assertHitCount(numDocs, prepareSearch("source").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")));
         for (int i = 0; i < numDocs; i++) {
             GetResponse getResponse = client().prepareGet("first_split", Integer.toString(i)).setRouting(routingValue[i]).get();
             assertTrue(getResponse.isExists());
@@ -216,13 +216,13 @@ public class SplitIndexIT extends ESIntegTestCase {
                 .setSettings(indexSettings(secondSplitShards, 0).putNull("index.blocks.write").build())
         );
         ensureGreen();
-        assertHitCount(prepareSearch("second_split").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")), numDocs);
+        assertHitCount(numDocs, prepareSearch("second_split").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")));
         assertNoResizeSourceIndexSettings("second_split");
 
         // let it be allocated anywhere and bump replicas
         setReplicaCount(1, "second_split");
         ensureGreen();
-        assertHitCount(prepareSearch("second_split").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")), numDocs);
+        assertHitCount(numDocs, prepareSearch("second_split").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")));
 
         for (int i = 0; i < numDocs; i++) { // now update
             IndexRequestBuilder builder = indexFunc.apply("second_split", i);
@@ -236,9 +236,9 @@ public class SplitIndexIT extends ESIntegTestCase {
             GetResponse getResponse = client().prepareGet("second_split", Integer.toString(i)).setRouting(routingValue[i]).get();
             assertTrue(getResponse.isExists());
         }
-        assertHitCount(prepareSearch("second_split").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")), numDocs);
-        assertHitCount(prepareSearch("first_split").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")), numDocs);
-        assertHitCount(prepareSearch("source").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")), numDocs);
+        assertHitCount(numDocs, prepareSearch("second_split").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")));
+        assertHitCount(numDocs, prepareSearch("first_split").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")));
+        assertHitCount(numDocs, prepareSearch("source").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")));
         if (useNested) {
             assertNested("source", numDocs);
             assertNested("first_split", numDocs);
@@ -252,20 +252,20 @@ public class SplitIndexIT extends ESIntegTestCase {
     public void assertNested(String index, int numDocs) {
         // now, do a nested query
         assertNoFailuresAndResponse(
-            prepareSearch(index).setQuery(nestedQuery("nested1", termQuery("nested1.n_field1", "n_value1_1"), ScoreMode.Avg)),
-            searchResponse -> assertThat(searchResponse.getHits().getTotalHits().value, equalTo((long) numDocs))
+            searchResponse -> assertThat(searchResponse.getHits().getTotalHits().value, equalTo((long) numDocs)),
+            prepareSearch(index).setQuery(nestedQuery("nested1", termQuery("nested1.n_field1", "n_value1_1"), ScoreMode.Avg))
         );
     }
 
     public void assertAllUniqueDocs(SearchRequestBuilder request, int numDocs) {
-        assertResponse(request, response -> {
+        assertResponse(response -> {
             Set<String> ids = new HashSet<>();
             for (int i = 0; i < response.getHits().getHits().length; i++) {
                 String id = response.getHits().getHits()[i].getId();
                 assertTrue("found ID " + id + " more than once", ids.add(id));
             }
             assertEquals(numDocs, ids.size());
-        });
+        }, request);
     }
 
     public void testSplitIndexPrimaryTerm() throws Exception {
@@ -407,21 +407,21 @@ public class SplitIndexIT extends ESIntegTestCase {
             }
 
             final int size = docs > 0 ? 2 * docs : 1;
-            assertHitCount(prepareSearch("target").setSize(size).setQuery(new TermsQueryBuilder("foo", "bar")), docs);
+            assertHitCount(docs, prepareSearch("target").setSize(size).setQuery(new TermsQueryBuilder("foo", "bar")));
 
             if (createWithReplicas == false) {
                 // bump replicas
                 setReplicaCount(1, "target");
                 ensureGreen();
-                assertHitCount(prepareSearch("target").setSize(size).setQuery(new TermsQueryBuilder("foo", "bar")), docs);
+                assertHitCount(docs, prepareSearch("target").setSize(size).setQuery(new TermsQueryBuilder("foo", "bar")));
             }
 
             for (int i = docs; i < 2 * docs; i++) {
                 prepareIndex("target").setSource("{\"foo\" : \"bar\", \"i\" : " + i + "}", XContentType.JSON).get();
             }
             flushAndRefresh();
-            assertHitCount(prepareSearch("target").setSize(2 * size).setQuery(new TermsQueryBuilder("foo", "bar")), 2 * docs);
-            assertHitCount(prepareSearch("source").setSize(size).setQuery(new TermsQueryBuilder("foo", "bar")), docs);
+            assertHitCount(2 * docs, prepareSearch("target").setSize(2 * size).setQuery(new TermsQueryBuilder("foo", "bar")));
+            assertHitCount(docs, prepareSearch("source").setSize(size).setQuery(new TermsQueryBuilder("foo", "bar")));
             GetSettingsResponse target = indicesAdmin().prepareGetSettings("target").get();
             assertThat(
                 target.getIndexToSettings().get("target").getAsVersionId("index.version.created", IndexVersion::fromId),

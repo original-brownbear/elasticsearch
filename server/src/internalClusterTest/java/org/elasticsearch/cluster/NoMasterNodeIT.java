@@ -261,15 +261,15 @@ public class NoMasterNodeIT extends ESIntegTestCase {
         GetResponse getResponse = clientToMasterlessNode.prepareGet("test1", "1").get();
         assertExists(getResponse);
 
-        assertHitCount(clientToMasterlessNode.prepareSearch("test1").setAllowPartialSearchResults(true).setSize(0), 1L);
+        assertHitCount(1L, clientToMasterlessNode.prepareSearch("test1").setAllowPartialSearchResults(true).setSize(0));
 
         logger.info("--> here 3");
-        assertHitCount(clientToMasterlessNode.prepareSearch("test1").setAllowPartialSearchResults(true), 1L);
+        assertHitCount(1L, clientToMasterlessNode.prepareSearch("test1").setAllowPartialSearchResults(true));
 
-        assertResponse(clientToMasterlessNode.prepareSearch("test2").setAllowPartialSearchResults(true).setSize(0), countResponse -> {
+        assertResponse(countResponse -> {
             assertThat(countResponse.getTotalShards(), equalTo(3));
             assertThat(countResponse.getSuccessfulShards(), equalTo(1));
-        });
+        }, clientToMasterlessNode.prepareSearch("test2").setAllowPartialSearchResults(true).setSize(0));
 
         TimeValue timeout = TimeValue.timeValueMillis(200);
         long now = System.currentTimeMillis();
@@ -357,7 +357,7 @@ public class NoMasterNodeIT extends ESIntegTestCase {
 
         expectThrows(Exception.class, client(partitionedNode).prepareGet("test1", "1"));
 
-        assertHitCount(client(randomFrom(nodesWithShards)).prepareSearch("test1").setAllowPartialSearchResults(true).setSize(0), 1L);
+        assertHitCount(1L, client(randomFrom(nodesWithShards)).prepareSearch("test1").setAllowPartialSearchResults(true).setSize(0));
 
         expectThrows(Exception.class, client(partitionedNode).prepareSearch("test1").setAllowPartialSearchResults(true).setSize(0));
 

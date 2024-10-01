@@ -41,48 +41,41 @@ public class HiddenIndexIT extends ESIntegTestCase {
         prepareIndex("hidden-index").setSource("foo", "bar").setRefreshPolicy(RefreshPolicy.IMMEDIATE).get();
 
         // default not visible to wildcard expansion
-        assertResponse(
-            prepareSearch(randomFrom("*", "_all", "h*", "*index")).setSize(1000).setQuery(QueryBuilders.matchAllQuery()),
-            response -> {
-                boolean matchedHidden = Arrays.stream(response.getHits().getHits()).anyMatch(hit -> "hidden-index".equals(hit.getIndex()));
-                assertFalse(matchedHidden);
-            }
-        );
+        assertResponse(response -> {
+            boolean matchedHidden = Arrays.stream(response.getHits().getHits()).anyMatch(hit -> "hidden-index".equals(hit.getIndex()));
+            assertFalse(matchedHidden);
+        }, prepareSearch(randomFrom("*", "_all", "h*", "*index")).setSize(1000).setQuery(QueryBuilders.matchAllQuery()));
 
         // direct access allowed
-        assertResponse(prepareSearch("hidden-index").setSize(1000).setQuery(QueryBuilders.matchAllQuery()), response -> {
+        assertResponse(response -> {
             boolean matchedHidden = Arrays.stream(response.getHits().getHits()).anyMatch(hit -> "hidden-index".equals(hit.getIndex()));
             assertTrue(matchedHidden);
-        });
+        }, prepareSearch("hidden-index").setSize(1000).setQuery(QueryBuilders.matchAllQuery()));
 
         // with indices option to include hidden
-        assertResponse(
+        assertResponse(response -> {
+            boolean matchedHidden = Arrays.stream(response.getHits().getHits()).anyMatch(hit -> "hidden-index".equals(hit.getIndex()));
+            assertTrue(matchedHidden);
+        },
             prepareSearch(randomFrom("*", "_all", "h*", "*index")).setSize(1000)
                 .setQuery(QueryBuilders.matchAllQuery())
-                .setIndicesOptions(IndicesOptions.LENIENT_EXPAND_OPEN_HIDDEN),
-            response -> {
-                boolean matchedHidden = Arrays.stream(response.getHits().getHits()).anyMatch(hit -> "hidden-index".equals(hit.getIndex()));
-                assertTrue(matchedHidden);
-            }
+                .setIndicesOptions(IndicesOptions.LENIENT_EXPAND_OPEN_HIDDEN)
         );
 
         // implicit based on use of pattern starting with . and a wildcard
         assertAcked(indicesAdmin().prepareCreate(".hidden-index").setSettings(Settings.builder().put("index.hidden", true).build()).get());
         prepareIndex(".hidden-index").setSource("foo", "bar").setRefreshPolicy(RefreshPolicy.IMMEDIATE).get();
-        assertResponse(prepareSearch(randomFrom(".*", ".hidden-*")).setSize(1000).setQuery(QueryBuilders.matchAllQuery()), response -> {
+        assertResponse(response -> {
             boolean matchedHidden = Arrays.stream(response.getHits().getHits()).anyMatch(hit -> ".hidden-index".equals(hit.getIndex()));
             assertTrue(matchedHidden);
-        });
+        }, prepareSearch(randomFrom(".*", ".hidden-*")).setSize(1000).setQuery(QueryBuilders.matchAllQuery()));
 
         // make index not hidden
         updateIndexSettings(Settings.builder().put("index.hidden", false), "hidden-index");
-        assertResponse(
-            prepareSearch(randomFrom("*", "_all", "h*", "*index")).setSize(1000).setQuery(QueryBuilders.matchAllQuery()),
-            response -> {
-                boolean matchedHidden = Arrays.stream(response.getHits().getHits()).anyMatch(hit -> "hidden-index".equals(hit.getIndex()));
-                assertTrue(matchedHidden);
-            }
-        );
+        assertResponse(response -> {
+            boolean matchedHidden = Arrays.stream(response.getHits().getHits()).anyMatch(hit -> "hidden-index".equals(hit.getIndex()));
+            assertTrue(matchedHidden);
+        }, prepareSearch(randomFrom("*", "_all", "h*", "*index")).setSize(1000).setQuery(QueryBuilders.matchAllQuery()));
     }
 
     public void testGlobalTemplatesDoNotApply() {

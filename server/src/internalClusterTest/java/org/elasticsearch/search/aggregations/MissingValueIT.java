@@ -53,186 +53,160 @@ public class MissingValueIT extends ESIntegTestCase {
     }
 
     public void testUnmappedTerms() {
-        assertNoFailuresAndResponse(
-            prepareSearch("idx").addAggregation(terms("my_terms").field("non_existing_field").missing("bar")),
-            response -> {
-                Terms terms = response.getAggregations().get("my_terms");
-                assertEquals(1, terms.getBuckets().size());
-                assertEquals(2, terms.getBucketByKey("bar").getDocCount());
-            }
-        );
+        assertNoFailuresAndResponse(response -> {
+            Terms terms = response.getAggregations().get("my_terms");
+            assertEquals(1, terms.getBuckets().size());
+            assertEquals(2, terms.getBucketByKey("bar").getDocCount());
+        }, prepareSearch("idx").addAggregation(terms("my_terms").field("non_existing_field").missing("bar")));
     }
 
     public void testStringTerms() {
         for (ExecutionMode mode : ExecutionMode.values()) {
-            assertNoFailuresAndResponse(
-                prepareSearch("idx").addAggregation(terms("my_terms").field("str").executionHint(mode.toString()).missing("bar")),
-                response -> {
-                    assertNoFailures(response);
-                    Terms terms = response.getAggregations().get("my_terms");
-                    assertEquals(2, terms.getBuckets().size());
-                    assertEquals(1, terms.getBucketByKey("foo").getDocCount());
-                    assertEquals(1, terms.getBucketByKey("bar").getDocCount());
-                }
-            );
-            assertNoFailuresAndResponse(prepareSearch("idx").addAggregation(terms("my_terms").field("str").missing("foo")), response -> {
+            assertNoFailuresAndResponse(response -> {
+                assertNoFailures(response);
+                Terms terms = response.getAggregations().get("my_terms");
+                assertEquals(2, terms.getBuckets().size());
+                assertEquals(1, terms.getBucketByKey("foo").getDocCount());
+                assertEquals(1, terms.getBucketByKey("bar").getDocCount());
+            }, prepareSearch("idx").addAggregation(terms("my_terms").field("str").executionHint(mode.toString()).missing("bar")));
+            assertNoFailuresAndResponse(response -> {
                 Terms terms = response.getAggregations().get("my_terms");
                 assertEquals(1, terms.getBuckets().size());
                 assertEquals(2, terms.getBucketByKey("foo").getDocCount());
-            });
+            }, prepareSearch("idx").addAggregation(terms("my_terms").field("str").missing("foo")));
         }
     }
 
     public void testLongTerms() {
-        assertNoFailuresAndResponse(prepareSearch("idx").addAggregation(terms("my_terms").field("long").missing(4)), response -> {
+        assertNoFailuresAndResponse(response -> {
             Terms terms = response.getAggregations().get("my_terms");
             assertEquals(2, terms.getBuckets().size());
             assertEquals(1, terms.getBucketByKey("3").getDocCount());
             assertEquals(1, terms.getBucketByKey("4").getDocCount());
-        });
-        assertNoFailuresAndResponse(prepareSearch("idx").addAggregation(terms("my_terms").field("long").missing(3)), response -> {
+        }, prepareSearch("idx").addAggregation(terms("my_terms").field("long").missing(4)));
+        assertNoFailuresAndResponse(response -> {
             assertNoFailures(response);
             Terms terms2 = response.getAggregations().get("my_terms");
             assertEquals(1, terms2.getBuckets().size());
             assertEquals(2, terms2.getBucketByKey("3").getDocCount());
-        });
+        }, prepareSearch("idx").addAggregation(terms("my_terms").field("long").missing(3)));
     }
 
     public void testDoubleTerms() {
-        assertNoFailuresAndResponse(prepareSearch("idx").addAggregation(terms("my_terms").field("double").missing(4.5)), response -> {
+        assertNoFailuresAndResponse(response -> {
             Terms terms = response.getAggregations().get("my_terms");
             assertEquals(2, terms.getBuckets().size());
             assertEquals(1, terms.getBucketByKey("4.5").getDocCount());
             assertEquals(1, terms.getBucketByKey("5.5").getDocCount());
-        });
+        }, prepareSearch("idx").addAggregation(terms("my_terms").field("double").missing(4.5)));
 
-        assertNoFailuresAndResponse(prepareSearch("idx").addAggregation(terms("my_terms").field("double").missing(5.5)), response -> {
+        assertNoFailuresAndResponse(response -> {
             Terms terms = response.getAggregations().get("my_terms");
             assertEquals(1, terms.getBuckets().size());
             assertEquals(2, terms.getBucketByKey("5.5").getDocCount());
-        });
+        }, prepareSearch("idx").addAggregation(terms("my_terms").field("double").missing(5.5)));
     }
 
     public void testUnmappedHistogram() {
-        assertNoFailuresAndResponse(
-            prepareSearch("idx").addAggregation(histogram("my_histogram").field("non-existing_field").interval(5).missing(12)),
-            response -> {
-                Histogram histogram = response.getAggregations().get("my_histogram");
-                assertEquals(1, histogram.getBuckets().size());
-                assertEquals(10d, histogram.getBuckets().get(0).getKey());
-                assertEquals(2, histogram.getBuckets().get(0).getDocCount());
-            }
-        );
+        assertNoFailuresAndResponse(response -> {
+            Histogram histogram = response.getAggregations().get("my_histogram");
+            assertEquals(1, histogram.getBuckets().size());
+            assertEquals(10d, histogram.getBuckets().get(0).getKey());
+            assertEquals(2, histogram.getBuckets().get(0).getDocCount());
+        }, prepareSearch("idx").addAggregation(histogram("my_histogram").field("non-existing_field").interval(5).missing(12)));
     }
 
     public void testHistogram() {
-        assertNoFailuresAndResponse(
-            prepareSearch("idx").addAggregation(histogram("my_histogram").field("long").interval(5).missing(7)),
-            response -> {
-                Histogram histogram = response.getAggregations().get("my_histogram");
-                assertEquals(2, histogram.getBuckets().size());
-                assertEquals(0d, histogram.getBuckets().get(0).getKey());
-                assertEquals(1, histogram.getBuckets().get(0).getDocCount());
-                assertEquals(5d, histogram.getBuckets().get(1).getKey());
-                assertEquals(1, histogram.getBuckets().get(1).getDocCount());
-            }
-        );
+        assertNoFailuresAndResponse(response -> {
+            Histogram histogram = response.getAggregations().get("my_histogram");
+            assertEquals(2, histogram.getBuckets().size());
+            assertEquals(0d, histogram.getBuckets().get(0).getKey());
+            assertEquals(1, histogram.getBuckets().get(0).getDocCount());
+            assertEquals(5d, histogram.getBuckets().get(1).getKey());
+            assertEquals(1, histogram.getBuckets().get(1).getDocCount());
+        }, prepareSearch("idx").addAggregation(histogram("my_histogram").field("long").interval(5).missing(7)));
 
-        assertNoFailuresAndResponse(
-            prepareSearch("idx").addAggregation(histogram("my_histogram").field("long").interval(5).missing(3)),
-            response -> {
-                Histogram histogram = response.getAggregations().get("my_histogram");
-                assertEquals(1, histogram.getBuckets().size());
-                assertEquals(0d, histogram.getBuckets().get(0).getKey());
-                assertEquals(2, histogram.getBuckets().get(0).getDocCount());
-            }
-        );
+        assertNoFailuresAndResponse(response -> {
+            Histogram histogram = response.getAggregations().get("my_histogram");
+            assertEquals(1, histogram.getBuckets().size());
+            assertEquals(0d, histogram.getBuckets().get(0).getKey());
+            assertEquals(2, histogram.getBuckets().get(0).getDocCount());
+        }, prepareSearch("idx").addAggregation(histogram("my_histogram").field("long").interval(5).missing(3)));
     }
 
     public void testDateHistogram() {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Histogram histogram = response.getAggregations().get("my_histogram");
+            assertEquals(2, histogram.getBuckets().size());
+            assertEquals("2014-01-01T00:00:00.000Z", histogram.getBuckets().get(0).getKeyAsString());
+            assertEquals(1, histogram.getBuckets().get(0).getDocCount());
+            assertEquals("2015-01-01T00:00:00.000Z", histogram.getBuckets().get(1).getKeyAsString());
+            assertEquals(1, histogram.getBuckets().get(1).getDocCount());
+        },
             prepareSearch("idx").addAggregation(
                 dateHistogram("my_histogram").field("date").calendarInterval(DateHistogramInterval.YEAR).missing("2014-05-07")
-            ),
-            response -> {
-                Histogram histogram = response.getAggregations().get("my_histogram");
-                assertEquals(2, histogram.getBuckets().size());
-                assertEquals("2014-01-01T00:00:00.000Z", histogram.getBuckets().get(0).getKeyAsString());
-                assertEquals(1, histogram.getBuckets().get(0).getDocCount());
-                assertEquals("2015-01-01T00:00:00.000Z", histogram.getBuckets().get(1).getKeyAsString());
-                assertEquals(1, histogram.getBuckets().get(1).getDocCount());
-            }
+            )
         );
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Histogram histogram = response.getAggregations().get("my_histogram");
+            assertEquals(1, histogram.getBuckets().size());
+            assertEquals("2015-01-01T00:00:00.000Z", histogram.getBuckets().get(0).getKeyAsString());
+            assertEquals(2, histogram.getBuckets().get(0).getDocCount());
+        },
             prepareSearch("idx").addAggregation(
                 dateHistogram("my_histogram").field("date").calendarInterval(DateHistogramInterval.YEAR).missing("2015-05-07")
-            ),
-            response -> {
-                Histogram histogram = response.getAggregations().get("my_histogram");
-                assertEquals(1, histogram.getBuckets().size());
-                assertEquals("2015-01-01T00:00:00.000Z", histogram.getBuckets().get(0).getKeyAsString());
-                assertEquals(2, histogram.getBuckets().get(0).getDocCount());
-            }
+            )
         );
     }
 
     public void testCardinality() {
-        assertNoFailuresAndResponse(prepareSearch("idx").addAggregation(cardinality("card").field("long").missing(2)), response -> {
+        assertNoFailuresAndResponse(response -> {
             Cardinality cardinality = response.getAggregations().get("card");
             assertEquals(2, cardinality.getValue());
-        });
+        }, prepareSearch("idx").addAggregation(cardinality("card").field("long").missing(2)));
     }
 
     public void testPercentiles() {
-        assertNoFailuresAndResponse(
-            prepareSearch("idx").addAggregation(percentiles("percentiles").field("long").missing(1000)),
-            response -> {
-                Percentiles percentiles = response.getAggregations().get("percentiles");
-                assertEquals(1000, percentiles.percentile(100), 0);
-            }
-        );
+        assertNoFailuresAndResponse(response -> {
+            Percentiles percentiles = response.getAggregations().get("percentiles");
+            assertEquals(1000, percentiles.percentile(100), 0);
+        }, prepareSearch("idx").addAggregation(percentiles("percentiles").field("long").missing(1000)));
     }
 
     public void testStats() {
-        assertNoFailuresAndResponse(prepareSearch("idx").addAggregation(stats("stats").field("long").missing(5)), response -> {
+        assertNoFailuresAndResponse(response -> {
             Stats stats = response.getAggregations().get("stats");
             assertEquals(2, stats.getCount());
             assertEquals(4, stats.getAvg(), 0);
-        });
+        }, prepareSearch("idx").addAggregation(stats("stats").field("long").missing(5)));
     }
 
     public void testUnmappedGeoBounds() {
-        assertNoFailuresAndResponse(
-            prepareSearch("idx").addAggregation(geoBounds("bounds").field("non_existing_field").missing("2,1")),
-            response -> {
-                GeoBounds bounds = response.getAggregations().get("bounds");
-                assertThat(bounds.bottomRight().lat(), closeTo(2.0, 1E-5));
-                assertThat(bounds.bottomRight().lon(), closeTo(1.0, 1E-5));
-                assertThat(bounds.topLeft().lat(), closeTo(2.0, 1E-5));
-                assertThat(bounds.topLeft().lon(), closeTo(1.0, 1E-5));
-            }
-        );
+        assertNoFailuresAndResponse(response -> {
+            GeoBounds bounds = response.getAggregations().get("bounds");
+            assertThat(bounds.bottomRight().lat(), closeTo(2.0, 1E-5));
+            assertThat(bounds.bottomRight().lon(), closeTo(1.0, 1E-5));
+            assertThat(bounds.topLeft().lat(), closeTo(2.0, 1E-5));
+            assertThat(bounds.topLeft().lon(), closeTo(1.0, 1E-5));
+        }, prepareSearch("idx").addAggregation(geoBounds("bounds").field("non_existing_field").missing("2,1")));
     }
 
     public void testGeoBounds() {
-        assertNoFailuresAndResponse(prepareSearch("idx").addAggregation(geoBounds("bounds").field("location").missing("2,1")), response -> {
+        assertNoFailuresAndResponse(response -> {
             GeoBounds bounds = response.getAggregations().get("bounds");
             assertThat(bounds.bottomRight().lat(), closeTo(1.0, 1E-5));
             assertThat(bounds.bottomRight().lon(), closeTo(2.0, 1E-5));
             assertThat(bounds.topLeft().lat(), closeTo(2.0, 1E-5));
             assertThat(bounds.topLeft().lon(), closeTo(1.0, 1E-5));
-        });
+        }, prepareSearch("idx").addAggregation(geoBounds("bounds").field("location").missing("2,1")));
     }
 
     public void testGeoCentroid() {
-        assertNoFailuresAndResponse(
-            prepareSearch("idx").addAggregation(geoCentroid("centroid").field("location").missing("2,1")),
-            response -> {
-                GeoCentroid centroid = response.getAggregations().get("centroid");
-                GeoPoint point = new GeoPoint(1.5, 1.5);
-                assertThat(point.getY(), closeTo(centroid.centroid().getY(), 1E-5));
-                assertThat(point.getX(), closeTo(centroid.centroid().getX(), 1E-5));
-            }
-        );
+        assertNoFailuresAndResponse(response -> {
+            GeoCentroid centroid = response.getAggregations().get("centroid");
+            GeoPoint point = new GeoPoint(1.5, 1.5);
+            assertThat(point.getY(), closeTo(centroid.centroid().getY(), 1E-5));
+            assertThat(point.getX(), closeTo(centroid.centroid().getX(), 1E-5));
+        }, prepareSearch("idx").addAggregation(geoCentroid("centroid").field("location").missing("2,1")));
     }
 }

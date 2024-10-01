@@ -84,7 +84,7 @@ public class UpdateMappingIntegrationIT extends ESIntegTestCase {
         logger.info("checking all the documents are there");
         BroadcastResponse refreshResponse = indicesAdmin().prepareRefresh().get();
         assertThat(refreshResponse.getFailedShards(), equalTo(0));
-        assertHitCount(prepareSearch("test").setSize(0), recCount);
+        assertHitCount(recCount, prepareSearch("test").setSize(0));
 
         logger.info("checking all the fields are in the mappings");
 

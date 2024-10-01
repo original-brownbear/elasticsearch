@@ -430,9 +430,9 @@ public class TransportSearchIT extends ESIntegTestCase {
         prepareIndex("test").setId("3").setSource("created_date", "2020-01-03").get();
         assertBusy(
             () -> assertResponse(
+                resp -> assertThat(resp.getHits().getTotalHits().value, equalTo(2L)),
                 prepareSearch("test").setQuery(new RangeQueryBuilder("created_date").gte("2020-01-02").lte("2020-01-03"))
-                    .setPreFilterShardSize(randomIntBetween(1, 3)),
-                resp -> assertThat(resp.getHits().getTotalHits().value, equalTo(2L))
+                    .setPreFilterShardSize(randomIntBetween(1, 3))
             )
         );
     }

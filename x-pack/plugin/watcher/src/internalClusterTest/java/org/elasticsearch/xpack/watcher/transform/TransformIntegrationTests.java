@@ -138,17 +138,17 @@ public class TransformIntegrationTests extends AbstractWatcherIntegrationTestCas
         assertWatchWithMinimumPerformedActionsCount("_id2", 1, false);
         refresh();
 
-        assertNoFailuresAndResponse(prepareSearch("output1"), response -> {
+        assertNoFailuresAndResponse(response -> {
             assertThat(response.getHits().getTotalHits().value, greaterThanOrEqualTo(1L));
             assertThat(response.getHits().getAt(0).getSourceAsMap().size(), equalTo(1));
             assertThat(response.getHits().getAt(0).getSourceAsMap().get("key3").toString(), equalTo("20"));
-        });
+        }, prepareSearch("output1"));
 
-        assertNoFailuresAndResponse(prepareSearch("output2"), response -> {
+        assertNoFailuresAndResponse(response -> {
             assertThat(response.getHits().getTotalHits().value, greaterThanOrEqualTo(1L));
             assertThat(response.getHits().getAt(0).getSourceAsMap().size(), equalTo(1));
             assertThat(response.getHits().getAt(0).getSourceAsMap().get("key3").toString(), equalTo("20"));
-        });
+        }, prepareSearch("output2"));
     }
 
     public void testSearchTransform() throws Exception {
@@ -183,15 +183,15 @@ public class TransformIntegrationTests extends AbstractWatcherIntegrationTestCas
         assertWatchWithMinimumPerformedActionsCount("_id2", 1, false);
         refresh();
 
-        assertNoFailuresAndResponse(prepareSearch("output1"), response -> {
+        assertNoFailuresAndResponse(response -> {
             assertThat(response.getHits().getTotalHits().value, greaterThanOrEqualTo(1L));
             assertThat(response.getHits().getAt(0).getSourceAsString(), containsString("mytestresult"));
-        });
+        }, prepareSearch("output1"));
 
-        assertNoFailuresAndResponse(prepareSearch("output2"), response -> {
+        assertNoFailuresAndResponse(response -> {
             assertThat(response.getHits().getTotalHits().value, greaterThanOrEqualTo(1L));
             assertThat(response.getHits().getAt(0).getSourceAsString(), containsString("mytestresult"));
-        });
+        }, prepareSearch("output2"));
     }
 
     public void testChainTransform() throws Exception {
@@ -222,17 +222,17 @@ public class TransformIntegrationTests extends AbstractWatcherIntegrationTestCas
         assertWatchWithMinimumPerformedActionsCount("_id2", 1, false);
         refresh();
 
-        assertNoFailuresAndResponse(prepareSearch("output1"), response -> {
+        assertNoFailuresAndResponse(response -> {
             assertThat(response.getHits().getTotalHits().value, greaterThanOrEqualTo(1L));
             assertThat(response.getHits().getAt(0).getSourceAsMap().size(), equalTo(1));
             assertThat(response.getHits().getAt(0).getSourceAsMap().get("key4").toString(), equalTo("30"));
-        });
+        }, prepareSearch("output1"));
 
-        assertNoFailuresAndResponse(prepareSearch("output2"), response -> {
+        assertNoFailuresAndResponse(response -> {
             assertThat(response.getHits().getTotalHits().value, greaterThanOrEqualTo(1L));
             assertThat(response.getHits().getAt(0).getSourceAsMap().size(), equalTo(1));
             assertThat(response.getHits().getAt(0).getSourceAsMap().get("key4").toString(), equalTo("30"));
-        });
+        }, prepareSearch("output2"));
     }
 
     private void executeWatch(String watchId) {

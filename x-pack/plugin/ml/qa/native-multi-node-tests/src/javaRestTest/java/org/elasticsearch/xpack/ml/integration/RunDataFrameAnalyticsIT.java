@@ -104,7 +104,7 @@ public class RunDataFrameAnalyticsIT extends MlNativeDataFrameAnalyticsIntegTest
         assertThat(stats.getDataCounts().getTestDocsCount(), equalTo(0L));
         assertThat(stats.getDataCounts().getSkippedDocsCount(), equalTo(0L));
 
-        assertResponse(prepareSearch(sourceIndex), sourceData -> {
+        assertResponse(sourceData -> {
             double scoreOfOutlier = 0.0;
             double scoreOfNonOutlier = -1.0;
             for (SearchHit hit : sourceData.getHits()) {
@@ -135,7 +135,7 @@ public class RunDataFrameAnalyticsIT extends MlNativeDataFrameAnalyticsIntegTest
                 }
             }
             assertThat(scoreOfOutlier, is(greaterThan(scoreOfNonOutlier)));
-        });
+        }, prepareSearch(sourceIndex));
 
         assertProgressComplete(id);
         assertStoredProgressHits(id, 1);
@@ -233,13 +233,13 @@ public class RunDataFrameAnalyticsIT extends MlNativeDataFrameAnalyticsIntegTest
         waitUntilAnalyticsIsStopped(id);
 
         // Check we've got all docs
-        assertHitCount(prepareSearch(config.getDest().getIndex()).setTrackTotalHits(true), docCount);
+        assertHitCount(docCount, prepareSearch(config.getDest().getIndex()).setTrackTotalHits(true));
 
         // Check they all have an outlier_score
         assertHitCount(
+            docCount,
             prepareSearch(config.getDest().getIndex()).setTrackTotalHits(true)
-                .setQuery(QueryBuilders.existsQuery("custom_ml.outlier_score")),
-            docCount
+                .setQuery(QueryBuilders.existsQuery("custom_ml.outlier_score"))
         );
 
         assertProgressComplete(id);
@@ -314,7 +314,7 @@ public class RunDataFrameAnalyticsIT extends MlNativeDataFrameAnalyticsIntegTest
         startAnalytics(id);
         waitUntilAnalyticsIsStopped(id);
 
-        assertResponse(prepareSearch(sourceIndex), sourceData -> {
+        assertResponse(sourceData -> {
             for (SearchHit hit : sourceData.getHits()) {
                 GetResponse destDocGetResponse = client().prepareGet().setIndex(config.getDest().getIndex()).setId(hit.getId()).get();
                 assertThat(destDocGetResponse.isExists(), is(true));
@@ -333,7 +333,7 @@ public class RunDataFrameAnalyticsIT extends MlNativeDataFrameAnalyticsIntegTest
                 double outlierScore = (double) resultsObject.get("outlier_score");
                 assertThat(outlierScore, allOf(greaterThanOrEqualTo(0.0), lessThanOrEqualTo(1.0)));
             }
-        });
+        }, prepareSearch(sourceIndex));
 
         assertProgressComplete(id);
         assertStoredProgressHits(id, 1);
@@ -395,7 +395,7 @@ public class RunDataFrameAnalyticsIT extends MlNativeDataFrameAnalyticsIntegTest
             return;
         }
 
-        assertResponse(prepareSearch(config.getDest().getIndex()).setTrackTotalHits(true), searchResponse -> {
+        assertResponse(searchResponse -> {
             if (searchResponse.getHits().getTotalHits().value == docCount) {
                 long seenCount = SearchResponseUtils.getTotalHitsValue(
                     prepareSearch(config.getDest().getIndex()).setTrackTotalHits(true)
@@ -406,7 +406,7 @@ public class RunDataFrameAnalyticsIT extends MlNativeDataFrameAnalyticsIntegTest
             } else {
                 logger.debug("We stopped during reindexing: [{}] < [{}]", searchResponse.getHits().getTotalHits().value, docCount);
             }
-        });
+        }, prepareSearch(config.getDest().getIndex()).setTrackTotalHits(true));
 
         assertThatAuditMessagesMatch(
             id,
@@ -463,12 +463,12 @@ public class RunDataFrameAnalyticsIT extends MlNativeDataFrameAnalyticsIntegTest
         waitUntilAnalyticsIsStopped(id);
 
         // Check we've got all docs
-        assertHitCount(prepareSearch(config.getDest().getIndex()).setTrackTotalHits(true), bulkRequestBuilder.numberOfActions());
+        assertHitCount(bulkRequestBuilder.numberOfActions(), prepareSearch(config.getDest().getIndex()).setTrackTotalHits(true));
 
         // Check they all have an outlier_score
         assertHitCount(
-            prepareSearch(config.getDest().getIndex()).setTrackTotalHits(true).setQuery(QueryBuilders.existsQuery("ml.outlier_score")),
-            bulkRequestBuilder.numberOfActions()
+            bulkRequestBuilder.numberOfActions(),
+            prepareSearch(config.getDest().getIndex()).setTrackTotalHits(true).setQuery(QueryBuilders.existsQuery("ml.outlier_score"))
         );
 
         assertProgressComplete(id);
@@ -525,11 +525,11 @@ public class RunDataFrameAnalyticsIT extends MlNativeDataFrameAnalyticsIntegTest
         waitUntilAnalyticsIsStopped(id);
 
         // Check we've got all docs
-        assertHitCount(prepareSearch(config.getDest().getIndex()).setTrackTotalHits(true), bulkRequestBuilder.numberOfActions());
+        assertHitCount(bulkRequestBuilder.numberOfActions(), prepareSearch(config.getDest().getIndex()).setTrackTotalHits(true));
         // Check they all have an outlier_score
         assertHitCount(
-            prepareSearch(config.getDest().getIndex()).setTrackTotalHits(true).setQuery(QueryBuilders.existsQuery("ml.outlier_score")),
-            bulkRequestBuilder.numberOfActions()
+            bulkRequestBuilder.numberOfActions(),
+            prepareSearch(config.getDest().getIndex()).setTrackTotalHits(true).setQuery(QueryBuilders.existsQuery("ml.outlier_score"))
         );
 
         assertProgressComplete(id);
@@ -689,13 +689,13 @@ public class RunDataFrameAnalyticsIT extends MlNativeDataFrameAnalyticsIntegTest
         waitUntilAnalyticsIsStopped(id);
 
         // Check we've got all docs
-        assertHitCount(prepareSearch(config.getDest().getIndex()).setTrackTotalHits(true), docCount);
+        assertHitCount(docCount, prepareSearch(config.getDest().getIndex()).setTrackTotalHits(true));
 
         // Check they all have an outlier_score
         assertHitCount(
+            docCount,
             prepareSearch(config.getDest().getIndex()).setTrackTotalHits(true)
-                .setQuery(QueryBuilders.existsQuery("custom_ml.outlier_score")),
-            docCount
+                .setQuery(QueryBuilders.existsQuery("custom_ml.outlier_score"))
         );
 
         assertProgressComplete(id);
@@ -748,7 +748,7 @@ public class RunDataFrameAnalyticsIT extends MlNativeDataFrameAnalyticsIntegTest
         startAnalytics(id);
         waitUntilAnalyticsIsStopped(id);
 
-        assertResponse(prepareSearch(sourceIndex), sourceData -> {
+        assertResponse(sourceData -> {
             double scoreOfOutlier = 0.0;
             double scoreOfNonOutlier = -1.0;
             for (SearchHit hit : sourceData.getHits()) {
@@ -781,7 +781,7 @@ public class RunDataFrameAnalyticsIT extends MlNativeDataFrameAnalyticsIntegTest
                 }
             }
             assertThat(scoreOfOutlier, is(greaterThan(scoreOfNonOutlier)));
-        });
+        }, prepareSearch(sourceIndex));
 
         assertProgressComplete(id);
         assertStoredProgressHits(id, 1);
@@ -858,7 +858,7 @@ public class RunDataFrameAnalyticsIT extends MlNativeDataFrameAnalyticsIntegTest
         assertThat(stats.getDataCounts().getTestDocsCount(), equalTo(0L));
         assertThat(stats.getDataCounts().getSkippedDocsCount(), equalTo(0L));
 
-        assertResponse(prepareSearch(sourceIndex), sourceData -> {
+        assertResponse(sourceData -> {
             double scoreOfOutlier = 0.0;
             double scoreOfNonOutlier = -1.0;
             for (SearchHit hit : sourceData.getHits()) {
@@ -894,7 +894,7 @@ public class RunDataFrameAnalyticsIT extends MlNativeDataFrameAnalyticsIntegTest
                 }
             }
             assertThat(scoreOfOutlier, is(greaterThan(scoreOfNonOutlier)));
-        });
+        }, prepareSearch(sourceIndex));
 
         assertProgressComplete(id);
         assertStoredProgressHits(id, 1);
@@ -964,7 +964,7 @@ public class RunDataFrameAnalyticsIT extends MlNativeDataFrameAnalyticsIntegTest
         assertThat(stats.getDataCounts().getTestDocsCount(), equalTo(0L));
         assertThat(stats.getDataCounts().getSkippedDocsCount(), equalTo(0L));
 
-        assertResponse(prepareSearch(sourceIndex), sourceData -> {
+        assertResponse(sourceData -> {
             double scoreOfOutlier = 0.0;
             double scoreOfNonOutlier = -1.0;
             for (SearchHit hit : sourceData.getHits()) {
@@ -1000,7 +1000,7 @@ public class RunDataFrameAnalyticsIT extends MlNativeDataFrameAnalyticsIntegTest
                 }
             }
             assertThat(scoreOfOutlier, is(greaterThan(scoreOfNonOutlier)));
-        });
+        }, prepareSearch(sourceIndex));
 
         assertProgressComplete(id);
         assertStoredProgressHits(id, 1);

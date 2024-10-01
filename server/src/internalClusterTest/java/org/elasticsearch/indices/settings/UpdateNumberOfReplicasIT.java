@@ -60,7 +60,7 @@ public class UpdateNumberOfReplicasIT extends ESIntegTestCase {
         refresh();
 
         for (int i = 0; i < 10; i++) {
-            assertHitCount(prepareSearch().setSize(0).setQuery(matchAllQuery()), 10L);
+            assertHitCount(10L, prepareSearch().setSize(0).setQuery(matchAllQuery()));
         }
 
         final long settingsVersion = clusterAdmin().prepareState(TEST_REQUEST_TIMEOUT)
@@ -119,7 +119,7 @@ public class UpdateNumberOfReplicasIT extends ESIntegTestCase {
         assertThat(clusterHealth.getIndices().get("test").getActiveShards(), equalTo(numShards.numPrimaries * 3));
 
         for (int i = 0; i < 10; i++) {
-            assertHitCount(prepareSearch().setSize(0).setQuery(matchAllQuery()), 10L);
+            assertHitCount(10L, prepareSearch().setSize(0).setQuery(matchAllQuery()));
         }
 
         logger.info("Decreasing number of replicas from 2 to 0");
@@ -141,7 +141,7 @@ public class UpdateNumberOfReplicasIT extends ESIntegTestCase {
         assertThat(clusterHealth.getIndices().get("test").getActiveShards(), equalTo(numShards.numPrimaries));
 
         for (int i = 0; i < 10; i++) {
-            assertHitCount(prepareSearch().setQuery(matchAllQuery()), 10);
+            assertHitCount(10, prepareSearch().setQuery(matchAllQuery()));
         }
 
         final long afterReplicaDecreaseSettingsVersion = clusterAdmin().prepareState(TEST_REQUEST_TIMEOUT)

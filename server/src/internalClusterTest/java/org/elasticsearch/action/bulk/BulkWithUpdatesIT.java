@@ -511,7 +511,7 @@ public class BulkWithUpdatesIT extends ESIntegTestCase {
 
         refresh();
 
-        assertHitCount(prepareSearch().setSize(0), numDocs);
+        assertHitCount(numDocs, prepareSearch().setSize(0));
     }
 
     public void testFailingVersionedUpdatedOnBulk() throws Exception {
@@ -614,7 +614,7 @@ public class BulkWithUpdatesIT extends ESIntegTestCase {
             .setRefreshPolicy(RefreshPolicy.IMMEDIATE);
 
         client().bulk(bulkRequest).get();
-        assertHitCount(prepareSearch("bulkindex*"), 3);
+        assertHitCount(3, prepareSearch("bulkindex*"));
 
         assertBusy(() -> assertAcked(indicesAdmin().prepareClose("bulkindex2")));
 

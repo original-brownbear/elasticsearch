@@ -135,12 +135,12 @@ public class CrossClusterIT extends AbstractMultiClustersTestCase {
         );
 
         assertHitCount(
+            demoDocs + prodDocs,
             localCluster.client(nodeWithRemoteClusterClientRole)
                 .prepareSearch("demo", "cluster_a:prod")
                 .setQuery(new MatchAllQueryBuilder())
                 .setAllowPartialSearchResults(false)
-                .setSize(1000),
-            demoDocs + prodDocs
+                .setSize(1000)
         );
     }
 

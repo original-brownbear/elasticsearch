@@ -144,17 +144,16 @@ public class SearchAfterIT extends ESIntegTestCase {
             prepareIndex("test").setId("0").setSource("field1", 0),
             prepareIndex("test").setId("1").setSource("field1", 100, "field2", "toto")
         );
-        assertResponse(
+        assertResponse(searchResponse -> {
+            assertThat(searchResponse.getHits().getTotalHits().value, Matchers.equalTo(2L));
+            assertThat(searchResponse.getHits().getHits().length, Matchers.equalTo(1));
+            assertThat(searchResponse.getHits().getHits()[0].getSourceAsMap().get("field1"), Matchers.equalTo(100));
+            assertThat(searchResponse.getHits().getHits()[0].getSourceAsMap().get("field2"), Matchers.equalTo("toto"));
+        },
             prepareSearch("test").addSort("field1", SortOrder.ASC)
                 .addSort("field2", SortOrder.ASC)
                 .setQuery(matchAllQuery())
-                .searchAfter(new Object[] { 0, null }),
-            searchResponse -> {
-                assertThat(searchResponse.getHits().getTotalHits().value, Matchers.equalTo(2L));
-                assertThat(searchResponse.getHits().getHits().length, Matchers.equalTo(1));
-                assertThat(searchResponse.getHits().getHits()[0].getSourceAsMap().get("field1"), Matchers.equalTo(100));
-                assertThat(searchResponse.getHits().getHits()[0].getSourceAsMap().get("field2"), Matchers.equalTo("toto"));
-            }
+                .searchAfter(new Object[] { 0, null })
         );
     }
 
@@ -219,35 +218,32 @@ public class SearchAfterIT extends ESIntegTestCase {
             .add(new IndexRequest("test").id("5").source("start_date", "2017-01-20", "end_date", "2025-05-28"))
             .get();
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(resp -> {
+            assertThat(resp.getHits().getHits()[0].getSortValues(), arrayContaining("22/01/2015", "2022-07-23"));
+            assertThat(resp.getHits().getHits()[1].getSortValues(), arrayContaining("21/02/2016", "2024-03-24"));
+        },
             prepareSearch("test").addSort(SortBuilders.fieldSort("start_date").setFormat("dd/MM/yyyy"))
                 .addSort(SortBuilders.fieldSort("end_date").setFormat("yyyy-MM-dd"))
-                .setSize(2),
-            resp -> {
-                assertThat(resp.getHits().getHits()[0].getSortValues(), arrayContaining("22/01/2015", "2022-07-23"));
-                assertThat(resp.getHits().getHits()[1].getSortValues(), arrayContaining("21/02/2016", "2024-03-24"));
-            }
+                .setSize(2)
         );
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(resp -> {
+            assertThat(resp.getHits().getHits()[0].getSortValues(), arrayContaining("20/01/2017", "2025-05-28"));
+            assertThat(resp.getHits().getHits()[1].getSortValues(), arrayContaining("23/04/2018", "2021-02-22"));
+        },
             prepareSearch("test").addSort(SortBuilders.fieldSort("start_date").setFormat("dd/MM/yyyy"))
                 .addSort(SortBuilders.fieldSort("end_date").setFormat("yyyy-MM-dd"))
                 .searchAfter(new String[] { "21/02/2016", "2024-03-24" })
-                .setSize(2),
-            resp -> {
-                assertThat(resp.getHits().getHits()[0].getSortValues(), arrayContaining("20/01/2017", "2025-05-28"));
-                assertThat(resp.getHits().getHits()[1].getSortValues(), arrayContaining("23/04/2018", "2021-02-22"));
-            }
+                .setSize(2)
         );
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(resp -> {
+            assertThat(resp.getHits().getHits()[0].getSortValues(), arrayContaining("20/01/2017", 1748390400000L));
+            assertThat(resp.getHits().getHits()[1].getSortValues(), arrayContaining("23/04/2018", 1613952000000L));
+        },
             prepareSearch("test").addSort(SortBuilders.fieldSort("start_date").setFormat("dd/MM/yyyy"))
                 .addSort(SortBuilders.fieldSort("end_date")) // it's okay because end_date has the format "yyyy-MM-dd"
                 .searchAfter(new String[] { "21/02/2016", "2024-03-24" })
-                .setSize(2),
-            resp -> {
-                assertThat(resp.getHits().getHits()[0].getSortValues(), arrayContaining("20/01/2017", 1748390400000L));
-                assertThat(resp.getHits().getHits()[1].getSortValues(), arrayContaining("23/04/2018", 1613952000000L));
-            }
+                .setSize(2)
         );
 
         SearchRequestBuilder searchRequest = prepareSearch("test").addSort(SortBuilders.fieldSort("start_date").setFormat("dd/MM/yyyy"))

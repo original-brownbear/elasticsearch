@@ -77,24 +77,23 @@ public class MultiNodesStatsTests extends MonitoringIntegTestCase {
             flush(ALL_MONITORING_INDICES);
             refresh();
 
-            assertResponse(
-                prepareSearch(ALL_MONITORING_INDICES).setQuery(QueryBuilders.termQuery("type", NodeStatsMonitoringDoc.TYPE))
-                    .setSize(0)
-                    .addAggregation(AggregationBuilders.terms("nodes_ids").field("node_stats.node_id")),
-                response -> {
-                    for (Aggregation aggregation : response.getAggregations()) {
-                        assertThat(aggregation, instanceOf(StringTerms.class));
-                        assertThat(((StringTerms) aggregation).getBuckets().size(), equalTo(nbNodes));
+            assertResponse(response -> {
+                for (Aggregation aggregation : response.getAggregations()) {
+                    assertThat(aggregation, instanceOf(StringTerms.class));
+                    assertThat(((StringTerms) aggregation).getBuckets().size(), equalTo(nbNodes));
 
-                        for (String nodeName : internalCluster().getNodeNames()) {
-                            StringTerms.Bucket bucket = ((StringTerms) aggregation).getBucketByKey(getNodeId(nodeName));
-                            // At least 1 doc must exist per node, but it can be more than 1
-                            // because the first node may have already collected many node stats documents
-                            // whereas the last node just started to collect node stats.
-                            assertThat(bucket.getDocCount(), greaterThanOrEqualTo(1L));
-                        }
+                    for (String nodeName : internalCluster().getNodeNames()) {
+                        StringTerms.Bucket bucket = ((StringTerms) aggregation).getBucketByKey(getNodeId(nodeName));
+                        // At least 1 doc must exist per node, but it can be more than 1
+                        // because the first node may have already collected many node stats documents
+                        // whereas the last node just started to collect node stats.
+                        assertThat(bucket.getDocCount(), greaterThanOrEqualTo(1L));
                     }
                 }
+            },
+                prepareSearch(ALL_MONITORING_INDICES).setQuery(QueryBuilders.termQuery("type", NodeStatsMonitoringDoc.TYPE))
+                    .setSize(0)
+                    .addAggregation(AggregationBuilders.terms("nodes_ids").field("node_stats.node_id"))
             );
         });
     }

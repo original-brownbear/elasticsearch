@@ -139,9 +139,9 @@ public class LatencySimulatingBlobStoreRepositoryTests extends AbstractSnapshotI
         assertThat(restoreSnapshotResponse.getRestoreInfo().failedShards(), equalTo(0));
 
         logger.info("--> run a search");
-        assertResponse(client.prepareSearch("test-idx").setQuery(QueryBuilders.termQuery("text", "sometext")), searchResponse -> {
+        assertResponse(searchResponse -> {
             assertThat(searchResponse.getHits().getTotalHits().value, greaterThan(0L));
             assertThat(COUNTS.intValue(), greaterThan(0));
-        });
+        }, client.prepareSearch("test-idx").setQuery(QueryBuilders.termQuery("text", "sometext")));
     }
 }

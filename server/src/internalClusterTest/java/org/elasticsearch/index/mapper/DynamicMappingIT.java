@@ -150,13 +150,10 @@ public class DynamicMappingIT extends ESIntegTestCase {
         );
         // every field is a multi-field (text + keyword)
         assertThat(properties, aMapWithSize(16));
-        assertResponse(
-            prepareSearch("index").setQuery(new MatchAllQueryBuilder()).setSize(numberOfFieldsToCreate).addFetchField("*"),
-            response -> {
-                long ignoredFields = Arrays.stream(response.getHits().getHits()).filter(hit -> hit.field("_ignored") != null).count();
-                assertEquals(16, ignoredFields);
-            }
-        );
+        assertResponse(response -> {
+            long ignoredFields = Arrays.stream(response.getHits().getHits()).filter(hit -> hit.field("_ignored") != null).count();
+            assertEquals(16, ignoredFields);
+        }, prepareSearch("index").setQuery(new MatchAllQueryBuilder()).setSize(numberOfFieldsToCreate).addFetchField("*"));
     }
 
     private Map<String, Object> indexConcurrently(int numberOfFieldsToCreate, Settings.Builder settings) throws Throwable {
@@ -380,13 +377,13 @@ public class DynamicMappingIT extends ESIntegTestCase {
                 .source(orderedMap("dynamic.keyword", "foo", "mapped_obj.number", 1, "mapped_obj.string", "foo"))
         ).get();
 
-        assertResponse(prepareSearch("test").setQuery(new MatchAllQueryBuilder()).addFetchField("*"), r -> {
+        assertResponse(r -> {
             var fields = r.getHits().getHits()[0].getFields();
             assertThat(fields.keySet(), equalTo(Set.of("dynamic.keyword", "mapped_obj.number", "_ignored")));
             assertThat(fields.get("dynamic.keyword").getValues(), equalTo(List.of("foo")));
             assertThat(fields.get("mapped_obj.number").getValues(), equalTo(List.of(1L)));
             assertThat(fields.get("_ignored").getValues(), equalTo(List.of("mapped_obj.string")));
-        });
+        }, prepareSearch("test").setQuery(new MatchAllQueryBuilder()).addFetchField("*"));
     }
 
     private LinkedHashMap<String, Object> orderedMap(Object... entries) {
@@ -421,8 +418,8 @@ public class DynamicMappingIT extends ESIntegTestCase {
         ensureGreen("index");
         client().prepareIndex("index").setId("1").setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE).setSource(source).get();
         assertResponse(
-            prepareSearch("index").setQuery(new MatchAllQueryBuilder()).addFetchField("*"),
-            r -> fieldsConsumer.accept(r.getHits().getHits()[0].getFields())
+            r -> fieldsConsumer.accept(r.getHits().getHits()[0].getFields()),
+            prepareSearch("index").setQuery(new MatchAllQueryBuilder()).addFetchField("*")
         );
     }
 
@@ -652,9 +649,12 @@ public class DynamicMappingIT extends ESIntegTestCase {
         BulkResponse bulkItemResponses = client().bulk(bulkRequest).actionGet();
         assertFalse(bulkItemResponses.buildFailureMessage(), bulkItemResponses.hasFailures());
 
-        assertHitCount(prepareSearch("test").setQuery(new MatchQueryBuilder("one", "one")), 1);
-        assertHitCount(prepareSearch("test").setQuery(new MatchQueryBuilder("one.two", 3.5)), 1);
-        assertHitCount(prepareSearch("test").setQuery(new MatchQueryBuilder("one.two.three", "1")), 1);
+        assertHitCount(
+            1,
+            prepareSearch("test").setQuery(new MatchQueryBuilder("one", "one")),
+            prepareSearch("test").setQuery(new MatchQueryBuilder("one.two", 3.5)),
+            prepareSearch("test").setQuery(new MatchQueryBuilder("one.two.three", "1"))
+        );
     }
 
     public void testDynamicRuntimeObjectFields() {
@@ -691,10 +691,13 @@ public class DynamicMappingIT extends ESIntegTestCase {
         BulkResponse bulkItemResponses = client().bulk(bulkRequest).actionGet();
         assertFalse(bulkItemResponses.buildFailureMessage(), bulkItemResponses.hasFailures());
 
-        assertHitCount(prepareSearch("test").setQuery(new MatchQueryBuilder("obj.one", 1)), 1);
-        assertHitCount(prepareSearch("test").setQuery(new MatchQueryBuilder("anything", "anything")), 1);
-        assertHitCount(prepareSearch("test").setQuery(new MatchQueryBuilder("obj.runtime.one", "one")), 1);
-        assertHitCount(prepareSearch("test").setQuery(new MatchQueryBuilder("obj.runtime.one.two", "1")), 1);
+        assertHitCount(
+            1,
+            prepareSearch("test").setQuery(new MatchQueryBuilder("obj.one", 1)),
+            prepareSearch("test").setQuery(new MatchQueryBuilder("anything", "anything")),
+            prepareSearch("test").setQuery(new MatchQueryBuilder("obj.runtime.one", "one")),
+            prepareSearch("test").setQuery(new MatchQueryBuilder("obj.runtime.one.two", "1"))
+        );
 
         Exception exception = expectThrows(DocumentParsingException.class, prepareIndex("test").setSource("obj.runtime", "value"));
         assertThat(
@@ -734,7 +737,7 @@ public class DynamicMappingIT extends ESIntegTestCase {
                 .status()
         );
 
-        assertHitCount(prepareSearch("test").setQuery(new MatchQueryBuilder("obj.runtime.dynamic.number", 1)), 1);
+        assertHitCount(1, prepareSearch("test").setQuery(new MatchQueryBuilder("obj.runtime.dynamic.number", 1)));
 
         // a doc with the same field but a different type causes a conflict
         Exception e = expectThrows(

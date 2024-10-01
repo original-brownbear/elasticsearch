@@ -153,7 +153,34 @@ public class BucketScriptIT extends ESIntegTestCase {
     }
 
     public void testInlineScript() {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            assertThat(histo.getName(), equalTo("histo"));
+            List<? extends Histogram.Bucket> buckets = histo.getBuckets();
+
+            for (int i = 0; i < buckets.size(); ++i) {
+                Histogram.Bucket bucket = buckets.get(i);
+                if (bucket.getDocCount() == 0) {
+                    SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
+                    assertThat(seriesArithmetic, nullValue());
+                } else {
+                    Sum field2Sum = bucket.getAggregations().get("field2Sum");
+                    assertThat(field2Sum, notNullValue());
+                    double field2SumValue = field2Sum.value();
+                    Sum field3Sum = bucket.getAggregations().get("field3Sum");
+                    assertThat(field3Sum, notNullValue());
+                    double field3SumValue = field3Sum.value();
+                    Sum field4Sum = bucket.getAggregations().get("field4Sum");
+                    assertThat(field4Sum, notNullValue());
+                    double field4SumValue = field4Sum.value();
+                    SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
+                    assertThat(seriesArithmetic, notNullValue());
+                    double seriesArithmeticValue = seriesArithmetic.value();
+                    assertThat(seriesArithmeticValue, equalTo(field2SumValue + field3SumValue + field4SumValue));
+                }
+            }
+        },
             prepareSearch("idx").addAggregation(
                 histogram("histo").field(FIELD_1_NAME)
                     .interval(interval)
@@ -169,40 +196,39 @@ public class BucketScriptIT extends ESIntegTestCase {
                             "field4Sum"
                         )
                     )
-            ),
-            response -> {
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                assertThat(histo.getName(), equalTo("histo"));
-                List<? extends Histogram.Bucket> buckets = histo.getBuckets();
-
-                for (int i = 0; i < buckets.size(); ++i) {
-                    Histogram.Bucket bucket = buckets.get(i);
-                    if (bucket.getDocCount() == 0) {
-                        SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
-                        assertThat(seriesArithmetic, nullValue());
-                    } else {
-                        Sum field2Sum = bucket.getAggregations().get("field2Sum");
-                        assertThat(field2Sum, notNullValue());
-                        double field2SumValue = field2Sum.value();
-                        Sum field3Sum = bucket.getAggregations().get("field3Sum");
-                        assertThat(field3Sum, notNullValue());
-                        double field3SumValue = field3Sum.value();
-                        Sum field4Sum = bucket.getAggregations().get("field4Sum");
-                        assertThat(field4Sum, notNullValue());
-                        double field4SumValue = field4Sum.value();
-                        SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
-                        assertThat(seriesArithmetic, notNullValue());
-                        double seriesArithmeticValue = seriesArithmetic.value();
-                        assertThat(seriesArithmeticValue, equalTo(field2SumValue + field3SumValue + field4SumValue));
-                    }
-                }
-            }
+            )
         );
     }
 
     public void testInlineScript2() {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            assertThat(histo.getName(), equalTo("histo"));
+            List<? extends Histogram.Bucket> buckets = histo.getBuckets();
+
+            for (int i = 0; i < buckets.size(); ++i) {
+                Histogram.Bucket bucket = buckets.get(i);
+                if (bucket.getDocCount() == 0) {
+                    SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
+                    assertThat(seriesArithmetic, nullValue());
+                } else {
+                    Sum field2Sum = bucket.getAggregations().get("field2Sum");
+                    assertThat(field2Sum, notNullValue());
+                    double field2SumValue = field2Sum.value();
+                    Sum field3Sum = bucket.getAggregations().get("field3Sum");
+                    assertThat(field3Sum, notNullValue());
+                    double field3SumValue = field3Sum.value();
+                    Sum field4Sum = bucket.getAggregations().get("field4Sum");
+                    assertThat(field4Sum, notNullValue());
+                    double field4SumValue = field4Sum.value();
+                    SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
+                    assertThat(seriesArithmetic, notNullValue());
+                    double seriesArithmeticValue = seriesArithmetic.value();
+                    assertThat(seriesArithmeticValue, equalTo(field2SumValue + field3SumValue / field4SumValue));
+                }
+            }
+        },
             prepareSearch("idx").addAggregation(
                 histogram("histo").field(FIELD_1_NAME)
                     .interval(interval)
@@ -218,40 +244,39 @@ public class BucketScriptIT extends ESIntegTestCase {
                             "field4Sum"
                         )
                     )
-            ),
-            response -> {
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                assertThat(histo.getName(), equalTo("histo"));
-                List<? extends Histogram.Bucket> buckets = histo.getBuckets();
-
-                for (int i = 0; i < buckets.size(); ++i) {
-                    Histogram.Bucket bucket = buckets.get(i);
-                    if (bucket.getDocCount() == 0) {
-                        SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
-                        assertThat(seriesArithmetic, nullValue());
-                    } else {
-                        Sum field2Sum = bucket.getAggregations().get("field2Sum");
-                        assertThat(field2Sum, notNullValue());
-                        double field2SumValue = field2Sum.value();
-                        Sum field3Sum = bucket.getAggregations().get("field3Sum");
-                        assertThat(field3Sum, notNullValue());
-                        double field3SumValue = field3Sum.value();
-                        Sum field4Sum = bucket.getAggregations().get("field4Sum");
-                        assertThat(field4Sum, notNullValue());
-                        double field4SumValue = field4Sum.value();
-                        SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
-                        assertThat(seriesArithmetic, notNullValue());
-                        double seriesArithmeticValue = seriesArithmetic.value();
-                        assertThat(seriesArithmeticValue, equalTo(field2SumValue + field3SumValue / field4SumValue));
-                    }
-                }
-            }
+            )
         );
     }
 
     public void testInlineScriptWithDateRange() {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Range range = response.getAggregations().get("range");
+            assertThat(range, notNullValue());
+            assertThat(range.getName(), equalTo("range"));
+            List<? extends Range.Bucket> buckets = range.getBuckets();
+
+            for (int i = 0; i < buckets.size(); ++i) {
+                Range.Bucket bucket = buckets.get(i);
+                if (bucket.getDocCount() == 0) {
+                    SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
+                    assertThat(seriesArithmetic, nullValue());
+                } else {
+                    Sum field2Sum = bucket.getAggregations().get("field2Sum");
+                    assertThat(field2Sum, notNullValue());
+                    double field2SumValue = field2Sum.value();
+                    Sum field3Sum = bucket.getAggregations().get("field3Sum");
+                    assertThat(field3Sum, notNullValue());
+                    double field3SumValue = field3Sum.value();
+                    Sum field4Sum = bucket.getAggregations().get("field4Sum");
+                    assertThat(field4Sum, notNullValue());
+                    double field4SumValue = field4Sum.value();
+                    SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
+                    assertThat(seriesArithmetic, notNullValue());
+                    double seriesArithmeticValue = seriesArithmetic.value();
+                    assertThat(seriesArithmeticValue, equalTo(field2SumValue + field3SumValue + field4SumValue));
+                }
+            }
+        },
             prepareSearch("idx").addAggregation(
                 dateRange("range").field(FIELD_5_NAME)
                     .addUnboundedFrom(date)
@@ -267,40 +292,33 @@ public class BucketScriptIT extends ESIntegTestCase {
                             "field4Sum"
                         )
                     )
-            ),
-            response -> {
-                Range range = response.getAggregations().get("range");
-                assertThat(range, notNullValue());
-                assertThat(range.getName(), equalTo("range"));
-                List<? extends Range.Bucket> buckets = range.getBuckets();
-
-                for (int i = 0; i < buckets.size(); ++i) {
-                    Range.Bucket bucket = buckets.get(i);
-                    if (bucket.getDocCount() == 0) {
-                        SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
-                        assertThat(seriesArithmetic, nullValue());
-                    } else {
-                        Sum field2Sum = bucket.getAggregations().get("field2Sum");
-                        assertThat(field2Sum, notNullValue());
-                        double field2SumValue = field2Sum.value();
-                        Sum field3Sum = bucket.getAggregations().get("field3Sum");
-                        assertThat(field3Sum, notNullValue());
-                        double field3SumValue = field3Sum.value();
-                        Sum field4Sum = bucket.getAggregations().get("field4Sum");
-                        assertThat(field4Sum, notNullValue());
-                        double field4SumValue = field4Sum.value();
-                        SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
-                        assertThat(seriesArithmetic, notNullValue());
-                        double seriesArithmeticValue = seriesArithmetic.value();
-                        assertThat(seriesArithmeticValue, equalTo(field2SumValue + field3SumValue + field4SumValue));
-                    }
-                }
-            }
+            )
         );
     }
 
     public void testInlineScriptSingleVariable() {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            assertThat(histo.getName(), equalTo("histo"));
+            List<? extends Histogram.Bucket> buckets = histo.getBuckets();
+
+            for (int i = 0; i < buckets.size(); ++i) {
+                Histogram.Bucket bucket = buckets.get(i);
+                if (bucket.getDocCount() == 0) {
+                    SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
+                    assertThat(seriesArithmetic, nullValue());
+                } else {
+                    Sum field2Sum = bucket.getAggregations().get("field2Sum");
+                    assertThat(field2Sum, notNullValue());
+                    double field2SumValue = field2Sum.value();
+                    SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
+                    assertThat(seriesArithmetic, notNullValue());
+                    double seriesArithmeticValue = seriesArithmetic.value();
+                    assertThat(seriesArithmeticValue, equalTo(field2SumValue));
+                }
+            }
+        },
             prepareSearch("idx").addAggregation(
                 histogram("histo").field(FIELD_1_NAME)
                     .interval(interval)
@@ -312,29 +330,7 @@ public class BucketScriptIT extends ESIntegTestCase {
                             "field2Sum"
                         )
                     )
-            ),
-            response -> {
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                assertThat(histo.getName(), equalTo("histo"));
-                List<? extends Histogram.Bucket> buckets = histo.getBuckets();
-
-                for (int i = 0; i < buckets.size(); ++i) {
-                    Histogram.Bucket bucket = buckets.get(i);
-                    if (bucket.getDocCount() == 0) {
-                        SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
-                        assertThat(seriesArithmetic, nullValue());
-                    } else {
-                        Sum field2Sum = bucket.getAggregations().get("field2Sum");
-                        assertThat(field2Sum, notNullValue());
-                        double field2SumValue = field2Sum.value();
-                        SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
-                        assertThat(seriesArithmetic, notNullValue());
-                        double seriesArithmeticValue = seriesArithmetic.value();
-                        assertThat(seriesArithmeticValue, equalTo(field2SumValue));
-                    }
-                }
-            }
+            )
         );
     }
 
@@ -343,7 +339,34 @@ public class BucketScriptIT extends ESIntegTestCase {
         bucketsPathsMap.put("foo", "field2Sum");
         bucketsPathsMap.put("bar", "field3Sum");
         bucketsPathsMap.put("baz", "field4Sum");
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            assertThat(histo.getName(), equalTo("histo"));
+            List<? extends Histogram.Bucket> buckets = histo.getBuckets();
+
+            for (int i = 0; i < buckets.size(); ++i) {
+                Histogram.Bucket bucket = buckets.get(i);
+                if (bucket.getDocCount() == 0) {
+                    SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
+                    assertThat(seriesArithmetic, nullValue());
+                } else {
+                    Sum field2Sum = bucket.getAggregations().get("field2Sum");
+                    assertThat(field2Sum, notNullValue());
+                    double field2SumValue = field2Sum.value();
+                    Sum field3Sum = bucket.getAggregations().get("field3Sum");
+                    assertThat(field3Sum, notNullValue());
+                    double field3SumValue = field3Sum.value();
+                    Sum field4Sum = bucket.getAggregations().get("field4Sum");
+                    assertThat(field4Sum, notNullValue());
+                    double field4SumValue = field4Sum.value();
+                    SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
+                    assertThat(seriesArithmetic, notNullValue());
+                    double seriesArithmeticValue = seriesArithmetic.value();
+                    assertThat(seriesArithmeticValue, equalTo(field2SumValue + field3SumValue + field4SumValue));
+                }
+            }
+        },
             prepareSearch("idx").addAggregation(
                 histogram("histo").field(FIELD_1_NAME)
                     .interval(interval)
@@ -357,35 +380,7 @@ public class BucketScriptIT extends ESIntegTestCase {
                             new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "foo + bar + baz", Collections.emptyMap())
                         )
                     )
-            ),
-            response -> {
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                assertThat(histo.getName(), equalTo("histo"));
-                List<? extends Histogram.Bucket> buckets = histo.getBuckets();
-
-                for (int i = 0; i < buckets.size(); ++i) {
-                    Histogram.Bucket bucket = buckets.get(i);
-                    if (bucket.getDocCount() == 0) {
-                        SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
-                        assertThat(seriesArithmetic, nullValue());
-                    } else {
-                        Sum field2Sum = bucket.getAggregations().get("field2Sum");
-                        assertThat(field2Sum, notNullValue());
-                        double field2SumValue = field2Sum.value();
-                        Sum field3Sum = bucket.getAggregations().get("field3Sum");
-                        assertThat(field3Sum, notNullValue());
-                        double field3SumValue = field3Sum.value();
-                        Sum field4Sum = bucket.getAggregations().get("field4Sum");
-                        assertThat(field4Sum, notNullValue());
-                        double field4SumValue = field4Sum.value();
-                        SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
-                        assertThat(seriesArithmetic, notNullValue());
-                        double seriesArithmeticValue = seriesArithmetic.value();
-                        assertThat(seriesArithmeticValue, equalTo(field2SumValue + field3SumValue + field4SumValue));
-                    }
-                }
-            }
+            )
         );
     }
 
@@ -395,7 +390,34 @@ public class BucketScriptIT extends ESIntegTestCase {
 
         Script script = new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "(_value0 + _value1 + _value2) * factor", params);
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            assertThat(histo.getName(), equalTo("histo"));
+            List<? extends Histogram.Bucket> buckets = histo.getBuckets();
+
+            for (int i = 0; i < buckets.size(); ++i) {
+                Histogram.Bucket bucket = buckets.get(i);
+                if (bucket.getDocCount() == 0) {
+                    SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
+                    assertThat(seriesArithmetic, nullValue());
+                } else {
+                    Sum field2Sum = bucket.getAggregations().get("field2Sum");
+                    assertThat(field2Sum, notNullValue());
+                    double field2SumValue = field2Sum.value();
+                    Sum field3Sum = bucket.getAggregations().get("field3Sum");
+                    assertThat(field3Sum, notNullValue());
+                    double field3SumValue = field3Sum.value();
+                    Sum field4Sum = bucket.getAggregations().get("field4Sum");
+                    assertThat(field4Sum, notNullValue());
+                    double field4SumValue = field4Sum.value();
+                    SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
+                    assertThat(seriesArithmetic, notNullValue());
+                    double seriesArithmeticValue = seriesArithmetic.value();
+                    assertThat(seriesArithmeticValue, equalTo((field2SumValue + field3SumValue + field4SumValue) * 3));
+                }
+            }
+        },
             prepareSearch("idx").addAggregation(
                 histogram("histo").field(FIELD_1_NAME)
                     .interval(interval)
@@ -403,40 +425,41 @@ public class BucketScriptIT extends ESIntegTestCase {
                     .subAggregation(sum("field3Sum").field(FIELD_3_NAME))
                     .subAggregation(sum("field4Sum").field(FIELD_4_NAME))
                     .subAggregation(bucketScript("seriesArithmetic", script, "field2Sum", "field3Sum", "field4Sum"))
-            ),
-            response -> {
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                assertThat(histo.getName(), equalTo("histo"));
-                List<? extends Histogram.Bucket> buckets = histo.getBuckets();
-
-                for (int i = 0; i < buckets.size(); ++i) {
-                    Histogram.Bucket bucket = buckets.get(i);
-                    if (bucket.getDocCount() == 0) {
-                        SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
-                        assertThat(seriesArithmetic, nullValue());
-                    } else {
-                        Sum field2Sum = bucket.getAggregations().get("field2Sum");
-                        assertThat(field2Sum, notNullValue());
-                        double field2SumValue = field2Sum.value();
-                        Sum field3Sum = bucket.getAggregations().get("field3Sum");
-                        assertThat(field3Sum, notNullValue());
-                        double field3SumValue = field3Sum.value();
-                        Sum field4Sum = bucket.getAggregations().get("field4Sum");
-                        assertThat(field4Sum, notNullValue());
-                        double field4SumValue = field4Sum.value();
-                        SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
-                        assertThat(seriesArithmetic, notNullValue());
-                        double seriesArithmeticValue = seriesArithmetic.value();
-                        assertThat(seriesArithmeticValue, equalTo((field2SumValue + field3SumValue + field4SumValue) * 3));
-                    }
-                }
-            }
+            )
         );
     }
 
     public void testInlineScriptInsertZeros() {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            assertThat(histo.getName(), equalTo("histo"));
+            List<? extends Histogram.Bucket> buckets = histo.getBuckets();
+
+            for (int i = 0; i < buckets.size(); ++i) {
+                Histogram.Bucket bucket = buckets.get(i);
+                if (bucket.getDocCount() == 0) {
+                    SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
+                    assertThat(seriesArithmetic, notNullValue());
+                    double seriesArithmeticValue = seriesArithmetic.value();
+                    assertThat(seriesArithmeticValue, equalTo(0.0));
+                } else {
+                    Sum field2Sum = bucket.getAggregations().get("field2Sum");
+                    assertThat(field2Sum, notNullValue());
+                    double field2SumValue = field2Sum.value();
+                    Sum field3Sum = bucket.getAggregations().get("field3Sum");
+                    assertThat(field3Sum, notNullValue());
+                    double field3SumValue = field3Sum.value();
+                    Sum field4Sum = bucket.getAggregations().get("field4Sum");
+                    assertThat(field4Sum, notNullValue());
+                    double field4SumValue = field4Sum.value();
+                    SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
+                    assertThat(seriesArithmetic, notNullValue());
+                    double seriesArithmeticValue = seriesArithmetic.value();
+                    assertThat(seriesArithmeticValue, equalTo(field2SumValue + field3SumValue + field4SumValue));
+                }
+            }
+        },
             prepareSearch("idx").addAggregation(
                 histogram("histo").field(FIELD_1_NAME)
                     .interval(interval)
@@ -452,42 +475,22 @@ public class BucketScriptIT extends ESIntegTestCase {
                             "field4Sum"
                         ).gapPolicy(GapPolicy.INSERT_ZEROS)
                     )
-            ),
-            response -> {
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                assertThat(histo.getName(), equalTo("histo"));
-                List<? extends Histogram.Bucket> buckets = histo.getBuckets();
-
-                for (int i = 0; i < buckets.size(); ++i) {
-                    Histogram.Bucket bucket = buckets.get(i);
-                    if (bucket.getDocCount() == 0) {
-                        SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
-                        assertThat(seriesArithmetic, notNullValue());
-                        double seriesArithmeticValue = seriesArithmetic.value();
-                        assertThat(seriesArithmeticValue, equalTo(0.0));
-                    } else {
-                        Sum field2Sum = bucket.getAggregations().get("field2Sum");
-                        assertThat(field2Sum, notNullValue());
-                        double field2SumValue = field2Sum.value();
-                        Sum field3Sum = bucket.getAggregations().get("field3Sum");
-                        assertThat(field3Sum, notNullValue());
-                        double field3SumValue = field3Sum.value();
-                        Sum field4Sum = bucket.getAggregations().get("field4Sum");
-                        assertThat(field4Sum, notNullValue());
-                        double field4SumValue = field4Sum.value();
-                        SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
-                        assertThat(seriesArithmetic, notNullValue());
-                        double seriesArithmeticValue = seriesArithmetic.value();
-                        assertThat(seriesArithmeticValue, equalTo(field2SumValue + field3SumValue + field4SumValue));
-                    }
-                }
-            }
+            )
         );
     }
 
     public void testInlineScriptReturnNull() {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            assertThat(histo.getName(), equalTo("histo"));
+            List<? extends Histogram.Bucket> buckets = histo.getBuckets();
+
+            for (int i = 0; i < buckets.size(); ++i) {
+                Histogram.Bucket bucket = buckets.get(i);
+                assertNull(bucket.getAggregations().get("nullField"));
+            }
+        },
             prepareSearch("idx").addAggregation(
                 histogram("histo").field(FIELD_1_NAME)
                     .interval(interval)
@@ -497,18 +500,7 @@ public class BucketScriptIT extends ESIntegTestCase {
                             new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "return null", Collections.emptyMap())
                         )
                     )
-            ),
-            response -> {
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                assertThat(histo.getName(), equalTo("histo"));
-                List<? extends Histogram.Bucket> buckets = histo.getBuckets();
-
-                for (int i = 0; i < buckets.size(); ++i) {
-                    Histogram.Bucket bucket = buckets.get(i);
-                    assertNull(bucket.getAggregations().get("nullField"));
-                }
-            }
+            )
         );
     }
 
@@ -520,7 +512,34 @@ public class BucketScriptIT extends ESIntegTestCase {
             "{ \"script\": {\"lang\": \"" + CustomScriptPlugin.NAME + "\", \"source\": \"my_script\" } }"
         );
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            assertThat(histo.getName(), equalTo("histo"));
+            List<? extends Histogram.Bucket> buckets = histo.getBuckets();
+
+            for (int i = 0; i < buckets.size(); ++i) {
+                Histogram.Bucket bucket = buckets.get(i);
+                if (bucket.getDocCount() == 0) {
+                    SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
+                    assertThat(seriesArithmetic, nullValue());
+                } else {
+                    Sum field2Sum = bucket.getAggregations().get("field2Sum");
+                    assertThat(field2Sum, notNullValue());
+                    double field2SumValue = field2Sum.value();
+                    Sum field3Sum = bucket.getAggregations().get("field3Sum");
+                    assertThat(field3Sum, notNullValue());
+                    double field3SumValue = field3Sum.value();
+                    Sum field4Sum = bucket.getAggregations().get("field4Sum");
+                    assertThat(field4Sum, notNullValue());
+                    double field4SumValue = field4Sum.value();
+                    SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
+                    assertThat(seriesArithmetic, notNullValue());
+                    double seriesArithmeticValue = seriesArithmetic.value();
+                    assertThat(seriesArithmeticValue, equalTo(field2SumValue + field3SumValue + field4SumValue));
+                }
+            }
+        },
             prepareSearch("idx").addAggregation(
                 histogram("histo").field(FIELD_1_NAME)
                     .interval(interval)
@@ -536,40 +555,17 @@ public class BucketScriptIT extends ESIntegTestCase {
                             "field4Sum"
                         )
                     )
-            ),
-            response -> {
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                assertThat(histo.getName(), equalTo("histo"));
-                List<? extends Histogram.Bucket> buckets = histo.getBuckets();
-
-                for (int i = 0; i < buckets.size(); ++i) {
-                    Histogram.Bucket bucket = buckets.get(i);
-                    if (bucket.getDocCount() == 0) {
-                        SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
-                        assertThat(seriesArithmetic, nullValue());
-                    } else {
-                        Sum field2Sum = bucket.getAggregations().get("field2Sum");
-                        assertThat(field2Sum, notNullValue());
-                        double field2SumValue = field2Sum.value();
-                        Sum field3Sum = bucket.getAggregations().get("field3Sum");
-                        assertThat(field3Sum, notNullValue());
-                        double field3SumValue = field3Sum.value();
-                        Sum field4Sum = bucket.getAggregations().get("field4Sum");
-                        assertThat(field4Sum, notNullValue());
-                        double field4SumValue = field4Sum.value();
-                        SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
-                        assertThat(seriesArithmetic, notNullValue());
-                        double seriesArithmeticValue = seriesArithmetic.value();
-                        assertThat(seriesArithmeticValue, equalTo(field2SumValue + field3SumValue + field4SumValue));
-                    }
-                }
-            }
+            )
         );
     }
 
     public void testUnmapped() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Histogram deriv = response.getAggregations().get("histo");
+            assertThat(deriv, notNullValue());
+            assertThat(deriv.getName(), equalTo("histo"));
+            assertThat(deriv.getBuckets().size(), equalTo(0));
+        },
             prepareSearch("idx_unmapped").addAggregation(
                 histogram("histo").field(FIELD_1_NAME)
                     .interval(interval)
@@ -585,18 +581,39 @@ public class BucketScriptIT extends ESIntegTestCase {
                             "field4Sum"
                         )
                     )
-            ),
-            response -> {
-                Histogram deriv = response.getAggregations().get("histo");
-                assertThat(deriv, notNullValue());
-                assertThat(deriv.getName(), equalTo("histo"));
-                assertThat(deriv.getBuckets().size(), equalTo(0));
-            }
+            )
         );
     }
 
     public void testPartiallyUnmapped() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            assertThat(histo.getName(), equalTo("histo"));
+            List<? extends Histogram.Bucket> buckets = histo.getBuckets();
+
+            for (int i = 0; i < buckets.size(); ++i) {
+                Histogram.Bucket bucket = buckets.get(i);
+                if (bucket.getDocCount() == 0) {
+                    SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
+                    assertThat(seriesArithmetic, nullValue());
+                } else {
+                    Sum field2Sum = bucket.getAggregations().get("field2Sum");
+                    assertThat(field2Sum, notNullValue());
+                    double field2SumValue = field2Sum.value();
+                    Sum field3Sum = bucket.getAggregations().get("field3Sum");
+                    assertThat(field3Sum, notNullValue());
+                    double field3SumValue = field3Sum.value();
+                    Sum field4Sum = bucket.getAggregations().get("field4Sum");
+                    assertThat(field4Sum, notNullValue());
+                    double field4SumValue = field4Sum.value();
+                    SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
+                    assertThat(seriesArithmetic, notNullValue());
+                    double seriesArithmeticValue = seriesArithmetic.value();
+                    assertThat(seriesArithmeticValue, equalTo(field2SumValue + field3SumValue + field4SumValue));
+                }
+            }
+        },
             prepareSearch("idx", "idx_unmapped").addAggregation(
                 histogram("histo").field(FIELD_1_NAME)
                     .interval(interval)
@@ -612,35 +629,7 @@ public class BucketScriptIT extends ESIntegTestCase {
                             "field4Sum"
                         )
                     )
-            ),
-            response -> {
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                assertThat(histo.getName(), equalTo("histo"));
-                List<? extends Histogram.Bucket> buckets = histo.getBuckets();
-
-                for (int i = 0; i < buckets.size(); ++i) {
-                    Histogram.Bucket bucket = buckets.get(i);
-                    if (bucket.getDocCount() == 0) {
-                        SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
-                        assertThat(seriesArithmetic, nullValue());
-                    } else {
-                        Sum field2Sum = bucket.getAggregations().get("field2Sum");
-                        assertThat(field2Sum, notNullValue());
-                        double field2SumValue = field2Sum.value();
-                        Sum field3Sum = bucket.getAggregations().get("field3Sum");
-                        assertThat(field3Sum, notNullValue());
-                        double field3SumValue = field3Sum.value();
-                        Sum field4Sum = bucket.getAggregations().get("field4Sum");
-                        assertThat(field4Sum, notNullValue());
-                        double field4SumValue = field4Sum.value();
-                        SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
-                        assertThat(seriesArithmetic, notNullValue());
-                        double seriesArithmeticValue = seriesArithmetic.value();
-                        assertThat(seriesArithmeticValue, equalTo(field2SumValue + field3SumValue + field4SumValue));
-                    }
-                }
-            }
+            )
         );
     }
 
@@ -658,35 +647,34 @@ public class BucketScriptIT extends ESIntegTestCase {
             bucketScriptAgg = BucketScriptPipelineAggregationBuilder.PARSER.parse(parser, "seriesArithmetic");
         }
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            assertThat(histo.getName(), equalTo("histo"));
+            List<? extends Histogram.Bucket> buckets = histo.getBuckets();
+
+            for (int i = 0; i < buckets.size(); ++i) {
+                Histogram.Bucket bucket = buckets.get(i);
+                if (bucket.getDocCount() == 0) {
+                    SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
+                    assertThat(seriesArithmetic, nullValue());
+                } else {
+                    Sum field2Sum = bucket.getAggregations().get("field2Sum");
+                    assertThat(field2Sum, notNullValue());
+                    double field2SumValue = field2Sum.value();
+                    SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
+                    assertThat(seriesArithmetic, notNullValue());
+                    double seriesArithmeticValue = seriesArithmetic.value();
+                    assertThat(seriesArithmeticValue, equalTo(field2SumValue));
+                }
+            }
+        },
             prepareSearch("idx", "idx_unmapped").addAggregation(
                 histogram("histo").field(FIELD_1_NAME)
                     .interval(interval)
                     .subAggregation(sum("field2Sum").field(FIELD_2_NAME))
                     .subAggregation(bucketScriptAgg)
-            ),
-            response -> {
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                assertThat(histo.getName(), equalTo("histo"));
-                List<? extends Histogram.Bucket> buckets = histo.getBuckets();
-
-                for (int i = 0; i < buckets.size(); ++i) {
-                    Histogram.Bucket bucket = buckets.get(i);
-                    if (bucket.getDocCount() == 0) {
-                        SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
-                        assertThat(seriesArithmetic, nullValue());
-                    } else {
-                        Sum field2Sum = bucket.getAggregations().get("field2Sum");
-                        assertThat(field2Sum, notNullValue());
-                        double field2SumValue = field2Sum.value();
-                        SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
-                        assertThat(seriesArithmetic, notNullValue());
-                        double seriesArithmeticValue = seriesArithmetic.value();
-                        assertThat(seriesArithmeticValue, equalTo(field2SumValue));
-                    }
-                }
-            }
+            )
         );
     }
 
@@ -704,7 +692,34 @@ public class BucketScriptIT extends ESIntegTestCase {
             bucketScriptAgg = BucketScriptPipelineAggregationBuilder.PARSER.parse(parser, "seriesArithmetic");
         }
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            assertThat(histo.getName(), equalTo("histo"));
+            List<? extends Histogram.Bucket> buckets = histo.getBuckets();
+
+            for (int i = 0; i < buckets.size(); ++i) {
+                Histogram.Bucket bucket = buckets.get(i);
+                if (bucket.getDocCount() == 0) {
+                    SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
+                    assertThat(seriesArithmetic, nullValue());
+                } else {
+                    Sum field2Sum = bucket.getAggregations().get("field2Sum");
+                    assertThat(field2Sum, notNullValue());
+                    double field2SumValue = field2Sum.value();
+                    Sum field3Sum = bucket.getAggregations().get("field3Sum");
+                    assertThat(field3Sum, notNullValue());
+                    double field3SumValue = field3Sum.value();
+                    Sum field4Sum = bucket.getAggregations().get("field4Sum");
+                    assertThat(field4Sum, notNullValue());
+                    double field4SumValue = field4Sum.value();
+                    SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
+                    assertThat(seriesArithmetic, notNullValue());
+                    double seriesArithmeticValue = seriesArithmetic.value();
+                    assertThat(seriesArithmeticValue, equalTo(field2SumValue + field3SumValue + field4SumValue));
+                }
+            }
+        },
             prepareSearch("idx", "idx_unmapped").addAggregation(
                 histogram("histo").field(FIELD_1_NAME)
                     .interval(interval)
@@ -712,35 +727,7 @@ public class BucketScriptIT extends ESIntegTestCase {
                     .subAggregation(sum("field3Sum").field(FIELD_3_NAME))
                     .subAggregation(sum("field4Sum").field(FIELD_4_NAME))
                     .subAggregation(bucketScriptAgg)
-            ),
-            response -> {
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                assertThat(histo.getName(), equalTo("histo"));
-                List<? extends Histogram.Bucket> buckets = histo.getBuckets();
-
-                for (int i = 0; i < buckets.size(); ++i) {
-                    Histogram.Bucket bucket = buckets.get(i);
-                    if (bucket.getDocCount() == 0) {
-                        SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
-                        assertThat(seriesArithmetic, nullValue());
-                    } else {
-                        Sum field2Sum = bucket.getAggregations().get("field2Sum");
-                        assertThat(field2Sum, notNullValue());
-                        double field2SumValue = field2Sum.value();
-                        Sum field3Sum = bucket.getAggregations().get("field3Sum");
-                        assertThat(field3Sum, notNullValue());
-                        double field3SumValue = field3Sum.value();
-                        Sum field4Sum = bucket.getAggregations().get("field4Sum");
-                        assertThat(field4Sum, notNullValue());
-                        double field4SumValue = field4Sum.value();
-                        SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
-                        assertThat(seriesArithmetic, notNullValue());
-                        double seriesArithmeticValue = seriesArithmetic.value();
-                        assertThat(seriesArithmeticValue, equalTo(field2SumValue + field3SumValue + field4SumValue));
-                    }
-                }
-            }
+            )
         );
     }
 
@@ -762,7 +749,34 @@ public class BucketScriptIT extends ESIntegTestCase {
             bucketScriptAgg = BucketScriptPipelineAggregationBuilder.PARSER.parse(parser, "seriesArithmetic");
         }
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            assertThat(histo.getName(), equalTo("histo"));
+            List<? extends Histogram.Bucket> buckets = histo.getBuckets();
+
+            for (int i = 0; i < buckets.size(); ++i) {
+                Histogram.Bucket bucket = buckets.get(i);
+                if (bucket.getDocCount() == 0) {
+                    SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
+                    assertThat(seriesArithmetic, nullValue());
+                } else {
+                    Sum field2Sum = bucket.getAggregations().get("field2Sum");
+                    assertThat(field2Sum, notNullValue());
+                    double field2SumValue = field2Sum.value();
+                    Sum field3Sum = bucket.getAggregations().get("field3Sum");
+                    assertThat(field3Sum, notNullValue());
+                    double field3SumValue = field3Sum.value();
+                    Sum field4Sum = bucket.getAggregations().get("field4Sum");
+                    assertThat(field4Sum, notNullValue());
+                    double field4SumValue = field4Sum.value();
+                    SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
+                    assertThat(seriesArithmetic, notNullValue());
+                    double seriesArithmeticValue = seriesArithmetic.value();
+                    assertThat(seriesArithmeticValue, equalTo(field2SumValue + field3SumValue + field4SumValue));
+                }
+            }
+        },
             prepareSearch("idx", "idx_unmapped").addAggregation(
                 histogram("histo").field(FIELD_1_NAME)
                     .interval(interval)
@@ -770,35 +784,7 @@ public class BucketScriptIT extends ESIntegTestCase {
                     .subAggregation(sum("field3Sum").field(FIELD_3_NAME))
                     .subAggregation(sum("field4Sum").field(FIELD_4_NAME))
                     .subAggregation(bucketScriptAgg)
-            ),
-            response -> {
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                assertThat(histo.getName(), equalTo("histo"));
-                List<? extends Histogram.Bucket> buckets = histo.getBuckets();
-
-                for (int i = 0; i < buckets.size(); ++i) {
-                    Histogram.Bucket bucket = buckets.get(i);
-                    if (bucket.getDocCount() == 0) {
-                        SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
-                        assertThat(seriesArithmetic, nullValue());
-                    } else {
-                        Sum field2Sum = bucket.getAggregations().get("field2Sum");
-                        assertThat(field2Sum, notNullValue());
-                        double field2SumValue = field2Sum.value();
-                        Sum field3Sum = bucket.getAggregations().get("field3Sum");
-                        assertThat(field3Sum, notNullValue());
-                        double field3SumValue = field3Sum.value();
-                        Sum field4Sum = bucket.getAggregations().get("field4Sum");
-                        assertThat(field4Sum, notNullValue());
-                        double field4SumValue = field4Sum.value();
-                        SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
-                        assertThat(seriesArithmetic, notNullValue());
-                        double seriesArithmeticValue = seriesArithmetic.value();
-                        assertThat(seriesArithmeticValue, equalTo(field2SumValue + field3SumValue + field4SumValue));
-                    }
-                }
-            }
+            )
         );
     }
 
@@ -840,7 +826,34 @@ public class BucketScriptIT extends ESIntegTestCase {
 
     public void testInlineScriptWithMultiValueAggregation() {
         int percentile = 90;
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            assertThat(histo.getName(), equalTo("histo"));
+            List<? extends Histogram.Bucket> buckets = histo.getBuckets();
+
+            for (int i = 0; i < buckets.size(); ++i) {
+                Histogram.Bucket bucket = buckets.get(i);
+                if (bucket.getDocCount() == 0) {
+                    SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
+                    assertThat(seriesArithmetic, nullValue());
+                } else {
+                    Percentiles field2Percentile = bucket.getAggregations().get("field2Percentile");
+                    assertThat(field2Percentile, notNullValue());
+                    double field2PercentileValue = field2Percentile.value(String.valueOf(percentile));
+                    Percentiles field3Percentile = bucket.getAggregations().get("field3Percentile");
+                    assertThat(field3Percentile, notNullValue());
+                    double field3PercentileValue = field3Percentile.value(String.valueOf(percentile));
+                    Percentiles field4Percentile = bucket.getAggregations().get("field4Percentile");
+                    assertThat(field4Percentile, notNullValue());
+                    double field4PercentileValue = field4Percentile.value(String.valueOf(percentile));
+                    SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
+                    assertThat(seriesArithmetic, notNullValue());
+                    double seriesArithmeticValue = seriesArithmetic.value();
+                    assertThat(seriesArithmeticValue, equalTo(field2PercentileValue + field3PercentileValue + field4PercentileValue));
+                }
+            }
+        },
             prepareSearch("idx").addAggregation(
                 histogram("histo").field(FIELD_1_NAME)
                     .interval(interval)
@@ -856,35 +869,7 @@ public class BucketScriptIT extends ESIntegTestCase {
                             "field4Percentile"
                         )
                     )
-            ),
-            response -> {
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                assertThat(histo.getName(), equalTo("histo"));
-                List<? extends Histogram.Bucket> buckets = histo.getBuckets();
-
-                for (int i = 0; i < buckets.size(); ++i) {
-                    Histogram.Bucket bucket = buckets.get(i);
-                    if (bucket.getDocCount() == 0) {
-                        SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
-                        assertThat(seriesArithmetic, nullValue());
-                    } else {
-                        Percentiles field2Percentile = bucket.getAggregations().get("field2Percentile");
-                        assertThat(field2Percentile, notNullValue());
-                        double field2PercentileValue = field2Percentile.value(String.valueOf(percentile));
-                        Percentiles field3Percentile = bucket.getAggregations().get("field3Percentile");
-                        assertThat(field3Percentile, notNullValue());
-                        double field3PercentileValue = field3Percentile.value(String.valueOf(percentile));
-                        Percentiles field4Percentile = bucket.getAggregations().get("field4Percentile");
-                        assertThat(field4Percentile, notNullValue());
-                        double field4PercentileValue = field4Percentile.value(String.valueOf(percentile));
-                        SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
-                        assertThat(seriesArithmetic, notNullValue());
-                        double seriesArithmeticValue = seriesArithmetic.value();
-                        assertThat(seriesArithmeticValue, equalTo(field2PercentileValue + field3PercentileValue + field4PercentileValue));
-                    }
-                }
-            }
+            )
         );
     }
 
@@ -892,7 +877,34 @@ public class BucketScriptIT extends ESIntegTestCase {
         int percentile10 = 10;
         int percentile50 = 50;
         int percentile90 = 90;
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            assertThat(histo.getName(), equalTo("histo"));
+            List<? extends Histogram.Bucket> buckets = histo.getBuckets();
+
+            for (int i = 0; i < buckets.size(); ++i) {
+                Histogram.Bucket bucket = buckets.get(i);
+                if (bucket.getDocCount() == 0) {
+                    SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
+                    assertThat(seriesArithmetic, nullValue());
+                } else {
+                    Percentiles field2Percentile = bucket.getAggregations().get("field2Percentile");
+                    assertThat(field2Percentile, notNullValue());
+                    double field2PercentileValue = field2Percentile.value(String.valueOf(percentile10));
+                    Percentiles field3Percentile = bucket.getAggregations().get("field3Percentile");
+                    assertThat(field3Percentile, notNullValue());
+                    double field3PercentileValue = field3Percentile.value(String.valueOf(percentile50));
+                    Percentiles field4Percentile = bucket.getAggregations().get("field4Percentile");
+                    assertThat(field4Percentile, notNullValue());
+                    double field4PercentileValue = field4Percentile.value(String.valueOf(percentile90));
+                    SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
+                    assertThat(seriesArithmetic, notNullValue());
+                    double seriesArithmeticValue = seriesArithmetic.value();
+                    assertThat(seriesArithmeticValue, equalTo(field2PercentileValue + field3PercentileValue + field4PercentileValue));
+                }
+            }
+        },
             prepareSearch("idx").addAggregation(
                 histogram("histo").field(FIELD_1_NAME)
                     .interval(interval)
@@ -910,35 +922,7 @@ public class BucketScriptIT extends ESIntegTestCase {
                             "field4Percentile"
                         )
                     )
-            ),
-            response -> {
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                assertThat(histo.getName(), equalTo("histo"));
-                List<? extends Histogram.Bucket> buckets = histo.getBuckets();
-
-                for (int i = 0; i < buckets.size(); ++i) {
-                    Histogram.Bucket bucket = buckets.get(i);
-                    if (bucket.getDocCount() == 0) {
-                        SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
-                        assertThat(seriesArithmetic, nullValue());
-                    } else {
-                        Percentiles field2Percentile = bucket.getAggregations().get("field2Percentile");
-                        assertThat(field2Percentile, notNullValue());
-                        double field2PercentileValue = field2Percentile.value(String.valueOf(percentile10));
-                        Percentiles field3Percentile = bucket.getAggregations().get("field3Percentile");
-                        assertThat(field3Percentile, notNullValue());
-                        double field3PercentileValue = field3Percentile.value(String.valueOf(percentile50));
-                        Percentiles field4Percentile = bucket.getAggregations().get("field4Percentile");
-                        assertThat(field4Percentile, notNullValue());
-                        double field4PercentileValue = field4Percentile.value(String.valueOf(percentile90));
-                        SimpleValue seriesArithmetic = bucket.getAggregations().get("seriesArithmetic");
-                        assertThat(seriesArithmetic, notNullValue());
-                        double seriesArithmeticValue = seriesArithmetic.value();
-                        assertThat(seriesArithmeticValue, equalTo(field2PercentileValue + field3PercentileValue + field4PercentileValue));
-                    }
-                }
-            }
+            )
         );
     }
 }

@@ -63,7 +63,7 @@ public class SearchWhileRelocatingIT extends ESIntegTestCase {
             );
         }
         indexRandom(true, indexBuilders.toArray(new IndexRequestBuilder[indexBuilders.size()]));
-        assertHitCount(prepareSearch(), (numDocs));
+        assertHitCount((numDocs), prepareSearch());
         final int numIters = scaledRandomIntBetween(5, 20);
         for (int i = 0; i < numIters; i++) {
             final AtomicBoolean stop = new AtomicBoolean(false);
@@ -76,7 +76,7 @@ public class SearchWhileRelocatingIT extends ESIntegTestCase {
                     public void run() {
                         try {
                             while (stop.get() == false) {
-                                assertResponse(prepareSearch().setSize(numDocs), response -> {
+                                assertResponse(response -> {
                                     if (response.getHits().getTotalHits().value != numDocs) {
                                         // if we did not search all shards but had no serious failures that is potentially fine
                                         // if only the hit-count is wrong. this can happen if the cluster-state is behind when the
@@ -103,7 +103,7 @@ public class SearchWhileRelocatingIT extends ESIntegTestCase {
                                         sh.getTotalHits().value,
                                         equalTo((long) (sh.getHits().length))
                                     );
-                                });
+                                }, prepareSearch().setSize(numDocs));
                                 // this is the more critical but that we hit the actual hit array has a different size than the
                                 // actual number of hits.
                             }
@@ -137,7 +137,7 @@ public class SearchWhileRelocatingIT extends ESIntegTestCase {
             if (nonCriticalExceptions.isEmpty() == false) {
                 logger.info("non-critical exceptions: {}", nonCriticalExceptions);
                 for (int j = 0; j < 10; j++) {
-                    assertHitCount(prepareSearch(), numDocs);
+                    assertHitCount(numDocs, prepareSearch());
                 }
             }
         }

@@ -323,7 +323,7 @@ public abstract class ESBlobStoreRepositoryIntegTestCase extends ESIntegTestCase
             docCounts[i] = iterations(10, 1000);
             logger.info("-->  create random index {} with {} records", indexNames[i], docCounts[i]);
             addRandomDocuments(indexNames[i], docCounts[i]);
-            assertHitCount(prepareSearch(indexNames[i]).setSize(0), docCounts[i]);
+            assertHitCount(docCounts[i], prepareSearch(indexNames[i]).setSize(0));
         }
 
         final String snapshotName = randomName();
@@ -374,7 +374,7 @@ public abstract class ESBlobStoreRepositoryIntegTestCase extends ESIntegTestCase
         ensureGreen(TimeValue.timeValueSeconds(120));
 
         for (int i = 0; i < indexCount; i++) {
-            assertHitCount(prepareSearch(indexNames[i]).setSize(0), docCounts[i]);
+            assertHitCount(docCounts[i], prepareSearch(indexNames[i]).setSize(0));
         }
 
         logger.info("-->  delete snapshot {}:{}", repoName, snapshotName);
@@ -443,7 +443,7 @@ public abstract class ESBlobStoreRepositoryIntegTestCase extends ESIntegTestCase
             );
 
             ensureGreen();
-            assertHitCount(prepareSearch(indexName).setSize(0), docCounts[iterationToRestore]);
+            assertHitCount(docCounts[iterationToRestore], prepareSearch(indexName).setSize(0));
         }
 
         for (int i = 0; i < iterationCount; i++) {

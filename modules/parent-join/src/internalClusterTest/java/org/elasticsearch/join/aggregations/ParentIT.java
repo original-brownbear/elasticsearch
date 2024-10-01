@@ -36,13 +36,10 @@ public class ParentIT extends AbstractParentChildTestCase {
             .stream()
             .filter(parentControl -> parentControl.commentIds.isEmpty() == false)
             .count();
-        assertNoFailuresAndResponse(
-            prepareSearch("test").setSize(0).setQuery(matchQuery("randomized", true)).addAggregation(parent("to_article", "comment")),
-            response -> {
-                Parent parentAgg = response.getAggregations().get("to_article");
-                assertThat("\nResponse: " + response + "\n", parentAgg.getDocCount(), equalTo(articlesWithComment));
-            }
-        );
+        assertNoFailuresAndResponse(response -> {
+            Parent parentAgg = response.getAggregations().get("to_article");
+            assertThat("\nResponse: " + response + "\n", parentAgg.getDocCount(), equalTo(articlesWithComment));
+        }, prepareSearch("test").setSize(0).setQuery(matchQuery("randomized", true)).addAggregation(parent("to_article", "comment")));
     }
 
     public void testSimpleParentAggWithSubAgg() {
@@ -51,52 +48,105 @@ public class ParentIT extends AbstractParentChildTestCase {
             .filter(parentControl -> parentControl.commentIds.isEmpty() == false)
             .count();
         long categoriesWithComments = categoryToControl.values().stream().filter(control -> control.commentIds.isEmpty() == false).count();
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Parent parentAgg = response.getAggregations().get("to_article");
+            assertThat("Response: " + response + "\n", parentAgg.getDocCount(), equalTo(articlesWithComment));
+            Terms categoryTerms = parentAgg.getAggregations().get("category");
+            assertThat(
+                "Buckets: "
+                    + categoryTerms.getBuckets()
+                        .stream()
+                        .map((Function<Terms.Bucket, String>) MultiBucketsAggregation.Bucket::getKeyAsString)
+                        .collect(Collectors.toList())
+                    + "\nCategories: "
+                    + categoryToControl.keySet(),
+                (long) categoryTerms.getBuckets().size(),
+                equalTo(categoriesWithComments)
+            );
+            for (Map.Entry<String, Control> entry : categoryToControl.entrySet()) {
+                // no children for this category -> no entry in the child to parent-aggregation
+                if (entry.getValue().commentIds.isEmpty()) {
+                    assertNull(categoryTerms.getBucketByKey(entry.getKey()));
+                    continue;
+                }
+
+                final Terms.Bucket categoryBucket = categoryTerms.getBucketByKey(entry.getKey());
+                assertNotNull("Failed for category " + entry.getKey(), categoryBucket);
+                assertThat("Failed for category " + entry.getKey(), categoryBucket.getKeyAsString(), equalTo(entry.getKey()));
+
+                // count all articles in this category which have at least one comment
+                long articlesForCategory = articleToControl.values()
+                    .stream()
+                    // only articles with this category
+                    .filter(parentControl -> parentControl.category.equals(entry.getKey()))
+                    // only articles which have comments
+                    .filter(parentControl -> parentControl.commentIds.isEmpty() == false)
+                    .count();
+                assertThat("Failed for category " + entry.getKey(), categoryBucket.getDocCount(), equalTo(articlesForCategory));
+            }
+        },
             prepareSearch("test").setSize(10000)
                 .setQuery(matchQuery("randomized", true))
-                .addAggregation(parent("to_article", "comment").subAggregation(terms("category").field("category").size(10000))),
-            response -> {
-                Parent parentAgg = response.getAggregations().get("to_article");
-                assertThat("Response: " + response + "\n", parentAgg.getDocCount(), equalTo(articlesWithComment));
-                Terms categoryTerms = parentAgg.getAggregations().get("category");
-                assertThat(
-                    "Buckets: "
-                        + categoryTerms.getBuckets()
-                            .stream()
-                            .map((Function<Terms.Bucket, String>) MultiBucketsAggregation.Bucket::getKeyAsString)
-                            .collect(Collectors.toList())
-                        + "\nCategories: "
-                        + categoryToControl.keySet(),
-                    (long) categoryTerms.getBuckets().size(),
-                    equalTo(categoriesWithComments)
-                );
-                for (Map.Entry<String, Control> entry : categoryToControl.entrySet()) {
-                    // no children for this category -> no entry in the child to parent-aggregation
-                    if (entry.getValue().commentIds.isEmpty()) {
-                        assertNull(categoryTerms.getBucketByKey(entry.getKey()));
-                        continue;
-                    }
-
-                    final Terms.Bucket categoryBucket = categoryTerms.getBucketByKey(entry.getKey());
-                    assertNotNull("Failed for category " + entry.getKey(), categoryBucket);
-                    assertThat("Failed for category " + entry.getKey(), categoryBucket.getKeyAsString(), equalTo(entry.getKey()));
-
-                    // count all articles in this category which have at least one comment
-                    long articlesForCategory = articleToControl.values()
-                        .stream()
-                        // only articles with this category
-                        .filter(parentControl -> parentControl.category.equals(entry.getKey()))
-                        // only articles which have comments
-                        .filter(parentControl -> parentControl.commentIds.isEmpty() == false)
-                        .count();
-                    assertThat("Failed for category " + entry.getKey(), categoryBucket.getDocCount(), equalTo(articlesForCategory));
-                }
-            }
+                .addAggregation(parent("to_article", "comment").subAggregation(terms("category").field("category").size(10000)))
         );
     }
 
     public void testParentAggs() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            final Set<String> commenters = getCommenters();
+            final Map<String, Set<String>> commenterToComments = getCommenterToComments();
+
+            Terms categoryTerms = response.getAggregations().get("to_commenter");
+            assertThat("Response: " + response + "\n", categoryTerms.getBuckets().size(), equalTo(commenters.size()));
+            for (Terms.Bucket commenterBucket : categoryTerms.getBuckets()) {
+                Set<String> comments = commenterToComments.get(commenterBucket.getKeyAsString());
+                assertNotNull(comments);
+                assertThat(
+                    "Failed for commenter " + commenterBucket.getKeyAsString(),
+                    commenterBucket.getDocCount(),
+                    equalTo((long) comments.size())
+                );
+
+                Parent articleAgg = commenterBucket.getAggregations().get("to_article");
+                assertThat(articleAgg.getName(), equalTo("to_article"));
+                // find all articles for the comments for the current commenter
+                Set<String> articles = articleToControl.values()
+                    .stream()
+                    .flatMap(
+                        (Function<ParentControl, Stream<String>>) parentControl -> parentControl.commentIds.stream()
+                            .filter(comments::contains)
+                    )
+                    .collect(Collectors.toSet());
+
+                assertThat(articleAgg.getDocCount(), equalTo((long) articles.size()));
+
+                Terms categoryAgg = articleAgg.getAggregations().get("to_category");
+                assertNotNull(categoryAgg);
+
+                List<String> categories = categoryToControl.entrySet()
+                    .stream()
+                    .filter(entry -> entry.getValue().commenterToCommentId.containsKey(commenterBucket.getKeyAsString()))
+                    .map(Map.Entry::getKey)
+                    .collect(Collectors.toList());
+
+                for (String category : categories) {
+                    Terms.Bucket categoryBucket = categoryAgg.getBucketByKey(category);
+                    assertNotNull(categoryBucket);
+
+                    Aggregation topCategory = categoryBucket.getAggregations().get("top_category");
+                    assertNotNull(topCategory);
+                }
+            }
+
+            for (String commenter : commenters) {
+                Terms.Bucket categoryBucket = categoryTerms.getBucketByKey(commenter);
+                assertThat(categoryBucket.getKeyAsString(), equalTo(commenter));
+                assertThat(categoryBucket.getDocCount(), equalTo((long) commenterToComments.get(commenter).size()));
+
+                Parent childrenBucket = categoryBucket.getAggregations().get("to_article");
+                assertThat(childrenBucket.getName(), equalTo("to_article"));
+            }
+        },
             prepareSearch("test").setSize(10000)
                 .setQuery(matchQuery("randomized", true))
                 .addAggregation(
@@ -107,62 +157,7 @@ public class ParentIT extends AbstractParentChildTestCase {
                                 terms("to_category").field("category").size(10000).subAggregation(topHits("top_category"))
                             )
                         )
-                ),
-            response -> {
-                final Set<String> commenters = getCommenters();
-                final Map<String, Set<String>> commenterToComments = getCommenterToComments();
-
-                Terms categoryTerms = response.getAggregations().get("to_commenter");
-                assertThat("Response: " + response + "\n", categoryTerms.getBuckets().size(), equalTo(commenters.size()));
-                for (Terms.Bucket commenterBucket : categoryTerms.getBuckets()) {
-                    Set<String> comments = commenterToComments.get(commenterBucket.getKeyAsString());
-                    assertNotNull(comments);
-                    assertThat(
-                        "Failed for commenter " + commenterBucket.getKeyAsString(),
-                        commenterBucket.getDocCount(),
-                        equalTo((long) comments.size())
-                    );
-
-                    Parent articleAgg = commenterBucket.getAggregations().get("to_article");
-                    assertThat(articleAgg.getName(), equalTo("to_article"));
-                    // find all articles for the comments for the current commenter
-                    Set<String> articles = articleToControl.values()
-                        .stream()
-                        .flatMap(
-                            (Function<ParentControl, Stream<String>>) parentControl -> parentControl.commentIds.stream()
-                                .filter(comments::contains)
-                        )
-                        .collect(Collectors.toSet());
-
-                    assertThat(articleAgg.getDocCount(), equalTo((long) articles.size()));
-
-                    Terms categoryAgg = articleAgg.getAggregations().get("to_category");
-                    assertNotNull(categoryAgg);
-
-                    List<String> categories = categoryToControl.entrySet()
-                        .stream()
-                        .filter(entry -> entry.getValue().commenterToCommentId.containsKey(commenterBucket.getKeyAsString()))
-                        .map(Map.Entry::getKey)
-                        .collect(Collectors.toList());
-
-                    for (String category : categories) {
-                        Terms.Bucket categoryBucket = categoryAgg.getBucketByKey(category);
-                        assertNotNull(categoryBucket);
-
-                        Aggregation topCategory = categoryBucket.getAggregations().get("top_category");
-                        assertNotNull(topCategory);
-                    }
-                }
-
-                for (String commenter : commenters) {
-                    Terms.Bucket categoryBucket = categoryTerms.getBucketByKey(commenter);
-                    assertThat(categoryBucket.getKeyAsString(), equalTo(commenter));
-                    assertThat(categoryBucket.getDocCount(), equalTo((long) commenterToComments.get(commenter).size()));
-
-                    Parent childrenBucket = categoryBucket.getAggregations().get("to_article");
-                    assertThat(childrenBucket.getName(), equalTo("to_article"));
-                }
-            }
+                )
         );
     }
 
@@ -185,65 +180,64 @@ public class ParentIT extends AbstractParentChildTestCase {
     }
 
     public void testNonExistingParentType() throws Exception {
-        assertNoFailuresAndResponse(prepareSearch("test").addAggregation(parent("non-existing", "xyz")), response -> {
+        assertNoFailuresAndResponse(response -> {
             Parent parent = response.getAggregations().get("non-existing");
             assertThat(parent.getName(), equalTo("non-existing"));
             assertThat(parent.getDocCount(), equalTo(0L));
-        });
+        }, prepareSearch("test").addAggregation(parent("non-existing", "xyz")));
     }
 
     public void testTermsParentAggTerms() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            final Set<String> commenters = getCommenters();
+            final Map<String, Set<String>> commenterToComments = getCommenterToComments();
+
+            Terms commentersAgg = response.getAggregations().get("to_commenter");
+            assertThat("Response: " + response + "\n", commentersAgg.getBuckets().size(), equalTo(commenters.size()));
+            for (Terms.Bucket commenterBucket : commentersAgg.getBuckets()) {
+                Set<String> comments = commenterToComments.get(commenterBucket.getKeyAsString());
+                assertNotNull(comments);
+                assertThat(
+                    "Failed for commenter " + commenterBucket.getKeyAsString(),
+                    commenterBucket.getDocCount(),
+                    equalTo((long) comments.size())
+                );
+
+                Parent articleAgg = commenterBucket.getAggregations().get("to_article");
+                assertThat(articleAgg.getName(), equalTo("to_article"));
+                // find all articles for the comments for the current commenter
+                Set<String> articles = articleToControl.values()
+                    .stream()
+                    .flatMap(
+                        (Function<ParentControl, Stream<String>>) parentControl -> parentControl.commentIds.stream()
+                            .filter(comments::contains)
+                    )
+                    .collect(Collectors.toSet());
+
+                assertThat(articleAgg.getDocCount(), equalTo((long) articles.size()));
+
+                Terms categoryAgg = articleAgg.getAggregations().get("to_category");
+                assertNotNull(categoryAgg);
+
+                List<String> categories = categoryToControl.entrySet()
+                    .stream()
+                    .filter(entry -> entry.getValue().commenterToCommentId.containsKey(commenterBucket.getKeyAsString()))
+                    .map(Map.Entry::getKey)
+                    .collect(Collectors.toList());
+
+                for (String category : categories) {
+                    Terms.Bucket categoryBucket = categoryAgg.getBucketByKey(category);
+                    assertNotNull(categoryBucket);
+                }
+            }
+        },
             prepareSearch("test").setSize(10000)
                 .setQuery(matchQuery("randomized", true))
                 .addAggregation(
                     terms("to_commenter").field("commenter")
                         .size(10000)
                         .subAggregation(parent("to_article", "comment").subAggregation(terms("to_category").field("category").size(10000)))
-                ),
-            response -> {
-                final Set<String> commenters = getCommenters();
-                final Map<String, Set<String>> commenterToComments = getCommenterToComments();
-
-                Terms commentersAgg = response.getAggregations().get("to_commenter");
-                assertThat("Response: " + response + "\n", commentersAgg.getBuckets().size(), equalTo(commenters.size()));
-                for (Terms.Bucket commenterBucket : commentersAgg.getBuckets()) {
-                    Set<String> comments = commenterToComments.get(commenterBucket.getKeyAsString());
-                    assertNotNull(comments);
-                    assertThat(
-                        "Failed for commenter " + commenterBucket.getKeyAsString(),
-                        commenterBucket.getDocCount(),
-                        equalTo((long) comments.size())
-                    );
-
-                    Parent articleAgg = commenterBucket.getAggregations().get("to_article");
-                    assertThat(articleAgg.getName(), equalTo("to_article"));
-                    // find all articles for the comments for the current commenter
-                    Set<String> articles = articleToControl.values()
-                        .stream()
-                        .flatMap(
-                            (Function<ParentControl, Stream<String>>) parentControl -> parentControl.commentIds.stream()
-                                .filter(comments::contains)
-                        )
-                        .collect(Collectors.toSet());
-
-                    assertThat(articleAgg.getDocCount(), equalTo((long) articles.size()));
-
-                    Terms categoryAgg = articleAgg.getAggregations().get("to_category");
-                    assertNotNull(categoryAgg);
-
-                    List<String> categories = categoryToControl.entrySet()
-                        .stream()
-                        .filter(entry -> entry.getValue().commenterToCommentId.containsKey(commenterBucket.getKeyAsString()))
-                        .map(Map.Entry::getKey)
-                        .collect(Collectors.toList());
-
-                    for (String category : categories) {
-                        Terms.Bucket categoryBucket = categoryAgg.getBucketByKey(category);
-                        assertNotNull(categoryBucket);
-                    }
-                }
-            }
+                )
         );
     }
 }

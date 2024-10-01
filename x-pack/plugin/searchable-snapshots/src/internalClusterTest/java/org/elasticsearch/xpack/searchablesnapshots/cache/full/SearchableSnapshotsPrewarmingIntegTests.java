@@ -239,7 +239,7 @@ public class SearchableSnapshotsPrewarmingIntegTests extends ESSingleNodeTestCas
                     assertThat(restoreSnapshotResponse.status(), is(RestStatus.OK));
                     assertThat(restoreSnapshotResponse.getRestoreInfo().successfulShards(), equalTo(shardsPerIndex.get(indexName)));
                     assertThat(restoreSnapshotResponse.getRestoreInfo().failedShards(), equalTo(0));
-                    assertHitCount(client().prepareSearch(indexName).setSize(0).setTrackTotalHits(true), docsPerIndex.get(indexName));
+                    assertHitCount(docsPerIndex.get(indexName), client().prepareSearch(indexName).setSize(0).setTrackTotalHits(true));
 
                     final GetSettingsResponse getSettingsResponse = indicesAdmin().prepareGetSettings(indexName).get();
                     assertThat(getSettingsResponse.getSetting(indexName, SNAPSHOT_CACHE_ENABLED_SETTING.getKey()), equalTo("true"));

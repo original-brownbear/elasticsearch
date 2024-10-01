@@ -64,34 +64,33 @@ public class HistoryTemplateSearchInputMappingsTests extends AbstractWatcherInte
         // the action should fail as no email server is available
         assertWatchWithMinimumActionsCount("_id", ExecutionState.EXECUTED, 1);
 
-        assertResponse(
+        assertResponse(response -> {
+            assertThat(response, notNullValue());
+            assertThat(response.getHits().getTotalHits().value, is(oneOf(1L, 2L)));
+            InternalAggregations aggs = response.getAggregations();
+            assertThat(aggs, notNullValue());
+
+            Terms terms = aggs.get("input_search_type");
+            assertThat(terms, notNullValue());
+            assertThat(terms.getBuckets().size(), is(1));
+            assertThat(terms.getBucketByKey("query_then_fetch"), notNullValue());
+            assertThat(terms.getBucketByKey("query_then_fetch").getDocCount(), is(oneOf(1L, 2L)));
+
+            terms = aggs.get("input_indices");
+            assertThat(terms, notNullValue());
+            assertThat(terms.getBuckets().size(), is(1));
+            assertThat(terms.getBucketByKey(index), notNullValue());
+            assertThat(terms.getBucketByKey(index).getDocCount(), is(oneOf(1L, 2L)));
+
+            terms = aggs.get("input_body");
+            assertThat(terms, notNullValue());
+            assertThat(terms.getBuckets().size(), is(0));
+        },
             prepareSearch(HistoryStoreField.DATA_STREAM + "*").setSource(
                 searchSource().aggregation(terms("input_search_type").field("result.input.search.request.search_type"))
                     .aggregation(terms("input_indices").field("result.input.search.request.indices"))
                     .aggregation(terms("input_body").field("result.input.search.request.body"))
-            ),
-            response -> {
-                assertThat(response, notNullValue());
-                assertThat(response.getHits().getTotalHits().value, is(oneOf(1L, 2L)));
-                InternalAggregations aggs = response.getAggregations();
-                assertThat(aggs, notNullValue());
-
-                Terms terms = aggs.get("input_search_type");
-                assertThat(terms, notNullValue());
-                assertThat(terms.getBuckets().size(), is(1));
-                assertThat(terms.getBucketByKey("query_then_fetch"), notNullValue());
-                assertThat(terms.getBucketByKey("query_then_fetch").getDocCount(), is(oneOf(1L, 2L)));
-
-                terms = aggs.get("input_indices");
-                assertThat(terms, notNullValue());
-                assertThat(terms.getBuckets().size(), is(1));
-                assertThat(terms.getBucketByKey(index), notNullValue());
-                assertThat(terms.getBucketByKey(index).getDocCount(), is(oneOf(1L, 2L)));
-
-                terms = aggs.get("input_body");
-                assertThat(terms, notNullValue());
-                assertThat(terms.getBuckets().size(), is(0));
-            }
+            )
         );
     }
 }

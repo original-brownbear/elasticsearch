@@ -44,7 +44,7 @@ public class ReplicaToPrimaryPromotionIT extends ESIntegTestCase {
             refresh(indexName);
         }
 
-        assertHitCount(prepareSearch(indexName).setSize(0), numOfDocs);
+        assertHitCount(numOfDocs, prepareSearch(indexName).setSize(0));
         ensureGreen(indexName);
 
         // sometimes test with a closed index
@@ -81,6 +81,6 @@ public class ReplicaToPrimaryPromotionIT extends ESIntegTestCase {
             assertAcked(indicesAdmin().prepareOpen(indexName));
             ensureYellowAndNoInitializingShards(indexName);
         }
-        assertHitCount(prepareSearch(indexName).setSize(0), numOfDocs);
+        assertHitCount(numOfDocs, prepareSearch(indexName).setSize(0));
     }
 }

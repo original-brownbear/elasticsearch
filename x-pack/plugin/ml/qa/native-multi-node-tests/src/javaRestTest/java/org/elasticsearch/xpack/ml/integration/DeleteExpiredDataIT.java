@@ -342,28 +342,25 @@ public class DeleteExpiredDataIT extends MlNativeAutodetectIntegTestCase {
         }
 
         // Verify .ml-state doesn't contain unused state documents
-        assertResponse(
-            prepareSearch(AnomalyDetectorsIndex.jobStateIndexPattern()).setFetchSource(false).setTrackTotalHits(true).setSize(10000),
-            stateDocsResponse -> {
-                assertThat(stateDocsResponse.getHits().getTotalHits().value, greaterThanOrEqualTo(5L));
+        assertResponse(stateDocsResponse -> {
+            assertThat(stateDocsResponse.getHits().getTotalHits().value, greaterThanOrEqualTo(5L));
 
-                int nonExistingJobDocsCount = 0;
-                List<String> nonExistingJobExampleIds = new ArrayList<>();
-                for (SearchHit hit : stateDocsResponse.getHits().getHits()) {
-                    if (hit.getId().startsWith("non_existing_job")) {
-                        nonExistingJobDocsCount++;
-                        if (nonExistingJobExampleIds.size() < 10) {
-                            nonExistingJobExampleIds.add(hit.getId());
-                        }
+            int nonExistingJobDocsCount = 0;
+            List<String> nonExistingJobExampleIds = new ArrayList<>();
+            for (SearchHit hit : stateDocsResponse.getHits().getHits()) {
+                if (hit.getId().startsWith("non_existing_job")) {
+                    nonExistingJobDocsCount++;
+                    if (nonExistingJobExampleIds.size() < 10) {
+                        nonExistingJobExampleIds.add(hit.getId());
                     }
                 }
-                assertThat(
-                    "Documents for non_existing_job are still around; examples: " + nonExistingJobExampleIds,
-                    nonExistingJobDocsCount,
-                    equalTo(0)
-                );
             }
-        );
+            assertThat(
+                "Documents for non_existing_job are still around; examples: " + nonExistingJobExampleIds,
+                nonExistingJobDocsCount,
+                equalTo(0)
+            );
+        }, prepareSearch(AnomalyDetectorsIndex.jobStateIndexPattern()).setFetchSource(false).setTrackTotalHits(true).setSize(10000));
     }
 
     public void testDeleteExpiresDataDeletesAnnotations() throws Exception {

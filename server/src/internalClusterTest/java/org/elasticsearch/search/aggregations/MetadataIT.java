@@ -39,32 +39,31 @@ public class MetadataIT extends ESIntegTestCase {
         final var nestedMetadata = Map.of("nested", "value");
         var metadata = Map.of("key", "value", "numeric", 1.2, "bool", true, "complex", nestedMetadata);
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            InternalAggregations aggs = response.getAggregations();
+            assertNotNull(aggs);
+
+            Terms terms = aggs.get("the_terms");
+            assertNotNull(terms);
+            assertMetadata(terms.getMetadata());
+
+            List<? extends Terms.Bucket> buckets = terms.getBuckets();
+            for (Terms.Bucket bucket : buckets) {
+                InternalAggregations subAggs = bucket.getAggregations();
+                assertNotNull(subAggs);
+
+                Sum sum = subAggs.get("the_sum");
+                assertNotNull(sum);
+                assertMetadata(sum.getMetadata());
+            }
+
+            InternalBucketMetricValue maxBucket = aggs.get("the_max_bucket");
+            assertNotNull(maxBucket);
+            assertMetadata(maxBucket.getMetadata());
+        },
             prepareSearch("idx").addAggregation(
                 terms("the_terms").setMetadata(metadata).field("name").subAggregation(sum("the_sum").setMetadata(metadata).field("value"))
-            ).addAggregation(maxBucket("the_max_bucket", "the_terms>the_sum").setMetadata(metadata)),
-            response -> {
-                InternalAggregations aggs = response.getAggregations();
-                assertNotNull(aggs);
-
-                Terms terms = aggs.get("the_terms");
-                assertNotNull(terms);
-                assertMetadata(terms.getMetadata());
-
-                List<? extends Terms.Bucket> buckets = terms.getBuckets();
-                for (Terms.Bucket bucket : buckets) {
-                    InternalAggregations subAggs = bucket.getAggregations();
-                    assertNotNull(subAggs);
-
-                    Sum sum = subAggs.get("the_sum");
-                    assertNotNull(sum);
-                    assertMetadata(sum.getMetadata());
-                }
-
-                InternalBucketMetricValue maxBucket = aggs.get("the_max_bucket");
-                assertNotNull(maxBucket);
-                assertMetadata(maxBucket.getMetadata());
-            }
+            ).addAggregation(maxBucket("the_max_bucket", "the_terms>the_sum").setMetadata(metadata))
         );
     }
 

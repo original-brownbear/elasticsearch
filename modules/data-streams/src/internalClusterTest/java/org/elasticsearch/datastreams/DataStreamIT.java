@@ -1703,22 +1703,19 @@ public class DataStreamIT extends ESIntegTestCase {
         indexDocs("metrics-foo", numDocs3); // 3rd segment
         int totalDocs = numDocs1 + numDocs2 + numDocs3;
 
-        assertResponse(
-            prepareSearch("metrics-foo").addFetchField(new FieldAndFormat(DEFAULT_TIMESTAMP_FIELD, "epoch_millis")).setSize(totalDocs),
-            resp -> {
-                assertEquals(totalDocs, resp.getHits().getTotalHits().value);
-                SearchHit[] hits = resp.getHits().getHits();
-                assertEquals(totalDocs, hits.length);
+        assertResponse(resp -> {
+            assertEquals(totalDocs, resp.getHits().getTotalHits().value);
+            SearchHit[] hits = resp.getHits().getHits();
+            assertEquals(totalDocs, hits.length);
 
-                // Test that when we read data, segments come in the reverse order with a segment with the latest date first
-                long timestamp1 = Long.valueOf(hits[0].field(DEFAULT_TIMESTAMP_FIELD).getValue()); // 1st doc of 1st seg
-                long timestamp2 = Long.valueOf(hits[0 + numDocs3].field(DEFAULT_TIMESTAMP_FIELD).getValue()); // 1st doc of the 2nd seg
-                long timestamp3 = Long.valueOf(hits[0 + numDocs3 + numDocs2].field(DEFAULT_TIMESTAMP_FIELD).getValue());  // 1st doc of the
-                // 3rd seg
-                assertTrue(timestamp1 > timestamp2);
-                assertTrue(timestamp2 > timestamp3);
-            }
-        );
+            // Test that when we read data, segments come in the reverse order with a segment with the latest date first
+            long timestamp1 = Long.valueOf(hits[0].field(DEFAULT_TIMESTAMP_FIELD).getValue()); // 1st doc of 1st seg
+            long timestamp2 = Long.valueOf(hits[0 + numDocs3].field(DEFAULT_TIMESTAMP_FIELD).getValue()); // 1st doc of the 2nd seg
+            long timestamp3 = Long.valueOf(hits[0 + numDocs3 + numDocs2].field(DEFAULT_TIMESTAMP_FIELD).getValue());  // 1st doc of the
+            // 3rd seg
+            assertTrue(timestamp1 > timestamp2);
+            assertTrue(timestamp2 > timestamp3);
+        }, prepareSearch("metrics-foo").addFetchField(new FieldAndFormat(DEFAULT_TIMESTAMP_FIELD, "epoch_millis")).setSize(totalDocs));
     }
 
     public void testCreateDataStreamWithSameNameAsIndexAlias() throws Exception {
@@ -1974,12 +1971,12 @@ public class DataStreamIT extends ESIntegTestCase {
         if (fail) {
             String expectedErrorMessage = "no such index [" + dataStream + "]";
             if (requestBuilder instanceof MultiSearchRequestBuilder) {
-                assertResponse((MultiSearchRequestBuilder) requestBuilder, multiSearchResponse -> {
+                assertResponse(multiSearchResponse -> {
                     assertThat(multiSearchResponse.getResponses().length, equalTo(1));
                     assertThat(multiSearchResponse.getResponses()[0].isFailure(), is(true));
                     assertThat(multiSearchResponse.getResponses()[0].getFailure(), instanceOf(IllegalArgumentException.class));
                     assertThat(multiSearchResponse.getResponses()[0].getFailure().getMessage(), equalTo(expectedErrorMessage));
-                });
+                }, (MultiSearchRequestBuilder) requestBuilder);
             } else if (requestBuilder instanceof ValidateQueryRequestBuilder) {
                 Exception e = expectThrows(IndexNotFoundException.class, requestBuilder);
                 assertThat(e.getMessage(), equalTo(expectedErrorMessage));
@@ -1989,11 +1986,11 @@ public class DataStreamIT extends ESIntegTestCase {
             }
         } else {
             if (requestBuilder instanceof SearchRequestBuilder searchRequestBuilder) {
-                assertHitCount(searchRequestBuilder, expectedCount);
+                assertHitCount(expectedCount, searchRequestBuilder);
             } else if (requestBuilder instanceof MultiSearchRequestBuilder) {
                 assertResponse(
-                    (MultiSearchRequestBuilder) requestBuilder,
-                    multiSearchResponse -> assertThat(multiSearchResponse.getResponses()[0].isFailure(), is(false))
+                    multiSearchResponse -> assertThat(multiSearchResponse.getResponses()[0].isFailure(), is(false)),
+                    (MultiSearchRequestBuilder) requestBuilder
                 );
             } else {
                 verifyResolvability(requestBuilder.execute());
@@ -2026,10 +2023,10 @@ public class DataStreamIT extends ESIntegTestCase {
     }
 
     static void verifyDocs(String dataStream, long expectedNumHits, List<String> expectedIndices) {
-        assertResponse(prepareSearch(dataStream).setSize((int) expectedNumHits), resp -> {
+        assertResponse(resp -> {
             assertThat(resp.getHits().getTotalHits().value, equalTo(expectedNumHits));
             Arrays.stream(resp.getHits().getHits()).forEach(hit -> assertTrue(expectedIndices.contains(hit.getIndex())));
-        });
+        }, prepareSearch(dataStream).setSize((int) expectedNumHits));
     }
 
     static void verifyDocs(String dataStream, long expectedNumHits, long minGeneration, long maxGeneration) {
@@ -2185,7 +2182,7 @@ public class DataStreamIT extends ESIntegTestCase {
         );
         client().execute(CreateDataStreamAction.INSTANCE, createDataStreamRequest).get();
 
-        assertResponse(prepareSearch("my-logs").setRouting("123"), resp -> { assertEquals(resp.getTotalShards(), 4); });
+        assertResponse(resp -> { assertEquals(resp.getTotalShards(), 4); }, prepareSearch("my-logs").setRouting("123"));
     }
 
     public void testWriteIndexWriteLoadAndAvgShardSizeIsStoredAfterRollover() throws Exception {

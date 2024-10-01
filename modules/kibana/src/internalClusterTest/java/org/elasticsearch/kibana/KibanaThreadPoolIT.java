@@ -101,7 +101,7 @@ public class KibanaThreadPoolIT extends ESIntegTestCase {
                 assertNoFailures(response);
 
                 // match-all search
-                assertHitCount(client().prepareSearch(index).setQuery(QueryBuilders.matchAllQuery()), 2);
+                assertHitCount(2, client().prepareSearch(index).setQuery(QueryBuilders.matchAllQuery()));
             }
         });
     }

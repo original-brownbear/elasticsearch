@@ -58,38 +58,35 @@ public abstract class GeoShapeIntegTestCase extends BaseShapeIntegTestCase<GeoSh
 
         indexRandom(true, prepareIndex("test").setId("0").setSource(source, XContentType.JSON));
 
-        assertHitCount(prepareSearch("test").setQuery(geoShapeQuery("shape", new Point(-179.75, 1))), 1L);
-        assertHitCount(prepareSearch("test").setQuery(geoShapeQuery("shape", new Point(90, 1))), 0L);
-        assertHitCount(prepareSearch("test").setQuery(geoShapeQuery("shape", new Point(-180, 1))), 1L);
-        assertHitCount(prepareSearch("test").setQuery(geoShapeQuery("shape", new Point(180, 1))), 1L);
+        assertHitCount(1L, prepareSearch("test").setQuery(geoShapeQuery("shape", new Point(-179.75, 1))));
+        assertHitCount(0L, prepareSearch("test").setQuery(geoShapeQuery("shape", new Point(90, 1))));
+        assertHitCount(1L, prepareSearch("test").setQuery(geoShapeQuery("shape", new Point(-180, 1))));
+        assertHitCount(1L, prepareSearch("test").setQuery(geoShapeQuery("shape", new Point(180, 1))));
 
     }
 
     /** The testBulk method uses this only for Geo-specific tests */
     protected void doDistanceAndBoundingBoxTest(String key) {
         assertHitCount(
-            prepareSearch().addStoredField("pin").setQuery(geoBoundingBoxQuery("pin").setCorners(90, -179.99999, -90, 179.99999)),
-            53
+            53,
+            prepareSearch().addStoredField("pin").setQuery(geoBoundingBoxQuery("pin").setCorners(90, -179.99999, -90, 179.99999))
         );
 
-        assertResponse(
-            prepareSearch().addStoredField("pin").setQuery(geoDistanceQuery("pin").distance("425km").point(51.11, 9.851)),
-            response -> {
-                assertHitCount(response, 5L);
-                GeoPoint point = new GeoPoint();
-                for (SearchHit hit : response.getHits()) {
-                    String name = hit.getId();
-                    point.resetFromString(hit.getFields().get("pin").getValue());
-                    double dist = distance(point.getLat(), point.getLon(), 51.11, 9.851);
+        assertResponse(response -> {
+            assertHitCount(response, 5L);
+            GeoPoint point = new GeoPoint();
+            for (SearchHit hit : response.getHits()) {
+                String name = hit.getId();
+                point.resetFromString(hit.getFields().get("pin").getValue());
+                double dist = distance(point.getLat(), point.getLon(), 51.11, 9.851);
 
-                    assertThat("distance to '" + name + "'", dist, lessThanOrEqualTo(425000d));
-                    assertThat(name, anyOf(equalTo("CZ"), equalTo("DE"), equalTo("BE"), equalTo("NL"), equalTo("LU")));
-                    if (key.equals(name)) {
-                        assertThat(dist, closeTo(0d, 0.1d));
-                    }
+                assertThat("distance to '" + name + "'", dist, lessThanOrEqualTo(425000d));
+                assertThat(name, anyOf(equalTo("CZ"), equalTo("DE"), equalTo("BE"), equalTo("NL"), equalTo("LU")));
+                if (key.equals(name)) {
+                    assertThat(dist, closeTo(0d, 0.1d));
                 }
             }
-        );
+        }, prepareSearch().addStoredField("pin").setQuery(geoDistanceQuery("pin").distance("425km").point(51.11, 9.851)));
     }
 
     private static double distance(double lat1, double lon1, double lat2, double lon2) {

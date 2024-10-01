@@ -124,7 +124,7 @@ public class SourceOnlySnapshotIT extends AbstractSnapshotIntegTestCase {
         assertTrue(e.toString().contains("_source only indices can't be searched or filtered"));
 
         // can-match phase pre-filters access to non-existing field
-        assertHitCount(prepareSearch(sourceIdx).setQuery(QueryBuilders.termQuery("field1", "bar")), 0);
+        assertHitCount(0, prepareSearch(sourceIdx).setQuery(QueryBuilders.termQuery("field1", "bar")));
         // make sure deletes do not work
         String idToDelete = "" + randomIntBetween(0, builders.length);
         expectThrows(ClusterBlockException.class, () -> client().prepareDelete(sourceIdx, idToDelete).setRouting("r" + idToDelete).get());
@@ -148,7 +148,7 @@ public class SourceOnlySnapshotIT extends AbstractSnapshotIntegTestCase {
         );
         assertTrue(e.toString().contains("_source only indices can't be searched or filtered"));
         // can-match phase pre-filters access to non-existing field
-        assertHitCount(prepareSearch(sourceIdx).setQuery(QueryBuilders.termQuery("field1", "bar")), 0);
+        assertHitCount(0, prepareSearch(sourceIdx).setQuery(QueryBuilders.termQuery("field1", "bar")));
         // make sure deletes do not work
         String idToDelete = "" + randomIntBetween(0, builders.length);
         expectThrows(ClusterBlockException.class, client().prepareDelete(sourceIdx, idToDelete).setRouting("r" + idToDelete));
@@ -272,10 +272,10 @@ public class SourceOnlySnapshotIT extends AbstractSnapshotIntegTestCase {
                 assertEquals("r" + id, hit.field("_routing").getValue());
             }
         };
-        assertResponse(prepareSearch(index).addSort(SeqNoFieldMapper.NAME, SortOrder.ASC).setSize(numDocsExpected), searchResponse -> {
+        assertResponse(searchResponse -> {
             assertConsumer.accept(searchResponse, sourceHadDeletions);
             assertEquals(numDocsExpected, searchResponse.getHits().getTotalHits().value);
-        });
+        }, prepareSearch(index).addSort(SeqNoFieldMapper.NAME, SortOrder.ASC).setSize(numDocsExpected));
         SearchResponse searchResponse = prepareSearch(index).addSort(SeqNoFieldMapper.NAME, SortOrder.ASC)
             .setScroll(TimeValue.timeValueMinutes(1))
             .slice(new SliceBuilder(SeqNoFieldMapper.NAME, randomIntBetween(0, 1), 2))
@@ -342,7 +342,7 @@ public class SourceOnlySnapshotIT extends AbstractSnapshotIntegTestCase {
         }
         indexRandom(true, builders);
         flushAndRefresh();
-        assertHitCount(prepareSearch(sourceIdx).setQuery(QueryBuilders.idsQuery().addIds("0")), 1);
+        assertHitCount(1, prepareSearch(sourceIdx).setQuery(QueryBuilders.idsQuery().addIds("0")));
 
         createSnapshot(repo, snapshot, Collections.singletonList(sourceIdx));
 

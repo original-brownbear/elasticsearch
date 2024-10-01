@@ -64,19 +64,18 @@ public class KnnSearchSingleNodeTests extends ESSingleNodeTestCase {
 
         float[] queryVector = randomVector();
         KnnSearchBuilder knnSearch = new KnnSearchBuilder("vector", queryVector, 20, 50, null).boost(5.0f);
-        assertResponse(
+        assertResponse(response -> {
+            // Originally indexed 20 documents, but deleted vector field with an update, so only 19 should be hit
+            assertHitCount(response, 19);
+            assertEquals(10, response.getHits().getHits().length);
+        },
             client().prepareSearch("index")
                 .setKnnSearch(List.of(knnSearch))
                 .setQuery(QueryBuilders.matchQuery("text", "goodnight"))
-                .setSize(10),
-            response -> {
-                // Originally indexed 20 documents, but deleted vector field with an update, so only 19 should be hit
-                assertHitCount(response, 19);
-                assertEquals(10, response.getHits().getHits().length);
-            }
+                .setSize(10)
         );
         // Make sure we still have 20 docs
-        assertHitCount(client().prepareSearch("index").setSize(0).setTrackTotalHits(true), 20);
+        assertHitCount(20, client().prepareSearch("index").setSize(0).setTrackTotalHits(true));
     }
 
     public void testKnnWithQuery() throws IOException {
@@ -108,23 +107,22 @@ public class KnnSearchSingleNodeTests extends ESSingleNodeTestCase {
 
         float[] queryVector = randomVector();
         KnnSearchBuilder knnSearch = new KnnSearchBuilder("vector", queryVector, 5, 50, null).boost(5.0f).queryName("knn");
-        assertResponse(
+        assertResponse(response -> {
+
+            // The total hits is k plus the number of text matches
+            assertHitCount(response, 15);
+            assertEquals(10, response.getHits().getHits().length);
+
+            // Because of the boost, vector results should appear first
+            assertNotNull(response.getHits().getAt(0).field("vector"));
+            assertEquals(response.getHits().getAt(0).getMatchedQueries()[0], "knn");
+            assertEquals(response.getHits().getAt(9).getMatchedQueries()[0], "query");
+        },
             client().prepareSearch("index")
                 .setKnnSearch(List.of(knnSearch))
                 .setQuery(QueryBuilders.matchQuery("text", "goodnight").queryName("query"))
                 .addFetchField("*")
-                .setSize(10),
-            response -> {
-
-                // The total hits is k plus the number of text matches
-                assertHitCount(response, 15);
-                assertEquals(10, response.getHits().getHits().length);
-
-                // Because of the boost, vector results should appear first
-                assertNotNull(response.getHits().getAt(0).field("vector"));
-                assertEquals(response.getHits().getAt(0).getMatchedQueries()[0], "knn");
-                assertEquals(response.getHits().getAt(9).getMatchedQueries()[0], "query");
-            }
+                .setSize(10)
         );
     }
 
@@ -159,13 +157,13 @@ public class KnnSearchSingleNodeTests extends ESSingleNodeTestCase {
         KnnSearchBuilder knnSearch = new KnnSearchBuilder("vector", queryVector, 5, 50, null).addFilterQuery(
             QueryBuilders.termsQuery("field", "second")
         );
-        assertResponse(client().prepareSearch("index").setKnnSearch(List.of(knnSearch)).addFetchField("*").setSize(10), response -> {
+        assertResponse(response -> {
             assertHitCount(response, 5);
             assertEquals(5, response.getHits().getHits().length);
             for (SearchHit hit : response.getHits().getHits()) {
                 assertEquals("second", hit.field("field").getValue());
             }
-        });
+        }, client().prepareSearch("index").setKnnSearch(List.of(knnSearch)).addFetchField("*").setSize(10));
     }
 
     public void testKnnFilterWithRewrite() throws IOException {
@@ -202,10 +200,10 @@ public class KnnSearchSingleNodeTests extends ESSingleNodeTestCase {
         KnnSearchBuilder knnSearch = new KnnSearchBuilder("vector", queryVector, 5, 50, null).addFilterQuery(
             QueryBuilders.termsLookupQuery("field", new TermsLookup("index", "lookup-doc", "other-field"))
         );
-        assertResponse(client().prepareSearch("index").setKnnSearch(List.of(knnSearch)).setSize(10), response -> {
+        assertResponse(response -> {
             assertHitCount(response, 5);
             assertEquals(5, response.getHits().getHits().length);
-        });
+        }, client().prepareSearch("index").setKnnSearch(List.of(knnSearch)).setSize(10));
     }
 
     public void testMultiKnnClauses() throws IOException {
@@ -248,28 +246,27 @@ public class KnnSearchSingleNodeTests extends ESSingleNodeTestCase {
         float[] queryVector = randomVector(20f, 21f);
         KnnSearchBuilder knnSearch = new KnnSearchBuilder("vector", queryVector, 5, 50, null).boost(5.0f);
         KnnSearchBuilder knnSearch2 = new KnnSearchBuilder("vector_2", queryVector, 5, 50, null).boost(10.0f);
-        assertResponse(
+        assertResponse(response -> {
+
+            // The total hits is k plus the number of text matches
+            assertHitCount(response, 20);
+            assertEquals(10, response.getHits().getHits().length);
+            InternalStats agg = response.getAggregations().get("stats");
+            assertThat(agg.getCount(), equalTo(20L));
+            assertThat(agg.getMax(), equalTo(3.0));
+            assertThat(agg.getMin(), equalTo(1.0));
+            assertThat(agg.getAvg(), equalTo(2.25));
+            assertThat(agg.getSum(), equalTo(45.0));
+
+            // Because of the boost & vector distributions, vector_2 results should appear first
+            assertNotNull(response.getHits().getAt(0).field("vector_2"));
+        },
             client().prepareSearch("index")
                 .setKnnSearch(List.of(knnSearch, knnSearch2))
                 .setQuery(QueryBuilders.matchQuery("text", "goodnight"))
                 .addFetchField("*")
                 .setSize(10)
-                .addAggregation(AggregationBuilders.stats("stats").field("number")),
-            response -> {
-
-                // The total hits is k plus the number of text matches
-                assertHitCount(response, 20);
-                assertEquals(10, response.getHits().getHits().length);
-                InternalStats agg = response.getAggregations().get("stats");
-                assertThat(agg.getCount(), equalTo(20L));
-                assertThat(agg.getMax(), equalTo(3.0));
-                assertThat(agg.getMin(), equalTo(1.0));
-                assertThat(agg.getAvg(), equalTo(2.25));
-                assertThat(agg.getSum(), equalTo(45.0));
-
-                // Because of the boost & vector distributions, vector_2 results should appear first
-                assertNotNull(response.getHits().getAt(0).field("vector_2"));
-            }
+                .addAggregation(AggregationBuilders.stats("stats").field("number"))
         );
     }
 
@@ -310,41 +307,38 @@ public class KnnSearchSingleNodeTests extends ESSingleNodeTestCase {
         // Having the same query vector and same docs should mean our KNN scores are linearly combined if the same doc is matched
         KnnSearchBuilder knnSearch = new KnnSearchBuilder("vector", queryVector, 5, 50, null);
         KnnSearchBuilder knnSearch2 = new KnnSearchBuilder("vector_2", queryVector, 5, 50, null);
-        assertResponse(
+        assertResponse(responseOneKnn -> assertResponse(responseBothKnn -> {
+            // The total hits is k matched docs
+            assertHitCount(responseOneKnn, 5);
+            assertHitCount(responseBothKnn, 5);
+            assertEquals(5, responseOneKnn.getHits().getHits().length);
+            assertEquals(5, responseBothKnn.getHits().getHits().length);
+
+            for (int i = 0; i < responseOneKnn.getHits().getHits().length; i++) {
+                SearchHit oneHit = responseOneKnn.getHits().getHits()[i];
+                SearchHit bothHit = responseBothKnn.getHits().getHits()[i];
+                assertThat(bothHit.getId(), equalTo(oneHit.getId()));
+                assertThat(bothHit.getScore(), greaterThan(oneHit.getScore()));
+            }
+            InternalStats oneAgg = responseOneKnn.getAggregations().get("stats");
+            InternalStats bothAgg = responseBothKnn.getAggregations().get("stats");
+            assertThat(bothAgg.getCount(), equalTo(oneAgg.getCount()));
+            assertThat(bothAgg.getAvg(), equalTo(oneAgg.getAvg()));
+            assertThat(bothAgg.getMax(), equalTo(oneAgg.getMax()));
+            assertThat(bothAgg.getSum(), equalTo(oneAgg.getSum()));
+            assertThat(bothAgg.getMin(), equalTo(oneAgg.getMin()));
+        },
+            client().prepareSearch("index")
+                .setKnnSearch(List.of(knnSearch, knnSearch2))
+                .addFetchField("*")
+                .setSize(10)
+                .addAggregation(AggregationBuilders.stats("stats").field("number"))
+        ),
             client().prepareSearch("index")
                 .setKnnSearch(List.of(knnSearch))
                 .addFetchField("*")
                 .setSize(10)
-                .addAggregation(AggregationBuilders.stats("stats").field("number")),
-            responseOneKnn -> assertResponse(
-                client().prepareSearch("index")
-                    .setKnnSearch(List.of(knnSearch, knnSearch2))
-                    .addFetchField("*")
-                    .setSize(10)
-                    .addAggregation(AggregationBuilders.stats("stats").field("number")),
-                responseBothKnn -> {
-
-                    // The total hits is k matched docs
-                    assertHitCount(responseOneKnn, 5);
-                    assertHitCount(responseBothKnn, 5);
-                    assertEquals(5, responseOneKnn.getHits().getHits().length);
-                    assertEquals(5, responseBothKnn.getHits().getHits().length);
-
-                    for (int i = 0; i < responseOneKnn.getHits().getHits().length; i++) {
-                        SearchHit oneHit = responseOneKnn.getHits().getHits()[i];
-                        SearchHit bothHit = responseBothKnn.getHits().getHits()[i];
-                        assertThat(bothHit.getId(), equalTo(oneHit.getId()));
-                        assertThat(bothHit.getScore(), greaterThan(oneHit.getScore()));
-                    }
-                    InternalStats oneAgg = responseOneKnn.getAggregations().get("stats");
-                    InternalStats bothAgg = responseBothKnn.getAggregations().get("stats");
-                    assertThat(bothAgg.getCount(), equalTo(oneAgg.getCount()));
-                    assertThat(bothAgg.getAvg(), equalTo(oneAgg.getAvg()));
-                    assertThat(bothAgg.getMax(), equalTo(oneAgg.getMax()));
-                    assertThat(bothAgg.getSum(), equalTo(oneAgg.getSum()));
-                    assertThat(bothAgg.getMin(), equalTo(oneAgg.getMin()));
-                }
-            )
+                .addAggregation(AggregationBuilders.stats("stats").field("number"))
         );
     }
 
@@ -383,10 +377,10 @@ public class KnnSearchSingleNodeTests extends ESSingleNodeTestCase {
         float[] queryVector = randomVector();
         KnnSearchBuilder knnSearch = new KnnSearchBuilder("vector", queryVector, 10, 50, null);
         final int expectedHitCount = expectedHits;
-        assertResponse(client().prepareSearch("test-alias").setKnnSearch(List.of(knnSearch)).setSize(10), response -> {
+        assertResponse(response -> {
             assertHitCount(response, expectedHitCount);
             assertEquals(expectedHitCount, response.getHits().getHits().length);
-        });
+        }, client().prepareSearch("test-alias").setKnnSearch(List.of(knnSearch)).setSize(10));
     }
 
     public void testKnnSearchAction() throws IOException {
@@ -416,14 +410,11 @@ public class KnnSearchSingleNodeTests extends ESSingleNodeTestCase {
         // Since there's no kNN search action at the transport layer, we just emulate
         // how the action works (it builds a kNN query under the hood)
         float[] queryVector = randomVector();
-        assertResponse(
-            client().prepareSearch("index1", "index2").setQuery(new KnnVectorQueryBuilder("vector", queryVector, null, 5, null)).setSize(2),
-            response -> {
-                // The total hits is num_cands * num_shards, since the query gathers num_cands hits from each shard
-                assertHitCount(response, 5 * 2);
-                assertEquals(2, response.getHits().getHits().length);
-            }
-        );
+        assertResponse(response -> {
+            // The total hits is num_cands * num_shards, since the query gathers num_cands hits from each shard
+            assertHitCount(response, 5 * 2);
+            assertEquals(2, response.getHits().getHits().length);
+        }, client().prepareSearch("index1", "index2").setQuery(new KnnVectorQueryBuilder("vector", queryVector, null, 5, null)).setSize(2));
     }
 
     public void testKnnVectorsWith4096Dims() throws IOException {
@@ -451,11 +442,11 @@ public class KnnSearchSingleNodeTests extends ESSingleNodeTestCase {
 
         float[] queryVector = randomVector(4096);
         KnnSearchBuilder knnSearch = new KnnSearchBuilder("vector", queryVector, 3, 50, null).boost(5.0f);
-        assertResponse(client().prepareSearch("index").setKnnSearch(List.of(knnSearch)).addFetchField("*").setSize(10), response -> {
+        assertResponse(response -> {
             assertHitCount(response, 3);
             assertEquals(3, response.getHits().getHits().length);
             assertEquals(4096, response.getHits().getAt(0).field("vector").getValues().size());
-        });
+        }, client().prepareSearch("index").setKnnSearch(List.of(knnSearch)).addFetchField("*").setSize(10));
     }
 
     private float[] randomVector() {

@@ -37,8 +37,8 @@ public class IndexRequestBuilderIT extends ESIntegTestCase {
             prepareIndex("test").setSource(map) };
         indexRandom(true, builders);
         ElasticsearchAssertions.assertHitCount(
-            prepareSearch("test").setQuery(QueryBuilders.termQuery("test_field", "foobar")),
-            builders.length
+            builders.length,
+            prepareSearch("test").setQuery(QueryBuilders.termQuery("test_field", "foobar"))
         );
     }
 

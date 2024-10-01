@@ -246,23 +246,20 @@ public class ScheduledEventsIT extends MlNativeAutodetectIntegTestCase {
         postScheduledEvents(calendarId, events);
 
         // Wait until the notification that the process was updated is indexed
-        assertBusy(
-            () -> assertResponse(
-                client().prepareSearch(NotificationsIndex.NOTIFICATIONS_INDEX)
-                    .setSize(1)
-                    .addSort("timestamp", SortOrder.DESC)
-                    .setQuery(
-                        QueryBuilders.boolQuery()
-                            .filter(QueryBuilders.termQuery("job_id", job.getId()))
-                            .filter(QueryBuilders.termQuery("level", "info"))
-                    ),
-                searchResponse -> {
-                    SearchHit[] hits = searchResponse.getHits().getHits();
-                    assertThat(hits.length, equalTo(1));
-                    assertThat(hits[0].getSourceAsMap().get("message"), equalTo("Updated calendars in running process"));
-                }
-            )
-        );
+        assertBusy(() -> assertResponse(searchResponse -> {
+            SearchHit[] hits = searchResponse.getHits().getHits();
+            assertThat(hits.length, equalTo(1));
+            assertThat(hits[0].getSourceAsMap().get("message"), equalTo("Updated calendars in running process"));
+        },
+            client().prepareSearch(NotificationsIndex.NOTIFICATIONS_INDEX)
+                .setSize(1)
+                .addSort("timestamp", SortOrder.DESC)
+                .setQuery(
+                    QueryBuilders.boolQuery()
+                        .filter(QueryBuilders.termQuery("job_id", job.getId()))
+                        .filter(QueryBuilders.termQuery("level", "info"))
+                )
+        ));
         // write some more buckets of data that cover the scheduled event period
         postData(
             job.getId(),
@@ -335,22 +332,19 @@ public class ScheduledEventsIT extends MlNativeAutodetectIntegTestCase {
         client().execute(UpdateJobAction.INSTANCE, jobUpdateRequest).actionGet();
 
         // Wait until the notification that the job was updated is indexed
-        assertBusy(
-            () -> assertResponse(
-                prepareSearch(NotificationsIndex.NOTIFICATIONS_INDEX).setSize(1)
-                    .addSort("timestamp", SortOrder.DESC)
-                    .setQuery(
-                        QueryBuilders.boolQuery()
-                            .filter(QueryBuilders.termQuery("job_id", job.getId()))
-                            .filter(QueryBuilders.termQuery("level", "info"))
-                    ),
-                searchResponse -> {
-                    SearchHit[] hits = searchResponse.getHits().getHits();
-                    assertThat(hits.length, equalTo(1));
-                    assertThat(hits[0].getSourceAsMap().get("message"), equalTo("Job updated: [groups]"));
-                }
-            )
-        );
+        assertBusy(() -> assertResponse(searchResponse -> {
+            SearchHit[] hits = searchResponse.getHits().getHits();
+            assertThat(hits.length, equalTo(1));
+            assertThat(hits[0].getSourceAsMap().get("message"), equalTo("Job updated: [groups]"));
+        },
+            prepareSearch(NotificationsIndex.NOTIFICATIONS_INDEX).setSize(1)
+                .addSort("timestamp", SortOrder.DESC)
+                .setQuery(
+                    QueryBuilders.boolQuery()
+                        .filter(QueryBuilders.termQuery("job_id", job.getId()))
+                        .filter(QueryBuilders.termQuery("level", "info"))
+                )
+        ));
 
         // write some more buckets of data that cover the scheduled event period
         postData(
@@ -424,22 +418,19 @@ public class ScheduledEventsIT extends MlNativeAutodetectIntegTestCase {
         postScheduledEvents(calendarId, postOpenJobEvents);
 
         // Wait until the notification that the job was updated is indexed
-        assertBusy(
-            () -> assertResponse(
-                prepareSearch(NotificationsIndex.NOTIFICATIONS_INDEX).setSize(1)
-                    .addSort("timestamp", SortOrder.DESC)
-                    .setQuery(
-                        QueryBuilders.boolQuery()
-                            .filter(QueryBuilders.termQuery("job_id", job.getId()))
-                            .filter(QueryBuilders.termQuery("level", "info"))
-                    ),
-                searchResponse -> {
-                    SearchHit[] hits = searchResponse.getHits().getHits();
-                    assertThat(hits.length, equalTo(1));
-                    assertThat(hits[0].getSourceAsMap().get("message"), equalTo("Updated calendars in running process"));
-                }
-            )
-        );
+        assertBusy(() -> assertResponse(searchResponse -> {
+            SearchHit[] hits = searchResponse.getHits().getHits();
+            assertThat(hits.length, equalTo(1));
+            assertThat(hits[0].getSourceAsMap().get("message"), equalTo("Updated calendars in running process"));
+        },
+            prepareSearch(NotificationsIndex.NOTIFICATIONS_INDEX).setSize(1)
+                .addSort("timestamp", SortOrder.DESC)
+                .setQuery(
+                    QueryBuilders.boolQuery()
+                        .filter(QueryBuilders.termQuery("job_id", job.getId()))
+                        .filter(QueryBuilders.termQuery("level", "info"))
+                )
+        ));
 
         // write some buckets of data
         postData(

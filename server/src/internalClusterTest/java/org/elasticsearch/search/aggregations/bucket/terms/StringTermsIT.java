@@ -313,89 +313,101 @@ public class StringTermsIT extends AbstractTermsTestCase {
     private void runTestFieldWithPartitionedFiltering(String field) throws Exception {
         // Find total number of unique terms
         int[] expectedCardinality = new int[1];
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            StringTerms terms = response.getAggregations().get("terms");
+            assertThat(terms, notNullValue());
+            assertThat(terms.getName(), equalTo("terms"));
+            expectedCardinality[0] = terms.getBuckets().size();
+        },
             prepareSearch("idx").addAggregation(
                 new TermsAggregationBuilder("terms").field(field).size(10000).collectMode(randomFrom(SubAggCollectionMode.values()))
-            ),
-            response -> {
-                StringTerms terms = response.getAggregations().get("terms");
-                assertThat(terms, notNullValue());
-                assertThat(terms.getName(), equalTo("terms"));
-                expectedCardinality[0] = terms.getBuckets().size();
-            }
+            )
         );
 
         // Gather terms using partitioned aggregations
         final int numPartitions = randomIntBetween(2, 4);
         Set<String> foundTerms = new HashSet<>();
         for (int partition = 0; partition < numPartitions; partition++) {
-            assertNoFailuresAndResponse(
+            assertNoFailuresAndResponse(response -> {
+                StringTerms terms = response.getAggregations().get("terms");
+                assertThat(terms, notNullValue());
+                assertThat(terms.getName(), equalTo("terms"));
+                for (StringTerms.Bucket bucket : terms.getBuckets()) {
+                    assertTrue(foundTerms.add(bucket.getKeyAsString()));
+                }
+            },
                 prepareSearch("idx").addAggregation(
                     new TermsAggregationBuilder("terms").field(field)
                         .includeExclude(new IncludeExclude(partition, numPartitions))
                         .collectMode(randomFrom(SubAggCollectionMode.values()))
-                ),
-                response -> {
-                    StringTerms terms = response.getAggregations().get("terms");
-                    assertThat(terms, notNullValue());
-                    assertThat(terms.getName(), equalTo("terms"));
-                    for (StringTerms.Bucket bucket : terms.getBuckets()) {
-                        assertTrue(foundTerms.add(bucket.getKeyAsString()));
-                    }
-                }
+                )
             );
         }
         assertEquals(expectedCardinality[0], foundTerms.size());
     }
 
     public void testSingleValuedFieldWithValueScript() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            StringTerms terms = response.getAggregations().get("terms");
+            assertThat(terms, notNullValue());
+            assertThat(terms.getName(), equalTo("terms"));
+            assertThat(terms.getBuckets().size(), equalTo(5));
+
+            for (int i = 0; i < 5; i++) {
+                StringTerms.Bucket bucket = terms.getBucketByKey("foo_val" + i);
+                assertThat(bucket, notNullValue());
+                assertThat(bucket.getKeyAsString(), equalTo("foo_val" + i));
+                assertThat(bucket.getDocCount(), equalTo(1L));
+            }
+        },
             prepareSearch("idx").addAggregation(
                 new TermsAggregationBuilder("terms").executionHint(randomExecutionHint())
                     .field(SINGLE_VALUED_FIELD_NAME)
                     .collectMode(randomFrom(SubAggCollectionMode.values()))
                     .script(new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "'foo_' + _value", Collections.emptyMap()))
-            ),
-            response -> {
-                StringTerms terms = response.getAggregations().get("terms");
-                assertThat(terms, notNullValue());
-                assertThat(terms.getName(), equalTo("terms"));
-                assertThat(terms.getBuckets().size(), equalTo(5));
-
-                for (int i = 0; i < 5; i++) {
-                    StringTerms.Bucket bucket = terms.getBucketByKey("foo_val" + i);
-                    assertThat(bucket, notNullValue());
-                    assertThat(bucket.getKeyAsString(), equalTo("foo_val" + i));
-                    assertThat(bucket.getDocCount(), equalTo(1L));
-                }
-            }
+            )
         );
     }
 
     public void testMultiValuedFieldWithValueScriptNotUnique() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            StringTerms terms = response.getAggregations().get("terms");
+            assertThat(terms, notNullValue());
+            assertThat(terms.getName(), equalTo("terms"));
+            assertThat(terms.getBuckets().size(), equalTo(1));
+
+            StringTerms.Bucket bucket = terms.getBucketByKey("val");
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKeyAsString(), equalTo("val"));
+            assertThat(bucket.getDocCount(), equalTo(5L));
+        },
             prepareSearch("idx").addAggregation(
                 new TermsAggregationBuilder("terms").executionHint(randomExecutionHint())
                     .field(MULTI_VALUED_FIELD_NAME)
                     .collectMode(randomFrom(SubAggCollectionMode.values()))
                     .script(new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "_value.substring(0,3)", Collections.emptyMap()))
-            ),
-            response -> {
-                StringTerms terms = response.getAggregations().get("terms");
-                assertThat(terms, notNullValue());
-                assertThat(terms.getName(), equalTo("terms"));
-                assertThat(terms.getBuckets().size(), equalTo(1));
-
-                StringTerms.Bucket bucket = terms.getBucketByKey("val");
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKeyAsString(), equalTo("val"));
-                assertThat(bucket.getDocCount(), equalTo(5L));
-            }
+            )
         );
     }
 
     public void testMultiValuedScript() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            StringTerms terms = response.getAggregations().get("terms");
+            assertThat(terms, notNullValue());
+            assertThat(terms.getName(), equalTo("terms"));
+            assertThat(terms.getBuckets().size(), equalTo(6));
+
+            for (int i = 0; i < 6; i++) {
+                Terms.Bucket bucket = terms.getBucketByKey("val" + i);
+                assertThat(bucket, notNullValue());
+                assertThat(bucket.getKeyAsString(), equalTo("val" + i));
+                if (i == 0 || i == 5) {
+                    assertThat(bucket.getDocCount(), equalTo(1L));
+                } else {
+                    assertThat(bucket.getDocCount(), equalTo(2L));
+                }
+            }
+        },
             prepareSearch("idx").addAggregation(
                 new TermsAggregationBuilder("terms").executionHint(randomExecutionHint())
                     .script(
@@ -407,52 +419,34 @@ public class StringTermsIT extends AbstractTermsTestCase {
                         )
                     )
                     .collectMode(randomFrom(SubAggCollectionMode.values()))
-            ),
-            response -> {
-                StringTerms terms = response.getAggregations().get("terms");
-                assertThat(terms, notNullValue());
-                assertThat(terms.getName(), equalTo("terms"));
-                assertThat(terms.getBuckets().size(), equalTo(6));
-
-                for (int i = 0; i < 6; i++) {
-                    Terms.Bucket bucket = terms.getBucketByKey("val" + i);
-                    assertThat(bucket, notNullValue());
-                    assertThat(bucket.getKeyAsString(), equalTo("val" + i));
-                    if (i == 0 || i == 5) {
-                        assertThat(bucket.getDocCount(), equalTo(1L));
-                    } else {
-                        assertThat(bucket.getDocCount(), equalTo(2L));
-                    }
-                }
-            }
+            )
         );
     }
 
     public void testMultiValuedFieldWithValueScript() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            StringTerms terms = response.getAggregations().get("terms");
+            assertThat(terms, notNullValue());
+            assertThat(terms.getName(), equalTo("terms"));
+            assertThat(terms.getBuckets().size(), equalTo(6));
+
+            for (int i = 0; i < 6; i++) {
+                StringTerms.Bucket bucket = terms.getBucketByKey("foo_val" + i);
+                assertThat(bucket, notNullValue());
+                assertThat(bucket.getKeyAsString(), equalTo("foo_val" + i));
+                if (i == 0 || i == 5) {
+                    assertThat(bucket.getDocCount(), equalTo(1L));
+                } else {
+                    assertThat(bucket.getDocCount(), equalTo(2L));
+                }
+            }
+        },
             prepareSearch("idx").addAggregation(
                 new TermsAggregationBuilder("terms").executionHint(randomExecutionHint())
                     .field(MULTI_VALUED_FIELD_NAME)
                     .collectMode(randomFrom(SubAggCollectionMode.values()))
                     .script(new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "'foo_' + _value", Collections.emptyMap()))
-            ),
-            response -> {
-                StringTerms terms = response.getAggregations().get("terms");
-                assertThat(terms, notNullValue());
-                assertThat(terms.getName(), equalTo("terms"));
-                assertThat(terms.getBuckets().size(), equalTo(6));
-
-                for (int i = 0; i < 6; i++) {
-                    StringTerms.Bucket bucket = terms.getBucketByKey("foo_val" + i);
-                    assertThat(bucket, notNullValue());
-                    assertThat(bucket.getKeyAsString(), equalTo("foo_val" + i));
-                    if (i == 0 || i == 5) {
-                        assertThat(bucket.getDocCount(), equalTo(1L));
-                    } else {
-                        assertThat(bucket.getDocCount(), equalTo(2L));
-                    }
-                }
-            }
+            )
         );
     }
 
@@ -476,25 +470,24 @@ public class StringTermsIT extends AbstractTermsTestCase {
             Collections.emptyMap()
         );
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            StringTerms terms = response.getAggregations().get("terms");
+            assertThat(terms, notNullValue());
+            assertThat(terms.getName(), equalTo("terms"));
+            assertThat(terms.getBuckets().size(), equalTo(5));
+
+            for (int i = 0; i < 5; i++) {
+                StringTerms.Bucket bucket = terms.getBucketByKey("val" + i);
+                assertThat(bucket, notNullValue());
+                assertThat(bucket.getKeyAsString(), equalTo("val" + i));
+                assertThat(bucket.getDocCount(), equalTo(1L));
+            }
+        },
             prepareSearch("idx").addAggregation(
                 new TermsAggregationBuilder("terms").collectMode(randomFrom(SubAggCollectionMode.values()))
                     .executionHint(randomExecutionHint())
                     .script(script)
-            ),
-            response -> {
-                StringTerms terms = response.getAggregations().get("terms");
-                assertThat(terms, notNullValue());
-                assertThat(terms.getName(), equalTo("terms"));
-                assertThat(terms.getBuckets().size(), equalTo(5));
-
-                for (int i = 0; i < 5; i++) {
-                    StringTerms.Bucket bucket = terms.getBucketByKey("val" + i);
-                    assertThat(bucket, notNullValue());
-                    assertThat(bucket.getKeyAsString(), equalTo("val" + i));
-                    assertThat(bucket.getDocCount(), equalTo(1L));
-                }
-            }
+            )
         );
     }
 
@@ -506,30 +499,45 @@ public class StringTermsIT extends AbstractTermsTestCase {
             Collections.emptyMap()
         );
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            StringTerms terms = response.getAggregations().get("terms");
+            assertThat(terms, notNullValue());
+            assertThat(terms.getName(), equalTo("terms"));
+            assertThat(terms.getBuckets().size(), equalTo(5));
+
+            for (int i = 0; i < 5; i++) {
+                StringTerms.Bucket bucket = terms.getBucketByKey("val" + i);
+                assertThat(bucket, notNullValue());
+                assertThat(bucket.getKeyAsString(), equalTo("val" + i));
+                assertThat(bucket.getDocCount(), equalTo(1L));
+            }
+        },
             prepareSearch("idx").addAggregation(
                 new TermsAggregationBuilder("terms").collectMode(randomFrom(SubAggCollectionMode.values()))
                     .executionHint(randomExecutionHint())
                     .script(script)
-            ),
-            response -> {
-                StringTerms terms = response.getAggregations().get("terms");
-                assertThat(terms, notNullValue());
-                assertThat(terms.getName(), equalTo("terms"));
-                assertThat(terms.getBuckets().size(), equalTo(5));
-
-                for (int i = 0; i < 5; i++) {
-                    StringTerms.Bucket bucket = terms.getBucketByKey("val" + i);
-                    assertThat(bucket, notNullValue());
-                    assertThat(bucket.getKeyAsString(), equalTo("val" + i));
-                    assertThat(bucket.getDocCount(), equalTo(1L));
-                }
-            }
+            )
         );
     }
 
     public void testScriptMultiValued() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            StringTerms terms = response.getAggregations().get("terms");
+            assertThat(terms, notNullValue());
+            assertThat(terms.getName(), equalTo("terms"));
+            assertThat(terms.getBuckets().size(), equalTo(6));
+
+            for (int i = 0; i < 6; i++) {
+                StringTerms.Bucket bucket = terms.getBucketByKey("val" + i);
+                assertThat(bucket, notNullValue());
+                assertThat(bucket.getKeyAsString(), equalTo("val" + i));
+                if (i == 0 || i == 5) {
+                    assertThat(bucket.getDocCount(), equalTo(1L));
+                } else {
+                    assertThat(bucket.getDocCount(), equalTo(2L));
+                }
+            }
+        },
             prepareSearch("idx")
 
                 .addAggregation(
@@ -543,76 +551,57 @@ public class StringTermsIT extends AbstractTermsTestCase {
                                 Collections.emptyMap()
                             )
                         )
-                ),
-            response -> {
-                StringTerms terms = response.getAggregations().get("terms");
-                assertThat(terms, notNullValue());
-                assertThat(terms.getName(), equalTo("terms"));
-                assertThat(terms.getBuckets().size(), equalTo(6));
-
-                for (int i = 0; i < 6; i++) {
-                    StringTerms.Bucket bucket = terms.getBucketByKey("val" + i);
-                    assertThat(bucket, notNullValue());
-                    assertThat(bucket.getKeyAsString(), equalTo("val" + i));
-                    if (i == 0 || i == 5) {
-                        assertThat(bucket.getDocCount(), equalTo(1L));
-                    } else {
-                        assertThat(bucket.getDocCount(), equalTo(2L));
-                    }
-                }
-            }
+                )
         );
     }
 
     public void testPartiallyUnmapped() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            StringTerms terms = response.getAggregations().get("terms");
+            assertThat(terms, notNullValue());
+            assertThat(terms.getName(), equalTo("terms"));
+            assertThat(terms.getBuckets().size(), equalTo(5));
+
+            for (int i = 0; i < 5; i++) {
+                StringTerms.Bucket bucket = terms.getBucketByKey("val" + i);
+                assertThat(bucket, notNullValue());
+                assertThat(bucket.getKeyAsString(), equalTo("val" + i));
+                assertThat(bucket.getDocCount(), equalTo(1L));
+            }
+        },
             prepareSearch("idx", "idx_unmapped").addAggregation(
                 new TermsAggregationBuilder("terms").executionHint(randomExecutionHint())
                     .field(SINGLE_VALUED_FIELD_NAME)
                     .collectMode(randomFrom(SubAggCollectionMode.values()))
-            ),
-            response -> {
-                StringTerms terms = response.getAggregations().get("terms");
-                assertThat(terms, notNullValue());
-                assertThat(terms.getName(), equalTo("terms"));
-                assertThat(terms.getBuckets().size(), equalTo(5));
-
-                for (int i = 0; i < 5; i++) {
-                    StringTerms.Bucket bucket = terms.getBucketByKey("val" + i);
-                    assertThat(bucket, notNullValue());
-                    assertThat(bucket.getKeyAsString(), equalTo("val" + i));
-                    assertThat(bucket.getDocCount(), equalTo(1L));
-                }
-            }
+            )
         );
     }
 
     public void testStringTermsNestedIntoPerBucketAggregator() throws Exception {
         // no execution hint so that the logic that decides whether or not to use ordinals is executed
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            assertThat(response.getFailedShards(), equalTo(0));
+
+            Filter filter = response.getAggregations().get("filter");
+
+            StringTerms terms = filter.getAggregations().get("terms");
+            assertThat(terms, notNullValue());
+            assertThat(terms.getName(), equalTo("terms"));
+            assertThat(terms.getBuckets().size(), equalTo(3));
+
+            for (int i = 2; i <= 4; i++) {
+                StringTerms.Bucket bucket = terms.getBucketByKey("val" + i);
+                assertThat(bucket, notNullValue());
+                assertThat(bucket.getKeyAsString(), equalTo("val" + i));
+                assertThat(bucket.getDocCount(), equalTo(i == 3 ? 2L : 1L));
+            }
+        },
             prepareSearch("idx").addAggregation(
                 filter("filter", termQuery(MULTI_VALUED_FIELD_NAME, "val3")).subAggregation(
                     new TermsAggregationBuilder("terms").field(MULTI_VALUED_FIELD_NAME)
                         .collectMode(randomFrom(SubAggCollectionMode.values()))
                 )
-            ),
-            response -> {
-                assertThat(response.getFailedShards(), equalTo(0));
-
-                Filter filter = response.getAggregations().get("filter");
-
-                StringTerms terms = filter.getAggregations().get("terms");
-                assertThat(terms, notNullValue());
-                assertThat(terms.getName(), equalTo("terms"));
-                assertThat(terms.getBuckets().size(), equalTo(3));
-
-                for (int i = 2; i <= 4; i++) {
-                    StringTerms.Bucket bucket = terms.getBucketByKey("val" + i);
-                    assertThat(bucket, notNullValue());
-                    assertThat(bucket.getKeyAsString(), equalTo("val" + i));
-                    assertThat(bucket.getDocCount(), equalTo(i == 3 ? 2L : 1L));
-                }
-            }
+            )
         );
     }
 
@@ -652,44 +641,81 @@ public class StringTermsIT extends AbstractTermsTestCase {
 
     public void testSingleValuedFieldOrderedBySingleBucketSubAggregationAsc() throws Exception {
         boolean asc = randomBoolean();
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            StringTerms tags = response.getAggregations().get("tags");
+            assertThat(tags, notNullValue());
+            assertThat(tags.getName(), equalTo("tags"));
+            assertThat(tags.getBuckets().size(), equalTo(2));
+
+            Iterator<StringTerms.Bucket> iters = tags.getBuckets().iterator();
+
+            Terms.Bucket tag = iters.next();
+            assertThat(tag, notNullValue());
+            assertThat(tag.getKeyAsString(), equalTo(asc ? "less" : "more"));
+            assertThat(tag.getDocCount(), equalTo(asc ? 2L : 3L));
+            Filter filter = tag.getAggregations().get("filter");
+            assertThat(filter, notNullValue());
+            assertThat(filter.getDocCount(), equalTo(asc ? 2L : 3L));
+
+            tag = iters.next();
+            assertThat(tag, notNullValue());
+            assertThat(tag.getKeyAsString(), equalTo(asc ? "more" : "less"));
+            assertThat(tag.getDocCount(), equalTo(asc ? 3L : 2L));
+            filter = tag.getAggregations().get("filter");
+            assertThat(filter, notNullValue());
+            assertThat(filter.getDocCount(), equalTo(asc ? 3L : 2L));
+        },
             prepareSearch("idx").addAggregation(
                 new TermsAggregationBuilder("tags").executionHint(randomExecutionHint())
                     .field("tag")
                     .collectMode(randomFrom(SubAggCollectionMode.values()))
                     .order(BucketOrder.aggregation("filter", asc))
                     .subAggregation(filter("filter", QueryBuilders.matchAllQuery()))
-            ),
-            response -> {
-                StringTerms tags = response.getAggregations().get("tags");
-                assertThat(tags, notNullValue());
-                assertThat(tags.getName(), equalTo("tags"));
-                assertThat(tags.getBuckets().size(), equalTo(2));
-
-                Iterator<StringTerms.Bucket> iters = tags.getBuckets().iterator();
-
-                Terms.Bucket tag = iters.next();
-                assertThat(tag, notNullValue());
-                assertThat(tag.getKeyAsString(), equalTo(asc ? "less" : "more"));
-                assertThat(tag.getDocCount(), equalTo(asc ? 2L : 3L));
-                Filter filter = tag.getAggregations().get("filter");
-                assertThat(filter, notNullValue());
-                assertThat(filter.getDocCount(), equalTo(asc ? 2L : 3L));
-
-                tag = iters.next();
-                assertThat(tag, notNullValue());
-                assertThat(tag.getKeyAsString(), equalTo(asc ? "more" : "less"));
-                assertThat(tag.getDocCount(), equalTo(asc ? 3L : 2L));
-                filter = tag.getAggregations().get("filter");
-                assertThat(filter, notNullValue());
-                assertThat(filter.getDocCount(), equalTo(asc ? 3L : 2L));
-            }
+            )
         );
     }
 
     public void testSingleValuedFieldOrderedBySubAggregationAscMultiHierarchyLevels() throws Exception {
         boolean asc = randomBoolean();
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            StringTerms tags = response.getAggregations().get("tags");
+            assertThat(tags, notNullValue());
+            assertThat(tags.getName(), equalTo("tags"));
+            assertThat(tags.getBuckets().size(), equalTo(2));
+
+            Iterator<StringTerms.Bucket> iters = tags.getBuckets().iterator();
+
+            // the max for "more" is 2
+            // the max for "less" is 4
+
+            StringTerms.Bucket tag = iters.next();
+            assertThat(tag, notNullValue());
+            assertThat(tag.getKeyAsString(), equalTo(asc ? "more" : "less"));
+            assertThat(tag.getDocCount(), equalTo(asc ? 3L : 2L));
+            Filter filter1 = tag.getAggregations().get("filter1");
+            assertThat(filter1, notNullValue());
+            assertThat(filter1.getDocCount(), equalTo(asc ? 3L : 2L));
+            Filter filter2 = filter1.getAggregations().get("filter2");
+            assertThat(filter2, notNullValue());
+            assertThat(filter2.getDocCount(), equalTo(asc ? 3L : 2L));
+            Stats stats = filter2.getAggregations().get("stats");
+            assertThat(stats, notNullValue());
+            assertThat(stats.getMax(), equalTo(asc ? 2.0 : 4.0));
+
+            tag = iters.next();
+            assertThat(tag, notNullValue());
+            assertThat(tag.getKeyAsString(), equalTo(asc ? "less" : "more"));
+            assertThat(tag.getDocCount(), equalTo(asc ? 2L : 3L));
+            filter1 = tag.getAggregations().get("filter1");
+            assertThat(filter1, notNullValue());
+            assertThat(filter1.getDocCount(), equalTo(asc ? 2L : 3L));
+            filter2 = filter1.getAggregations().get("filter2");
+            assertThat(filter2, notNullValue());
+            assertThat(filter2.getDocCount(), equalTo(asc ? 2L : 3L));
+            stats = filter2.getAggregations().get("stats");
+            assertThat(stats, notNullValue());
+            assertThat(stats.getMax(), equalTo(asc ? 4.0 : 2.0));
+        },
             prepareSearch("idx").addAggregation(
                 new TermsAggregationBuilder("tags").executionHint(randomExecutionHint())
                     .field("tag")
@@ -700,46 +726,7 @@ public class StringTermsIT extends AbstractTermsTestCase {
                             filter("filter2", QueryBuilders.matchAllQuery()).subAggregation(stats("stats").field("i"))
                         )
                     )
-            ),
-            response -> {
-                StringTerms tags = response.getAggregations().get("tags");
-                assertThat(tags, notNullValue());
-                assertThat(tags.getName(), equalTo("tags"));
-                assertThat(tags.getBuckets().size(), equalTo(2));
-
-                Iterator<StringTerms.Bucket> iters = tags.getBuckets().iterator();
-
-                // the max for "more" is 2
-                // the max for "less" is 4
-
-                StringTerms.Bucket tag = iters.next();
-                assertThat(tag, notNullValue());
-                assertThat(tag.getKeyAsString(), equalTo(asc ? "more" : "less"));
-                assertThat(tag.getDocCount(), equalTo(asc ? 3L : 2L));
-                Filter filter1 = tag.getAggregations().get("filter1");
-                assertThat(filter1, notNullValue());
-                assertThat(filter1.getDocCount(), equalTo(asc ? 3L : 2L));
-                Filter filter2 = filter1.getAggregations().get("filter2");
-                assertThat(filter2, notNullValue());
-                assertThat(filter2.getDocCount(), equalTo(asc ? 3L : 2L));
-                Stats stats = filter2.getAggregations().get("stats");
-                assertThat(stats, notNullValue());
-                assertThat(stats.getMax(), equalTo(asc ? 2.0 : 4.0));
-
-                tag = iters.next();
-                assertThat(tag, notNullValue());
-                assertThat(tag.getKeyAsString(), equalTo(asc ? "less" : "more"));
-                assertThat(tag.getDocCount(), equalTo(asc ? 2L : 3L));
-                filter1 = tag.getAggregations().get("filter1");
-                assertThat(filter1, notNullValue());
-                assertThat(filter1.getDocCount(), equalTo(asc ? 2L : 3L));
-                filter2 = filter1.getAggregations().get("filter2");
-                assertThat(filter2, notNullValue());
-                assertThat(filter2.getDocCount(), equalTo(asc ? 2L : 3L));
-                stats = filter2.getAggregations().get("stats");
-                assertThat(stats, notNullValue());
-                assertThat(stats.getMax(), equalTo(asc ? 4.0 : 2.0));
-            }
+            )
         );
     }
 
@@ -751,7 +738,45 @@ public class StringTermsIT extends AbstractTermsTestCase {
         statsNameBuilder.append(randomAlphaOfLengthBetween(3, 10).replace("[", "").replace("]", "").replace(">", ""));
         String statsName = statsNameBuilder.toString();
         boolean asc = randomBoolean();
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            StringTerms tags = response.getAggregations().get("tags");
+            assertThat(tags, notNullValue());
+            assertThat(tags.getName(), equalTo("tags"));
+            assertThat(tags.getBuckets().size(), equalTo(2));
+
+            Iterator<StringTerms.Bucket> iters = tags.getBuckets().iterator();
+
+            // the max for "more" is 2
+            // the max for "less" is 4
+
+            StringTerms.Bucket tag = iters.next();
+            assertThat(tag, notNullValue());
+            assertThat(tag.getKeyAsString(), equalTo(asc ? "more" : "less"));
+            assertThat(tag.getDocCount(), equalTo(asc ? 3L : 2L));
+            Filter filter1 = tag.getAggregations().get("filter1");
+            assertThat(filter1, notNullValue());
+            assertThat(filter1.getDocCount(), equalTo(asc ? 3L : 2L));
+            Filter filter2 = filter1.getAggregations().get(filter2Name);
+            assertThat(filter2, notNullValue());
+            assertThat(filter2.getDocCount(), equalTo(asc ? 3L : 2L));
+            Stats stats = filter2.getAggregations().get(statsName);
+            assertThat(stats, notNullValue());
+            assertThat(stats.getMax(), equalTo(asc ? 2.0 : 4.0));
+
+            tag = iters.next();
+            assertThat(tag, notNullValue());
+            assertThat(tag.getKeyAsString(), equalTo(asc ? "less" : "more"));
+            assertThat(tag.getDocCount(), equalTo(asc ? 2L : 3L));
+            filter1 = tag.getAggregations().get("filter1");
+            assertThat(filter1, notNullValue());
+            assertThat(filter1.getDocCount(), equalTo(asc ? 2L : 3L));
+            filter2 = filter1.getAggregations().get(filter2Name);
+            assertThat(filter2, notNullValue());
+            assertThat(filter2.getDocCount(), equalTo(asc ? 2L : 3L));
+            stats = filter2.getAggregations().get(statsName);
+            assertThat(stats, notNullValue());
+            assertThat(stats.getMax(), equalTo(asc ? 4.0 : 2.0));
+        },
             prepareSearch("idx").addAggregation(
                 new TermsAggregationBuilder("tags").executionHint(randomExecutionHint())
                     .field("tag")
@@ -762,46 +787,7 @@ public class StringTermsIT extends AbstractTermsTestCase {
                             filter(filter2Name, QueryBuilders.matchAllQuery()).subAggregation(stats(statsName).field("i"))
                         )
                     )
-            ),
-            response -> {
-                StringTerms tags = response.getAggregations().get("tags");
-                assertThat(tags, notNullValue());
-                assertThat(tags.getName(), equalTo("tags"));
-                assertThat(tags.getBuckets().size(), equalTo(2));
-
-                Iterator<StringTerms.Bucket> iters = tags.getBuckets().iterator();
-
-                // the max for "more" is 2
-                // the max for "less" is 4
-
-                StringTerms.Bucket tag = iters.next();
-                assertThat(tag, notNullValue());
-                assertThat(tag.getKeyAsString(), equalTo(asc ? "more" : "less"));
-                assertThat(tag.getDocCount(), equalTo(asc ? 3L : 2L));
-                Filter filter1 = tag.getAggregations().get("filter1");
-                assertThat(filter1, notNullValue());
-                assertThat(filter1.getDocCount(), equalTo(asc ? 3L : 2L));
-                Filter filter2 = filter1.getAggregations().get(filter2Name);
-                assertThat(filter2, notNullValue());
-                assertThat(filter2.getDocCount(), equalTo(asc ? 3L : 2L));
-                Stats stats = filter2.getAggregations().get(statsName);
-                assertThat(stats, notNullValue());
-                assertThat(stats.getMax(), equalTo(asc ? 2.0 : 4.0));
-
-                tag = iters.next();
-                assertThat(tag, notNullValue());
-                assertThat(tag.getKeyAsString(), equalTo(asc ? "less" : "more"));
-                assertThat(tag.getDocCount(), equalTo(asc ? 2L : 3L));
-                filter1 = tag.getAggregations().get("filter1");
-                assertThat(filter1, notNullValue());
-                assertThat(filter1.getDocCount(), equalTo(asc ? 2L : 3L));
-                filter2 = filter1.getAggregations().get(filter2Name);
-                assertThat(filter2, notNullValue());
-                assertThat(filter2.getDocCount(), equalTo(asc ? 2L : 3L));
-                stats = filter2.getAggregations().get(statsName);
-                assertThat(stats, notNullValue());
-                assertThat(stats.getMax(), equalTo(asc ? 4.0 : 2.0));
-            }
+            )
         );
     }
 
@@ -813,7 +799,45 @@ public class StringTermsIT extends AbstractTermsTestCase {
         statsNameBuilder.append(randomAlphaOfLengthBetween(3, 10).replace("[", "").replace("]", "").replace(">", ""));
         String statsName = statsNameBuilder.toString();
         boolean asc = randomBoolean();
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            StringTerms tags = response.getAggregations().get("tags");
+            assertThat(tags, notNullValue());
+            assertThat(tags.getName(), equalTo("tags"));
+            assertThat(tags.getBuckets().size(), equalTo(2));
+
+            Iterator<StringTerms.Bucket> iters = tags.getBuckets().iterator();
+
+            // the max for "more" is 2
+            // the max for "less" is 4
+
+            StringTerms.Bucket tag = iters.next();
+            assertThat(tag, notNullValue());
+            assertThat(tag.getKeyAsString(), equalTo(asc ? "more" : "less"));
+            assertThat(tag.getDocCount(), equalTo(asc ? 3L : 2L));
+            Filter filter1 = tag.getAggregations().get("filter1");
+            assertThat(filter1, notNullValue());
+            assertThat(filter1.getDocCount(), equalTo(asc ? 3L : 2L));
+            Filter filter2 = filter1.getAggregations().get(filter2Name);
+            assertThat(filter2, notNullValue());
+            assertThat(filter2.getDocCount(), equalTo(asc ? 3L : 2L));
+            Stats stats = filter2.getAggregations().get(statsName);
+            assertThat(stats, notNullValue());
+            assertThat(stats.getMax(), equalTo(asc ? 2.0 : 4.0));
+
+            tag = iters.next();
+            assertThat(tag, notNullValue());
+            assertThat(tag.getKeyAsString(), equalTo(asc ? "less" : "more"));
+            assertThat(tag.getDocCount(), equalTo(asc ? 2L : 3L));
+            filter1 = tag.getAggregations().get("filter1");
+            assertThat(filter1, notNullValue());
+            assertThat(filter1.getDocCount(), equalTo(asc ? 2L : 3L));
+            filter2 = filter1.getAggregations().get(filter2Name);
+            assertThat(filter2, notNullValue());
+            assertThat(filter2.getDocCount(), equalTo(asc ? 2L : 3L));
+            stats = filter2.getAggregations().get(statsName);
+            assertThat(stats, notNullValue());
+            assertThat(stats.getMax(), equalTo(asc ? 4.0 : 2.0));
+        },
             prepareSearch("idx").addAggregation(
                 new TermsAggregationBuilder("tags").executionHint(randomExecutionHint())
                     .field("tag")
@@ -824,46 +848,7 @@ public class StringTermsIT extends AbstractTermsTestCase {
                             filter(filter2Name, QueryBuilders.matchAllQuery()).subAggregation(stats(statsName).field("i"))
                         )
                     )
-            ),
-            response -> {
-                StringTerms tags = response.getAggregations().get("tags");
-                assertThat(tags, notNullValue());
-                assertThat(tags.getName(), equalTo("tags"));
-                assertThat(tags.getBuckets().size(), equalTo(2));
-
-                Iterator<StringTerms.Bucket> iters = tags.getBuckets().iterator();
-
-                // the max for "more" is 2
-                // the max for "less" is 4
-
-                StringTerms.Bucket tag = iters.next();
-                assertThat(tag, notNullValue());
-                assertThat(tag.getKeyAsString(), equalTo(asc ? "more" : "less"));
-                assertThat(tag.getDocCount(), equalTo(asc ? 3L : 2L));
-                Filter filter1 = tag.getAggregations().get("filter1");
-                assertThat(filter1, notNullValue());
-                assertThat(filter1.getDocCount(), equalTo(asc ? 3L : 2L));
-                Filter filter2 = filter1.getAggregations().get(filter2Name);
-                assertThat(filter2, notNullValue());
-                assertThat(filter2.getDocCount(), equalTo(asc ? 3L : 2L));
-                Stats stats = filter2.getAggregations().get(statsName);
-                assertThat(stats, notNullValue());
-                assertThat(stats.getMax(), equalTo(asc ? 2.0 : 4.0));
-
-                tag = iters.next();
-                assertThat(tag, notNullValue());
-                assertThat(tag.getKeyAsString(), equalTo(asc ? "less" : "more"));
-                assertThat(tag.getDocCount(), equalTo(asc ? 2L : 3L));
-                filter1 = tag.getAggregations().get("filter1");
-                assertThat(filter1, notNullValue());
-                assertThat(filter1.getDocCount(), equalTo(asc ? 2L : 3L));
-                filter2 = filter1.getAggregations().get(filter2Name);
-                assertThat(filter2, notNullValue());
-                assertThat(filter2.getDocCount(), equalTo(asc ? 2L : 3L));
-                stats = filter2.getAggregations().get(statsName);
-                assertThat(stats, notNullValue());
-                assertThat(stats.getMax(), equalTo(asc ? 4.0 : 2.0));
-            }
+            )
         );
     }
 
@@ -954,100 +939,125 @@ public class StringTermsIT extends AbstractTermsTestCase {
 
     public void testSingleValuedFieldOrderedByMultiValueSubAggregationAsc() throws Exception {
         boolean asc = true;
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            StringTerms terms = response.getAggregations().get("terms");
+            assertThat(terms, notNullValue());
+            assertThat(terms.getName(), equalTo("terms"));
+            assertThat(terms.getBuckets().size(), equalTo(5));
+
+            int i = 0;
+            for (StringTerms.Bucket bucket : terms.getBuckets()) {
+                assertThat(bucket, notNullValue());
+                assertThat(bucket.getKeyAsString(), equalTo("val" + i));
+                assertThat(bucket.getDocCount(), equalTo(1L));
+
+                Stats stats = bucket.getAggregations().get("stats");
+                assertThat(stats, notNullValue());
+                assertThat(stats.getMax(), equalTo((double) i));
+                i++;
+            }
+        },
             prepareSearch("idx").addAggregation(
                 new TermsAggregationBuilder("terms").executionHint(randomExecutionHint())
                     .field(SINGLE_VALUED_FIELD_NAME)
                     .collectMode(randomFrom(SubAggCollectionMode.values()))
                     .order(BucketOrder.aggregation("stats.avg", asc))
                     .subAggregation(stats("stats").field("i"))
-            ),
-            response -> {
-                StringTerms terms = response.getAggregations().get("terms");
-                assertThat(terms, notNullValue());
-                assertThat(terms.getName(), equalTo("terms"));
-                assertThat(terms.getBuckets().size(), equalTo(5));
-
-                int i = 0;
-                for (StringTerms.Bucket bucket : terms.getBuckets()) {
-                    assertThat(bucket, notNullValue());
-                    assertThat(bucket.getKeyAsString(), equalTo("val" + i));
-                    assertThat(bucket.getDocCount(), equalTo(1L));
-
-                    Stats stats = bucket.getAggregations().get("stats");
-                    assertThat(stats, notNullValue());
-                    assertThat(stats.getMax(), equalTo((double) i));
-                    i++;
-                }
-            }
+            )
         );
     }
 
     public void testSingleValuedFieldOrderedByMultiValueSubAggregationDesc() throws Exception {
         boolean asc = false;
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            StringTerms terms = response.getAggregations().get("terms");
+            assertThat(terms, notNullValue());
+            assertThat(terms.getName(), equalTo("terms"));
+            assertThat(terms.getBuckets().size(), equalTo(5));
+
+            int i = 4;
+            for (StringTerms.Bucket bucket : terms.getBuckets()) {
+                assertThat(bucket, notNullValue());
+                assertThat(bucket.getKeyAsString(), equalTo("val" + i));
+                assertThat(bucket.getDocCount(), equalTo(1L));
+
+                Stats stats = bucket.getAggregations().get("stats");
+                assertThat(stats, notNullValue());
+                assertThat(stats.getMax(), equalTo((double) i));
+                i--;
+            }
+        },
             prepareSearch("idx").addAggregation(
                 new TermsAggregationBuilder("terms").executionHint(randomExecutionHint())
                     .field(SINGLE_VALUED_FIELD_NAME)
                     .collectMode(randomFrom(SubAggCollectionMode.values()))
                     .order(BucketOrder.aggregation("stats.avg", asc))
                     .subAggregation(stats("stats").field("i"))
-            ),
-            response -> {
-                StringTerms terms = response.getAggregations().get("terms");
-                assertThat(terms, notNullValue());
-                assertThat(terms.getName(), equalTo("terms"));
-                assertThat(terms.getBuckets().size(), equalTo(5));
-
-                int i = 4;
-                for (StringTerms.Bucket bucket : terms.getBuckets()) {
-                    assertThat(bucket, notNullValue());
-                    assertThat(bucket.getKeyAsString(), equalTo("val" + i));
-                    assertThat(bucket.getDocCount(), equalTo(1L));
-
-                    Stats stats = bucket.getAggregations().get("stats");
-                    assertThat(stats, notNullValue());
-                    assertThat(stats.getMax(), equalTo((double) i));
-                    i--;
-                }
-            }
+            )
         );
     }
 
     public void testSingleValuedFieldOrderedByMultiValueExtendedStatsAsc() throws Exception {
         boolean asc = true;
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            StringTerms terms = response.getAggregations().get("terms");
+            assertThat(terms, notNullValue());
+            assertThat(terms.getName(), equalTo("terms"));
+            assertThat(terms.getBuckets().size(), equalTo(5));
+
+            int i = 0;
+            for (StringTerms.Bucket bucket : terms.getBuckets()) {
+                assertThat(bucket, notNullValue());
+                assertThat(bucket.getKeyAsString(), equalTo("val" + i));
+                assertThat(bucket.getDocCount(), equalTo(1L));
+
+                ExtendedStats stats = bucket.getAggregations().get("stats");
+                assertThat(stats, notNullValue());
+                assertThat(stats.getMax(), equalTo((double) i));
+                i++;
+            }
+        },
             prepareSearch("idx").addAggregation(
                 new TermsAggregationBuilder("terms").executionHint(randomExecutionHint())
                     .field(SINGLE_VALUED_FIELD_NAME)
                     .collectMode(randomFrom(SubAggCollectionMode.values()))
                     .order(BucketOrder.aggregation("stats.sum_of_squares", asc))
                     .subAggregation(extendedStats("stats").field("i"))
-            ),
-            response -> {
-                StringTerms terms = response.getAggregations().get("terms");
-                assertThat(terms, notNullValue());
-                assertThat(terms.getName(), equalTo("terms"));
-                assertThat(terms.getBuckets().size(), equalTo(5));
-
-                int i = 0;
-                for (StringTerms.Bucket bucket : terms.getBuckets()) {
-                    assertThat(bucket, notNullValue());
-                    assertThat(bucket.getKeyAsString(), equalTo("val" + i));
-                    assertThat(bucket.getDocCount(), equalTo(1L));
-
-                    ExtendedStats stats = bucket.getAggregations().get("stats");
-                    assertThat(stats, notNullValue());
-                    assertThat(stats.getMax(), equalTo((double) i));
-                    i++;
-                }
-            }
+            )
         );
     }
 
     public void testSingleValuedFieldOrderedByStatsAggAscWithTermsSubAgg() throws Exception {
         boolean asc = true;
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            StringTerms terms = response.getAggregations().get("terms");
+            assertThat(terms, notNullValue());
+            assertThat(terms.getName(), equalTo("terms"));
+            assertThat(terms.getBuckets().size(), equalTo(5));
+
+            int i = 0;
+            for (StringTerms.Bucket bucket : terms.getBuckets()) {
+                assertThat(bucket, notNullValue());
+                assertThat(bucket.getKeyAsString(), equalTo("val" + i));
+                assertThat(bucket.getDocCount(), equalTo(1L));
+
+                ExtendedStats stats = bucket.getAggregations().get("stats");
+                assertThat(stats, notNullValue());
+                assertThat(stats.getMax(), equalTo((double) i));
+
+                StringTerms subTermsAgg = bucket.getAggregations().get("subTerms");
+                assertThat(subTermsAgg, notNullValue());
+                assertThat(subTermsAgg.getBuckets().size(), equalTo(2));
+                int j = i;
+                for (StringTerms.Bucket subBucket : subTermsAgg.getBuckets()) {
+                    assertThat(subBucket, notNullValue());
+                    assertThat(subBucket.getKeyAsString(), equalTo("val" + j));
+                    assertThat(subBucket.getDocCount(), equalTo(1L));
+                    j++;
+                }
+                i++;
+            }
+        },
             prepareSearch("idx").addAggregation(
                 new TermsAggregationBuilder("terms").executionHint(randomExecutionHint())
                     .field(SINGLE_VALUED_FIELD_NAME)
@@ -1057,36 +1067,7 @@ public class StringTermsIT extends AbstractTermsTestCase {
                     .subAggregation(
                         new TermsAggregationBuilder("subTerms").field("s_values").collectMode(randomFrom(SubAggCollectionMode.values()))
                     )
-            ),
-            response -> {
-                StringTerms terms = response.getAggregations().get("terms");
-                assertThat(terms, notNullValue());
-                assertThat(terms.getName(), equalTo("terms"));
-                assertThat(terms.getBuckets().size(), equalTo(5));
-
-                int i = 0;
-                for (StringTerms.Bucket bucket : terms.getBuckets()) {
-                    assertThat(bucket, notNullValue());
-                    assertThat(bucket.getKeyAsString(), equalTo("val" + i));
-                    assertThat(bucket.getDocCount(), equalTo(1L));
-
-                    ExtendedStats stats = bucket.getAggregations().get("stats");
-                    assertThat(stats, notNullValue());
-                    assertThat(stats.getMax(), equalTo((double) i));
-
-                    StringTerms subTermsAgg = bucket.getAggregations().get("subTerms");
-                    assertThat(subTermsAgg, notNullValue());
-                    assertThat(subTermsAgg.getBuckets().size(), equalTo(2));
-                    int j = i;
-                    for (StringTerms.Bucket subBucket : subTermsAgg.getBuckets()) {
-                        assertThat(subBucket, notNullValue());
-                        assertThat(subBucket.getKeyAsString(), equalTo("val" + j));
-                        assertThat(subBucket.getDocCount(), equalTo(1L));
-                        j++;
-                    }
-                    i++;
-                }
-            }
+            )
         );
     }
 
@@ -1131,7 +1112,26 @@ public class StringTermsIT extends AbstractTermsTestCase {
     }
 
     private void assertMultiSortResponse(String[] expectedKeys, BucketOrder... order) {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            StringTerms terms = response.getAggregations().get("terms");
+            assertThat(terms, notNullValue());
+            assertThat(terms.getName(), equalTo("terms"));
+            assertThat(terms.getBuckets().size(), equalTo(expectedKeys.length));
+
+            int i = 0;
+            for (StringTerms.Bucket bucket : terms.getBuckets()) {
+                assertThat(bucket, notNullValue());
+                assertThat(bucket.getKeyAsString(), equalTo(expectedKeys[i]));
+                assertThat(bucket.getDocCount(), equalTo(expectedMultiSortBuckets.get(expectedKeys[i]).get("_count")));
+                Avg avg = bucket.getAggregations().get("avg_l");
+                assertThat(avg, notNullValue());
+                assertThat(avg.getValue(), equalTo(expectedMultiSortBuckets.get(expectedKeys[i]).get("avg_l")));
+                Sum sum = bucket.getAggregations().get("sum_d");
+                assertThat(sum, notNullValue());
+                assertThat(sum.value(), equalTo(expectedMultiSortBuckets.get(expectedKeys[i]).get("sum_d")));
+                i++;
+            }
+        },
             prepareSearch("sort_idx").addAggregation(
                 new TermsAggregationBuilder("terms").executionHint(randomExecutionHint())
                     .field(SINGLE_VALUED_FIELD_NAME)
@@ -1139,51 +1139,30 @@ public class StringTermsIT extends AbstractTermsTestCase {
                     .order(BucketOrder.compound(order))
                     .subAggregation(avg("avg_l").field("l"))
                     .subAggregation(sum("sum_d").field("d"))
-            ),
-            response -> {
-                StringTerms terms = response.getAggregations().get("terms");
-                assertThat(terms, notNullValue());
-                assertThat(terms.getName(), equalTo("terms"));
-                assertThat(terms.getBuckets().size(), equalTo(expectedKeys.length));
-
-                int i = 0;
-                for (StringTerms.Bucket bucket : terms.getBuckets()) {
-                    assertThat(bucket, notNullValue());
-                    assertThat(bucket.getKeyAsString(), equalTo(expectedKeys[i]));
-                    assertThat(bucket.getDocCount(), equalTo(expectedMultiSortBuckets.get(expectedKeys[i]).get("_count")));
-                    Avg avg = bucket.getAggregations().get("avg_l");
-                    assertThat(avg, notNullValue());
-                    assertThat(avg.getValue(), equalTo(expectedMultiSortBuckets.get(expectedKeys[i]).get("avg_l")));
-                    Sum sum = bucket.getAggregations().get("sum_d");
-                    assertThat(sum, notNullValue());
-                    assertThat(sum.value(), equalTo(expectedMultiSortBuckets.get(expectedKeys[i]).get("sum_d")));
-                    i++;
-                }
-            }
+            )
         );
     }
 
     public void testIndexMetaField() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            StringTerms terms = response.getAggregations().get("terms");
+            assertThat(terms, notNullValue());
+            assertThat(terms.getName(), equalTo("terms"));
+            assertThat(terms.getBuckets().size(), equalTo(2));
+
+            int i = 0;
+            for (StringTerms.Bucket bucket : terms.getBuckets()) {
+                assertThat(bucket, notNullValue());
+                assertThat(bucket.getKeyAsString(), equalTo(i == 0 ? "idx" : "empty_bucket_idx"));
+                assertThat(bucket.getDocCount(), equalTo(i == 0 ? 5L : 2L));
+                i++;
+            }
+        },
             prepareSearch("idx", "empty_bucket_idx").addAggregation(
                 new TermsAggregationBuilder("terms").collectMode(randomFrom(SubAggCollectionMode.values()))
                     .executionHint(randomExecutionHint())
                     .field(IndexFieldMapper.NAME)
-            ),
-            response -> {
-                StringTerms terms = response.getAggregations().get("terms");
-                assertThat(terms, notNullValue());
-                assertThat(terms.getName(), equalTo("terms"));
-                assertThat(terms.getBuckets().size(), equalTo(2));
-
-                int i = 0;
-                for (StringTerms.Bucket bucket : terms.getBuckets()) {
-                    assertThat(bucket, notNullValue());
-                    assertThat(bucket.getKeyAsString(), equalTo(i == 0 ? "idx" : "empty_bucket_idx"));
-                    assertThat(bucket.getDocCount(), equalTo(i == 0 ? 5L : 2L));
-                    i++;
-                }
-            }
+            )
         );
     }
 
@@ -1275,15 +1254,12 @@ public class StringTermsIT extends AbstractTermsTestCase {
         String source = builder.toString();
 
         try (XContentParser parser = createParser(JsonXContent.jsonXContent, source)) {
-            assertNoFailuresAndResponse(
-                prepareSearch("idx").setSource(new SearchSourceBuilder().parseXContent(parser, true, nf -> false)),
-                response -> {
-                    LongTerms terms = response.getAggregations().get("terms");
-                    assertThat(terms, notNullValue());
-                    assertThat(terms.getName(), equalTo("terms"));
-                    assertThat(terms.getBuckets().size(), equalTo(1));
-                }
-            );
+            assertNoFailuresAndResponse(response -> {
+                LongTerms terms = response.getAggregations().get("terms");
+                assertThat(terms, notNullValue());
+                assertThat(terms.getName(), equalTo("terms"));
+                assertThat(terms.getBuckets().size(), equalTo(1));
+            }, prepareSearch("idx").setSource(new SearchSourceBuilder().parseXContent(parser, true, nf -> false)));
         }
 
         String invalidValueType = source.replaceAll("\"value_type\":\"n.*\"", "\"value_type\":\"foobar\"");
@@ -1359,7 +1335,20 @@ public class StringTermsIT extends AbstractTermsTestCase {
             sumOtherCount += counts.get(keys.get(i))[0];
         }
         final long finalSumOtherCount = sumOtherCount;
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            StringTerms terms = response.getAggregations().get("terms");
+            assertThat(terms, notNullValue());
+            assertThat(terms.getName(), equalTo("terms"));
+            assertThat(terms.getBuckets().size(), equalTo(size));
+            assertThat(terms.getSumOfOtherDocCounts(), equalTo(finalSumOtherCount));
+
+            for (int i = 0; i < size; i++) {
+                StringTerms.Bucket bucket = terms.getBuckets().get(i);
+                assertThat(bucket, notNullValue());
+                assertThat(bucket.getKeyAsString(), equalTo(keys.get(i)));
+                assertThat(bucket.getDocCount(), equalTo(counts.get(keys.get(i))[0]));
+            }
+        },
             prepareSearch("idx0", "idx1", "idx2", "idx3", "idx4").setBatchedReduceSize(batchReduceSize)
                 .setQuery(QueryBuilders.termQuery("filter", false))
                 .addAggregation(
@@ -1368,21 +1357,7 @@ public class StringTermsIT extends AbstractTermsTestCase {
                         .shardSize(500)
                         .minDocCount(minDocCount)
                         .order(BucketOrder.key(asc))
-                ),
-            response -> {
-                StringTerms terms = response.getAggregations().get("terms");
-                assertThat(terms, notNullValue());
-                assertThat(terms.getName(), equalTo("terms"));
-                assertThat(terms.getBuckets().size(), equalTo(size));
-                assertThat(terms.getSumOfOtherDocCounts(), equalTo(finalSumOtherCount));
-
-                for (int i = 0; i < size; i++) {
-                    StringTerms.Bucket bucket = terms.getBuckets().get(i);
-                    assertThat(bucket, notNullValue());
-                    assertThat(bucket.getKeyAsString(), equalTo(keys.get(i)));
-                    assertThat(bucket.getDocCount(), equalTo(counts.get(keys.get(i))[0]));
-                }
-            }
+                )
         );
     }
 
@@ -1411,7 +1386,7 @@ public class StringTermsIT extends AbstractTermsTestCase {
                         .subAggregation(new TopHitsAggregationBuilder("top_hits").storedField("_none_"))
                 )
         );
-        assertNoFailuresAndResponse(prepareSearch("global").addAggregation(globalBuilder), response -> {
+        assertNoFailuresAndResponse(response -> {
             InternalGlobal result = response.getAggregations().get("global");
             InternalMultiBucketAggregation<?, ?> terms = result.getAggregations().get("terms");
             assertThat(terms.getBuckets().size(), equalTo(3));
@@ -1425,6 +1400,6 @@ public class StringTermsIT extends AbstractTermsTestCase {
                     assertThat(hit.getScore(), greaterThan(0f));
                 }
             }
-        });
+        }, prepareSearch("global").addAggregation(globalBuilder));
     }
 }

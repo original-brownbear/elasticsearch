@@ -113,10 +113,10 @@ public class FrozenIndexTests extends ESSingleNodeTestCase {
         assertEquals(0, shard.refreshStats().getTotal());
         boolean useDFS = randomBoolean();
         assertHitCount(
+            3,
             client().prepareSearch()
                 .setIndicesOptions(IndicesOptions.STRICT_EXPAND_OPEN_FORBID_CLOSED)
-                .setSearchType(useDFS ? SearchType.DFS_QUERY_THEN_FETCH : SearchType.QUERY_THEN_FETCH),
-            3
+                .setSearchType(useDFS ? SearchType.DFS_QUERY_THEN_FETCH : SearchType.QUERY_THEN_FETCH)
         );
         assertThat(engine, Matchers.instanceOf(FrozenEngine.class));
         assertEquals(useDFS ? 3 : 2, shard.refreshStats().getTotal());
@@ -152,13 +152,10 @@ public class FrozenIndexTests extends ESSingleNodeTestCase {
         BytesReference pitId = openReaders(TimeValue.timeValueMinutes(1), indexName);
         try {
             for (int from = 0; from < 3; from++) {
-                assertResponse(
-                    client().prepareSearch().setPointInTime(new PointInTimeBuilder(pitId)).setSize(1).setFrom(from),
-                    response -> {
-                        assertHitCount(response, 3);
-                        assertEquals(1, response.getHits().getHits().length);
-                    }
-                );
+                assertResponse(response -> {
+                    assertHitCount(response, 3);
+                    assertEquals(1, response.getHits().getHits().length);
+                }, client().prepareSearch().setPointInTime(new PointInTimeBuilder(pitId)).setSize(1).setFrom(from));
                 SearchService searchService = getInstanceFromNode(SearchService.class);
                 assertThat(searchService.getActiveContexts(), Matchers.greaterThanOrEqualTo(1));
                 for (int i = 0; i < 2; i++) {
@@ -320,7 +317,7 @@ public class FrozenIndexTests extends ESSingleNodeTestCase {
         ClusterStateResponse stateResponse = clusterAdmin().prepareState(TEST_REQUEST_TIMEOUT).get();
         assertEquals(IndexMetadata.State.CLOSE, stateResponse.getState().getMetadata().index("idx-closed").getState());
         assertEquals(IndexMetadata.State.OPEN, stateResponse.getState().getMetadata().index("idx").getState());
-        assertHitCount(client().prepareSearch(), 1L);
+        assertHitCount(1L, client().prepareSearch());
     }
 
     public void testFreezePattern() {
@@ -337,7 +334,7 @@ public class FrozenIndexTests extends ESSingleNodeTestCase {
 
         IndicesStatsResponse index = indicesAdmin().prepareStats(indexName).clear().setRefresh(true).get();
         assertEquals(0, index.getTotal().refresh.getTotal());
-        assertHitCount(client().prepareSearch(indexName).setIndicesOptions(IndicesOptions.STRICT_EXPAND_OPEN_FORBID_CLOSED), 1);
+        assertHitCount(1, client().prepareSearch(indexName).setIndicesOptions(IndicesOptions.STRICT_EXPAND_OPEN_FORBID_CLOSED));
         index = indicesAdmin().prepareStats(indexName).clear().setRefresh(true).get();
         assertEquals(1, index.getTotal().refresh.getTotal());
 

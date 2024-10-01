@@ -54,8 +54,8 @@ public class QueryStringWithAnalyzersIT extends ESIntegTestCase {
         refresh();
 
         assertHitCount(
-            prepareSearch("test").setQuery(queryStringQuery("foo.baz").defaultOperator(Operator.AND).field("field1").field("field2")),
-            1L
+            1L,
+            prepareSearch("test").setQuery(queryStringQuery("foo.baz").defaultOperator(Operator.AND).field("field1").field("field2"))
         );
     }
 }

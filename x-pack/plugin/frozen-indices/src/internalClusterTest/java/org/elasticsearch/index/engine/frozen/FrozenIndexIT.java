@@ -387,23 +387,22 @@ public class FrozenIndexIT extends ESIntegTestCase {
             .actionGet()
             .getPointInTimeId();
         try {
-            assertNoFailuresAndResponse(prepareSearch().setPointInTime(new PointInTimeBuilder(pitId)), searchResponse -> {
+            assertNoFailuresAndResponse(searchResponse -> {
                 assertThat(searchResponse.pointInTimeId(), equalTo(pitId));
                 assertHitCount(searchResponse, numDocs);
-            });
+            }, prepareSearch().setPointInTime(new PointInTimeBuilder(pitId)));
             internalCluster().restartNode(assignedNode);
             ensureGreen(indexName);
 
-            assertNoFailuresAndResponse(
+            assertNoFailuresAndResponse(searchResponse -> {
+                assertThat(searchResponse.pointInTimeId(), equalTo(pitId));
+                assertHitCount(searchResponse, numDocs);
+            },
                 prepareSearch().setQuery(new RangeQueryBuilder("created_date").gte("2011-01-01").lte("2011-12-12"))
                     .setSearchType(SearchType.QUERY_THEN_FETCH)
                     .setPreFilterShardSize(between(1, 10))
                     .setAllowPartialSearchResults(true)
-                    .setPointInTime(new PointInTimeBuilder(pitId)),
-                searchResponse -> {
-                    assertThat(searchResponse.pointInTimeId(), equalTo(pitId));
-                    assertHitCount(searchResponse, numDocs);
-                }
+                    .setPointInTime(new PointInTimeBuilder(pitId))
             );
         } finally {
             assertAcked(
@@ -448,13 +447,10 @@ public class FrozenIndexIT extends ESIntegTestCase {
         try {
             indicesAdmin().prepareDelete("index-1").get();
             // Return partial results if allow partial search result is allowed
-            assertResponse(
-                prepareSearch().setAllowPartialSearchResults(true).setPointInTime(new PointInTimeBuilder(pitId)),
-                searchResponse -> {
-                    assertFailures(searchResponse);
-                    assertHitCount(searchResponse, index2);
-                }
-            );
+            assertResponse(searchResponse -> {
+                assertFailures(searchResponse);
+                assertHitCount(searchResponse, index2);
+            }, prepareSearch().setAllowPartialSearchResults(true).setPointInTime(new PointInTimeBuilder(pitId)));
             // Fails if allow partial search result is not allowed
             expectThrows(
                 ElasticsearchException.class,
@@ -487,8 +483,8 @@ public class FrozenIndexIT extends ESIntegTestCase {
                 .getPointInTimeId();
             try {
                 assertNoFailuresAndResponse(
-                    prepareSearch().setPointInTime(new PointInTimeBuilder(pitId)),
-                    searchResponse -> assertHitCount(searchResponse, numDocs)
+                    searchResponse -> assertHitCount(searchResponse, numDocs),
+                    prepareSearch().setPointInTime(new PointInTimeBuilder(pitId))
                 );
             } finally {
                 client().execute(TransportClosePointInTimeAction.TYPE, new ClosePointInTimeRequest(pitId)).actionGet();

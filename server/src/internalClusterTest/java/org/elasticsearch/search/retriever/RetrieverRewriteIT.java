@@ -75,26 +75,26 @@ public class RetrieverRewriteIT extends ESIntegTestCase {
         standard.queryBuilder = QueryBuilders.termQuery(ID_FIELD, "doc_0");
         source.retriever(new AssertingRetrieverBuilder(standard));
         SearchRequestBuilder req = client().prepareSearch(INDEX_DOCS, INDEX_QUERIES).setSource(source);
-        ElasticsearchAssertions.assertResponse(req, resp -> {
+        ElasticsearchAssertions.assertResponse(resp -> {
             assertNull(resp.pointInTimeId());
             assertNotNull(resp.getHits().getTotalHits());
             assertThat(resp.getHits().getTotalHits().value, equalTo(1L));
             assertThat(resp.getHits().getTotalHits().relation, equalTo(TotalHits.Relation.EQUAL_TO));
             assertThat(resp.getHits().getAt(0).getId(), equalTo("doc_0"));
-        });
+        }, req);
     }
 
     public void testRewriteCompound() {
         SearchSourceBuilder source = new SearchSourceBuilder();
         source.retriever(new AssertingCompoundRetrieverBuilder("query_0"));
         SearchRequestBuilder req = client().prepareSearch(INDEX_DOCS, INDEX_QUERIES).setSource(source);
-        ElasticsearchAssertions.assertResponse(req, resp -> {
+        ElasticsearchAssertions.assertResponse(resp -> {
             assertNull(resp.pointInTimeId());
             assertNotNull(resp.getHits().getTotalHits());
             assertThat(resp.getHits().getTotalHits().value, equalTo(1L));
             assertThat(resp.getHits().getTotalHits().relation, equalTo(TotalHits.Relation.EQUAL_TO));
             assertThat(resp.getHits().getAt(0).getId(), equalTo("doc_2"));
-        });
+        }, req);
     }
 
     public void testRewriteCompoundRetrieverShouldThrowForPartialResults() throws Exception {

@@ -116,7 +116,7 @@ public class SearchSliceIT extends ESIntegTestCase {
         int totalDocs = randomIntBetween(100, 1000);
         setupIndex(totalDocs, numShards);
 
-        assertResponse(prepareSearch("test").setQuery(matchAllQuery()).setPreference("_shards:1,4").setSize(0), sr -> {
+        assertResponse(sr -> {
             int numDocs = (int) sr.getHits().getTotalHits().value;
             int max = randomIntBetween(2, numShards * 3);
             int fetchSize = randomIntBetween(10, 100);
@@ -126,9 +126,9 @@ public class SearchSliceIT extends ESIntegTestCase {
                 .setPreference("_shards:1,4")
                 .addSort(SortBuilders.fieldSort("_doc"));
             assertSearchSlicesWithScroll(request, "_id", max, numDocs);
-        });
+        }, prepareSearch("test").setQuery(matchAllQuery()).setPreference("_shards:1,4").setSize(0));
 
-        assertResponse(prepareSearch("test").setQuery(matchAllQuery()).setRouting("foo", "bar").setSize(0), sr -> {
+        assertResponse(sr -> {
             int numDocs = (int) sr.getHits().getTotalHits().value;
             int max = randomIntBetween(2, numShards * 3);
             int fetchSize = randomIntBetween(10, 100);
@@ -138,7 +138,7 @@ public class SearchSliceIT extends ESIntegTestCase {
                 .setRouting("foo", "bar")
                 .addSort(SortBuilders.fieldSort("_doc"));
             assertSearchSlicesWithScroll(request, "_id", max, numDocs);
-        });
+        }, prepareSearch("test").setQuery(matchAllQuery()).setRouting("foo", "bar").setSize(0));
 
         assertAcked(
             indicesAdmin().prepareAliases()
@@ -146,7 +146,7 @@ public class SearchSliceIT extends ESIntegTestCase {
                 .addAliasAction(IndicesAliasesRequest.AliasActions.add().index("test").alias("alias2").routing("bar"))
                 .addAliasAction(IndicesAliasesRequest.AliasActions.add().index("test").alias("alias3").routing("baz"))
         );
-        assertResponse(prepareSearch("alias1", "alias3").setQuery(matchAllQuery()).setSize(0), sr -> {
+        assertResponse(sr -> {
             int numDocs = (int) sr.getHits().getTotalHits().value;
             int max = randomIntBetween(2, numShards * 3);
             int fetchSize = randomIntBetween(10, 100);
@@ -155,7 +155,7 @@ public class SearchSliceIT extends ESIntegTestCase {
                 .setSize(fetchSize)
                 .addSort(SortBuilders.fieldSort("_doc"));
             assertSearchSlicesWithScroll(request, "_id", max, numDocs);
-        });
+        }, prepareSearch("alias1", "alias3").setQuery(matchAllQuery()).setSize(0));
     }
 
     private void assertSearchSlicesWithScroll(SearchRequestBuilder request, String field, int numSlice, int numDocs) {

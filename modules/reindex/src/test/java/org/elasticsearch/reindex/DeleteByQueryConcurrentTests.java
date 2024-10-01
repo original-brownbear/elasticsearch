@@ -37,7 +37,7 @@ public class DeleteByQueryConcurrentTests extends ReindexTestCase {
         indexRandom(true, true, true, builders);
 
         for (int t = 0; t < threadCount; t++) {
-            assertHitCount(prepareSearch("test").setSize(0).setQuery(QueryBuilders.termQuery("field", t)), docs);
+            assertHitCount(docs, prepareSearch("test").setSize(0).setQuery(QueryBuilders.termQuery("field", t)));
         }
         startInParallel(
             threadCount,
@@ -48,7 +48,7 @@ public class DeleteByQueryConcurrentTests extends ReindexTestCase {
         );
 
         for (int t = 0; t < threadCount; t++) {
-            assertHitCount(prepareSearch("test").setSize(0).setQuery(QueryBuilders.termQuery("field", t)), 0);
+            assertHitCount(0, prepareSearch("test").setSize(0).setQuery(QueryBuilders.termQuery("field", t)));
         }
     }
 
@@ -68,7 +68,7 @@ public class DeleteByQueryConcurrentTests extends ReindexTestCase {
         // Some deletions might fail due to version conflict, but what matters here is the total of successful deletions
         startInParallel(threadCount, i -> deleted.addAndGet(deleteByQuery().source("test").filter(query).refresh(true).get().getDeleted()));
 
-        assertHitCount(prepareSearch("test").setSize(0), 0L);
+        assertHitCount(0L, prepareSearch("test").setSize(0));
         assertThat(deleted.get(), equalTo(docs));
     }
 }

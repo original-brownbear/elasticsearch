@@ -68,25 +68,25 @@ public class SearchPreferenceIT extends ESIntegTestCase {
             "_prefer_nodes:somenode,server2" };
         for (String pref : preferences) {
             logger.info("--> Testing out preference={}", pref);
-            assertResponse(prepareSearch().setSize(0).setPreference(pref), response -> {
+            assertResponse(response -> {
                 assertThat(RestStatus.OK, equalTo(response.status()));
                 assertThat(pref, response.getFailedShards(), greaterThanOrEqualTo(0));
-            });
-            assertResponse(prepareSearch().setPreference(pref), response -> {
+            }, prepareSearch().setSize(0).setPreference(pref));
+            assertResponse(response -> {
                 assertThat(RestStatus.OK, equalTo(response.status()));
                 assertThat(pref, response.getFailedShards(), greaterThanOrEqualTo(0));
-            });
+            }, prepareSearch().setPreference(pref));
         }
 
         // _only_local is a stricter preference, we need to send the request to a data node
-        assertResponse(dataNodeClient().prepareSearch().setSize(0).setPreference("_only_local"), response -> {
+        assertResponse(response -> {
             assertThat(RestStatus.OK, equalTo(response.status()));
             assertThat("_only_local", response.getFailedShards(), greaterThanOrEqualTo(0));
-        });
-        assertResponse(dataNodeClient().prepareSearch().setPreference("_only_local"), response -> {
+        }, dataNodeClient().prepareSearch().setSize(0).setPreference("_only_local"));
+        assertResponse(response -> {
             assertThat(RestStatus.OK, equalTo(response.status()));
             assertThat("_only_local", response.getFailedShards(), greaterThanOrEqualTo(0));
-        });
+        }, dataNodeClient().prepareSearch().setPreference("_only_local"));
     }
 
     public void testNoPreferenceRandom() {
@@ -103,14 +103,14 @@ public class SearchPreferenceIT extends ESIntegTestCase {
 
         final Client client = internalCluster().smartClient();
         assertResponse(
-            client.prepareSearch("test").setQuery(matchAllQuery()),
             fist -> assertResponse(
-                client.prepareSearch("test").setQuery(matchAllQuery()),
                 second -> assertThat(
                     fist.getHits().getAt(0).getShard().getNodeId(),
                     not(equalTo(second.getHits().getAt(0).getShard().getNodeId()))
-                )
-            )
+                ),
+                client.prepareSearch("test").setQuery(matchAllQuery())
+            ),
+            client.prepareSearch("test").setQuery(matchAllQuery())
         );
     }
 
@@ -122,18 +122,10 @@ public class SearchPreferenceIT extends ESIntegTestCase {
         refresh();
 
         assertResponse(
+            response -> assertThat(response.getHits().getTotalHits().value, equalTo(1L)),
             prepareSearch().setQuery(matchAllQuery()),
-            response -> assertThat(response.getHits().getTotalHits().value, equalTo(1L))
-        );
-
-        assertResponse(
             prepareSearch().setQuery(matchAllQuery()).setPreference("_local"),
-            response -> assertThat(response.getHits().getTotalHits().value, equalTo(1L))
-        );
-
-        assertResponse(
-            prepareSearch().setQuery(matchAllQuery()).setPreference("1234"),
-            response -> assertThat(response.getHits().getTotalHits().value, equalTo(1L))
+            prepareSearch().setQuery(matchAllQuery()).setPreference("1234")
         );
     }
 
@@ -203,10 +195,10 @@ public class SearchPreferenceIT extends ESIntegTestCase {
     private void assertSearchOnRandomNodes(SearchRequestBuilder request) {
         Set<String> hitNodes = new HashSet<>();
         for (int i = 0; i < 2; i++) {
-            assertResponse(request, response -> {
+            assertResponse(response -> {
                 assertThat(response.getHits().getHits().length, greaterThan(0));
                 hitNodes.add(response.getHits().getAt(0).getShard().getNodeId());
-            });
+            }, request);
         }
         assertThat(hitNodes.size(), greaterThan(1));
     }
@@ -275,9 +267,9 @@ public class SearchPreferenceIT extends ESIntegTestCase {
     }
 
     private static void assertSearchesSpecificNode(String index, String customPreference, String nodeId) {
-        assertResponse(prepareSearch(index).setQuery(matchAllQuery()).setPreference(customPreference), response -> {
+        assertResponse(response -> {
             assertThat(response.getHits().getHits().length, equalTo(1));
             assertThat(response.getHits().getAt(0).getShard().getNodeId(), equalTo(nodeId));
-        });
+        }, prepareSearch(index).setQuery(matchAllQuery()).setPreference(customPreference));
     }
 }

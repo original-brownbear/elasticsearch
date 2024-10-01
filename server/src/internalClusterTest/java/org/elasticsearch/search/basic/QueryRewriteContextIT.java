@@ -249,7 +249,7 @@ public class QueryRewriteContextIT extends ESIntegTestCase {
         };
 
         setQuery(requestBuilder, testQueryBuilder);
-        assertResponse(requestBuilder, responseAssertions);
+        assertResponse(responseAssertions, requestBuilder);
         assertThat(gotQueryRewriteContext.get(), is(true));
     }
 

@@ -79,15 +79,15 @@ public abstract class ShardSizeTestCase extends ESIntegTestCase {
 
         indexRandom(true, docs);
 
-        assertNoFailuresAndResponse(prepareSearch("idx").setRouting(routing1).setQuery(matchAllQuery()), resp -> {
+        assertNoFailuresAndResponse(resp -> {
             long totalOnOne = resp.getHits().getTotalHits().value;
             assertThat(totalOnOne, is(15L));
-        });
-        assertNoFailuresAndResponse(prepareSearch("idx").setRouting(routing2).setQuery(matchAllQuery()), resp -> {
+        }, prepareSearch("idx").setRouting(routing1).setQuery(matchAllQuery()));
+        assertNoFailuresAndResponse(resp -> {
             assertNoFailures(resp);
             long totalOnTwo = resp.getHits().getTotalHits().value;
             assertThat(totalOnTwo, is(12L));
-        });
+        }, prepareSearch("idx").setRouting(routing2).setQuery(matchAllQuery()));
     }
 
     protected List<IndexRequestBuilder> indexDoc(String shard, String key, int times) throws Exception {

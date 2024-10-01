@@ -308,122 +308,136 @@ public class TopHitsIT extends ESIntegTestCase {
     }
 
     public void testBasics() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Terms terms = response.getAggregations().get("terms");
+            assertThat(terms, notNullValue());
+            assertThat(terms.getName(), equalTo("terms"));
+            assertThat(terms.getBuckets().size(), equalTo(5));
+
+            long higestSortValue = 0;
+            for (int i = 0; i < 5; i++) {
+                Terms.Bucket bucket = terms.getBucketByKey("val" + i);
+                assertThat(bucket, notNullValue());
+                assertThat(key(bucket), equalTo("val" + i));
+                assertThat(bucket.getDocCount(), equalTo(10L));
+                TopHits topHits = bucket.getAggregations().get("hits");
+                SearchHits hits = topHits.getHits();
+                assertThat(hits.getTotalHits().value, equalTo(10L));
+                assertThat(hits.getHits().length, equalTo(3));
+                higestSortValue += 10;
+                assertThat((Long) hits.getAt(0).getSortValues()[0], equalTo(higestSortValue));
+                assertThat((Long) hits.getAt(1).getSortValues()[0], equalTo(higestSortValue - 1));
+                assertThat((Long) hits.getAt(2).getSortValues()[0], equalTo(higestSortValue - 2));
+
+                assertThat(hits.getAt(0).getSourceAsMap().size(), equalTo(5));
+            }
+        },
             prepareSearch("idx").addAggregation(
                 terms("terms").executionHint(randomExecutionHint())
                     .field(TERMS_AGGS_FIELD)
                     .subAggregation(topHits("hits").sort(SortBuilders.fieldSort(SORT_FIELD).order(SortOrder.DESC)))
-            ),
-            response -> {
-                Terms terms = response.getAggregations().get("terms");
-                assertThat(terms, notNullValue());
-                assertThat(terms.getName(), equalTo("terms"));
-                assertThat(terms.getBuckets().size(), equalTo(5));
-
-                long higestSortValue = 0;
-                for (int i = 0; i < 5; i++) {
-                    Terms.Bucket bucket = terms.getBucketByKey("val" + i);
-                    assertThat(bucket, notNullValue());
-                    assertThat(key(bucket), equalTo("val" + i));
-                    assertThat(bucket.getDocCount(), equalTo(10L));
-                    TopHits topHits = bucket.getAggregations().get("hits");
-                    SearchHits hits = topHits.getHits();
-                    assertThat(hits.getTotalHits().value, equalTo(10L));
-                    assertThat(hits.getHits().length, equalTo(3));
-                    higestSortValue += 10;
-                    assertThat((Long) hits.getAt(0).getSortValues()[0], equalTo(higestSortValue));
-                    assertThat((Long) hits.getAt(1).getSortValues()[0], equalTo(higestSortValue - 1));
-                    assertThat((Long) hits.getAt(2).getSortValues()[0], equalTo(higestSortValue - 2));
-
-                    assertThat(hits.getAt(0).getSourceAsMap().size(), equalTo(5));
-                }
-            }
+            )
         );
     }
 
     public void testIssue11119() throws Exception {
         // Test that top_hits aggregation is fed scores if query results size=0
-        assertNoFailuresAndResponse(
-            prepareSearch("field-collapsing").setSize(0)
-                .setQuery(matchQuery("text", "x y z"))
-                .addAggregation(terms("terms").executionHint(randomExecutionHint()).field("group").subAggregation(topHits("hits"))),
-            response -> {
-                assertThat(response.getHits().getTotalHits().value, equalTo(8L));
-                assertThat(response.getHits().getHits().length, equalTo(0));
-                assertThat(response.getHits().getMaxScore(), equalTo(Float.NaN));
-                Terms terms = response.getAggregations().get("terms");
-                assertThat(terms, notNullValue());
-                assertThat(terms.getName(), equalTo("terms"));
-                assertThat(terms.getBuckets().size(), equalTo(3));
+        assertNoFailuresAndResponse(response -> {
+            assertThat(response.getHits().getTotalHits().value, equalTo(8L));
+            assertThat(response.getHits().getHits().length, equalTo(0));
+            assertThat(response.getHits().getMaxScore(), equalTo(Float.NaN));
+            Terms terms = response.getAggregations().get("terms");
+            assertThat(terms, notNullValue());
+            assertThat(terms.getName(), equalTo("terms"));
+            assertThat(terms.getBuckets().size(), equalTo(3));
 
-                for (Terms.Bucket bucket : terms.getBuckets()) {
-                    assertThat(bucket, notNullValue());
-                    TopHits topHits = bucket.getAggregations().get("hits");
-                    SearchHits hits = topHits.getHits();
-                    float bestScore = Float.MAX_VALUE;
-                    for (int h = 0; h < hits.getHits().length; h++) {
-                        float score = hits.getAt(h).getScore();
-                        assertThat(score, lessThanOrEqualTo(bestScore));
-                        assertThat(score, greaterThan(0f));
-                        bestScore = hits.getAt(h).getScore();
-                    }
+            for (Terms.Bucket bucket : terms.getBuckets()) {
+                assertThat(bucket, notNullValue());
+                TopHits topHits = bucket.getAggregations().get("hits");
+                SearchHits hits = topHits.getHits();
+                float bestScore = Float.MAX_VALUE;
+                for (int h = 0; h < hits.getHits().length; h++) {
+                    float score = hits.getAt(h).getScore();
+                    assertThat(score, lessThanOrEqualTo(bestScore));
+                    assertThat(score, greaterThan(0f));
+                    bestScore = hits.getAt(h).getScore();
                 }
             }
+        },
+            prepareSearch("field-collapsing").setSize(0)
+                .setQuery(matchQuery("text", "x y z"))
+                .addAggregation(terms("terms").executionHint(randomExecutionHint()).field("group").subAggregation(topHits("hits")))
         );
 
         // Also check that min_score setting works when size=0
         // (technically not a test of top_hits but implementation details are
         // tied up with the need to feed scores into the agg tree even when
         // users don't want ranked set of query results.)
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            assertThat(response.getHits().getTotalHits().value, equalTo(8L));
+            assertThat(response.getHits().getHits().length, equalTo(0));
+            assertThat(response.getHits().getMaxScore(), equalTo(Float.NaN));
+            Terms terms = response.getAggregations().get("terms");
+            assertThat(terms, notNullValue());
+            assertThat(terms.getName(), equalTo("terms"));
+            assertThat(terms.getBuckets().size(), equalTo(3));
+        },
             prepareSearch("field-collapsing").setSize(0)
                 .setMinScore(0.0001f)
                 .setQuery(matchQuery("text", "x y z"))
-                .addAggregation(terms("terms").executionHint(randomExecutionHint()).field("group")),
-            response -> {
-                assertThat(response.getHits().getTotalHits().value, equalTo(8L));
-                assertThat(response.getHits().getHits().length, equalTo(0));
-                assertThat(response.getHits().getMaxScore(), equalTo(Float.NaN));
-                Terms terms = response.getAggregations().get("terms");
-                assertThat(terms, notNullValue());
-                assertThat(terms.getName(), equalTo("terms"));
-                assertThat(terms.getBuckets().size(), equalTo(3));
-            }
+                .addAggregation(terms("terms").executionHint(randomExecutionHint()).field("group"))
         );
     }
 
     public void testBreadthFirstWithScoreNeeded() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Terms terms = response.getAggregations().get("terms");
+            assertThat(terms, notNullValue());
+            assertThat(terms.getName(), equalTo("terms"));
+            assertThat(terms.getBuckets().size(), equalTo(5));
+
+            for (int i = 0; i < 5; i++) {
+                Terms.Bucket bucket = terms.getBucketByKey("val" + i);
+                assertThat(bucket, notNullValue());
+                assertThat(key(bucket), equalTo("val" + i));
+                assertThat(bucket.getDocCount(), equalTo(10L));
+                TopHits topHits = bucket.getAggregations().get("hits");
+                SearchHits hits = topHits.getHits();
+                assertThat(hits.getTotalHits().value, equalTo(10L));
+                assertThat(hits.getHits().length, equalTo(3));
+
+                assertThat(hits.getAt(0).getSourceAsMap().size(), equalTo(5));
+            }
+        },
             prepareSearch("idx").addAggregation(
                 terms("terms").executionHint(randomExecutionHint())
                     .collectMode(SubAggCollectionMode.BREADTH_FIRST)
                     .field(TERMS_AGGS_FIELD)
                     .subAggregation(topHits("hits").size(3))
-            ),
-            response -> {
-                Terms terms = response.getAggregations().get("terms");
-                assertThat(terms, notNullValue());
-                assertThat(terms.getName(), equalTo("terms"));
-                assertThat(terms.getBuckets().size(), equalTo(5));
-
-                for (int i = 0; i < 5; i++) {
-                    Terms.Bucket bucket = terms.getBucketByKey("val" + i);
-                    assertThat(bucket, notNullValue());
-                    assertThat(key(bucket), equalTo("val" + i));
-                    assertThat(bucket.getDocCount(), equalTo(10L));
-                    TopHits topHits = bucket.getAggregations().get("hits");
-                    SearchHits hits = topHits.getHits();
-                    assertThat(hits.getTotalHits().value, equalTo(10L));
-                    assertThat(hits.getHits().length, equalTo(3));
-
-                    assertThat(hits.getAt(0).getSourceAsMap().size(), equalTo(5));
-                }
-            }
+            )
         );
     }
 
     public void testBreadthFirstWithAggOrderAndScoreNeeded() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Terms terms = response.getAggregations().get("terms");
+            assertThat(terms, notNullValue());
+            assertThat(terms.getName(), equalTo("terms"));
+            assertThat(terms.getBuckets().size(), equalTo(5));
+            int id = 4;
+            for (Terms.Bucket bucket : terms.getBuckets()) {
+                assertThat(bucket, notNullValue());
+                assertThat(key(bucket), equalTo("val" + id));
+                assertThat(bucket.getDocCount(), equalTo(10L));
+                TopHits topHits = bucket.getAggregations().get("hits");
+                SearchHits hits = topHits.getHits();
+                assertThat(hits.getTotalHits().value, equalTo(10L));
+                assertThat(hits.getHits().length, equalTo(3));
+
+                assertThat(hits.getAt(0).getSourceAsMap().size(), equalTo(5));
+                id--;
+            }
+        },
             prepareSearch("idx").addAggregation(
                 terms("terms").executionHint(randomExecutionHint())
                     .collectMode(SubAggCollectionMode.BREADTH_FIRST)
@@ -431,133 +445,136 @@ public class TopHitsIT extends ESIntegTestCase {
                     .order(BucketOrder.aggregation("max", false))
                     .subAggregation(max("max").field(SORT_FIELD))
                     .subAggregation(topHits("hits").size(3))
-            ),
-            response -> {
-                Terms terms = response.getAggregations().get("terms");
-                assertThat(terms, notNullValue());
-                assertThat(terms.getName(), equalTo("terms"));
-                assertThat(terms.getBuckets().size(), equalTo(5));
-                int id = 4;
-                for (Terms.Bucket bucket : terms.getBuckets()) {
-                    assertThat(bucket, notNullValue());
-                    assertThat(key(bucket), equalTo("val" + id));
-                    assertThat(bucket.getDocCount(), equalTo(10L));
-                    TopHits topHits = bucket.getAggregations().get("hits");
-                    SearchHits hits = topHits.getHits();
-                    assertThat(hits.getTotalHits().value, equalTo(10L));
-                    assertThat(hits.getHits().length, equalTo(3));
-
-                    assertThat(hits.getAt(0).getSourceAsMap().size(), equalTo(5));
-                    id--;
-                }
-            }
+            )
         );
     }
 
     public void testBasicsGetProperty() throws Exception {
-        assertNoFailuresAndResponse(
-            prepareSearch("idx").setQuery(matchAllQuery()).addAggregation(global("global").subAggregation(topHits("hits"))),
-            response -> {
-                Global global = response.getAggregations().get("global");
-                assertThat(global, notNullValue());
-                assertThat(global.getName(), equalTo("global"));
-                assertThat(global.getAggregations(), notNullValue());
-                assertThat(global.getAggregations().asList().size(), equalTo(1));
+        assertNoFailuresAndResponse(response -> {
+            Global global = response.getAggregations().get("global");
+            assertThat(global, notNullValue());
+            assertThat(global.getName(), equalTo("global"));
+            assertThat(global.getAggregations(), notNullValue());
+            assertThat(global.getAggregations().asList().size(), equalTo(1));
 
-                TopHits topHits = global.getAggregations().get("hits");
-                assertThat(topHits, notNullValue());
-                assertThat(topHits.getName(), equalTo("hits"));
-                assertThat((TopHits) ((InternalAggregation) global).getProperty("hits"), sameInstance(topHits));
-            }
-        );
+            TopHits topHits = global.getAggregations().get("hits");
+            assertThat(topHits, notNullValue());
+            assertThat(topHits.getName(), equalTo("hits"));
+            assertThat((TopHits) ((InternalAggregation) global).getProperty("hits"), sameInstance(topHits));
+        }, prepareSearch("idx").setQuery(matchAllQuery()).addAggregation(global("global").subAggregation(topHits("hits"))));
     }
 
     public void testPagination() throws Exception {
         int size = randomIntBetween(1, 10);
         int from = randomIntBetween(0, 10);
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> assertNoFailuresAndResponse(control -> {
+            assertNoFailures(control);
+            SearchHits controlHits = control.getHits();
+
+            Terms terms = response.getAggregations().get("terms");
+            assertThat(terms, notNullValue());
+            assertThat(terms.getName(), equalTo("terms"));
+            assertThat(terms.getBuckets().size(), equalTo(5));
+
+            Terms.Bucket bucket = terms.getBucketByKey("val0");
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getDocCount(), equalTo(10L));
+            TopHits topHits = bucket.getAggregations().get("hits");
+            SearchHits hits = topHits.getHits();
+            assertThat(hits.getTotalHits().value, equalTo(controlHits.getTotalHits().value));
+            assertThat(hits.getHits().length, equalTo(controlHits.getHits().length));
+            for (int i = 0; i < hits.getHits().length; i++) {
+                logger.info(
+                    "{}: top_hits: [{}][{}] control: [{}][{}]",
+                    i,
+                    hits.getAt(i).getId(),
+                    hits.getAt(i).getSortValues()[0],
+                    controlHits.getAt(i).getId(),
+                    controlHits.getAt(i).getSortValues()[0]
+                );
+                assertThat(hits.getAt(i).getId(), equalTo(controlHits.getAt(i).getId()));
+                assertThat(hits.getAt(i).getSortValues()[0], equalTo(controlHits.getAt(i).getSortValues()[0]));
+            }
+        },
+            prepareSearch("idx").setFrom(from)
+                .setSize(size)
+                .setPostFilter(QueryBuilders.termQuery(TERMS_AGGS_FIELD, "val0"))
+                .addSort(SORT_FIELD, SortOrder.DESC)
+        ),
             prepareSearch("idx").addAggregation(
                 terms("terms").executionHint(randomExecutionHint())
                     .field(TERMS_AGGS_FIELD)
                     .subAggregation(topHits("hits").sort(SortBuilders.fieldSort(SORT_FIELD).order(SortOrder.DESC)).from(from).size(size))
-            ),
-            response -> {
-                assertNoFailuresAndResponse(
-                    prepareSearch("idx").setFrom(from)
-                        .setSize(size)
-                        .setPostFilter(QueryBuilders.termQuery(TERMS_AGGS_FIELD, "val0"))
-                        .addSort(SORT_FIELD, SortOrder.DESC),
-                    control -> {
-                        assertNoFailures(control);
-                        SearchHits controlHits = control.getHits();
-
-                        Terms terms = response.getAggregations().get("terms");
-                        assertThat(terms, notNullValue());
-                        assertThat(terms.getName(), equalTo("terms"));
-                        assertThat(terms.getBuckets().size(), equalTo(5));
-
-                        Terms.Bucket bucket = terms.getBucketByKey("val0");
-                        assertThat(bucket, notNullValue());
-                        assertThat(bucket.getDocCount(), equalTo(10L));
-                        TopHits topHits = bucket.getAggregations().get("hits");
-                        SearchHits hits = topHits.getHits();
-                        assertThat(hits.getTotalHits().value, equalTo(controlHits.getTotalHits().value));
-                        assertThat(hits.getHits().length, equalTo(controlHits.getHits().length));
-                        for (int i = 0; i < hits.getHits().length; i++) {
-                            logger.info(
-                                "{}: top_hits: [{}][{}] control: [{}][{}]",
-                                i,
-                                hits.getAt(i).getId(),
-                                hits.getAt(i).getSortValues()[0],
-                                controlHits.getAt(i).getId(),
-                                controlHits.getAt(i).getSortValues()[0]
-                            );
-                            assertThat(hits.getAt(i).getId(), equalTo(controlHits.getAt(i).getId()));
-                            assertThat(hits.getAt(i).getSortValues()[0], equalTo(controlHits.getAt(i).getSortValues()[0]));
-                        }
-                    }
-                );
-            }
+            )
         );
     }
 
     public void testSortByBucket() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Terms terms = response.getAggregations().get("terms");
+            assertThat(terms, notNullValue());
+            assertThat(terms.getName(), equalTo("terms"));
+            assertThat(terms.getBuckets().size(), equalTo(5));
+
+            long higestSortValue = 50;
+            int currentBucket = 4;
+            for (Terms.Bucket bucket : terms.getBuckets()) {
+                assertThat(key(bucket), equalTo("val" + currentBucket--));
+                assertThat(bucket.getDocCount(), equalTo(10L));
+                TopHits topHits = bucket.getAggregations().get("hits");
+                SearchHits hits = topHits.getHits();
+                assertThat(hits.getTotalHits().value, equalTo(10L));
+                assertThat(hits.getHits().length, equalTo(3));
+                assertThat(hits.getAt(0).getSortValues()[0], equalTo(higestSortValue));
+                assertThat(hits.getAt(1).getSortValues()[0], equalTo(higestSortValue - 1));
+                assertThat(hits.getAt(2).getSortValues()[0], equalTo(higestSortValue - 2));
+                Max max = bucket.getAggregations().get("max_sort");
+                assertThat(max.value(), equalTo(((Long) higestSortValue).doubleValue()));
+                higestSortValue -= 10;
+            }
+        },
             prepareSearch("idx").addAggregation(
                 terms("terms").executionHint(randomExecutionHint())
                     .field(TERMS_AGGS_FIELD)
                     .order(BucketOrder.aggregation("max_sort", false))
                     .subAggregation(topHits("hits").sort(SortBuilders.fieldSort(SORT_FIELD).order(SortOrder.DESC)).trackScores(true))
                     .subAggregation(max("max_sort").field(SORT_FIELD))
-            ),
-            response -> {
-                Terms terms = response.getAggregations().get("terms");
-                assertThat(terms, notNullValue());
-                assertThat(terms.getName(), equalTo("terms"));
-                assertThat(terms.getBuckets().size(), equalTo(5));
-
-                long higestSortValue = 50;
-                int currentBucket = 4;
-                for (Terms.Bucket bucket : terms.getBuckets()) {
-                    assertThat(key(bucket), equalTo("val" + currentBucket--));
-                    assertThat(bucket.getDocCount(), equalTo(10L));
-                    TopHits topHits = bucket.getAggregations().get("hits");
-                    SearchHits hits = topHits.getHits();
-                    assertThat(hits.getTotalHits().value, equalTo(10L));
-                    assertThat(hits.getHits().length, equalTo(3));
-                    assertThat(hits.getAt(0).getSortValues()[0], equalTo(higestSortValue));
-                    assertThat(hits.getAt(1).getSortValues()[0], equalTo(higestSortValue - 1));
-                    assertThat(hits.getAt(2).getSortValues()[0], equalTo(higestSortValue - 2));
-                    Max max = bucket.getAggregations().get("max_sort");
-                    assertThat(max.value(), equalTo(((Long) higestSortValue).doubleValue()));
-                    higestSortValue -= 10;
-                }
-            }
+            )
         );
     }
 
     public void testFieldCollapsing() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Terms terms = response.getAggregations().get("terms");
+            assertThat(terms, notNullValue());
+            assertThat(terms.getName(), equalTo("terms"));
+            assertThat(terms.getBuckets().size(), equalTo(3));
+
+            Iterator<? extends Terms.Bucket> bucketIterator = terms.getBuckets().iterator();
+            Terms.Bucket bucket = bucketIterator.next();
+            assertThat(key(bucket), equalTo("b"));
+            TopHits topHits = bucket.getAggregations().get("hits");
+            SearchHits hits = topHits.getHits();
+            assertThat(hits.getTotalHits().value, equalTo(4L));
+            assertThat(hits.getHits().length, equalTo(1));
+            assertThat(hits.getAt(0).getId(), equalTo("6"));
+
+            bucket = bucketIterator.next();
+            assertThat(key(bucket), equalTo("c"));
+            topHits = bucket.getAggregations().get("hits");
+            hits = topHits.getHits();
+            assertThat(hits.getTotalHits().value, equalTo(3L));
+            assertThat(hits.getHits().length, equalTo(1));
+            assertThat(hits.getAt(0).getId(), equalTo("9"));
+
+            bucket = bucketIterator.next();
+            assertThat(key(bucket), equalTo("a"));
+            topHits = bucket.getAggregations().get("hits");
+            hits = topHits.getHits();
+            assertThat(hits.getTotalHits().value, equalTo(2L));
+            assertThat(hits.getHits().length, equalTo(1));
+            assertThat(hits.getAt(0).getId(), equalTo("2"));
+        },
             prepareSearch("field-collapsing").setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
                 .setQuery(matchQuery("text", "term rare"))
                 .addAggregation(
@@ -566,44 +583,52 @@ public class TopHitsIT extends ESIntegTestCase {
                         .order(BucketOrder.aggregation("max_score", false))
                         .subAggregation(topHits("hits").size(1))
                         .subAggregation(max("max_score").field("value"))
-                ),
-            response -> {
-                Terms terms = response.getAggregations().get("terms");
-                assertThat(terms, notNullValue());
-                assertThat(terms.getName(), equalTo("terms"));
-                assertThat(terms.getBuckets().size(), equalTo(3));
-
-                Iterator<? extends Terms.Bucket> bucketIterator = terms.getBuckets().iterator();
-                Terms.Bucket bucket = bucketIterator.next();
-                assertThat(key(bucket), equalTo("b"));
-                TopHits topHits = bucket.getAggregations().get("hits");
-                SearchHits hits = topHits.getHits();
-                assertThat(hits.getTotalHits().value, equalTo(4L));
-                assertThat(hits.getHits().length, equalTo(1));
-                assertThat(hits.getAt(0).getId(), equalTo("6"));
-
-                bucket = bucketIterator.next();
-                assertThat(key(bucket), equalTo("c"));
-                topHits = bucket.getAggregations().get("hits");
-                hits = topHits.getHits();
-                assertThat(hits.getTotalHits().value, equalTo(3L));
-                assertThat(hits.getHits().length, equalTo(1));
-                assertThat(hits.getAt(0).getId(), equalTo("9"));
-
-                bucket = bucketIterator.next();
-                assertThat(key(bucket), equalTo("a"));
-                topHits = bucket.getAggregations().get("hits");
-                hits = topHits.getHits();
-                assertThat(hits.getTotalHits().value, equalTo(2L));
-                assertThat(hits.getHits().length, equalTo(1));
-                assertThat(hits.getAt(0).getId(), equalTo("2"));
-            }
+                )
         );
     }
 
     public void testFetchFeatures() throws IOException {
         final boolean seqNoAndTerm = randomBoolean();
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Terms terms = response.getAggregations().get("terms");
+            assertThat(terms, notNullValue());
+            assertThat(terms.getName(), equalTo("terms"));
+            assertThat(terms.getBuckets().size(), equalTo(5));
+
+            for (Terms.Bucket bucket : terms.getBuckets()) {
+                TopHits topHits = bucket.getAggregations().get("hits");
+                SearchHits hits = topHits.getHits();
+                assertThat(hits.getTotalHits().value, equalTo(10L));
+                assertThat(hits.getHits().length, equalTo(1));
+
+                SearchHit hit = hits.getAt(0);
+                HighlightField highlightField = hit.getHighlightFields().get("text");
+                assertThat(highlightField.fragments().length, equalTo(1));
+                assertThat(highlightField.fragments()[0].string(), equalTo("some <em>text</em> to entertain"));
+
+                long version = hit.getVersion();
+                assertThat(version, equalTo(1L));
+
+                if (seqNoAndTerm) {
+                    assertThat(hit.getSeqNo(), greaterThanOrEqualTo(0L));
+                    assertThat(hit.getPrimaryTerm(), greaterThanOrEqualTo(1L));
+                } else {
+                    assertThat(hit.getSeqNo(), equalTo(SequenceNumbers.UNASSIGNED_SEQ_NO));
+                    assertThat(hit.getPrimaryTerm(), equalTo(SequenceNumbers.UNASSIGNED_PRIMARY_TERM));
+                }
+
+                assertThat(hit.getMatchedQueries()[0], equalTo("test"));
+
+                assertThat(hit.field("field1").getValue(), equalTo(5L));
+                assertThat(hit.field("field2").getValue(), equalTo(2.71f));
+                assertThat(hit.field("script").getValue().toString(), equalTo("5"));
+
+                assertThat(hit.getSourceAsMap().size(), equalTo(1));
+                assertThat(hit.getSourceAsMap().get("text").toString(), equalTo("some text to entertain"));
+                assertEquals("some text to entertain", hit.getFields().get("text").getValue());
+                assertEquals("some text to entertain", hit.getFields().get("text_stored_lookup").getValue());
+            }
+        },
             prepareSearch("idx").setQuery(matchQuery("text", "text").queryName("test"))
                 .addAggregation(
                     terms("terms").executionHint(randomExecutionHint())
@@ -620,47 +645,7 @@ public class TopHitsIT extends ESIntegTestCase {
                                 .version(true)
                                 .seqNoAndPrimaryTerm(seqNoAndTerm)
                         )
-                ),
-            response -> {
-                Terms terms = response.getAggregations().get("terms");
-                assertThat(terms, notNullValue());
-                assertThat(terms.getName(), equalTo("terms"));
-                assertThat(terms.getBuckets().size(), equalTo(5));
-
-                for (Terms.Bucket bucket : terms.getBuckets()) {
-                    TopHits topHits = bucket.getAggregations().get("hits");
-                    SearchHits hits = topHits.getHits();
-                    assertThat(hits.getTotalHits().value, equalTo(10L));
-                    assertThat(hits.getHits().length, equalTo(1));
-
-                    SearchHit hit = hits.getAt(0);
-                    HighlightField highlightField = hit.getHighlightFields().get("text");
-                    assertThat(highlightField.fragments().length, equalTo(1));
-                    assertThat(highlightField.fragments()[0].string(), equalTo("some <em>text</em> to entertain"));
-
-                    long version = hit.getVersion();
-                    assertThat(version, equalTo(1L));
-
-                    if (seqNoAndTerm) {
-                        assertThat(hit.getSeqNo(), greaterThanOrEqualTo(0L));
-                        assertThat(hit.getPrimaryTerm(), greaterThanOrEqualTo(1L));
-                    } else {
-                        assertThat(hit.getSeqNo(), equalTo(SequenceNumbers.UNASSIGNED_SEQ_NO));
-                        assertThat(hit.getPrimaryTerm(), equalTo(SequenceNumbers.UNASSIGNED_PRIMARY_TERM));
-                    }
-
-                    assertThat(hit.getMatchedQueries()[0], equalTo("test"));
-
-                    assertThat(hit.field("field1").getValue(), equalTo(5L));
-                    assertThat(hit.field("field2").getValue(), equalTo(2.71f));
-                    assertThat(hit.field("script").getValue().toString(), equalTo("5"));
-
-                    assertThat(hit.getSourceAsMap().size(), equalTo(1));
-                    assertThat(hit.getSourceAsMap().get("text").toString(), equalTo("some text to entertain"));
-                    assertEquals("some text to entertain", hit.getFields().get("text").getValue());
-                    assertEquals("some text to entertain", hit.getFields().get("text_stored_lookup").getValue());
-                }
-            }
+                )
         );
     }
 
@@ -678,103 +663,184 @@ public class TopHitsIT extends ESIntegTestCase {
     }
 
     public void testEmptyIndex() throws Exception {
-        assertNoFailuresAndResponse(prepareSearch("empty").addAggregation(topHits("hits")), response -> {
+        assertNoFailuresAndResponse(response -> {
             TopHits hits = response.getAggregations().get("hits");
             assertThat(hits, notNullValue());
             assertThat(hits.getName(), equalTo("hits"));
             assertThat(hits.getHits().getTotalHits().value, equalTo(0L));
-        });
+        }, prepareSearch("empty").addAggregation(topHits("hits")));
     }
 
     public void testTrackScores() throws Exception {
         boolean[] trackScores = new boolean[] { true, false };
         for (boolean trackScore : trackScores) {
             logger.info("Track score={}", trackScore);
-            assertNoFailuresAndResponse(
+            assertNoFailuresAndResponse(response -> {
+                Terms terms = response.getAggregations().get("terms");
+                assertThat(terms, notNullValue());
+                assertThat(terms.getName(), equalTo("terms"));
+                assertThat(terms.getBuckets().size(), equalTo(3));
+
+                Terms.Bucket bucket = terms.getBucketByKey("a");
+                assertThat(key(bucket), equalTo("a"));
+                TopHits topHits = bucket.getAggregations().get("hits");
+                SearchHits hits = topHits.getHits();
+                assertThat(hits.getMaxScore(), trackScore ? not(equalTo(Float.NaN)) : equalTo(Float.NaN));
+                assertThat(hits.getAt(0).getScore(), trackScore ? not(equalTo(Float.NaN)) : equalTo(Float.NaN));
+
+                bucket = terms.getBucketByKey("b");
+                assertThat(key(bucket), equalTo("b"));
+                topHits = bucket.getAggregations().get("hits");
+                hits = topHits.getHits();
+                assertThat(hits.getMaxScore(), trackScore ? not(equalTo(Float.NaN)) : equalTo(Float.NaN));
+                assertThat(hits.getAt(0).getScore(), trackScore ? not(equalTo(Float.NaN)) : equalTo(Float.NaN));
+
+                bucket = terms.getBucketByKey("c");
+                assertThat(key(bucket), equalTo("c"));
+                topHits = bucket.getAggregations().get("hits");
+                hits = topHits.getHits();
+                assertThat(hits.getMaxScore(), trackScore ? not(equalTo(Float.NaN)) : equalTo(Float.NaN));
+                assertThat(hits.getAt(0).getScore(), trackScore ? not(equalTo(Float.NaN)) : equalTo(Float.NaN));
+            },
                 prepareSearch("field-collapsing").setQuery(matchQuery("text", "term rare"))
                     .addAggregation(
                         terms("terms").field("group")
                             .subAggregation(topHits("hits").trackScores(trackScore).size(1).sort("_index", SortOrder.DESC))
-                    ),
-                response -> {
-                    Terms terms = response.getAggregations().get("terms");
-                    assertThat(terms, notNullValue());
-                    assertThat(terms.getName(), equalTo("terms"));
-                    assertThat(terms.getBuckets().size(), equalTo(3));
-
-                    Terms.Bucket bucket = terms.getBucketByKey("a");
-                    assertThat(key(bucket), equalTo("a"));
-                    TopHits topHits = bucket.getAggregations().get("hits");
-                    SearchHits hits = topHits.getHits();
-                    assertThat(hits.getMaxScore(), trackScore ? not(equalTo(Float.NaN)) : equalTo(Float.NaN));
-                    assertThat(hits.getAt(0).getScore(), trackScore ? not(equalTo(Float.NaN)) : equalTo(Float.NaN));
-
-                    bucket = terms.getBucketByKey("b");
-                    assertThat(key(bucket), equalTo("b"));
-                    topHits = bucket.getAggregations().get("hits");
-                    hits = topHits.getHits();
-                    assertThat(hits.getMaxScore(), trackScore ? not(equalTo(Float.NaN)) : equalTo(Float.NaN));
-                    assertThat(hits.getAt(0).getScore(), trackScore ? not(equalTo(Float.NaN)) : equalTo(Float.NaN));
-
-                    bucket = terms.getBucketByKey("c");
-                    assertThat(key(bucket), equalTo("c"));
-                    topHits = bucket.getAggregations().get("hits");
-                    hits = topHits.getHits();
-                    assertThat(hits.getMaxScore(), trackScore ? not(equalTo(Float.NaN)) : equalTo(Float.NaN));
-                    assertThat(hits.getAt(0).getScore(), trackScore ? not(equalTo(Float.NaN)) : equalTo(Float.NaN));
-                }
+                    )
             );
         }
     }
 
     public void testTopHitsInNestedSimple() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Nested nested = response.getAggregations().get("to-comments");
+            assertThat(nested.getDocCount(), equalTo(4L));
+
+            Terms terms = nested.getAggregations().get("users");
+            Terms.Bucket bucket = terms.getBucketByKey("a");
+            assertThat(bucket.getDocCount(), equalTo(1L));
+            TopHits topHits = bucket.getAggregations().get("top-comments");
+            SearchHits searchHits = topHits.getHits();
+            assertThat(searchHits.getTotalHits().value, equalTo(1L));
+            assertThat(searchHits.getAt(0).getNestedIdentity().getField().string(), equalTo("comments"));
+            assertThat(searchHits.getAt(0).getNestedIdentity().getOffset(), equalTo(0));
+            assertThat(extractValue("date", searchHits.getAt(0).getSourceAsMap()), equalTo(1));
+
+            bucket = terms.getBucketByKey("b");
+            assertThat(bucket.getDocCount(), equalTo(2L));
+            topHits = bucket.getAggregations().get("top-comments");
+            searchHits = topHits.getHits();
+            assertThat(searchHits.getTotalHits().value, equalTo(2L));
+            assertThat(searchHits.getAt(0).getNestedIdentity().getField().string(), equalTo("comments"));
+            assertThat(searchHits.getAt(0).getNestedIdentity().getOffset(), equalTo(1));
+            assertThat(extractValue("date", searchHits.getAt(0).getSourceAsMap()), equalTo(2));
+            assertThat(searchHits.getAt(1).getNestedIdentity().getField().string(), equalTo("comments"));
+            assertThat(searchHits.getAt(1).getNestedIdentity().getOffset(), equalTo(0));
+            assertThat(extractValue("date", searchHits.getAt(1).getSourceAsMap()), equalTo(3));
+
+            bucket = terms.getBucketByKey("c");
+            assertThat(bucket.getDocCount(), equalTo(1L));
+            topHits = bucket.getAggregations().get("top-comments");
+            searchHits = topHits.getHits();
+            assertThat(searchHits.getTotalHits().value, equalTo(1L));
+            assertThat(searchHits.getAt(0).getNestedIdentity().getField().string(), equalTo("comments"));
+            assertThat(searchHits.getAt(0).getNestedIdentity().getOffset(), equalTo(1));
+            assertThat(extractValue("date", searchHits.getAt(0).getSourceAsMap()), equalTo(4));
+        },
             prepareSearch("articles").setQuery(matchQuery("title", "title"))
                 .addAggregation(
                     nested("to-comments", "comments").subAggregation(
                         terms("users").field("comments.user").subAggregation(topHits("top-comments").sort("comments.date", SortOrder.ASC))
                     )
-                ),
-            response -> {
-                Nested nested = response.getAggregations().get("to-comments");
-                assertThat(nested.getDocCount(), equalTo(4L));
-
-                Terms terms = nested.getAggregations().get("users");
-                Terms.Bucket bucket = terms.getBucketByKey("a");
-                assertThat(bucket.getDocCount(), equalTo(1L));
-                TopHits topHits = bucket.getAggregations().get("top-comments");
-                SearchHits searchHits = topHits.getHits();
-                assertThat(searchHits.getTotalHits().value, equalTo(1L));
-                assertThat(searchHits.getAt(0).getNestedIdentity().getField().string(), equalTo("comments"));
-                assertThat(searchHits.getAt(0).getNestedIdentity().getOffset(), equalTo(0));
-                assertThat(extractValue("date", searchHits.getAt(0).getSourceAsMap()), equalTo(1));
-
-                bucket = terms.getBucketByKey("b");
-                assertThat(bucket.getDocCount(), equalTo(2L));
-                topHits = bucket.getAggregations().get("top-comments");
-                searchHits = topHits.getHits();
-                assertThat(searchHits.getTotalHits().value, equalTo(2L));
-                assertThat(searchHits.getAt(0).getNestedIdentity().getField().string(), equalTo("comments"));
-                assertThat(searchHits.getAt(0).getNestedIdentity().getOffset(), equalTo(1));
-                assertThat(extractValue("date", searchHits.getAt(0).getSourceAsMap()), equalTo(2));
-                assertThat(searchHits.getAt(1).getNestedIdentity().getField().string(), equalTo("comments"));
-                assertThat(searchHits.getAt(1).getNestedIdentity().getOffset(), equalTo(0));
-                assertThat(extractValue("date", searchHits.getAt(1).getSourceAsMap()), equalTo(3));
-
-                bucket = terms.getBucketByKey("c");
-                assertThat(bucket.getDocCount(), equalTo(1L));
-                topHits = bucket.getAggregations().get("top-comments");
-                searchHits = topHits.getHits();
-                assertThat(searchHits.getTotalHits().value, equalTo(1L));
-                assertThat(searchHits.getAt(0).getNestedIdentity().getField().string(), equalTo("comments"));
-                assertThat(searchHits.getAt(0).getNestedIdentity().getOffset(), equalTo(1));
-                assertThat(extractValue("date", searchHits.getAt(0).getSourceAsMap()), equalTo(4));
-            }
+                )
         );
     }
 
     public void testTopHitsInSecondLayerNested() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Nested toComments = response.getAggregations().get("to-comments");
+            assertThat(toComments.getDocCount(), equalTo(4L));
+
+            TopHits topComments = toComments.getAggregations().get("top-comments");
+            assertThat(topComments.getHits().getTotalHits().value, equalTo(4L));
+            assertThat(topComments.getHits().getHits().length, equalTo(4));
+
+            assertThat(topComments.getHits().getAt(0).getId(), equalTo("2"));
+            assertThat(topComments.getHits().getAt(0).getNestedIdentity().getField().string(), equalTo("comments"));
+            assertThat(topComments.getHits().getAt(0).getNestedIdentity().getOffset(), equalTo(1));
+            assertThat(topComments.getHits().getAt(0).getNestedIdentity().getChild(), nullValue());
+
+            assertThat(topComments.getHits().getAt(1).getId(), equalTo("2"));
+            assertThat(topComments.getHits().getAt(1).getNestedIdentity().getField().string(), equalTo("comments"));
+            assertThat(topComments.getHits().getAt(1).getNestedIdentity().getOffset(), equalTo(0));
+            assertThat(topComments.getHits().getAt(1).getNestedIdentity().getChild(), nullValue());
+
+            assertThat(topComments.getHits().getAt(2).getId(), equalTo("1"));
+            assertThat(topComments.getHits().getAt(2).getNestedIdentity().getField().string(), equalTo("comments"));
+            assertThat(topComments.getHits().getAt(2).getNestedIdentity().getOffset(), equalTo(1));
+            assertThat(topComments.getHits().getAt(2).getNestedIdentity().getChild(), nullValue());
+
+            assertThat(topComments.getHits().getAt(3).getId(), equalTo("1"));
+            assertThat(topComments.getHits().getAt(3).getNestedIdentity().getField().string(), equalTo("comments"));
+            assertThat(topComments.getHits().getAt(3).getNestedIdentity().getOffset(), equalTo(0));
+            assertThat(topComments.getHits().getAt(3).getNestedIdentity().getChild(), nullValue());
+
+            Nested toReviewers = toComments.getAggregations().get("to-reviewers");
+            assertThat(toReviewers.getDocCount(), equalTo(7L));
+
+            TopHits topReviewers = toReviewers.getAggregations().get("top-reviewers");
+            assertThat(topReviewers.getHits().getTotalHits().value, equalTo(7L));
+            assertThat(topReviewers.getHits().getHits().length, equalTo(7));
+
+            assertThat(topReviewers.getHits().getAt(0).getId(), equalTo("1"));
+            assertThat(extractValue("name", topReviewers.getHits().getAt(0).getSourceAsMap()), equalTo("user a"));
+            assertThat(topReviewers.getHits().getAt(0).getNestedIdentity().getField().string(), equalTo("comments"));
+            assertThat(topReviewers.getHits().getAt(0).getNestedIdentity().getOffset(), equalTo(0));
+            assertThat(topReviewers.getHits().getAt(0).getNestedIdentity().getChild().getField().string(), equalTo("reviewers"));
+            assertThat(topReviewers.getHits().getAt(0).getNestedIdentity().getChild().getOffset(), equalTo(0));
+
+            assertThat(topReviewers.getHits().getAt(1).getId(), equalTo("1"));
+            assertThat(extractValue("name", topReviewers.getHits().getAt(1).getSourceAsMap()), equalTo("user b"));
+            assertThat(topReviewers.getHits().getAt(1).getNestedIdentity().getField().string(), equalTo("comments"));
+            assertThat(topReviewers.getHits().getAt(1).getNestedIdentity().getOffset(), equalTo(0));
+            assertThat(topReviewers.getHits().getAt(1).getNestedIdentity().getChild().getField().string(), equalTo("reviewers"));
+            assertThat(topReviewers.getHits().getAt(1).getNestedIdentity().getChild().getOffset(), equalTo(1));
+
+            assertThat(topReviewers.getHits().getAt(2).getId(), equalTo("1"));
+            assertThat(extractValue("name", topReviewers.getHits().getAt(2).getSourceAsMap()), equalTo("user c"));
+            assertThat(topReviewers.getHits().getAt(2).getNestedIdentity().getField().string(), equalTo("comments"));
+            assertThat(topReviewers.getHits().getAt(2).getNestedIdentity().getOffset(), equalTo(1));
+            assertThat(topReviewers.getHits().getAt(2).getNestedIdentity().getChild().getField().string(), equalTo("reviewers"));
+            assertThat(topReviewers.getHits().getAt(2).getNestedIdentity().getChild().getOffset(), equalTo(0));
+
+            assertThat(topReviewers.getHits().getAt(3).getId(), equalTo("1"));
+            assertThat(extractValue("name", topReviewers.getHits().getAt(3).getSourceAsMap()), equalTo("user c"));
+            assertThat(topReviewers.getHits().getAt(3).getNestedIdentity().getField().string(), equalTo("comments"));
+            assertThat(topReviewers.getHits().getAt(3).getNestedIdentity().getOffset(), equalTo(0));
+            assertThat(topReviewers.getHits().getAt(3).getNestedIdentity().getChild().getField().string(), equalTo("reviewers"));
+            assertThat(topReviewers.getHits().getAt(3).getNestedIdentity().getChild().getOffset(), equalTo(2));
+
+            assertThat(topReviewers.getHits().getAt(4).getId(), equalTo("1"));
+            assertThat(extractValue("name", topReviewers.getHits().getAt(4).getSourceAsMap()), equalTo("user d"));
+            assertThat(topReviewers.getHits().getAt(4).getNestedIdentity().getField().string(), equalTo("comments"));
+            assertThat(topReviewers.getHits().getAt(4).getNestedIdentity().getOffset(), equalTo(1));
+            assertThat(topReviewers.getHits().getAt(4).getNestedIdentity().getChild().getField().string(), equalTo("reviewers"));
+            assertThat(topReviewers.getHits().getAt(4).getNestedIdentity().getChild().getOffset(), equalTo(1));
+
+            assertThat(topReviewers.getHits().getAt(5).getId(), equalTo("1"));
+            assertThat(extractValue("name", topReviewers.getHits().getAt(5).getSourceAsMap()), equalTo("user e"));
+            assertThat(topReviewers.getHits().getAt(5).getNestedIdentity().getField().string(), equalTo("comments"));
+            assertThat(topReviewers.getHits().getAt(5).getNestedIdentity().getOffset(), equalTo(1));
+            assertThat(topReviewers.getHits().getAt(5).getNestedIdentity().getChild().getField().string(), equalTo("reviewers"));
+            assertThat(topReviewers.getHits().getAt(5).getNestedIdentity().getChild().getOffset(), equalTo(2));
+
+            assertThat(topReviewers.getHits().getAt(6).getId(), equalTo("2"));
+            assertThat(extractValue("name", topReviewers.getHits().getAt(6).getSourceAsMap()), equalTo("user f"));
+            assertThat(topReviewers.getHits().getAt(0).getNestedIdentity().getField().string(), equalTo("comments"));
+            assertThat(topReviewers.getHits().getAt(0).getNestedIdentity().getOffset(), equalTo(0));
+            assertThat(topReviewers.getHits().getAt(0).getNestedIdentity().getChild().getField().string(), equalTo("reviewers"));
+            assertThat(topReviewers.getHits().getAt(0).getNestedIdentity().getChild().getOffset(), equalTo(0));
+        },
             prepareSearch("articles").setQuery(matchQuery("title", "title"))
                 .addAggregation(
                     nested("to-comments", "comments").subAggregation(
@@ -783,91 +849,7 @@ public class TopHitsIT extends ESIntegTestCase {
                             topHits("top-reviewers").sort("comments.reviewers.name", SortOrder.ASC).sort("_doc", SortOrder.DESC).size(7)
                         )
                     ).subAggregation(topHits("top-comments").sort("comments.date", SortOrder.DESC).size(4))
-                ),
-            response -> {
-                Nested toComments = response.getAggregations().get("to-comments");
-                assertThat(toComments.getDocCount(), equalTo(4L));
-
-                TopHits topComments = toComments.getAggregations().get("top-comments");
-                assertThat(topComments.getHits().getTotalHits().value, equalTo(4L));
-                assertThat(topComments.getHits().getHits().length, equalTo(4));
-
-                assertThat(topComments.getHits().getAt(0).getId(), equalTo("2"));
-                assertThat(topComments.getHits().getAt(0).getNestedIdentity().getField().string(), equalTo("comments"));
-                assertThat(topComments.getHits().getAt(0).getNestedIdentity().getOffset(), equalTo(1));
-                assertThat(topComments.getHits().getAt(0).getNestedIdentity().getChild(), nullValue());
-
-                assertThat(topComments.getHits().getAt(1).getId(), equalTo("2"));
-                assertThat(topComments.getHits().getAt(1).getNestedIdentity().getField().string(), equalTo("comments"));
-                assertThat(topComments.getHits().getAt(1).getNestedIdentity().getOffset(), equalTo(0));
-                assertThat(topComments.getHits().getAt(1).getNestedIdentity().getChild(), nullValue());
-
-                assertThat(topComments.getHits().getAt(2).getId(), equalTo("1"));
-                assertThat(topComments.getHits().getAt(2).getNestedIdentity().getField().string(), equalTo("comments"));
-                assertThat(topComments.getHits().getAt(2).getNestedIdentity().getOffset(), equalTo(1));
-                assertThat(topComments.getHits().getAt(2).getNestedIdentity().getChild(), nullValue());
-
-                assertThat(topComments.getHits().getAt(3).getId(), equalTo("1"));
-                assertThat(topComments.getHits().getAt(3).getNestedIdentity().getField().string(), equalTo("comments"));
-                assertThat(topComments.getHits().getAt(3).getNestedIdentity().getOffset(), equalTo(0));
-                assertThat(topComments.getHits().getAt(3).getNestedIdentity().getChild(), nullValue());
-
-                Nested toReviewers = toComments.getAggregations().get("to-reviewers");
-                assertThat(toReviewers.getDocCount(), equalTo(7L));
-
-                TopHits topReviewers = toReviewers.getAggregations().get("top-reviewers");
-                assertThat(topReviewers.getHits().getTotalHits().value, equalTo(7L));
-                assertThat(topReviewers.getHits().getHits().length, equalTo(7));
-
-                assertThat(topReviewers.getHits().getAt(0).getId(), equalTo("1"));
-                assertThat(extractValue("name", topReviewers.getHits().getAt(0).getSourceAsMap()), equalTo("user a"));
-                assertThat(topReviewers.getHits().getAt(0).getNestedIdentity().getField().string(), equalTo("comments"));
-                assertThat(topReviewers.getHits().getAt(0).getNestedIdentity().getOffset(), equalTo(0));
-                assertThat(topReviewers.getHits().getAt(0).getNestedIdentity().getChild().getField().string(), equalTo("reviewers"));
-                assertThat(topReviewers.getHits().getAt(0).getNestedIdentity().getChild().getOffset(), equalTo(0));
-
-                assertThat(topReviewers.getHits().getAt(1).getId(), equalTo("1"));
-                assertThat(extractValue("name", topReviewers.getHits().getAt(1).getSourceAsMap()), equalTo("user b"));
-                assertThat(topReviewers.getHits().getAt(1).getNestedIdentity().getField().string(), equalTo("comments"));
-                assertThat(topReviewers.getHits().getAt(1).getNestedIdentity().getOffset(), equalTo(0));
-                assertThat(topReviewers.getHits().getAt(1).getNestedIdentity().getChild().getField().string(), equalTo("reviewers"));
-                assertThat(topReviewers.getHits().getAt(1).getNestedIdentity().getChild().getOffset(), equalTo(1));
-
-                assertThat(topReviewers.getHits().getAt(2).getId(), equalTo("1"));
-                assertThat(extractValue("name", topReviewers.getHits().getAt(2).getSourceAsMap()), equalTo("user c"));
-                assertThat(topReviewers.getHits().getAt(2).getNestedIdentity().getField().string(), equalTo("comments"));
-                assertThat(topReviewers.getHits().getAt(2).getNestedIdentity().getOffset(), equalTo(1));
-                assertThat(topReviewers.getHits().getAt(2).getNestedIdentity().getChild().getField().string(), equalTo("reviewers"));
-                assertThat(topReviewers.getHits().getAt(2).getNestedIdentity().getChild().getOffset(), equalTo(0));
-
-                assertThat(topReviewers.getHits().getAt(3).getId(), equalTo("1"));
-                assertThat(extractValue("name", topReviewers.getHits().getAt(3).getSourceAsMap()), equalTo("user c"));
-                assertThat(topReviewers.getHits().getAt(3).getNestedIdentity().getField().string(), equalTo("comments"));
-                assertThat(topReviewers.getHits().getAt(3).getNestedIdentity().getOffset(), equalTo(0));
-                assertThat(topReviewers.getHits().getAt(3).getNestedIdentity().getChild().getField().string(), equalTo("reviewers"));
-                assertThat(topReviewers.getHits().getAt(3).getNestedIdentity().getChild().getOffset(), equalTo(2));
-
-                assertThat(topReviewers.getHits().getAt(4).getId(), equalTo("1"));
-                assertThat(extractValue("name", topReviewers.getHits().getAt(4).getSourceAsMap()), equalTo("user d"));
-                assertThat(topReviewers.getHits().getAt(4).getNestedIdentity().getField().string(), equalTo("comments"));
-                assertThat(topReviewers.getHits().getAt(4).getNestedIdentity().getOffset(), equalTo(1));
-                assertThat(topReviewers.getHits().getAt(4).getNestedIdentity().getChild().getField().string(), equalTo("reviewers"));
-                assertThat(topReviewers.getHits().getAt(4).getNestedIdentity().getChild().getOffset(), equalTo(1));
-
-                assertThat(topReviewers.getHits().getAt(5).getId(), equalTo("1"));
-                assertThat(extractValue("name", topReviewers.getHits().getAt(5).getSourceAsMap()), equalTo("user e"));
-                assertThat(topReviewers.getHits().getAt(5).getNestedIdentity().getField().string(), equalTo("comments"));
-                assertThat(topReviewers.getHits().getAt(5).getNestedIdentity().getOffset(), equalTo(1));
-                assertThat(topReviewers.getHits().getAt(5).getNestedIdentity().getChild().getField().string(), equalTo("reviewers"));
-                assertThat(topReviewers.getHits().getAt(5).getNestedIdentity().getChild().getOffset(), equalTo(2));
-
-                assertThat(topReviewers.getHits().getAt(6).getId(), equalTo("2"));
-                assertThat(extractValue("name", topReviewers.getHits().getAt(6).getSourceAsMap()), equalTo("user f"));
-                assertThat(topReviewers.getHits().getAt(0).getNestedIdentity().getField().string(), equalTo("comments"));
-                assertThat(topReviewers.getHits().getAt(0).getNestedIdentity().getOffset(), equalTo(0));
-                assertThat(topReviewers.getHits().getAt(0).getNestedIdentity().getChild().getField().string(), equalTo("reviewers"));
-                assertThat(topReviewers.getHits().getAt(0).getNestedIdentity().getChild().getOffset(), equalTo(0));
-            }
+                )
         );
     }
 
@@ -877,7 +859,43 @@ public class TopHitsIT extends ESIntegTestCase {
             matchQuery("comments.message", "comment")
         ).highlighterType(hlType);
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            assertHitCount(response, 2);
+            Nested nested = response.getAggregations().get("to-comments");
+            assertThat(nested.getDocCount(), equalTo(4L));
+
+            SearchHits hits = ((TopHits) nested.getAggregations().get("top-comments")).getHits();
+            assertThat(hits.getTotalHits().value, equalTo(4L));
+            SearchHit searchHit = hits.getAt(0);
+            assertThat(searchHit.getId(), equalTo("1"));
+            assertThat(searchHit.getNestedIdentity().getField().string(), equalTo("comments"));
+            assertThat(searchHit.getNestedIdentity().getOffset(), equalTo(0));
+
+            HighlightField highlightField = searchHit.getHighlightFields().get("comments.message");
+            assertThat(highlightField.fragments().length, equalTo(1));
+            assertThat(highlightField.fragments()[0].string(), equalTo("some <em>comment</em>"));
+
+            // Can't explain nested hit with the main query, since both are in a different scopes, also the nested doc may not
+            // even have matched with the main query.
+            // If top_hits would have a query option then we can explain that query
+            Explanation explanation = searchHit.getExplanation();
+            assertFalse(explanation.isMatch());
+
+            // Returns the version of the root document. Nested docs don't have a separate version
+            long version = searchHit.getVersion();
+            assertThat(version, equalTo(1L));
+
+            assertThat(searchHit.getMatchedQueries(), arrayContaining("test"));
+
+            DocumentField field = searchHit.field("comments.user");
+            assertThat(field.getValue().toString(), equalTo("a"));
+
+            field = searchHit.field("script");
+            assertThat(field.getValue().toString(), equalTo("5"));
+
+            assertThat(searchHit.getSourceAsMap().size(), equalTo(1));
+            assertThat(extractValue("message", searchHit.getSourceAsMap()), equalTo("some comment"));
+        },
             prepareSearch("articles").setQuery(
                 nestedQuery("comments", matchQuery("comments.message", "comment").queryName("test"), ScoreMode.Avg)
             )
@@ -892,49 +910,35 @@ public class TopHitsIT extends ESIntegTestCase {
                             .version(true)
                             .sort("comments.date", SortOrder.ASC)
                     )
-                ),
-            response -> {
-                assertHitCount(response, 2);
-                Nested nested = response.getAggregations().get("to-comments");
-                assertThat(nested.getDocCount(), equalTo(4L));
-
-                SearchHits hits = ((TopHits) nested.getAggregations().get("top-comments")).getHits();
-                assertThat(hits.getTotalHits().value, equalTo(4L));
-                SearchHit searchHit = hits.getAt(0);
-                assertThat(searchHit.getId(), equalTo("1"));
-                assertThat(searchHit.getNestedIdentity().getField().string(), equalTo("comments"));
-                assertThat(searchHit.getNestedIdentity().getOffset(), equalTo(0));
-
-                HighlightField highlightField = searchHit.getHighlightFields().get("comments.message");
-                assertThat(highlightField.fragments().length, equalTo(1));
-                assertThat(highlightField.fragments()[0].string(), equalTo("some <em>comment</em>"));
-
-                // Can't explain nested hit with the main query, since both are in a different scopes, also the nested doc may not
-                // even have matched with the main query.
-                // If top_hits would have a query option then we can explain that query
-                Explanation explanation = searchHit.getExplanation();
-                assertFalse(explanation.isMatch());
-
-                // Returns the version of the root document. Nested docs don't have a separate version
-                long version = searchHit.getVersion();
-                assertThat(version, equalTo(1L));
-
-                assertThat(searchHit.getMatchedQueries(), arrayContaining("test"));
-
-                DocumentField field = searchHit.field("comments.user");
-                assertThat(field.getValue().toString(), equalTo("a"));
-
-                field = searchHit.field("script");
-                assertThat(field.getValue().toString(), equalTo("5"));
-
-                assertThat(searchHit.getSourceAsMap().size(), equalTo(1));
-                assertThat(extractValue("message", searchHit.getSourceAsMap()), equalTo("some comment"));
-            }
+                )
         );
     }
 
     public void testTopHitsInNested() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Histogram histogram = response.getAggregations().get("dates");
+            for (int i = 0; i < numArticles; i += 5) {
+                Histogram.Bucket bucket = histogram.getBuckets().get(i / 5);
+                assertThat(bucket.getDocCount(), equalTo(5L));
+
+                long numNestedDocs = 10 + (5 * i);
+                Nested nested = bucket.getAggregations().get("to-comments");
+                assertThat(nested.getDocCount(), equalTo(numNestedDocs));
+
+                TopHits hits = nested.getAggregations().get("comments");
+                SearchHits searchHits = hits.getHits();
+                assertThat(searchHits.getTotalHits().value, equalTo(numNestedDocs));
+                for (int j = 0; j < 3; j++) {
+                    assertThat(searchHits.getAt(j).getNestedIdentity().getField().string(), equalTo("comments"));
+                    assertThat(searchHits.getAt(j).getNestedIdentity().getOffset(), equalTo(0));
+                    assertThat(extractValue("id", searchHits.getAt(j).getSourceAsMap()), equalTo(0));
+
+                    HighlightField highlightField = searchHits.getAt(j).getHighlightFields().get("comments.message");
+                    assertThat(highlightField.fragments().length, equalTo(1));
+                    assertThat(highlightField.fragments()[0].string(), equalTo("some <em>text</em>"));
+                }
+            }
+        },
             prepareSearch("articles").addAggregation(
                 histogram("dates").field("date")
                     .interval(5)
@@ -947,31 +951,7 @@ public class TopHitsIT extends ESIntegTestCase {
                             ).sort("comments.id", SortOrder.ASC)
                         )
                     )
-            ),
-            response -> {
-                Histogram histogram = response.getAggregations().get("dates");
-                for (int i = 0; i < numArticles; i += 5) {
-                    Histogram.Bucket bucket = histogram.getBuckets().get(i / 5);
-                    assertThat(bucket.getDocCount(), equalTo(5L));
-
-                    long numNestedDocs = 10 + (5 * i);
-                    Nested nested = bucket.getAggregations().get("to-comments");
-                    assertThat(nested.getDocCount(), equalTo(numNestedDocs));
-
-                    TopHits hits = nested.getAggregations().get("comments");
-                    SearchHits searchHits = hits.getHits();
-                    assertThat(searchHits.getTotalHits().value, equalTo(numNestedDocs));
-                    for (int j = 0; j < 3; j++) {
-                        assertThat(searchHits.getAt(j).getNestedIdentity().getField().string(), equalTo("comments"));
-                        assertThat(searchHits.getAt(j).getNestedIdentity().getOffset(), equalTo(0));
-                        assertThat(extractValue("id", searchHits.getAt(j).getSourceAsMap()), equalTo(0));
-
-                        HighlightField highlightField = searchHits.getAt(j).getHighlightFields().get("comments.message");
-                        assertThat(highlightField.fragments().length, equalTo(1));
-                        assertThat(highlightField.fragments()[0].string(), equalTo("some <em>text</em>"));
-                    }
-                }
-            }
+            )
         );
     }
 
@@ -1045,33 +1025,32 @@ public class TopHitsIT extends ESIntegTestCase {
     }
 
     public void testNoStoredFields() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Terms terms = response.getAggregations().get("terms");
+            assertThat(terms, notNullValue());
+            assertThat(terms.getName(), equalTo("terms"));
+            assertThat(terms.getBuckets().size(), equalTo(5));
+
+            for (int i = 0; i < 5; i++) {
+                Terms.Bucket bucket = terms.getBucketByKey("val" + i);
+                assertThat(bucket, notNullValue());
+                assertThat(key(bucket), equalTo("val" + i));
+                assertThat(bucket.getDocCount(), equalTo(10L));
+                TopHits topHits = bucket.getAggregations().get("hits");
+                SearchHits hits = topHits.getHits();
+                assertThat(hits.getTotalHits().value, equalTo(10L));
+                assertThat(hits.getHits().length, equalTo(3));
+                for (SearchHit hit : hits) {
+                    assertThat(hit.getSourceAsMap(), nullValue());
+                    assertThat(hit.getId(), nullValue());
+                }
+            }
+        },
             prepareSearch("idx").addAggregation(
                 terms("terms").executionHint(randomExecutionHint())
                     .field(TERMS_AGGS_FIELD)
                     .subAggregation(topHits("hits").storedField("_none_"))
-            ),
-            response -> {
-                Terms terms = response.getAggregations().get("terms");
-                assertThat(terms, notNullValue());
-                assertThat(terms.getName(), equalTo("terms"));
-                assertThat(terms.getBuckets().size(), equalTo(5));
-
-                for (int i = 0; i < 5; i++) {
-                    Terms.Bucket bucket = terms.getBucketByKey("val" + i);
-                    assertThat(bucket, notNullValue());
-                    assertThat(key(bucket), equalTo("val" + i));
-                    assertThat(bucket.getDocCount(), equalTo(10L));
-                    TopHits topHits = bucket.getAggregations().get("hits");
-                    SearchHits hits = topHits.getHits();
-                    assertThat(hits.getTotalHits().value, equalTo(10L));
-                    assertThat(hits.getHits().length, equalTo(3));
-                    for (SearchHit hit : hits) {
-                        assertThat(hit.getSourceAsMap(), nullValue());
-                        assertThat(hit.getId(), nullValue());
-                    }
-                }
-            }
+            )
         );
     }
 
@@ -1203,66 +1182,62 @@ public class TopHitsIT extends ESIntegTestCase {
 
     public void testWithRescore() {
         // Rescore with default sort on relevancy (score)
-        assertNoFailuresAndResponse(
-            prepareSearch("idx").addRescorer(new QueryRescorerBuilder(new MatchAllQueryBuilder().boost(3.0f)))
-                .addAggregation(terms("terms").field(TERMS_AGGS_FIELD).subAggregation(topHits("hits"))),
-            response -> {
-                Terms terms = response.getAggregations().get("terms");
-                for (Terms.Bucket bucket : terms.getBuckets()) {
-                    TopHits topHits = bucket.getAggregations().get("hits");
-                    for (SearchHit hit : topHits.getHits().getHits()) {
-                        assertThat(hit.getScore(), equalTo(4.0f));
-                    }
+        assertNoFailuresAndResponse(response -> {
+            Terms terms = response.getAggregations().get("terms");
+            for (Terms.Bucket bucket : terms.getBuckets()) {
+                TopHits topHits = bucket.getAggregations().get("hits");
+                for (SearchHit hit : topHits.getHits().getHits()) {
+                    assertThat(hit.getScore(), equalTo(4.0f));
                 }
             }
+        },
+            prepareSearch("idx").addRescorer(new QueryRescorerBuilder(new MatchAllQueryBuilder().boost(3.0f)))
+                .addAggregation(terms("terms").field(TERMS_AGGS_FIELD).subAggregation(topHits("hits")))
         );
 
-        assertNoFailuresAndResponse(
-            prepareSearch("idx").addRescorer(new QueryRescorerBuilder(new MatchAllQueryBuilder().boost(3.0f)))
-                .addAggregation(terms("terms").field(TERMS_AGGS_FIELD).subAggregation(topHits("hits").sort(SortBuilders.scoreSort()))),
-            response -> {
-                Terms terms = response.getAggregations().get("terms");
-                for (Terms.Bucket bucket : terms.getBuckets()) {
-                    TopHits topHits = bucket.getAggregations().get("hits");
-                    for (SearchHit hit : topHits.getHits().getHits()) {
-                        assertThat(hit.getScore(), equalTo(4.0f));
-                    }
+        assertNoFailuresAndResponse(response -> {
+            Terms terms = response.getAggregations().get("terms");
+            for (Terms.Bucket bucket : terms.getBuckets()) {
+                TopHits topHits = bucket.getAggregations().get("hits");
+                for (SearchHit hit : topHits.getHits().getHits()) {
+                    assertThat(hit.getScore(), equalTo(4.0f));
                 }
             }
+        },
+            prepareSearch("idx").addRescorer(new QueryRescorerBuilder(new MatchAllQueryBuilder().boost(3.0f)))
+                .addAggregation(terms("terms").field(TERMS_AGGS_FIELD).subAggregation(topHits("hits").sort(SortBuilders.scoreSort())))
         );
 
         // Rescore should not be applied if the sort order is not relevancy
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Terms terms = response.getAggregations().get("terms");
+            for (Terms.Bucket bucket : terms.getBuckets()) {
+                TopHits topHits = bucket.getAggregations().get("hits");
+                for (SearchHit hit : topHits.getHits().getHits()) {
+                    assertThat(hit.getScore(), equalTo(Float.NaN));
+                }
+            }
+        },
             prepareSearch("idx").addRescorer(new QueryRescorerBuilder(new MatchAllQueryBuilder().boost(3.0f)))
                 .addAggregation(
                     terms("terms").field(TERMS_AGGS_FIELD).subAggregation(topHits("hits").sort(SortBuilders.fieldSort("_index")))
-                ),
-            response -> {
-                Terms terms = response.getAggregations().get("terms");
-                for (Terms.Bucket bucket : terms.getBuckets()) {
-                    TopHits topHits = bucket.getAggregations().get("hits");
-                    for (SearchHit hit : topHits.getHits().getHits()) {
-                        assertThat(hit.getScore(), equalTo(Float.NaN));
-                    }
-                }
-            }
+                )
         );
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Terms terms = response.getAggregations().get("terms");
+            for (Terms.Bucket bucket : terms.getBuckets()) {
+                TopHits topHits = bucket.getAggregations().get("hits");
+                for (SearchHit hit : topHits.getHits().getHits()) {
+                    assertThat(hit.getScore(), equalTo(Float.NaN));
+                }
+            }
+        },
             prepareSearch("idx").addRescorer(new QueryRescorerBuilder(new MatchAllQueryBuilder().boost(3.0f)))
                 .addAggregation(
                     terms("terms").field(TERMS_AGGS_FIELD)
                         .subAggregation(topHits("hits").sort(SortBuilders.scoreSort()).sort(SortBuilders.fieldSort("_index")))
-                ),
-            response -> {
-                Terms terms = response.getAggregations().get("terms");
-                for (Terms.Bucket bucket : terms.getBuckets()) {
-                    TopHits topHits = bucket.getAggregations().get("hits");
-                    for (SearchHit hit : topHits.getHits().getHits()) {
-                        assertThat(hit.getScore(), equalTo(Float.NaN));
-                    }
-                }
-            }
+                )
         );
     }
 

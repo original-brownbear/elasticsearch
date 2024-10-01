@@ -40,61 +40,58 @@ public class DuelScrollIT extends ESIntegTestCase {
     public void testDuelQueryThenFetch() throws Exception {
         TestContext context = create(SearchType.DFS_QUERY_THEN_FETCH, SearchType.QUERY_THEN_FETCH);
 
-        assertNoFailuresAndResponse(
-            prepareSearch("index").setSearchType(context.searchType).addSort(context.sort).setSize(context.numDocs),
-            control -> {
-                SearchHits sh = control.getHits();
-                assertThat(sh.getTotalHits().value, equalTo((long) context.numDocs));
-                assertThat(sh.getHits().length, equalTo(context.numDocs));
+        assertNoFailuresAndResponse(control -> {
+            SearchHits sh = control.getHits();
+            assertThat(sh.getTotalHits().value, equalTo((long) context.numDocs));
+            assertThat(sh.getHits().length, equalTo(context.numDocs));
 
-                SearchResponse searchScrollResponse = prepareSearch("index").setSearchType(context.searchType)
-                    .addSort(context.sort)
-                    .setSize(context.scrollRequestSize)
-                    .setScroll(TimeValue.timeValueMinutes(10))
-                    .get();
-                try {
+            SearchResponse searchScrollResponse = prepareSearch("index").setSearchType(context.searchType)
+                .addSort(context.sort)
+                .setSize(context.scrollRequestSize)
+                .setScroll(TimeValue.timeValueMinutes(10))
+                .get();
+            try {
 
+                assertNoFailures(searchScrollResponse);
+                assertThat(searchScrollResponse.getHits().getTotalHits().value, equalTo((long) context.numDocs));
+                assertThat(searchScrollResponse.getHits().getHits().length, equalTo(context.scrollRequestSize));
+
+                int counter = 0;
+                for (SearchHit hit : searchScrollResponse.getHits()) {
+                    assertThat(hit.getSortValues()[0], equalTo(sh.getAt(counter++).getSortValues()[0]));
+                }
+
+                int iter = 1;
+                String scrollId = searchScrollResponse.getScrollId();
+                while (true) {
+                    searchScrollResponse.decRef();
+                    searchScrollResponse = client().prepareSearchScroll(scrollId).setScroll(TimeValue.timeValueMinutes(10)).get();
                     assertNoFailures(searchScrollResponse);
                     assertThat(searchScrollResponse.getHits().getTotalHits().value, equalTo((long) context.numDocs));
-                    assertThat(searchScrollResponse.getHits().getHits().length, equalTo(context.scrollRequestSize));
+                    if (searchScrollResponse.getHits().getHits().length == 0) {
+                        break;
+                    }
 
-                    int counter = 0;
+                    int expectedLength;
+                    int scrollSlice = ++iter * context.scrollRequestSize;
+                    if (scrollSlice <= context.numDocs) {
+                        expectedLength = context.scrollRequestSize;
+                    } else {
+                        expectedLength = context.scrollRequestSize - (scrollSlice - context.numDocs);
+                    }
+                    assertThat(searchScrollResponse.getHits().getHits().length, equalTo(expectedLength));
                     for (SearchHit hit : searchScrollResponse.getHits()) {
                         assertThat(hit.getSortValues()[0], equalTo(sh.getAt(counter++).getSortValues()[0]));
                     }
-
-                    int iter = 1;
-                    String scrollId = searchScrollResponse.getScrollId();
-                    while (true) {
-                        searchScrollResponse.decRef();
-                        searchScrollResponse = client().prepareSearchScroll(scrollId).setScroll(TimeValue.timeValueMinutes(10)).get();
-                        assertNoFailures(searchScrollResponse);
-                        assertThat(searchScrollResponse.getHits().getTotalHits().value, equalTo((long) context.numDocs));
-                        if (searchScrollResponse.getHits().getHits().length == 0) {
-                            break;
-                        }
-
-                        int expectedLength;
-                        int scrollSlice = ++iter * context.scrollRequestSize;
-                        if (scrollSlice <= context.numDocs) {
-                            expectedLength = context.scrollRequestSize;
-                        } else {
-                            expectedLength = context.scrollRequestSize - (scrollSlice - context.numDocs);
-                        }
-                        assertThat(searchScrollResponse.getHits().getHits().length, equalTo(expectedLength));
-                        for (SearchHit hit : searchScrollResponse.getHits()) {
-                            assertThat(hit.getSortValues()[0], equalTo(sh.getAt(counter++).getSortValues()[0]));
-                        }
-                        scrollId = searchScrollResponse.getScrollId();
-                    }
-
-                    assertThat(counter, equalTo(context.numDocs));
-                    clearScroll(scrollId);
-                } finally {
-                    searchScrollResponse.decRef();
+                    scrollId = searchScrollResponse.getScrollId();
                 }
+
+                assertThat(counter, equalTo(context.numDocs));
+                clearScroll(scrollId);
+            } finally {
+                searchScrollResponse.decRef();
             }
-        );
+        }, prepareSearch("index").setSearchType(context.searchType).addSort(context.sort).setSize(context.numDocs));
     }
 
     private TestContext create(SearchType... searchTypes) throws Exception {
@@ -221,50 +218,49 @@ public class DuelScrollIT extends ESIntegTestCase {
 
     private void testDuelIndexOrder(SearchType searchType, boolean trackScores, int numDocs) throws Exception {
         final int size = scaledRandomIntBetween(5, numDocs + 5);
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(control -> {
+
+            SearchResponse scroll = prepareSearch("test").setSearchType(searchType)
+                .setSize(size)
+                .setQuery(QueryBuilders.matchQuery("foo", "true"))
+                .addSort(SortBuilders.fieldSort("_doc"))
+                .setTrackScores(trackScores)
+                .setScroll(TimeValue.timeValueMinutes(10))
+                .get();
+
+            int scrollDocs = 0;
+            try {
+                while (true) {
+                    assertNoFailures(scroll);
+                    assertEquals(control.getHits().getTotalHits().value, scroll.getHits().getTotalHits().value);
+                    assertEquals(control.getHits().getMaxScore(), scroll.getHits().getMaxScore(), 0.01f);
+                    if (scroll.getHits().getHits().length == 0) {
+                        break;
+                    }
+                    for (int i = 0; i < scroll.getHits().getHits().length; ++i) {
+                        SearchHit controlHit = control.getHits().getAt(scrollDocs + i);
+                        SearchHit scrollHit = scroll.getHits().getAt(i);
+                        assertEquals(controlHit.getId(), scrollHit.getId());
+                    }
+                    scrollDocs += scroll.getHits().getHits().length;
+                    scroll.decRef();
+                    scroll = client().prepareSearchScroll(scroll.getScrollId()).setScroll(TimeValue.timeValueMinutes(10)).get();
+                }
+                assertEquals(control.getHits().getTotalHits().value, scrollDocs);
+            } catch (AssertionError e) {
+                logger.info("Control:\n{}", control);
+                logger.info("Scroll size={}, from={}:\n{}", size, scrollDocs, scroll);
+                throw e;
+            } finally {
+                clearScroll(scroll.getScrollId());
+                scroll.decRef();
+            }
+        },
             prepareSearch("test").setSearchType(searchType)
                 .setSize(numDocs)
                 .setQuery(QueryBuilders.matchQuery("foo", "true"))
                 .addSort(SortBuilders.fieldSort("_doc"))
-                .setTrackScores(trackScores),
-            control -> {
-
-                SearchResponse scroll = prepareSearch("test").setSearchType(searchType)
-                    .setSize(size)
-                    .setQuery(QueryBuilders.matchQuery("foo", "true"))
-                    .addSort(SortBuilders.fieldSort("_doc"))
-                    .setTrackScores(trackScores)
-                    .setScroll(TimeValue.timeValueMinutes(10))
-                    .get();
-
-                int scrollDocs = 0;
-                try {
-                    while (true) {
-                        assertNoFailures(scroll);
-                        assertEquals(control.getHits().getTotalHits().value, scroll.getHits().getTotalHits().value);
-                        assertEquals(control.getHits().getMaxScore(), scroll.getHits().getMaxScore(), 0.01f);
-                        if (scroll.getHits().getHits().length == 0) {
-                            break;
-                        }
-                        for (int i = 0; i < scroll.getHits().getHits().length; ++i) {
-                            SearchHit controlHit = control.getHits().getAt(scrollDocs + i);
-                            SearchHit scrollHit = scroll.getHits().getAt(i);
-                            assertEquals(controlHit.getId(), scrollHit.getId());
-                        }
-                        scrollDocs += scroll.getHits().getHits().length;
-                        scroll.decRef();
-                        scroll = client().prepareSearchScroll(scroll.getScrollId()).setScroll(TimeValue.timeValueMinutes(10)).get();
-                    }
-                    assertEquals(control.getHits().getTotalHits().value, scrollDocs);
-                } catch (AssertionError e) {
-                    logger.info("Control:\n{}", control);
-                    logger.info("Scroll size={}, from={}:\n{}", size, scrollDocs, scroll);
-                    throw e;
-                } finally {
-                    clearScroll(scroll.getScrollId());
-                    scroll.decRef();
-                }
-            }
+                .setTrackScores(trackScores)
         );
     }
 

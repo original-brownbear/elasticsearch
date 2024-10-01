@@ -47,9 +47,9 @@ public class CustomHighlighterSearchIT extends ESIntegTestCase {
 
     public void testThatCustomHighlightersAreSupported() throws IOException {
         assertResponse(
+            response -> assertHighlight(response, 0, "name", 0, equalTo("standard response for name at position 1")),
             prepareSearch("test").setQuery(QueryBuilders.matchAllQuery())
-                .highlighter(new HighlightBuilder().field("name").highlighterType("test-custom")),
-            response -> assertHighlight(response, 0, "name", 0, equalTo("standard response for name at position 1"))
+                .highlighter(new HighlightBuilder().field("name").highlighterType("test-custom"))
         );
     }
 
@@ -60,31 +60,34 @@ public class CustomHighlighterSearchIT extends ESIntegTestCase {
         options.put("myFieldOption", "someValue");
         highlightConfig.options(options);
 
-        assertResponse(
-            prepareSearch("test").setQuery(QueryBuilders.matchAllQuery()).highlighter(new HighlightBuilder().field(highlightConfig)),
-            response -> {
-                assertHighlight(response, 0, "name", 0, equalTo("standard response for name at position 1"));
-                assertHighlight(response, 0, "name", 1, equalTo("field:myFieldOption:someValue"));
-            }
-        );
+        assertResponse(response -> {
+            assertHighlight(response, 0, "name", 0, equalTo("standard response for name at position 1"));
+            assertHighlight(response, 0, "name", 1, equalTo("field:myFieldOption:someValue"));
+        }, prepareSearch("test").setQuery(QueryBuilders.matchAllQuery()).highlighter(new HighlightBuilder().field(highlightConfig)));
     }
 
     public void testThatCustomHighlighterCanBeConfiguredGlobally() throws Exception {
         Map<String, Object> options = new HashMap<>();
         options.put("myGlobalOption", "someValue");
 
-        assertResponse(
+        assertResponse(response -> {
+            assertHighlight(response, 0, "name", 0, equalTo("standard response for name at position 1"));
+            assertHighlight(response, 0, "name", 1, equalTo("field:myGlobalOption:someValue"));
+        },
             prepareSearch("test").setQuery(QueryBuilders.matchAllQuery())
-                .highlighter(new HighlightBuilder().field("name").highlighterType("test-custom").options(options)),
-            response -> {
-                assertHighlight(response, 0, "name", 0, equalTo("standard response for name at position 1"));
-                assertHighlight(response, 0, "name", 1, equalTo("field:myGlobalOption:someValue"));
-            }
+                .highlighter(new HighlightBuilder().field("name").highlighterType("test-custom").options(options))
         );
     }
 
     public void testThatCustomHighlighterReceivesFieldsInOrder() throws Exception {
-        assertResponse(
+        assertResponse(response -> {
+            assertHighlight(response, 0, "name", 0, equalTo("standard response for name at position 1"));
+            assertHighlight(response, 0, "other_name", 0, equalTo("standard response for other_name at position 2"));
+            assertHighlight(response, 0, "other_other_name", 0, equalTo("standard response for other_other_name at position 3"));
+            assertHighlight(response, 1, "name", 0, equalTo("standard response for name at position 1"));
+            assertHighlight(response, 1, "other_name", 0, equalTo("standard response for other_name at position 2"));
+            assertHighlight(response, 1, "other_other_name", 0, equalTo("standard response for other_other_name at position 3"));
+        },
             prepareSearch("test").setQuery(
                 QueryBuilders.boolQuery().must(QueryBuilders.matchAllQuery()).should(QueryBuilders.termQuery("name", "arbitrary"))
             )
@@ -94,15 +97,7 @@ public class CustomHighlighterSearchIT extends ESIntegTestCase {
                         .field("other_name")
                         .field("other_other_name")
                         .useExplicitFieldOrder(true)
-                ),
-            response -> {
-                assertHighlight(response, 0, "name", 0, equalTo("standard response for name at position 1"));
-                assertHighlight(response, 0, "other_name", 0, equalTo("standard response for other_name at position 2"));
-                assertHighlight(response, 0, "other_other_name", 0, equalTo("standard response for other_other_name at position 3"));
-                assertHighlight(response, 1, "name", 0, equalTo("standard response for name at position 1"));
-                assertHighlight(response, 1, "other_name", 0, equalTo("standard response for other_name at position 2"));
-                assertHighlight(response, 1, "other_other_name", 0, equalTo("standard response for other_other_name at position 3"));
-            }
+                )
         );
     }
 }

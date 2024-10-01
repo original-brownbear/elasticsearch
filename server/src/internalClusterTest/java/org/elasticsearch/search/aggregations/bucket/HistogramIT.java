@@ -242,52 +242,46 @@ public class HistogramIT extends ESIntegTestCase {
     }
 
     public void testSingleValuedField() throws Exception {
-        assertNoFailuresAndResponse(
-            prepareSearch("idx").addAggregation(histogram("histo").field(SINGLE_VALUED_FIELD_NAME).interval(interval)),
-            response -> {
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                assertThat(histo.getName(), equalTo("histo"));
-                List<? extends Bucket> buckets = histo.getBuckets();
-                assertThat(buckets.size(), equalTo(numValueBuckets));
+        assertNoFailuresAndResponse(response -> {
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            assertThat(histo.getName(), equalTo("histo"));
+            List<? extends Bucket> buckets = histo.getBuckets();
+            assertThat(buckets.size(), equalTo(numValueBuckets));
 
-                for (int i = 0; i < numValueBuckets; ++i) {
-                    Bucket bucket = buckets.get(i);
-                    assertThat(bucket, notNullValue());
-                    assertThat(((Number) bucket.getKey()).longValue(), equalTo((long) i * interval));
-                    assertThat(bucket.getDocCount(), equalTo(valueCounts[i]));
-                }
+            for (int i = 0; i < numValueBuckets; ++i) {
+                Bucket bucket = buckets.get(i);
+                assertThat(bucket, notNullValue());
+                assertThat(((Number) bucket.getKey()).longValue(), equalTo((long) i * interval));
+                assertThat(bucket.getDocCount(), equalTo(valueCounts[i]));
             }
-        );
+        }, prepareSearch("idx").addAggregation(histogram("histo").field(SINGLE_VALUED_FIELD_NAME).interval(interval)));
     }
 
     public void singleValuedField_withOffset() throws Exception {
         int interval1 = 10;
         int offset = 5;
-        assertNoFailuresAndResponse(
-            prepareSearch("idx").addAggregation(histogram("histo").field(SINGLE_VALUED_FIELD_NAME).interval(interval1).offset(offset)),
-            response -> {
+        assertNoFailuresAndResponse(response -> {
 
-                // from setup we have between 6 and 20 documents, each with value 1 in test field
-                int expectedNumberOfBuckets = (offset >= (numDocs % interval + 1)) ? numValueBuckets : numValueBuckets + 1;
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                assertThat(histo.getName(), equalTo("histo"));
-                assertThat(histo.getBuckets().size(), equalTo(expectedNumberOfBuckets));
+            // from setup we have between 6 and 20 documents, each with value 1 in test field
+            int expectedNumberOfBuckets = (offset >= (numDocs % interval + 1)) ? numValueBuckets : numValueBuckets + 1;
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            assertThat(histo.getName(), equalTo("histo"));
+            assertThat(histo.getBuckets().size(), equalTo(expectedNumberOfBuckets));
 
-                // first bucket should start at -5, contain 4 documents
-                Bucket bucket = histo.getBuckets().get(0);
-                assertThat(bucket, notNullValue());
-                assertThat(((Number) bucket.getKey()).longValue(), equalTo(-5L));
-                assertThat(bucket.getDocCount(), equalTo(4L));
+            // first bucket should start at -5, contain 4 documents
+            Bucket bucket = histo.getBuckets().get(0);
+            assertThat(bucket, notNullValue());
+            assertThat(((Number) bucket.getKey()).longValue(), equalTo(-5L));
+            assertThat(bucket.getDocCount(), equalTo(4L));
 
-                // last bucket should have (numDocs % interval + 1) docs
-                bucket = histo.getBuckets().get(0);
-                assertThat(bucket, notNullValue());
-                assertThat(((Number) bucket.getKey()).longValue(), equalTo(numDocs % interval1 + 5L));
-                assertThat(bucket.getDocCount(), equalTo((numDocs % interval) + 1L));
-            }
-        );
+            // last bucket should have (numDocs % interval + 1) docs
+            bucket = histo.getBuckets().get(0);
+            assertThat(bucket, notNullValue());
+            assertThat(((Number) bucket.getKey()).longValue(), equalTo(numDocs % interval1 + 5L));
+            assertThat(bucket.getDocCount(), equalTo((numDocs % interval) + 1L));
+        }, prepareSearch("idx").addAggregation(histogram("histo").field(SINGLE_VALUED_FIELD_NAME).interval(interval1).offset(offset)));
     }
 
     /**
@@ -296,364 +290,351 @@ public class HistogramIT extends ESIntegTestCase {
      */
     public void testSingleValuedFieldWithRandomOffset() throws Exception {
         int offset = randomIntBetween(2, interval);
-        assertNoFailuresAndResponse(
-            prepareSearch("idx").addAggregation(histogram("histo").field(SINGLE_VALUED_FIELD_NAME).interval(interval).offset(offset)),
-            response -> {
-                // shifting by offset>2 creates new extra bucket [0,offset-1]
-                // if offset is >= number of values in original last bucket, that effect is canceled
-                int expectedNumberOfBuckets = (offset >= (numDocs % interval + 1)) ? numValueBuckets : numValueBuckets + 1;
+        assertNoFailuresAndResponse(response -> {
+            // shifting by offset>2 creates new extra bucket [0,offset-1]
+            // if offset is >= number of values in original last bucket, that effect is canceled
+            int expectedNumberOfBuckets = (offset >= (numDocs % interval + 1)) ? numValueBuckets : numValueBuckets + 1;
 
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                assertThat(histo.getName(), equalTo("histo"));
-                assertThat(histo.getBuckets().size(), equalTo(expectedNumberOfBuckets));
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            assertThat(histo.getName(), equalTo("histo"));
+            assertThat(histo.getBuckets().size(), equalTo(expectedNumberOfBuckets));
 
-                long docsCounted = 0;
-                for (int i = 0; i < expectedNumberOfBuckets; ++i) {
-                    Bucket bucket = histo.getBuckets().get(i);
-                    assertThat(bucket, notNullValue());
-                    assertThat(((Number) bucket.getKey()).longValue(), equalTo((long) ((i - 1) * interval + offset)));
-                    if (i == 0) {
-                        // first bucket
-                        long expectedFirstBucketCount = offset - 1;
-                        assertThat(bucket.getDocCount(), equalTo(expectedFirstBucketCount));
-                        docsCounted += expectedFirstBucketCount;
-                    } else if (i < expectedNumberOfBuckets - 1) {
-                        assertThat(bucket.getDocCount(), equalTo((long) interval));
-                        docsCounted += interval;
-                    } else {
-                        assertThat(bucket.getDocCount(), equalTo((long) numDocs - docsCounted));
-                    }
+            long docsCounted = 0;
+            for (int i = 0; i < expectedNumberOfBuckets; ++i) {
+                Bucket bucket = histo.getBuckets().get(i);
+                assertThat(bucket, notNullValue());
+                assertThat(((Number) bucket.getKey()).longValue(), equalTo((long) ((i - 1) * interval + offset)));
+                if (i == 0) {
+                    // first bucket
+                    long expectedFirstBucketCount = offset - 1;
+                    assertThat(bucket.getDocCount(), equalTo(expectedFirstBucketCount));
+                    docsCounted += expectedFirstBucketCount;
+                } else if (i < expectedNumberOfBuckets - 1) {
+                    assertThat(bucket.getDocCount(), equalTo((long) interval));
+                    docsCounted += interval;
+                } else {
+                    assertThat(bucket.getDocCount(), equalTo((long) numDocs - docsCounted));
                 }
             }
-        );
+        }, prepareSearch("idx").addAggregation(histogram("histo").field(SINGLE_VALUED_FIELD_NAME).interval(interval).offset(offset)));
     }
 
     public void testSingleValuedFieldOrderedByKeyAsc() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            assertThat(histo.getName(), equalTo("histo"));
+            assertThat(histo.getBuckets().size(), equalTo(numValueBuckets));
+
+            List<Bucket> buckets = new ArrayList<>(histo.getBuckets());
+            for (int i = 0; i < numValueBuckets; ++i) {
+                Bucket bucket = buckets.get(i);
+                assertThat(bucket, notNullValue());
+                assertThat(((Number) bucket.getKey()).longValue(), equalTo((long) i * interval));
+                assertThat(bucket.getDocCount(), equalTo(valueCounts[i]));
+            }
+        },
             prepareSearch("idx").addAggregation(
                 histogram("histo").field(SINGLE_VALUED_FIELD_NAME).interval(interval).order(BucketOrder.key(true))
-            ),
-            response -> {
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                assertThat(histo.getName(), equalTo("histo"));
-                assertThat(histo.getBuckets().size(), equalTo(numValueBuckets));
-
-                List<Bucket> buckets = new ArrayList<>(histo.getBuckets());
-                for (int i = 0; i < numValueBuckets; ++i) {
-                    Bucket bucket = buckets.get(i);
-                    assertThat(bucket, notNullValue());
-                    assertThat(((Number) bucket.getKey()).longValue(), equalTo((long) i * interval));
-                    assertThat(bucket.getDocCount(), equalTo(valueCounts[i]));
-                }
-            }
+            )
         );
     }
 
     public void testsingleValuedFieldOrderedByKeyDesc() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            assertThat(histo.getName(), equalTo("histo"));
+            assertThat(histo.getBuckets().size(), equalTo(numValueBuckets));
+
+            List<Bucket> buckets = new ArrayList<>(histo.getBuckets());
+            for (int i = 0; i < numValueBuckets; ++i) {
+                Bucket bucket = buckets.get(numValueBuckets - i - 1);
+                assertThat(bucket, notNullValue());
+                assertThat(((Number) bucket.getKey()).longValue(), equalTo((long) i * interval));
+                assertThat(bucket.getDocCount(), equalTo(valueCounts[i]));
+            }
+        },
             prepareSearch("idx").addAggregation(
                 histogram("histo").field(SINGLE_VALUED_FIELD_NAME).interval(interval).order(BucketOrder.key(false))
-            ),
-            response -> {
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                assertThat(histo.getName(), equalTo("histo"));
-                assertThat(histo.getBuckets().size(), equalTo(numValueBuckets));
-
-                List<Bucket> buckets = new ArrayList<>(histo.getBuckets());
-                for (int i = 0; i < numValueBuckets; ++i) {
-                    Bucket bucket = buckets.get(numValueBuckets - i - 1);
-                    assertThat(bucket, notNullValue());
-                    assertThat(((Number) bucket.getKey()).longValue(), equalTo((long) i * interval));
-                    assertThat(bucket.getDocCount(), equalTo(valueCounts[i]));
-                }
-            }
+            )
         );
     }
 
     public void testSingleValuedFieldOrderedByCountAsc() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            assertThat(histo.getName(), equalTo("histo"));
+            assertThat(histo.getBuckets().size(), equalTo(numValueBuckets));
+
+            Set<Long> buckets = new HashSet<>();
+            List<Bucket> histoBuckets = new ArrayList<>(histo.getBuckets());
+            long previousCount = Long.MIN_VALUE;
+            for (int i = 0; i < numValueBuckets; ++i) {
+                Bucket bucket = histoBuckets.get(i);
+                assertThat(bucket, notNullValue());
+                long key = ((Number) bucket.getKey()).longValue();
+                assertEquals(0, key % interval);
+                assertTrue(buckets.add(key));
+                assertThat(bucket.getDocCount(), equalTo(valueCounts[(int) (key / interval)]));
+                assertThat(bucket.getDocCount(), greaterThanOrEqualTo(previousCount));
+                previousCount = bucket.getDocCount();
+            }
+        },
             prepareSearch("idx").addAggregation(
                 histogram("histo").field(SINGLE_VALUED_FIELD_NAME).interval(interval).order(BucketOrder.count(true))
-            ),
-            response -> {
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                assertThat(histo.getName(), equalTo("histo"));
-                assertThat(histo.getBuckets().size(), equalTo(numValueBuckets));
-
-                Set<Long> buckets = new HashSet<>();
-                List<Bucket> histoBuckets = new ArrayList<>(histo.getBuckets());
-                long previousCount = Long.MIN_VALUE;
-                for (int i = 0; i < numValueBuckets; ++i) {
-                    Bucket bucket = histoBuckets.get(i);
-                    assertThat(bucket, notNullValue());
-                    long key = ((Number) bucket.getKey()).longValue();
-                    assertEquals(0, key % interval);
-                    assertTrue(buckets.add(key));
-                    assertThat(bucket.getDocCount(), equalTo(valueCounts[(int) (key / interval)]));
-                    assertThat(bucket.getDocCount(), greaterThanOrEqualTo(previousCount));
-                    previousCount = bucket.getDocCount();
-                }
-            }
+            )
         );
     }
 
     public void testSingleValuedFieldOrderedByCountDesc() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            assertThat(histo.getName(), equalTo("histo"));
+            assertThat(histo.getBuckets().size(), equalTo(numValueBuckets));
+
+            Set<Long> buckets = new HashSet<>();
+            List<Bucket> histoBuckets = new ArrayList<>(histo.getBuckets());
+            long previousCount = Long.MAX_VALUE;
+            for (int i = 0; i < numValueBuckets; ++i) {
+                Bucket bucket = histoBuckets.get(i);
+                assertThat(bucket, notNullValue());
+                long key = ((Number) bucket.getKey()).longValue();
+                assertEquals(0, key % interval);
+                assertTrue(buckets.add(key));
+                assertThat(bucket.getDocCount(), equalTo(valueCounts[(int) (key / interval)]));
+                assertThat(bucket.getDocCount(), lessThanOrEqualTo(previousCount));
+                previousCount = bucket.getDocCount();
+            }
+        },
             prepareSearch("idx").addAggregation(
                 histogram("histo").field(SINGLE_VALUED_FIELD_NAME).interval(interval).order(BucketOrder.count(false))
-            ),
-            response -> {
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                assertThat(histo.getName(), equalTo("histo"));
-                assertThat(histo.getBuckets().size(), equalTo(numValueBuckets));
-
-                Set<Long> buckets = new HashSet<>();
-                List<Bucket> histoBuckets = new ArrayList<>(histo.getBuckets());
-                long previousCount = Long.MAX_VALUE;
-                for (int i = 0; i < numValueBuckets; ++i) {
-                    Bucket bucket = histoBuckets.get(i);
-                    assertThat(bucket, notNullValue());
-                    long key = ((Number) bucket.getKey()).longValue();
-                    assertEquals(0, key % interval);
-                    assertTrue(buckets.add(key));
-                    assertThat(bucket.getDocCount(), equalTo(valueCounts[(int) (key / interval)]));
-                    assertThat(bucket.getDocCount(), lessThanOrEqualTo(previousCount));
-                    previousCount = bucket.getDocCount();
-                }
-            }
+            )
         );
     }
 
     public void testSingleValuedFieldWithSubAggregation() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            assertThat(histo.getName(), equalTo("histo"));
+            assertThat(histo.getBuckets().size(), equalTo(numValueBuckets));
+            assertThat(((InternalAggregation) histo).getProperty("_bucket_count"), equalTo(numValueBuckets));
+            Object[] propertiesKeys = (Object[]) ((InternalAggregation) histo).getProperty("_key");
+            Object[] propertiesDocCounts = (Object[]) ((InternalAggregation) histo).getProperty("_count");
+            Object[] propertiesCounts = (Object[]) ((InternalAggregation) histo).getProperty("sum.value");
+
+            List<Bucket> buckets = new ArrayList<>(histo.getBuckets());
+            for (int i = 0; i < numValueBuckets; ++i) {
+                Bucket bucket = buckets.get(i);
+                assertThat(bucket, notNullValue());
+                assertThat(((Number) bucket.getKey()).longValue(), equalTo((long) i * interval));
+                assertThat(bucket.getDocCount(), equalTo(valueCounts[i]));
+                assertThat(bucket.getAggregations().asList().isEmpty(), is(false));
+                Sum sum = bucket.getAggregations().get("sum");
+                assertThat(sum, notNullValue());
+                long s = 0;
+                for (int j = 0; j < numDocs; ++j) {
+                    if ((j + 1) / interval == i) {
+                        s += j + 1;
+                    }
+                }
+                assertThat(sum.value(), equalTo((double) s));
+                assertEquals(propertiesKeys[i], (double) i * interval);
+                assertThat(propertiesDocCounts[i], equalTo(valueCounts[i]));
+                assertThat(propertiesCounts[i], equalTo((double) s));
+            }
+        },
             prepareSearch("idx").addAggregation(
                 histogram("histo").field(SINGLE_VALUED_FIELD_NAME)
                     .interval(interval)
                     .subAggregation(sum("sum").field(SINGLE_VALUED_FIELD_NAME))
-            ),
-            response -> {
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                assertThat(histo.getName(), equalTo("histo"));
-                assertThat(histo.getBuckets().size(), equalTo(numValueBuckets));
-                assertThat(((InternalAggregation) histo).getProperty("_bucket_count"), equalTo(numValueBuckets));
-                Object[] propertiesKeys = (Object[]) ((InternalAggregation) histo).getProperty("_key");
-                Object[] propertiesDocCounts = (Object[]) ((InternalAggregation) histo).getProperty("_count");
-                Object[] propertiesCounts = (Object[]) ((InternalAggregation) histo).getProperty("sum.value");
-
-                List<Bucket> buckets = new ArrayList<>(histo.getBuckets());
-                for (int i = 0; i < numValueBuckets; ++i) {
-                    Bucket bucket = buckets.get(i);
-                    assertThat(bucket, notNullValue());
-                    assertThat(((Number) bucket.getKey()).longValue(), equalTo((long) i * interval));
-                    assertThat(bucket.getDocCount(), equalTo(valueCounts[i]));
-                    assertThat(bucket.getAggregations().asList().isEmpty(), is(false));
-                    Sum sum = bucket.getAggregations().get("sum");
-                    assertThat(sum, notNullValue());
-                    long s = 0;
-                    for (int j = 0; j < numDocs; ++j) {
-                        if ((j + 1) / interval == i) {
-                            s += j + 1;
-                        }
-                    }
-                    assertThat(sum.value(), equalTo((double) s));
-                    assertEquals(propertiesKeys[i], (double) i * interval);
-                    assertThat(propertiesDocCounts[i], equalTo(valueCounts[i]));
-                    assertThat(propertiesCounts[i], equalTo((double) s));
-                }
-            }
+            )
         );
     }
 
     public void testSingleValuedFieldOrderedBySubAggregationAsc() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            assertThat(histo.getName(), equalTo("histo"));
+            assertThat(histo.getBuckets().size(), equalTo(numValueBuckets));
+
+            Set<Long> visited = new HashSet<>();
+            double previousSum = Double.NEGATIVE_INFINITY;
+            List<Bucket> buckets = new ArrayList<>(histo.getBuckets());
+            for (int i = 0; i < numValueBuckets; ++i) {
+                Bucket bucket = buckets.get(i);
+                assertThat(bucket, notNullValue());
+                long key = ((Number) bucket.getKey()).longValue();
+                assertTrue(visited.add(key));
+                int b = (int) (key / interval);
+                assertThat(bucket.getDocCount(), equalTo(valueCounts[b]));
+                assertThat(bucket.getAggregations().asList().isEmpty(), is(false));
+                Sum sum = bucket.getAggregations().get("sum");
+                assertThat(sum, notNullValue());
+                long s = 0;
+                for (int j = 0; j < numDocs; ++j) {
+                    if ((j + 1) / interval == b) {
+                        s += j + 1;
+                    }
+                }
+                assertThat(sum.value(), equalTo((double) s));
+                assertThat(sum.value(), greaterThanOrEqualTo(previousSum));
+                previousSum = s;
+            }
+        },
             prepareSearch("idx").addAggregation(
                 histogram("histo").field(SINGLE_VALUED_FIELD_NAME)
                     .interval(interval)
                     .order(BucketOrder.aggregation("sum", true))
                     .subAggregation(sum("sum").field(SINGLE_VALUED_FIELD_NAME))
-            ),
-            response -> {
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                assertThat(histo.getName(), equalTo("histo"));
-                assertThat(histo.getBuckets().size(), equalTo(numValueBuckets));
-
-                Set<Long> visited = new HashSet<>();
-                double previousSum = Double.NEGATIVE_INFINITY;
-                List<Bucket> buckets = new ArrayList<>(histo.getBuckets());
-                for (int i = 0; i < numValueBuckets; ++i) {
-                    Bucket bucket = buckets.get(i);
-                    assertThat(bucket, notNullValue());
-                    long key = ((Number) bucket.getKey()).longValue();
-                    assertTrue(visited.add(key));
-                    int b = (int) (key / interval);
-                    assertThat(bucket.getDocCount(), equalTo(valueCounts[b]));
-                    assertThat(bucket.getAggregations().asList().isEmpty(), is(false));
-                    Sum sum = bucket.getAggregations().get("sum");
-                    assertThat(sum, notNullValue());
-                    long s = 0;
-                    for (int j = 0; j < numDocs; ++j) {
-                        if ((j + 1) / interval == b) {
-                            s += j + 1;
-                        }
-                    }
-                    assertThat(sum.value(), equalTo((double) s));
-                    assertThat(sum.value(), greaterThanOrEqualTo(previousSum));
-                    previousSum = s;
-                }
-            }
+            )
         );
     }
 
     public void testSingleValuedFieldOrderedBySubAggregationDesc() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            assertThat(histo.getName(), equalTo("histo"));
+            assertThat(histo.getBuckets().size(), equalTo(numValueBuckets));
+
+            Set<Long> visited = new HashSet<>();
+            double previousSum = Double.POSITIVE_INFINITY;
+            List<Bucket> buckets = new ArrayList<>(histo.getBuckets());
+            for (int i = 0; i < numValueBuckets; ++i) {
+                Bucket bucket = buckets.get(i);
+                assertThat(bucket, notNullValue());
+                long key = ((Number) bucket.getKey()).longValue();
+                assertTrue(visited.add(key));
+                int b = (int) (key / interval);
+                assertThat(bucket.getDocCount(), equalTo(valueCounts[b]));
+                assertThat(bucket.getAggregations().asList().isEmpty(), is(false));
+                Sum sum = bucket.getAggregations().get("sum");
+                assertThat(sum, notNullValue());
+                long s = 0;
+                for (int j = 0; j < numDocs; ++j) {
+                    if ((j + 1) / interval == b) {
+                        s += j + 1;
+                    }
+                }
+                assertThat(sum.value(), equalTo((double) s));
+                assertThat(sum.value(), lessThanOrEqualTo(previousSum));
+                previousSum = s;
+            }
+        },
             prepareSearch("idx").addAggregation(
                 histogram("histo").field(SINGLE_VALUED_FIELD_NAME)
                     .interval(interval)
                     .order(BucketOrder.aggregation("sum", false))
                     .subAggregation(sum("sum").field(SINGLE_VALUED_FIELD_NAME))
-            ),
-            response -> {
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                assertThat(histo.getName(), equalTo("histo"));
-                assertThat(histo.getBuckets().size(), equalTo(numValueBuckets));
-
-                Set<Long> visited = new HashSet<>();
-                double previousSum = Double.POSITIVE_INFINITY;
-                List<Bucket> buckets = new ArrayList<>(histo.getBuckets());
-                for (int i = 0; i < numValueBuckets; ++i) {
-                    Bucket bucket = buckets.get(i);
-                    assertThat(bucket, notNullValue());
-                    long key = ((Number) bucket.getKey()).longValue();
-                    assertTrue(visited.add(key));
-                    int b = (int) (key / interval);
-                    assertThat(bucket.getDocCount(), equalTo(valueCounts[b]));
-                    assertThat(bucket.getAggregations().asList().isEmpty(), is(false));
-                    Sum sum = bucket.getAggregations().get("sum");
-                    assertThat(sum, notNullValue());
-                    long s = 0;
-                    for (int j = 0; j < numDocs; ++j) {
-                        if ((j + 1) / interval == b) {
-                            s += j + 1;
-                        }
-                    }
-                    assertThat(sum.value(), equalTo((double) s));
-                    assertThat(sum.value(), lessThanOrEqualTo(previousSum));
-                    previousSum = s;
-                }
-            }
+            )
         );
     }
 
     public void testSingleValuedFieldOrderedByMultiValuedSubAggregationDesc() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            assertThat(histo.getName(), equalTo("histo"));
+            assertThat(histo.getBuckets().size(), equalTo(numValueBuckets));
+
+            Set<Long> visited = new HashSet<>();
+            double previousSum = Double.POSITIVE_INFINITY;
+
+            List<Bucket> buckets = new ArrayList<>(histo.getBuckets());
+            for (int i = 0; i < numValueBuckets; ++i) {
+                Bucket bucket = buckets.get(i);
+                assertThat(bucket, notNullValue());
+                long key = ((Number) bucket.getKey()).longValue();
+                assertTrue(visited.add(key));
+                int b = (int) (key / interval);
+                assertThat(bucket.getDocCount(), equalTo(valueCounts[b]));
+                assertThat(bucket.getAggregations().asList().isEmpty(), is(false));
+                Stats stats = bucket.getAggregations().get("stats");
+                assertThat(stats, notNullValue());
+                long s = 0;
+                for (int j = 0; j < numDocs; ++j) {
+                    if ((j + 1) / interval == b) {
+                        s += j + 1;
+                    }
+                }
+                assertThat(stats.getSum(), equalTo((double) s));
+                assertThat(stats.getSum(), lessThanOrEqualTo(previousSum));
+                previousSum = s;
+            }
+        },
             prepareSearch("idx").addAggregation(
                 histogram("histo").field(SINGLE_VALUED_FIELD_NAME)
                     .interval(interval)
                     .order(BucketOrder.aggregation("stats.sum", false))
                     .subAggregation(stats("stats").field(SINGLE_VALUED_FIELD_NAME))
-            ),
-            response -> {
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                assertThat(histo.getName(), equalTo("histo"));
-                assertThat(histo.getBuckets().size(), equalTo(numValueBuckets));
-
-                Set<Long> visited = new HashSet<>();
-                double previousSum = Double.POSITIVE_INFINITY;
-
-                List<Bucket> buckets = new ArrayList<>(histo.getBuckets());
-                for (int i = 0; i < numValueBuckets; ++i) {
-                    Bucket bucket = buckets.get(i);
-                    assertThat(bucket, notNullValue());
-                    long key = ((Number) bucket.getKey()).longValue();
-                    assertTrue(visited.add(key));
-                    int b = (int) (key / interval);
-                    assertThat(bucket.getDocCount(), equalTo(valueCounts[b]));
-                    assertThat(bucket.getAggregations().asList().isEmpty(), is(false));
-                    Stats stats = bucket.getAggregations().get("stats");
-                    assertThat(stats, notNullValue());
-                    long s = 0;
-                    for (int j = 0; j < numDocs; ++j) {
-                        if ((j + 1) / interval == b) {
-                            s += j + 1;
-                        }
-                    }
-                    assertThat(stats.getSum(), equalTo((double) s));
-                    assertThat(stats.getSum(), lessThanOrEqualTo(previousSum));
-                    previousSum = s;
-                }
-            }
+            )
         );
     }
 
     public void testSingleValuedFieldOrderedBySubAggregationDescDeepOrderPath() throws Exception {
         boolean asc = randomBoolean();
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            assertThat(histo.getName(), equalTo("histo"));
+            assertThat(histo.getBuckets().size(), equalTo(numValueBuckets));
+
+            Set<Long> visited = new HashSet<>();
+            double prevMax = asc ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
+            List<Bucket> buckets = new ArrayList<>(histo.getBuckets());
+            for (int i = 0; i < numValueBuckets; ++i) {
+                Bucket bucket = buckets.get(i);
+                assertThat(bucket, notNullValue());
+                long key = ((Number) bucket.getKey()).longValue();
+                assertTrue(visited.add(key));
+                int b = (int) (key / interval);
+                assertThat(bucket.getDocCount(), equalTo(valueCounts[b]));
+                assertThat(bucket.getAggregations().asList().isEmpty(), is(false));
+                Filter filter = bucket.getAggregations().get("filter");
+                assertThat(filter, notNullValue());
+                assertThat(bucket.getDocCount(), equalTo(filter.getDocCount()));
+                Max max = filter.getAggregations().get("max");
+                assertThat(max, Matchers.notNullValue());
+                assertThat(max.value(), asc ? greaterThanOrEqualTo(prevMax) : lessThanOrEqualTo(prevMax));
+                prevMax = max.value();
+            }
+        },
             prepareSearch("idx").addAggregation(
                 histogram("histo").field(SINGLE_VALUED_FIELD_NAME)
                     .interval(interval)
                     .order(BucketOrder.aggregation("filter>max", asc))
                     .subAggregation(filter("filter", matchAllQuery()).subAggregation(max("max").field(SINGLE_VALUED_FIELD_NAME)))
-            ),
-            response -> {
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                assertThat(histo.getName(), equalTo("histo"));
-                assertThat(histo.getBuckets().size(), equalTo(numValueBuckets));
-
-                Set<Long> visited = new HashSet<>();
-                double prevMax = asc ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
-                List<Bucket> buckets = new ArrayList<>(histo.getBuckets());
-                for (int i = 0; i < numValueBuckets; ++i) {
-                    Bucket bucket = buckets.get(i);
-                    assertThat(bucket, notNullValue());
-                    long key = ((Number) bucket.getKey()).longValue();
-                    assertTrue(visited.add(key));
-                    int b = (int) (key / interval);
-                    assertThat(bucket.getDocCount(), equalTo(valueCounts[b]));
-                    assertThat(bucket.getAggregations().asList().isEmpty(), is(false));
-                    Filter filter = bucket.getAggregations().get("filter");
-                    assertThat(filter, notNullValue());
-                    assertThat(bucket.getDocCount(), equalTo(filter.getDocCount()));
-                    Max max = filter.getAggregations().get("max");
-                    assertThat(max, Matchers.notNullValue());
-                    assertThat(max.value(), asc ? greaterThanOrEqualTo(prevMax) : lessThanOrEqualTo(prevMax));
-                    prevMax = max.value();
-                }
-            }
+            )
         );
     }
 
     public void testSingleValuedFieldOrderedByTieBreaker() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            assertThat(histo.getName(), equalTo("histo"));
+            assertThat(histo.getBuckets().size(), equalTo(numValueBuckets));
+
+            List<Bucket> buckets = new ArrayList<>(histo.getBuckets());
+            for (int i = 0; i < numValueBuckets; ++i) {
+                Bucket bucket = buckets.get(i);
+                assertThat(bucket, notNullValue());
+                assertThat(((Number) bucket.getKey()).longValue(), equalTo((long) i * interval));
+                assertThat(bucket.getDocCount(), equalTo(valueCounts[i]));
+            }
+        },
             prepareSearch("idx").addAggregation(
                 histogram("histo").field(SINGLE_VALUED_FIELD_NAME)
                     .interval(interval)
                     .order(BucketOrder.aggregation("max_constant", randomBoolean()))
                     .subAggregation(max("max_constant").field("constant"))
-            ),
-            response -> {
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                assertThat(histo.getName(), equalTo("histo"));
-                assertThat(histo.getBuckets().size(), equalTo(numValueBuckets));
-
-                List<Bucket> buckets = new ArrayList<>(histo.getBuckets());
-                for (int i = 0; i < numValueBuckets; ++i) {
-                    Bucket bucket = buckets.get(i);
-                    assertThat(bucket, notNullValue());
-                    assertThat(((Number) bucket.getKey()).longValue(), equalTo((long) i * interval));
-                    assertThat(bucket.getDocCount(), equalTo(valueCounts[i]));
-                }
-            }
+            )
         );
     }
 
@@ -685,248 +666,232 @@ public class HistogramIT extends ESIntegTestCase {
     }
 
     public void testSingleValuedFieldWithValueScript() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            final int numBuckets = (numDocs + 1) / interval - 2 / interval + 1;
+            final long[] counts = new long[(numDocs + 1) / interval + 1];
+            for (int i = 0; i < numDocs; ++i) {
+                ++counts[(i + 2) / interval];
+            }
+
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            assertThat(histo.getName(), equalTo("histo"));
+            List<? extends Bucket> buckets = histo.getBuckets();
+            assertThat(buckets.size(), equalTo(numBuckets));
+
+            for (int i = 0; i < numBuckets; i++) {
+                Bucket bucket = buckets.get(i);
+                assertThat(bucket, notNullValue());
+                int key = ((2 / interval) + i) * interval;
+                assertThat(((Number) bucket.getKey()).longValue(), equalTo((long) key));
+                assertThat(bucket.getDocCount(), equalTo(counts[key / interval]));
+            }
+        },
             prepareSearch("idx").addAggregation(
                 histogram("histo").field(SINGLE_VALUED_FIELD_NAME)
                     .script(new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "_value + 1", emptyMap()))
                     .interval(interval)
-            ),
-            response -> {
-                final int numBuckets = (numDocs + 1) / interval - 2 / interval + 1;
-                final long[] counts = new long[(numDocs + 1) / interval + 1];
-                for (int i = 0; i < numDocs; ++i) {
-                    ++counts[(i + 2) / interval];
-                }
-
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                assertThat(histo.getName(), equalTo("histo"));
-                List<? extends Bucket> buckets = histo.getBuckets();
-                assertThat(buckets.size(), equalTo(numBuckets));
-
-                for (int i = 0; i < numBuckets; i++) {
-                    Bucket bucket = buckets.get(i);
-                    assertThat(bucket, notNullValue());
-                    int key = ((2 / interval) + i) * interval;
-                    assertThat(((Number) bucket.getKey()).longValue(), equalTo((long) key));
-                    assertThat(bucket.getDocCount(), equalTo(counts[key / interval]));
-                }
-            }
+            )
         );
     }
 
     public void testMultiValuedField() throws Exception {
-        assertNoFailuresAndResponse(
-            prepareSearch("idx").addAggregation(histogram("histo").field(MULTI_VALUED_FIELD_NAME).interval(interval)),
-            response -> {
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                assertThat(histo.getName(), equalTo("histo"));
-                List<? extends Bucket> buckets = histo.getBuckets();
-                assertThat(buckets.size(), equalTo(numValuesBuckets));
+        assertNoFailuresAndResponse(response -> {
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            assertThat(histo.getName(), equalTo("histo"));
+            List<? extends Bucket> buckets = histo.getBuckets();
+            assertThat(buckets.size(), equalTo(numValuesBuckets));
 
-                for (int i = 0; i < numValuesBuckets; ++i) {
-                    Bucket bucket = buckets.get(i);
-                    assertThat(bucket, notNullValue());
-                    assertThat(((Number) bucket.getKey()).longValue(), equalTo((long) i * interval));
-                    assertThat(bucket.getDocCount(), equalTo(valuesCounts[i]));
-                }
+            for (int i = 0; i < numValuesBuckets; ++i) {
+                Bucket bucket = buckets.get(i);
+                assertThat(bucket, notNullValue());
+                assertThat(((Number) bucket.getKey()).longValue(), equalTo((long) i * interval));
+                assertThat(bucket.getDocCount(), equalTo(valuesCounts[i]));
             }
-        );
+        }, prepareSearch("idx").addAggregation(histogram("histo").field(MULTI_VALUED_FIELD_NAME).interval(interval)));
     }
 
     public void testMultiValuedFieldOrderedByKeyDesc() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            assertThat(histo.getName(), equalTo("histo"));
+            assertThat(histo.getBuckets().size(), equalTo(numValuesBuckets));
+
+            List<Bucket> buckets = new ArrayList<>(histo.getBuckets());
+            for (int i = 0; i < numValuesBuckets; ++i) {
+                Bucket bucket = buckets.get(numValuesBuckets - i - 1);
+                assertThat(bucket, notNullValue());
+                assertThat(((Number) bucket.getKey()).longValue(), equalTo((long) i * interval));
+                assertThat(bucket.getDocCount(), equalTo(valuesCounts[i]));
+            }
+        },
             prepareSearch("idx").addAggregation(
                 histogram("histo").field(MULTI_VALUED_FIELD_NAME).interval(interval).order(BucketOrder.key(false))
-            ),
-            response -> {
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                assertThat(histo.getName(), equalTo("histo"));
-                assertThat(histo.getBuckets().size(), equalTo(numValuesBuckets));
-
-                List<Bucket> buckets = new ArrayList<>(histo.getBuckets());
-                for (int i = 0; i < numValuesBuckets; ++i) {
-                    Bucket bucket = buckets.get(numValuesBuckets - i - 1);
-                    assertThat(bucket, notNullValue());
-                    assertThat(((Number) bucket.getKey()).longValue(), equalTo((long) i * interval));
-                    assertThat(bucket.getDocCount(), equalTo(valuesCounts[i]));
-                }
-            }
+            )
         );
     }
 
     public void testMultiValuedFieldWithValueScript() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            final int numBuckets = (numDocs + 2) / interval - 2 / interval + 1;
+            final long[] counts = new long[(numDocs + 2) / interval + 1];
+            for (int i = 0; i < numDocs; ++i) {
+                final int bucket1 = (i + 2) / interval;
+                final int bucket2 = (i + 3) / interval;
+                ++counts[bucket1];
+                if (bucket1 != bucket2) {
+                    ++counts[bucket2];
+                }
+            }
+
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            assertThat(histo.getName(), equalTo("histo"));
+            List<? extends Bucket> buckets = histo.getBuckets();
+            assertThat(buckets.size(), equalTo(numBuckets));
+
+            for (int i = 0; i < numBuckets; i++) {
+                Bucket bucket = buckets.get(i);
+                assertThat(bucket, notNullValue());
+                int key = ((2 / interval) + i) * interval;
+                assertThat(((Number) bucket.getKey()).longValue(), equalTo((long) key));
+                assertThat(bucket.getDocCount(), equalTo(counts[key / interval]));
+            }
+        },
             prepareSearch("idx").addAggregation(
                 histogram("histo").field(MULTI_VALUED_FIELD_NAME)
                     .script(new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "_value + 1", emptyMap()))
                     .interval(interval)
-            ),
-            response -> {
-                final int numBuckets = (numDocs + 2) / interval - 2 / interval + 1;
-                final long[] counts = new long[(numDocs + 2) / interval + 1];
-                for (int i = 0; i < numDocs; ++i) {
-                    final int bucket1 = (i + 2) / interval;
-                    final int bucket2 = (i + 3) / interval;
-                    ++counts[bucket1];
-                    if (bucket1 != bucket2) {
-                        ++counts[bucket2];
-                    }
-                }
-
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                assertThat(histo.getName(), equalTo("histo"));
-                List<? extends Bucket> buckets = histo.getBuckets();
-                assertThat(buckets.size(), equalTo(numBuckets));
-
-                for (int i = 0; i < numBuckets; i++) {
-                    Bucket bucket = buckets.get(i);
-                    assertThat(bucket, notNullValue());
-                    int key = ((2 / interval) + i) * interval;
-                    assertThat(((Number) bucket.getKey()).longValue(), equalTo((long) key));
-                    assertThat(bucket.getDocCount(), equalTo(counts[key / interval]));
-                }
-            }
+            )
         );
     }
 
     public void testScriptSingleValue() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            assertThat(histo.getName(), equalTo("histo"));
+            List<? extends Bucket> buckets = histo.getBuckets();
+            assertThat(buckets.size(), equalTo(numValueBuckets));
+
+            for (int i = 0; i < numValueBuckets; ++i) {
+                Bucket bucket = buckets.get(i);
+                assertThat(bucket, notNullValue());
+                assertThat(((Number) bucket.getKey()).longValue(), equalTo((long) i * interval));
+                assertThat(bucket.getDocCount(), equalTo(valueCounts[i]));
+            }
+        },
             prepareSearch("idx").addAggregation(
                 histogram("histo").script(new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "doc['l_value'].value", emptyMap()))
                     .interval(interval)
-            ),
-            response -> {
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                assertThat(histo.getName(), equalTo("histo"));
-                List<? extends Bucket> buckets = histo.getBuckets();
-                assertThat(buckets.size(), equalTo(numValueBuckets));
-
-                for (int i = 0; i < numValueBuckets; ++i) {
-                    Bucket bucket = buckets.get(i);
-                    assertThat(bucket, notNullValue());
-                    assertThat(((Number) bucket.getKey()).longValue(), equalTo((long) i * interval));
-                    assertThat(bucket.getDocCount(), equalTo(valueCounts[i]));
-                }
-            }
+            )
         );
     }
 
     public void testScriptMultiValued() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            assertThat(histo.getName(), equalTo("histo"));
+            List<? extends Bucket> buckets = histo.getBuckets();
+            assertThat(buckets.size(), equalTo(numValuesBuckets));
+
+            for (int i = 0; i < numValuesBuckets; ++i) {
+                Bucket bucket = buckets.get(i);
+                assertThat(bucket, notNullValue());
+                assertThat(((Number) bucket.getKey()).longValue(), equalTo((long) i * interval));
+                assertThat(bucket.getDocCount(), equalTo(valuesCounts[i]));
+            }
+        },
             prepareSearch("idx").addAggregation(
                 histogram("histo").script(new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "doc['l_values']", emptyMap()))
                     .interval(interval)
-            ),
-            response -> {
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                assertThat(histo.getName(), equalTo("histo"));
-                List<? extends Bucket> buckets = histo.getBuckets();
-                assertThat(buckets.size(), equalTo(numValuesBuckets));
-
-                for (int i = 0; i < numValuesBuckets; ++i) {
-                    Bucket bucket = buckets.get(i);
-                    assertThat(bucket, notNullValue());
-                    assertThat(((Number) bucket.getKey()).longValue(), equalTo((long) i * interval));
-                    assertThat(bucket.getDocCount(), equalTo(valuesCounts[i]));
-                }
-            }
+            )
         );
     }
 
     public void testUnmapped() throws Exception {
-        assertNoFailuresAndResponse(
-            prepareSearch("idx_unmapped").addAggregation(histogram("histo").field(SINGLE_VALUED_FIELD_NAME).interval(interval)),
-            response -> {
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                assertThat(histo.getName(), equalTo("histo"));
-                assertThat(histo.getBuckets().size(), equalTo(0));
-            }
-        );
+        assertNoFailuresAndResponse(response -> {
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            assertThat(histo.getName(), equalTo("histo"));
+            assertThat(histo.getBuckets().size(), equalTo(0));
+        }, prepareSearch("idx_unmapped").addAggregation(histogram("histo").field(SINGLE_VALUED_FIELD_NAME).interval(interval)));
     }
 
     public void testPartiallyUnmapped() throws Exception {
-        assertNoFailuresAndResponse(
-            prepareSearch("idx", "idx_unmapped").addAggregation(histogram("histo").field(SINGLE_VALUED_FIELD_NAME).interval(interval)),
-            response -> {
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                assertThat(histo.getName(), equalTo("histo"));
-                List<? extends Bucket> buckets = histo.getBuckets();
-                assertThat(buckets.size(), equalTo(numValueBuckets));
+        assertNoFailuresAndResponse(response -> {
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            assertThat(histo.getName(), equalTo("histo"));
+            List<? extends Bucket> buckets = histo.getBuckets();
+            assertThat(buckets.size(), equalTo(numValueBuckets));
 
-                for (int i = 0; i < numValueBuckets; ++i) {
-                    Bucket bucket = buckets.get(i);
-                    assertThat(bucket, notNullValue());
-                    assertThat(((Number) bucket.getKey()).longValue(), equalTo((long) i * interval));
-                    assertThat(bucket.getDocCount(), equalTo(valueCounts[i]));
-                }
+            for (int i = 0; i < numValueBuckets; ++i) {
+                Bucket bucket = buckets.get(i);
+                assertThat(bucket, notNullValue());
+                assertThat(((Number) bucket.getKey()).longValue(), equalTo((long) i * interval));
+                assertThat(bucket.getDocCount(), equalTo(valueCounts[i]));
             }
-        );
+        }, prepareSearch("idx", "idx_unmapped").addAggregation(histogram("histo").field(SINGLE_VALUED_FIELD_NAME).interval(interval)));
     }
 
     public void testPartiallyUnmappedWithExtendedBounds() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, notNullValue());
+            assertThat(histo.getName(), equalTo("histo"));
+            List<? extends Bucket> buckets = histo.getBuckets();
+            assertThat(buckets.size(), equalTo(numValueBuckets + 3));
+
+            Bucket bucket = buckets.get(0);
+            assertThat(bucket, notNullValue());
+            assertThat(((Number) bucket.getKey()).longValue(), equalTo((long) -1 * 2 * interval));
+            assertThat(bucket.getDocCount(), equalTo(0L));
+
+            bucket = buckets.get(1);
+            assertThat(bucket, notNullValue());
+            assertThat(((Number) bucket.getKey()).longValue(), equalTo((long) -1 * interval));
+            assertThat(bucket.getDocCount(), equalTo(0L));
+
+            for (int i = 2; i < numValueBuckets + 2; ++i) {
+                bucket = buckets.get(i);
+                assertThat(bucket, notNullValue());
+                assertThat(((Number) bucket.getKey()).longValue(), equalTo((long) (i - 2) * interval));
+                assertThat(bucket.getDocCount(), equalTo(valueCounts[i - 2]));
+            }
+        },
             prepareSearch("idx", "idx_unmapped").addAggregation(
                 histogram("histo").field(SINGLE_VALUED_FIELD_NAME)
                     .interval(interval)
                     .extendedBounds(-1 * 2 * interval, valueCounts.length * interval)
-            ),
-            response -> {
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, notNullValue());
-                assertThat(histo.getName(), equalTo("histo"));
-                List<? extends Bucket> buckets = histo.getBuckets();
-                assertThat(buckets.size(), equalTo(numValueBuckets + 3));
-
-                Bucket bucket = buckets.get(0);
-                assertThat(bucket, notNullValue());
-                assertThat(((Number) bucket.getKey()).longValue(), equalTo((long) -1 * 2 * interval));
-                assertThat(bucket.getDocCount(), equalTo(0L));
-
-                bucket = buckets.get(1);
-                assertThat(bucket, notNullValue());
-                assertThat(((Number) bucket.getKey()).longValue(), equalTo((long) -1 * interval));
-                assertThat(bucket.getDocCount(), equalTo(0L));
-
-                for (int i = 2; i < numValueBuckets + 2; ++i) {
-                    bucket = buckets.get(i);
-                    assertThat(bucket, notNullValue());
-                    assertThat(((Number) bucket.getKey()).longValue(), equalTo((long) (i - 2) * interval));
-                    assertThat(bucket.getDocCount(), equalTo(valueCounts[i - 2]));
-                }
-            }
+            )
         );
     }
 
     public void testEmptyAggregation() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            assertThat(response.getHits().getTotalHits().value, equalTo(2L));
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, Matchers.notNullValue());
+            List<? extends Bucket> buckets = histo.getBuckets();
+            Bucket bucket = buckets.get(1);
+            assertThat(bucket, Matchers.notNullValue());
+
+            histo = bucket.getAggregations().get("sub_histo");
+            assertThat(histo, Matchers.notNullValue());
+            assertThat(histo.getName(), equalTo("sub_histo"));
+            assertThat(histo.getBuckets().isEmpty(), is(true));
+        },
             prepareSearch("empty_bucket_idx").setQuery(matchAllQuery())
                 .addAggregation(
                     histogram("histo").field(SINGLE_VALUED_FIELD_NAME)
                         .interval(1L)
                         .minDocCount(0)
                         .subAggregation(histogram("sub_histo").field(SINGLE_VALUED_FIELD_NAME).interval(1L))
-                ),
-            response -> {
-                assertThat(response.getHits().getTotalHits().value, equalTo(2L));
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, Matchers.notNullValue());
-                List<? extends Bucket> buckets = histo.getBuckets();
-                Bucket bucket = buckets.get(1);
-                assertThat(bucket, Matchers.notNullValue());
-
-                histo = bucket.getAggregations().get("sub_histo");
-                assertThat(histo, Matchers.notNullValue());
-                assertThat(histo.getName(), equalTo("sub_histo"));
-                assertThat(histo.getBuckets().isEmpty(), is(true));
-            }
+                )
         );
     }
 
@@ -965,32 +930,31 @@ public class HistogramIT extends ESIntegTestCase {
         System.arraycopy(valueCounts, 0, extendedValueCounts, addedBucketsLeft, valueCounts.length);
         final long startKey = Math.min(boundsMinKey, 0);
         try {
-            assertNoFailuresAndResponse(
+            assertNoFailuresAndResponse(response -> {
+                if (invalidBoundsError) {
+                    fail("Expected an exception to be thrown when bounds.min is greater than bounds.max");
+                }
+                Histogram histo = response.getAggregations().get("histo");
+                assertThat(histo, notNullValue());
+                assertThat(histo.getName(), equalTo("histo"));
+                List<? extends Bucket> buckets = histo.getBuckets();
+                assertThat(buckets.size(), equalTo(bucketsCount));
+
+                long key = startKey;
+                for (int i = 0; i < bucketsCount; i++) {
+                    Bucket bucket = buckets.get(i);
+                    assertThat(bucket, notNullValue());
+                    assertThat(((Number) bucket.getKey()).longValue(), equalTo(key));
+                    assertThat(bucket.getDocCount(), equalTo(extendedValueCounts[i]));
+                    key += interval;
+                }
+            },
                 prepareSearch("idx").addAggregation(
                     histogram("histo").field(SINGLE_VALUED_FIELD_NAME)
                         .interval(interval)
                         .minDocCount(0)
                         .extendedBounds(boundsMin, boundsMax)
-                ),
-                response -> {
-                    if (invalidBoundsError) {
-                        fail("Expected an exception to be thrown when bounds.min is greater than bounds.max");
-                    }
-                    Histogram histo = response.getAggregations().get("histo");
-                    assertThat(histo, notNullValue());
-                    assertThat(histo.getName(), equalTo("histo"));
-                    List<? extends Bucket> buckets = histo.getBuckets();
-                    assertThat(buckets.size(), equalTo(bucketsCount));
-
-                    long key = startKey;
-                    for (int i = 0; i < bucketsCount; i++) {
-                        Bucket bucket = buckets.get(i);
-                        assertThat(bucket, notNullValue());
-                        assertThat(((Number) bucket.getKey()).longValue(), equalTo(key));
-                        assertThat(bucket.getDocCount(), equalTo(extendedValueCounts[i]));
-                        key += interval;
-                    }
-                }
+                )
             );
         } catch (IllegalArgumentException e) {
             if (invalidBoundsError) {
@@ -1037,34 +1001,33 @@ public class HistogramIT extends ESIntegTestCase {
         System.arraycopy(valueCounts, 0, extendedValueCounts, addedBucketsLeft, valueCounts.length);
         final long startKey = boundsMinKey;
         try {
-            assertNoFailuresAndResponse(
+            assertNoFailuresAndResponse(response -> {
+                if (invalidBoundsError) {
+                    fail("Expected an exception to be thrown when bounds.min is greater than bounds.max");
+
+                }
+                Histogram histo = response.getAggregations().get("histo");
+                assertThat(histo, notNullValue());
+                assertThat(histo.getName(), equalTo("histo"));
+                List<? extends Bucket> buckets = histo.getBuckets();
+                assertThat(buckets.size(), equalTo(bucketsCount));
+
+                long key = startKey;
+                for (int i = 0; i < bucketsCount; i++) {
+                    Bucket bucket = buckets.get(i);
+                    assertThat(bucket, notNullValue());
+                    assertThat(((Number) bucket.getKey()).longValue(), equalTo(key));
+                    assertThat(bucket.getDocCount(), equalTo(0L));
+                    key += interval;
+                }
+            },
                 prepareSearch("idx").setQuery(QueryBuilders.termQuery("foo", "bar"))
                     .addAggregation(
                         histogram("histo").field(SINGLE_VALUED_FIELD_NAME)
                             .interval(interval)
                             .minDocCount(0)
                             .extendedBounds(boundsMin, boundsMax)
-                    ),
-                response -> {
-                    if (invalidBoundsError) {
-                        fail("Expected an exception to be thrown when bounds.min is greater than bounds.max");
-
-                    }
-                    Histogram histo = response.getAggregations().get("histo");
-                    assertThat(histo, notNullValue());
-                    assertThat(histo.getName(), equalTo("histo"));
-                    List<? extends Bucket> buckets = histo.getBuckets();
-                    assertThat(buckets.size(), equalTo(bucketsCount));
-
-                    long key = startKey;
-                    for (int i = 0; i < bucketsCount; i++) {
-                        Bucket bucket = buckets.get(i);
-                        assertThat(bucket, notNullValue());
-                        assertThat(((Number) bucket.getKey()).longValue(), equalTo(key));
-                        assertThat(bucket.getDocCount(), equalTo(0L));
-                        key += interval;
-                    }
-                }
+                    )
             );
         } catch (IllegalArgumentException e) {
             if (invalidBoundsError == false) {
@@ -1094,18 +1057,15 @@ public class HistogramIT extends ESIntegTestCase {
             prepareIndex("decimal_values").setId("2").setSource("d", 0.1)
         );
 
-        assertNoFailuresAndResponse(
-            prepareSearch("decimal_values").addAggregation(histogram("histo").field("d").interval(0.7).offset(0.05)),
-            response -> {
-                Histogram histogram = response.getAggregations().get("histo");
-                List<? extends Bucket> buckets = histogram.getBuckets();
-                assertEquals(2, buckets.size());
-                assertEquals(-0.65, (double) buckets.get(0).getKey(), 0.01d);
-                assertEquals(1, buckets.get(0).getDocCount());
-                assertEquals(0.05, (double) buckets.get(1).getKey(), 0.01d);
-                assertEquals(1, buckets.get(1).getDocCount());
-            }
-        );
+        assertNoFailuresAndResponse(response -> {
+            Histogram histogram = response.getAggregations().get("histo");
+            List<? extends Bucket> buckets = histogram.getBuckets();
+            assertEquals(2, buckets.size());
+            assertEquals(-0.65, (double) buckets.get(0).getKey(), 0.01d);
+            assertEquals(1, buckets.get(0).getDocCount());
+            assertEquals(0.05, (double) buckets.get(1).getKey(), 0.01d);
+            assertEquals(1, buckets.get(1).getDocCount());
+        }, prepareSearch("decimal_values").addAggregation(histogram("histo").field("d").interval(0.7).offset(0.05)));
     }
 
     /**
@@ -1255,66 +1215,56 @@ public class HistogramIT extends ESIntegTestCase {
             prepareIndex("test").setId("3").setSource("d", 0.1)
         );
 
-        assertNoFailuresAndResponse(
-            prepareSearch("test").addAggregation(histogram("histo").field("d").interval(0.1).hardBounds(new DoubleBounds(0.0, null))),
-            response -> {
-                Histogram histogram = response.getAggregations().get("histo");
-                List<? extends Bucket> buckets = histogram.getBuckets();
-                assertEquals(5, buckets.size());
-                assertEquals(0.1, (double) buckets.get(0).getKey(), 0.01d);
-                assertEquals(0.5, (double) buckets.get(4).getKey(), 0.01d);
-            }
-        );
+        assertNoFailuresAndResponse(response -> {
+            Histogram histogram = response.getAggregations().get("histo");
+            List<? extends Bucket> buckets = histogram.getBuckets();
+            assertEquals(5, buckets.size());
+            assertEquals(0.1, (double) buckets.get(0).getKey(), 0.01d);
+            assertEquals(0.5, (double) buckets.get(4).getKey(), 0.01d);
+        }, prepareSearch("test").addAggregation(histogram("histo").field("d").interval(0.1).hardBounds(new DoubleBounds(0.0, null))));
 
-        assertNoFailuresAndResponse(
-            prepareSearch("test").addAggregation(histogram("histo").field("d").interval(0.1).hardBounds(new DoubleBounds(null, 0.0))),
-            response -> {
-                Histogram histogram = response.getAggregations().get("histo");
-                List<? extends Bucket> buckets = histogram.getBuckets();
-                assertEquals(1, buckets.size());
-                assertEquals(-0.6, (double) buckets.get(0).getKey(), 0.01d);
-            }
-        );
-        assertNoFailuresAndResponse(
-            prepareSearch("test").addAggregation(histogram("histo").field("d").interval(0.1).hardBounds(new DoubleBounds(0.0, 0.3))),
-            response -> {
-                Histogram histogram = response.getAggregations().get("histo");
-                List<? extends Bucket> buckets = histogram.getBuckets();
-                assertEquals(1, buckets.size());
-                assertEquals(0.1, (double) buckets.get(0).getKey(), 0.01d);
-            }
-        );
+        assertNoFailuresAndResponse(response -> {
+            Histogram histogram = response.getAggregations().get("histo");
+            List<? extends Bucket> buckets = histogram.getBuckets();
+            assertEquals(1, buckets.size());
+            assertEquals(-0.6, (double) buckets.get(0).getKey(), 0.01d);
+        }, prepareSearch("test").addAggregation(histogram("histo").field("d").interval(0.1).hardBounds(new DoubleBounds(null, 0.0))));
+        assertNoFailuresAndResponse(response -> {
+            Histogram histogram = response.getAggregations().get("histo");
+            List<? extends Bucket> buckets = histogram.getBuckets();
+            assertEquals(1, buckets.size());
+            assertEquals(0.1, (double) buckets.get(0).getKey(), 0.01d);
+        }, prepareSearch("test").addAggregation(histogram("histo").field("d").interval(0.1).hardBounds(new DoubleBounds(0.0, 0.3))));
     }
 
     private void assertMultiSortResponse(long[] expectedKeys, BucketOrder... order) {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Histogram histogram = response.getAggregations().get("histo");
+            assertThat(histogram, notNullValue());
+            assertThat(histogram.getName(), equalTo("histo"));
+            assertThat(histogram.getBuckets().size(), equalTo(expectedKeys.length));
+
+            int i = 0;
+            for (Bucket bucket : histogram.getBuckets()) {
+                assertThat(bucket, notNullValue());
+                assertThat(key(bucket), equalTo(expectedKeys[i]));
+                assertThat(bucket.getDocCount(), equalTo(expectedMultiSortBuckets.get(expectedKeys[i]).get("_count")));
+                Avg avg = bucket.getAggregations().get("avg_l");
+                assertThat(avg, notNullValue());
+                assertThat(avg.getValue(), equalTo(expectedMultiSortBuckets.get(expectedKeys[i]).get("avg_l")));
+                Sum sum = bucket.getAggregations().get("sum_d");
+                assertThat(sum, notNullValue());
+                assertThat(sum.value(), equalTo(expectedMultiSortBuckets.get(expectedKeys[i]).get("sum_d")));
+                i++;
+            }
+        },
             prepareSearch("sort_idx").addAggregation(
                 histogram("histo").field(SINGLE_VALUED_FIELD_NAME)
                     .interval(1)
                     .order(BucketOrder.compound(order))
                     .subAggregation(avg("avg_l").field("l"))
                     .subAggregation(sum("sum_d").field("d"))
-            ),
-            response -> {
-                Histogram histogram = response.getAggregations().get("histo");
-                assertThat(histogram, notNullValue());
-                assertThat(histogram.getName(), equalTo("histo"));
-                assertThat(histogram.getBuckets().size(), equalTo(expectedKeys.length));
-
-                int i = 0;
-                for (Bucket bucket : histogram.getBuckets()) {
-                    assertThat(bucket, notNullValue());
-                    assertThat(key(bucket), equalTo(expectedKeys[i]));
-                    assertThat(bucket.getDocCount(), equalTo(expectedMultiSortBuckets.get(expectedKeys[i]).get("_count")));
-                    Avg avg = bucket.getAggregations().get("avg_l");
-                    assertThat(avg, notNullValue());
-                    assertThat(avg.getValue(), equalTo(expectedMultiSortBuckets.get(expectedKeys[i]).get("avg_l")));
-                    Sum sum = bucket.getAggregations().get("sum_d");
-                    assertThat(sum, notNullValue());
-                    assertThat(sum.value(), equalTo(expectedMultiSortBuckets.get(expectedKeys[i]).get("sum_d")));
-                    i++;
-                }
-            }
+            )
         );
     }
 

@@ -516,13 +516,13 @@ public class ShardRoutingRoleIT extends ESIntegTestCase {
                         // do nothing
                     }
                 }
-                assertResponse(search, resp -> {
+                assertResponse(resp -> {
                     final var profileResults = resp.getProfileResults();
                     assertThat(profileResults, not(anEmptyMap()));
                     for (final var searchShardProfileKey : profileResults.keySet()) {
                         assertThat(searchShardProfileKeys, hasItem(searchShardProfileKey));
                     }
-                });
+                }, search);
             }
             // Search with PIT
             for (int i = 0; i < 10; i++) {
@@ -538,13 +538,13 @@ public class ShardRoutingRoleIT extends ESIntegTestCase {
                 }
                 BytesReference pitId = client().execute(TransportOpenPointInTimeAction.TYPE, openRequest).actionGet().getPointInTimeId();
                 try {
-                    assertResponse(prepareSearch().setPointInTime(new PointInTimeBuilder(pitId)).setProfile(true), response -> {
+                    assertResponse(response -> {
                         var profileResults = response.getProfileResults();
                         assertThat(profileResults, not(anEmptyMap()));
                         for (final var profileKey : profileResults.keySet()) {
                             assertThat(profileKey, in(searchShardProfileKeys));
                         }
-                    });
+                    }, prepareSearch().setPointInTime(new PointInTimeBuilder(pitId)).setProfile(true));
                 } finally {
                     client().execute(TransportClosePointInTimeAction.TYPE, new ClosePointInTimeRequest(pitId));
                 }

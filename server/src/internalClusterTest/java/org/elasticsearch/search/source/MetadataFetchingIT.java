@@ -35,17 +35,17 @@ public class MetadataFetchingIT extends ESIntegTestCase {
         prepareIndex("test").setId("1").setSource("field", "value").get();
         refresh();
 
-        assertResponse(prepareSearch("test").storedFields("_none_").setFetchSource(false).setVersion(true), response -> {
+        assertResponse(response -> {
             assertThat(response.getHits().getAt(0).getId(), nullValue());
             assertThat(response.getHits().getAt(0).getSourceAsString(), nullValue());
             assertThat(response.getHits().getAt(0).getVersion(), notNullValue());
-        });
+        }, prepareSearch("test").storedFields("_none_").setFetchSource(false).setVersion(true));
 
-        assertResponse(prepareSearch("test").storedFields("_none_"), response -> {
+        assertResponse(response -> {
             assertThat(response.getHits().getAt(0).getId(), nullValue());
             assertThat(response.getHits().getAt(0).getId(), nullValue());
             assertThat(response.getHits().getAt(0).getSourceAsString(), nullValue());
-        });
+        }, prepareSearch("test").storedFields("_none_"));
     }
 
     public void testInnerHits() {
@@ -54,7 +54,16 @@ public class MetadataFetchingIT extends ESIntegTestCase {
         prepareIndex("test").setId("1").setSource("field", "value", "nested", Collections.singletonMap("title", "foo")).get();
         refresh();
 
-        assertResponse(
+        assertResponse(response -> {
+            assertThat(response.getHits().getTotalHits().value, equalTo(1L));
+            assertThat(response.getHits().getAt(0).getId(), nullValue());
+            assertThat(response.getHits().getAt(0).getSourceAsString(), nullValue());
+            assertThat(response.getHits().getAt(0).getInnerHits().size(), equalTo(1));
+            SearchHits hits = response.getHits().getAt(0).getInnerHits().get("nested");
+            assertThat(hits.getTotalHits().value, equalTo(1L));
+            assertThat(hits.getAt(0).getId(), nullValue());
+            assertThat(hits.getAt(0).getSourceAsString(), nullValue());
+        },
             prepareSearch("test").storedFields("_none_")
                 .setFetchSource(false)
                 .setQuery(
@@ -62,17 +71,7 @@ public class MetadataFetchingIT extends ESIntegTestCase {
                         new InnerHitBuilder().setStoredFieldNames(Collections.singletonList("_none_"))
                             .setFetchSourceContext(FetchSourceContext.DO_NOT_FETCH_SOURCE)
                     )
-                ),
-            response -> {
-                assertThat(response.getHits().getTotalHits().value, equalTo(1L));
-                assertThat(response.getHits().getAt(0).getId(), nullValue());
-                assertThat(response.getHits().getAt(0).getSourceAsString(), nullValue());
-                assertThat(response.getHits().getAt(0).getInnerHits().size(), equalTo(1));
-                SearchHits hits = response.getHits().getAt(0).getInnerHits().get("nested");
-                assertThat(hits.getTotalHits().value, equalTo(1L));
-                assertThat(hits.getAt(0).getId(), nullValue());
-                assertThat(hits.getAt(0).getSourceAsString(), nullValue());
-            }
+                )
         );
     }
 
@@ -83,20 +82,20 @@ public class MetadataFetchingIT extends ESIntegTestCase {
         prepareIndex("test").setId("1").setSource("field", "value").setRouting("toto").get();
         refresh();
 
-        assertResponse(prepareSearch("test"), response -> {
+        assertResponse(response -> {
             assertThat(response.getHits().getAt(0).getId(), notNullValue());
             assertThat(response.getHits().getAt(0).field("_routing"), notNullValue());
             assertThat(response.getHits().getAt(0).getSourceAsString(), notNullValue());
-        });
-        assertResponse(prepareSearch("test").storedFields("_none_").setFetchSource(false), response -> {
+        }, prepareSearch("test"));
+        assertResponse(response -> {
             assertThat(response.getHits().getAt(0).getId(), nullValue());
             assertThat(response.getHits().getAt(0).field("_routing"), nullValue());
             assertThat(response.getHits().getAt(0).getSourceAsString(), nullValue());
-        });
-        assertResponse(prepareSearch("test").storedFields("_none_"), response -> {
+        }, prepareSearch("test").storedFields("_none_").setFetchSource(false));
+        assertResponse(response -> {
             assertThat(response.getHits().getAt(0).getId(), nullValue());
             assertThat(response.getHits().getAt(0).getSourceAsString(), nullValue());
-        });
+        }, prepareSearch("test").storedFields("_none_"));
 
         GetResponse getResponse = client().prepareGet("test", "1").setRouting("toto").get();
         assertTrue(getResponse.isExists());
@@ -110,16 +109,16 @@ public class MetadataFetchingIT extends ESIntegTestCase {
         prepareIndex("test").setId("1").setSource("ip", "value").get();
         refresh();
 
-        assertResponse(prepareSearch("test"), response -> {
+        assertResponse(response -> {
             assertThat(response.getHits().getAt(0).getId(), notNullValue());
             assertThat(response.getHits().getAt(0).field("_ignored").getValue(), equalTo("ip"));
             assertThat(response.getHits().getAt(0).getSourceAsString(), notNullValue());
-        });
-        assertResponse(prepareSearch("test").storedFields("_none_"), response -> {
+        }, prepareSearch("test"));
+        assertResponse(response -> {
             assertThat(response.getHits().getAt(0).getId(), nullValue());
             assertThat(response.getHits().getAt(0).field("_ignored"), nullValue());
             assertThat(response.getHits().getAt(0).getSourceAsString(), nullValue());
-        });
+        }, prepareSearch("test").storedFields("_none_"));
 
         {
             GetResponse getResponse = client().prepareGet("test", "1").get();
@@ -177,10 +176,10 @@ public class MetadataFetchingIT extends ESIntegTestCase {
         prepareIndex("test").setId("1").setSource("field", "value").get();
         refresh();
 
-        assertResponse(prepareSearch("test").addFetchField("_id"), response -> {
+        assertResponse(response -> {
             assertEquals(1, response.getHits().getHits().length);
             assertEquals("1", response.getHits().getAt(0).getId());
             assertEquals("1", response.getHits().getAt(0).field("_id").getValue());
-        });
+        }, prepareSearch("test").addFetchField("_id"));
     }
 }

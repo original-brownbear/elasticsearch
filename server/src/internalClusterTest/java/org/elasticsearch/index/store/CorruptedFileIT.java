@@ -170,7 +170,7 @@ public class CorruptedFileIT extends ESIntegTestCase {
         assertAllSuccessful(indicesAdmin().prepareFlush().setForce(true).get());
         assertAllSuccessful(indicesAdmin().prepareFlush().setForce(true).get());
         // we have to flush at least once here since we don't corrupt the translog
-        assertHitCount(prepareSearch().setSize(0), numDocs);
+        assertHitCount(numDocs, prepareSearch().setSize(0));
 
         final int numShards = numShards("test");
         ShardRouting corruptedShardRouting = corruptRandomPrimaryFile();
@@ -198,7 +198,7 @@ public class CorruptedFileIT extends ESIntegTestCase {
         assertThat(health.getStatus(), equalTo(ClusterHealthStatus.GREEN));
         final int numIterations = scaledRandomIntBetween(5, 20);
         for (int i = 0; i < numIterations; i++) {
-            assertHitCount(prepareSearch().setSize(numDocs), numDocs);
+            assertHitCount(numDocs, prepareSearch().setSize(numDocs));
         }
 
         /*
@@ -283,7 +283,7 @@ public class CorruptedFileIT extends ESIntegTestCase {
         assertAllSuccessful(indicesAdmin().prepareFlush().setForce(true).get());
         assertAllSuccessful(indicesAdmin().prepareFlush().setForce(true).get());
         // we have to flush at least once here since we don't corrupt the translog
-        assertHitCount(prepareSearch().setSize(0), numDocs);
+        assertHitCount(numDocs, prepareSearch().setSize(0));
 
         ShardRouting shardRouting = corruptRandomPrimaryFile();
         /*
@@ -416,7 +416,7 @@ public class CorruptedFileIT extends ESIntegTestCase {
         ensureGreen();
         assertAllSuccessful(indicesAdmin().prepareFlush().setForce(true).get());
         // we have to flush at least once here since we don't corrupt the translog
-        assertHitCount(prepareSearch().setSize(0), numDocs);
+        assertHitCount(numDocs, prepareSearch().setSize(0));
 
         final var source = MockTransportService.getInstance(primariesNode.getName());
         final var target = MockTransportService.getInstance(unluckyNode.getName());
@@ -515,7 +515,7 @@ public class CorruptedFileIT extends ESIntegTestCase {
 
         final int numIterations = scaledRandomIntBetween(5, 20);
         for (int i = 0; i < numIterations; i++) {
-            assertHitCount(prepareSearch().setSize(numDocs), numDocs);
+            assertHitCount(numDocs, prepareSearch().setSize(numDocs));
         }
     }
 
@@ -556,7 +556,7 @@ public class CorruptedFileIT extends ESIntegTestCase {
         ensureGreen();
         assertAllSuccessful(indicesAdmin().prepareFlush().setForce(true).get());
         // we have to flush at least once here since we don't corrupt the translog
-        assertHitCount(prepareSearch().setSize(0), numDocs);
+        assertHitCount(numDocs, prepareSearch().setSize(0));
 
         ShardRouting shardRouting = corruptRandomPrimaryFile(false);
         logger.info("--> shard {} has a corrupted file", shardRouting);
@@ -624,7 +624,7 @@ public class CorruptedFileIT extends ESIntegTestCase {
         ensureGreen();
         assertAllSuccessful(indicesAdmin().prepareFlush().setForce(true).get());
         // we have to flush at least once here since we don't corrupt the translog
-        assertHitCount(prepareSearch().setSize(0), numDocs);
+        assertHitCount(numDocs, prepareSearch().setSize(0));
 
         // disable allocations of replicas post restart (the restart will change replicas to primaries, so we have
         // to capture replicas post restart)

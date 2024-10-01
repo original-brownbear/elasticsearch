@@ -98,7 +98,7 @@ public class IndexingMasterFailoverIT extends ESIntegTestCase {
 
         ensureGreen("myindex");
         refresh();
-        assertHitCount(prepareSearch("myindex"), 10);
+        assertHitCount(10, prepareSearch("myindex"));
     }
 
 }

@@ -304,15 +304,14 @@ public class CategorizationIT extends MlNativeAutodetectIntegTestCase {
         // before closing the job to prove that it was persisted in the background at the
         // end of lookback rather than when the job was closed.
         assertBusy(() -> {
-            assertResponse(
+            assertResponse(stateDocsResponse -> {
+                SearchHit[] hits = stateDocsResponse.getHits().getHits();
+                assertThat(hits, arrayWithSize(1));
+                assertThat(hits[0].getSourceAsMap(), hasKey("compressed"));
+            },
                 prepareSearch(AnomalyDetectorsIndex.jobStateIndexPattern()).setQuery(
                     QueryBuilders.idsQuery().addIds(CategorizerState.documentId(job.getId(), 1))
-                ),
-                stateDocsResponse -> {
-                    SearchHit[] hits = stateDocsResponse.getHits().getHits();
-                    assertThat(hits, arrayWithSize(1));
-                    assertThat(hits[0].getSourceAsMap(), hasKey("compressed"));
-                }
+                )
             );
         }, 30, TimeUnit.SECONDS);
 

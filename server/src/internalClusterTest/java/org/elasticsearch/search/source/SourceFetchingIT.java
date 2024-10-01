@@ -24,16 +24,16 @@ public class SourceFetchingIT extends ESIntegTestCase {
         indexDoc("test", "1", "field", "value");
         refresh();
 
-        assertResponse(prepareSearch("test"), response -> assertThat(response.getHits().getAt(0).getSourceAsString(), notNullValue()));
+        assertResponse(response -> assertThat(response.getHits().getAt(0).getSourceAsString(), notNullValue()), prepareSearch("test"));
 
         assertResponse(
-            prepareSearch("test").addStoredField("bla"),
-            response -> assertThat(response.getHits().getAt(0).getSourceAsString(), nullValue())
+            response -> assertThat(response.getHits().getAt(0).getSourceAsString(), nullValue()),
+            prepareSearch("test").addStoredField("bla")
         );
 
         assertResponse(
-            prepareSearch("test").addStoredField("_source"),
-            response -> assertThat(response.getHits().getAt(0).getSourceAsString(), notNullValue())
+            response -> assertThat(response.getHits().getAt(0).getSourceAsString(), notNullValue()),
+            prepareSearch("test").addStoredField("_source")
         );
 
     }
@@ -46,29 +46,29 @@ public class SourceFetchingIT extends ESIntegTestCase {
         refresh();
 
         assertResponse(
-            prepareSearch("test").setFetchSource(false),
-            response -> assertThat(response.getHits().getAt(0).getSourceAsString(), nullValue())
+            response -> assertThat(response.getHits().getAt(0).getSourceAsString(), nullValue()),
+            prepareSearch("test").setFetchSource(false)
         );
 
         assertResponse(
-            prepareSearch("test").setFetchSource(true),
-            response -> assertThat(response.getHits().getAt(0).getSourceAsString(), notNullValue())
+            response -> assertThat(response.getHits().getAt(0).getSourceAsString(), notNullValue()),
+            prepareSearch("test").setFetchSource(true)
         );
 
-        assertResponse(prepareSearch("test").setFetchSource("field1", null), response -> {
+        assertResponse(response -> {
             assertThat(response.getHits().getAt(0).getSourceAsString(), notNullValue());
             assertThat(response.getHits().getAt(0).getSourceAsMap().size(), equalTo(1));
             assertThat((String) response.getHits().getAt(0).getSourceAsMap().get("field1"), equalTo("value"));
-        });
-        assertResponse(prepareSearch("test").setFetchSource("hello", null), response -> {
+        }, prepareSearch("test").setFetchSource("field1", null));
+        assertResponse(response -> {
             assertThat(response.getHits().getAt(0).getSourceAsString(), notNullValue());
             assertThat(response.getHits().getAt(0).getSourceAsMap().size(), equalTo(0));
-        });
-        assertResponse(prepareSearch("test").setFetchSource(new String[] { "*" }, new String[] { "field2" }), response -> {
+        }, prepareSearch("test").setFetchSource("hello", null));
+        assertResponse(response -> {
             assertThat(response.getHits().getAt(0).getSourceAsString(), notNullValue());
             assertThat(response.getHits().getAt(0).getSourceAsMap().size(), equalTo(1));
             assertThat((String) response.getHits().getAt(0).getSourceAsMap().get("field1"), equalTo("value"));
-        });
+        }, prepareSearch("test").setFetchSource(new String[] { "*" }, new String[] { "field2" }));
     }
 
     /**
@@ -82,15 +82,15 @@ public class SourceFetchingIT extends ESIntegTestCase {
         prepareIndex("test").setId("1").setSource("field", "value").get();
         refresh();
 
-        assertResponse(prepareSearch("test").setFetchSource(new String[] { "*.notexisting", "field" }, null), response -> {
+        assertResponse(response -> {
             assertThat(response.getHits().getAt(0).getSourceAsString(), notNullValue());
             assertThat(response.getHits().getAt(0).getSourceAsMap().size(), equalTo(1));
             assertThat((String) response.getHits().getAt(0).getSourceAsMap().get("field"), equalTo("value"));
-        });
-        assertResponse(prepareSearch("test").setFetchSource(new String[] { "field.notexisting.*", "field" }, null), response -> {
+        }, prepareSearch("test").setFetchSource(new String[] { "*.notexisting", "field" }, null));
+        assertResponse(response -> {
             assertThat(response.getHits().getAt(0).getSourceAsString(), notNullValue());
             assertThat(response.getHits().getAt(0).getSourceAsMap().size(), equalTo(1));
             assertThat((String) response.getHits().getAt(0).getSourceAsMap().get("field"), equalTo("value"));
-        });
+        }, prepareSearch("test").setFetchSource(new String[] { "field.notexisting.*", "field" }, null));
     }
 }

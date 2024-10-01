@@ -152,7 +152,20 @@ public class GeoPointScriptDocValuesIT extends ESSingleNodeTestCase {
             .get();
 
         client().admin().indices().prepareRefresh("test").get();
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            final double qLat = GeoEncodingUtils.decodeLatitude(GeoEncodingUtils.encodeLatitude(lat));
+            final double qLon = GeoEncodingUtils.decodeLongitude(GeoEncodingUtils.encodeLongitude(lon));
+
+            Map<String, DocumentField> fields = response.getHits().getHits()[0].getFields();
+            assertThat(fields.get("lat").getValue(), equalTo(qLat));
+            assertThat(fields.get("lon").getValue(), equalTo(qLon));
+            assertThat(fields.get("height").getValue(), equalTo(0d));
+            assertThat(fields.get("width").getValue(), equalTo(0d));
+
+            // Check label position is the same point
+            assertThat(fields.get("label_lon").getValue(), equalTo(qLon));
+            assertThat(fields.get("label_lat").getValue(), equalTo(qLat));
+        },
             client().prepareSearch()
                 .addStoredField("_source")
                 .addScriptField("lat", new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "lat", Collections.emptyMap()))
@@ -160,21 +173,7 @@ public class GeoPointScriptDocValuesIT extends ESSingleNodeTestCase {
                 .addScriptField("height", new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "height", Collections.emptyMap()))
                 .addScriptField("width", new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "width", Collections.emptyMap()))
                 .addScriptField("label_lat", new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "label_lat", Collections.emptyMap()))
-                .addScriptField("label_lon", new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "label_lon", Collections.emptyMap())),
-            response -> {
-                final double qLat = GeoEncodingUtils.decodeLatitude(GeoEncodingUtils.encodeLatitude(lat));
-                final double qLon = GeoEncodingUtils.decodeLongitude(GeoEncodingUtils.encodeLongitude(lon));
-
-                Map<String, DocumentField> fields = response.getHits().getHits()[0].getFields();
-                assertThat(fields.get("lat").getValue(), equalTo(qLat));
-                assertThat(fields.get("lon").getValue(), equalTo(qLon));
-                assertThat(fields.get("height").getValue(), equalTo(0d));
-                assertThat(fields.get("width").getValue(), equalTo(0d));
-
-                // Check label position is the same point
-                assertThat(fields.get("label_lon").getValue(), equalTo(qLon));
-                assertThat(fields.get("label_lat").getValue(), equalTo(qLat));
-            }
+                .addScriptField("label_lon", new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "label_lon", Collections.emptyMap()))
         );
     }
 
@@ -197,7 +196,28 @@ public class GeoPointScriptDocValuesIT extends ESSingleNodeTestCase {
 
         client().admin().indices().prepareRefresh("test").get();
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            for (int i = 0; i < size; i++) {
+                lats[i] = GeoEncodingUtils.decodeLatitude(GeoEncodingUtils.encodeLatitude(lats[i]));
+                lons[i] = GeoEncodingUtils.decodeLongitude(GeoEncodingUtils.encodeLongitude(lons[i]));
+            }
+
+            final double centroidLon = Arrays.stream(lons).sum() / size;
+            final double centroidLat = Arrays.stream(lats).sum() / size;
+            final double width = Arrays.stream(lons).max().getAsDouble() - Arrays.stream(lons).min().getAsDouble();
+            final double height = Arrays.stream(lats).max().getAsDouble() - Arrays.stream(lats).min().getAsDouble();
+
+            Map<String, DocumentField> fields = response.getHits().getHits()[0].getFields();
+            assertThat(fields.get("lat").getValue(), equalTo(centroidLat));
+            assertThat(fields.get("lon").getValue(), equalTo(centroidLon));
+            assertThat(fields.get("height").getValue(), equalTo(height));
+            assertThat(fields.get("width").getValue(), equalTo(width));
+
+            // Check label position is one of the incoming points
+            double labelLat = fields.get("label_lat").getValue();
+            double labelLon = fields.get("label_lon").getValue();
+            assertThat("Label should be one of the points", new GeoPoint(labelLat, labelLon), isMultiPointLabelPosition(lats, lons));
+        },
             client().prepareSearch()
                 .addStoredField("_source")
                 .addScriptField("lat", new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "lat", Collections.emptyMap()))
@@ -205,29 +225,7 @@ public class GeoPointScriptDocValuesIT extends ESSingleNodeTestCase {
                 .addScriptField("height", new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "height", Collections.emptyMap()))
                 .addScriptField("width", new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "width", Collections.emptyMap()))
                 .addScriptField("label_lat", new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "label_lat", Collections.emptyMap()))
-                .addScriptField("label_lon", new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "label_lon", Collections.emptyMap())),
-            response -> {
-                for (int i = 0; i < size; i++) {
-                    lats[i] = GeoEncodingUtils.decodeLatitude(GeoEncodingUtils.encodeLatitude(lats[i]));
-                    lons[i] = GeoEncodingUtils.decodeLongitude(GeoEncodingUtils.encodeLongitude(lons[i]));
-                }
-
-                final double centroidLon = Arrays.stream(lons).sum() / size;
-                final double centroidLat = Arrays.stream(lats).sum() / size;
-                final double width = Arrays.stream(lons).max().getAsDouble() - Arrays.stream(lons).min().getAsDouble();
-                final double height = Arrays.stream(lats).max().getAsDouble() - Arrays.stream(lats).min().getAsDouble();
-
-                Map<String, DocumentField> fields = response.getHits().getHits()[0].getFields();
-                assertThat(fields.get("lat").getValue(), equalTo(centroidLat));
-                assertThat(fields.get("lon").getValue(), equalTo(centroidLon));
-                assertThat(fields.get("height").getValue(), equalTo(height));
-                assertThat(fields.get("width").getValue(), equalTo(width));
-
-                // Check label position is one of the incoming points
-                double labelLat = fields.get("label_lat").getValue();
-                double labelLon = fields.get("label_lon").getValue();
-                assertThat("Label should be one of the points", new GeoPoint(labelLat, labelLon), isMultiPointLabelPosition(lats, lons));
-            }
+                .addScriptField("label_lon", new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "label_lon", Collections.emptyMap()))
         );
     }
 
@@ -238,20 +236,19 @@ public class GeoPointScriptDocValuesIT extends ESSingleNodeTestCase {
 
         client().admin().indices().prepareRefresh("test").get();
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Map<String, DocumentField> fields = response.getHits().getHits()[0].getFields();
+            assertThat(fields.get("lat").getValue(), equalTo(Double.NaN));
+            assertThat(fields.get("lon").getValue(), equalTo(Double.NaN));
+            assertThat(fields.get("height").getValue(), equalTo(Double.NaN));
+            assertThat(fields.get("width").getValue(), equalTo(Double.NaN));
+        },
             client().prepareSearch()
                 .addStoredField("_source")
                 .addScriptField("lat", new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "lat", Collections.emptyMap()))
                 .addScriptField("lon", new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "lon", Collections.emptyMap()))
                 .addScriptField("height", new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "height", Collections.emptyMap()))
-                .addScriptField("width", new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "width", Collections.emptyMap())),
-            response -> {
-                Map<String, DocumentField> fields = response.getHits().getHits()[0].getFields();
-                assertThat(fields.get("lat").getValue(), equalTo(Double.NaN));
-                assertThat(fields.get("lon").getValue(), equalTo(Double.NaN));
-                assertThat(fields.get("height").getValue(), equalTo(Double.NaN));
-                assertThat(fields.get("width").getValue(), equalTo(Double.NaN));
-            }
+                .addScriptField("width", new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "width", Collections.emptyMap()))
         );
     }
 

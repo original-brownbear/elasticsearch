@@ -398,10 +398,10 @@ public class IndicesOptionsIntegrationIT extends ESIntegTestCase {
     public void testAllMissingLenient() throws Exception {
         createIndex("test1");
         prepareIndex("test1").setId("1").setSource("k", "v").setRefreshPolicy(IMMEDIATE).get();
-        assertHitCount(prepareSearch("test2").setIndicesOptions(IndicesOptions.lenientExpandOpen()).setQuery(matchAllQuery()), 0L);
-        assertHitCount(prepareSearch("test2", "test3").setQuery(matchAllQuery()).setIndicesOptions(IndicesOptions.lenientExpandOpen()), 0L);
+        assertHitCount(0L, prepareSearch("test2").setIndicesOptions(IndicesOptions.lenientExpandOpen()).setQuery(matchAllQuery()));
+        assertHitCount(0L, prepareSearch("test2", "test3").setQuery(matchAllQuery()).setIndicesOptions(IndicesOptions.lenientExpandOpen()));
         // you should still be able to run empty searches without things blowing up
-        assertHitCount(prepareSearch().setIndicesOptions(IndicesOptions.lenientExpandOpen()).setQuery(matchAllQuery()), 1L);
+        assertHitCount(1L, prepareSearch().setIndicesOptions(IndicesOptions.lenientExpandOpen()).setQuery(matchAllQuery()));
     }
 
     public void testAllMissingStrict() throws Exception {
@@ -679,11 +679,11 @@ public class IndicesOptionsIntegrationIT extends ESIntegTestCase {
     private static void verify(ActionRequestBuilder<?, ?> requestBuilder, boolean fail, long expectedCount) {
         if (fail) {
             if (requestBuilder instanceof MultiSearchRequestBuilder multiSearchRequestBuilder) {
-                assertResponse(multiSearchRequestBuilder, multiSearchResponse -> {
+                assertResponse(multiSearchResponse -> {
                     assertThat(multiSearchResponse.getResponses().length, equalTo(1));
                     assertThat(multiSearchResponse.getResponses()[0].isFailure(), is(true));
                     assertThat(multiSearchResponse.getResponses()[0].getResponse(), nullValue());
-                });
+                }, multiSearchRequestBuilder);
             } else {
                 try {
                     requestBuilder.get().decRef();
@@ -692,12 +692,12 @@ public class IndicesOptionsIntegrationIT extends ESIntegTestCase {
             }
         } else {
             if (requestBuilder instanceof SearchRequestBuilder searchRequestBuilder) {
-                assertHitCount(searchRequestBuilder, expectedCount);
+                assertHitCount(expectedCount, searchRequestBuilder);
             } else if (requestBuilder instanceof MultiSearchRequestBuilder multiSearchRequestBuilder) {
-                assertResponse(multiSearchRequestBuilder, response -> {
+                assertResponse(response -> {
                     assertThat(response.getResponses().length, equalTo(1));
                     assertThat(response.getResponses()[0].getResponse(), notNullValue());
-                });
+                }, multiSearchRequestBuilder);
             } else {
                 requestBuilder.get().decRef();
             }

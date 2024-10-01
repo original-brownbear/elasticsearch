@@ -65,7 +65,7 @@ public class URLSnapshotRestoreIT extends ESIntegTestCase {
             indexDoc("test-idx", Integer.toString(i), "foo", "bar" + i);
         }
         refresh();
-        assertHitCount(client.prepareSearch("test-idx").setSize(0), 100);
+        assertHitCount(100, client.prepareSearch("test-idx").setSize(0));
 
         logger.info("--> snapshot");
         CreateSnapshotResponse createSnapshotResponse = client.admin()
@@ -112,7 +112,7 @@ public class URLSnapshotRestoreIT extends ESIntegTestCase {
             .get();
         assertThat(restoreSnapshotResponse.getRestoreInfo().totalShards(), greaterThan(0));
 
-        assertHitCount(client.prepareSearch("test-idx").setSize(0), 100);
+        assertHitCount(100, client.prepareSearch("test-idx").setSize(0));
 
         logger.info("--> list available shapshots");
         GetSnapshotsResponse getSnapshotsResponse = client.admin().cluster().prepareGetSnapshots(TEST_REQUEST_TIMEOUT, "url-repo").get();

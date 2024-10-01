@@ -95,7 +95,12 @@ public class RandomSamplerIT extends ESIntegTestCase {
         long[] sampledDocCount = new long[1];
         double tolerance = 1e-14;
         // initialize the values
-        assertResponse(
+        assertResponse(response -> {
+            InternalRandomSampler sampler = response.getAggregations().get("sampler");
+            sampleMonotonicValue[0] = ((Avg) sampler.getAggregations().get("mean_monotonic")).getValue();
+            sampleNumericValue[0] = ((Avg) sampler.getAggregations().get("mean_numeric")).getValue();
+            sampledDocCount[0] = sampler.getDocCount();
+        },
             prepareSearch("idx").setPreference("shard:0")
                 .addAggregation(
                     new RandomSamplerAggregationBuilder("sampler").setProbability(PROBABILITY)
@@ -103,17 +108,19 @@ public class RandomSamplerIT extends ESIntegTestCase {
                         .subAggregation(avg("mean_monotonic").field(MONOTONIC_VALUE))
                         .subAggregation(avg("mean_numeric").field(NUMERIC_VALUE))
                         .setShardSeed(42)
-                ),
-            response -> {
-                InternalRandomSampler sampler = response.getAggregations().get("sampler");
-                sampleMonotonicValue[0] = ((Avg) sampler.getAggregations().get("mean_monotonic")).getValue();
-                sampleNumericValue[0] = ((Avg) sampler.getAggregations().get("mean_numeric")).getValue();
-                sampledDocCount[0] = sampler.getDocCount();
-            }
+                )
         );
 
         for (int i = 0; i < NUM_SAMPLE_RUNS; i++) {
-            assertResponse(
+            assertResponse(response -> {
+                InternalRandomSampler sampler = response.getAggregations().get("sampler");
+                double monotonicValue = ((Avg) sampler.getAggregations().get("mean_monotonic")).getValue();
+                double numericValue = ((Avg) sampler.getAggregations().get("mean_numeric")).getValue();
+                long docCount = sampler.getDocCount();
+                assertEquals(monotonicValue, sampleMonotonicValue[0], tolerance);
+                assertEquals(numericValue, sampleNumericValue[0], tolerance);
+                assertEquals(docCount, sampledDocCount[0]);
+            },
                 prepareSearch("idx").setPreference("shard:0")
                     .addAggregation(
                         new RandomSamplerAggregationBuilder("sampler").setProbability(PROBABILITY)
@@ -121,16 +128,7 @@ public class RandomSamplerIT extends ESIntegTestCase {
                             .subAggregation(avg("mean_monotonic").field(MONOTONIC_VALUE))
                             .subAggregation(avg("mean_numeric").field(NUMERIC_VALUE))
                             .setShardSeed(42)
-                    ),
-                response -> {
-                    InternalRandomSampler sampler = response.getAggregations().get("sampler");
-                    double monotonicValue = ((Avg) sampler.getAggregations().get("mean_monotonic")).getValue();
-                    double numericValue = ((Avg) sampler.getAggregations().get("mean_numeric")).getValue();
-                    long docCount = sampler.getDocCount();
-                    assertEquals(monotonicValue, sampleMonotonicValue[0], tolerance);
-                    assertEquals(numericValue, sampleNumericValue[0], tolerance);
-                    assertEquals(docCount, sampledDocCount[0]);
-                }
+                    )
             );
         }
     }
@@ -141,18 +139,17 @@ public class RandomSamplerIT extends ESIntegTestCase {
         double[] sampledDocCount = new double[1];
 
         for (int i = 0; i < NUM_SAMPLE_RUNS; i++) {
-            assertResponse(
+            assertResponse(response -> {
+                InternalRandomSampler sampler = response.getAggregations().get("sampler");
+                sampleMonotonicValue[0] += ((Avg) sampler.getAggregations().get("mean_monotonic")).getValue();
+                sampleNumericValue[0] += ((Avg) sampler.getAggregations().get("mean_numeric")).getValue();
+                sampledDocCount[0] += sampler.getDocCount();
+            },
                 prepareSearch("idx").addAggregation(
                     new RandomSamplerAggregationBuilder("sampler").setProbability(PROBABILITY)
                         .subAggregation(avg("mean_monotonic").field(MONOTONIC_VALUE))
                         .subAggregation(avg("mean_numeric").field(NUMERIC_VALUE))
-                ),
-                response -> {
-                    InternalRandomSampler sampler = response.getAggregations().get("sampler");
-                    sampleMonotonicValue[0] += ((Avg) sampler.getAggregations().get("mean_monotonic")).getValue();
-                    sampleNumericValue[0] += ((Avg) sampler.getAggregations().get("mean_numeric")).getValue();
-                    sampledDocCount[0] += sampler.getDocCount();
-                }
+                )
             );
         }
         sampledDocCount[0] /= NUM_SAMPLE_RUNS;
@@ -165,17 +162,16 @@ public class RandomSamplerIT extends ESIntegTestCase {
         double maxCountError = 6.0 * Math.sqrt(PROBABILITY * numDocs / NUM_SAMPLE_RUNS);
         assertThat(Math.abs(sampledDocCount[0] - expectedDocCount), lessThan(maxCountError));
 
-        assertResponse(
+        assertResponse(response -> {
+            double trueMonotonic = ((Avg) response.getAggregations().get("mean_monotonic")).getValue();
+            double trueNumeric = ((Avg) response.getAggregations().get("mean_numeric")).getValue();
+            double maxMonotonicError = 6.0 * Math.sqrt(varMonotonic / (numDocs * PROBABILITY * NUM_SAMPLE_RUNS));
+            double maxNumericError = 6.0 * Math.sqrt(varNumeric / (numDocs * PROBABILITY * NUM_SAMPLE_RUNS));
+            assertThat(Math.abs(sampleMonotonicValue[0] - trueMonotonic), lessThan(maxMonotonicError));
+            assertThat(Math.abs(sampleNumericValue[0] - trueNumeric), lessThan(maxNumericError));
+        },
             prepareSearch("idx").addAggregation(avg("mean_monotonic").field(MONOTONIC_VALUE))
-                .addAggregation(avg("mean_numeric").field(NUMERIC_VALUE)),
-            response -> {
-                double trueMonotonic = ((Avg) response.getAggregations().get("mean_monotonic")).getValue();
-                double trueNumeric = ((Avg) response.getAggregations().get("mean_numeric")).getValue();
-                double maxMonotonicError = 6.0 * Math.sqrt(varMonotonic / (numDocs * PROBABILITY * NUM_SAMPLE_RUNS));
-                double maxNumericError = 6.0 * Math.sqrt(varNumeric / (numDocs * PROBABILITY * NUM_SAMPLE_RUNS));
-                assertThat(Math.abs(sampleMonotonicValue[0] - trueMonotonic), lessThan(maxMonotonicError));
-                assertThat(Math.abs(sampleNumericValue[0] - trueNumeric), lessThan(maxNumericError));
-            }
+                .addAggregation(avg("mean_numeric").field(NUMERIC_VALUE))
         );
     }
 
@@ -185,7 +181,21 @@ public class RandomSamplerIT extends ESIntegTestCase {
         Map<String, Double> sampledDocCount = new HashMap<>();
 
         for (int i = 0; i < NUM_SAMPLE_RUNS; i++) {
-            assertResponse(
+            assertResponse(response -> {
+                InternalRandomSampler sampler = response.getAggregations().get("sampler");
+                Histogram histo = sampler.getAggregations().get("histo");
+                for (Histogram.Bucket bucket : histo.getBuckets()) {
+                    sampleMonotonicValue.compute(
+                        bucket.getKeyAsString(),
+                        (k, v) -> ((Avg) bucket.getAggregations().get("mean_monotonic")).getValue() + (v == null ? 0 : v)
+                    );
+                    sampleNumericValue.compute(
+                        bucket.getKeyAsString(),
+                        (k, v) -> ((Avg) bucket.getAggregations().get("mean_numeric")).getValue() + (v == null ? 0 : v)
+                    );
+                    sampledDocCount.compute(bucket.getKeyAsString(), (k, v) -> bucket.getDocCount() + (v == null ? 0 : v));
+                }
+            },
                 prepareSearch("idx").addAggregation(
                     new RandomSamplerAggregationBuilder("sampler").setProbability(PROBABILITY)
                         .subAggregation(
@@ -194,22 +204,7 @@ public class RandomSamplerIT extends ESIntegTestCase {
                                 .subAggregation(avg("mean_monotonic").field(MONOTONIC_VALUE))
                                 .subAggregation(avg("mean_numeric").field(NUMERIC_VALUE))
                         )
-                ),
-                response -> {
-                    InternalRandomSampler sampler = response.getAggregations().get("sampler");
-                    Histogram histo = sampler.getAggregations().get("histo");
-                    for (Histogram.Bucket bucket : histo.getBuckets()) {
-                        sampleMonotonicValue.compute(
-                            bucket.getKeyAsString(),
-                            (k, v) -> ((Avg) bucket.getAggregations().get("mean_monotonic")).getValue() + (v == null ? 0 : v)
-                        );
-                        sampleNumericValue.compute(
-                            bucket.getKeyAsString(),
-                            (k, v) -> ((Avg) bucket.getAggregations().get("mean_numeric")).getValue() + (v == null ? 0 : v)
-                        );
-                        sampledDocCount.compute(bucket.getKeyAsString(), (k, v) -> bucket.getDocCount() + (v == null ? 0 : v));
-                    }
-                }
+                )
             );
         }
         for (String key : sampledDocCount.keySet()) {
@@ -218,28 +213,27 @@ public class RandomSamplerIT extends ESIntegTestCase {
             sampleMonotonicValue.put(key, sampleMonotonicValue.get(key) / NUM_SAMPLE_RUNS);
         }
 
-        assertResponse(
+        assertResponse(response -> {
+            Histogram histogram = response.getAggregations().get("histo");
+            for (Histogram.Bucket bucket : histogram.getBuckets()) {
+                long numDocs = bucket.getDocCount();
+                // Note the true count is estimated by dividing the bucket sample doc count by PROBABILITY.
+                double maxCountError = 6.0 * Math.sqrt(numDocs / NUM_SAMPLE_RUNS / (0.5 * PROBABILITY));
+                assertThat(Math.abs(sampledDocCount.get(bucket.getKeyAsString()) - numDocs), lessThan(maxCountError));
+                double trueMonotonic = ((Avg) bucket.getAggregations().get("mean_monotonic")).getValue();
+                double trueNumeric = ((Avg) bucket.getAggregations().get("mean_numeric")).getValue();
+                double maxMonotonicError = 6.0 * Math.sqrt(varMonotonic / (numDocs * 0.5 * PROBABILITY * NUM_SAMPLE_RUNS));
+                double maxNumericError = 6.0 * Math.sqrt(varNumeric / (numDocs * 0.5 * PROBABILITY * NUM_SAMPLE_RUNS));
+                assertThat(Math.abs(sampleMonotonicValue.get(bucket.getKeyAsString()) - trueMonotonic), lessThan(maxMonotonicError));
+                assertThat(Math.abs(sampleNumericValue.get(bucket.getKeyAsString()) - trueNumeric), lessThan(maxNumericError));
+            }
+        },
             prepareSearch("idx").addAggregation(
                 histogram("histo").field(NUMERIC_VALUE)
                     .interval(5.0)
                     .subAggregation(avg("mean_monotonic").field(MONOTONIC_VALUE))
                     .subAggregation(avg("mean_numeric").field(NUMERIC_VALUE))
-            ),
-            response -> {
-                Histogram histogram = response.getAggregations().get("histo");
-                for (Histogram.Bucket bucket : histogram.getBuckets()) {
-                    long numDocs = bucket.getDocCount();
-                    // Note the true count is estimated by dividing the bucket sample doc count by PROBABILITY.
-                    double maxCountError = 6.0 * Math.sqrt(numDocs / NUM_SAMPLE_RUNS / (0.5 * PROBABILITY));
-                    assertThat(Math.abs(sampledDocCount.get(bucket.getKeyAsString()) - numDocs), lessThan(maxCountError));
-                    double trueMonotonic = ((Avg) bucket.getAggregations().get("mean_monotonic")).getValue();
-                    double trueNumeric = ((Avg) bucket.getAggregations().get("mean_numeric")).getValue();
-                    double maxMonotonicError = 6.0 * Math.sqrt(varMonotonic / (numDocs * 0.5 * PROBABILITY * NUM_SAMPLE_RUNS));
-                    double maxNumericError = 6.0 * Math.sqrt(varNumeric / (numDocs * 0.5 * PROBABILITY * NUM_SAMPLE_RUNS));
-                    assertThat(Math.abs(sampleMonotonicValue.get(bucket.getKeyAsString()) - trueMonotonic), lessThan(maxMonotonicError));
-                    assertThat(Math.abs(sampleNumericValue.get(bucket.getKeyAsString()) - trueNumeric), lessThan(maxNumericError));
-                }
-            }
+            )
         );
     }
 

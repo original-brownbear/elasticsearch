@@ -229,13 +229,11 @@ public class DownsampleTransportFailureIT extends ESIntegTestCase {
 
     private void assertDocumentsExist(final String nodeName, final String indexName) {
         assertResponse(
+            searchResponse -> { assertEquals(DOCUMENTS.size(), searchResponse.getHits().getHits().length); },
             client(nodeName).prepareSearch(indexName)
                 .setQuery(new MatchAllQueryBuilder())
                 .setTrackTotalHitsUpTo(Integer.MAX_VALUE)
-                .setSize(DOCUMENTS.size()),
-            searchResponse -> {
-                assertEquals(DOCUMENTS.size(), searchResponse.getHits().getHits().length);
-            }
+                .setSize(DOCUMENTS.size())
         );
     }
 

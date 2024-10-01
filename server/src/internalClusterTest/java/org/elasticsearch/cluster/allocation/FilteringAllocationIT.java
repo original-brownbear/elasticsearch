@@ -54,7 +54,7 @@ public class FilteringAllocationIT extends ESIntegTestCase {
             prepareIndex("test").setId(Integer.toString(i)).setSource("field", "value" + i).get();
         }
         indicesAdmin().prepareRefresh().get();
-        assertHitCount(prepareSearch().setSize(0).setQuery(QueryBuilders.matchAllQuery()), 100);
+        assertHitCount(100, prepareSearch().setSize(0).setQuery(QueryBuilders.matchAllQuery()));
 
         final boolean closed = randomBoolean();
         if (closed) {
@@ -82,7 +82,7 @@ public class FilteringAllocationIT extends ESIntegTestCase {
         }
 
         indicesAdmin().prepareRefresh().get();
-        assertHitCount(prepareSearch().setSize(0).setQuery(QueryBuilders.matchAllQuery()), 100);
+        assertHitCount(100, prepareSearch().setSize(0).setQuery(QueryBuilders.matchAllQuery()));
     }
 
     public void testAutoExpandReplicasToFilteredNodes() {
@@ -135,7 +135,7 @@ public class FilteringAllocationIT extends ESIntegTestCase {
             prepareIndex("test").setId(Integer.toString(i)).setSource("field", "value" + i).get();
         }
         indicesAdmin().prepareRefresh().get();
-        assertHitCount(prepareSearch().setSize(0).setQuery(QueryBuilders.matchAllQuery()), 100);
+        assertHitCount(100, prepareSearch().setSize(0).setQuery(QueryBuilders.matchAllQuery()));
 
         final boolean closed = randomBoolean();
         if (closed) {

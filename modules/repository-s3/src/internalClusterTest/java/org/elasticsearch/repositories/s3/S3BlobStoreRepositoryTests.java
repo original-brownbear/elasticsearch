@@ -205,7 +205,7 @@ public class S3BlobStoreRepositoryTests extends ESMockAPIBasedRepositoryIntegTes
         flushAndRefresh(index);
         BroadcastResponse forceMerge = client().admin().indices().prepareForceMerge(index).setFlush(true).setMaxNumSegments(1).get();
         assertThat(forceMerge.getSuccessfulShards(), equalTo(1));
-        assertHitCount(prepareSearch(index).setSize(0).setTrackTotalHits(true), nbDocs);
+        assertHitCount(nbDocs, prepareSearch(index).setSize(0).setTrackTotalHits(true));
 
         // Intentionally fail snapshot to trigger abortMultipartUpload requests
         shouldFailCompleteMultipartUploadRequest.set(true);
@@ -249,7 +249,7 @@ public class S3BlobStoreRepositoryTests extends ESMockAPIBasedRepositoryIntegTes
         flushAndRefresh(index);
         BroadcastResponse forceMerge = client().admin().indices().prepareForceMerge(index).setFlush(true).setMaxNumSegments(1).get();
         assertThat(forceMerge.getSuccessfulShards(), equalTo(1));
-        assertHitCount(prepareSearch(index).setSize(0).setTrackTotalHits(true), nbDocs);
+        assertHitCount(nbDocs, prepareSearch(index).setSize(0).setTrackTotalHits(true));
 
         final String snapshot = "snapshot";
         assertSuccessfulSnapshot(
@@ -260,7 +260,7 @@ public class S3BlobStoreRepositoryTests extends ESMockAPIBasedRepositoryIntegTes
             clusterAdmin().prepareRestoreSnapshot(TEST_REQUEST_TIMEOUT, repository, snapshot).setWaitForCompletion(true)
         );
         ensureGreen(index);
-        assertHitCount(prepareSearch(index).setSize(0).setTrackTotalHits(true), nbDocs);
+        assertHitCount(nbDocs, prepareSearch(index).setSize(0).setTrackTotalHits(true));
         assertAcked(clusterAdmin().prepareDeleteSnapshot(TEST_REQUEST_TIMEOUT, repository, snapshot).get());
 
         final Map<S3BlobStore.StatsKey, Long> aggregatedMetrics = new HashMap<>();

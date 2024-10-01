@@ -32,6 +32,6 @@ public abstract class AbstractAzureFsTestCase extends ESIntegTestCase {
             indexDoc("test", "" + i, "foo", "bar");
         }
         refresh();
-        assertHitCount(prepareSearch("test"), nbDocs);
+        assertHitCount(nbDocs, prepareSearch("test"));
     }
 }

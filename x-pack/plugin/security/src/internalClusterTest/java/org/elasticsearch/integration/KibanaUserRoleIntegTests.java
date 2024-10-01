@@ -102,14 +102,14 @@ public class KibanaUserRoleIntegTests extends NativeRealmIntegTestCase {
         final String field = "foo";
         indexRandom(true, prepareIndex(index).setSource(field, "bar"));
 
-        assertResponse(prepareSearch(index).setQuery(QueryBuilders.matchAllQuery()), response -> {
+        assertResponse(response -> {
             final long hits = response.getHits().getTotalHits().value;
             assertThat(hits, greaterThan(0L));
             assertResponse(
+                response2 -> assertEquals(response2.getHits().getTotalHits().value, hits),
                 client().filterWithHeader(
                     singletonMap("Authorization", UsernamePasswordToken.basicAuthHeaderValue("kibana_user", USERS_PASSWD))
-                ).prepareSearch(index).setQuery(QueryBuilders.matchAllQuery()),
-                response2 -> assertEquals(response2.getHits().getTotalHits().value, hits)
+                ).prepareSearch(index).setQuery(QueryBuilders.matchAllQuery())
             );
             final long multiHits;
             MultiSearchResponse multiSearchResponse = client().prepareMultiSearch()
@@ -129,7 +129,7 @@ public class KibanaUserRoleIntegTests extends NativeRealmIntegTestCase {
             } finally {
                 multiSearchResponse.decRef();
             }
-        });
+        }, prepareSearch(index).setQuery(QueryBuilders.matchAllQuery()));
     }
 
     public void testGetIndex() throws Exception {

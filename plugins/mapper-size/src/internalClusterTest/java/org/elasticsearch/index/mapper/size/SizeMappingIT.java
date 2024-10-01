@@ -112,23 +112,23 @@ public class SizeMappingIT extends ESIntegTestCase {
         final String source = "{\"f\":\"" + randomAlphaOfLengthBetween(1, 100) + "\"}";
         indexRandom(true, prepareIndex("test").setId("1").setSource(source, XContentType.JSON));
         assertResponse(
-            prepareSearch("test").addFetchField("_size"),
             response -> assertEquals(
                 source.length(),
                 ((Long) response.getHits().getHits()[0].getFields().get("_size").getValue()).intValue()
-            )
+            ),
+            prepareSearch("test").addFetchField("_size")
         );
 
         // this should not work when requesting fields via wildcard expression
         assertResponse(
-            prepareSearch("test").addFetchField("*"),
-            response -> assertNull(response.getHits().getHits()[0].getFields().get("_size"))
+            response -> assertNull(response.getHits().getHits()[0].getFields().get("_size")),
+            prepareSearch("test").addFetchField("*")
         );
 
         // This should STILL work
         assertResponse(
-            prepareSearch("test").addStoredField("*"),
-            response -> assertNotNull(response.getHits().getHits()[0].getFields().get("_size"))
+            response -> assertNotNull(response.getHits().getHits()[0].getFields().get("_size")),
+            prepareSearch("test").addStoredField("*")
         );
     }
 
@@ -137,18 +137,18 @@ public class SizeMappingIT extends ESIntegTestCase {
         final String source = "{\"f\":\"" + randomAlphaOfLengthBetween(1, 100) + "\"}";
         indexRandom(true, prepareIndex("test").setId("1").setSource(source, XContentType.JSON));
         assertResponse(
-            prepareSearch("test").addFetchField("_size"),
-            response -> assertNull(response.getHits().getHits()[0].getFields().get("_size"))
+            response -> assertNull(response.getHits().getHits()[0].getFields().get("_size")),
+            prepareSearch("test").addFetchField("_size")
         );
 
         assertResponse(
-            prepareSearch("test").addFetchField("*"),
-            response -> assertNull(response.getHits().getHits()[0].getFields().get("_size"))
+            response -> assertNull(response.getHits().getHits()[0].getFields().get("_size")),
+            prepareSearch("test").addFetchField("*")
         );
 
         assertResponse(
-            prepareSearch("test").addStoredField("*"),
-            response -> assertNull(response.getHits().getHits()[0].getFields().get("_size"))
+            response -> assertNull(response.getHits().getHits()[0].getFields().get("_size")),
+            prepareSearch("test").addStoredField("*")
         );
     }
 
@@ -157,18 +157,18 @@ public class SizeMappingIT extends ESIntegTestCase {
         final String source = "{\"f\":\"" + randomAlphaOfLengthBetween(1, 100) + "\"}";
         indexRandom(true, prepareIndex("test").setId("1").setSource(source, XContentType.JSON));
         assertResponse(
-            prepareSearch("test").addFetchField("_size"),
-            response -> assertNull(response.getHits().getHits()[0].getFields().get("_size"))
+            response -> assertNull(response.getHits().getHits()[0].getFields().get("_size")),
+            prepareSearch("test").addFetchField("_size")
         );
 
         assertResponse(
-            prepareSearch("test").addFetchField("*"),
-            response -> assertNull(response.getHits().getHits()[0].getFields().get("_size"))
+            response -> assertNull(response.getHits().getHits()[0].getFields().get("_size")),
+            prepareSearch("test").addFetchField("*")
         );
 
         assertResponse(
-            prepareSearch("test").addStoredField("*"),
-            response -> assertNull(response.getHits().getHits()[0].getFields().get("_size"))
+            response -> assertNull(response.getHits().getHits()[0].getFields().get("_size")),
+            prepareSearch("test").addStoredField("*")
         );
     }
 }

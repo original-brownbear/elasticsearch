@@ -75,8 +75,8 @@ public class ConcurrentDynamicTemplateIT extends ESIntegTestCase {
             latch.await();
             assertThat(throwable, emptyIterable());
             refresh();
-            assertHitCount(prepareSearch("test").setQuery(QueryBuilders.matchQuery(fieldName, "test-user")), numDocs);
-            assertHitCount(prepareSearch("test").setQuery(QueryBuilders.matchQuery(fieldName, "test user")), 0);
+            assertHitCount(numDocs, prepareSearch("test").setQuery(QueryBuilders.matchQuery(fieldName, "test-user")));
+            assertHitCount(0, prepareSearch("test").setQuery(QueryBuilders.matchQuery(fieldName, "test user")));
 
         }
     }

@@ -26,42 +26,36 @@ import static org.hamcrest.Matchers.notNullValue;
 public class GeoBoundsIT extends SpatialBoundsAggregationTestBase<GeoPoint> {
 
     public void testSingleValuedFieldNearDateLine() {
-        assertNoFailuresAndResponse(
-            prepareSearch(DATELINE_IDX_NAME).addAggregation(boundsAgg(aggName(), SINGLE_VALUED_FIELD_NAME).wrapLongitude(false)),
-            response -> {
-                GeoPoint geoValuesTopLeft = new GeoPoint(38, -179);
-                GeoPoint geoValuesBottomRight = new GeoPoint(-24, 178);
+        assertNoFailuresAndResponse(response -> {
+            GeoPoint geoValuesTopLeft = new GeoPoint(38, -179);
+            GeoPoint geoValuesBottomRight = new GeoPoint(-24, 178);
 
-                GeoBounds geoBounds = response.getAggregations().get(aggName());
-                assertThat(geoBounds, notNullValue());
-                assertThat(geoBounds.getName(), equalTo(aggName()));
-                GeoPoint topLeft = geoBounds.topLeft();
-                GeoPoint bottomRight = geoBounds.bottomRight();
-                assertThat(topLeft.getY(), closeTo(geoValuesTopLeft.getY(), GEOHASH_TOLERANCE));
-                assertThat(topLeft.getX(), closeTo(geoValuesTopLeft.getX(), GEOHASH_TOLERANCE));
-                assertThat(bottomRight.getY(), closeTo(geoValuesBottomRight.getY(), GEOHASH_TOLERANCE));
-                assertThat(bottomRight.getX(), closeTo(geoValuesBottomRight.getX(), GEOHASH_TOLERANCE));
-            }
-        );
+            GeoBounds geoBounds = response.getAggregations().get(aggName());
+            assertThat(geoBounds, notNullValue());
+            assertThat(geoBounds.getName(), equalTo(aggName()));
+            GeoPoint topLeft = geoBounds.topLeft();
+            GeoPoint bottomRight = geoBounds.bottomRight();
+            assertThat(topLeft.getY(), closeTo(geoValuesTopLeft.getY(), GEOHASH_TOLERANCE));
+            assertThat(topLeft.getX(), closeTo(geoValuesTopLeft.getX(), GEOHASH_TOLERANCE));
+            assertThat(bottomRight.getY(), closeTo(geoValuesBottomRight.getY(), GEOHASH_TOLERANCE));
+            assertThat(bottomRight.getX(), closeTo(geoValuesBottomRight.getX(), GEOHASH_TOLERANCE));
+        }, prepareSearch(DATELINE_IDX_NAME).addAggregation(boundsAgg(aggName(), SINGLE_VALUED_FIELD_NAME).wrapLongitude(false)));
     }
 
     public void testSingleValuedFieldNearDateLineWrapLongitude() {
         GeoPoint geoValuesTopLeft = new GeoPoint(38, 170);
         GeoPoint geoValuesBottomRight = new GeoPoint(-24, -175);
-        assertNoFailuresAndResponse(
-            prepareSearch(DATELINE_IDX_NAME).addAggregation(boundsAgg(aggName(), SINGLE_VALUED_FIELD_NAME).wrapLongitude(true)),
-            response -> {
-                GeoBounds geoBounds = response.getAggregations().get(aggName());
-                assertThat(geoBounds, notNullValue());
-                assertThat(geoBounds.getName(), equalTo(aggName()));
-                GeoPoint topLeft = geoBounds.topLeft();
-                GeoPoint bottomRight = geoBounds.bottomRight();
-                assertThat(topLeft.getY(), closeTo(geoValuesTopLeft.getY(), GEOHASH_TOLERANCE));
-                assertThat(topLeft.getX(), closeTo(geoValuesTopLeft.getX(), GEOHASH_TOLERANCE));
-                assertThat(bottomRight.getY(), closeTo(geoValuesBottomRight.getY(), GEOHASH_TOLERANCE));
-                assertThat(bottomRight.getX(), closeTo(geoValuesBottomRight.getX(), GEOHASH_TOLERANCE));
-            }
-        );
+        assertNoFailuresAndResponse(response -> {
+            GeoBounds geoBounds = response.getAggregations().get(aggName());
+            assertThat(geoBounds, notNullValue());
+            assertThat(geoBounds.getName(), equalTo(aggName()));
+            GeoPoint topLeft = geoBounds.topLeft();
+            GeoPoint bottomRight = geoBounds.bottomRight();
+            assertThat(topLeft.getY(), closeTo(geoValuesTopLeft.getY(), GEOHASH_TOLERANCE));
+            assertThat(topLeft.getX(), closeTo(geoValuesTopLeft.getX(), GEOHASH_TOLERANCE));
+            assertThat(bottomRight.getY(), closeTo(geoValuesBottomRight.getY(), GEOHASH_TOLERANCE));
+            assertThat(bottomRight.getX(), closeTo(geoValuesBottomRight.getX(), GEOHASH_TOLERANCE));
+        }, prepareSearch(DATELINE_IDX_NAME).addAggregation(boundsAgg(aggName(), SINGLE_VALUED_FIELD_NAME).wrapLongitude(true)));
     }
 
     @Override

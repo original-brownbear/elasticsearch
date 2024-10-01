@@ -105,9 +105,9 @@ public class HistogramPercentileAggregationTests extends ESSingleNodeTestCase {
         }
         client().admin().indices().refresh(new RefreshRequest("raw", "pre_agg")).get();
 
-        assertHitCount(client().prepareSearch("raw").setTrackTotalHits(true), numDocs);
+        assertHitCount(numDocs, client().prepareSearch("raw").setTrackTotalHits(true));
 
-        assertHitCount(client().prepareSearch("pre_agg"), numDocs / frq);
+        assertHitCount(numDocs / frq, client().prepareSearch("pre_agg"));
 
         PercentilesAggregationBuilder builder = AggregationBuilders.percentiles("agg")
             .field("data")
@@ -115,20 +115,16 @@ public class HistogramPercentileAggregationTests extends ESSingleNodeTestCase {
             .numberOfSignificantValueDigits(numberOfSignificantValueDigits)
             .percentiles(10);
 
-        assertResponse(
-            client().prepareSearch("raw").addAggregation(builder),
-            responseRaw -> assertResponse(
-                client().prepareSearch("pre_agg").addAggregation(builder),
-                responsePreAgg -> assertResponse(client().prepareSearch("pre_agg", "raw").addAggregation(builder), responseBoth -> {
-                    InternalHDRPercentiles percentilesRaw = responseRaw.getAggregations().get("agg");
-                    InternalHDRPercentiles percentilesPreAgg = responsePreAgg.getAggregations().get("agg");
-                    InternalHDRPercentiles percentilesBoth = responseBoth.getAggregations().get("agg");
-                    for (int i = 1; i < 100; i++) {
-                        assertEquals(percentilesRaw.percentile(i), percentilesPreAgg.percentile(i), 0.0);
-                        assertEquals(percentilesRaw.percentile(i), percentilesBoth.percentile(i), 0.0);
-                    }
-                })
-            )
+        assertResponse(responseRaw -> assertResponse(responsePreAgg -> assertResponse(responseBoth -> {
+            InternalHDRPercentiles percentilesRaw = responseRaw.getAggregations().get("agg");
+            InternalHDRPercentiles percentilesPreAgg = responsePreAgg.getAggregations().get("agg");
+            InternalHDRPercentiles percentilesBoth = responseBoth.getAggregations().get("agg");
+            for (int i = 1; i < 100; i++) {
+                assertEquals(percentilesRaw.percentile(i), percentilesPreAgg.percentile(i), 0.0);
+                assertEquals(percentilesRaw.percentile(i), percentilesBoth.percentile(i), 0.0);
+            }
+        }, client().prepareSearch("pre_agg", "raw").addAggregation(builder)), client().prepareSearch("pre_agg").addAggregation(builder)),
+            client().prepareSearch("raw").addAggregation(builder)
         );
     }
 
@@ -210,8 +206,8 @@ public class HistogramPercentileAggregationTests extends ESSingleNodeTestCase {
         }
         client().admin().indices().refresh(new RefreshRequest("raw", "pre_agg")).get();
 
-        assertHitCount(client().prepareSearch("raw").setTrackTotalHits(true), numDocs);
-        assertHitCount(client().prepareSearch("pre_agg"), numDocs / frq);
+        assertHitCount(numDocs, client().prepareSearch("raw").setTrackTotalHits(true));
+        assertHitCount(numDocs / frq, client().prepareSearch("pre_agg"));
     }
 
     public void testTDigestHistogram() throws Exception {
@@ -224,20 +220,16 @@ public class HistogramPercentileAggregationTests extends ESSingleNodeTestCase {
             .compression(compression)
             .percentiles(10, 25, 50, 75);
 
-        assertResponse(
-            client().prepareSearch("raw").addAggregation(builder),
-            responseRaw -> assertResponse(
-                client().prepareSearch("pre_agg").addAggregation(builder),
-                responsePreAgg -> assertResponse(client().prepareSearch("raw", "pre_agg").addAggregation(builder), responseBoth -> {
-                    InternalTDigestPercentiles percentilesRaw = responseRaw.getAggregations().get("agg");
-                    InternalTDigestPercentiles percentilesPreAgg = responsePreAgg.getAggregations().get("agg");
-                    InternalTDigestPercentiles percentilesBoth = responseBoth.getAggregations().get("agg");
-                    for (int i = 1; i < 100; i++) {
-                        assertEquals(percentilesRaw.percentile(i), percentilesPreAgg.percentile(i), 1.0);
-                        assertEquals(percentilesRaw.percentile(i), percentilesBoth.percentile(i), 1.0);
-                    }
-                })
-            )
+        assertResponse(responseRaw -> assertResponse(responsePreAgg -> assertResponse(responseBoth -> {
+            InternalTDigestPercentiles percentilesRaw = responseRaw.getAggregations().get("agg");
+            InternalTDigestPercentiles percentilesPreAgg = responsePreAgg.getAggregations().get("agg");
+            InternalTDigestPercentiles percentilesBoth = responseBoth.getAggregations().get("agg");
+            for (int i = 1; i < 100; i++) {
+                assertEquals(percentilesRaw.percentile(i), percentilesPreAgg.percentile(i), 1.0);
+                assertEquals(percentilesRaw.percentile(i), percentilesBoth.percentile(i), 1.0);
+            }
+        }, client().prepareSearch("raw", "pre_agg").addAggregation(builder)), client().prepareSearch("pre_agg").addAggregation(builder)),
+            client().prepareSearch("raw").addAggregation(builder)
         );
     }
 
@@ -246,28 +238,24 @@ public class HistogramPercentileAggregationTests extends ESSingleNodeTestCase {
         setupTDigestHistogram(compression);
         BoxplotAggregationBuilder bpBuilder = new BoxplotAggregationBuilder("agg").field("inner.data").compression(compression);
 
-        assertResponse(
-            client().prepareSearch("raw").addAggregation(bpBuilder),
-            bpResponseRaw -> assertResponse(
-                client().prepareSearch("pre_agg").addAggregation(bpBuilder),
-                bpResponsePreAgg -> assertResponse(client().prepareSearch("raw", "pre_agg").addAggregation(bpBuilder), bpResponseBoth -> {
-                    Boxplot bpRaw = bpResponseRaw.getAggregations().get("agg");
-                    Boxplot bpPreAgg = bpResponsePreAgg.getAggregations().get("agg");
-                    Boxplot bpBoth = bpResponseBoth.getAggregations().get("agg");
-                    assertEquals(bpRaw.getMax(), bpPreAgg.getMax(), 0.0);
-                    assertEquals(bpRaw.getMax(), bpBoth.getMax(), 0.0);
-                    assertEquals(bpRaw.getMin(), bpPreAgg.getMin(), 0.0);
-                    assertEquals(bpRaw.getMin(), bpBoth.getMin(), 0.0);
+        assertResponse(bpResponseRaw -> assertResponse(bpResponsePreAgg -> assertResponse(bpResponseBoth -> {
+            Boxplot bpRaw = bpResponseRaw.getAggregations().get("agg");
+            Boxplot bpPreAgg = bpResponsePreAgg.getAggregations().get("agg");
+            Boxplot bpBoth = bpResponseBoth.getAggregations().get("agg");
+            assertEquals(bpRaw.getMax(), bpPreAgg.getMax(), 0.0);
+            assertEquals(bpRaw.getMax(), bpBoth.getMax(), 0.0);
+            assertEquals(bpRaw.getMin(), bpPreAgg.getMin(), 0.0);
+            assertEquals(bpRaw.getMin(), bpBoth.getMin(), 0.0);
 
-                    assertEquals(bpRaw.getQ1(), bpPreAgg.getQ1(), 1.0);
-                    assertEquals(bpRaw.getQ1(), bpBoth.getQ1(), 1.0);
-                    assertEquals(bpRaw.getQ2(), bpPreAgg.getQ2(), 1.0);
-                    assertEquals(bpRaw.getQ2(), bpBoth.getQ2(), 1.0);
-                    assertEquals(bpRaw.getQ3(), bpPreAgg.getQ3(), 1.0);
-                    assertEquals(bpRaw.getQ3(), bpBoth.getQ3(), 1.0);
-                })
-            )
-        );
+            assertEquals(bpRaw.getQ1(), bpPreAgg.getQ1(), 1.0);
+            assertEquals(bpRaw.getQ1(), bpBoth.getQ1(), 1.0);
+            assertEquals(bpRaw.getQ2(), bpPreAgg.getQ2(), 1.0);
+            assertEquals(bpRaw.getQ2(), bpBoth.getQ2(), 1.0);
+            assertEquals(bpRaw.getQ3(), bpPreAgg.getQ3(), 1.0);
+            assertEquals(bpRaw.getQ3(), bpBoth.getQ3(), 1.0);
+        }, client().prepareSearch("raw", "pre_agg").addAggregation(bpBuilder)),
+            client().prepareSearch("pre_agg").addAggregation(bpBuilder)
+        ), client().prepareSearch("raw").addAggregation(bpBuilder));
     }
 
     @Override

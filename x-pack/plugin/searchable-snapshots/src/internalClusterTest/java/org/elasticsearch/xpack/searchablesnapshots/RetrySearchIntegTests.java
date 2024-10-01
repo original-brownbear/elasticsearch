@@ -144,25 +144,24 @@ public class RetrySearchIntegTests extends BaseSearchableSnapshotsIntegTestCase 
         ).keepAlive(TimeValue.timeValueMinutes(2));
         final BytesReference pitId = client().execute(TransportOpenPointInTimeAction.TYPE, openRequest).actionGet().getPointInTimeId();
         try {
-            assertNoFailuresAndResponse(prepareSearch().setPointInTime(new PointInTimeBuilder(pitId)), resp -> {
+            assertNoFailuresAndResponse(resp -> {
                 assertThat(resp.pointInTimeId(), equalTo(pitId));
                 assertHitCount(resp, docCount);
-            });
+            }, prepareSearch().setPointInTime(new PointInTimeBuilder(pitId)));
             final Set<String> allocatedNodes = internalCluster().nodesInclude(indexName);
             for (String allocatedNode : allocatedNodes) {
                 internalCluster().restartNode(allocatedNode);
             }
             ensureGreen(indexName);
-            assertNoFailuresAndResponse(
+            assertNoFailuresAndResponse(resp -> {
+                assertThat(resp.pointInTimeId(), equalTo(pitId));
+                assertHitCount(resp, docCount);
+            },
                 prepareSearch().setQuery(new RangeQueryBuilder("created_date").gte("2011-01-01").lte("2011-12-12"))
                     .setSearchType(SearchType.QUERY_THEN_FETCH)
                     .setPreFilterShardSize(between(1, 10))
                     .setAllowPartialSearchResults(true)
-                    .setPointInTime(new PointInTimeBuilder(pitId)),
-                resp -> {
-                    assertThat(resp.pointInTimeId(), equalTo(pitId));
-                    assertHitCount(resp, docCount);
-                }
+                    .setPointInTime(new PointInTimeBuilder(pitId))
             );
         } finally {
             client().execute(TransportClosePointInTimeAction.TYPE, new ClosePointInTimeRequest(pitId)).actionGet();

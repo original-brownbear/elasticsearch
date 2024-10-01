@@ -81,7 +81,7 @@ public class SecurityClearScrollTests extends SecurityIntegTestCase {
             multiSearchRequestBuilder.add(prepareSearch("index").setScroll(TimeValue.timeValueMinutes(10)).setSize(1));
         }
         scrollIds = new ArrayList<>();
-        assertResponse(multiSearchRequestBuilder, multiSearchResponse -> scrollIds.addAll(getScrollIds(multiSearchResponse)));
+        assertResponse(multiSearchResponse -> scrollIds.addAll(getScrollIds(multiSearchResponse)), multiSearchRequestBuilder);
     }
 
     @After

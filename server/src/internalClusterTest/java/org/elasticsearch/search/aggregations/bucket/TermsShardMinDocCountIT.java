@@ -62,7 +62,11 @@ public class TermsShardMinDocCountIT extends ESIntegTestCase {
         indexRandom(true, false, indexBuilders);
 
         // first, check that indeed when not setting the shardMinDocCount parameter 0 terms are returned
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            InternalFilter filteredBucket = response.getAggregations().get("inclass");
+            SignificantTerms sigterms = filteredBucket.getAggregations().get("mySignificantTerms");
+            assertThat(sigterms.getBuckets().size(), equalTo(0));
+        },
             prepareSearch(index).addAggregation(
                 (filter("inclass", QueryBuilders.termQuery("class", true))).subAggregation(
                     significantTerms("mySignificantTerms").field("text")
@@ -71,15 +75,15 @@ public class TermsShardMinDocCountIT extends ESIntegTestCase {
                         .shardSize(2)
                         .executionHint(randomExecutionHint())
                 )
-            ),
-            response -> {
-                InternalFilter filteredBucket = response.getAggregations().get("inclass");
-                SignificantTerms sigterms = filteredBucket.getAggregations().get("mySignificantTerms");
-                assertThat(sigterms.getBuckets().size(), equalTo(0));
-            }
+            )
         );
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            assertNoFailures(response);
+            InternalFilter filteredBucket = response.getAggregations().get("inclass");
+            SignificantTerms sigterms = filteredBucket.getAggregations().get("mySignificantTerms");
+            assertThat(sigterms.getBuckets().size(), equalTo(2));
+        },
             prepareSearch(index).addAggregation(
                 (filter("inclass", QueryBuilders.termQuery("class", true))).subAggregation(
                     significantTerms("mySignificantTerms").field("text")
@@ -89,13 +93,7 @@ public class TermsShardMinDocCountIT extends ESIntegTestCase {
                         .size(2)
                         .executionHint(randomExecutionHint())
                 )
-            ),
-            response -> {
-                assertNoFailures(response);
-                InternalFilter filteredBucket = response.getAggregations().get("inclass");
-                SignificantTerms sigterms = filteredBucket.getAggregations().get("mySignificantTerms");
-                assertThat(sigterms.getBuckets().size(), equalTo(2));
-            }
+            )
         );
     }
 
@@ -130,7 +128,10 @@ public class TermsShardMinDocCountIT extends ESIntegTestCase {
         indexRandom(true, false, indexBuilders);
 
         // first, check that indeed when not setting the shardMinDocCount parameter 0 terms are returned
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Terms sigterms = response.getAggregations().get("myTerms");
+            assertThat(sigterms.getBuckets().size(), equalTo(0));
+        },
             prepareSearch(index).addAggregation(
                 terms("myTerms").field("text")
                     .minDocCount(2)
@@ -138,14 +139,13 @@ public class TermsShardMinDocCountIT extends ESIntegTestCase {
                     .shardSize(2)
                     .executionHint(randomExecutionHint())
                     .order(BucketOrder.key(true))
-            ),
-            response -> {
-                Terms sigterms = response.getAggregations().get("myTerms");
-                assertThat(sigterms.getBuckets().size(), equalTo(0));
-            }
+            )
         );
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Terms sigterms = response.getAggregations().get("myTerms");
+            assertThat(sigterms.getBuckets().size(), equalTo(2));
+        },
             prepareSearch(index).addAggregation(
                 terms("myTerms").field("text")
                     .minDocCount(2)
@@ -154,11 +154,7 @@ public class TermsShardMinDocCountIT extends ESIntegTestCase {
                     .shardSize(2)
                     .executionHint(randomExecutionHint())
                     .order(BucketOrder.key(true))
-            ),
-            response -> {
-                Terms sigterms = response.getAggregations().get("myTerms");
-                assertThat(sigterms.getBuckets().size(), equalTo(2));
-            }
+            )
         );
     }
 

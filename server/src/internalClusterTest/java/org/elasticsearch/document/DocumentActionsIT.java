@@ -151,14 +151,14 @@ public class DocumentActionsIT extends ESIntegTestCase {
         // check count
         for (int i = 0; i < 5; i++) {
             // test successful
-            assertNoFailuresAndResponse(prepareSearch("test").setSize(0).setQuery(matchAllQuery()), countResponse -> {
+            assertNoFailuresAndResponse(countResponse -> {
                 assertThat(countResponse.getHits().getTotalHits().value, equalTo(2L));
                 assertThat(countResponse.getSuccessfulShards(), equalTo(numShards.numPrimaries));
                 assertThat(countResponse.getFailedShards(), equalTo(0));
-            });
+            }, prepareSearch("test").setSize(0).setQuery(matchAllQuery()));
 
             // count with no query is a match all one
-            assertNoFailuresAndResponse(prepareSearch("test").setSize(0), countResponse -> {
+            assertNoFailuresAndResponse(countResponse -> {
                 assertThat(
                     "Failures " + countResponse.getShardFailures(),
                     countResponse.getShardFailures() == null ? 0 : countResponse.getShardFailures().length,
@@ -167,7 +167,7 @@ public class DocumentActionsIT extends ESIntegTestCase {
                 assertThat(countResponse.getHits().getTotalHits().value, equalTo(2L));
                 assertThat(countResponse.getSuccessfulShards(), equalTo(numShards.numPrimaries));
                 assertThat(countResponse.getFailedShards(), equalTo(0));
-            });
+            }, prepareSearch("test").setSize(0));
         }
     }
 

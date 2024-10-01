@@ -124,9 +124,6 @@ public class TextSimilarityRankTests extends ESSingleNodeTestCase {
     public void testRerank() {
         ElasticsearchAssertions.assertNoFailuresAndResponse(
             // Execute search with text similarity reranking
-            client.prepareSearch()
-                .setRankBuilder(new TextSimilarityRankBuilder("text", "my-rerank-model", "my query", 100, 0.0f))
-                .setQuery(QueryBuilders.matchAllQuery()),
             response -> {
                 // Verify order, rank and score of results
                 SearchHit[] hits = response.getHits().getHits();
@@ -136,16 +133,16 @@ public class TextSimilarityRankTests extends ESSingleNodeTestCase {
                 assertHitHasRankScoreAndText(hits[2], 3, 2.0f, "2");
                 assertHitHasRankScoreAndText(hits[3], 4, 1.0f, "1");
                 assertHitHasRankScoreAndText(hits[4], 5, 0.0f, "0");
-            }
+            },
+            client.prepareSearch()
+                .setRankBuilder(new TextSimilarityRankBuilder("text", "my-rerank-model", "my query", 100, 0.0f))
+                .setQuery(QueryBuilders.matchAllQuery())
         );
     }
 
     public void testRerankWithMinScore() {
         ElasticsearchAssertions.assertNoFailuresAndResponse(
             // Execute search with text similarity reranking
-            client.prepareSearch()
-                .setRankBuilder(new TextSimilarityRankBuilder("text", "my-rerank-model", "my query", 100, 1.5f))
-                .setQuery(QueryBuilders.matchAllQuery()),
             response -> {
                 // Verify order, rank and score of results
                 SearchHit[] hits = response.getHits().getHits();
@@ -153,7 +150,10 @@ public class TextSimilarityRankTests extends ESSingleNodeTestCase {
                 assertHitHasRankScoreAndText(hits[0], 1, 4.0f, "4");
                 assertHitHasRankScoreAndText(hits[1], 2, 3.0f, "3");
                 assertHitHasRankScoreAndText(hits[2], 3, 2.0f, "2");
-            }
+            },
+            client.prepareSearch()
+                .setRankBuilder(new TextSimilarityRankBuilder("text", "my-rerank-model", "my query", 100, 1.5f))
+                .setQuery(QueryBuilders.matchAllQuery())
         );
     }
 

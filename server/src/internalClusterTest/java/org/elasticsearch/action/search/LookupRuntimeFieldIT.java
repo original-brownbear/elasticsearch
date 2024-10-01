@@ -135,42 +135,66 @@ public class LookupRuntimeFieldIT extends ESIntegTestCase {
     }
 
     public void testBasic() {
-        assertNoFailuresAndResponse(
-            prepareSearch("books").addFetchField("author").addFetchField("title").addSort("published_date", SortOrder.DESC).setSize(3),
-            searchResponse -> {
-                ElasticsearchAssertions.assertHitCount(searchResponse, 5);
+        assertNoFailuresAndResponse(searchResponse -> {
+            ElasticsearchAssertions.assertHitCount(searchResponse, 5);
 
-                SearchHit hit0 = searchResponse.getHits().getHits()[0];
-                assertThat(hit0.field("title").getValues(), equalTo(List.of("the fifth book")));
-                assertThat(
-                    hit0.field("author").getValues(),
-                    equalTo(List.of(Map.of("first_name", List.of("Mike"), "last_name", List.of("Boston"))))
-                );
+            SearchHit hit0 = searchResponse.getHits().getHits()[0];
+            assertThat(hit0.field("title").getValues(), equalTo(List.of("the fifth book")));
+            assertThat(
+                hit0.field("author").getValues(),
+                equalTo(List.of(Map.of("first_name", List.of("Mike"), "last_name", List.of("Boston"))))
+            );
 
-                SearchHit hit1 = searchResponse.getHits().getHits()[1];
-                assertThat(hit1.field("title").getValues(), equalTo(List.of("the forth book")));
-                assertThat(
-                    hit1.field("author").getValues(),
-                    equalTo(
-                        List.of(
-                            Map.of("first_name", List.of("Mike"), "last_name", List.of("Boston")),
-                            Map.of("first_name", List.of("Jack"), "last_name", List.of("Austin"))
-                        )
+            SearchHit hit1 = searchResponse.getHits().getHits()[1];
+            assertThat(hit1.field("title").getValues(), equalTo(List.of("the forth book")));
+            assertThat(
+                hit1.field("author").getValues(),
+                equalTo(
+                    List.of(
+                        Map.of("first_name", List.of("Mike"), "last_name", List.of("Boston")),
+                        Map.of("first_name", List.of("Jack"), "last_name", List.of("Austin"))
                     )
-                );
+                )
+            );
 
-                SearchHit hit2 = searchResponse.getHits().getHits()[2];
-                assertThat(hit2.field("title").getValues(), equalTo(List.of("the third book")));
-                assertThat(
-                    hit2.field("author").getValues(),
-                    equalTo(List.of(Map.of("first_name", List.of("Mike"), "last_name", List.of("Boston"))))
-                );
-            }
-        );
+            SearchHit hit2 = searchResponse.getHits().getHits()[2];
+            assertThat(hit2.field("title").getValues(), equalTo(List.of("the third book")));
+            assertThat(
+                hit2.field("author").getValues(),
+                equalTo(List.of(Map.of("first_name", List.of("Mike"), "last_name", List.of("Boston"))))
+            );
+        }, prepareSearch("books").addFetchField("author").addFetchField("title").addSort("published_date", SortOrder.DESC).setSize(3));
     }
 
     public void testLookupMultipleIndices() throws IOException {
-        assertResponse(
+        assertResponse(searchResponse -> {
+            SearchHit hit0 = searchResponse.getHits().getHits()[0];
+            assertThat(hit0.field("title").getValues(), equalTo(List.of("the fifth book")));
+            assertThat(
+                hit0.field("author").getValues(),
+                equalTo(List.of(Map.of("first_name", List.of("Mike"), "last_name", List.of("Boston"))))
+            );
+            assertThat(
+                hit0.field("publisher").getValues(),
+                equalTo(List.of(Map.of("name", List.of("The second publisher"), "city", List.of("Toronto"))))
+            );
+
+            SearchHit hit1 = searchResponse.getHits().getHits()[1];
+            assertThat(hit1.field("title").getValues(), equalTo(List.of("the forth book")));
+            assertThat(
+                hit1.field("author").getValues(),
+                equalTo(
+                    List.of(
+                        Map.of("first_name", List.of("Mike"), "last_name", List.of("Boston")),
+                        Map.of("first_name", List.of("Jack"), "last_name", List.of("Austin"))
+                    )
+                )
+            );
+            assertThat(
+                hit1.field("publisher").getValues(),
+                equalTo(List.of(Map.of("name", List.of("The first publisher"), "city", List.of("Montreal", "Vancouver"))))
+            );
+        },
             prepareSearch("books").setRuntimeMappings(parseMapping("""
                 {
                     "publisher": {
@@ -187,40 +211,20 @@ public class LookupRuntimeFieldIT extends ESIntegTestCase {
                 .addFetchField("author")
                 .addFetchField("publisher")
                 .addSort("published_date", SortOrder.DESC)
-                .setSize(2),
-            searchResponse -> {
-                SearchHit hit0 = searchResponse.getHits().getHits()[0];
-                assertThat(hit0.field("title").getValues(), equalTo(List.of("the fifth book")));
-                assertThat(
-                    hit0.field("author").getValues(),
-                    equalTo(List.of(Map.of("first_name", List.of("Mike"), "last_name", List.of("Boston"))))
-                );
-                assertThat(
-                    hit0.field("publisher").getValues(),
-                    equalTo(List.of(Map.of("name", List.of("The second publisher"), "city", List.of("Toronto"))))
-                );
-
-                SearchHit hit1 = searchResponse.getHits().getHits()[1];
-                assertThat(hit1.field("title").getValues(), equalTo(List.of("the forth book")));
-                assertThat(
-                    hit1.field("author").getValues(),
-                    equalTo(
-                        List.of(
-                            Map.of("first_name", List.of("Mike"), "last_name", List.of("Boston")),
-                            Map.of("first_name", List.of("Jack"), "last_name", List.of("Austin"))
-                        )
-                    )
-                );
-                assertThat(
-                    hit1.field("publisher").getValues(),
-                    equalTo(List.of(Map.of("name", List.of("The first publisher"), "city", List.of("Montreal", "Vancouver"))))
-                );
-            }
+                .setSize(2)
         );
     }
 
     public void testFetchField() throws Exception {
-        assertNoFailuresAndResponse(prepareSearch("books").setRuntimeMappings(parseMapping("""
+        assertNoFailuresAndResponse(searchResponse -> {
+            SearchHit hit0 = searchResponse.getHits().getHits()[0];
+            // "author", "john", "first_name", "John", "last_name", "New York", "joined", "2020-03-01"
+            assertThat(hit0.field("title").getValues(), equalTo(List.of("the first book")));
+            assertThat(
+                hit0.field("author").getValues(),
+                equalTo(List.of(Map.of("first_name", List.of("John"), "joined", List.of("03/2020"))))
+            );
+        }, prepareSearch("books").setRuntimeMappings(parseMapping("""
             {
                 "author": {
                     "type": "lookup",
@@ -230,15 +234,7 @@ public class LookupRuntimeFieldIT extends ESIntegTestCase {
                     "fetch_fields": ["first_name", {"field": "joined", "format": "MM/yyyy"}]
                 }
             }
-            """)).addFetchField("author").addFetchField("title").addSort("published_date", SortOrder.ASC).setSize(1), searchResponse -> {
-            SearchHit hit0 = searchResponse.getHits().getHits()[0];
-            // "author", "john", "first_name", "John", "last_name", "New York", "joined", "2020-03-01"
-            assertThat(hit0.field("title").getValues(), equalTo(List.of("the first book")));
-            assertThat(
-                hit0.field("author").getValues(),
-                equalTo(List.of(Map.of("first_name", List.of("John"), "joined", List.of("03/2020"))))
-            );
-        });
+            """)).addFetchField("author").addFetchField("title").addSort("published_date", SortOrder.ASC).setSize(1));
     }
 
     private Map<String, Object> parseMapping(String mapping) throws IOException {

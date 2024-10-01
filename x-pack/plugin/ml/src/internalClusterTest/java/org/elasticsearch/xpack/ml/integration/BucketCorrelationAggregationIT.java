@@ -71,41 +71,36 @@ public class BucketCorrelationAggregationIT extends MlSingleNodeTestCase {
 
         AtomicLong counter = new AtomicLong();
         double[] steps = Stream.generate(() -> counter.getAndAdd(2L)).limit(50).mapToDouble(l -> (double) l).toArray();
-        assertResponse(
+        assertResponse(percentilesSearch -> {
+            long totalHits = percentilesSearch.getHits().getTotalHits().value;
+            Percentiles percentiles = percentilesSearch.getAggregations().get("percentiles");
+            Tuple<RangeAggregationBuilder, BucketCorrelationAggregationBuilder> aggs = buildRangeAggAndSetExpectations(
+                percentiles,
+                steps,
+                totalHits,
+                "metric"
+            );
+
+            assertResponse(countCorrelations -> {
+                Terms terms = countCorrelations.getAggregations().get("buckets");
+                Terms.Bucket catBucket = terms.getBucketByKey("cat");
+                Terms.Bucket dogBucket = terms.getBucketByKey("dog");
+                NumericMetricsAggregation.SingleValue approxCatCorrelation = catBucket.getAggregations().get("correlates");
+                NumericMetricsAggregation.SingleValue approxDogCorrelation = dogBucket.getAggregations().get("correlates");
+
+                assertThat(approxCatCorrelation.value(), closeTo(catCorrelation, 0.1));
+                assertThat(approxDogCorrelation.value(), closeTo(dogCorrelation, 0.1));
+            },
+                client().prepareSearch("data")
+                    .setSize(0)
+                    .setTrackTotalHits(false)
+                    .addAggregation(AggregationBuilders.terms("buckets").field("term").subAggregation(aggs.v1()).subAggregation(aggs.v2()))
+            );
+        },
             client().prepareSearch("data")
                 .addAggregation(AggregationBuilders.percentiles("percentiles").field("metric").percentiles(steps))
                 .setSize(0)
-                .setTrackTotalHits(true),
-            percentilesSearch -> {
-                long totalHits = percentilesSearch.getHits().getTotalHits().value;
-                Percentiles percentiles = percentilesSearch.getAggregations().get("percentiles");
-                Tuple<RangeAggregationBuilder, BucketCorrelationAggregationBuilder> aggs = buildRangeAggAndSetExpectations(
-                    percentiles,
-                    steps,
-                    totalHits,
-                    "metric"
-                );
-
-                assertResponse(
-                    client().prepareSearch("data")
-                        .setSize(0)
-                        .setTrackTotalHits(false)
-                        .addAggregation(
-                            AggregationBuilders.terms("buckets").field("term").subAggregation(aggs.v1()).subAggregation(aggs.v2())
-                        ),
-                    countCorrelations -> {
-
-                        Terms terms = countCorrelations.getAggregations().get("buckets");
-                        Terms.Bucket catBucket = terms.getBucketByKey("cat");
-                        Terms.Bucket dogBucket = terms.getBucketByKey("dog");
-                        NumericMetricsAggregation.SingleValue approxCatCorrelation = catBucket.getAggregations().get("correlates");
-                        NumericMetricsAggregation.SingleValue approxDogCorrelation = dogBucket.getAggregations().get("correlates");
-
-                        assertThat(approxCatCorrelation.value(), closeTo(catCorrelation, 0.1));
-                        assertThat(approxDogCorrelation.value(), closeTo(dogCorrelation, 0.1));
-                    }
-                );
-            }
+                .setTrackTotalHits(true)
         );
     }
 

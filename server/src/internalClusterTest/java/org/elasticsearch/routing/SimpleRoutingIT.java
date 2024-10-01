@@ -136,19 +136,19 @@ public class SimpleRoutingIT extends ESIntegTestCase {
 
         logger.info("--> search with no routing, should fine one");
         for (int i = 0; i < 5; i++) {
-            assertHitCount(prepareSearch().setQuery(QueryBuilders.matchAllQuery()), 1L);
+            assertHitCount(1L, prepareSearch().setQuery(QueryBuilders.matchAllQuery()));
         }
 
         logger.info("--> search with wrong routing, should not find");
         for (int i = 0; i < 5; i++) {
-            assertHitCount(prepareSearch().setRouting("1").setQuery(QueryBuilders.matchAllQuery()), 0);
-            assertHitCount(prepareSearch().setSize(0).setRouting("1").setQuery(QueryBuilders.matchAllQuery()), 0);
+            assertHitCount(0, prepareSearch().setRouting("1").setQuery(QueryBuilders.matchAllQuery()));
+            assertHitCount(0, prepareSearch().setSize(0).setRouting("1").setQuery(QueryBuilders.matchAllQuery()));
         }
 
         logger.info("--> search with correct routing, should find");
         for (int i = 0; i < 5; i++) {
-            assertHitCount(prepareSearch().setRouting(routingValue).setQuery(QueryBuilders.matchAllQuery()), 1);
-            assertHitCount(prepareSearch().setSize(0).setRouting(routingValue).setQuery(QueryBuilders.matchAllQuery()), 1);
+            assertHitCount(1, prepareSearch().setRouting(routingValue).setQuery(QueryBuilders.matchAllQuery()));
+            assertHitCount(1, prepareSearch().setSize(0).setRouting(routingValue).setQuery(QueryBuilders.matchAllQuery()));
         }
 
         String secondRoutingValue = "1";
@@ -161,42 +161,42 @@ public class SimpleRoutingIT extends ESIntegTestCase {
 
         logger.info("--> search with no routing, should fine two");
         for (int i = 0; i < 5; i++) {
-            assertHitCount(prepareSearch().setQuery(QueryBuilders.matchAllQuery()), 2);
-            assertHitCount(prepareSearch().setSize(0).setQuery(QueryBuilders.matchAllQuery()), 2);
+            assertHitCount(2, prepareSearch().setQuery(QueryBuilders.matchAllQuery()));
+            assertHitCount(2, prepareSearch().setSize(0).setQuery(QueryBuilders.matchAllQuery()));
         }
 
         logger.info("--> search with {} routing, should find one", routingValue);
         for (int i = 0; i < 5; i++) {
-            assertHitCount(prepareSearch().setRouting(routingValue).setQuery(QueryBuilders.matchAllQuery()), 1);
-            assertHitCount(prepareSearch().setSize(0).setRouting(routingValue).setQuery(QueryBuilders.matchAllQuery()), 1);
+            assertHitCount(1, prepareSearch().setRouting(routingValue).setQuery(QueryBuilders.matchAllQuery()));
+            assertHitCount(1, prepareSearch().setSize(0).setRouting(routingValue).setQuery(QueryBuilders.matchAllQuery()));
         }
 
         logger.info("--> search with {} routing, should find one", secondRoutingValue);
         for (int i = 0; i < 5; i++) {
-            assertHitCount(prepareSearch().setRouting("1").setQuery(QueryBuilders.matchAllQuery()), 1);
-            assertHitCount(prepareSearch().setSize(0).setRouting(secondRoutingValue).setQuery(QueryBuilders.matchAllQuery()), 1);
+            assertHitCount(1, prepareSearch().setRouting("1").setQuery(QueryBuilders.matchAllQuery()));
+            assertHitCount(1, prepareSearch().setSize(0).setRouting(secondRoutingValue).setQuery(QueryBuilders.matchAllQuery()));
         }
 
         logger.info("--> search with {},{} indexRoutings , should find two", routingValue, "1");
         for (int i = 0; i < 5; i++) {
-            assertHitCount(prepareSearch().setRouting(routingValue, secondRoutingValue).setQuery(QueryBuilders.matchAllQuery()), 2);
+            assertHitCount(2, prepareSearch().setRouting(routingValue, secondRoutingValue).setQuery(QueryBuilders.matchAllQuery()));
             assertHitCount(
-                prepareSearch().setSize(0).setRouting(routingValue, secondRoutingValue).setQuery(QueryBuilders.matchAllQuery()),
-                2
+                2,
+                prepareSearch().setSize(0).setRouting(routingValue, secondRoutingValue).setQuery(QueryBuilders.matchAllQuery())
             );
         }
 
         logger.info("--> search with {},{},{} indexRoutings , should find two", routingValue, secondRoutingValue, routingValue);
         for (int i = 0; i < 5; i++) {
             assertHitCount(
-                prepareSearch().setRouting(routingValue, secondRoutingValue, routingValue).setQuery(QueryBuilders.matchAllQuery()),
-                2
+                2,
+                prepareSearch().setRouting(routingValue, secondRoutingValue, routingValue).setQuery(QueryBuilders.matchAllQuery())
             );
             assertHitCount(
+                2,
                 prepareSearch().setSize(0)
                     .setRouting(routingValue, secondRoutingValue, routingValue)
-                    .setQuery(QueryBuilders.matchAllQuery()),
-                2
+                    .setQuery(QueryBuilders.matchAllQuery())
             );
         }
     }

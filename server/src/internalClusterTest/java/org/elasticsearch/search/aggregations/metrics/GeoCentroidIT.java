@@ -29,23 +29,22 @@ import static org.hamcrest.Matchers.notNullValue;
 public class GeoCentroidIT extends CentroidAggregationTestBase {
 
     public void testSingleValueFieldAsSubAggToGeohashGrid() {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            GeoGrid grid = response.getAggregations().get("geoGrid");
+            assertThat(grid, notNullValue());
+            assertThat(grid.getName(), equalTo("geoGrid"));
+            List<? extends GeoGrid.Bucket> buckets = grid.getBuckets();
+            for (GeoGrid.Bucket cell : buckets) {
+                String geohash = cell.getKeyAsString();
+                SpatialPoint expectedCentroid = expectedCentroidsForGeoHash.get(geohash);
+                GeoCentroid centroidAgg = cell.getAggregations().get(aggName());
+                assertSameCentroid(centroidAgg.centroid(), expectedCentroid);
+            }
+        },
             prepareSearch(HIGH_CARD_IDX_NAME).addAggregation(
                 geohashGrid("geoGrid").field(SINGLE_VALUED_FIELD_NAME)
                     .subAggregation(centroidAgg(aggName()).field(SINGLE_VALUED_FIELD_NAME))
-            ),
-            response -> {
-                GeoGrid grid = response.getAggregations().get("geoGrid");
-                assertThat(grid, notNullValue());
-                assertThat(grid.getName(), equalTo("geoGrid"));
-                List<? extends GeoGrid.Bucket> buckets = grid.getBuckets();
-                for (GeoGrid.Bucket cell : buckets) {
-                    String geohash = cell.getKeyAsString();
-                    SpatialPoint expectedCentroid = expectedCentroidsForGeoHash.get(geohash);
-                    GeoCentroid centroidAgg = cell.getAggregations().get(aggName());
-                    assertSameCentroid(centroidAgg.centroid(), expectedCentroid);
-                }
-            }
+            )
         );
     }
 

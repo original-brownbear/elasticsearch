@@ -102,35 +102,34 @@ public class RandomScoreFunctionIT extends ESIntegTestCase {
             final SearchHit[][] hits = new SearchHit[1][];
             for (int i = 0; i < innerIters; i++) {
                 final int finalI = i;
-                assertResponse(
-                    prepareSearch().setSize(docCount) // get all docs otherwise we are prone to tie-breaking
-                        .setPreference(preference)
-                        .setQuery(functionScoreQuery(matchAllQuery(), randomFunction().seed(seed).setField("foo"))),
-                    response -> {
-                        assertThat(
-                            "Failures " + Arrays.toString(response.getShardFailures()),
-                            response.getShardFailures().length,
-                            CoreMatchers.equalTo(0)
-                        );
-                        final int hitCount = response.getHits().getHits().length;
-                        final SearchHit[] currentHits = response.getHits().asUnpooled().getHits();
-                        ArrayUtil.timSort(currentHits, (o1, o2) -> {
-                            // for tie-breaking we have to resort here since if the score is
-                            // identical we rely on collection order which might change.
-                            int cmp = Float.compare(o1.getScore(), o2.getScore());
-                            return cmp == 0 ? o1.getId().compareTo(o2.getId()) : cmp;
-                        });
-                        if (finalI == 0) {
-                            assertThat(hits[0], nullValue());
-                            hits[0] = currentHits;
-                        } else {
-                            assertThat(hits[0].length, equalTo(response.getHits().getHits().length));
-                            for (int j = 0; j < hitCount; j++) {
-                                assertThat("" + j, currentHits[j].getScore(), equalTo(hits[0][j].getScore()));
-                                assertThat("" + j, currentHits[j].getId(), equalTo(hits[0][j].getId()));
-                            }
+                assertResponse(response -> {
+                    assertThat(
+                        "Failures " + Arrays.toString(response.getShardFailures()),
+                        response.getShardFailures().length,
+                        CoreMatchers.equalTo(0)
+                    );
+                    final int hitCount = response.getHits().getHits().length;
+                    final SearchHit[] currentHits = response.getHits().asUnpooled().getHits();
+                    ArrayUtil.timSort(currentHits, (o1, o2) -> {
+                        // for tie-breaking we have to resort here since if the score is
+                        // identical we rely on collection order which might change.
+                        int cmp = Float.compare(o1.getScore(), o2.getScore());
+                        return cmp == 0 ? o1.getId().compareTo(o2.getId()) : cmp;
+                    });
+                    if (finalI == 0) {
+                        assertThat(hits[0], nullValue());
+                        hits[0] = currentHits;
+                    } else {
+                        assertThat(hits[0].length, equalTo(response.getHits().getHits().length));
+                        for (int j = 0; j < hitCount; j++) {
+                            assertThat("" + j, currentHits[j].getScore(), equalTo(hits[0][j].getScore()));
+                            assertThat("" + j, currentHits[j].getId(), equalTo(hits[0][j].getId()));
                         }
                     }
+                },
+                    prepareSearch().setSize(docCount) // get all docs otherwise we are prone to tie-breaking
+                        .setPreference(preference)
+                        .setQuery(functionScoreQuery(matchAllQuery(), randomFunction().seed(seed).setField("foo")))
                 );
 
                 // randomly change some docs to get them in different segments
@@ -170,7 +169,10 @@ public class RandomScoreFunctionIT extends ESIntegTestCase {
 
         // Test for accessing _score
         Script script = new Script(ScriptType.INLINE, NAME, "log(doc['index'].value + (factor * _score))", params);
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            SearchHit firstHit = response.getHits().getAt(0);
+            assertThat(firstHit.getScore(), greaterThan(1f));
+        },
             prepareSearch("test").setQuery(
                 functionScoreQuery(
                     matchQuery("body", "foo"),
@@ -178,16 +180,15 @@ public class RandomScoreFunctionIT extends ESIntegTestCase {
                         new FunctionScoreQueryBuilder.FilterFunctionBuilder(fieldValueFactorFunction("index").factor(2)),
                         new FunctionScoreQueryBuilder.FilterFunctionBuilder(scriptFunction(script)) }
                 )
-            ),
-            response -> {
-                SearchHit firstHit = response.getHits().getAt(0);
-                assertThat(firstHit.getScore(), greaterThan(1f));
-            }
+            )
         );
 
         // Test for accessing _score.intValue()
         script = new Script(ScriptType.INLINE, NAME, "log(doc['index'].value + (factor * _score.intValue()))", params);
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            SearchHit firstHit = response.getHits().getAt(0);
+            assertThat(firstHit.getScore(), greaterThan(1f));
+        },
             prepareSearch("test").setQuery(
                 functionScoreQuery(
                     matchQuery("body", "foo"),
@@ -195,16 +196,15 @@ public class RandomScoreFunctionIT extends ESIntegTestCase {
                         new FunctionScoreQueryBuilder.FilterFunctionBuilder(fieldValueFactorFunction("index").factor(2)),
                         new FunctionScoreQueryBuilder.FilterFunctionBuilder(scriptFunction(script)) }
                 )
-            ),
-            response -> {
-                SearchHit firstHit = response.getHits().getAt(0);
-                assertThat(firstHit.getScore(), greaterThan(1f));
-            }
+            )
         );
 
         // Test for accessing _score.longValue()
         script = new Script(ScriptType.INLINE, NAME, "log(doc['index'].value + (factor * _score.longValue()))", params);
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            SearchHit firstHit = response.getHits().getAt(0);
+            assertThat(firstHit.getScore(), greaterThan(1f));
+        },
             prepareSearch("test").setQuery(
                 functionScoreQuery(
                     matchQuery("body", "foo"),
@@ -212,16 +212,15 @@ public class RandomScoreFunctionIT extends ESIntegTestCase {
                         new FunctionScoreQueryBuilder.FilterFunctionBuilder(fieldValueFactorFunction("index").factor(2)),
                         new FunctionScoreQueryBuilder.FilterFunctionBuilder(scriptFunction(script)) }
                 )
-            ),
-            response -> {
-                SearchHit firstHit = response.getHits().getAt(0);
-                assertThat(firstHit.getScore(), greaterThan(1f));
-            }
+            )
         );
 
         // Test for accessing _score.floatValue()
         script = new Script(ScriptType.INLINE, NAME, "log(doc['index'].value + (factor * _score.floatValue()))", params);
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            SearchHit firstHit = response.getHits().getAt(0);
+            assertThat(firstHit.getScore(), greaterThan(1f));
+        },
             prepareSearch("test").setQuery(
                 functionScoreQuery(
                     matchQuery("body", "foo"),
@@ -229,16 +228,15 @@ public class RandomScoreFunctionIT extends ESIntegTestCase {
                         new FunctionScoreQueryBuilder.FilterFunctionBuilder(fieldValueFactorFunction("index").factor(2)),
                         new FunctionScoreQueryBuilder.FilterFunctionBuilder(scriptFunction(script)) }
                 )
-            ),
-            response -> {
-                SearchHit firstHit = response.getHits().getAt(0);
-                assertThat(firstHit.getScore(), greaterThan(1f));
-            }
+            )
         );
 
         // Test for accessing _score.doubleValue()
         script = new Script(ScriptType.INLINE, NAME, "log(doc['index'].value + (factor * _score.doubleValue()))", params);
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            SearchHit firstHit = response.getHits().getAt(0);
+            assertThat(firstHit.getScore(), greaterThan(1f));
+        },
             prepareSearch("test").setQuery(
                 functionScoreQuery(
                     matchQuery("body", "foo"),
@@ -246,11 +244,7 @@ public class RandomScoreFunctionIT extends ESIntegTestCase {
                         new FunctionScoreQueryBuilder.FilterFunctionBuilder(fieldValueFactorFunction("index").factor(2)),
                         new FunctionScoreQueryBuilder.FilterFunctionBuilder(scriptFunction(script)) }
                 )
-            ),
-            response -> {
-                SearchHit firstHit = response.getHits().getAt(0);
-                assertThat(firstHit.getScore(), greaterThan(1f));
-            }
+            )
         );
     }
 
@@ -263,15 +257,14 @@ public class RandomScoreFunctionIT extends ESIntegTestCase {
 
         int seed = 12345678;
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            assertNoFailures(response);
+            assertEquals(1, response.getHits().getTotalHits().value);
+            SearchHit firstHit = response.getHits().getAt(0);
+            assertThat(firstHit.getExplanation().toString(), containsString("" + seed));
+        },
             prepareSearch("test").setQuery(functionScoreQuery(matchAllQuery(), randomFunction().seed(seed).setField(SeqNoFieldMapper.NAME)))
-                .setExplain(true),
-            response -> {
-                assertNoFailures(response);
-                assertEquals(1, response.getHits().getTotalHits().value);
-                SearchHit firstHit = response.getHits().getAt(0);
-                assertThat(firstHit.getExplanation().toString(), containsString("" + seed));
-            }
+                .setExplain(true)
         );
     }
 
@@ -280,15 +273,13 @@ public class RandomScoreFunctionIT extends ESIntegTestCase {
         ensureGreen();
 
         assertNoFailuresAndResponse(
-            prepareSearch("test").setQuery(
-                functionScoreQuery(matchAllQuery(), randomFunction().seed(1234).setField(SeqNoFieldMapper.NAME))
-            ),
-            response -> assertEquals(0, response.getHits().getTotalHits().value)
+            response -> assertEquals(0, response.getHits().getTotalHits().value),
+            prepareSearch("test").setQuery(functionScoreQuery(matchAllQuery(), randomFunction().seed(1234).setField(SeqNoFieldMapper.NAME)))
         );
 
         assertNoFailuresAndResponse(
-            prepareSearch("test").setQuery(functionScoreQuery(matchAllQuery(), randomFunction())),
-            response -> assertEquals(0, response.getHits().getTotalHits().value)
+            response -> assertEquals(0, response.getHits().getTotalHits().value),
+            prepareSearch("test").setQuery(functionScoreQuery(matchAllQuery(), randomFunction()))
         );
     }
 
@@ -305,14 +296,11 @@ public class RandomScoreFunctionIT extends ESIntegTestCase {
         refresh();
         int iters = scaledRandomIntBetween(10, 20);
         for (int i = 0; i < iters; ++i) {
-            assertNoFailuresAndResponse(
-                prepareSearch().setQuery(functionScoreQuery(matchAllQuery(), randomFunction())).setSize(docCount),
-                response -> {
-                    for (SearchHit hit : response.getHits().getHits()) {
-                        assertThat(hit.getScore(), allOf(greaterThanOrEqualTo(0.0f), lessThanOrEqualTo(1.0f)));
-                    }
+            assertNoFailuresAndResponse(response -> {
+                for (SearchHit hit : response.getHits().getHits()) {
+                    assertThat(hit.getScore(), allOf(greaterThanOrEqualTo(0.0f), lessThanOrEqualTo(1.0f)));
                 }
-            );
+            }, prepareSearch().setQuery(functionScoreQuery(matchAllQuery(), randomFunction())).setSize(docCount));
         }
     }
 
@@ -327,15 +315,9 @@ public class RandomScoreFunctionIT extends ESIntegTestCase {
 
         assertNoFailures(
             prepareSearch().setSize(docCount) // get all docs otherwise we are prone to tie-breaking
-                .setQuery(functionScoreQuery(matchAllQuery(), randomFunction().seed(randomInt()).setField(SeqNoFieldMapper.NAME)))
-        );
-
-        assertNoFailures(
+                .setQuery(functionScoreQuery(matchAllQuery(), randomFunction().seed(randomInt()).setField(SeqNoFieldMapper.NAME))),
             prepareSearch().setSize(docCount) // get all docs otherwise we are prone to tie-breaking
-                .setQuery(functionScoreQuery(matchAllQuery(), randomFunction().seed(randomLong()).setField(SeqNoFieldMapper.NAME)))
-        );
-
-        assertNoFailures(
+                .setQuery(functionScoreQuery(matchAllQuery(), randomFunction().seed(randomLong()).setField(SeqNoFieldMapper.NAME))),
             prepareSearch().setSize(docCount) // get all docs otherwise we are prone to tie-breaking
                 .setQuery(
                     functionScoreQuery(
@@ -364,8 +346,8 @@ public class RandomScoreFunctionIT extends ESIntegTestCase {
         for (int i = 0; i < count; i++) {
 
             assertResponse(
-                prepareSearch().setQuery(functionScoreQuery(matchAllQuery(), new RandomScoreFunctionBuilder())),
-                response -> matrix[Integer.valueOf(response.getHits().getAt(0).getId())]++
+                response -> matrix[Integer.valueOf(response.getHits().getAt(0).getId())]++,
+                prepareSearch().setQuery(functionScoreQuery(matchAllQuery(), new RandomScoreFunctionBuilder()))
             );
         }
 

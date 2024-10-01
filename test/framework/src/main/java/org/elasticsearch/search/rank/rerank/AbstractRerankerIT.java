@@ -77,7 +77,17 @@ public abstract class AbstractRerankerIT extends ESIntegTestCase {
             prepareIndex(indexName).setId("5").setSource(rankFeatureField, 0.5, searchField, "E")
         );
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            assertHitCount(response, 5L);
+            int rank = 1;
+            for (SearchHit searchHit : response.getHits().getHits()) {
+                assertThat(searchHit, hasId(String.valueOf(5 - (rank - 1))));
+                assertEquals(0.5f - ((rank - 1) * 0.1f), searchHit.getScore(), 1e-5f);
+                assertThat(searchHit, hasRank(rank));
+                assertNotNull(searchHit.getFields().get(searchField));
+                rank++;
+            }
+        },
             prepareSearch().setQuery(
                 boolQuery().should(constantScoreQuery(matchQuery(searchField, "A")).boost(randomFloat()))
                     .should(constantScoreQuery(matchQuery(searchField, "B")).boost(randomFloat()))
@@ -89,18 +99,7 @@ public abstract class AbstractRerankerIT extends ESIntegTestCase {
                 .addFetchField(searchField)
                 .setTrackTotalHits(true)
                 .setAllowPartialSearchResults(true)
-                .setSize(10),
-            response -> {
-                assertHitCount(response, 5L);
-                int rank = 1;
-                for (SearchHit searchHit : response.getHits().getHits()) {
-                    assertThat(searchHit, hasId(String.valueOf(5 - (rank - 1))));
-                    assertEquals(0.5f - ((rank - 1) * 0.1f), searchHit.getScore(), 1e-5f);
-                    assertThat(searchHit, hasRank(rank));
-                    assertNotNull(searchHit.getFields().get(searchField));
-                    rank++;
-                }
-            }
+                .setSize(10)
         );
         assertNoOpenContext(indexName);
     }
@@ -121,7 +120,17 @@ public abstract class AbstractRerankerIT extends ESIntegTestCase {
             prepareIndex(indexName).setId("5").setSource(rankFeatureField, 0.5, searchField, "E")
         );
 
-        assertResponse(
+        assertResponse(response -> {
+            assertHitCount(response, 5L);
+            int rank = 3;
+            for (SearchHit searchHit : response.getHits().getHits()) {
+                assertThat(searchHit, hasId(String.valueOf(5 - (rank - 1))));
+                assertEquals(0.5f - ((rank - 1) * 0.1f), searchHit.getScore(), 1e-5f);
+                assertThat(searchHit, hasRank(rank));
+                assertNotNull(searchHit.getFields().get(searchField));
+                rank++;
+            }
+        },
             prepareSearch().setQuery(
                 boolQuery().should(constantScoreQuery(matchQuery(searchField, "A")).boost(randomFloat()))
                     .should(constantScoreQuery(matchQuery(searchField, "B")).boost(randomFloat()))
@@ -134,18 +143,7 @@ public abstract class AbstractRerankerIT extends ESIntegTestCase {
                 .setTrackTotalHits(true)
                 .setAllowPartialSearchResults(true)
                 .setSize(2)
-                .setFrom(2),
-            response -> {
-                assertHitCount(response, 5L);
-                int rank = 3;
-                for (SearchHit searchHit : response.getHits().getHits()) {
-                    assertThat(searchHit, hasId(String.valueOf(5 - (rank - 1))));
-                    assertEquals(0.5f - ((rank - 1) * 0.1f), searchHit.getScore(), 1e-5f);
-                    assertThat(searchHit, hasRank(rank));
-                    assertNotNull(searchHit.getFields().get(searchField));
-                    rank++;
-                }
-            }
+                .setFrom(2)
         );
         assertNoOpenContext(indexName);
     }
@@ -166,7 +164,10 @@ public abstract class AbstractRerankerIT extends ESIntegTestCase {
             prepareIndex(indexName).setId("5").setSource(rankFeatureField, 0.5, searchField, "E")
         );
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            assertHitCount(response, 5L);
+            assertEquals(0, response.getHits().getHits().length);
+        },
             prepareSearch().setQuery(
                 boolQuery().should(constantScoreQuery(matchQuery(searchField, "A")).boost(randomFloat()))
                     .should(constantScoreQuery(matchQuery(searchField, "B")).boost(randomFloat()))
@@ -179,11 +180,7 @@ public abstract class AbstractRerankerIT extends ESIntegTestCase {
                 .setTrackTotalHits(true)
                 .setAllowPartialSearchResults(true)
                 .setSize(2)
-                .setFrom(10),
-            response -> {
-                assertHitCount(response, 5L);
-                assertEquals(0, response.getHits().getHits().length);
-            }
+                .setFrom(10)
         );
         assertNoOpenContext(indexName);
     }
@@ -204,7 +201,18 @@ public abstract class AbstractRerankerIT extends ESIntegTestCase {
             prepareIndex(indexName).setId("5").setSource(rankFeatureField, 0.5, searchField, "E").setRouting("C")
         );
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            assertHitCount(response, 4L);
+            assertEquals(2, response.getHits().getHits().length);
+            int rank = 1;
+            for (SearchHit searchHit : response.getHits().getHits()) {
+                assertThat(searchHit, hasId(String.valueOf(5 - (rank - 1))));
+                assertEquals(0.5f - ((rank - 1) * 0.1f), searchHit.getScore(), 1e-5f);
+                assertThat(searchHit, hasRank(rank));
+                assertNotNull(searchHit.getFields().get(searchField));
+                rank++;
+            }
+        },
             prepareSearch().setQuery(
                 boolQuery().should(constantScoreQuery(matchQuery(searchField, "A")).boost(0.1f))
                     .should(constantScoreQuery(matchQuery(searchField, "C")).boost(0.3f))
@@ -215,19 +223,7 @@ public abstract class AbstractRerankerIT extends ESIntegTestCase {
                 .addFetchField(searchField)
                 .setTrackTotalHits(true)
                 .setAllowPartialSearchResults(true)
-                .setSize(2),
-            response -> {
-                assertHitCount(response, 4L);
-                assertEquals(2, response.getHits().getHits().length);
-                int rank = 1;
-                for (SearchHit searchHit : response.getHits().getHits()) {
-                    assertThat(searchHit, hasId(String.valueOf(5 - (rank - 1))));
-                    assertEquals(0.5f - ((rank - 1) * 0.1f), searchHit.getScore(), 1e-5f);
-                    assertThat(searchHit, hasRank(rank));
-                    assertNotNull(searchHit.getFields().get(searchField));
-                    rank++;
-                }
-            }
+                .setSize(2)
         );
         assertNoOpenContext(indexName);
     }
@@ -249,15 +245,13 @@ public abstract class AbstractRerankerIT extends ESIntegTestCase {
         );
 
         assertNoFailuresAndResponse(
+            response -> { assertHitCount(response, 0L); },
             prepareSearch().setQuery(boolQuery().should(constantScoreQuery(matchQuery(searchField, "F")).boost(randomFloat())))
                 .setRankBuilder(getRankBuilder(rankWindowSize, rankFeatureField))
                 .addFetchField(searchField)
                 .setTrackTotalHits(true)
                 .setAllowPartialSearchResults(true)
-                .setSize(10),
-            response -> {
-                assertHitCount(response, 0L);
-            }
+                .setSize(10)
         );
         assertNoOpenContext(indexName);
     }
@@ -367,7 +361,15 @@ public abstract class AbstractRerankerIT extends ESIntegTestCase {
         );
 
         // we have 10 shards and 5 documents, so when the exception is thrown we know that not all shards will report failures
-        assertResponse(
+        assertResponse(response -> {
+            assertTrue(response.getFailedShards() > 0);
+            assertTrue(
+                Arrays.stream(response.getShardFailures())
+                    .allMatch(failure -> failure.getCause().getMessage().contains("rfs - simulated failure"))
+            );
+            assertHitCount(response, 5);
+            assertTrue(response.getHits().getHits().length == 0);
+        },
             prepareSearch().setQuery(
                 boolQuery().should(constantScoreQuery(matchQuery(searchField, "A")).boost(randomFloat()))
                     .should(constantScoreQuery(matchQuery(searchField, "B")).boost(randomFloat()))
@@ -385,16 +387,7 @@ public abstract class AbstractRerankerIT extends ESIntegTestCase {
                 .addFetchField(searchField)
                 .setTrackTotalHits(true)
                 .setAllowPartialSearchResults(true)
-                .setSize(10),
-            response -> {
-                assertTrue(response.getFailedShards() > 0);
-                assertTrue(
-                    Arrays.stream(response.getShardFailures())
-                        .allMatch(failure -> failure.getCause().getMessage().contains("rfs - simulated failure"))
-                );
-                assertHitCount(response, 5);
-                assertTrue(response.getHits().getHits().length == 0);
-            }
+                .setSize(10)
         );
         assertNoOpenContext(indexName);
     }

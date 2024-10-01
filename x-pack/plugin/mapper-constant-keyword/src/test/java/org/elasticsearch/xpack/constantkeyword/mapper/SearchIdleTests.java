@@ -131,13 +131,13 @@ public class SearchIdleTests extends ESSingleNodeTestCase {
         assertIdleShard(beforeStatsResponse);
 
         // WHEN
-        assertResponse(search("test*", "constant_keyword", randomAlphaOfLength(5), 5), searchResponse -> {
+        assertResponse(searchResponse -> {
             assertEquals(RestStatus.OK, searchResponse.status());
             // NOTE: we need an empty result from at least one shard
             assertEquals(idleIndexShardsCount + activeIndexShardsCount - 1, searchResponse.getSkippedShards());
             assertEquals(0, searchResponse.getFailedShards());
             assertEquals(0, searchResponse.getHits().getHits().length);
-        });
+        }, search("test*", "constant_keyword", randomAlphaOfLength(5), 5));
 
         // THEN
         final IndicesStatsResponse afterStatsResponse = indicesAdmin().prepareStats("test*").get();
@@ -204,12 +204,12 @@ public class SearchIdleTests extends ESSingleNodeTestCase {
         assertIdleShard(activeIndexStatsBefore);
 
         // WHEN
-        assertResponse(search("test*", "constant_keyword", "constant_value2", 5), searchResponse -> {
+        assertResponse(searchResponse -> {
             assertEquals(RestStatus.OK, searchResponse.status());
             assertEquals(idleIndexShardsCount, searchResponse.getSkippedShards());
             assertEquals(0, searchResponse.getFailedShards());
             Arrays.stream(searchResponse.getHits().getHits()).forEach(searchHit -> assertEquals("test2", searchHit.getIndex()));
-        });
+        }, search("test*", "constant_keyword", "constant_value2", 5));
 
         // THEN
         final IndicesStatsResponse idleIndexStatsAfter = indicesAdmin().prepareStats(idleIndex).get();
@@ -268,7 +268,7 @@ public class SearchIdleTests extends ESSingleNodeTestCase {
         assertIdleShard(beforeStatsResponse);
 
         // WHEN
-        assertResponse(search("test*", "constant_keyword", "constant", 5), searchResponse -> {
+        assertResponse(searchResponse -> {
 
             // THEN
             assertEquals(RestStatus.OK, searchResponse.status());
@@ -280,7 +280,7 @@ public class SearchIdleTests extends ESSingleNodeTestCase {
             );
             final IndicesStatsResponse afterStatsResponse = indicesAdmin().prepareStats("test*").get();
             assertIdleShardsRefreshStats(beforeStatsResponse, afterStatsResponse);
-        });
+        }, search("test*", "constant_keyword", "constant", 5));
     }
 
     public void testSearchIdleWildcardQueryMatchOneIndex() throws InterruptedException {
@@ -331,17 +331,14 @@ public class SearchIdleTests extends ESSingleNodeTestCase {
         assertIdleShard(activeIndexStatsBefore);
 
         // WHEN
-        assertResponse(
-            client().prepareSearch("test*").setQuery(new WildcardQueryBuilder("constant_keyword", "test2*")).setPreFilterShardSize(5),
-            searchResponse -> {
+        assertResponse(searchResponse -> {
 
-                // THEN
-                assertEquals(RestStatus.OK, searchResponse.status());
-                assertEquals(idleIndexShardsCount, searchResponse.getSkippedShards());
-                assertEquals(0, searchResponse.getFailedShards());
-                Arrays.stream(searchResponse.getHits().getHits()).forEach(searchHit -> assertEquals("test2", searchHit.getIndex()));
-            }
-        );
+            // THEN
+            assertEquals(RestStatus.OK, searchResponse.status());
+            assertEquals(idleIndexShardsCount, searchResponse.getSkippedShards());
+            assertEquals(0, searchResponse.getFailedShards());
+            Arrays.stream(searchResponse.getHits().getHits()).forEach(searchHit -> assertEquals("test2", searchHit.getIndex()));
+        }, client().prepareSearch("test*").setQuery(new WildcardQueryBuilder("constant_keyword", "test2*")).setPreFilterShardSize(5));
         final IndicesStatsResponse idleIndexStatsAfter = indicesAdmin().prepareStats(idleIndex).get();
         assertIdleShardsRefreshStats(idleIndexStatsBefore, idleIndexStatsAfter);
 

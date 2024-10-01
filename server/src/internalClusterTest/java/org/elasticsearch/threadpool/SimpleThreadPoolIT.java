@@ -91,8 +91,10 @@ public class SimpleThreadPoolIT extends ESIntegTestCase {
         indexRandom(true, builders);
         int numSearches = randomIntBetween(2, 100);
         for (int i = 0; i < numSearches; i++) {
-            assertNoFailures(prepareSearch("idx").setQuery(QueryBuilders.termQuery("str_value", "s" + i)));
-            assertNoFailures(prepareSearch("idx").setQuery(QueryBuilders.termQuery("l_value", i)));
+            assertNoFailures(
+                prepareSearch("idx").setQuery(QueryBuilders.termQuery("str_value", "s" + i)),
+                prepareSearch("idx").setQuery(QueryBuilders.termQuery("l_value", i))
+            );
         }
         Set<String> threadNames = new HashSet<>();
         for (long l : threadBean.getAllThreadIds()) {
@@ -151,8 +153,10 @@ public class SimpleThreadPoolIT extends ESIntegTestCase {
         indexRandom(true, builders);
         int numSearches = randomIntBetween(2, 100);
         for (int i = 0; i < numSearches; i++) {
-            assertNoFailures(prepareSearch("idx").setQuery(QueryBuilders.termQuery("str_value", "s" + i)));
-            assertNoFailures(prepareSearch("idx").setQuery(QueryBuilders.termQuery("l_value", i)));
+            assertNoFailures(
+                prepareSearch("idx").setQuery(QueryBuilders.termQuery("str_value", "s" + i)),
+                prepareSearch("idx").setQuery(QueryBuilders.termQuery("l_value", i))
+            );
         }
 
         final var tp = internalCluster().getInstance(ThreadPool.class, dataNodeName);

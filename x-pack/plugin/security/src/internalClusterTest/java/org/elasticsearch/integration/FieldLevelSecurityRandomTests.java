@@ -162,19 +162,19 @@ public class FieldLevelSecurityRandomTests extends SecurityIntegTestCase {
         for (String allowedField : allowedFields) {
             logger.info("Checking allowed field [{}]", allowedField);
             assertHitCount(
+                1,
                 client().filterWithHeader(Collections.singletonMap(BASIC_AUTH_HEADER, basicAuthHeaderValue("user1", USERS_PASSWD)))
                     .prepareSearch("test")
-                    .setQuery(matchQuery(allowedField, "value")),
-                1
+                    .setQuery(matchQuery(allowedField, "value"))
             );
         }
         for (String disallowedField : disAllowedFields) {
             logger.info("Checking disallowed field [{}]", disallowedField);
             assertHitCount(
+                0,
                 client().filterWithHeader(Collections.singletonMap(BASIC_AUTH_HEADER, basicAuthHeaderValue("user1", USERS_PASSWD)))
                     .prepareSearch("test")
-                    .setQuery(matchQuery(disallowedField, "value")),
-                0
+                    .setQuery(matchQuery(disallowedField, "value"))
             );
         }
     }
@@ -194,7 +194,16 @@ public class FieldLevelSecurityRandomTests extends SecurityIntegTestCase {
         }
         indexRandom(true, requests);
 
-        assertResponse(
+        assertResponse(actual -> assertResponse(expected -> {
+            assertThat(actual.getHits().getTotalHits().value, equalTo(expected.getHits().getTotalHits().value));
+            assertThat(actual.getHits().getHits().length, equalTo(expected.getHits().getHits().length));
+            for (int i = 0; i < actual.getHits().getHits().length; i++) {
+                assertThat(actual.getHits().getAt(i).getId(), equalTo(expected.getHits().getAt(i).getId()));
+            }
+        },
+            prepareSearch("test").addSort("id", SortOrder.ASC)
+                .setQuery(QueryBuilders.boolQuery().should(QueryBuilders.termQuery("field1", "value")))
+        ),
             client().filterWithHeader(Collections.singletonMap(BASIC_AUTH_HEADER, basicAuthHeaderValue("user2", USERS_PASSWD)))
                 .prepareSearch("test")
                 .addSort("id", SortOrder.ASC)
@@ -203,21 +212,19 @@ public class FieldLevelSecurityRandomTests extends SecurityIntegTestCase {
                         .should(QueryBuilders.termQuery("field1", "value"))
                         .should(QueryBuilders.termQuery("field2", "value"))
                         .should(QueryBuilders.termQuery("field3", "value"))
-                ),
-            actual -> assertResponse(
-                prepareSearch("test").addSort("id", SortOrder.ASC)
-                    .setQuery(QueryBuilders.boolQuery().should(QueryBuilders.termQuery("field1", "value"))),
-                expected -> {
-                    assertThat(actual.getHits().getTotalHits().value, equalTo(expected.getHits().getTotalHits().value));
-                    assertThat(actual.getHits().getHits().length, equalTo(expected.getHits().getHits().length));
-                    for (int i = 0; i < actual.getHits().getHits().length; i++) {
-                        assertThat(actual.getHits().getAt(i).getId(), equalTo(expected.getHits().getAt(i).getId()));
-                    }
-                }
-            )
+                )
         );
 
-        assertResponse(
+        assertResponse(actual -> assertResponse(expected -> {
+            assertThat(actual.getHits().getTotalHits().value, equalTo(expected.getHits().getTotalHits().value));
+            assertThat(actual.getHits().getHits().length, equalTo(expected.getHits().getHits().length));
+            for (int i = 0; i < actual.getHits().getHits().length; i++) {
+                assertThat(actual.getHits().getAt(i).getId(), equalTo(expected.getHits().getAt(i).getId()));
+            }
+        },
+            prepareSearch("test").addSort("id", SortOrder.ASC)
+                .setQuery(QueryBuilders.boolQuery().should(QueryBuilders.termQuery("field2", "value")))
+        ),
             client().filterWithHeader(Collections.singletonMap(BASIC_AUTH_HEADER, basicAuthHeaderValue("user3", USERS_PASSWD)))
                 .prepareSearch("test")
                 .addSort("id", SortOrder.ASC)
@@ -226,21 +233,19 @@ public class FieldLevelSecurityRandomTests extends SecurityIntegTestCase {
                         .should(QueryBuilders.termQuery("field1", "value"))
                         .should(QueryBuilders.termQuery("field2", "value"))
                         .should(QueryBuilders.termQuery("field3", "value"))
-                ),
-            actual -> assertResponse(
-                prepareSearch("test").addSort("id", SortOrder.ASC)
-                    .setQuery(QueryBuilders.boolQuery().should(QueryBuilders.termQuery("field2", "value"))),
-                expected -> {
-                    assertThat(actual.getHits().getTotalHits().value, equalTo(expected.getHits().getTotalHits().value));
-                    assertThat(actual.getHits().getHits().length, equalTo(expected.getHits().getHits().length));
-                    for (int i = 0; i < actual.getHits().getHits().length; i++) {
-                        assertThat(actual.getHits().getAt(i).getId(), equalTo(expected.getHits().getAt(i).getId()));
-                    }
-                }
-            )
+                )
         );
 
-        assertResponse(
+        assertResponse(actual -> assertResponse(expected -> {
+            assertThat(actual.getHits().getTotalHits().value, equalTo(expected.getHits().getTotalHits().value));
+            assertThat(actual.getHits().getHits().length, equalTo(expected.getHits().getHits().length));
+            for (int i = 0; i < actual.getHits().getHits().length; i++) {
+                assertThat(actual.getHits().getAt(i).getId(), equalTo(expected.getHits().getAt(i).getId()));
+            }
+        },
+            prepareSearch("test").addSort("id", SortOrder.ASC)
+                .setQuery(QueryBuilders.boolQuery().should(QueryBuilders.termQuery("field3", "value")))
+        ),
             client().filterWithHeader(Collections.singletonMap(BASIC_AUTH_HEADER, basicAuthHeaderValue("user4", USERS_PASSWD)))
                 .prepareSearch("test")
                 .addSort("id", SortOrder.ASC)
@@ -249,18 +254,7 @@ public class FieldLevelSecurityRandomTests extends SecurityIntegTestCase {
                         .should(QueryBuilders.termQuery("field1", "value"))
                         .should(QueryBuilders.termQuery("field2", "value"))
                         .should(QueryBuilders.termQuery("field3", "value"))
-                ),
-            actual -> assertResponse(
-                prepareSearch("test").addSort("id", SortOrder.ASC)
-                    .setQuery(QueryBuilders.boolQuery().should(QueryBuilders.termQuery("field3", "value"))),
-                expected -> {
-                    assertThat(actual.getHits().getTotalHits().value, equalTo(expected.getHits().getTotalHits().value));
-                    assertThat(actual.getHits().getHits().length, equalTo(expected.getHits().getHits().length));
-                    for (int i = 0; i < actual.getHits().getHits().length; i++) {
-                        assertThat(actual.getHits().getAt(i).getId(), equalTo(expected.getHits().getAt(i).getId()));
-                    }
-                }
-            )
+                )
         );
     }
 

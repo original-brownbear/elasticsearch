@@ -161,10 +161,10 @@ public class ModelPlotsIT extends MlNativeAutodetectIntegTestCase {
     private Set<String> modelPlotTerms(String jobId, String fieldName) {
         Set<String> set = new HashSet<>();
         assertResponse(
-            prepareSearch(".ml-anomalies-" + jobId).setQuery(QueryBuilders.termQuery("result_type", "model_plot"))
-                .addAggregation(AggregationBuilders.terms("model_plot_terms").field(fieldName)),
             searchResponse -> ((Terms) searchResponse.getAggregations().get("model_plot_terms")).getBuckets()
-                .forEach(bucket -> set.add(bucket.getKeyAsString()))
+                .forEach(bucket -> set.add(bucket.getKeyAsString())),
+            prepareSearch(".ml-anomalies-" + jobId).setQuery(QueryBuilders.termQuery("result_type", "model_plot"))
+                .addAggregation(AggregationBuilders.terms("model_plot_terms").field(fieldName))
         );
         return set;
     }

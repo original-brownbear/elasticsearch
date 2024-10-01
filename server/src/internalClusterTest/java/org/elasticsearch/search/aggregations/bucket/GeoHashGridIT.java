@@ -133,46 +133,40 @@ public class GeoHashGridIT extends ESIntegTestCase {
     public void testSimple() throws Exception {
         for (int precision = 1; precision <= PRECISION; precision++) {
             final int finalPrecision = precision;
-            assertNoFailuresAndResponse(
-                prepareSearch("idx").addAggregation(geohashGrid("geohashgrid").field("location").precision(precision)),
-                response -> {
-                    GeoGrid geoGrid = response.getAggregations().get("geohashgrid");
-                    List<? extends Bucket> buckets = geoGrid.getBuckets();
-                    Object[] propertiesKeys = (Object[]) ((InternalAggregation) geoGrid).getProperty("_key");
-                    Object[] propertiesDocCounts = (Object[]) ((InternalAggregation) geoGrid).getProperty("_count");
-                    for (int i = 0; i < buckets.size(); i++) {
-                        GeoGrid.Bucket cell = buckets.get(i);
-                        String geohash = cell.getKeyAsString();
+            assertNoFailuresAndResponse(response -> {
+                GeoGrid geoGrid = response.getAggregations().get("geohashgrid");
+                List<? extends Bucket> buckets = geoGrid.getBuckets();
+                Object[] propertiesKeys = (Object[]) ((InternalAggregation) geoGrid).getProperty("_key");
+                Object[] propertiesDocCounts = (Object[]) ((InternalAggregation) geoGrid).getProperty("_count");
+                for (int i = 0; i < buckets.size(); i++) {
+                    Bucket cell = buckets.get(i);
+                    String geohash = cell.getKeyAsString();
 
-                        long bucketCount = cell.getDocCount();
-                        int expectedBucketCount = expectedDocCountsForGeoHash.get(geohash);
-                        assertNotSame(bucketCount, 0);
-                        assertEquals("Geohash " + geohash + " has wrong doc count ", expectedBucketCount, bucketCount);
-                        GeoPoint geoPoint = (GeoPoint) propertiesKeys[i];
-                        assertThat(stringEncode(geoPoint.lon(), geoPoint.lat(), finalPrecision), equalTo(geohash));
-                        assertThat((long) propertiesDocCounts[i], equalTo(bucketCount));
-                    }
+                    long bucketCount = cell.getDocCount();
+                    int expectedBucketCount = expectedDocCountsForGeoHash.get(geohash);
+                    assertNotSame(bucketCount, 0);
+                    assertEquals("Geohash " + geohash + " has wrong doc count ", expectedBucketCount, bucketCount);
+                    GeoPoint geoPoint = (GeoPoint) propertiesKeys[i];
+                    assertThat(stringEncode(geoPoint.lon(), geoPoint.lat(), finalPrecision), equalTo(geohash));
+                    assertThat((long) propertiesDocCounts[i], equalTo(bucketCount));
                 }
-            );
+            }, prepareSearch("idx").addAggregation(geohashGrid("geohashgrid").field("location").precision(precision)));
         }
     }
 
     public void testMultivalued() throws Exception {
         for (int precision = 1; precision <= PRECISION; precision++) {
-            assertNoFailuresAndResponse(
-                prepareSearch("multi_valued_idx").addAggregation(geohashGrid("geohashgrid").field("location").precision(precision)),
-                response -> {
-                    GeoGrid geoGrid = response.getAggregations().get("geohashgrid");
-                    for (GeoGrid.Bucket cell : geoGrid.getBuckets()) {
-                        String geohash = cell.getKeyAsString();
+            assertNoFailuresAndResponse(response -> {
+                GeoGrid geoGrid = response.getAggregations().get("geohashgrid");
+                for (Bucket cell : geoGrid.getBuckets()) {
+                    String geohash = cell.getKeyAsString();
 
-                        long bucketCount = cell.getDocCount();
-                        int expectedBucketCount = multiValuedExpectedDocCountsForGeoHash.get(geohash);
-                        assertNotSame(bucketCount, 0);
-                        assertEquals("Geohash " + geohash + " has wrong doc count ", expectedBucketCount, bucketCount);
-                    }
+                    long bucketCount = cell.getDocCount();
+                    int expectedBucketCount = multiValuedExpectedDocCountsForGeoHash.get(geohash);
+                    assertNotSame(bucketCount, 0);
+                    assertEquals("Geohash " + geohash + " has wrong doc count ", expectedBucketCount, bucketCount);
                 }
-            );
+            }, prepareSearch("multi_valued_idx").addAggregation(geohashGrid("geohashgrid").field("location").precision(precision)));
         }
     }
 
@@ -180,84 +174,76 @@ public class GeoHashGridIT extends ESIntegTestCase {
         GeoBoundingBoxQueryBuilder bbox = new GeoBoundingBoxQueryBuilder("location");
         bbox.setCorners(smallestGeoHash).queryName("bbox");
         for (int precision = 1; precision <= PRECISION; precision++) {
-            assertNoFailuresAndResponse(
+            assertNoFailuresAndResponse(response -> {
+                Filter filter = response.getAggregations().get("filtered");
+
+                GeoGrid geoGrid = filter.getAggregations().get("geohashgrid");
+                for (Bucket cell : geoGrid.getBuckets()) {
+                    String geohash = cell.getKeyAsString();
+                    long bucketCount = cell.getDocCount();
+                    int expectedBucketCount = expectedDocCountsForGeoHash.get(geohash);
+                    assertNotSame(bucketCount, 0);
+                    assertTrue("Buckets must be filtered", geohash.startsWith(smallestGeoHash));
+                    assertEquals("Geohash " + geohash + " has wrong doc count ", expectedBucketCount, bucketCount);
+                }
+            },
                 prepareSearch("idx").addAggregation(
                     AggregationBuilders.filter("filtered", bbox)
                         .subAggregation(geohashGrid("geohashgrid").field("location").precision(precision))
-                ),
-                response -> {
-                    Filter filter = response.getAggregations().get("filtered");
-
-                    GeoGrid geoGrid = filter.getAggregations().get("geohashgrid");
-                    for (GeoGrid.Bucket cell : geoGrid.getBuckets()) {
-                        String geohash = cell.getKeyAsString();
-                        long bucketCount = cell.getDocCount();
-                        int expectedBucketCount = expectedDocCountsForGeoHash.get(geohash);
-                        assertNotSame(bucketCount, 0);
-                        assertTrue("Buckets must be filtered", geohash.startsWith(smallestGeoHash));
-                        assertEquals("Geohash " + geohash + " has wrong doc count ", expectedBucketCount, bucketCount);
-                    }
-                }
+                )
             );
         }
     }
 
     public void testUnmapped() throws Exception {
         for (int precision = 1; precision <= PRECISION; precision++) {
-            assertNoFailuresAndResponse(
-                prepareSearch("idx_unmapped").addAggregation(geohashGrid("geohashgrid").field("location").precision(precision)),
-                response -> {
-                    GeoGrid geoGrid = response.getAggregations().get("geohashgrid");
-                    assertThat(geoGrid.getBuckets().size(), equalTo(0));
-                }
-            );
+            assertNoFailuresAndResponse(response -> {
+                GeoGrid geoGrid = response.getAggregations().get("geohashgrid");
+                assertThat(geoGrid.getBuckets().size(), equalTo(0));
+            }, prepareSearch("idx_unmapped").addAggregation(geohashGrid("geohashgrid").field("location").precision(precision)));
         }
 
     }
 
     public void testPartiallyUnmapped() throws Exception {
         for (int precision = 1; precision <= PRECISION; precision++) {
-            assertNoFailuresAndResponse(
-                prepareSearch("idx", "idx_unmapped").addAggregation(geohashGrid("geohashgrid").field("location").precision(precision)),
-                response -> {
-                    GeoGrid geoGrid = response.getAggregations().get("geohashgrid");
-                    for (GeoGrid.Bucket cell : geoGrid.getBuckets()) {
-                        String geohash = cell.getKeyAsString();
+            assertNoFailuresAndResponse(response -> {
+                GeoGrid geoGrid = response.getAggregations().get("geohashgrid");
+                for (Bucket cell : geoGrid.getBuckets()) {
+                    String geohash = cell.getKeyAsString();
 
-                        long bucketCount = cell.getDocCount();
-                        int expectedBucketCount = expectedDocCountsForGeoHash.get(geohash);
-                        assertNotSame(bucketCount, 0);
-                        assertEquals("Geohash " + geohash + " has wrong doc count ", expectedBucketCount, bucketCount);
-                    }
+                    long bucketCount = cell.getDocCount();
+                    int expectedBucketCount = expectedDocCountsForGeoHash.get(geohash);
+                    assertNotSame(bucketCount, 0);
+                    assertEquals("Geohash " + geohash + " has wrong doc count ", expectedBucketCount, bucketCount);
                 }
-            );
+            }, prepareSearch("idx", "idx_unmapped").addAggregation(geohashGrid("geohashgrid").field("location").precision(precision)));
         }
     }
 
     public void testTopMatch() throws Exception {
         for (int precision = 1; precision <= PRECISION; precision++) {
             final int finalPrecision = precision;
-            assertNoFailuresAndResponse(
+            assertNoFailuresAndResponse(response -> {
+                GeoGrid geoGrid = response.getAggregations().get("geohashgrid");
+                // Check we only have one bucket with the best match for that resolution
+                assertThat(geoGrid.getBuckets().size(), equalTo(1));
+                for (Bucket cell : geoGrid.getBuckets()) {
+                    String geohash = cell.getKeyAsString();
+                    long bucketCount = cell.getDocCount();
+                    int expectedBucketCount = 0;
+                    for (var entry : expectedDocCountsForGeoHash.entrySet()) {
+                        if (entry.getKey().length() == finalPrecision) {
+                            expectedBucketCount = Math.max(expectedBucketCount, entry.getValue());
+                        }
+                    }
+                    assertNotSame(bucketCount, 0);
+                    assertEquals("Geohash " + geohash + " has wrong doc count ", expectedBucketCount, bucketCount);
+                }
+            },
                 prepareSearch("idx").addAggregation(
                     geohashGrid("geohashgrid").field("location").size(1).shardSize(100).precision(precision)
-                ),
-                response -> {
-                    GeoGrid geoGrid = response.getAggregations().get("geohashgrid");
-                    // Check we only have one bucket with the best match for that resolution
-                    assertThat(geoGrid.getBuckets().size(), equalTo(1));
-                    for (GeoGrid.Bucket cell : geoGrid.getBuckets()) {
-                        String geohash = cell.getKeyAsString();
-                        long bucketCount = cell.getDocCount();
-                        int expectedBucketCount = 0;
-                        for (var entry : expectedDocCountsForGeoHash.entrySet()) {
-                            if (entry.getKey().length() == finalPrecision) {
-                                expectedBucketCount = Math.max(expectedBucketCount, entry.getValue());
-                            }
-                        }
-                        assertNotSame(bucketCount, 0);
-                        assertEquals("Geohash " + geohash + " has wrong doc count ", expectedBucketCount, bucketCount);
-                    }
-                }
+                )
             );
         }
     }

@@ -619,7 +619,7 @@ public class CcrRepositoryIT extends CcrIntegTestCase {
             );
         }
 
-        assertHitCount(followerClient().prepareSearch(followerIndex).setSize(0), numDocs);
+        assertHitCount(numDocs, followerClient().prepareSearch(followerIndex).setSize(0));
         assertAcked(followerClient().admin().indices().prepareDelete(followerIndex).setMasterNodeTimeout(TimeValue.MAX_VALUE));
     }
 

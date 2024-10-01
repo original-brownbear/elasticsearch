@@ -1664,7 +1664,7 @@ public class SharedClusterSnapshotRestoreIT extends AbstractSnapshotIntegTestCas
         assertThat(restoreSnapshotResponse.getRestoreInfo().successfulShards(), equalTo(snapshotInfo.successfulShards()));
 
         ensureGreen("test-idx-1", "test-idx-2");
-        assertHitCount(prepareSearch("test-idx-*").setSize(0), 3);
+        assertHitCount(3, prepareSearch("test-idx-*").setSize(0));
     }
 
     /**
@@ -1736,7 +1736,7 @@ public class SharedClusterSnapshotRestoreIT extends AbstractSnapshotIntegTestCas
         ensureGreen();
         for (Map.Entry<String, Integer> entry : nbDocsPerIndex.entrySet()) {
             if (isRestorableIndex.test(entry.getKey())) {
-                assertHitCount(prepareSearch(entry.getKey()).setSize(0), entry.getValue().longValue());
+                assertHitCount(entry.getValue().longValue(), prepareSearch(entry.getKey()).setSize(0));
             }
         }
 

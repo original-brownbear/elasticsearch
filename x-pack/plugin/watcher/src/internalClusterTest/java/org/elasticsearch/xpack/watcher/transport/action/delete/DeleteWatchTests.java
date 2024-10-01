@@ -81,7 +81,7 @@ public class DeleteWatchTests extends AbstractWatcherIntegrationTestCase {
                 // during execution
                 refresh(HistoryStoreField.INDEX_PREFIX + "*");
 
-                assertResponse(prepareSearch(HistoryStoreField.INDEX_PREFIX + "*").setQuery(matchAllQuery()), searchResponse -> {
+                assertResponse(searchResponse -> {
                     assertHitCount(searchResponse, 1);
 
                     Map<String, Object> source = searchResponse.getHits().getAt(0).getSourceAsMap();
@@ -90,7 +90,7 @@ public class DeleteWatchTests extends AbstractWatcherIntegrationTestCase {
                     assertThat(state, is("executed"));
                     // no exception occurred
                     assertThat(source, not(hasKey("exception")));
-                });
+                }, prepareSearch(HistoryStoreField.INDEX_PREFIX + "*").setQuery(matchAllQuery()));
             });
         }
     }

@@ -108,6 +108,7 @@ public class SearchableSnapshotsBlobStoreCacheMaintenanceIntegTests extends Base
             for (String mountedIndex : mountedIndices.keySet()) {
                 final Settings indexSettings = mountedIndices.get(mountedIndex).v1();
                 assertHitCount(
+                    indicesToDelete.contains(mountedIndex) ? 0L : mountedIndices.get(mountedIndex).v2(),
                     systemClient().prepareSearch(SNAPSHOT_BLOB_CACHE_INDEX)
                         .setQuery(
                             BlobStoreCacheMaintenanceService.buildDeleteByQuery(
@@ -116,8 +117,7 @@ public class SearchableSnapshotsBlobStoreCacheMaintenanceIntegTests extends Base
                                 SNAPSHOT_INDEX_ID_SETTING.get(indexSettings)
                             )
                         )
-                        .setSize(0),
-                    indicesToDelete.contains(mountedIndex) ? 0L : mountedIndices.get(mountedIndex).v2()
+                        .setSize(0)
                 );
             }
         });
@@ -168,7 +168,18 @@ public class SearchableSnapshotsBlobStoreCacheMaintenanceIntegTests extends Base
                 for (String mountedIndex : mountedIndices.keySet()) {
                     final Settings indexSettings = mountedIndices.get(mountedIndex).v1();
 
-                    assertResponse(
+                    assertResponse(res -> {
+                        final long remainingEntriesInCache = res.getHits().getTotalHits().value;
+                        if (indicesToDelete.contains(mountedIndex)) {
+                            assertThat(remainingEntriesInCache, equalTo(0L));
+                        } else if (snapshotId.equals(SNAPSHOT_SNAPSHOT_ID_SETTING.get(indexSettings))) {
+                            assertThat(remainingEntriesInCache, greaterThanOrEqualTo(mountedIndices.get(randomMountedIndex).v2()));
+                        } else if (moreIndicesToDelete.contains(mountedIndex)) {
+                            assertThat(remainingEntriesInCache, equalTo(0L));
+                        } else {
+                            assertThat(remainingEntriesInCache, equalTo(mountedIndices.get(mountedIndex).v2()));
+                        }
+                    },
                         systemClient().prepareSearch(SNAPSHOT_BLOB_CACHE_INDEX)
                             .setQuery(
                                 BlobStoreCacheMaintenanceService.buildDeleteByQuery(
@@ -177,19 +188,7 @@ public class SearchableSnapshotsBlobStoreCacheMaintenanceIntegTests extends Base
                                     SNAPSHOT_INDEX_ID_SETTING.get(indexSettings)
                                 )
                             )
-                            .setSize(0),
-                        res -> {
-                            final long remainingEntriesInCache = res.getHits().getTotalHits().value;
-                            if (indicesToDelete.contains(mountedIndex)) {
-                                assertThat(remainingEntriesInCache, equalTo(0L));
-                            } else if (snapshotId.equals(SNAPSHOT_SNAPSHOT_ID_SETTING.get(indexSettings))) {
-                                assertThat(remainingEntriesInCache, greaterThanOrEqualTo(mountedIndices.get(randomMountedIndex).v2()));
-                            } else if (moreIndicesToDelete.contains(mountedIndex)) {
-                                assertThat(remainingEntriesInCache, equalTo(0L));
-                            } else {
-                                assertThat(remainingEntriesInCache, equalTo(mountedIndices.get(mountedIndex).v2()));
-                            }
-                        }
+                            .setSize(0)
                     );
                 }
             });
@@ -199,7 +198,7 @@ public class SearchableSnapshotsBlobStoreCacheMaintenanceIntegTests extends Base
         assertAcked(indicesAdmin().prepareDelete("mounted-*"));
         assertBusy(() -> {
             refreshSystemIndex(true);
-            assertHitCount(systemClient().prepareSearch(SNAPSHOT_BLOB_CACHE_INDEX).setSize(0), 0L);
+            assertHitCount(0L, systemClient().prepareSearch(SNAPSHOT_BLOB_CACHE_INDEX).setSize(0));
         });
     }
 

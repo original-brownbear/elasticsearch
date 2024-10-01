@@ -72,42 +72,40 @@ public class DateHistogramOffsetIT extends ESIntegTestCase {
     public void testSingleValueWithPositiveOffset() throws Exception {
         prepareIndex(date("2014-03-11T00:00:00+00:00"), 5, 1, 0);
 
-        assertResponse(
+        assertResponse(response -> {
+            assertThat(response.getHits().getTotalHits().value, equalTo(5L));
+
+            Histogram histo = response.getAggregations().get("date_histo");
+            List<? extends Histogram.Bucket> buckets = histo.getBuckets();
+            assertThat(buckets.size(), equalTo(2));
+
+            checkBucketFor(buckets.get(0), ZonedDateTime.of(2014, 3, 10, 2, 0, 0, 0, ZoneOffset.UTC), 2L);
+            checkBucketFor(buckets.get(1), ZonedDateTime.of(2014, 3, 11, 2, 0, 0, 0, ZoneOffset.UTC), 3L);
+        },
             prepareSearch("idx2").setQuery(matchAllQuery())
                 .addAggregation(
                     dateHistogram("date_histo").field("date").offset("2h").format(DATE_FORMAT).fixedInterval(DateHistogramInterval.DAY)
-                ),
-            response -> {
-                assertThat(response.getHits().getTotalHits().value, equalTo(5L));
-
-                Histogram histo = response.getAggregations().get("date_histo");
-                List<? extends Histogram.Bucket> buckets = histo.getBuckets();
-                assertThat(buckets.size(), equalTo(2));
-
-                checkBucketFor(buckets.get(0), ZonedDateTime.of(2014, 3, 10, 2, 0, 0, 0, ZoneOffset.UTC), 2L);
-                checkBucketFor(buckets.get(1), ZonedDateTime.of(2014, 3, 11, 2, 0, 0, 0, ZoneOffset.UTC), 3L);
-            }
+                )
         );
     }
 
     public void testSingleValueWithNegativeOffset() throws Exception {
         prepareIndex(date("2014-03-11T00:00:00+00:00"), 5, -1, 0);
 
-        assertResponse(
+        assertResponse(response -> {
+            assertThat(response.getHits().getTotalHits().value, equalTo(5L));
+
+            Histogram histo = response.getAggregations().get("date_histo");
+            List<? extends Histogram.Bucket> buckets = histo.getBuckets();
+            assertThat(buckets.size(), equalTo(2));
+
+            checkBucketFor(buckets.get(0), ZonedDateTime.of(2014, 3, 9, 22, 0, 0, 0, ZoneOffset.UTC), 2L);
+            checkBucketFor(buckets.get(1), ZonedDateTime.of(2014, 3, 10, 22, 0, 0, 0, ZoneOffset.UTC), 3L);
+        },
             prepareSearch("idx2").setQuery(matchAllQuery())
                 .addAggregation(
                     dateHistogram("date_histo").field("date").offset("-2h").format(DATE_FORMAT).fixedInterval(DateHistogramInterval.DAY)
-                ),
-            response -> {
-                assertThat(response.getHits().getTotalHits().value, equalTo(5L));
-
-                Histogram histo = response.getAggregations().get("date_histo");
-                List<? extends Histogram.Bucket> buckets = histo.getBuckets();
-                assertThat(buckets.size(), equalTo(2));
-
-                checkBucketFor(buckets.get(0), ZonedDateTime.of(2014, 3, 9, 22, 0, 0, 0, ZoneOffset.UTC), 2L);
-                checkBucketFor(buckets.get(1), ZonedDateTime.of(2014, 3, 10, 22, 0, 0, 0, ZoneOffset.UTC), 3L);
-            }
+                )
         );
     }
 
@@ -118,7 +116,19 @@ public class DateHistogramOffsetIT extends ESIntegTestCase {
         prepareIndex(date("2014-03-11T00:00:00+00:00"), 12, 1, 0);
         prepareIndex(date("2014-03-14T00:00:00+00:00"), 12, 1, 13);
 
-        assertResponse(
+        assertResponse(response -> {
+            assertThat(response.getHits().getTotalHits().value, equalTo(24L));
+
+            Histogram histo = response.getAggregations().get("date_histo");
+            List<? extends Histogram.Bucket> buckets = histo.getBuckets();
+            assertThat(buckets.size(), equalTo(5));
+
+            checkBucketFor(buckets.get(0), ZonedDateTime.of(2014, 3, 10, 6, 0, 0, 0, ZoneOffset.UTC), 6L);
+            checkBucketFor(buckets.get(1), ZonedDateTime.of(2014, 3, 11, 6, 0, 0, 0, ZoneOffset.UTC), 6L);
+            checkBucketFor(buckets.get(2), ZonedDateTime.of(2014, 3, 12, 6, 0, 0, 0, ZoneOffset.UTC), 0L);
+            checkBucketFor(buckets.get(3), ZonedDateTime.of(2014, 3, 13, 6, 0, 0, 0, ZoneOffset.UTC), 6L);
+            checkBucketFor(buckets.get(4), ZonedDateTime.of(2014, 3, 14, 6, 0, 0, 0, ZoneOffset.UTC), 6L);
+        },
             prepareSearch("idx2").setQuery(matchAllQuery())
                 .addAggregation(
                     dateHistogram("date_histo").field("date")
@@ -126,20 +136,7 @@ public class DateHistogramOffsetIT extends ESIntegTestCase {
                         .minDocCount(0)
                         .format(DATE_FORMAT)
                         .fixedInterval(DateHistogramInterval.DAY)
-                ),
-            response -> {
-                assertThat(response.getHits().getTotalHits().value, equalTo(24L));
-
-                Histogram histo = response.getAggregations().get("date_histo");
-                List<? extends Histogram.Bucket> buckets = histo.getBuckets();
-                assertThat(buckets.size(), equalTo(5));
-
-                checkBucketFor(buckets.get(0), ZonedDateTime.of(2014, 3, 10, 6, 0, 0, 0, ZoneOffset.UTC), 6L);
-                checkBucketFor(buckets.get(1), ZonedDateTime.of(2014, 3, 11, 6, 0, 0, 0, ZoneOffset.UTC), 6L);
-                checkBucketFor(buckets.get(2), ZonedDateTime.of(2014, 3, 12, 6, 0, 0, 0, ZoneOffset.UTC), 0L);
-                checkBucketFor(buckets.get(3), ZonedDateTime.of(2014, 3, 13, 6, 0, 0, 0, ZoneOffset.UTC), 6L);
-                checkBucketFor(buckets.get(4), ZonedDateTime.of(2014, 3, 14, 6, 0, 0, 0, ZoneOffset.UTC), 6L);
-            }
+                )
         );
     }
 

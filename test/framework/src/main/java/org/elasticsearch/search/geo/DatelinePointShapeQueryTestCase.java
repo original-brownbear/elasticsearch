@@ -66,12 +66,12 @@ public class DatelinePointShapeQueryTestCase {
         Rectangle rectangle = new Rectangle(169, -178, 1, -1);
 
         GeoShapeQueryBuilder geoShapeQueryBuilder = QueryBuilders.geoShapeQuery(defaultFieldName, rectangle);
-        assertResponse(tests.client().prepareSearch(defaultIndexName).setQuery(geoShapeQueryBuilder), response -> {
+        assertResponse(response -> {
             SearchHits searchHits = response.getHits();
             assertEquals(2, searchHits.getTotalHits().value);
             assertNotEquals("1", searchHits.getAt(0).getId());
             assertNotEquals("1", searchHits.getAt(1).getId());
-        });
+        }, tests.client().prepareSearch(defaultIndexName).setQuery(geoShapeQueryBuilder));
     }
 
     public void testPolygonSpanningDateline(BasePointShapeQueryTestCase<GeoShapeQueryBuilder> tests) throws Exception {
@@ -110,14 +110,14 @@ public class DatelinePointShapeQueryTestCase {
 
         GeoShapeQueryBuilder geoShapeQueryBuilder = QueryBuilders.geoShapeQuery(defaultFieldName, polygon);
         geoShapeQueryBuilder.relation(ShapeRelation.INTERSECTS);
-        assertResponse(tests.client().prepareSearch(defaultIndexName).setQuery(geoShapeQueryBuilder), response -> {
+        assertResponse(response -> {
             SearchHits searchHits = response.getHits();
             assertEquals(2, searchHits.getTotalHits().value);
             assertNotEquals("1", searchHits.getAt(0).getId());
             assertNotEquals("4", searchHits.getAt(0).getId());
             assertNotEquals("1", searchHits.getAt(1).getId());
             assertNotEquals("4", searchHits.getAt(1).getId());
-        });
+        }, tests.client().prepareSearch(defaultIndexName).setQuery(geoShapeQueryBuilder));
     }
 
     public void testMultiPolygonSpanningDateline(BasePointShapeQueryTestCase<GeoShapeQueryBuilder> tests) throws Exception {
@@ -153,11 +153,11 @@ public class DatelinePointShapeQueryTestCase {
 
         GeoShapeQueryBuilder geoShapeQueryBuilder = QueryBuilders.geoShapeQuery(defaultFieldName, multiPolygon);
         geoShapeQueryBuilder.relation(ShapeRelation.INTERSECTS);
-        assertResponse(tests.client().prepareSearch(defaultIndexName).setQuery(geoShapeQueryBuilder), response -> {
+        assertResponse(response -> {
             SearchHits searchHits = response.getHits();
             assertEquals(2, searchHits.getTotalHits().value);
             assertNotEquals("3", searchHits.getAt(0).getId());
             assertNotEquals("3", searchHits.getAt(1).getId());
-        });
+        }, tests.client().prepareSearch(defaultIndexName).setQuery(geoShapeQueryBuilder));
     }
 }

@@ -68,8 +68,8 @@ public class SingleNodeTests extends AbstractWatcherIntegrationTestCase {
             BroadcastResponse refreshResponse = indicesAdmin().prepareRefresh(".watcher-history*").get();
             assertThat(refreshResponse.getStatus(), equalTo(RestStatus.OK));
             assertResponse(
-                prepareSearch(".watcher-history*").setSize(0),
-                searchResponse -> assertThat(searchResponse.getHits().getTotalHits().value, is(greaterThanOrEqualTo(1L)))
+                searchResponse -> assertThat(searchResponse.getHits().getTotalHits().value, is(greaterThanOrEqualTo(1L))),
+                prepareSearch(".watcher-history*").setSize(0)
             );
         }, 30, TimeUnit.SECONDS);
     }

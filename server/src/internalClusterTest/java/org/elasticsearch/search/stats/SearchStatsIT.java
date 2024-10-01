@@ -104,7 +104,10 @@ public class SearchStatsIT extends ESIntegTestCase {
         refresh();
         int iters = scaledRandomIntBetween(100, 150);
         for (int i = 0; i < iters; i++) {
-            assertResponse(
+            assertResponse(response -> {
+                assertHitCount(response, docsTest1 + docsTest2);
+                assertAllSuccessful(response);
+            },
                 internalCluster().coordOnlyNodeClient()
                     .prepareSearch()
                     .setQuery(QueryBuilders.termQuery("field", "value"))
@@ -114,11 +117,7 @@ public class SearchStatsIT extends ESIntegTestCase {
                         "script1",
                         new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "_source.field", Collections.emptyMap())
                     )
-                    .setSize(100),
-                response -> {
-                    assertHitCount(response, docsTest1 + docsTest2);
-                    assertAllSuccessful(response);
-                }
+                    .setSize(100)
             );
         }
 
@@ -193,13 +192,10 @@ public class SearchStatsIT extends ESIntegTestCase {
         int size = scaledRandomIntBetween(1, docs);
         final String[] scroll = new String[1];
         final int[] total = new int[1];
-        assertNoFailuresAndResponse(
-            prepareSearch().setQuery(matchAllQuery()).setSize(size).setScroll(TimeValue.timeValueMinutes(2)),
-            response -> {
-                scroll[0] = response.getScrollId();
-                total[0] = response.getHits().getHits().length;
-            }
-        );
+        assertNoFailuresAndResponse(response -> {
+            scroll[0] = response.getScrollId();
+            total[0] = response.getHits().getHits().length;
+        }, prepareSearch().setQuery(matchAllQuery()).setSize(size).setScroll(TimeValue.timeValueMinutes(2)));
 
         // refresh the stats now that scroll contexts are opened
         indicesStats = indicesAdmin().prepareStats(index).get();
@@ -213,10 +209,10 @@ public class SearchStatsIT extends ESIntegTestCase {
                 break;
             }
             hits += total[0];
-            assertResponse(client().prepareSearchScroll(scroll[0]).setScroll(TimeValue.timeValueMinutes(2)), response -> {
+            assertResponse(response -> {
                 scroll[0] = response.getScrollId();
                 total[0] = response.getHits().getHits().length;
-            });
+            }, client().prepareSearchScroll(scroll[0]).setScroll(TimeValue.timeValueMinutes(2)));
         }
         long expected = 0;
 

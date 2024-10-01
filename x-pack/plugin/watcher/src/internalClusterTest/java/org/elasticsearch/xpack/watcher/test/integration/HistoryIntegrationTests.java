@@ -87,7 +87,7 @@ public class HistoryIntegrationTests extends AbstractWatcherIntegrationTestCase 
 
         new ExecuteWatchRequestBuilder(client()).setId("test_watch").setRecordExecution(true).get();
 
-        assertBusy(() -> { assertHitCount(getWatchHistory(), 1); });
+        assertBusy(() -> { assertHitCount(1, getWatchHistory()); });
     }
 
     // See https://github.com/elastic/x-plugins/issues/2913
@@ -117,7 +117,7 @@ public class HistoryIntegrationTests extends AbstractWatcherIntegrationTestCase 
 
         new ExecuteWatchRequestBuilder(client()).setId("test_watch").setRecordExecution(true).get();
 
-        assertBusy(() -> { assertHitCount(getWatchHistory(), 1); });
+        assertBusy(() -> { assertHitCount(1, getWatchHistory()); });
 
         // as fields with dots are allowed in 5.0 again, the mapping must be checked in addition
         GetMappingsResponse response = indicesAdmin().prepareGetMappings(".watcher-history*").get();
@@ -159,7 +159,7 @@ public class HistoryIntegrationTests extends AbstractWatcherIntegrationTestCase 
 
         new ExecuteWatchRequestBuilder(client()).setId("test_watch").setRecordExecution(true).get();
 
-        assertBusy(() -> { assertHitCount(getWatchHistory(), 1); });
+        assertBusy(() -> { assertHitCount(1, getWatchHistory()); });
 
         // as fields with dots are allowed in 5.0 again, the mapping must be checked in addition
         GetMappingsResponse response = indicesAdmin().prepareGetMappings(".watcher-history*").get();
@@ -193,7 +193,7 @@ public class HistoryIntegrationTests extends AbstractWatcherIntegrationTestCase 
         WatchStatus status = new GetWatchRequestBuilder(client()).setId("test_watch").get().getStatus();
 
         assertBusy(() -> {
-            assertResponse(getWatchHistory(), searchResponse -> {
+            assertResponse(searchResponse -> {
                 assertHitCount(searchResponse, 1);
                 SearchHit hit = searchResponse.getHits().getAt(0);
 
@@ -220,7 +220,7 @@ public class HistoryIntegrationTests extends AbstractWatcherIntegrationTestCase 
 
                 Boolean lastExecutionSuccesful = source.getValue("status.actions._logger.last_execution.successful");
                 assertThat(lastExecutionSuccesful, is(actionStatus.lastExecution().successful()));
-            });
+            }, getWatchHistory());
         });
 
         assertBusy(() -> {
@@ -254,7 +254,7 @@ public class HistoryIntegrationTests extends AbstractWatcherIntegrationTestCase 
                 .get();
             new ExecuteWatchRequestBuilder(client()).setId("test_watch_small").setRecordExecution(true).get();
             assertBusy(() -> {
-                assertResponse(getWatchHistory(), searchResponse -> {
+                assertResponse(searchResponse -> {
                     assertHitCount(searchResponse, 1);
                     SearchHit hit = searchResponse.getHits().getAt(0);
                     XContentSource source = new XContentSource(hit.getSourceRef(), XContentType.JSON);
@@ -266,7 +266,7 @@ public class HistoryIntegrationTests extends AbstractWatcherIntegrationTestCase 
                     assertThat(result.containsKey("input"), equalTo(true));
                     assertThat(result.containsKey("actions"), equalTo(true));
                     assertThat(result.containsKey("condition"), equalTo(true));
-                });
+                }, getWatchHistory());
             });
         }
         {
@@ -283,7 +283,7 @@ public class HistoryIntegrationTests extends AbstractWatcherIntegrationTestCase 
                 .get();
             new ExecuteWatchRequestBuilder(client()).setId("test_watch_large").setRecordExecution(true).get();
             assertBusy(() -> {
-                assertResponse(getWatchHistory(), searchResponse -> {
+                assertResponse(searchResponse -> {
                     assertHitCount(searchResponse, 2);
                     SearchHit hit = searchResponse.getHits().getAt(1);
                     XContentSource source = new XContentSource(hit.getSourceRef(), XContentType.JSON);
@@ -297,7 +297,7 @@ public class HistoryIntegrationTests extends AbstractWatcherIntegrationTestCase 
                     assertThat(result.containsKey("input"), equalTo(false));
                     assertThat(result.containsKey("actions"), equalTo(false));
                     assertThat(result.containsKey("condition"), equalTo(false));
-                });
+                }, getWatchHistory());
             });
         }
     }

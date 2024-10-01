@@ -145,17 +145,16 @@ public class NaNSortingIT extends ESIntegTestCase {
     public void testTerms(String fieldName) {
         final boolean asc = randomBoolean();
         SubAggregation agg = randomFrom(SubAggregation.values());
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            final Terms terms = response.getAggregations().get("terms");
+            assertCorrectlySorted(terms, asc, agg);
+        },
             prepareSearch("idx").addAggregation(
                 terms("terms").field(fieldName)
                     .collectMode(randomFrom(SubAggCollectionMode.values()))
                     .subAggregation(agg.builder())
                     .order(BucketOrder.aggregation(agg.sortKey(), asc))
-            ),
-            response -> {
-                final Terms terms = response.getAggregations().get("terms");
-                assertCorrectlySorted(terms, asc, agg);
-            }
+            )
         );
     }
 
@@ -174,17 +173,16 @@ public class NaNSortingIT extends ESIntegTestCase {
     public void testLongHistogram() {
         final boolean asc = randomBoolean();
         SubAggregation agg = randomFrom(SubAggregation.values());
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            final Histogram histo = response.getAggregations().get("histo");
+            assertCorrectlySorted(histo, asc, agg);
+        },
             prepareSearch("idx").addAggregation(
                 histogram("histo").field("long_value")
                     .interval(randomIntBetween(1, 2))
                     .subAggregation(agg.builder())
                     .order(BucketOrder.aggregation(agg.sortKey(), asc))
-            ),
-            response -> {
-                final Histogram histo = response.getAggregations().get("histo");
-                assertCorrectlySorted(histo, asc, agg);
-            }
+            )
         );
     }
 }

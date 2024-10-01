@@ -134,7 +134,7 @@ public abstract class AbstractIndexRecoveryIntegTestCase extends ESIntegTestCase
 
         assertFalse(stateResponse.getState().getRoutingNodes().node(blueNodeId).isEmpty());
 
-        assertHitCount(prepareSearch(indexName), numDocs);
+        assertHitCount(numDocs, prepareSearch(indexName));
 
         logger.info("--> will temporarily interrupt recovery action between blue & red on [{}]", recoveryActionToBlock);
 
@@ -183,7 +183,7 @@ public abstract class AbstractIndexRecoveryIntegTestCase extends ESIntegTestCase
             if (recoveryActionToBlock.equals(PeerRecoveryTargetService.Actions.RESTORE_FILE_FROM_SNAPSHOT)) {
                 assertThat(handlingBehavior.blocksRemaining.get(), is(equalTo(0)));
             }
-            assertHitCount(client(redNodeName).prepareSearch(indexName).setPreference("_local"), numDocs);
+            assertHitCount(numDocs, client(redNodeName).prepareSearch(indexName).setPreference("_local"));
         } finally {
             blueTransportService.clearAllRules();
             redTransportService.clearAllRules();
@@ -225,7 +225,7 @@ public abstract class AbstractIndexRecoveryIntegTestCase extends ESIntegTestCase
 
         assertFalse(stateResponse.getState().getRoutingNodes().node(blueNodeId).isEmpty());
 
-        assertHitCount(prepareSearch(indexName), numDocs);
+        assertHitCount(numDocs, prepareSearch(indexName));
 
         final boolean dropRequests = randomBoolean();
         logger.info("--> will {} between blue & red on [{}]", dropRequests ? "drop requests" : "break connection", recoveryActionToBlock);
@@ -283,7 +283,7 @@ public abstract class AbstractIndexRecoveryIntegTestCase extends ESIntegTestCase
         redMockTransportService.clearAllRules();
 
         ensureGreen();
-        assertHitCount(client(redNodeName).prepareSearch(indexName).setPreference("_local"), numDocs);
+        assertHitCount(numDocs, client(redNodeName).prepareSearch(indexName).setPreference("_local"));
     }
 
     public void checkDisconnectsDuringRecovery(boolean useSnapshotBasedRecoveries) throws Exception {
@@ -315,7 +315,7 @@ public abstract class AbstractIndexRecoveryIntegTestCase extends ESIntegTestCase
         }
         indexRandom(true, requests);
         ensureSearchable(indexName);
-        assertHitCount(prepareSearch(indexName), numDocs);
+        assertHitCount(numDocs, prepareSearch(indexName));
 
         if (useSnapshotBasedRecoveries) {
             createSnapshotThatCanBeUsedDuringRecovery(indexName);
@@ -421,7 +421,7 @@ public abstract class AbstractIndexRecoveryIntegTestCase extends ESIntegTestCase
         }
 
         for (int i = 0; i < 10; i++) {
-            assertHitCount(prepareSearch(indexName), numDocs);
+            assertHitCount(numDocs, prepareSearch(indexName));
         }
     }
 

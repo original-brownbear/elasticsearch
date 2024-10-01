@@ -47,7 +47,7 @@ public abstract class ESFsBasedRepositoryIntegTestCase extends ESBlobStoreReposi
         int docCount = iterations(10, 1000);
         logger.info("-->  create random index {} with {} records", indexName, docCount);
         addRandomDocuments(indexName, docCount);
-        assertHitCount(prepareSearch(indexName).setSize(0), docCount);
+        assertHitCount(docCount, prepareSearch(indexName).setSize(0));
 
         final String snapshotName = randomName();
         logger.info("-->  create snapshot {}:{}", repoName, snapshotName);

@@ -72,23 +72,20 @@ public class FetchSubPhasePluginIT extends ESIntegTestCase {
 
         indicesAdmin().prepareRefresh().get();
 
-        assertNoFailuresAndResponse(
-            prepareSearch().setSource(new SearchSourceBuilder().ext(Collections.singletonList(new TermVectorsFetchBuilder("test")))),
-            response -> {
-                assertThat(
-                    ((Map<String, Integer>) response.getHits().getAt(0).field("term_vectors_fetch").getValues().get(0)).get("i"),
-                    equalTo(2)
-                );
-                assertThat(
-                    ((Map<String, Integer>) response.getHits().getAt(0).field("term_vectors_fetch").getValues().get(0)).get("am"),
-                    equalTo(2)
-                );
-                assertThat(
-                    ((Map<String, Integer>) response.getHits().getAt(0).field("term_vectors_fetch").getValues().get(0)).get("sam"),
-                    equalTo(1)
-                );
-            }
-        );
+        assertNoFailuresAndResponse(response -> {
+            assertThat(
+                ((Map<String, Integer>) response.getHits().getAt(0).field("term_vectors_fetch").getValues().get(0)).get("i"),
+                equalTo(2)
+            );
+            assertThat(
+                ((Map<String, Integer>) response.getHits().getAt(0).field("term_vectors_fetch").getValues().get(0)).get("am"),
+                equalTo(2)
+            );
+            assertThat(
+                ((Map<String, Integer>) response.getHits().getAt(0).field("term_vectors_fetch").getValues().get(0)).get("sam"),
+                equalTo(1)
+            );
+        }, prepareSearch().setSource(new SearchSourceBuilder().ext(Collections.singletonList(new TermVectorsFetchBuilder("test")))));
     }
 
     public static class FetchTermVectorsPlugin extends Plugin implements SearchPlugin {

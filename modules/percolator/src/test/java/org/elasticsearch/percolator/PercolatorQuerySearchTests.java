@@ -147,6 +147,7 @@ public class PercolatorQuerySearchTests extends ESSingleNodeTestCase {
 
         for (int i = 0; i < 32; i++) {
             assertHitCount(
+                1,
                 client().prepareSearch()
                     .setQuery(
                         new PercolateQueryBuilder(
@@ -170,8 +171,7 @@ public class PercolatorQuerySearchTests extends ESSingleNodeTestCase {
                     )
                     .addSort("_doc", SortOrder.ASC)
                     // size 0, because other wise load bitsets for normal document in FetchPhase#findRootDocumentIfNested(...)
-                    .setSize(0),
-                1
+                    .setSize(0)
             );
         }
 
@@ -245,10 +245,10 @@ public class PercolatorQuerySearchTests extends ESSingleNodeTestCase {
         doc.endObject();
         for (int i = 0; i < 32; i++) {
             assertHitCount(
+                1,
                 client().prepareSearch()
                     .setQuery(new PercolateQueryBuilder("query", BytesReference.bytes(doc), XContentType.JSON))
-                    .addSort("_doc", SortOrder.ASC),
-                1
+                    .addSort("_doc", SortOrder.ASC)
             );
         }
 
@@ -408,7 +408,7 @@ public class PercolatorQuerySearchTests extends ESSingleNodeTestCase {
             """);
 
         QueryBuilder query = new PercolateQueryBuilder("my_query", List.of(house1_doc, house2_doc), XContentType.JSON);
-        assertResponse(client().prepareSearch("houses").setQuery(query), response -> {
+        assertResponse(response -> {
             assertEquals(2, response.getHits().getTotalHits().value);
 
             SearchHit[] hits = response.getHits().getHits();
@@ -427,7 +427,7 @@ public class PercolatorQuerySearchTests extends ESSingleNodeTestCase {
                 hits[1].getFields().get("_percolator_document_slot_0_matched_queries").getValues(),
                 equalTo(Arrays.asList("swimming_pool_query", "3_bedrooms_query"))
             );
-        });
+        }, client().prepareSearch("houses").setQuery(query));
     }
 
 }

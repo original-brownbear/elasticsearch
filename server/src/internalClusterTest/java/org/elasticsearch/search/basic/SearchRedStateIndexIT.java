@@ -44,7 +44,7 @@ public class SearchRedStateIndexIT extends ESIntegTestCase {
         final int numShards = cluster().numDataNodes() + 2;
         buildRedIndex(numShards);
 
-        assertResponse(prepareSearch().setSize(0).setAllowPartialSearchResults(true), response -> {
+        assertResponse(response -> {
             assertThat(RestStatus.OK, equalTo(response.status()));
             assertThat("Expect some shards failed", response.getFailedShards(), allOf(greaterThan(0), lessThanOrEqualTo(numShards)));
             assertThat("Expect no shards skipped", response.getSkippedShards(), equalTo(0));
@@ -53,7 +53,7 @@ public class SearchRedStateIndexIT extends ESIntegTestCase {
             for (ShardSearchFailure failure : response.getShardFailures()) {
                 assertThat(failure.getCause(), instanceOf(NoShardAvailableActionException.class));
             }
-        });
+        }, prepareSearch().setSize(0).setAllowPartialSearchResults(true));
     }
 
     public void testClusterAllowPartialsWithRedState() throws Exception {
@@ -62,7 +62,7 @@ public class SearchRedStateIndexIT extends ESIntegTestCase {
 
         setClusterDefaultAllowPartialResults(true);
 
-        assertResponse(prepareSearch().setSize(0), response -> {
+        assertResponse(response -> {
             assertThat(RestStatus.OK, equalTo(response.status()));
             assertThat("Expect some shards failed", response.getFailedShards(), allOf(greaterThan(0), lessThanOrEqualTo(numShards)));
             assertThat("Expect no shards skipped", response.getSkippedShards(), equalTo(0));
@@ -74,7 +74,7 @@ public class SearchRedStateIndexIT extends ESIntegTestCase {
                 // We don't write out the entire, repetitive stacktrace in the reason
                 assertThat(failure.reason(), equalTo("org.elasticsearch.action.NoShardAvailableActionException" + System.lineSeparator()));
             }
-        });
+        }, prepareSearch().setSize(0));
     }
 
     public void testDisallowPartialsWithRedState() throws Exception {

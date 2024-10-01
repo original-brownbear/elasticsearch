@@ -54,7 +54,7 @@ public class RejectedExecutionTests extends AbstractWatcherIntegrationTestCase {
         // Now we make sure that we get a watcher history record for the failed watch (it is written on a different thread pool)
         assertBusy(() -> {
             flushAndRefresh(".watcher-history-*");
-            assertResponse(prepareSearch(".watcher-history-*"), searchResponse -> {
+            assertResponse(searchResponse -> {
                 assertThat("Watcher history not found", searchResponse.getHits().getTotalHits().value, greaterThanOrEqualTo(2L));
                 assertThat(
                     "Did not find watcher history for rejected watch",
@@ -66,7 +66,7 @@ public class RejectedExecutionTests extends AbstractWatcherIntegrationTestCase {
                         ),
                     equalTo(true)
                 );
-            });
+            }, prepareSearch(".watcher-history-*"));
         });
     }
 

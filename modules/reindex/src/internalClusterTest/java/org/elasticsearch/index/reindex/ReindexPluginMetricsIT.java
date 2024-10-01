@@ -63,7 +63,7 @@ public class ReindexPluginMetricsIT extends ESIntegTestCase {
             prepareIndex("source").setId("3").setSource("foo", "b"),
             prepareIndex("source").setId("4").setSource("foo", "c")
         );
-        assertHitCount(prepareSearch("source").setSize(0), 4);
+        assertHitCount(4, prepareSearch("source").setSize(0));
 
         final TestTelemetryPlugin testTelemetryPlugin = internalCluster().getInstance(PluginsService.class, dataNodeName)
             .filterPlugins(TestTelemetryPlugin.class)
@@ -119,7 +119,7 @@ public class ReindexPluginMetricsIT extends ESIntegTestCase {
             prepareIndex("test").setId("7").setSource("foo", "f")
         );
 
-        assertHitCount(prepareSearch("test").setSize(0), 7);
+        assertHitCount(7, prepareSearch("test").setSize(0));
 
         final TestTelemetryPlugin testTelemetryPlugin = internalCluster().getInstance(PluginsService.class, dataNodeName)
             .filterPlugins(TestTelemetryPlugin.class)
@@ -171,7 +171,7 @@ public class ReindexPluginMetricsIT extends ESIntegTestCase {
             prepareIndex("test").setId("3").setSource("foo", "b"),
             prepareIndex("test").setId("4").setSource("foo", "c")
         );
-        assertHitCount(prepareSearch("test").setSize(0), 4);
+        assertHitCount(4, prepareSearch("test").setSize(0));
         assertEquals(1, client().prepareGet("test", "1").get().getVersion());
         assertEquals(1, client().prepareGet("test", "4").get().getVersion());
 

@@ -319,7 +319,7 @@ public class SignificantTermsSignificanceScoreIT extends ESIntegTestCase {
                 );
         }
 
-        assertNoFailuresAndResponse(request1, response1 -> assertNoFailuresAndResponse(request2, response2 -> {
+        assertNoFailuresAndResponse(response1 -> assertNoFailuresAndResponse(response2 -> {
             StringTerms classes = response1.getAggregations().get("class");
 
             SignificantTerms sigTerms0 = classes.getBucketByKey("0").getAggregations().get("sig_terms");
@@ -344,7 +344,7 @@ public class SignificantTermsSignificanceScoreIT extends ESIntegTestCase {
             assertThat(score01Background, equalTo(score01SeparateSets));
             assertThat(score10Background, equalTo(score10SeparateSets));
             assertThat(score11Background, equalTo(score11SeparateSets));
-        }));
+        }, request2), request1);
     }
 
     public void testScoresEqualForPositiveAndNegative() throws Exception {
@@ -380,7 +380,7 @@ public class SignificantTermsSignificanceScoreIT extends ESIntegTestCase {
                     )
             );
         }
-        assertNoFailuresAndResponse(request, response -> {
+        assertNoFailuresAndResponse(response -> {
             StringTerms classes = response.getAggregations().get("class");
             assertThat(classes.getBuckets().size(), equalTo(2));
             Iterator<? extends Terms.Bucket> classBuckets = classes.getBuckets().iterator();
@@ -396,7 +396,7 @@ public class SignificantTermsSignificanceScoreIT extends ESIntegTestCase {
                 assertThat(classABucket.getKey(), equalTo(classBBucket.getKey()));
                 assertThat(classABucket.getSignificanceScore(), closeTo(classBBucket.getSignificanceScore(), 1.e-5));
             }
-        });
+        }, request);
     }
 
     /**
@@ -416,7 +416,7 @@ public class SignificantTermsSignificanceScoreIT extends ESIntegTestCase {
             .size(1000)
             .subAggregation(subAgg);
 
-        assertNoFailuresAndResponse(prepareSearch("test").setQuery(query).addAggregation(agg), response -> {
+        assertNoFailuresAndResponse(response -> {
             SignificantTerms sigTerms = response.getAggregations().get("significant_terms");
             assertThat(sigTerms.getBuckets().size(), equalTo(2));
 
@@ -424,7 +424,7 @@ public class SignificantTermsSignificanceScoreIT extends ESIntegTestCase {
                 StringTerms terms = bucket.getAggregations().get("class");
                 assertThat(terms.getBuckets().size(), equalTo(2));
             }
-        });
+        }, prepareSearch("test").setQuery(query).addAggregation(agg));
     }
 
     private void indexEqualTestData() throws ExecutionException, InterruptedException {
@@ -489,7 +489,7 @@ public class SignificantTermsSignificanceScoreIT extends ESIntegTestCase {
                     )
             );
         }
-        assertNoFailuresAndResponse(request, response -> {
+        assertNoFailuresAndResponse(response -> {
             for (Terms.Bucket classBucket : ((Terms) response.getAggregations().get("class")).getBuckets()) {
                 SignificantTerms sigTerms = classBucket.getAggregations().get("mySignificantTerms");
                 for (SignificantTerms.Bucket bucket : sigTerms.getBuckets()) {
@@ -499,7 +499,7 @@ public class SignificantTermsSignificanceScoreIT extends ESIntegTestCase {
                     );
                 }
             }
-        });
+        }, request);
     }
 
     private ScriptHeuristic getScriptSignificanceHeuristic() throws IOException {

@@ -112,8 +112,8 @@ public class LocalExporterIntegTests extends LocalExporterIntegTestCase {
                     ensureYellowAndNoInitializingShards(".monitoring-*");
 
                     assertResponse(
-                        prepareSearch(".monitoring-*"),
-                        response -> assertThat((long) nbDocs, lessThanOrEqualTo(response.getHits().getTotalHits().value))
+                        response -> assertThat((long) nbDocs, lessThanOrEqualTo(response.getHits().getTotalHits().value)),
+                        prepareSearch(".monitoring-*")
                     );
                 });
 
@@ -161,24 +161,23 @@ public class LocalExporterIntegTests extends LocalExporterIntegTestCase {
                     greaterThan(0L)
                 );
 
-                assertResponse(
+                assertResponse(response -> {
+                    Terms aggregation = response.getAggregations().get("agg_nodes_ids");
+                    assertEquals(
+                        "Aggregation on node_id must return a bucket per node involved in test",
+                        numNodes,
+                        aggregation.getBuckets().size()
+                    );
+                    for (String nodeName : internalCluster().getNodeNames()) {
+                        String nodeId = getNodeId(nodeName);
+                        Terms.Bucket bucket = aggregation.getBucketByKey(nodeId);
+                        assertTrue("No bucket found for node id [" + nodeId + "]", bucket != null);
+                        assertTrue(bucket.getDocCount() >= 1L);
+                    }
+                },
                     prepareSearch(".monitoring-es-*").setSize(0)
                         .setQuery(QueryBuilders.termQuery("type", "node_stats"))
-                        .addAggregation(terms("agg_nodes_ids").field("node_stats.node_id")),
-                    response -> {
-                        Terms aggregation = response.getAggregations().get("agg_nodes_ids");
-                        assertEquals(
-                            "Aggregation on node_id must return a bucket per node involved in test",
-                            numNodes,
-                            aggregation.getBuckets().size()
-                        );
-                        for (String nodeName : internalCluster().getNodeNames()) {
-                            String nodeId = getNodeId(nodeName);
-                            Terms.Bucket bucket = aggregation.getBucketByKey(nodeId);
-                            assertTrue("No bucket found for node id [" + nodeId + "]", bucket != null);
-                            assertTrue(bucket.getDocCount() >= 1L);
-                        }
-                    }
+                        .addAggregation(terms("agg_nodes_ids").field("node_stats.node_id"))
                 );
             }, 30L, TimeUnit.SECONDS);
 
@@ -198,26 +197,25 @@ public class LocalExporterIntegTests extends LocalExporterIntegTestCase {
                 ensureYellowAndNoInitializingShards(".monitoring-*");
                 refresh(".monitoring-es-*");
 
-                assertResponse(
+                assertResponse(response -> {
+                    Terms aggregation = response.getAggregations().get("agg_nodes_ids");
+                    for (String nodeName : internalCluster().getNodeNames()) {
+                        String nodeId = getNodeId(nodeName);
+                        Terms.Bucket bucket = aggregation.getBucketByKey(nodeId);
+                        assertTrue("No bucket found for node id [" + nodeId + "]", bucket != null);
+                        assertTrue(bucket.getDocCount() >= 1L);
+
+                        Max subAggregation = bucket.getAggregations().get("agg_last_time_collected");
+                        ZonedDateTime lastCollection = Instant.ofEpochMilli(Math.round(subAggregation.value())).atZone(ZoneOffset.UTC);
+                        assertTrue(lastCollection.plusSeconds(elapsedInSeconds).isBefore(ZonedDateTime.now(ZoneOffset.UTC)));
+                    }
+                },
                     prepareSearch(".monitoring-es-*").setSize(0)
                         .setQuery(QueryBuilders.termQuery("type", "node_stats"))
                         .addAggregation(
                             terms("agg_nodes_ids").field("node_stats.node_id")
                                 .subAggregation(max("agg_last_time_collected").field("timestamp"))
-                        ),
-                    response -> {
-                        Terms aggregation = response.getAggregations().get("agg_nodes_ids");
-                        for (String nodeName : internalCluster().getNodeNames()) {
-                            String nodeId = getNodeId(nodeName);
-                            Terms.Bucket bucket = aggregation.getBucketByKey(nodeId);
-                            assertTrue("No bucket found for node id [" + nodeId + "]", bucket != null);
-                            assertTrue(bucket.getDocCount() >= 1L);
-
-                            Max subAggregation = bucket.getAggregations().get("agg_last_time_collected");
-                            ZonedDateTime lastCollection = Instant.ofEpochMilli(Math.round(subAggregation.value())).atZone(ZoneOffset.UTC);
-                            assertTrue(lastCollection.plusSeconds(elapsedInSeconds).isBefore(ZonedDateTime.now(ZoneOffset.UTC)));
-                        }
-                    }
+                        )
                 );
             } else {
                 assertTrue(ZonedDateTime.now(ZoneOffset.UTC).isAfter(startTime.plusSeconds(elapsedInSeconds)));
@@ -259,7 +257,7 @@ public class LocalExporterIntegTests extends LocalExporterIntegTestCase {
         DateFormatter dateParser = DateFormatter.forPattern("strict_date_time");
         DateFormatter dateFormatter = DateFormatter.forPattern(customTimeFormat).withZone(ZoneOffset.UTC);
 
-        assertResponse(prepareSearch(".monitoring-*").setSize(100), rsp -> {
+        assertResponse(rsp -> {
             assertThat(rsp.getHits().getTotalHits().value, greaterThan(0L));
             for (SearchHit hit : rsp.getHits().getHits()) {
                 final Map<String, Object> source = hit.getSourceAsMap();
@@ -295,7 +293,7 @@ public class LocalExporterIntegTests extends LocalExporterIntegTestCase {
                     assertNotNull("document is missing source_node field", sourceNode);
                 }
             }
-        });
+        }, prepareSearch(".monitoring-*").setSize(100));
     }
 
     public static MonitoringBulkDoc createMonitoringBulkDoc() throws IOException {

@@ -963,7 +963,7 @@ public class ConcurrentSnapshotsIT extends AbstractSnapshotIntegTestCase {
             indexDoc(testIndex, Integer.toString(i), "foo", "bar" + i);
         }
         refresh();
-        assertHitCount(prepareSearch(testIndex).setSize(0), 100);
+        assertHitCount(100, prepareSearch(testIndex).setSize(0));
 
         logger.info("--> start relocations");
         allowNodes(testIndex, 1);

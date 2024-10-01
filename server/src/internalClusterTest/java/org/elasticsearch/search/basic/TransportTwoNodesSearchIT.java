@@ -369,21 +369,20 @@ public class TransportTwoNodesSearchIT extends ESIntegTestCase {
 
         logger.info("Start Testing failed multi search with a wrong query");
 
-        assertResponse(
+        assertResponse(response -> {
+            assertThat(response.getResponses().length, equalTo(3));
+            assertThat(response.getResponses()[0].getFailureMessage(), notNullValue());
+
+            assertThat(response.getResponses()[1].getFailureMessage(), nullValue());
+            assertThat(response.getResponses()[1].getResponse().getHits().getHits().length, equalTo(1));
+
+            assertThat(response.getResponses()[2].getFailureMessage(), nullValue());
+            assertThat(response.getResponses()[2].getResponse().getHits().getHits().length, equalTo(10));
+        },
             client().prepareMultiSearch()
                 .add(prepareSearch("test").setQuery(new MatchQueryBuilder("foo", "biz")))
                 .add(prepareSearch("test").setQuery(QueryBuilders.termQuery("nid", 2)))
-                .add(prepareSearch("test").setQuery(QueryBuilders.matchAllQuery())),
-            response -> {
-                assertThat(response.getResponses().length, equalTo(3));
-                assertThat(response.getResponses()[0].getFailureMessage(), notNullValue());
-
-                assertThat(response.getResponses()[1].getFailureMessage(), nullValue());
-                assertThat(response.getResponses()[1].getResponse().getHits().getHits().length, equalTo(1));
-
-                assertThat(response.getResponses()[2].getFailureMessage(), nullValue());
-                assertThat(response.getResponses()[2].getResponse().getHits().getHits().length, equalTo(10));
-            }
+                .add(prepareSearch("test").setQuery(QueryBuilders.matchAllQuery()))
         );
         logger.info("Done Testing failed search");
     }
@@ -393,7 +392,16 @@ public class TransportTwoNodesSearchIT extends ESIntegTestCase {
 
         logger.info("Start Testing failed multi search with a wrong query");
 
-        assertResponse(
+        assertResponse(response -> {
+            assertThat(response.getResponses().length, equalTo(3));
+            assertThat(response.getResponses()[0].getFailureMessage(), notNullValue());
+
+            assertThat(response.getResponses()[1].getFailureMessage(), nullValue());
+            assertThat(response.getResponses()[1].getResponse().getHits().getHits().length, equalTo(1));
+
+            assertThat(response.getResponses()[2].getFailureMessage(), nullValue());
+            assertThat(response.getResponses()[2].getResponse().getHits().getHits().length, equalTo(10));
+        },
             client().prepareMultiSearch()
                 // Add custom score query with bogus script
                 .add(
@@ -405,17 +413,7 @@ public class TransportTwoNodesSearchIT extends ESIntegTestCase {
                     )
                 )
                 .add(prepareSearch("test").setQuery(QueryBuilders.termQuery("nid", 2)))
-                .add(prepareSearch("test").setQuery(QueryBuilders.matchAllQuery())),
-            response -> {
-                assertThat(response.getResponses().length, equalTo(3));
-                assertThat(response.getResponses()[0].getFailureMessage(), notNullValue());
-
-                assertThat(response.getResponses()[1].getFailureMessage(), nullValue());
-                assertThat(response.getResponses()[1].getResponse().getHits().getHits().length, equalTo(1));
-
-                assertThat(response.getResponses()[2].getFailureMessage(), nullValue());
-                assertThat(response.getResponses()[2].getResponse().getHits().getHits().length, equalTo(10));
-            }
+                .add(prepareSearch("test").setQuery(QueryBuilders.matchAllQuery()))
         );
         logger.info("Done Testing failed search");
     }

@@ -102,7 +102,7 @@ public class CancelTests extends ReindexTestCase {
         );
 
         // Checks that the all documents have been indexed and correctly counted
-        assertHitCount(prepareSearch(INDEX).setSize(0), numDocs);
+        assertHitCount(numDocs, prepareSearch(INDEX).setSize(0));
         assertThat(ALLOWED_OPERATIONS.drainPermits(), equalTo(0));
 
         /* Allow a random number of the documents less the number of workers
@@ -222,7 +222,7 @@ public class CancelTests extends ReindexTestCase {
             assertThat(response, matcher().created(modified).reasonCancelled(equalTo("by user request")));
 
             refresh("dest");
-            assertHitCount(prepareSearch("dest").setSize(0), modified);
+            assertHitCount(modified, prepareSearch("dest").setSize(0));
         }, equalTo("reindex from [" + INDEX + "] to [dest]"));
     }
 
@@ -240,7 +240,7 @@ public class CancelTests extends ReindexTestCase {
             updateByQuery().setPipeline("set-processed").source(INDEX),
             (response, total, modified) -> {
                 assertThat(response, matcher().updated(modified).reasonCancelled(equalTo("by user request")));
-                assertHitCount(prepareSearch(INDEX).setSize(0).setQuery(termQuery("processed", true)), modified);
+                assertHitCount(modified, prepareSearch(INDEX).setSize(0).setQuery(termQuery("processed", true)));
             },
             equalTo("update-by-query [" + INDEX + "]")
         );
@@ -254,7 +254,7 @@ public class CancelTests extends ReindexTestCase {
             deleteByQuery().source(INDEX).filter(QueryBuilders.matchAllQuery()),
             (response, total, modified) -> {
                 assertThat(response, matcher().deleted(modified).reasonCancelled(equalTo("by user request")));
-                assertHitCount(prepareSearch(INDEX).setSize(0), total - modified);
+                assertHitCount(total - modified, prepareSearch(INDEX).setSize(0));
             },
             equalTo("delete-by-query [" + INDEX + "]")
         );
@@ -267,7 +267,7 @@ public class CancelTests extends ReindexTestCase {
             (response, total, modified) -> {
                 assertThat(response, matcher().created(modified).reasonCancelled(equalTo("by user request")).slices(hasSize(5)));
                 refresh("dest");
-                assertHitCount(prepareSearch("dest").setSize(0), modified);
+                assertHitCount(modified, prepareSearch("dest").setSize(0));
             },
             equalTo("reindex from [" + INDEX + "] to [dest]")
         );
@@ -287,7 +287,7 @@ public class CancelTests extends ReindexTestCase {
             updateByQuery().setPipeline("set-processed").source(INDEX).setSlices(5),
             (response, total, modified) -> {
                 assertThat(response, matcher().updated(modified).reasonCancelled(equalTo("by user request")).slices(hasSize(5)));
-                assertHitCount(prepareSearch(INDEX).setSize(0).setQuery(termQuery("processed", true)), modified);
+                assertHitCount(modified, prepareSearch(INDEX).setSize(0).setQuery(termQuery("processed", true)));
             },
             equalTo("update-by-query [" + INDEX + "]")
         );
@@ -301,7 +301,7 @@ public class CancelTests extends ReindexTestCase {
             deleteByQuery().source(INDEX).filter(QueryBuilders.matchAllQuery()).setSlices(5),
             (response, total, modified) -> {
                 assertThat(response, matcher().deleted(modified).reasonCancelled(equalTo("by user request")).slices(hasSize(5)));
-                assertHitCount(prepareSearch(INDEX).setSize(0), total - modified);
+                assertHitCount(total - modified, prepareSearch(INDEX).setSize(0));
             },
             equalTo("delete-by-query [" + INDEX + "]")
         );

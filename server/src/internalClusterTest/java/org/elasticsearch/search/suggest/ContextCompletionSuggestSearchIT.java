@@ -617,13 +617,13 @@ public class ContextCompletionSuggestSearchIT extends ESIntegTestCase {
                     Collections.singletonList(GeoQueryContext.builder().setGeoPoint(new GeoPoint(52.52, 13.4)).build())
                 )
             );
-        assertResponse(prepareSearch(INDEX).suggest(new SuggestBuilder().addSuggestion(suggestionName, context)), response -> {
+        assertResponse(response -> {
             assertEquals(response.getSuggest().size(), 1);
             assertEquals(
                 "Hotel Amsterdam in Berlin",
                 response.getSuggest().getSuggestion(suggestionName).iterator().next().getOptions().iterator().next().getText().string()
             );
-        });
+        }, prepareSearch(INDEX).suggest(new SuggestBuilder().addSuggestion(suggestionName, context)));
     }
 
     public void testSkipDuplicatesWithContexts() throws Exception {
@@ -668,8 +668,8 @@ public class ContextCompletionSuggestSearchIT extends ESIntegTestCase {
 
     public void assertSuggestions(String suggestionName, SuggestionBuilder<?> suggestBuilder, String... suggestions) {
         assertResponse(
-            prepareSearch(INDEX).suggest(new SuggestBuilder().addSuggestion(suggestionName, suggestBuilder)),
-            response -> CompletionSuggestSearchIT.assertSuggestions(response, suggestionName, suggestions)
+            response -> CompletionSuggestSearchIT.assertSuggestions(response, suggestionName, suggestions),
+            prepareSearch(INDEX).suggest(new SuggestBuilder().addSuggestion(suggestionName, suggestBuilder))
         );
     }
 

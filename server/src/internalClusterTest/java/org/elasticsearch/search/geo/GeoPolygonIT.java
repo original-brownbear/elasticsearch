@@ -136,16 +136,15 @@ public class GeoPolygonIT extends ESIntegTestCase {
         points.add(new GeoPoint(40.8, -74.1));
         points.add(new GeoPoint(40.8, -74.0));
         points.add(new GeoPoint(40.7, -74.0));
-        assertResponse(
-            prepareSearch("test") // from NY
-                .setQuery(boolQuery().must(geoPolygonQuery("location", points))),
-            response -> {
-                assertHitCount(response, 4);
-                assertThat(response.getHits().getHits().length, equalTo(4));
-                for (SearchHit hit : response.getHits()) {
-                    assertThat(hit.getId(), anyOf(equalTo("1"), equalTo("3"), equalTo("4"), equalTo("5")));
-                }
+        assertResponse(response -> {
+            assertHitCount(response, 4);
+            assertThat(response.getHits().getHits().length, equalTo(4));
+            for (SearchHit hit : response.getHits()) {
+                assertThat(hit.getId(), anyOf(equalTo("1"), equalTo("3"), equalTo("4"), equalTo("5")));
             }
+        },
+            prepareSearch("test") // from NY
+                .setQuery(boolQuery().must(geoPolygonQuery("location", points)))
         );
     }
 
@@ -155,16 +154,15 @@ public class GeoPolygonIT extends ESIntegTestCase {
         points.add(new GeoPoint(40.7, -74.1));
         points.add(new GeoPoint(40.8, -74.1));
         points.add(new GeoPoint(40.8, -74.0));
-        assertResponse(
-            prepareSearch("test") // from NY
-                .setQuery(boolQuery().must(geoPolygonQuery("location", points))),
-            response -> {
-                assertHitCount(response, 4);
-                assertThat(response.getHits().getHits().length, equalTo(4));
-                for (SearchHit hit : response.getHits()) {
-                    assertThat(hit.getId(), anyOf(equalTo("1"), equalTo("3"), equalTo("4"), equalTo("5")));
-                }
+        assertResponse(response -> {
+            assertHitCount(response, 4);
+            assertThat(response.getHits().getHits().length, equalTo(4));
+            for (SearchHit hit : response.getHits()) {
+                assertThat(hit.getId(), anyOf(equalTo("1"), equalTo("3"), equalTo("4"), equalTo("5")));
             }
+        },
+            prepareSearch("test") // from NY
+                .setQuery(boolQuery().must(geoPolygonQuery("location", points)))
         );
     }
 
@@ -176,9 +174,9 @@ public class GeoPolygonIT extends ESIntegTestCase {
         points.add(new GeoPoint(40.8, -74.0));
         points.add(new GeoPoint(40.7, -74.0));
         assertHitCount(
+            4L,
             prepareSearch("test") // from NY
-                .setQuery(boolQuery().must(geoPolygonQuery("alias", points))),
-            4L
+                .setQuery(boolQuery().must(geoPolygonQuery("alias", points)))
         );
     }
 }

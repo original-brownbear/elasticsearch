@@ -340,16 +340,13 @@ public class RecoveryWhileUnderLoadIT extends ESIntegTestCase {
         boolean[] error = new boolean[1];
         for (int i = 0; i < iterations; i++) {
             final int finalI = i;
-            assertResponse(
-                prepareSearch().setSize((int) numberOfDocs).setQuery(matchAllQuery()).setTrackTotalHits(true).addSort("id", SortOrder.ASC),
-                response -> {
-                    logSearchResponse(numberOfShards, numberOfDocs, finalI, response);
-                    iterationHitCount[finalI] = response.getHits().getTotalHits().value;
-                    if (iterationHitCount[finalI] != numberOfDocs) {
-                        error[0] = true;
-                    }
+            assertResponse(response -> {
+                logSearchResponse(numberOfShards, numberOfDocs, finalI, response);
+                iterationHitCount[finalI] = response.getHits().getTotalHits().value;
+                if (iterationHitCount[finalI] != numberOfDocs) {
+                    error[0] = true;
                 }
-            );
+            }, prepareSearch().setSize((int) numberOfDocs).setQuery(matchAllQuery()).setTrackTotalHits(true).addSort("id", SortOrder.ASC));
         }
 
         if (error[0]) {
@@ -390,11 +387,11 @@ public class RecoveryWhileUnderLoadIT extends ESIntegTestCase {
             assertBusy(() -> {
                 boolean[] errorOccurred = new boolean[1];
                 for (int i = 0; i < iterations; i++) {
-                    assertResponse(prepareSearch().setTrackTotalHits(true).setSize(0).setQuery(matchAllQuery()), response -> {
+                    assertResponse(response -> {
                         if (response.getHits().getTotalHits().value != numberOfDocs) {
                             errorOccurred[0] = true;
                         }
-                    });
+                    }, prepareSearch().setTrackTotalHits(true).setSize(0).setQuery(matchAllQuery()));
                 }
                 assertFalse("An error occurred while waiting", errorOccurred[0]);
             }, 5, TimeUnit.MINUTES);

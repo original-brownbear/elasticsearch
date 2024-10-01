@@ -112,15 +112,14 @@ public class DocumentLevelSecurityRandomTests extends SecurityIntegTestCase {
 
         for (int roleI = 1; roleI <= numberOfRoles; roleI++) {
             final int role = roleI;
-            assertResponse(
+            assertResponse(searchResponse1 -> assertResponse(searchResponse2 -> {
+                assertThat(searchResponse1.getHits().getTotalHits().value, equalTo(searchResponse2.getHits().getTotalHits().value));
+                for (int hitI = 0; hitI < searchResponse1.getHits().getHits().length; hitI++) {
+                    assertThat(searchResponse1.getHits().getAt(hitI).getId(), equalTo(searchResponse2.getHits().getAt(hitI).getId()));
+                }
+            }, prepareSearch("alias" + role)),
                 client().filterWithHeader(Collections.singletonMap(BASIC_AUTH_HEADER, basicAuthHeaderValue("user" + roleI, USERS_PASSWD)))
-                    .prepareSearch("test"),
-                searchResponse1 -> assertResponse(prepareSearch("alias" + role), searchResponse2 -> {
-                    assertThat(searchResponse1.getHits().getTotalHits().value, equalTo(searchResponse2.getHits().getTotalHits().value));
-                    for (int hitI = 0; hitI < searchResponse1.getHits().getHits().length; hitI++) {
-                        assertThat(searchResponse1.getHits().getAt(hitI).getId(), equalTo(searchResponse2.getHits().getAt(hitI).getId()));
-                    }
-                })
+                    .prepareSearch("test")
             );
         }
     }
@@ -190,9 +189,9 @@ public class DocumentLevelSecurityRandomTests extends SecurityIntegTestCase {
         }
         indexRandom(true, requests);
         assertHitCount(
+            42L,
             client().filterWithHeader(Collections.singletonMap(BASIC_AUTH_HEADER, basicAuthHeaderValue("user1", USERS_PASSWD)))
-                .prepareSearch("test"),
-            42L
+                .prepareSearch("test")
         );
     }
 }

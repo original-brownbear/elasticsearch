@@ -44,22 +44,21 @@ public class MultiSearchIT extends ESIntegTestCase {
         prepareIndex("test").setId("1").setSource("field", "xxx").get();
         prepareIndex("test").setId("2").setSource("field", "yyy").get();
         refresh();
-        assertResponse(
+        assertResponse(response -> {
+            for (Item item : response) {
+                assertNoFailures(item.getResponse());
+            }
+            assertThat(response.getResponses().length, equalTo(3));
+            assertHitCount(response.getResponses()[0].getResponse(), 1L);
+            assertHitCount(response.getResponses()[1].getResponse(), 1L);
+            assertHitCount(response.getResponses()[2].getResponse(), 2L);
+            assertFirstHit(response.getResponses()[0].getResponse(), hasId("1"));
+            assertFirstHit(response.getResponses()[1].getResponse(), hasId("2"));
+        },
             client().prepareMultiSearch()
                 .add(prepareSearch("test").setQuery(QueryBuilders.termQuery("field", "xxx")))
                 .add(prepareSearch("test").setQuery(QueryBuilders.termQuery("field", "yyy")))
-                .add(prepareSearch("test").setQuery(QueryBuilders.matchAllQuery())),
-            response -> {
-                for (Item item : response) {
-                    assertNoFailures(item.getResponse());
-                }
-                assertThat(response.getResponses().length, equalTo(3));
-                assertHitCount(response.getResponses()[0].getResponse(), 1L);
-                assertHitCount(response.getResponses()[1].getResponse(), 1L);
-                assertHitCount(response.getResponses()[2].getResponse(), 2L);
-                assertFirstHit(response.getResponses()[0].getResponse(), hasId("1"));
-                assertFirstHit(response.getResponses()[1].getResponse(), hasId("2"));
-            }
+                .add(prepareSearch("test").setQuery(QueryBuilders.matchAllQuery()))
         );
     }
 
@@ -99,7 +98,15 @@ public class MultiSearchIT extends ESIntegTestCase {
         prepareIndex("test").setId("1").setSource("field", "xxx").get();
         prepareIndex("test").setId("2").setSource("field", "yyy").get();
         refresh();
-        assertResponse(
+        assertResponse(response -> {
+            assertThat(response.getResponses().length, equalTo(3));
+            assertHitCount(response.getResponses()[0].getResponse(), 1L);
+            assertHitCount(response.getResponses()[1].getResponse(), 1L);
+            assertTrue(response.getResponses()[2].isFailure());
+            assertTrue(
+                response.getResponses()[2].getFailure().getMessage().contains("the 'search.check_ccs_compatibility' setting is enabled")
+            );
+        },
             client().prepareMultiSearch()
                 .add(prepareSearch("test").setQuery(QueryBuilders.termQuery("field", "xxx")))
                 .add(prepareSearch("test").setQuery(QueryBuilders.termQuery("field", "yyy")))
@@ -108,16 +115,7 @@ public class MultiSearchIT extends ESIntegTestCase {
                     public TransportVersion getMinimalSupportedVersion() {
                         return transportVersion;
                     }
-                })),
-            response -> {
-                assertThat(response.getResponses().length, equalTo(3));
-                assertHitCount(response.getResponses()[0].getResponse(), 1L);
-                assertHitCount(response.getResponses()[1].getResponse(), 1L);
-                assertTrue(response.getResponses()[2].isFailure());
-                assertTrue(
-                    response.getResponses()[2].getFailure().getMessage().contains("the 'search.check_ccs_compatibility' setting is enabled")
-                );
-            }
+                }))
         );
     }
 }

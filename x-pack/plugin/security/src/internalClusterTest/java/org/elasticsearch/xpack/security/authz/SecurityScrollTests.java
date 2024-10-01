@@ -47,17 +47,14 @@ public class SecurityScrollTests extends SecurityIntegTestCase {
         }
         indexRandom(true, docs);
 
-        assertResponse(prepareSearch("foo").setScroll(TimeValue.timeValueSeconds(5L)).setQuery(matchAllQuery()).setSize(1), response -> {
+        assertResponse(response -> {
             assertEquals(numDocs, response.getHits().getTotalHits().value);
             assertEquals(1, response.getHits().getHits().length);
             if (randomBoolean()) {
-                assertResponse(
-                    client().prepareSearchScroll(response.getScrollId()).setScroll(TimeValue.timeValueSeconds(5L)),
-                    response2 -> {
-                        assertEquals(numDocs, response2.getHits().getTotalHits().value);
-                        assertEquals(1, response2.getHits().getHits().length);
-                    }
-                );
+                assertResponse(response2 -> {
+                    assertEquals(numDocs, response2.getHits().getTotalHits().value);
+                    assertEquals(1, response2.getHits().getHits().length);
+                }, client().prepareSearchScroll(response.getScrollId()).setScroll(TimeValue.timeValueSeconds(5L)));
             }
             final String scrollId = response.getScrollId();
             SearchPhaseExecutionException e = expectThrows(
@@ -72,7 +69,7 @@ public class SecurityScrollTests extends SecurityIntegTestCase {
             for (ShardSearchFailure failure : e.shardFailures()) {
                 assertThat(ExceptionsHelper.unwrapCause(failure.getCause()), instanceOf(SearchContextMissingException.class));
             }
-        });
+        }, prepareSearch("foo").setScroll(TimeValue.timeValueSeconds(5L)).setQuery(matchAllQuery()).setSize(1));
     }
 
     public void testSearchAndClearScroll() throws Exception {

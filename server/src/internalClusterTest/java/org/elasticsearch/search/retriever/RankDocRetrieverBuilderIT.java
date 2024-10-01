@@ -220,7 +220,7 @@ public class RankDocRetrieverBuilderIT extends ESIntegTestCase {
         // include some pagination as well
         source.from(1);
         SearchRequestBuilder req = client().prepareSearch(INDEX).setSource(source);
-        ElasticsearchAssertions.assertResponse(req, resp -> {
+        ElasticsearchAssertions.assertResponse(resp -> {
             assertNull(resp.pointInTimeId());
             assertNotNull(resp.getHits().getTotalHits());
             assertThat(resp.getHits().getTotalHits().value, equalTo(6L));
@@ -230,7 +230,7 @@ public class RankDocRetrieverBuilderIT extends ESIntegTestCase {
             assertThat(resp.getHits().getAt(2).getId(), equalTo("doc_4"));
             assertThat(resp.getHits().getAt(3).getId(), equalTo("doc_7"));
             assertThat(resp.getHits().getAt(4).getId(), equalTo("doc_3"));
-        });
+        }, req);
     }
 
     public void testRankDocsRetrieverWithAggs() {
@@ -269,7 +269,7 @@ public class RankDocRetrieverBuilderIT extends ESIntegTestCase {
         );
         source.aggregation(new TermsAggregationBuilder("topic").field(TOPIC_FIELD));
         SearchRequestBuilder req = client().prepareSearch(INDEX).setSource(source);
-        ElasticsearchAssertions.assertResponse(req, resp -> {
+        ElasticsearchAssertions.assertResponse(resp -> {
             assertNull(resp.pointInTimeId());
             assertNotNull(resp.getHits().getTotalHits());
             assertThat(resp.getHits().getTotalHits().value, equalTo(1L));
@@ -283,7 +283,7 @@ public class RankDocRetrieverBuilderIT extends ESIntegTestCase {
             assertThat(terms.getBucketByKey("technology").getDocCount(), equalTo(2L));
             assertThat(terms.getBucketByKey("astronomy").getDocCount(), equalTo(1L));
             assertThat(terms.getBucketByKey("biology").getDocCount(), equalTo(1L));
-        });
+        }, req);
     }
 
     public void testRankDocsRetrieverWithCollapse() {
@@ -327,7 +327,7 @@ public class RankDocRetrieverBuilderIT extends ESIntegTestCase {
         );
         source.fetchField(TOPIC_FIELD);
         SearchRequestBuilder req = client().prepareSearch(INDEX).setSource(source);
-        ElasticsearchAssertions.assertResponse(req, resp -> {
+        ElasticsearchAssertions.assertResponse(resp -> {
             assertNull(resp.pointInTimeId());
             assertNotNull(resp.getHits().getTotalHits());
             assertThat(resp.getHits().getTotalHits().value, equalTo(6L));
@@ -344,7 +344,7 @@ public class RankDocRetrieverBuilderIT extends ESIntegTestCase {
             assertThat(resp.getHits().getAt(2).getInnerHits().get("a").getAt(2).getId(), equalTo("doc_1"));
             assertThat(resp.getHits().getAt(3).getId(), equalTo("doc_7"));
             assertThat(resp.getHits().getAt(3).field(TOPIC_FIELD).getValue().toString(), equalTo("biology"));
-        });
+        }, req);
     }
 
     public void testRankDocsRetrieverWithCollapseAndAggs() {
@@ -389,7 +389,7 @@ public class RankDocRetrieverBuilderIT extends ESIntegTestCase {
         );
         source.aggregation(new TermsAggregationBuilder("topic").field(TOPIC_FIELD));
         SearchRequestBuilder req = client().prepareSearch(INDEX).setSource(source);
-        ElasticsearchAssertions.assertResponse(req, resp -> {
+        ElasticsearchAssertions.assertResponse(resp -> {
             assertNull(resp.pointInTimeId());
             assertNotNull(resp.getHits().getTotalHits());
             assertThat(resp.getHits().getTotalHits().value, equalTo(5L));
@@ -403,7 +403,7 @@ public class RankDocRetrieverBuilderIT extends ESIntegTestCase {
             assertThat(terms.getBucketByKey("technology").getDocCount(), equalTo(3L));
             assertThat(terms.getBucketByKey("astronomy").getDocCount(), equalTo(1L));
             assertThat(terms.getBucketByKey("biology").getDocCount(), equalTo(1L));
-        });
+        }, req);
     }
 
     public void testRankDocsRetrieverWithNestedQuery() {
@@ -441,7 +441,7 @@ public class RankDocRetrieverBuilderIT extends ESIntegTestCase {
         );
         source.fetchField(TOPIC_FIELD);
         SearchRequestBuilder req = client().prepareSearch(INDEX).setSource(source);
-        ElasticsearchAssertions.assertResponse(req, resp -> {
+        ElasticsearchAssertions.assertResponse(resp -> {
             assertNull(resp.pointInTimeId());
             assertNotNull(resp.getHits().getTotalHits());
             assertThat(resp.getHits().getTotalHits().value, equalTo(6L));
@@ -452,7 +452,7 @@ public class RankDocRetrieverBuilderIT extends ESIntegTestCase {
             assertThat(resp.getHits().getAt(3).getId(), equalTo("doc_7"));
             assertThat(resp.getHits().getAt(4).getId(), equalTo("doc_4"));
             assertThat(resp.getHits().getAt(5).getId(), equalTo("doc_3"));
-        });
+        }, req);
     }
 
     public void testRankDocsRetrieverMultipleCompoundRetrievers() {
@@ -500,7 +500,7 @@ public class RankDocRetrieverBuilderIT extends ESIntegTestCase {
         );
 
         SearchRequestBuilder req = client().prepareSearch(INDEX).setSource(source);
-        ElasticsearchAssertions.assertResponse(req, resp -> {
+        ElasticsearchAssertions.assertResponse(resp -> {
             assertNull(resp.pointInTimeId());
             assertNotNull(resp.getHits().getTotalHits());
             assertThat(resp.getHits().getTotalHits().value, equalTo(6L));
@@ -511,7 +511,7 @@ public class RankDocRetrieverBuilderIT extends ESIntegTestCase {
             assertThat(resp.getHits().getAt(3).getId(), equalTo("doc_1"));
             assertThat(resp.getHits().getAt(4).getId(), equalTo("doc_7"));
             assertThat(resp.getHits().getAt(5).getId(), equalTo("doc_3"));
-        });
+        }, req);
     }
 
     public void testRankDocsRetrieverDifferentNestedSorting() {
@@ -538,7 +538,7 @@ public class RankDocRetrieverBuilderIT extends ESIntegTestCase {
         );
 
         SearchRequestBuilder req = client().prepareSearch(INDEX).setSource(source);
-        ElasticsearchAssertions.assertResponse(req, resp -> {
+        ElasticsearchAssertions.assertResponse(resp -> {
             assertNull(resp.pointInTimeId());
             assertNotNull(resp.getHits().getTotalHits());
             assertThat(resp.getHits().getTotalHits().value, equalTo(5L));
@@ -548,7 +548,7 @@ public class RankDocRetrieverBuilderIT extends ESIntegTestCase {
             assertThat(resp.getHits().getAt(2).getId(), equalTo("doc_7"));
             assertThat(resp.getHits().getAt(3).getId(), equalTo("doc_6"));
             assertThat(resp.getHits().getAt(4).getId(), equalTo("doc_2"));
-        });
+        }, req);
     }
 
     class CompoundRetrieverWithRankDocs extends RetrieverBuilder {

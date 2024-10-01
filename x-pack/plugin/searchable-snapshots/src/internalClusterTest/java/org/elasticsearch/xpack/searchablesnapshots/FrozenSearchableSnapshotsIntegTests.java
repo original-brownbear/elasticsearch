@@ -474,7 +474,43 @@ public class FrozenSearchableSnapshotsIntegTests extends BaseFrozenSearchableSna
         // use a fixed client for the searches, as clients randomize timeouts, which leads to different cache entries
         Client client = client();
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(r1 -> {
+            assertRequestCacheState(client(), "test-index", 0, 1);
+
+            // The cached is actually used
+            assertThat(
+                indicesAdmin().prepareStats("test-index").setRequestCache(true).get().getTotal().getRequestCache().getMemorySizeInBytes(),
+                greaterThan(0L)
+            );
+
+            for (int i = 0; i < 10; ++i) {
+                final int idx = i;
+                assertNoFailuresAndResponse(r2 -> {
+                    assertRequestCacheState(client(), "test-index", idx + 1, 1);
+                    Histogram h1 = r1.getAggregations().get("histo");
+                    Histogram h2 = r2.getAggregations().get("histo");
+                    final List<? extends Histogram.Bucket> buckets1 = h1.getBuckets();
+                    final List<? extends Histogram.Bucket> buckets2 = h2.getBuckets();
+                    assertEquals(buckets1.size(), buckets2.size());
+                    for (int j = 0; j < buckets1.size(); ++j) {
+                        final Histogram.Bucket b1 = buckets1.get(j);
+                        final Histogram.Bucket b2 = buckets2.get(j);
+                        assertEquals(b1.getKey(), b2.getKey());
+                        assertEquals(b1.getDocCount(), b2.getDocCount());
+                    }
+                },
+                    client.prepareSearch("test-index")
+                        .setSize(0)
+                        .setSearchType(SearchType.QUERY_THEN_FETCH)
+                        .addAggregation(
+                            dateHistogram("histo").field("f")
+                                .timeZone(ZoneId.of("+01:00"))
+                                .minDocCount(0)
+                                .calendarInterval(DateHistogramInterval.MONTH)
+                        )
+                );
+            }
+        },
             client.prepareSearch("test-index")
                 .setSize(0)
                 .setSearchType(SearchType.QUERY_THEN_FETCH)
@@ -483,50 +519,7 @@ public class FrozenSearchableSnapshotsIntegTests extends BaseFrozenSearchableSna
                         .timeZone(ZoneId.of("+01:00"))
                         .minDocCount(0)
                         .calendarInterval(DateHistogramInterval.MONTH)
-                ),
-            r1 -> {
-                assertRequestCacheState(client(), "test-index", 0, 1);
-
-                // The cached is actually used
-                assertThat(
-                    indicesAdmin().prepareStats("test-index")
-                        .setRequestCache(true)
-                        .get()
-                        .getTotal()
-                        .getRequestCache()
-                        .getMemorySizeInBytes(),
-                    greaterThan(0L)
-                );
-
-                for (int i = 0; i < 10; ++i) {
-                    final int idx = i;
-                    assertNoFailuresAndResponse(
-                        client.prepareSearch("test-index")
-                            .setSize(0)
-                            .setSearchType(SearchType.QUERY_THEN_FETCH)
-                            .addAggregation(
-                                dateHistogram("histo").field("f")
-                                    .timeZone(ZoneId.of("+01:00"))
-                                    .minDocCount(0)
-                                    .calendarInterval(DateHistogramInterval.MONTH)
-                            ),
-                        r2 -> {
-                            assertRequestCacheState(client(), "test-index", idx + 1, 1);
-                            Histogram h1 = r1.getAggregations().get("histo");
-                            Histogram h2 = r2.getAggregations().get("histo");
-                            final List<? extends Histogram.Bucket> buckets1 = h1.getBuckets();
-                            final List<? extends Histogram.Bucket> buckets2 = h2.getBuckets();
-                            assertEquals(buckets1.size(), buckets2.size());
-                            for (int j = 0; j < buckets1.size(); ++j) {
-                                final Histogram.Bucket b1 = buckets1.get(j);
-                                final Histogram.Bucket b2 = buckets2.get(j);
-                                assertEquals(b1.getKey(), b2.getKey());
-                                assertEquals(b1.getDocCount(), b2.getDocCount());
-                            }
-                        }
-                    );
-                }
-            }
+                )
         );
 
         // shut down shard and check that cache entries are actually removed

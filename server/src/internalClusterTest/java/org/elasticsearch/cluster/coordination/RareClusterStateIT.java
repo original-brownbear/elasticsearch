@@ -179,7 +179,7 @@ public class RareClusterStateIT extends ESIntegTestCase {
         ensureGreen("test");
         final var finalClusterStateVersion = masterClusterService.state().version();
         assertBusy(() -> assertThat(dataNodeClusterService.state().version(), greaterThanOrEqualTo(finalClusterStateVersion)));
-        assertHitCount(prepareSearch("test"), 0);
+        assertHitCount(0, prepareSearch("test"));
     }
 
     private static void publishTrivialClusterStateUpdate() {

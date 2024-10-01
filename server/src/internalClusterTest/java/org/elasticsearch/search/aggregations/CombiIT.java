@@ -63,25 +63,24 @@ public class CombiIT extends ESIntegTestCase {
 
         final long finalMissingValues = missingValues;
         SubAggCollectionMode aggCollectionMode = randomFrom(SubAggCollectionMode.values());
-        assertNoFailuresAndResponse(
-            prepareSearch("idx").addAggregation(missing("missing_values").field("value"))
-                .addAggregation(terms("values").field("value").collectMode(aggCollectionMode)),
-            response -> {
-                InternalAggregations aggs = response.getAggregations();
+        assertNoFailuresAndResponse(response -> {
+            InternalAggregations aggs = response.getAggregations();
 
-                Missing missing = aggs.get("missing_values");
-                assertNotNull(missing);
-                assertThat(missing.getDocCount(), equalTo(finalMissingValues));
+            Missing missing = aggs.get("missing_values");
+            assertNotNull(missing);
+            assertThat(missing.getDocCount(), equalTo(finalMissingValues));
 
-                Terms terms = aggs.get("values");
-                assertNotNull(terms);
-                List<? extends Terms.Bucket> buckets = terms.getBuckets();
-                assertThat(buckets.size(), equalTo(values.size()));
-                for (Terms.Bucket bucket : buckets) {
-                    values.remove(((Number) bucket.getKey()).intValue());
-                }
-                assertTrue(values.isEmpty());
+            Terms terms = aggs.get("values");
+            assertNotNull(terms);
+            List<? extends Terms.Bucket> buckets = terms.getBuckets();
+            assertThat(buckets.size(), equalTo(values.size()));
+            for (Terms.Bucket bucket : buckets) {
+                values.remove(((Number) bucket.getKey()).intValue());
             }
+            assertTrue(values.isEmpty());
+        },
+            prepareSearch("idx").addAggregation(missing("missing_values").field("value"))
+                .addAggregation(terms("values").field("value").collectMode(aggCollectionMode))
         );
     }
 
@@ -110,16 +109,15 @@ public class CombiIT extends ESIntegTestCase {
         ensureSearchable("idx");
 
         SubAggCollectionMode aggCollectionMode = randomFrom(SubAggCollectionMode.values());
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            assertThat(response.getHits().getTotalHits().value, Matchers.equalTo(0L));
+            Histogram values = response.getAggregations().get("values");
+            assertThat(values, notNullValue());
+            assertThat(values.getBuckets().isEmpty(), is(true));
+        },
             prepareSearch("idx").addAggregation(
                 histogram("values").field("value1").interval(1).subAggregation(terms("names").field("name").collectMode(aggCollectionMode))
-            ),
-            response -> {
-                assertThat(response.getHits().getTotalHits().value, Matchers.equalTo(0L));
-                Histogram values = response.getAggregations().get("values");
-                assertThat(values, notNullValue());
-                assertThat(values.getBuckets().isEmpty(), is(true));
-            }
+            )
         );
     }
 }

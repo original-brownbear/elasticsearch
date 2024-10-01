@@ -129,7 +129,7 @@ public class ReindexFailureTests extends ReindexTestCase {
             prepareIndex(sourceIndexName).setId("3").setSource("foo", "b"),
             prepareIndex(sourceIndexName).setId("4").setSource("foo", "c")
         );
-        assertHitCount(prepareSearch(sourceIndexName).setSize(0), 4);
+        assertHitCount(4, prepareSearch(sourceIndexName).setSize(0));
 
         ActionRequestValidationException e = expectThrows(
             ActionRequestValidationException.class,

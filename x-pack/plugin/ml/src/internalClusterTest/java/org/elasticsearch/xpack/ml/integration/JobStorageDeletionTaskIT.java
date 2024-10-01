@@ -205,6 +205,7 @@ public class JobStorageDeletionTaskIT extends BaseMlIntegTestCase {
 
         // Make sure all results referencing the dedicated job are gone
         assertHitCount(
+            0,
             prepareSearch().setIndices(AnomalyDetectorsIndex.jobResultsIndexPrefix() + "*")
                 .setIndicesOptions(IndicesOptions.lenientExpandOpenHidden())
                 .setTrackTotalHits(true)
@@ -212,8 +213,7 @@ public class JobStorageDeletionTaskIT extends BaseMlIntegTestCase {
                 .setSource(
                     SearchSourceBuilder.searchSource()
                         .query(QueryBuilders.boolQuery().filter(QueryBuilders.termQuery(Job.ID.getPreferredName(), jobIdDedicated)))
-                ),
-            0
+                )
         );
     }
 

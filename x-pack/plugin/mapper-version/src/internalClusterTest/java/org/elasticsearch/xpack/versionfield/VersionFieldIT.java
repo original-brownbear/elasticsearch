@@ -67,20 +67,17 @@ public class VersionFieldIT extends ESSingleNodeTestCase {
         indicesAdmin().prepareRefresh().get();
 
         // terms aggs
-        assertResponse(
-            client().prepareSearch(indexName).addAggregation(AggregationBuilders.terms("myterms").field("version")),
-            response -> {
-                Terms terms = response.getAggregations().get("myterms");
-                List<? extends Bucket> buckets = terms.getBuckets();
+        assertResponse(response -> {
+            Terms terms = response.getAggregations().get("myterms");
+            List<? extends Bucket> buckets = terms.getBuckets();
 
-                assertEquals(5, buckets.size());
-                assertEquals("1.0", buckets.get(0).getKey());
-                assertEquals("1.3.0", buckets.get(1).getKey());
-                assertEquals("2.1.0-alpha", buckets.get(2).getKey());
-                assertEquals("2.1.0", buckets.get(3).getKey());
-                assertEquals("3.11.5", buckets.get(4).getKey());
-            }
-        );
+            assertEquals(5, buckets.size());
+            assertEquals("1.0", buckets.get(0).getKey());
+            assertEquals("1.3.0", buckets.get(1).getKey());
+            assertEquals("2.1.0-alpha", buckets.get(2).getKey());
+            assertEquals("2.1.0", buckets.get(3).getKey());
+            assertEquals("3.11.5", buckets.get(4).getKey());
+        }, client().prepareSearch(indexName).addAggregation(AggregationBuilders.terms("myterms").field("version")));
     }
 
     public void testTermsEnum() throws Exception {

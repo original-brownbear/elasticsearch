@@ -113,19 +113,18 @@ public class ScriptQuerySearchIT extends ESIntegTestCase {
         flush();
         refresh();
 
-        assertResponse(
+        assertResponse(response -> {
+            assertThat(response.getHits().getTotalHits().value, equalTo(1L));
+            assertThat(response.getHits().getAt(0).getId(), equalTo("2"));
+            assertThat(response.getHits().getAt(0).getFields().get("sbinaryData").getValues().get(0), equalTo(16));
+        },
             prepareSearch().setQuery(
                 scriptQuery(new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "doc['binaryData'].get(0).length > 15", emptyMap()))
             )
                 .addScriptField(
                     "sbinaryData",
                     new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "doc['binaryData'].get(0).length", emptyMap())
-                ),
-            response -> {
-                assertThat(response.getHits().getTotalHits().value, equalTo(1L));
-                assertThat(response.getHits().getAt(0).getId(), equalTo("2"));
-                assertThat(response.getHits().getAt(0).getFields().get("sbinaryData").getValues().get(0), equalTo(16));
-            }
+                )
         );
     }
 
@@ -165,7 +164,13 @@ public class ScriptQuerySearchIT extends ESIntegTestCase {
         refresh();
 
         logger.info("running doc['num1'].value > 1");
-        assertResponse(
+        assertResponse(response -> {
+            assertThat(response.getHits().getTotalHits().value, equalTo(2L));
+            assertThat(response.getHits().getAt(0).getId(), equalTo("2"));
+            assertThat(response.getHits().getAt(0).getFields().get("sNum1").getValues().get(0), equalTo(2.0));
+            assertThat(response.getHits().getAt(1).getId(), equalTo("3"));
+            assertThat(response.getHits().getAt(1).getFields().get("sNum1").getValues().get(0), equalTo(3.0));
+        },
             prepareSearch().setQuery(
                 scriptQuery(new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "doc['num1'].value > 1", Collections.emptyMap()))
             )
@@ -173,20 +178,17 @@ public class ScriptQuerySearchIT extends ESIntegTestCase {
                 .addScriptField(
                     "sNum1",
                     new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "doc['num1'].value", Collections.emptyMap())
-                ),
-            response -> {
-                assertThat(response.getHits().getTotalHits().value, equalTo(2L));
-                assertThat(response.getHits().getAt(0).getId(), equalTo("2"));
-                assertThat(response.getHits().getAt(0).getFields().get("sNum1").getValues().get(0), equalTo(2.0));
-                assertThat(response.getHits().getAt(1).getId(), equalTo("3"));
-                assertThat(response.getHits().getAt(1).getFields().get("sNum1").getValues().get(0), equalTo(3.0));
-            }
+                )
         );
         Map<String, Object> params = new HashMap<>();
         params.put("param1", 2);
 
         logger.info("running doc['num1'].value > param1");
-        assertResponse(
+        assertResponse(response -> {
+            assertThat(response.getHits().getTotalHits().value, equalTo(1L));
+            assertThat(response.getHits().getAt(0).getId(), equalTo("3"));
+            assertThat(response.getHits().getAt(0).getFields().get("sNum1").getValues().get(0), equalTo(3.0));
+        },
             prepareSearch().setQuery(
                 scriptQuery(new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "doc['num1'].value > param1", params))
             )
@@ -194,17 +196,20 @@ public class ScriptQuerySearchIT extends ESIntegTestCase {
                 .addScriptField(
                     "sNum1",
                     new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "doc['num1'].value", Collections.emptyMap())
-                ),
-            response -> {
-                assertThat(response.getHits().getTotalHits().value, equalTo(1L));
-                assertThat(response.getHits().getAt(0).getId(), equalTo("3"));
-                assertThat(response.getHits().getAt(0).getFields().get("sNum1").getValues().get(0), equalTo(3.0));
-            }
+                )
         );
         params = new HashMap<>();
         params.put("param1", -1);
         logger.info("running doc['num1'].value > param1");
-        assertResponse(
+        assertResponse(response -> {
+            assertThat(response.getHits().getTotalHits().value, equalTo(3L));
+            assertThat(response.getHits().getAt(0).getId(), equalTo("1"));
+            assertThat(response.getHits().getAt(0).getFields().get("sNum1").getValues().get(0), equalTo(1.0));
+            assertThat(response.getHits().getAt(1).getId(), equalTo("2"));
+            assertThat(response.getHits().getAt(1).getFields().get("sNum1").getValues().get(0), equalTo(2.0));
+            assertThat(response.getHits().getAt(2).getId(), equalTo("3"));
+            assertThat(response.getHits().getAt(2).getFields().get("sNum1").getValues().get(0), equalTo(3.0));
+        },
             prepareSearch().setQuery(
                 scriptQuery(new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "doc['num1'].value > param1", params))
             )
@@ -212,16 +217,7 @@ public class ScriptQuerySearchIT extends ESIntegTestCase {
                 .addScriptField(
                     "sNum1",
                     new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "doc['num1'].value", Collections.emptyMap())
-                ),
-            response -> {
-                assertThat(response.getHits().getTotalHits().value, equalTo(3L));
-                assertThat(response.getHits().getAt(0).getId(), equalTo("1"));
-                assertThat(response.getHits().getAt(0).getFields().get("sNum1").getValues().get(0), equalTo(1.0));
-                assertThat(response.getHits().getAt(1).getId(), equalTo("2"));
-                assertThat(response.getHits().getAt(1).getFields().get("sNum1").getValues().get(0), equalTo(2.0));
-                assertThat(response.getHits().getAt(2).getId(), equalTo("3"));
-                assertThat(response.getHits().getAt(2).getFields().get("sNum1").getValues().get(0), equalTo(3.0));
-            }
+                )
         );
     }
 

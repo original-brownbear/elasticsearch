@@ -80,21 +80,21 @@ public class CloneIndexIT extends ESIntegTestCase {
             }
 
             final int size = docs > 0 ? 2 * docs : 1;
-            assertHitCount(prepareSearch("target").setSize(size).setQuery(new TermsQueryBuilder("foo", "bar")), docs);
+            assertHitCount(docs, prepareSearch("target").setSize(size).setQuery(new TermsQueryBuilder("foo", "bar")));
 
             if (createWithReplicas == false) {
                 // bump replicas
                 setReplicaCount(1, "target");
                 ensureGreen();
-                assertHitCount(prepareSearch("target").setSize(size).setQuery(new TermsQueryBuilder("foo", "bar")), docs);
+                assertHitCount(docs, prepareSearch("target").setSize(size).setQuery(new TermsQueryBuilder("foo", "bar")));
             }
 
             for (int i = docs; i < 2 * docs; i++) {
                 prepareIndex("target").setSource("{\"foo\" : \"bar\", \"i\" : " + i + "}", XContentType.JSON).get();
             }
             flushAndRefresh();
-            assertHitCount(prepareSearch("target").setSize(2 * size).setQuery(new TermsQueryBuilder("foo", "bar")), 2 * docs);
-            assertHitCount(prepareSearch("source").setSize(size).setQuery(new TermsQueryBuilder("foo", "bar")), docs);
+            assertHitCount(2 * docs, prepareSearch("target").setSize(2 * size).setQuery(new TermsQueryBuilder("foo", "bar")));
+            assertHitCount(docs, prepareSearch("source").setSize(size).setQuery(new TermsQueryBuilder("foo", "bar")));
             GetSettingsResponse target = indicesAdmin().prepareGetSettings("target").get();
             assertThat(
                 target.getIndexToSettings().get("target").getAsVersionId("index.version.created", IndexVersion::fromId),

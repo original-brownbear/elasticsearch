@@ -302,13 +302,12 @@ public class CreateIndexIT extends ESIntegTestCase {
 
         // we only really assert that we never reuse segments of old indices or anything like this here and that nothing fails with
         // crazy exceptions
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(expected -> assertNoFailuresAndResponse(all -> {
+            assertEquals(expected + " vs. " + all, expected.getHits().getTotalHits().value, all.getHits().getTotalHits().value);
+            logger.info("total: {}", expected.getHits().getTotalHits().value);
+        }, prepareSearch("test").setIndicesOptions(IndicesOptions.lenientExpandOpen())),
             prepareSearch("test").setIndicesOptions(IndicesOptions.lenientExpandOpen())
-                .setQuery(new RangeQueryBuilder("index_version").from(indexVersion.get(), true)),
-            expected -> assertNoFailuresAndResponse(prepareSearch("test").setIndicesOptions(IndicesOptions.lenientExpandOpen()), all -> {
-                assertEquals(expected + " vs. " + all, expected.getHits().getTotalHits().value, all.getHits().getTotalHits().value);
-                logger.info("total: {}", expected.getHits().getTotalHits().value);
-            })
+                .setQuery(new RangeQueryBuilder("index_version").from(indexVersion.get(), true))
         );
     }
 

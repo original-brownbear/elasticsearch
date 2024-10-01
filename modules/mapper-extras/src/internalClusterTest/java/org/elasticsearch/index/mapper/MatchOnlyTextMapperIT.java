@@ -67,18 +67,17 @@ public class MatchOnlyTextMapperIT extends ESIntegTestCase {
         BulkResponse bulkItemResponses = bulk.get();
         assertNoFailures(bulkItemResponses);
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(searchResponse -> {
+            for (SearchHit searchHit : searchResponse.getHits()) {
+                assertThat(
+                    searchHit.getHighlightFields().get("message").fragments()[0].string(),
+                    containsString("<em>marking and sending shard</em>")
+                );
+            }
+        },
             prepareSearch("test").setQuery(QueryBuilders.matchPhraseQuery("message", "marking and sending shard"))
                 .setSize(500)
-                .highlighter(new HighlightBuilder().field("message")),
-            searchResponse -> {
-                for (SearchHit searchHit : searchResponse.getHits()) {
-                    assertThat(
-                        searchHit.getHighlightFields().get("message").fragments()[0].string(),
-                        containsString("<em>marking and sending shard</em>")
-                    );
-                }
-            }
+                .highlighter(new HighlightBuilder().field("message"))
         );
     }
 
@@ -116,18 +115,17 @@ public class MatchOnlyTextMapperIT extends ESIntegTestCase {
         BulkResponse bulkItemResponses = bulk.get();
         assertNoFailures(bulkItemResponses);
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(searchResponse -> {
+            for (SearchHit searchHit : searchResponse.getHits()) {
+                assertThat(
+                    searchHit.getHighlightFields().get("message").fragments()[0].string(),
+                    containsString("<em>marking and sending shard</em>")
+                );
+            }
+        },
             prepareSearch("test").setQuery(QueryBuilders.matchPhraseQuery("message", "marking and sending shard"))
                 .setSize(500)
-                .highlighter(new HighlightBuilder().field("message")),
-            searchResponse -> {
-                for (SearchHit searchHit : searchResponse.getHits()) {
-                    assertThat(
-                        searchHit.getHighlightFields().get("message").fragments()[0].string(),
-                        containsString("<em>marking and sending shard</em>")
-                    );
-                }
-            }
+                .highlighter(new HighlightBuilder().field("message"))
         );
     }
 

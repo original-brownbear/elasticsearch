@@ -265,7 +265,7 @@ public class LocalExporterResourceIntegTests extends LocalExporterIntegTestCase 
         SearchSourceBuilder searchSource = SearchSourceBuilder.searchSource()
             .query(QueryBuilders.matchQuery("metadata.xpack.cluster_uuid", clusterUUID));
         Set<String> watchIds = new HashSet<>(Arrays.asList(ClusterAlertsUtil.WATCH_IDS));
-        assertResponse(prepareSearch(".watches").setSource(searchSource), response -> {
+        assertResponse(response -> {
             for (SearchHit hit : response.getHits().getHits()) {
                 String watchId = ObjectPath.eval("metadata.xpack.watch", hit.getSourceAsMap());
                 assertNotNull("Missing watch ID", watchId);
@@ -279,7 +279,7 @@ public class LocalExporterResourceIntegTests extends LocalExporterIntegTestCase 
                 assertNotNull("Missing cluster uuid", uuid);
                 assertEquals(clusterUUID, uuid);
             }
-        });
+        }, prepareSearch(".watches").setSource(searchSource));
     }
 
     private void assertNoWatchesExist() {
@@ -292,7 +292,7 @@ public class LocalExporterResourceIntegTests extends LocalExporterIntegTestCase 
         SearchSourceBuilder searchSource = SearchSourceBuilder.searchSource()
             .query(QueryBuilders.matchQuery("metadata.xpack.cluster_uuid", clusterUUID));
 
-        assertResponse(prepareSearch(".watches").setSource(searchSource), response -> {
+        assertResponse(response -> {
             if (response.getHits().getTotalHits().value > 0) {
                 List<String> invalidWatches = new ArrayList<>();
                 for (SearchHit hit : response.getHits().getHits()) {
@@ -300,7 +300,7 @@ public class LocalExporterResourceIntegTests extends LocalExporterIntegTestCase 
                 }
                 fail("Found [" + response.getHits().getTotalHits().value + "] invalid watches when none were expected: " + invalidWatches);
             }
-        });
+        }, prepareSearch(".watches").setSource(searchSource));
     }
 
     private void assertResourcesExist() throws Exception {

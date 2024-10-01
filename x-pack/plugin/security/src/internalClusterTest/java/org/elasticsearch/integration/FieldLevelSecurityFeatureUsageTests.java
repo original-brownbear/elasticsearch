@@ -77,11 +77,11 @@ public class FieldLevelSecurityFeatureUsageTests extends AbstractDocumentAndFiel
         prepareIndex("test").setId("2").setSource("field1", "value2", "field2", "value2").setRefreshPolicy(IMMEDIATE).get();
 
         assertHitCount(
+            1,
             internalCluster().coordOnlyNodeClient()
                 .filterWithHeader(Collections.singletonMap(BASIC_AUTH_HEADER, basicAuthHeaderValue("user1", USERS_PASSWD)))
                 .prepareSearch("test")
-                .setQuery(QueryBuilders.termQuery("field1", "value1")),
-            1
+                .setQuery(QueryBuilders.termQuery("field1", "value1"))
         );
 
         // coordinating only node should not tack DLS/FLS feature usage

@@ -48,22 +48,21 @@ public class HistoryTemplateIndexActionMappingsTests extends AbstractWatcherInte
         flush();
         refresh();
 
-        assertResponse(
+        assertResponse(response -> {
+            assertThat(response, notNullValue());
+            assertThat(response.getHits().getTotalHits().value, is(oneOf(1L, 2L)));
+            InternalAggregations aggs = response.getAggregations();
+            assertThat(aggs, notNullValue());
+
+            Terms terms = aggs.get("index_action_indices");
+            assertThat(terms, notNullValue());
+            assertThat(terms.getBuckets().size(), is(1));
+            assertThat(terms.getBucketByKey(index), notNullValue());
+            assertThat(terms.getBucketByKey(index).getDocCount(), is(1L));
+        },
             prepareSearch(HistoryStoreField.DATA_STREAM + "*").setSource(
                 searchSource().aggregation(terms("index_action_indices").field("result.actions.index.response.index"))
-            ),
-            response -> {
-                assertThat(response, notNullValue());
-                assertThat(response.getHits().getTotalHits().value, is(oneOf(1L, 2L)));
-                InternalAggregations aggs = response.getAggregations();
-                assertThat(aggs, notNullValue());
-
-                Terms terms = aggs.get("index_action_indices");
-                assertThat(terms, notNullValue());
-                assertThat(terms.getBuckets().size(), is(1));
-                assertThat(terms.getBucketByKey(index), notNullValue());
-                assertThat(terms.getBucketByKey(index).getDocCount(), is(1L));
-            }
+            )
         );
     }
 }

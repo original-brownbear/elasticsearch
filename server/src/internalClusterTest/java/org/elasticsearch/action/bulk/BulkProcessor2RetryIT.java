@@ -138,7 +138,7 @@ public class BulkProcessor2RetryIT extends ESIntegTestCase {
         indicesAdmin().refresh(new RefreshRequest()).get();
 
         final boolean finalRejectedAfterAllRetries = rejectedAfterAllRetries;
-        assertResponse(prepareSearch(INDEX_NAME).setQuery(QueryBuilders.matchAllQuery()).setSize(0), results -> {
+        assertResponse(results -> {
             assertThat(bulkProcessor.getTotalBytesInFlight(), equalTo(0L));
             if (rejectedExecutionExpected) {
                 assertThat((int) results.getHits().getTotalHits().value, lessThanOrEqualTo(numberOfAsyncOps));
@@ -147,7 +147,7 @@ public class BulkProcessor2RetryIT extends ESIntegTestCase {
             } else {
                 assertThat((int) results.getHits().getTotalHits().value, equalTo(numberOfAsyncOps));
             }
-        });
+        }, prepareSearch(INDEX_NAME).setQuery(QueryBuilders.matchAllQuery()).setSize(0));
     }
 
     private static void indexDocs(BulkProcessor2 processor, int numDocs) {

@@ -56,70 +56,60 @@ public class ArrayCompareConditionSearchTests extends AbstractWatcherIntegration
         Map<String, Object> fightsForTheUsers = new HashMap<>();
         Map<String, Object> elastic = new HashMap<>();
 
-        assertResponse(
-            prepareSearch(index).addAggregation(AggregationBuilders.terms("top_tweeters").field("user.screen_name.keyword").size(3)),
-            response -> {
-                WatchExecutionContext ctx = null;
-                try {
-                    ctx = mockExecutionContext("_name", new Payload.XContent(response, ToXContent.EMPTY_PARAMS));
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-                Condition.Result result = condition.execute(ctx);
-
-                boolean met = quantifier.eval(
-                    Arrays.<Object>asList(numberOfDocuments, numberOfDocuments),
-                    numberOfDocumentsWatchingFor,
-                    op
-                );
-                assertEquals(met, result.met());
-
-                Map<String, Object> resolvedValues = result.getResolvedValues();
-                assertThat(resolvedValues, notNullValue());
-                assertThat(resolvedValues.size(), is(1));
-                elastic.put("doc_count", numberOfDocuments);
-                elastic.put("key", "elastic");
-
-                fightsForTheUsers.put("doc_count", numberOfDocuments);
-                fightsForTheUsers.put("key", "fights_for_the_users");
-                assertThat(
-                    resolvedValues,
-                    hasEntry("ctx.payload.aggregations.top_tweeters.buckets", (Object) Arrays.asList(elastic, fightsForTheUsers))
-                );
+        assertResponse(response -> {
+            WatchExecutionContext ctx = null;
+            try {
+                ctx = mockExecutionContext("_name", new Payload.XContent(response, ToXContent.EMPTY_PARAMS));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
-        );
+            Condition.Result result = condition.execute(ctx);
+
+            boolean met = quantifier.eval(Arrays.<Object>asList(numberOfDocuments, numberOfDocuments), numberOfDocumentsWatchingFor, op);
+            assertEquals(met, result.met());
+
+            Map<String, Object> resolvedValues = result.getResolvedValues();
+            assertThat(resolvedValues, notNullValue());
+            assertThat(resolvedValues.size(), is(1));
+            elastic.put("doc_count", numberOfDocuments);
+            elastic.put("key", "elastic");
+
+            fightsForTheUsers.put("doc_count", numberOfDocuments);
+            fightsForTheUsers.put("key", "fights_for_the_users");
+            assertThat(
+                resolvedValues,
+                hasEntry("ctx.payload.aggregations.top_tweeters.buckets", (Object) Arrays.asList(elastic, fightsForTheUsers))
+            );
+        }, prepareSearch(index).addAggregation(AggregationBuilders.terms("top_tweeters").field("user.screen_name.keyword").size(3)));
 
         prepareIndex(index).setSource(source("fights_for_the_users", "you know, for the users", numberOfDocuments)).get();
         refresh();
 
-        assertResponse(
-            prepareSearch(index).addAggregation(AggregationBuilders.terms("top_tweeters").field("user.screen_name.keyword").size(3)),
-            response -> {
-                WatchExecutionContext ctx = null;
-                try {
-                    ctx = mockExecutionContext("_name", new Payload.XContent(response, ToXContent.EMPTY_PARAMS));
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-                Condition.Result result = condition.execute(ctx);
-
-                boolean met = quantifier.eval(
-                    Arrays.<Object>asList(numberOfDocumentsWatchingFor, numberOfDocuments),
-                    numberOfDocumentsWatchingFor,
-                    op
-                );
-                assertEquals(met, result.met());
-
-                Map<String, Object> resolvedValues = result.getResolvedValues();
-                assertThat(resolvedValues, notNullValue());
-                assertThat(resolvedValues.size(), is(1));
-                fightsForTheUsers.put("doc_count", numberOfDocumentsWatchingFor);
-                assertThat(
-                    resolvedValues,
-                    hasEntry("ctx.payload.aggregations.top_tweeters.buckets", (Object) Arrays.asList(fightsForTheUsers, elastic))
-                );
+        assertResponse(response -> {
+            WatchExecutionContext ctx = null;
+            try {
+                ctx = mockExecutionContext("_name", new Payload.XContent(response, ToXContent.EMPTY_PARAMS));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
-        );
+            Condition.Result result = condition.execute(ctx);
+
+            boolean met = quantifier.eval(
+                Arrays.<Object>asList(numberOfDocumentsWatchingFor, numberOfDocuments),
+                numberOfDocumentsWatchingFor,
+                op
+            );
+            assertEquals(met, result.met());
+
+            Map<String, Object> resolvedValues = result.getResolvedValues();
+            assertThat(resolvedValues, notNullValue());
+            assertThat(resolvedValues.size(), is(1));
+            fightsForTheUsers.put("doc_count", numberOfDocumentsWatchingFor);
+            assertThat(
+                resolvedValues,
+                hasEntry("ctx.payload.aggregations.top_tweeters.buckets", (Object) Arrays.asList(fightsForTheUsers, elastic))
+            );
+        }, prepareSearch(index).addAggregation(AggregationBuilders.terms("top_tweeters").field("user.screen_name.keyword").size(3)));
 
     }
 

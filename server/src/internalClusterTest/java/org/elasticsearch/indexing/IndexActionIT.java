@@ -56,7 +56,7 @@ public class IndexActionIT extends ESIntegTestCase {
             for (int j = 0; j < numOfChecks; j++) {
                 try {
                     logger.debug("running search with all types");
-                    assertResponse(prepareSearch("test"), response -> {
+                    assertResponse(response -> {
                         if (response.getHits().getTotalHits().value != numOfDocs) {
                             final String message = "Count is "
                                 + response.getHits().getTotalHits().value
@@ -67,7 +67,7 @@ public class IndexActionIT extends ESIntegTestCase {
                             logger.error("{}. search response: \n{}", message, response);
                             fail(message);
                         }
-                    });
+                    }, prepareSearch("test"));
                 } catch (Exception e) {
                     logger.error("search for all docs types failed", e);
                     if (firstError == null) {
@@ -76,7 +76,7 @@ public class IndexActionIT extends ESIntegTestCase {
                 }
                 try {
                     logger.debug("running search with a specific type");
-                    assertResponse(prepareSearch("test"), response -> {
+                    assertResponse(response -> {
                         if (response.getHits().getTotalHits().value != numOfDocs) {
                             final String message = "Count is "
                                 + response.getHits().getTotalHits().value
@@ -87,7 +87,7 @@ public class IndexActionIT extends ESIntegTestCase {
                             logger.error("{}. search response: \n{}", message, response);
                             fail(message);
                         }
-                    });
+                    }, prepareSearch("test"));
                 } catch (Exception e) {
                     logger.error("search for all docs of a specific type failed", e);
                     if (firstError == null) {

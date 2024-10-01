@@ -147,7 +147,7 @@ public class MonitoringIT extends ESSingleNodeTestCase {
                 ensureGreen(monitoringIndex);
                 assertThat(client().admin().indices().prepareRefresh(monitoringIndex).get().getStatus(), is(RestStatus.OK));
 
-                assertResponse(client().prepareSearch(".monitoring-" + system.getSystem() + "-" + TEMPLATE_VERSION + "-*"), response -> {
+                assertResponse(response -> {
                     // exactly 3 results are expected
                     assertThat("No monitoring documents yet", response.getHits().getTotalHits().value, equalTo(3L));
 
@@ -159,7 +159,7 @@ public class MonitoringIT extends ESSingleNodeTestCase {
                     assertThat(sources.stream().map(source -> source.get("timestamp")).distinct().count(), is(1L));
                     // find distinct _source.source_node fields (which is a map)
                     assertThat(sources.stream().map(source -> source.get("source_node")).distinct().count(), is(1L));
-                });
+                }, client().prepareSearch(".monitoring-" + system.getSystem() + "-" + TEMPLATE_VERSION + "-*"));
             });
 
             assertCheckedResponse(client().prepareSearch(monitoringIndex), response -> {

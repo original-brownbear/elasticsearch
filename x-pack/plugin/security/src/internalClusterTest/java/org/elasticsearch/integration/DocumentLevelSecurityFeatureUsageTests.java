@@ -89,15 +89,14 @@ public class DocumentLevelSecurityFeatureUsageTests extends AbstractDocumentAndF
         prepareIndex("test").setId("2").setSource("field2", "value2").setRefreshPolicy(IMMEDIATE).get();
         prepareIndex("test").setId("3").setSource("field3", "value3").setRefreshPolicy(IMMEDIATE).get();
 
-        assertResponse(
+        assertResponse(response -> {
+            assertHitCount(response, 1);
+            assertSearchHits(response, "1");
+        },
             internalCluster().coordOnlyNodeClient()
                 .filterWithHeader(Collections.singletonMap(BASIC_AUTH_HEADER, basicAuthHeaderValue("user1", USERS_PASSWD)))
                 .prepareSearch("test")
-                .setQuery(randomBoolean() ? QueryBuilders.termQuery("field1", "value1") : QueryBuilders.matchAllQuery()),
-            response -> {
-                assertHitCount(response, 1);
-                assertSearchHits(response, "1");
-            }
+                .setQuery(randomBoolean() ? QueryBuilders.termQuery("field1", "value1") : QueryBuilders.matchAllQuery())
         );
 
         // coordinating only node should not tack DLS/FLS feature usage
@@ -112,14 +111,13 @@ public class DocumentLevelSecurityFeatureUsageTests extends AbstractDocumentAndF
         prepareIndex("test").setId("2").setSource("id", "2", "field2", "value2").setRefreshPolicy(IMMEDIATE).get();
 
         // Running a search with user2 (which has role3 without DLS/FLS) should not trigger feature tracking.
-        assertResponse(
+        assertResponse(response -> {
+            assertHitCount(response, 2);
+            assertSearchHits(response, "1", "2");
+        },
             internalCluster().coordOnlyNodeClient()
                 .filterWithHeader(Collections.singletonMap(BASIC_AUTH_HEADER, basicAuthHeaderValue("user2", USERS_PASSWD)))
-                .prepareSearch("test"),
-            response -> {
-                assertHitCount(response, 2);
-                assertSearchHits(response, "1", "2");
-            }
+                .prepareSearch("test")
         );
         assertDlsFlsNotTrackedAcrossAllNodes();
     }

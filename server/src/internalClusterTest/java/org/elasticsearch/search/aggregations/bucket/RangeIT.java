@@ -131,308 +131,302 @@ public class RangeIT extends ESIntegTestCase {
     }
 
     public void testRangeAsSubAggregation() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Terms terms = response.getAggregations().get("terms");
+            assertThat(terms, notNullValue());
+            assertThat(terms.getBuckets().size(), equalTo(numDocs + 1));
+            for (int i = 1; i < numDocs + 2; ++i) {
+                Terms.Bucket bucket = terms.getBucketByKey("" + i);
+                assertThat(bucket, notNullValue());
+                final long docCount = i == 1 || i == numDocs + 1 ? 1 : 2;
+                assertThat(bucket.getDocCount(), equalTo(docCount));
+                Range range = bucket.getAggregations().get("range");
+                List<? extends Bucket> buckets = range.getBuckets();
+                Bucket rangeBucket = buckets.get(0);
+                assertThat(rangeBucket.getKey(), equalTo("*-3.0"));
+                assertThat(rangeBucket.getKeyAsString(), equalTo("*-3.0"));
+                assertThat(rangeBucket, notNullValue());
+                assertThat(rangeBucket.getFromAsString(), nullValue());
+                assertThat(rangeBucket.getToAsString(), equalTo("3.0"));
+                if (i == 1 || i == 3) {
+                    assertThat(rangeBucket.getDocCount(), equalTo(1L));
+                } else if (i == 2) {
+                    assertThat(rangeBucket.getDocCount(), equalTo(2L));
+                } else {
+                    assertThat(rangeBucket.getDocCount(), equalTo(0L));
+                }
+                rangeBucket = buckets.get(1);
+                assertThat(rangeBucket.getKey(), equalTo("3.0-6.0"));
+                assertThat(rangeBucket.getKeyAsString(), equalTo("3.0-6.0"));
+                assertThat(rangeBucket, notNullValue());
+                assertThat(rangeBucket.getFromAsString(), equalTo("3.0"));
+                assertThat(rangeBucket.getToAsString(), equalTo("6.0"));
+                if (i == 3 || i == 6) {
+                    assertThat(rangeBucket.getDocCount(), equalTo(1L));
+                } else if (i == 4 || i == 5) {
+                    assertThat(rangeBucket.getDocCount(), equalTo(2L));
+                } else {
+                    assertThat(rangeBucket.getDocCount(), equalTo(0L));
+                }
+                rangeBucket = buckets.get(2);
+                assertThat(rangeBucket.getKey(), equalTo("6.0-*"));
+                assertThat(rangeBucket.getKeyAsString(), equalTo("6.0-*"));
+                assertThat(rangeBucket, notNullValue());
+                assertThat(rangeBucket.getFromAsString(), equalTo("6.0"));
+                assertThat(rangeBucket.getToAsString(), nullValue());
+                if (i == 6 || i == numDocs + 1) {
+                    assertThat(rangeBucket.getDocCount(), equalTo(1L));
+                } else if (i < 6) {
+                    assertThat(rangeBucket.getDocCount(), equalTo(0L));
+                } else {
+                    assertThat(rangeBucket.getDocCount(), equalTo(2L));
+                }
+            }
+        },
             prepareSearch("idx").addAggregation(
                 terms("terms").field(MULTI_VALUED_FIELD_NAME)
                     .size(100)
                     .collectMode(randomFrom(SubAggCollectionMode.values()))
                     .subAggregation(range("range").field(SINGLE_VALUED_FIELD_NAME).addUnboundedTo(3).addRange(3, 6).addUnboundedFrom(6))
-            ),
-            response -> {
-                Terms terms = response.getAggregations().get("terms");
-                assertThat(terms, notNullValue());
-                assertThat(terms.getBuckets().size(), equalTo(numDocs + 1));
-                for (int i = 1; i < numDocs + 2; ++i) {
-                    Terms.Bucket bucket = terms.getBucketByKey("" + i);
-                    assertThat(bucket, notNullValue());
-                    final long docCount = i == 1 || i == numDocs + 1 ? 1 : 2;
-                    assertThat(bucket.getDocCount(), equalTo(docCount));
-                    Range range = bucket.getAggregations().get("range");
-                    List<? extends Bucket> buckets = range.getBuckets();
-                    Range.Bucket rangeBucket = buckets.get(0);
-                    assertThat(rangeBucket.getKey(), equalTo("*-3.0"));
-                    assertThat(rangeBucket.getKeyAsString(), equalTo("*-3.0"));
-                    assertThat(rangeBucket, notNullValue());
-                    assertThat(rangeBucket.getFromAsString(), nullValue());
-                    assertThat(rangeBucket.getToAsString(), equalTo("3.0"));
-                    if (i == 1 || i == 3) {
-                        assertThat(rangeBucket.getDocCount(), equalTo(1L));
-                    } else if (i == 2) {
-                        assertThat(rangeBucket.getDocCount(), equalTo(2L));
-                    } else {
-                        assertThat(rangeBucket.getDocCount(), equalTo(0L));
-                    }
-                    rangeBucket = buckets.get(1);
-                    assertThat(rangeBucket.getKey(), equalTo("3.0-6.0"));
-                    assertThat(rangeBucket.getKeyAsString(), equalTo("3.0-6.0"));
-                    assertThat(rangeBucket, notNullValue());
-                    assertThat(rangeBucket.getFromAsString(), equalTo("3.0"));
-                    assertThat(rangeBucket.getToAsString(), equalTo("6.0"));
-                    if (i == 3 || i == 6) {
-                        assertThat(rangeBucket.getDocCount(), equalTo(1L));
-                    } else if (i == 4 || i == 5) {
-                        assertThat(rangeBucket.getDocCount(), equalTo(2L));
-                    } else {
-                        assertThat(rangeBucket.getDocCount(), equalTo(0L));
-                    }
-                    rangeBucket = buckets.get(2);
-                    assertThat(rangeBucket.getKey(), equalTo("6.0-*"));
-                    assertThat(rangeBucket.getKeyAsString(), equalTo("6.0-*"));
-                    assertThat(rangeBucket, notNullValue());
-                    assertThat(rangeBucket.getFromAsString(), equalTo("6.0"));
-                    assertThat(rangeBucket.getToAsString(), nullValue());
-                    if (i == 6 || i == numDocs + 1) {
-                        assertThat(rangeBucket.getDocCount(), equalTo(1L));
-                    } else if (i < 6) {
-                        assertThat(rangeBucket.getDocCount(), equalTo(0L));
-                    } else {
-                        assertThat(rangeBucket.getDocCount(), equalTo(2L));
-                    }
-                }
-            }
+            )
         );
     }
 
     public void testSingleValueField() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Range range = response.getAggregations().get("range");
+            assertThat(range, notNullValue());
+            assertThat(range.getName(), equalTo("range"));
+            List<? extends Bucket> buckets = range.getBuckets();
+            assertThat(buckets.size(), equalTo(3));
+
+            Bucket bucket = buckets.get(0);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("*-3.0"));
+            assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(Double.NEGATIVE_INFINITY));
+            assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(3.0));
+            assertThat(bucket.getFromAsString(), nullValue());
+            assertThat(bucket.getToAsString(), equalTo("3.0"));
+            assertThat(bucket.getDocCount(), equalTo(2L));
+
+            bucket = buckets.get(1);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("3.0-6.0"));
+            assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(3.0));
+            assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(6.0));
+            assertThat(bucket.getFromAsString(), equalTo("3.0"));
+            assertThat(bucket.getToAsString(), equalTo("6.0"));
+            assertThat(bucket.getDocCount(), equalTo(3L));
+
+            bucket = buckets.get(2);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("6.0-*"));
+            assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(6.0));
+            assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(Double.POSITIVE_INFINITY));
+            assertThat(bucket.getFromAsString(), equalTo("6.0"));
+            assertThat(bucket.getToAsString(), nullValue());
+            assertThat(bucket.getDocCount(), equalTo(numDocs - 5L));
+        },
             prepareSearch("idx").addAggregation(
                 range("range").field(SINGLE_VALUED_FIELD_NAME).addUnboundedTo(3).addRange(3, 6).addUnboundedFrom(6)
-            ),
-            response -> {
-                Range range = response.getAggregations().get("range");
-                assertThat(range, notNullValue());
-                assertThat(range.getName(), equalTo("range"));
-                List<? extends Bucket> buckets = range.getBuckets();
-                assertThat(buckets.size(), equalTo(3));
-
-                Range.Bucket bucket = buckets.get(0);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("*-3.0"));
-                assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(Double.NEGATIVE_INFINITY));
-                assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(3.0));
-                assertThat(bucket.getFromAsString(), nullValue());
-                assertThat(bucket.getToAsString(), equalTo("3.0"));
-                assertThat(bucket.getDocCount(), equalTo(2L));
-
-                bucket = buckets.get(1);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("3.0-6.0"));
-                assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(3.0));
-                assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(6.0));
-                assertThat(bucket.getFromAsString(), equalTo("3.0"));
-                assertThat(bucket.getToAsString(), equalTo("6.0"));
-                assertThat(bucket.getDocCount(), equalTo(3L));
-
-                bucket = buckets.get(2);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("6.0-*"));
-                assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(6.0));
-                assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(Double.POSITIVE_INFINITY));
-                assertThat(bucket.getFromAsString(), equalTo("6.0"));
-                assertThat(bucket.getToAsString(), nullValue());
-                assertThat(bucket.getDocCount(), equalTo(numDocs - 5L));
-            }
+            )
         );
     }
 
     public void testSingleValueFieldWithFormat() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Range range = response.getAggregations().get("range");
+            assertThat(range, notNullValue());
+            assertThat(range.getName(), equalTo("range"));
+            List<? extends Bucket> buckets = range.getBuckets();
+            assertThat(range.getBuckets().size(), equalTo(3));
+
+            Bucket bucket = buckets.get(0);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("*-3"));
+            assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(Double.NEGATIVE_INFINITY));
+            assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(3.0));
+            assertThat(bucket.getFromAsString(), nullValue());
+            assertThat(bucket.getToAsString(), equalTo("3"));
+            assertThat(bucket.getDocCount(), equalTo(2L));
+
+            bucket = buckets.get(1);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("3-6"));
+            assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(3.0));
+            assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(6.0));
+            assertThat(bucket.getFromAsString(), equalTo("3"));
+            assertThat(bucket.getToAsString(), equalTo("6"));
+            assertThat(bucket.getDocCount(), equalTo(3L));
+
+            bucket = buckets.get(2);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("6-*"));
+            assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(6.0));
+            assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(Double.POSITIVE_INFINITY));
+            assertThat(bucket.getFromAsString(), equalTo("6"));
+            assertThat(bucket.getToAsString(), nullValue());
+            assertThat(bucket.getDocCount(), equalTo(numDocs - 5L));
+        },
             prepareSearch("idx").addAggregation(
                 range("range").field(SINGLE_VALUED_FIELD_NAME).addUnboundedTo(3).addRange(3, 6).addUnboundedFrom(6).format("#")
-            ),
-            response -> {
-                Range range = response.getAggregations().get("range");
-                assertThat(range, notNullValue());
-                assertThat(range.getName(), equalTo("range"));
-                List<? extends Bucket> buckets = range.getBuckets();
-                assertThat(range.getBuckets().size(), equalTo(3));
-
-                Range.Bucket bucket = buckets.get(0);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("*-3"));
-                assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(Double.NEGATIVE_INFINITY));
-                assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(3.0));
-                assertThat(bucket.getFromAsString(), nullValue());
-                assertThat(bucket.getToAsString(), equalTo("3"));
-                assertThat(bucket.getDocCount(), equalTo(2L));
-
-                bucket = buckets.get(1);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("3-6"));
-                assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(3.0));
-                assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(6.0));
-                assertThat(bucket.getFromAsString(), equalTo("3"));
-                assertThat(bucket.getToAsString(), equalTo("6"));
-                assertThat(bucket.getDocCount(), equalTo(3L));
-
-                bucket = buckets.get(2);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("6-*"));
-                assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(6.0));
-                assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(Double.POSITIVE_INFINITY));
-                assertThat(bucket.getFromAsString(), equalTo("6"));
-                assertThat(bucket.getToAsString(), nullValue());
-                assertThat(bucket.getDocCount(), equalTo(numDocs - 5L));
-            }
+            )
         );
     }
 
     public void testSingleValueFieldWithCustomKey() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Range range = response.getAggregations().get("range");
+            assertThat(range, notNullValue());
+            assertThat(range.getName(), equalTo("range"));
+            List<? extends Bucket> buckets = range.getBuckets();
+            assertThat(range.getBuckets().size(), equalTo(3));
+
+            Bucket bucket = buckets.get(0);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("r1"));
+            assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(Double.NEGATIVE_INFINITY));
+            assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(3.0));
+            assertThat(bucket.getFromAsString(), nullValue());
+            assertThat(bucket.getToAsString(), equalTo("3.0"));
+            assertThat(bucket.getDocCount(), equalTo(2L));
+
+            bucket = buckets.get(1);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("r2"));
+            assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(3.0));
+            assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(6.0));
+            assertThat(bucket.getFromAsString(), equalTo("3.0"));
+            assertThat(bucket.getToAsString(), equalTo("6.0"));
+            assertThat(bucket.getDocCount(), equalTo(3L));
+
+            bucket = buckets.get(2);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("r3"));
+            assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(6.0));
+            assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(Double.POSITIVE_INFINITY));
+            assertThat(bucket.getFromAsString(), equalTo("6.0"));
+            assertThat(bucket.getToAsString(), nullValue());
+            assertThat(bucket.getDocCount(), equalTo(numDocs - 5L));
+        },
             prepareSearch("idx").addAggregation(
                 range("range").field(SINGLE_VALUED_FIELD_NAME).addUnboundedTo("r1", 3).addRange("r2", 3, 6).addUnboundedFrom("r3", 6)
-            ),
-            response -> {
-                Range range = response.getAggregations().get("range");
-                assertThat(range, notNullValue());
-                assertThat(range.getName(), equalTo("range"));
-                List<? extends Bucket> buckets = range.getBuckets();
-                assertThat(range.getBuckets().size(), equalTo(3));
-
-                Range.Bucket bucket = buckets.get(0);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("r1"));
-                assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(Double.NEGATIVE_INFINITY));
-                assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(3.0));
-                assertThat(bucket.getFromAsString(), nullValue());
-                assertThat(bucket.getToAsString(), equalTo("3.0"));
-                assertThat(bucket.getDocCount(), equalTo(2L));
-
-                bucket = buckets.get(1);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("r2"));
-                assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(3.0));
-                assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(6.0));
-                assertThat(bucket.getFromAsString(), equalTo("3.0"));
-                assertThat(bucket.getToAsString(), equalTo("6.0"));
-                assertThat(bucket.getDocCount(), equalTo(3L));
-
-                bucket = buckets.get(2);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("r3"));
-                assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(6.0));
-                assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(Double.POSITIVE_INFINITY));
-                assertThat(bucket.getFromAsString(), equalTo("6.0"));
-                assertThat(bucket.getToAsString(), nullValue());
-                assertThat(bucket.getDocCount(), equalTo(numDocs - 5L));
-            }
+            )
         );
     }
 
     public void testSingleValuedFieldWithSubAggregation() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Range range = response.getAggregations().get("range");
+            assertThat(range, notNullValue());
+            assertThat(range.getName(), equalTo("range"));
+            List<? extends Bucket> buckets = range.getBuckets();
+            assertThat(range.getBuckets().size(), equalTo(3));
+            Object[] propertiesKeys = (Object[]) ((InternalAggregation) range).getProperty("_key");
+            Object[] propertiesDocCounts = (Object[]) ((InternalAggregation) range).getProperty("_count");
+            Object[] propertiesCounts = (Object[]) ((InternalAggregation) range).getProperty("sum.value");
+
+            Bucket bucket = buckets.get(0);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("*-3.0"));
+            assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(Double.NEGATIVE_INFINITY));
+            assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(3.0));
+            assertThat(bucket.getFromAsString(), nullValue());
+            assertThat(bucket.getToAsString(), equalTo("3.0"));
+            assertThat(bucket.getDocCount(), equalTo(2L));
+            Sum sum = bucket.getAggregations().get("sum");
+            assertThat(sum, notNullValue());
+            assertThat(sum.value(), equalTo(3.0)); // 1 + 2
+            assertThat(propertiesKeys[0], equalTo("*-3.0"));
+            assertThat(propertiesDocCounts[0], equalTo(2L));
+            assertThat(propertiesCounts[0], equalTo(3.0));
+
+            bucket = buckets.get(1);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("3.0-6.0"));
+            assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(3.0));
+            assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(6.0));
+            assertThat(bucket.getFromAsString(), equalTo("3.0"));
+            assertThat(bucket.getToAsString(), equalTo("6.0"));
+            assertThat(bucket.getDocCount(), equalTo(3L));
+            sum = bucket.getAggregations().get("sum");
+            assertThat(sum, notNullValue());
+            assertThat(sum.value(), equalTo(12.0)); // 3 + 4 + 5
+            assertThat(propertiesKeys[1], equalTo("3.0-6.0"));
+            assertThat(propertiesDocCounts[1], equalTo(3L));
+            assertThat(propertiesCounts[1], equalTo(12.0));
+
+            bucket = buckets.get(2);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("6.0-*"));
+            assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(6.0));
+            assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(Double.POSITIVE_INFINITY));
+            assertThat(bucket.getFromAsString(), equalTo("6.0"));
+            assertThat(bucket.getToAsString(), nullValue());
+            assertThat(bucket.getDocCount(), equalTo(numDocs - 5L));
+            sum = bucket.getAggregations().get("sum");
+            assertThat(sum, notNullValue());
+            long total = 0;
+            for (int i = 5; i < numDocs; ++i) {
+                total += i + 1;
+            }
+            assertThat(sum.value(), equalTo((double) total));
+            assertThat(propertiesKeys[2], equalTo("6.0-*"));
+            assertThat(propertiesDocCounts[2], equalTo(numDocs - 5L));
+            assertThat(propertiesCounts[2], equalTo((double) total));
+        },
             prepareSearch("idx").addAggregation(
                 range("range").field(SINGLE_VALUED_FIELD_NAME)
                     .addUnboundedTo(3)
                     .addRange(3, 6)
                     .addUnboundedFrom(6)
                     .subAggregation(sum("sum").field(SINGLE_VALUED_FIELD_NAME))
-            ),
-            response -> {
-                Range range = response.getAggregations().get("range");
-                assertThat(range, notNullValue());
-                assertThat(range.getName(), equalTo("range"));
-                List<? extends Bucket> buckets = range.getBuckets();
-                assertThat(range.getBuckets().size(), equalTo(3));
-                Object[] propertiesKeys = (Object[]) ((InternalAggregation) range).getProperty("_key");
-                Object[] propertiesDocCounts = (Object[]) ((InternalAggregation) range).getProperty("_count");
-                Object[] propertiesCounts = (Object[]) ((InternalAggregation) range).getProperty("sum.value");
-
-                Range.Bucket bucket = buckets.get(0);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("*-3.0"));
-                assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(Double.NEGATIVE_INFINITY));
-                assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(3.0));
-                assertThat(bucket.getFromAsString(), nullValue());
-                assertThat(bucket.getToAsString(), equalTo("3.0"));
-                assertThat(bucket.getDocCount(), equalTo(2L));
-                Sum sum = bucket.getAggregations().get("sum");
-                assertThat(sum, notNullValue());
-                assertThat(sum.value(), equalTo(3.0)); // 1 + 2
-                assertThat(propertiesKeys[0], equalTo("*-3.0"));
-                assertThat(propertiesDocCounts[0], equalTo(2L));
-                assertThat(propertiesCounts[0], equalTo(3.0));
-
-                bucket = buckets.get(1);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("3.0-6.0"));
-                assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(3.0));
-                assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(6.0));
-                assertThat(bucket.getFromAsString(), equalTo("3.0"));
-                assertThat(bucket.getToAsString(), equalTo("6.0"));
-                assertThat(bucket.getDocCount(), equalTo(3L));
-                sum = bucket.getAggregations().get("sum");
-                assertThat(sum, notNullValue());
-                assertThat(sum.value(), equalTo(12.0)); // 3 + 4 + 5
-                assertThat(propertiesKeys[1], equalTo("3.0-6.0"));
-                assertThat(propertiesDocCounts[1], equalTo(3L));
-                assertThat(propertiesCounts[1], equalTo(12.0));
-
-                bucket = buckets.get(2);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("6.0-*"));
-                assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(6.0));
-                assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(Double.POSITIVE_INFINITY));
-                assertThat(bucket.getFromAsString(), equalTo("6.0"));
-                assertThat(bucket.getToAsString(), nullValue());
-                assertThat(bucket.getDocCount(), equalTo(numDocs - 5L));
-                sum = bucket.getAggregations().get("sum");
-                assertThat(sum, notNullValue());
-                long total = 0;
-                for (int i = 5; i < numDocs; ++i) {
-                    total += i + 1;
-                }
-                assertThat(sum.value(), equalTo((double) total));
-                assertThat(propertiesKeys[2], equalTo("6.0-*"));
-                assertThat(propertiesDocCounts[2], equalTo(numDocs - 5L));
-                assertThat(propertiesCounts[2], equalTo((double) total));
-            }
+            )
         );
     }
 
     public void testSingleValuedFieldWithValueScript() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Range range = response.getAggregations().get("range");
+            assertThat(range, notNullValue());
+            assertThat(range.getName(), equalTo("range"));
+            List<? extends Bucket> buckets = range.getBuckets();
+            assertThat(range.getBuckets().size(), equalTo(3));
+
+            Bucket bucket = buckets.get(0);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("*-3.0"));
+            assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(Double.NEGATIVE_INFINITY));
+            assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(3.0));
+            assertThat(bucket.getFromAsString(), nullValue());
+            assertThat(bucket.getToAsString(), equalTo("3.0"));
+            assertThat(bucket.getDocCount(), equalTo(1L)); // 2
+
+            bucket = buckets.get(1);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("3.0-6.0"));
+            assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(3.0));
+            assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(6.0));
+            assertThat(bucket.getFromAsString(), equalTo("3.0"));
+            assertThat(bucket.getToAsString(), equalTo("6.0"));
+            assertThat(bucket.getDocCount(), equalTo(3L)); // 3, 4, 5
+
+            bucket = buckets.get(2);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("6.0-*"));
+            assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(6.0));
+            assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(Double.POSITIVE_INFINITY));
+            assertThat(bucket.getFromAsString(), equalTo("6.0"));
+            assertThat(bucket.getToAsString(), nullValue());
+            assertThat(bucket.getDocCount(), equalTo(numDocs - 4L));
+        },
             prepareSearch("idx").addAggregation(
                 range("range").field(SINGLE_VALUED_FIELD_NAME)
                     .script(new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "_value + 1", Collections.emptyMap()))
                     .addUnboundedTo(3)
                     .addRange(3, 6)
                     .addUnboundedFrom(6)
-            ),
-            response -> {
-                Range range = response.getAggregations().get("range");
-                assertThat(range, notNullValue());
-                assertThat(range.getName(), equalTo("range"));
-                List<? extends Bucket> buckets = range.getBuckets();
-                assertThat(range.getBuckets().size(), equalTo(3));
-
-                Range.Bucket bucket = buckets.get(0);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("*-3.0"));
-                assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(Double.NEGATIVE_INFINITY));
-                assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(3.0));
-                assertThat(bucket.getFromAsString(), nullValue());
-                assertThat(bucket.getToAsString(), equalTo("3.0"));
-                assertThat(bucket.getDocCount(), equalTo(1L)); // 2
-
-                bucket = buckets.get(1);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("3.0-6.0"));
-                assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(3.0));
-                assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(6.0));
-                assertThat(bucket.getFromAsString(), equalTo("3.0"));
-                assertThat(bucket.getToAsString(), equalTo("6.0"));
-                assertThat(bucket.getDocCount(), equalTo(3L)); // 3, 4, 5
-
-                bucket = buckets.get(2);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("6.0-*"));
-                assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(6.0));
-                assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(Double.POSITIVE_INFINITY));
-                assertThat(bucket.getFromAsString(), equalTo("6.0"));
-                assertThat(bucket.getToAsString(), nullValue());
-                assertThat(bucket.getDocCount(), equalTo(numDocs - 4L));
-            }
+            )
         );
     }
 
@@ -450,44 +444,43 @@ public class RangeIT extends ESIntegTestCase {
      */
 
     public void testMultiValuedField() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Range range = response.getAggregations().get("range");
+            assertThat(range, notNullValue());
+            assertThat(range.getName(), equalTo("range"));
+            List<? extends Bucket> buckets = range.getBuckets();
+            assertThat(range.getBuckets().size(), equalTo(3));
+
+            Bucket bucket = buckets.get(0);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("*-3.0"));
+            assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(Double.NEGATIVE_INFINITY));
+            assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(3.0));
+            assertThat(bucket.getFromAsString(), nullValue());
+            assertThat(bucket.getToAsString(), equalTo("3.0"));
+            assertThat(bucket.getDocCount(), equalTo(2L));
+
+            bucket = buckets.get(1);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("3.0-6.0"));
+            assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(3.0));
+            assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(6.0));
+            assertThat(bucket.getFromAsString(), equalTo("3.0"));
+            assertThat(bucket.getToAsString(), equalTo("6.0"));
+            assertThat(bucket.getDocCount(), equalTo(4L));
+
+            bucket = buckets.get(2);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("6.0-*"));
+            assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(6.0));
+            assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(Double.POSITIVE_INFINITY));
+            assertThat(bucket.getFromAsString(), equalTo("6.0"));
+            assertThat(bucket.getToAsString(), nullValue());
+            assertThat(bucket.getDocCount(), equalTo(numDocs - 4L));
+        },
             prepareSearch("idx").addAggregation(
                 range("range").field(MULTI_VALUED_FIELD_NAME).addUnboundedTo(3).addRange(3, 6).addUnboundedFrom(6)
-            ),
-            response -> {
-                Range range = response.getAggregations().get("range");
-                assertThat(range, notNullValue());
-                assertThat(range.getName(), equalTo("range"));
-                List<? extends Bucket> buckets = range.getBuckets();
-                assertThat(range.getBuckets().size(), equalTo(3));
-
-                Range.Bucket bucket = buckets.get(0);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("*-3.0"));
-                assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(Double.NEGATIVE_INFINITY));
-                assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(3.0));
-                assertThat(bucket.getFromAsString(), nullValue());
-                assertThat(bucket.getToAsString(), equalTo("3.0"));
-                assertThat(bucket.getDocCount(), equalTo(2L));
-
-                bucket = buckets.get(1);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("3.0-6.0"));
-                assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(3.0));
-                assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(6.0));
-                assertThat(bucket.getFromAsString(), equalTo("3.0"));
-                assertThat(bucket.getToAsString(), equalTo("6.0"));
-                assertThat(bucket.getDocCount(), equalTo(4L));
-
-                bucket = buckets.get(2);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("6.0-*"));
-                assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(6.0));
-                assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(Double.POSITIVE_INFINITY));
-                assertThat(bucket.getFromAsString(), equalTo("6.0"));
-                assertThat(bucket.getToAsString(), nullValue());
-                assertThat(bucket.getDocCount(), equalTo(numDocs - 4L));
-            }
+            )
         );
     }
 
@@ -505,48 +498,47 @@ public class RangeIT extends ESIntegTestCase {
      */
 
     public void testMultiValuedFieldWithValueScript() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Range range = response.getAggregations().get("range");
+            assertThat(range, notNullValue());
+            assertThat(range.getName(), equalTo("range"));
+            List<? extends Bucket> buckets = range.getBuckets();
+            assertThat(range.getBuckets().size(), equalTo(3));
+
+            Bucket bucket = buckets.get(0);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("*-3.0"));
+            assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(Double.NEGATIVE_INFINITY));
+            assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(3.0));
+            assertThat(bucket.getFromAsString(), nullValue());
+            assertThat(bucket.getToAsString(), equalTo("3.0"));
+            assertThat(bucket.getDocCount(), equalTo(1L));
+
+            bucket = buckets.get(1);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("3.0-6.0"));
+            assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(3.0));
+            assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(6.0));
+            assertThat(bucket.getFromAsString(), equalTo("3.0"));
+            assertThat(bucket.getToAsString(), equalTo("6.0"));
+            assertThat(bucket.getDocCount(), equalTo(4L));
+
+            bucket = buckets.get(2);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("6.0-*"));
+            assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(6.0));
+            assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(Double.POSITIVE_INFINITY));
+            assertThat(bucket.getFromAsString(), equalTo("6.0"));
+            assertThat(bucket.getToAsString(), nullValue());
+            assertThat(bucket.getDocCount(), equalTo(numDocs - 3L));
+        },
             prepareSearch("idx").addAggregation(
                 range("range").field(MULTI_VALUED_FIELD_NAME)
                     .script(new Script(ScriptType.INLINE, CustomScriptPlugin.NAME, "_value + 1", Collections.emptyMap()))
                     .addUnboundedTo(3)
                     .addRange(3, 6)
                     .addUnboundedFrom(6)
-            ),
-            response -> {
-                Range range = response.getAggregations().get("range");
-                assertThat(range, notNullValue());
-                assertThat(range.getName(), equalTo("range"));
-                List<? extends Bucket> buckets = range.getBuckets();
-                assertThat(range.getBuckets().size(), equalTo(3));
-
-                Range.Bucket bucket = buckets.get(0);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("*-3.0"));
-                assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(Double.NEGATIVE_INFINITY));
-                assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(3.0));
-                assertThat(bucket.getFromAsString(), nullValue());
-                assertThat(bucket.getToAsString(), equalTo("3.0"));
-                assertThat(bucket.getDocCount(), equalTo(1L));
-
-                bucket = buckets.get(1);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("3.0-6.0"));
-                assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(3.0));
-                assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(6.0));
-                assertThat(bucket.getFromAsString(), equalTo("3.0"));
-                assertThat(bucket.getToAsString(), equalTo("6.0"));
-                assertThat(bucket.getDocCount(), equalTo(4L));
-
-                bucket = buckets.get(2);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("6.0-*"));
-                assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(6.0));
-                assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(Double.POSITIVE_INFINITY));
-                assertThat(bucket.getFromAsString(), equalTo("6.0"));
-                assertThat(bucket.getToAsString(), nullValue());
-                assertThat(bucket.getDocCount(), equalTo(numDocs - 3L));
-            }
+            )
         );
     }
 
@@ -574,74 +566,68 @@ public class RangeIT extends ESIntegTestCase {
             "doc['" + SINGLE_VALUED_FIELD_NAME + "'].value",
             Collections.emptyMap()
         );
-        assertNoFailuresAndResponse(
-            prepareSearch("idx").addAggregation(range("range").script(script).addUnboundedTo(3).addRange(3, 6).addUnboundedFrom(6)),
-            response -> {
-                Range range = response.getAggregations().get("range");
-                assertThat(range, notNullValue());
-                assertThat(range.getName(), equalTo("range"));
-                List<? extends Bucket> buckets = range.getBuckets();
-                assertThat(range.getBuckets().size(), equalTo(3));
+        assertNoFailuresAndResponse(response -> {
+            Range range = response.getAggregations().get("range");
+            assertThat(range, notNullValue());
+            assertThat(range.getName(), equalTo("range"));
+            List<? extends Bucket> buckets = range.getBuckets();
+            assertThat(range.getBuckets().size(), equalTo(3));
 
-                Range.Bucket bucket = buckets.get(0);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("*-3.0"));
-                assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(Double.NEGATIVE_INFINITY));
-                assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(3.0));
-                assertThat(bucket.getFromAsString(), nullValue());
-                assertThat(bucket.getToAsString(), equalTo("3.0"));
-                assertThat(bucket.getDocCount(), equalTo(2L));
+            Bucket bucket = buckets.get(0);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("*-3.0"));
+            assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(Double.NEGATIVE_INFINITY));
+            assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(3.0));
+            assertThat(bucket.getFromAsString(), nullValue());
+            assertThat(bucket.getToAsString(), equalTo("3.0"));
+            assertThat(bucket.getDocCount(), equalTo(2L));
 
-                bucket = buckets.get(1);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("3.0-6.0"));
-                assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(3.0));
-                assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(6.0));
-                assertThat(bucket.getFromAsString(), equalTo("3.0"));
-                assertThat(bucket.getToAsString(), equalTo("6.0"));
-                assertThat(bucket.getDocCount(), equalTo(3L));
+            bucket = buckets.get(1);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("3.0-6.0"));
+            assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(3.0));
+            assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(6.0));
+            assertThat(bucket.getFromAsString(), equalTo("3.0"));
+            assertThat(bucket.getToAsString(), equalTo("6.0"));
+            assertThat(bucket.getDocCount(), equalTo(3L));
 
-                bucket = buckets.get(2);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("6.0-*"));
-                assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(6.0));
-                assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(Double.POSITIVE_INFINITY));
-                assertThat(bucket.getFromAsString(), equalTo("6.0"));
-                assertThat(bucket.getToAsString(), nullValue());
-                assertThat(bucket.getDocCount(), equalTo(numDocs - 5L));
-            }
-        );
+            bucket = buckets.get(2);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("6.0-*"));
+            assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(6.0));
+            assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(Double.POSITIVE_INFINITY));
+            assertThat(bucket.getFromAsString(), equalTo("6.0"));
+            assertThat(bucket.getToAsString(), nullValue());
+            assertThat(bucket.getDocCount(), equalTo(numDocs - 5L));
+        }, prepareSearch("idx").addAggregation(range("range").script(script).addUnboundedTo(3).addRange(3, 6).addUnboundedFrom(6)));
     }
 
     public void testEmptyRange() throws Exception {
-        assertNoFailuresAndResponse(
-            prepareSearch("idx").addAggregation(range("range").field(MULTI_VALUED_FIELD_NAME).addUnboundedTo(-1).addUnboundedFrom(1000)),
-            response -> {
-                Range range = response.getAggregations().get("range");
-                assertThat(range, notNullValue());
-                assertThat(range.getName(), equalTo("range"));
-                List<? extends Bucket> buckets = range.getBuckets();
-                assertThat(range.getBuckets().size(), equalTo(2));
+        assertNoFailuresAndResponse(response -> {
+            Range range = response.getAggregations().get("range");
+            assertThat(range, notNullValue());
+            assertThat(range.getName(), equalTo("range"));
+            List<? extends Bucket> buckets = range.getBuckets();
+            assertThat(range.getBuckets().size(), equalTo(2));
 
-                Range.Bucket bucket = buckets.get(0);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("*--1.0"));
-                assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(Double.NEGATIVE_INFINITY));
-                assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(-1.0));
-                assertThat(bucket.getFromAsString(), nullValue());
-                assertThat(bucket.getToAsString(), equalTo("-1.0"));
-                assertThat(bucket.getDocCount(), equalTo(0L));
+            Bucket bucket = buckets.get(0);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("*--1.0"));
+            assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(Double.NEGATIVE_INFINITY));
+            assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(-1.0));
+            assertThat(bucket.getFromAsString(), nullValue());
+            assertThat(bucket.getToAsString(), equalTo("-1.0"));
+            assertThat(bucket.getDocCount(), equalTo(0L));
 
-                bucket = buckets.get(1);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("1000.0-*"));
-                assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(1000d));
-                assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(Double.POSITIVE_INFINITY));
-                assertThat(bucket.getFromAsString(), equalTo("1000.0"));
-                assertThat(bucket.getToAsString(), nullValue());
-                assertThat(bucket.getDocCount(), equalTo(0L));
-            }
-        );
+            bucket = buckets.get(1);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("1000.0-*"));
+            assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(1000d));
+            assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(Double.POSITIVE_INFINITY));
+            assertThat(bucket.getFromAsString(), equalTo("1000.0"));
+            assertThat(bucket.getToAsString(), nullValue());
+            assertThat(bucket.getDocCount(), equalTo(0L));
+        }, prepareSearch("idx").addAggregation(range("range").field(MULTI_VALUED_FIELD_NAME).addUnboundedTo(-1).addUnboundedFrom(1000)));
     }
 
     public void testNoRangesInQuery() {
@@ -663,43 +649,40 @@ public class RangeIT extends ESIntegTestCase {
             Collections.emptyMap()
         );
 
-        assertNoFailuresAndResponse(
-            prepareSearch("idx").addAggregation(range("range").script(script).addUnboundedTo(3).addRange(3, 6).addUnboundedFrom(6)),
-            response -> {
-                Range range = response.getAggregations().get("range");
-                assertThat(range, notNullValue());
-                assertThat(range.getName(), equalTo("range"));
-                List<? extends Bucket> buckets = range.getBuckets();
-                assertThat(range.getBuckets().size(), equalTo(3));
+        assertNoFailuresAndResponse(response -> {
+            Range range = response.getAggregations().get("range");
+            assertThat(range, notNullValue());
+            assertThat(range.getName(), equalTo("range"));
+            List<? extends Bucket> buckets = range.getBuckets();
+            assertThat(range.getBuckets().size(), equalTo(3));
 
-                Range.Bucket bucket = buckets.get(0);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("*-3.0"));
-                assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(Double.NEGATIVE_INFINITY));
-                assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(3.0));
-                assertThat(bucket.getFromAsString(), nullValue());
-                assertThat(bucket.getToAsString(), equalTo("3.0"));
-                assertThat(bucket.getDocCount(), equalTo(2L));
+            Bucket bucket = buckets.get(0);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("*-3.0"));
+            assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(Double.NEGATIVE_INFINITY));
+            assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(3.0));
+            assertThat(bucket.getFromAsString(), nullValue());
+            assertThat(bucket.getToAsString(), equalTo("3.0"));
+            assertThat(bucket.getDocCount(), equalTo(2L));
 
-                bucket = buckets.get(1);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("3.0-6.0"));
-                assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(3.0));
-                assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(6.0));
-                assertThat(bucket.getFromAsString(), equalTo("3.0"));
-                assertThat(bucket.getToAsString(), equalTo("6.0"));
-                assertThat(bucket.getDocCount(), equalTo(4L));
+            bucket = buckets.get(1);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("3.0-6.0"));
+            assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(3.0));
+            assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(6.0));
+            assertThat(bucket.getFromAsString(), equalTo("3.0"));
+            assertThat(bucket.getToAsString(), equalTo("6.0"));
+            assertThat(bucket.getDocCount(), equalTo(4L));
 
-                bucket = buckets.get(2);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("6.0-*"));
-                assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(6.0));
-                assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(Double.POSITIVE_INFINITY));
-                assertThat(bucket.getFromAsString(), equalTo("6.0"));
-                assertThat(bucket.getToAsString(), nullValue());
-                assertThat(bucket.getDocCount(), equalTo(numDocs - 4L));
-            }
-        );
+            bucket = buckets.get(2);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("6.0-*"));
+            assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(6.0));
+            assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(Double.POSITIVE_INFINITY));
+            assertThat(bucket.getFromAsString(), equalTo("6.0"));
+            assertThat(bucket.getToAsString(), nullValue());
+            assertThat(bucket.getDocCount(), equalTo(numDocs - 4L));
+        }, prepareSearch("idx").addAggregation(range("range").script(script).addUnboundedTo(3).addRange(3, 6).addUnboundedFrom(6)));
     }
 
     /*
@@ -720,171 +703,167 @@ public class RangeIT extends ESIntegTestCase {
      */
 
     public void testUnmapped() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Range range = response.getAggregations().get("range");
+            assertThat(range, notNullValue());
+            assertThat(range.getName(), equalTo("range"));
+            List<? extends Bucket> buckets = range.getBuckets();
+            assertThat(range.getBuckets().size(), equalTo(3));
+
+            Bucket bucket = buckets.get(0);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("*-3.0"));
+            assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(Double.NEGATIVE_INFINITY));
+            assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(3.0));
+            assertThat(bucket.getFromAsString(), nullValue());
+            assertThat(bucket.getToAsString(), equalTo("3.0"));
+            assertThat(bucket.getDocCount(), equalTo(0L));
+
+            bucket = buckets.get(1);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("3.0-6.0"));
+            assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(3.0));
+            assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(6.0));
+            assertThat(bucket.getFromAsString(), equalTo("3.0"));
+            assertThat(bucket.getToAsString(), equalTo("6.0"));
+            assertThat(bucket.getDocCount(), equalTo(0L));
+
+            bucket = buckets.get(2);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("6.0-*"));
+            assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(6.0));
+            assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(Double.POSITIVE_INFINITY));
+            assertThat(bucket.getFromAsString(), equalTo("6.0"));
+            assertThat(bucket.getToAsString(), nullValue());
+            assertThat(bucket.getDocCount(), equalTo(0L));
+        },
             prepareSearch("idx_unmapped").addAggregation(
                 range("range").field(SINGLE_VALUED_FIELD_NAME).addUnboundedTo(3).addRange(3, 6).addUnboundedFrom(6)
-            ),
-            response -> {
-                Range range = response.getAggregations().get("range");
-                assertThat(range, notNullValue());
-                assertThat(range.getName(), equalTo("range"));
-                List<? extends Bucket> buckets = range.getBuckets();
-                assertThat(range.getBuckets().size(), equalTo(3));
-
-                Range.Bucket bucket = buckets.get(0);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("*-3.0"));
-                assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(Double.NEGATIVE_INFINITY));
-                assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(3.0));
-                assertThat(bucket.getFromAsString(), nullValue());
-                assertThat(bucket.getToAsString(), equalTo("3.0"));
-                assertThat(bucket.getDocCount(), equalTo(0L));
-
-                bucket = buckets.get(1);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("3.0-6.0"));
-                assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(3.0));
-                assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(6.0));
-                assertThat(bucket.getFromAsString(), equalTo("3.0"));
-                assertThat(bucket.getToAsString(), equalTo("6.0"));
-                assertThat(bucket.getDocCount(), equalTo(0L));
-
-                bucket = buckets.get(2);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("6.0-*"));
-                assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(6.0));
-                assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(Double.POSITIVE_INFINITY));
-                assertThat(bucket.getFromAsString(), equalTo("6.0"));
-                assertThat(bucket.getToAsString(), nullValue());
-                assertThat(bucket.getDocCount(), equalTo(0L));
-            }
+            )
         );
     }
 
     public void testPartiallyUnmapped() throws Exception {
         clusterAdmin().prepareHealth(TEST_REQUEST_TIMEOUT, "idx_unmapped").setWaitForYellowStatus().get();
 
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Range range = response.getAggregations().get("range");
+            assertThat(range, notNullValue());
+            assertThat(range.getName(), equalTo("range"));
+            List<? extends Bucket> buckets = range.getBuckets();
+            assertThat(range.getBuckets().size(), equalTo(3));
+
+            Bucket bucket = buckets.get(0);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("*-3.0"));
+            assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(Double.NEGATIVE_INFINITY));
+            assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(3.0));
+            assertThat(bucket.getFromAsString(), nullValue());
+            assertThat(bucket.getToAsString(), equalTo("3.0"));
+            assertThat(bucket.getDocCount(), equalTo(2L));
+
+            bucket = buckets.get(1);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("3.0-6.0"));
+            assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(3.0));
+            assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(6.0));
+            assertThat(bucket.getFromAsString(), equalTo("3.0"));
+            assertThat(bucket.getToAsString(), equalTo("6.0"));
+            assertThat(bucket.getDocCount(), equalTo(3L));
+
+            bucket = buckets.get(2);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("6.0-*"));
+            assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(6.0));
+            assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(Double.POSITIVE_INFINITY));
+            assertThat(bucket.getFromAsString(), equalTo("6.0"));
+            assertThat(bucket.getToAsString(), nullValue());
+            assertThat(bucket.getDocCount(), equalTo(numDocs - 5L));
+        },
             prepareSearch("idx", "idx_unmapped").addAggregation(
                 range("range").field(SINGLE_VALUED_FIELD_NAME).addUnboundedTo(3).addRange(3, 6).addUnboundedFrom(6)
-            ),
-            response -> {
-                Range range = response.getAggregations().get("range");
-                assertThat(range, notNullValue());
-                assertThat(range.getName(), equalTo("range"));
-                List<? extends Bucket> buckets = range.getBuckets();
-                assertThat(range.getBuckets().size(), equalTo(3));
-
-                Range.Bucket bucket = buckets.get(0);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("*-3.0"));
-                assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(Double.NEGATIVE_INFINITY));
-                assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(3.0));
-                assertThat(bucket.getFromAsString(), nullValue());
-                assertThat(bucket.getToAsString(), equalTo("3.0"));
-                assertThat(bucket.getDocCount(), equalTo(2L));
-
-                bucket = buckets.get(1);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("3.0-6.0"));
-                assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(3.0));
-                assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(6.0));
-                assertThat(bucket.getFromAsString(), equalTo("3.0"));
-                assertThat(bucket.getToAsString(), equalTo("6.0"));
-                assertThat(bucket.getDocCount(), equalTo(3L));
-
-                bucket = buckets.get(2);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("6.0-*"));
-                assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(6.0));
-                assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(Double.POSITIVE_INFINITY));
-                assertThat(bucket.getFromAsString(), equalTo("6.0"));
-                assertThat(bucket.getToAsString(), nullValue());
-                assertThat(bucket.getDocCount(), equalTo(numDocs - 5L));
-            }
+            )
         );
     }
 
     public void testOverlappingRanges() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Range range = response.getAggregations().get("range");
+            assertThat(range, notNullValue());
+            assertThat(range.getName(), equalTo("range"));
+            List<? extends Bucket> buckets = range.getBuckets();
+            assertThat(range.getBuckets().size(), equalTo(4));
+
+            Bucket bucket = buckets.get(0);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("*-5.0"));
+            assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(Double.NEGATIVE_INFINITY));
+            assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(5.0));
+            assertThat(bucket.getFromAsString(), nullValue());
+            assertThat(bucket.getToAsString(), equalTo("5.0"));
+            assertThat(bucket.getDocCount(), equalTo(4L));
+
+            bucket = buckets.get(1);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("3.0-6.0"));
+            assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(3.0));
+            assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(6.0));
+            assertThat(bucket.getFromAsString(), equalTo("3.0"));
+            assertThat(bucket.getToAsString(), equalTo("6.0"));
+            assertThat(bucket.getDocCount(), equalTo(4L));
+
+            bucket = buckets.get(2);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("4.0-5.0"));
+            assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(4.0));
+            assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(5.0));
+            assertThat(bucket.getFromAsString(), equalTo("4.0"));
+            assertThat(bucket.getToAsString(), equalTo("5.0"));
+            assertThat(bucket.getDocCount(), equalTo(2L));
+
+            bucket = buckets.get(3);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("4.0-*"));
+            assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(4.0));
+            assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(Double.POSITIVE_INFINITY));
+            assertThat(bucket.getFromAsString(), equalTo("4.0"));
+            assertThat(bucket.getToAsString(), nullValue());
+            assertThat(bucket.getDocCount(), equalTo(numDocs - 2L));
+        },
             prepareSearch("idx").addAggregation(
                 range("range").field(MULTI_VALUED_FIELD_NAME).addUnboundedTo(5).addRange(3, 6).addRange(4, 5).addUnboundedFrom(4)
-            ),
-            response -> {
-                Range range = response.getAggregations().get("range");
-                assertThat(range, notNullValue());
-                assertThat(range.getName(), equalTo("range"));
-                List<? extends Bucket> buckets = range.getBuckets();
-                assertThat(range.getBuckets().size(), equalTo(4));
-
-                Range.Bucket bucket = buckets.get(0);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("*-5.0"));
-                assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(Double.NEGATIVE_INFINITY));
-                assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(5.0));
-                assertThat(bucket.getFromAsString(), nullValue());
-                assertThat(bucket.getToAsString(), equalTo("5.0"));
-                assertThat(bucket.getDocCount(), equalTo(4L));
-
-                bucket = buckets.get(1);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("3.0-6.0"));
-                assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(3.0));
-                assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(6.0));
-                assertThat(bucket.getFromAsString(), equalTo("3.0"));
-                assertThat(bucket.getToAsString(), equalTo("6.0"));
-                assertThat(bucket.getDocCount(), equalTo(4L));
-
-                bucket = buckets.get(2);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("4.0-5.0"));
-                assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(4.0));
-                assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(5.0));
-                assertThat(bucket.getFromAsString(), equalTo("4.0"));
-                assertThat(bucket.getToAsString(), equalTo("5.0"));
-                assertThat(bucket.getDocCount(), equalTo(2L));
-
-                bucket = buckets.get(3);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("4.0-*"));
-                assertThat(((Number) bucket.getFrom()).doubleValue(), equalTo(4.0));
-                assertThat(((Number) bucket.getTo()).doubleValue(), equalTo(Double.POSITIVE_INFINITY));
-                assertThat(bucket.getFromAsString(), equalTo("4.0"));
-                assertThat(bucket.getToAsString(), nullValue());
-                assertThat(bucket.getDocCount(), equalTo(numDocs - 2L));
-            }
+            )
         );
     }
 
     public void testEmptyAggregation() throws Exception {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            assertThat(response.getHits().getTotalHits().value, equalTo(2L));
+            Histogram histo = response.getAggregations().get("histo");
+            assertThat(histo, Matchers.notNullValue());
+            Histogram.Bucket bucket = histo.getBuckets().get(1);
+            assertThat(bucket, Matchers.notNullValue());
+
+            Range range = bucket.getAggregations().get("range");
+            // TODO: use diamond once JI-9019884 is fixed
+            List<Bucket> buckets = new ArrayList<>(range.getBuckets());
+            assertThat(range, Matchers.notNullValue());
+            assertThat(range.getName(), equalTo("range"));
+            assertThat(buckets.size(), is(1));
+            assertThat(buckets.get(0).getKey(), equalTo("0-2"));
+            assertThat(((Number) buckets.get(0).getFrom()).doubleValue(), equalTo(0.0));
+            assertThat(((Number) buckets.get(0).getTo()).doubleValue(), equalTo(2.0));
+            assertThat(buckets.get(0).getFromAsString(), equalTo("0.0"));
+            assertThat(buckets.get(0).getToAsString(), equalTo("2.0"));
+            assertThat(buckets.get(0).getDocCount(), equalTo(0L));
+        },
             prepareSearch("empty_bucket_idx").setQuery(matchAllQuery())
                 .addAggregation(
                     histogram("histo").field(SINGLE_VALUED_FIELD_NAME)
                         .interval(1L)
                         .minDocCount(0)
                         .subAggregation(range("range").field(SINGLE_VALUED_FIELD_NAME).addRange("0-2", 0.0, 2.0))
-                ),
-            response -> {
-                assertThat(response.getHits().getTotalHits().value, equalTo(2L));
-                Histogram histo = response.getAggregations().get("histo");
-                assertThat(histo, Matchers.notNullValue());
-                Histogram.Bucket bucket = histo.getBuckets().get(1);
-                assertThat(bucket, Matchers.notNullValue());
-
-                Range range = bucket.getAggregations().get("range");
-                // TODO: use diamond once JI-9019884 is fixed
-                List<Range.Bucket> buckets = new ArrayList<>(range.getBuckets());
-                assertThat(range, Matchers.notNullValue());
-                assertThat(range.getName(), equalTo("range"));
-                assertThat(buckets.size(), is(1));
-                assertThat(buckets.get(0).getKey(), equalTo("0-2"));
-                assertThat(((Number) buckets.get(0).getFrom()).doubleValue(), equalTo(0.0));
-                assertThat(((Number) buckets.get(0).getTo()).doubleValue(), equalTo(2.0));
-                assertThat(buckets.get(0).getFromAsString(), equalTo("0.0"));
-                assertThat(buckets.get(0).getToAsString(), equalTo("2.0"));
-                assertThat(buckets.get(0).getDocCount(), equalTo(0L));
-            }
+                )
         );
 
     }
@@ -968,62 +947,60 @@ public class RangeIT extends ESIntegTestCase {
     }
 
     public void testFieldAlias() {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Range range = response.getAggregations().get("range");
+            assertThat(range, notNullValue());
+            assertThat(range.getName(), equalTo("range"));
+            List<? extends Bucket> buckets = range.getBuckets();
+            assertThat(buckets.size(), equalTo(3));
+
+            Bucket bucket = buckets.get(0);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("*-50.0"));
+            assertThat(bucket.getDocCount(), equalTo(1L));
+
+            bucket = buckets.get(1);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("50.0-150.0"));
+            assertThat(bucket.getDocCount(), equalTo(2L));
+
+            bucket = buckets.get(2);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("150.0-*"));
+            assertThat(bucket.getDocCount(), equalTo(0L));
+        },
             prepareSearch("old_index", "new_index").addAggregation(
                 range("range").field("route_length_miles").addUnboundedTo(50.0).addRange(50.0, 150.0).addUnboundedFrom(150.0)
-            ),
-            response -> {
-                Range range = response.getAggregations().get("range");
-                assertThat(range, notNullValue());
-                assertThat(range.getName(), equalTo("range"));
-                List<? extends Range.Bucket> buckets = range.getBuckets();
-                assertThat(buckets.size(), equalTo(3));
-
-                Range.Bucket bucket = buckets.get(0);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("*-50.0"));
-                assertThat(bucket.getDocCount(), equalTo(1L));
-
-                bucket = buckets.get(1);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("50.0-150.0"));
-                assertThat(bucket.getDocCount(), equalTo(2L));
-
-                bucket = buckets.get(2);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("150.0-*"));
-                assertThat(bucket.getDocCount(), equalTo(0L));
-            }
+            )
         );
     }
 
     public void testFieldAliasWithMissingValue() {
-        assertNoFailuresAndResponse(
+        assertNoFailuresAndResponse(response -> {
+            Range range = response.getAggregations().get("range");
+            assertThat(range, notNullValue());
+            assertThat(range.getName(), equalTo("range"));
+            List<? extends Bucket> buckets = range.getBuckets();
+            assertThat(buckets.size(), equalTo(3));
+
+            Bucket bucket = buckets.get(0);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("*-50.0"));
+            assertThat(bucket.getDocCount(), equalTo(2L));
+
+            bucket = buckets.get(1);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("50.0-150.0"));
+            assertThat(bucket.getDocCount(), equalTo(2L));
+
+            bucket = buckets.get(2);
+            assertThat(bucket, notNullValue());
+            assertThat(bucket.getKey(), equalTo("150.0-*"));
+            assertThat(bucket.getDocCount(), equalTo(0L));
+        },
             prepareSearch("old_index", "new_index").addAggregation(
                 range("range").field("route_length_miles").missing(0.0).addUnboundedTo(50.0).addRange(50.0, 150.0).addUnboundedFrom(150.0)
-            ),
-            response -> {
-                Range range = response.getAggregations().get("range");
-                assertThat(range, notNullValue());
-                assertThat(range.getName(), equalTo("range"));
-                List<? extends Range.Bucket> buckets = range.getBuckets();
-                assertThat(buckets.size(), equalTo(3));
-
-                Range.Bucket bucket = buckets.get(0);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("*-50.0"));
-                assertThat(bucket.getDocCount(), equalTo(2L));
-
-                bucket = buckets.get(1);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("50.0-150.0"));
-                assertThat(bucket.getDocCount(), equalTo(2L));
-
-                bucket = buckets.get(2);
-                assertThat(bucket, notNullValue());
-                assertThat(bucket.getKey(), equalTo("150.0-*"));
-                assertThat(bucket.getDocCount(), equalTo(0L));
-            }
+            )
         );
     }
 }
