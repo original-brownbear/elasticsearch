@@ -10,6 +10,7 @@
 package org.elasticsearch.index.mapper;
 
 import org.elasticsearch.core.CheckedFunction;
+import org.elasticsearch.core.PerformanceSensitive;
 import org.elasticsearch.xcontent.FilterXContentParser;
 import org.elasticsearch.xcontent.FilterXContentParserWrapper;
 import org.elasticsearch.xcontent.XContentLocation;
@@ -32,6 +33,7 @@ import java.util.function.Supplier;
  * lookups will return the same mapper/field type, and we never load incoming documents in a map where duplicate
  * keys would end up overriding each other.
  */
+@PerformanceSensitive("used for parsing documents during indexing")
 class DotExpandingXContentParser extends FilterXContentParserWrapper {
 
     private static final class WrappingParser extends FilterXContentParser {

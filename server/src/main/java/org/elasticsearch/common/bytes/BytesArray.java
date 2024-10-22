@@ -13,12 +13,14 @@ import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.BytesRefIterator;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.util.ByteUtils;
+import org.elasticsearch.core.PerformanceSensitive;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.Objects;
 
+@PerformanceSensitive("commonly used buffer abstraction, essentially every method is relevant to overall system performance")
 public final class BytesArray extends AbstractBytesReference {
 
     public static final BytesArray EMPTY = new BytesArray(BytesRef.EMPTY_BYTES, 0, 0);

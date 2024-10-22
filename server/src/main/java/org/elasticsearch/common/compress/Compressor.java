@@ -12,6 +12,7 @@ package org.elasticsearch.common.compress;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.InputStreamStreamInput;
 import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.core.PerformanceSensitive;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -29,8 +30,8 @@ public interface Compressor {
         // wrap stream in buffer since InputStreamStreamInput doesn't do any buffering itself but does a lot of small reads
         return new InputStreamStreamInput(new BufferedInputStream(threadLocalInputStream(in), DeflateCompressor.BUFFER_SIZE) {
             @Override
+            @PerformanceSensitive("override read to avoid synchronized single byte reads now that JEP374 removed biased locking")
             public int read() throws IOException {
-                // override read to avoid synchronized single byte reads now that JEP374 removed biased locking
                 if (pos >= count) {
                     return super.read();
                 }

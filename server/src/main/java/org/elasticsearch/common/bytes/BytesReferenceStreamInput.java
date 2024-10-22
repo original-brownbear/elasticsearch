@@ -13,6 +13,7 @@ import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.BytesRefIterator;
 import org.elasticsearch.common.io.stream.ByteBufferStreamInput;
 import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.core.PerformanceSensitive;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -24,6 +25,7 @@ import java.util.Objects;
  * generic stream access to {@link BytesReference} instances without materializing the
  * underlying bytes.
  */
+@PerformanceSensitive("used for deserializing transport messages")
 class BytesReferenceStreamInput extends StreamInput {
 
     private static final ByteBuffer EMPTY = ByteBuffer.wrap(new byte[0]);

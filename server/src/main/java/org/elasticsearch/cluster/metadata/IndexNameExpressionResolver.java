@@ -27,6 +27,7 @@ import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.core.Nullable;
+import org.elasticsearch.core.PerformanceSensitive;
 import org.elasticsearch.core.Predicates;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexNotFoundException;
@@ -60,6 +61,11 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+@PerformanceSensitive("""
+    Used on transport threads and in the hot path of searches, any overhead introduced here can slow down and/or destabilize a
+    node in unexpected ways.
+    Be particularly careful with allocations and introducing loops over collections and be mindful that the collections of
+    names used as inputs to various methods may be very long.""")
 public class IndexNameExpressionResolver {
     private static final DeprecationLogger deprecationLogger = DeprecationLogger.getLogger(IndexNameExpressionResolver.class);
 
