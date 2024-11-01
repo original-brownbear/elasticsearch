@@ -8,6 +8,8 @@
  */
 package org.elasticsearch.indexing;
 
+import com.carrotsearch.randomizedtesting.annotations.Repeat;
+
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequestBuilder;
@@ -38,11 +40,11 @@ public class IndexActionIT extends ESIntegTestCase {
      * This test tries to simulate load while creating an index and indexing documents
      * while the index is being created.
      */
-
+    @Repeat(iterations = 100)
     public void testAutoGenerateIdNoDuplicates() throws Exception {
         int numberOfIterations = scaledRandomIntBetween(10, 50);
+        Throwable firstError = null;
         for (int i = 0; i < numberOfIterations; i++) {
-            Exception firstError = null;
             createIndex("test");
             int numOfDocs = randomIntBetween(10, 100);
             logger.info("indexing [{}] docs", numOfDocs);
@@ -68,7 +70,7 @@ public class IndexActionIT extends ESIntegTestCase {
                             fail(message);
                         }
                     });
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     logger.error("search for all docs types failed", e);
                     if (firstError == null) {
                         firstError = e;
@@ -88,7 +90,7 @@ public class IndexActionIT extends ESIntegTestCase {
                             fail(message);
                         }
                     });
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     logger.error("search for all docs of a specific type failed", e);
                     if (firstError == null) {
                         firstError = e;
