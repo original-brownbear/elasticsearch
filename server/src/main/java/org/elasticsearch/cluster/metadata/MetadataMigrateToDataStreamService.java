@@ -203,7 +203,7 @@ public class MetadataMigrateToDataStreamService {
         String dataStreamName,
         Function<IndexMetadata, MapperService> mapperSupplier,
         boolean removeAlias
-    ) throws IOException {
+    ) {
         prepareBackingIndex(b, im, dataStreamName, mapperSupplier, removeAlias, false, Settings.EMPTY);
     }
 
@@ -228,7 +228,7 @@ public class MetadataMigrateToDataStreamService {
         boolean removeAlias,
         boolean failureStore,
         Settings nodeSettings
-    ) throws IOException {
+    ) {
         MappingMetadata mm = im.mapping();
         if (mm == null || mm.equals(MappingMetadata.EMPTY_MAPPINGS)) {
             throw new IllegalArgumentException("backing index [" + im.getIndex().getName() + "] must have mappings for a timestamp field");

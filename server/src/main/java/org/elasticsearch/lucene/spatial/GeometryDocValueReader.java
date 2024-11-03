@@ -52,7 +52,7 @@ public class GeometryDocValueReader {
     /**
      * reset the geometry.
      */
-    public void reset(BytesRef bytesRef) throws IOException {
+    public void reset(BytesRef bytesRef) {
         this.bytesRef = bytesRef; // Needed only for supporting Writable, maintaining original offset, not adjusted on from input
         this.input.reset(bytesRef.bytes, bytesRef.offset, bytesRef.length);
         docValueOffset = bytesRef.offset;

@@ -72,7 +72,7 @@ public enum IndexMode {
         public void validateAlias(@Nullable String indexRouting, @Nullable String searchRouting) {}
 
         @Override
-        public void validateTimestampFieldMapping(boolean isDataStream, MappingLookup mappingLookup) throws IOException {
+        public void validateTimestampFieldMapping(boolean isDataStream, MappingLookup mappingLookup) {
             if (isDataStream) {
                 MetadataCreateDataStreamService.validateTimestampFieldMapping(mappingLookup);
             }
@@ -170,7 +170,7 @@ public enum IndexMode {
         }
 
         @Override
-        public void validateTimestampFieldMapping(boolean isDataStream, MappingLookup mappingLookup) throws IOException {
+        public void validateTimestampFieldMapping(boolean isDataStream, MappingLookup mappingLookup) {
             MetadataCreateDataStreamService.validateTimestampFieldMapping(mappingLookup);
         }
 
@@ -246,7 +246,7 @@ public enum IndexMode {
         }
 
         @Override
-        public void validateTimestampFieldMapping(boolean isDataStream, MappingLookup mappingLookup) throws IOException {
+        public void validateTimestampFieldMapping(boolean isDataStream, MappingLookup mappingLookup) {
             if (isDataStream) {
                 MetadataCreateDataStreamService.validateTimestampFieldMapping(mappingLookup);
             }

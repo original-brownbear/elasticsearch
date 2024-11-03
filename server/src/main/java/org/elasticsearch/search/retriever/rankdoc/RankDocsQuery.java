@@ -105,7 +105,7 @@ public class RankDocsQuery extends Query {
                 }
 
                 @Override
-                public ScorerSupplier scorerSupplier(LeafReaderContext context) throws IOException {
+                public ScorerSupplier scorerSupplier(LeafReaderContext context) {
                     /**
                      * We return a scorer even if there are no ranked documents within the segment.
                      * This ensures the correct propagation of the maximum score.

@@ -17,7 +17,6 @@ import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
 import org.elasticsearch.common.util.concurrent.KeyedLock;
 import org.elasticsearch.core.Releasable;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
@@ -277,7 +276,7 @@ public final class LiveVersionMap implements ReferenceManager.RefreshListener, A
     private final AtomicLong ramBytesUsedForTombstones = new AtomicLong();
 
     @Override
-    public void beforeRefresh() throws IOException {
+    public void beforeRefresh() {
         // Start sending all updates after this point to the new
         // map. While reopen is running, any lookup will first
         // try this new map, then fallback to old, then to the
@@ -289,7 +288,7 @@ public final class LiveVersionMap implements ReferenceManager.RefreshListener, A
     }
 
     @Override
-    public void afterRefresh(boolean didRefresh) throws IOException {
+    public void afterRefresh(boolean didRefresh) {
         // We can now drop old because these operations are now visible via the newly opened searcher. Even if didRefresh is false, which
         // means Lucene did not actually open a new reader because it detected no changes, it's possible old has some entries in it, which
         // is fine: it means they were actually already included in the previously opened reader, so we can still safely drop them in that

@@ -116,7 +116,7 @@ public abstract class ValuesSource {
         }
 
         @Override
-        public final Function<Rounding, Rounding.Prepared> roundingPreparer(AggregationContext context) throws IOException {
+        public final Function<Rounding, Rounding.Prepared> roundingPreparer(AggregationContext context) {
             throw AggregationErrors.unsupportedRounding("BYTES");
         }
 
@@ -143,12 +143,12 @@ public abstract class ValuesSource {
                 }
 
                 @Override
-                public SortedBinaryDocValues bytesValues(LeafReaderContext context) throws IOException {
+                public SortedBinaryDocValues bytesValues(LeafReaderContext context) {
                     return org.elasticsearch.index.fielddata.FieldData.emptySortedBinary();
                 }
 
                 @Override
-                public LongUnaryOperator globalOrdinalsMapping(LeafReaderContext context) throws IOException {
+                public LongUnaryOperator globalOrdinalsMapping(LeafReaderContext context) {
                     return LongUnaryOperator.identity();
                 }
 
@@ -292,7 +292,7 @@ public abstract class ValuesSource {
                 }
 
                 @Override
-                public LongUnaryOperator globalOrdinalsMapping(LeafReaderContext context) throws IOException {
+                public LongUnaryOperator globalOrdinalsMapping(LeafReaderContext context) {
                     final IndexOrdinalsFieldData global = indexFieldData.loadGlobal((DirectoryReader) context.parent.reader());
                     final OrdinalMap map = global.getOrdinalMap();
                     if (map == null) {
@@ -429,12 +429,12 @@ public abstract class ValuesSource {
             }
 
             @Override
-            public SortedNumericDoubleValues doubleValues(LeafReaderContext context) throws IOException {
+            public SortedNumericDoubleValues doubleValues(LeafReaderContext context) {
                 return org.elasticsearch.index.fielddata.FieldData.emptySortedNumericDoubles();
             }
 
             @Override
-            public SortedBinaryDocValues bytesValues(LeafReaderContext context) throws IOException {
+            public SortedBinaryDocValues bytesValues(LeafReaderContext context) {
                 return org.elasticsearch.index.fielddata.FieldData.emptySortedBinary();
             }
 
@@ -680,13 +680,13 @@ public abstract class ValuesSource {
         }
 
         @Override
-        public DocValueBits docsWithValue(LeafReaderContext context) throws IOException {
+        public DocValueBits docsWithValue(LeafReaderContext context) {
             final SortedBinaryDocValues bytes = bytesValues(context);
             return org.elasticsearch.index.fielddata.FieldData.docsWithValue(bytes);
         }
 
         @Override
-        public Function<Rounding, Prepared> roundingPreparer(AggregationContext context) throws IOException {
+        public Function<Rounding, Prepared> roundingPreparer(AggregationContext context) {
             // TODO lookup the min and max rounding when appropriate
             return Rounding::prepareForUnknown;
         }
@@ -710,20 +710,20 @@ public abstract class ValuesSource {
             }
 
             @Override
-            public SortedBinaryDocValues bytesValues(LeafReaderContext context) throws IOException {
+            public SortedBinaryDocValues bytesValues(LeafReaderContext context) {
                 return org.elasticsearch.index.fielddata.FieldData.emptySortedBinary();
             }
 
         };
 
         @Override
-        public DocValueBits docsWithValue(LeafReaderContext context) throws IOException {
+        public DocValueBits docsWithValue(LeafReaderContext context) {
             final MultiGeoPointValues geoPoints = geoPointValues(context);
             return org.elasticsearch.index.fielddata.FieldData.docsWithValue(geoPoints);
         }
 
         @Override
-        public final Function<Rounding, Rounding.Prepared> roundingPreparer(AggregationContext context) throws IOException {
+        public final Function<Rounding, Rounding.Prepared> roundingPreparer(AggregationContext context) {
             throw AggregationErrors.unsupportedRounding("GEO_POINT");
         }
 

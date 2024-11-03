@@ -262,7 +262,7 @@ final class ShardSplittingQuery extends Query {
         }
 
         @Override
-        public void binaryField(FieldInfo fieldInfo, byte[] value) throws IOException {
+        public void binaryField(FieldInfo fieldInfo, byte[] value) {
             switch (fieldInfo.name) {
                 case IdFieldMapper.NAME -> id = Uid.decodeId(value);
                 default -> throw new IllegalStateException("Unexpected field: " + fieldInfo.name);
@@ -270,7 +270,7 @@ final class ShardSplittingQuery extends Query {
         }
 
         @Override
-        public void stringField(FieldInfo fieldInfo, String value) throws IOException {
+        public void stringField(FieldInfo fieldInfo, String value) {
             switch (fieldInfo.name) {
                 case RoutingFieldMapper.NAME -> routing = value;
                 default -> throw new IllegalStateException("Unexpected field: " + fieldInfo.name);
@@ -278,7 +278,7 @@ final class ShardSplittingQuery extends Query {
         }
 
         @Override
-        public Status needsField(FieldInfo fieldInfo) throws IOException {
+        public Status needsField(FieldInfo fieldInfo) {
             // we don't support 5.x so no need for the uid field
             switch (fieldInfo.name) {
                 case IdFieldMapper.NAME:

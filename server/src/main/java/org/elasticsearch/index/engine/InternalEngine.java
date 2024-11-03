@@ -345,7 +345,7 @@ public class InternalEngine extends Engine {
 
     private LocalCheckpointTracker createLocalCheckpointTracker(
         BiFunction<Long, Long, LocalCheckpointTracker> localCheckpointTrackerSupplier
-    ) throws IOException {
+    ) {
         final long maxSeqNo;
         final long localCheckpoint;
         final SequenceNumbers.CommitInfo seqNoStats = SequenceNumbers.loadSeqNoInfoFromLuceneCommit(
@@ -367,7 +367,7 @@ public class InternalEngine extends Engine {
         };
     }
 
-    private SoftDeletesPolicy newSoftDeletesPolicy() throws IOException {
+    private SoftDeletesPolicy newSoftDeletesPolicy() {
         final Map<String, String> commitUserData = lastCommittedSegmentInfos.userData;
         final long lastMinRetainedSeqNo;
         if (commitUserData.containsKey(Engine.MIN_RETAINED_SEQNO)) {
@@ -2894,7 +2894,7 @@ public class InternalEngine extends Engine {
             }
 
             @Override
-            protected void doRun() throws Exception {
+            protected void doRun() {
                 /*
                  * We do this on another thread rather than the merge thread that we are initially called on so that we have complete
                  * confidence that the call stack does not contain catch statements that would cause the error that might be thrown

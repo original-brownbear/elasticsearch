@@ -111,11 +111,7 @@ public class SimpleQueryStringQueryParser extends SimpleQueryParser {
 
     @Override
     public Query newDefaultQuery(String text) {
-        try {
-            return queryBuilder.parse(type, weights, text, null);
-        } catch (IOException e) {
-            return rethrowUnlessLenient(new IllegalStateException(e.getMessage()));
-        }
+        return queryBuilder.parse(type, weights, text, null);
     }
 
     public void setType(MultiMatchQueryBuilder.Type type) {
@@ -164,8 +160,6 @@ public class SimpleQueryStringQueryParser extends SimpleQueryParser {
                 phraseWeights = weights;
             }
             return queryBuilder.parse(MultiMatchQueryBuilder.Type.PHRASE, phraseWeights, text, null);
-        } catch (IOException e) {
-            return rethrowUnlessLenient(new IllegalStateException(e.getMessage()));
         } finally {
             queryBuilder.setPhraseSlop(0);
         }

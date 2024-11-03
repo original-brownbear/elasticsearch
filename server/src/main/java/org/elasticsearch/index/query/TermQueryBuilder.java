@@ -211,7 +211,7 @@ public class TermQueryBuilder extends BaseTermQueryBuilder<TermQueryBuilder> {
     }
 
     @Override
-    protected Query doToQuery(SearchExecutionContext context) throws IOException {
+    protected Query doToQuery(SearchExecutionContext context) {
         MappedFieldType mapper = context.getFieldType(this.fieldName);
         if (mapper == null) {
             throw new IllegalStateException("Rewrite first");

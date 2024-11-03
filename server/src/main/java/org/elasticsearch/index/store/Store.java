@@ -1322,7 +1322,7 @@ public class Store extends AbstractIndexShardComponent implements Closeable, Ref
         }
 
         @Override
-        public IndexInput slice(String sliceDescription, long offset, long length) throws IOException {
+        public IndexInput slice(String sliceDescription, long offset, long length) {
             throw new UnsupportedOperationException();
         }
 

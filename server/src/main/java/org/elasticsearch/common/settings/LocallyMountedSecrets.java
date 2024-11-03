@@ -32,7 +32,6 @@ import java.nio.CharBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Map;
@@ -204,13 +203,13 @@ public final class LocallyMountedSecrets implements SecureSettings {
     }
 
     @Override
-    public InputStream getFile(String setting) throws GeneralSecurityException {
+    public InputStream getFile(String setting) {
         assert isLoaded();
         return new ByteArrayInputStream(secrets.get().entries().get(setting));
     }
 
     @Override
-    public byte[] getSHA256Digest(String setting) throws GeneralSecurityException {
+    public byte[] getSHA256Digest(String setting) {
         assert isLoaded();
         return MessageDigests.sha256().digest(secrets.get().entries().get(setting));
     }
@@ -223,7 +222,7 @@ public final class LocallyMountedSecrets implements SecureSettings {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         if (null != secrets.get() && secrets.get().entries().isEmpty() == false) {
             for (var entry : secrets.get().entries().entrySet()) {
                 entry.setValue(null);

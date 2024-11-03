@@ -73,7 +73,7 @@ public abstract class StringStoredFieldFieldLoader implements SourceLoader.Synth
     protected abstract void write(XContentBuilder b, Object value) throws IOException;
 
     @Override
-    public final DocValuesLoader docValuesLoader(LeafReader reader, int[] docIdsInLeaf) throws IOException {
+    public final DocValuesLoader docValuesLoader(LeafReader reader, int[] docIdsInLeaf) {
         return null;
     }
 

@@ -80,7 +80,7 @@ public final class StandardRetrieverBuilder extends RetrieverBuilder implements 
         RetrieverBuilder.declareBaseParserFields(NAME, PARSER);
     }
 
-    public static StandardRetrieverBuilder fromXContent(XContentParser parser, RetrieverParserContext context) throws IOException {
+    public static StandardRetrieverBuilder fromXContent(XContentParser parser, RetrieverParserContext context) {
         if (context.clusterSupportsFeature(STANDARD_RETRIEVER_SUPPORTED) == false) {
             throw new ParsingException(parser.getTokenLocation(), "unknown retriever [" + NAME + "]");
         }

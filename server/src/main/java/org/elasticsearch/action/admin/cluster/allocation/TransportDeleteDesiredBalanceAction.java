@@ -96,7 +96,7 @@ public class TransportDeleteDesiredBalanceAction extends TransportMasterNodeActi
         }
 
         @Override
-        public ClusterState execute(BatchExecutionContext<ResetDesiredBalanceTask> batchExecutionContext) throws InterruptedException {
+        public ClusterState execute(BatchExecutionContext<ResetDesiredBalanceTask> batchExecutionContext) {
             var listener = new AllocationActionMultiListener<Void>(threadPool.getThreadContext());
             var state = batchExecutionContext.initialState();
             desiredBalanceShardsAllocator.resetDesiredBalance();

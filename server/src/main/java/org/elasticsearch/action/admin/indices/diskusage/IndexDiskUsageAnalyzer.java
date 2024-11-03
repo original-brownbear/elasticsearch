@@ -179,37 +179,37 @@ final class IndexDiskUsageAnalyzer {
         }
 
         @Override
-        public void binaryField(FieldInfo fieldInfo, byte[] value) throws IOException {
+        public void binaryField(FieldInfo fieldInfo, byte[] value) {
             trackField(fieldInfo, Integer.BYTES + value.length);
         }
 
         @Override
-        public void stringField(FieldInfo fieldInfo, String value) throws IOException {
+        public void stringField(FieldInfo fieldInfo, String value) {
             trackField(fieldInfo, Integer.BYTES + value.getBytes(StandardCharsets.UTF_8).length);
         }
 
         @Override
-        public void intField(FieldInfo fieldInfo, int value) throws IOException {
+        public void intField(FieldInfo fieldInfo, int value) {
             trackField(fieldInfo, Integer.BYTES);
         }
 
         @Override
-        public void longField(FieldInfo fieldInfo, long value) throws IOException {
+        public void longField(FieldInfo fieldInfo, long value) {
             trackField(fieldInfo, Long.BYTES);
         }
 
         @Override
-        public void floatField(FieldInfo fieldInfo, float value) throws IOException {
+        public void floatField(FieldInfo fieldInfo, float value) {
             trackField(fieldInfo, Float.BYTES);
         }
 
         @Override
-        public void doubleField(FieldInfo fieldInfo, double value) throws IOException {
+        public void doubleField(FieldInfo fieldInfo, double value) {
             trackField(fieldInfo, Double.BYTES);
         }
 
         @Override
-        public Status needsField(FieldInfo fieldInfo) throws IOException {
+        public Status needsField(FieldInfo fieldInfo) {
             return Status.YES;
         }
     }
@@ -424,12 +424,12 @@ final class IndexDiskUsageAnalyzer {
     private class PointsVisitor implements PointValues.IntersectVisitor {
 
         @Override
-        public void visit(int docID) throws IOException {
+        public void visit(int docID) {
             cancellationChecker.logEvent();
         }
 
         @Override
-        public void visit(int docID, byte[] packedValue) throws IOException {
+        public void visit(int docID, byte[] packedValue) {
             cancellationChecker.logEvent();
         }
 

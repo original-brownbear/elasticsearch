@@ -316,7 +316,7 @@ public class GeoPointFieldMapper extends AbstractPointGeometryFieldMapper<GeoPoi
         }
 
         @Override
-        public String textOrNull() throws IOException {
+        public String textOrNull() {
             return value;
         }
 
@@ -326,7 +326,7 @@ public class GeoPointFieldMapper extends AbstractPointGeometryFieldMapper<GeoPoi
         }
 
         @Override
-        public Token nextToken() throws IOException {
+        public Token nextToken() {
             throw new UnsupportedOperationException();
         }
     }

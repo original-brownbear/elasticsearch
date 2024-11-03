@@ -22,7 +22,6 @@ import org.elasticsearch.index.query.functionscore.ScriptScoreQueryBuilder;
 import org.elasticsearch.indices.TermsLookup;
 import org.elasticsearch.script.Script;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 
@@ -634,7 +633,7 @@ public final class QueryBuilders {
      * @param name  The shape field name
      * @param shape Shape to use in the filter
      */
-    public static GeoShapeQueryBuilder geoShapeQuery(String name, Geometry shape) throws IOException {
+    public static GeoShapeQueryBuilder geoShapeQuery(String name, Geometry shape) {
         return new GeoShapeQueryBuilder(name, shape);
     }
 
@@ -648,7 +647,7 @@ public final class QueryBuilders {
      * @param name  The shape field name
      * @param shape Shape to use in the filter
      */
-    public static GeoShapeQueryBuilder geoIntersectionQuery(String name, Geometry shape) throws IOException {
+    public static GeoShapeQueryBuilder geoIntersectionQuery(String name, Geometry shape) {
         GeoShapeQueryBuilder builder = geoShapeQuery(name, shape);
         builder.relation(ShapeRelation.INTERSECTS);
         return builder;
@@ -660,33 +659,9 @@ public final class QueryBuilders {
         return builder;
     }
 
-    /**
-     * A filter to filter indexed shapes that are contained by a shape
-     *
-     * @param name  The shape field name
-     * @param shape Shape to use in the filter
-     */
-    public static GeoShapeQueryBuilder geoWithinQuery(String name, Geometry shape) throws IOException {
-        GeoShapeQueryBuilder builder = geoShapeQuery(name, shape);
-        builder.relation(ShapeRelation.WITHIN);
-        return builder;
-    }
-
     public static GeoShapeQueryBuilder geoWithinQuery(String name, String indexedShapeId) {
         GeoShapeQueryBuilder builder = geoShapeQuery(name, indexedShapeId);
         builder.relation(ShapeRelation.WITHIN);
-        return builder;
-    }
-
-    /**
-     * A filter to filter indexed shapes that are not intersection with the query shape
-     *
-     * @param name  The shape field name
-     * @param shape Shape to use in the filter
-     */
-    public static GeoShapeQueryBuilder geoDisjointQuery(String name, Geometry shape) throws IOException {
-        GeoShapeQueryBuilder builder = geoShapeQuery(name, shape);
-        builder.relation(ShapeRelation.DISJOINT);
         return builder;
     }
 

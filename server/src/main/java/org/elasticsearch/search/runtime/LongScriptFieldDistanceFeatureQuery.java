@@ -49,7 +49,7 @@ public final class LongScriptFieldDistanceFeatureQuery extends AbstractScriptFie
     }
 
     @Override
-    public Weight createWeight(IndexSearcher searcher, ScoreMode scoreMode, float boost) throws IOException {
+    public Weight createWeight(IndexSearcher searcher, ScoreMode scoreMode, float boost) {
         return new Weight(this) {
             @Override
             public boolean isCacheable(LeafReaderContext ctx) {

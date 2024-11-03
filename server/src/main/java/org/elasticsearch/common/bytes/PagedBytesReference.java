@@ -14,7 +14,6 @@ import org.apache.lucene.util.BytesRefIterator;
 import org.elasticsearch.common.util.ByteArray;
 import org.elasticsearch.common.util.PageCacheRecycler;
 
-import java.io.IOException;
 import java.util.Objects;
 
 /**
@@ -72,7 +71,7 @@ public class PagedBytesReference extends AbstractBytesReference {
             final BytesRef slice = new BytesRef();
 
             @Override
-            public BytesRef next() throws IOException {
+            public BytesRef next() {
                 if (nextFragmentSize != 0) {
                     final boolean materialized = byteArray.get(offset + position, nextFragmentSize, slice);
                     assert materialized == false : "iteration should be page aligned but array got materialized";

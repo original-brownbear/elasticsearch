@@ -58,7 +58,7 @@ public final class RandomSamplingQuery extends Query {
     }
 
     @Override
-    public Weight createWeight(IndexSearcher searcher, ScoreMode scoreMode, float boost) throws IOException {
+    public Weight createWeight(IndexSearcher searcher, ScoreMode scoreMode, float boost) {
         return new Weight(this) {
             @Override
             public boolean isCacheable(LeafReaderContext ctx) {
@@ -77,7 +77,7 @@ public final class RandomSamplingQuery extends Query {
             }
 
             @Override
-            public ScorerSupplier scorerSupplier(LeafReaderContext context) throws IOException {
+            public ScorerSupplier scorerSupplier(LeafReaderContext context) {
                 final SplittableRandom random = new SplittableRandom(BitMixer.mix(hash ^ seed));
                 int maxDoc = context.reader().maxDoc();
                 Scorer scorer = new ConstantScoreScorer(

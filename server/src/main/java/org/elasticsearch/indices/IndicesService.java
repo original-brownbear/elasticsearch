@@ -426,7 +426,7 @@ public class IndicesService extends AbstractLifecycleComponent
     }
 
     @Override
-    protected void doClose() throws IOException {
+    protected void doClose() {
         indicesRefCount.decRef();
     }
 

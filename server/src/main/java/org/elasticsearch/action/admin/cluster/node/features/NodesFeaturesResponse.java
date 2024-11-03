@@ -16,7 +16,6 @@ import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 
-import java.io.IOException;
 import java.util.List;
 
 public class NodesFeaturesResponse extends BaseNodesResponse<NodeFeatures> {
@@ -25,12 +24,12 @@ public class NodesFeaturesResponse extends BaseNodesResponse<NodeFeatures> {
     }
 
     @Override
-    protected List<NodeFeatures> readNodesFrom(StreamInput in) throws IOException {
+    protected List<NodeFeatures> readNodesFrom(StreamInput in) {
         return TransportAction.localOnly();
     }
 
     @Override
-    protected void writeNodesTo(StreamOutput out, List<NodeFeatures> nodes) throws IOException {
+    protected void writeNodesTo(StreamOutput out, List<NodeFeatures> nodes) {
         TransportAction.localOnly();
     }
 }

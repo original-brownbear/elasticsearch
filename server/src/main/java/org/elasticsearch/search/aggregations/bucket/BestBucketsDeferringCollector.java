@@ -137,7 +137,7 @@ public class BestBucketsDeferringCollector extends DeferringBucketCollector {
     }
 
     @Override
-    public void postCollection() throws IOException {
+    public void postCollection() {
         finishLeaf();
         finished = true;
     }

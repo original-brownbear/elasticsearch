@@ -483,52 +483,52 @@ public final class FlattenedFieldMapper extends FieldMapper {
         }
 
         @Override
-        public IOBooleanSupplier prepareSeekExact(BytesRef bytesRef) throws IOException {
+        public IOBooleanSupplier prepareSeekExact(BytesRef bytesRef) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public boolean seekExact(BytesRef text) throws IOException {
+        public boolean seekExact(BytesRef text) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public SeekStatus seekCeil(BytesRef text) throws IOException {
+        public SeekStatus seekCeil(BytesRef text) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public void seekExact(long ord) throws IOException {
+        public void seekExact(long ord) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public void seekExact(BytesRef term, TermState state) throws IOException {
+        public void seekExact(BytesRef term, TermState state) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public long ord() throws IOException {
+        public long ord() {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public long totalTermFreq() throws IOException {
+        public long totalTermFreq() {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public PostingsEnum postings(PostingsEnum reuse, int flags) throws IOException {
+        public PostingsEnum postings(PostingsEnum reuse, int flags) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public ImpactsEnum impacts(int flags) throws IOException {
+        public ImpactsEnum impacts(int flags) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public TermState termState() throws IOException {
+        public TermState termState() {
             throw new UnsupportedOperationException();
         }
 

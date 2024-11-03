@@ -1420,7 +1420,7 @@ public class PersistedClusterStateService {
         }
 
         @Override
-        public void flush() throws IOException {
+        public void flush() {
             assert closed == false : "must not flush after close";
             // keep buffering, don't actually flush anything
         }

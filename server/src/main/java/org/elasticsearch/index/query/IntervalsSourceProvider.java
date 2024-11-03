@@ -540,7 +540,7 @@ public abstract class IntervalsSourceProvider implements NamedWriteable, ToXCont
         }
 
         @Override
-        public IntervalsSource getSource(SearchExecutionContext context, MappedFieldType fieldType) throws IOException {
+        public IntervalsSource getSource(SearchExecutionContext context, MappedFieldType fieldType) {
             NamedAnalyzer analyzer = null;
             if (this.analyzer != null) {
                 analyzer = context.getIndexAnalyzers().get(this.analyzer);

@@ -38,7 +38,7 @@ public class WeightBuilder extends ScoreFunctionBuilder<WeightBuilder> {
     }
 
     @Override
-    protected void doWriteTo(StreamOutput out) throws IOException {}
+    protected void doWriteTo(StreamOutput out) {}
 
     @Override
     public String getName() {
@@ -46,7 +46,7 @@ public class WeightBuilder extends ScoreFunctionBuilder<WeightBuilder> {
     }
 
     @Override
-    protected void doXContent(XContentBuilder builder, Params params) throws IOException {}
+    protected void doXContent(XContentBuilder builder, Params params) {}
 
     @Override
     protected boolean doEquals(WeightBuilder functionBuilder) {
@@ -64,7 +64,7 @@ public class WeightBuilder extends ScoreFunctionBuilder<WeightBuilder> {
     }
 
     @Override
-    protected ScoreFunction doToFunction(SearchExecutionContext context) throws IOException {
+    protected ScoreFunction doToFunction(SearchExecutionContext context) {
         // nothing to do here, weight will be applied by the parent class, no score function
         return null;
     }

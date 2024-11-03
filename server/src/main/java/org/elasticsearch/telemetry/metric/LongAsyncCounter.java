@@ -19,9 +19,7 @@ public interface LongAsyncCounter extends Instrument, AutoCloseable {
      */
     LongAsyncCounter NOOP = new LongAsyncCounter() {
         @Override
-        public void close() throws Exception {
-
-        }
+        public void close() {}
 
         @Override
         public String getName() {

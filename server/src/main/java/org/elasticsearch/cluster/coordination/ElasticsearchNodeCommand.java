@@ -227,7 +227,7 @@ public abstract class ElasticsearchNodeCommand extends EnvironmentAwareCommand {
         }
 
         @Override
-        public void writeTo(StreamOutput out) throws IOException {
+        public void writeTo(StreamOutput out) {
             assert false;
             throw new UnsupportedOperationException();
         }
@@ -251,7 +251,7 @@ public abstract class ElasticsearchNodeCommand extends EnvironmentAwareCommand {
         }
 
         @Override
-        public void writeTo(StreamOutput out) throws IOException {
+        public void writeTo(StreamOutput out) {
             assert false;
             throw new UnsupportedOperationException();
         }

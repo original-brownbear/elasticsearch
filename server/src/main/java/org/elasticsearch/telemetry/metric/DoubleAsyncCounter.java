@@ -19,9 +19,7 @@ public interface DoubleAsyncCounter extends Instrument, AutoCloseable {
      */
     DoubleAsyncCounter NOOP = new DoubleAsyncCounter() {
         @Override
-        public void close() throws Exception {
-
-        }
+        public void close() {}
 
         @Override
         public String getName() {

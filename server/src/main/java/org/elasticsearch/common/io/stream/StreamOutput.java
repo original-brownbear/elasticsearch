@@ -81,7 +81,7 @@ public abstract class StreamOutput extends OutputStream {
         this.version = version;
     }
 
-    public long position() throws IOException {
+    public long position() {
         throw new UnsupportedOperationException();
     }
 

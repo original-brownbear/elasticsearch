@@ -258,7 +258,7 @@ public class ScriptScoreQuery extends Query {
         }
 
         @Override
-        public float score() throws IOException {
+        public float score() {
             int docId = docID();
             scoreScript.setDocument(docId);
             float score = (float) scoreScript.execute(explanation);
@@ -320,7 +320,7 @@ public class ScriptScoreQuery extends Query {
         }
 
         @Override
-        public float score() throws IOException {
+        public float score() {
             int docId = docIDSupplier.getAsInt();
             scoreScript.setDocument(docId);
             float score = (float) scoreScript.execute(null);

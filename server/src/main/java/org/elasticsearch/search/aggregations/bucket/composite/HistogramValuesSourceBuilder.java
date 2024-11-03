@@ -165,7 +165,7 @@ public class HistogramValuesSourceBuilder extends CompositeValuesSourceBuilder<H
     }
 
     @Override
-    protected CompositeValuesSourceConfig innerBuild(ValuesSourceRegistry registry, ValuesSourceConfig config) throws IOException {
+    protected CompositeValuesSourceConfig innerBuild(ValuesSourceRegistry registry, ValuesSourceConfig config) {
         return registry.getAggregator(REGISTRY_KEY, config)
             .apply(config, interval, name, script() != null, format(), missingBucket(), missingOrder(), order());
     }

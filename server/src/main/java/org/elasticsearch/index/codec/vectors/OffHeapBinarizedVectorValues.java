@@ -266,7 +266,7 @@ public abstract class OffHeapBinarizedVectorValues extends BinarizedByteVectorVa
         }
 
         @Override
-        public DenseOffHeapVectorValues copy() throws IOException {
+        public DenseOffHeapVectorValues copy() {
             return new DenseOffHeapVectorValues(
                 dimension,
                 size,
@@ -421,7 +421,7 @@ public abstract class OffHeapBinarizedVectorValues extends BinarizedByteVectorVa
         }
 
         @Override
-        public VectorScorer scorer(float[] target) throws IOException {
+        public VectorScorer scorer(float[] target) {
             return null;
         }
     }

@@ -92,7 +92,7 @@ public final class KnnRetrieverBuilder extends RetrieverBuilder {
         RetrieverBuilder.declareBaseParserFields(NAME, PARSER);
     }
 
-    public static KnnRetrieverBuilder fromXContent(XContentParser parser, RetrieverParserContext context) throws IOException {
+    public static KnnRetrieverBuilder fromXContent(XContentParser parser, RetrieverParserContext context) {
         if (context.clusterSupportsFeature(KNN_RETRIEVER_SUPPORTED) == false) {
             throw new ParsingException(parser.getTokenLocation(), "unknown retriever [" + NAME + "]");
         }

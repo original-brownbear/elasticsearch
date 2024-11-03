@@ -410,7 +410,7 @@ class DotExpandingXContentParser extends FilterXContentParserWrapper {
         }
 
         @Override
-        public Token nextToken() throws IOException {
+        public Token nextToken() {
             return null;
         }
     }

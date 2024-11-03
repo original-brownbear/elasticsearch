@@ -33,7 +33,7 @@ public class PositionTrackingOutputStreamStreamOutput extends OutputStreamStream
     }
 
     @Override
-    public long position() throws IOException {
+    public long position() {
         return position;
     }
 }

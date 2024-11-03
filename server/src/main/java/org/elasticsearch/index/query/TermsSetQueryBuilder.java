@@ -336,12 +336,12 @@ public final class TermsSetQueryBuilder extends AbstractQueryBuilder<TermsSetQue
             TermsSetQueryScript script = leafFactory.newInstance(ctx);
             return new LongValues() {
                 @Override
-                public long longValue() throws IOException {
+                public long longValue() {
                     return script.runAsLong();
                 }
 
                 @Override
-                public boolean advanceExact(int doc) throws IOException {
+                public boolean advanceExact(int doc) {
                     script.setDocument(doc);
                     return script.execute() != null;
                 }
@@ -383,7 +383,7 @@ public final class TermsSetQueryBuilder extends AbstractQueryBuilder<TermsSetQue
         }
 
         @Override
-        public LongValuesSource rewrite(IndexSearcher searcher) throws IOException {
+        public LongValuesSource rewrite(IndexSearcher searcher) {
             return this;
         }
 
@@ -437,14 +437,14 @@ public final class TermsSetQueryBuilder extends AbstractQueryBuilder<TermsSetQue
         }
 
         @Override
-        public LongValues getValues(LeafReaderContext ctx, DoubleValues scores) throws IOException {
+        public LongValues getValues(LeafReaderContext ctx, DoubleValues scores) {
             SortedNumericDocValues values = fieldData.load(ctx).getLongValues();
             return new LongValues() {
 
                 long current = -1;
 
                 @Override
-                public long longValue() throws IOException {
+                public long longValue() {
                     return current;
                 }
 
@@ -473,7 +473,7 @@ public final class TermsSetQueryBuilder extends AbstractQueryBuilder<TermsSetQue
         }
 
         @Override
-        public LongValuesSource rewrite(IndexSearcher searcher) throws IOException {
+        public LongValuesSource rewrite(IndexSearcher searcher) {
             return this;
         }
     }

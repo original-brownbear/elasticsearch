@@ -289,7 +289,7 @@ public final class CombinedFieldsQueryBuilder extends AbstractQueryBuilder<Combi
     }
 
     @Override
-    protected Query doToQuery(SearchExecutionContext context) throws IOException {
+    protected Query doToQuery(SearchExecutionContext context) {
         if (fieldsAndBoosts.isEmpty()) {
             throw new IllegalArgumentException("In [" + NAME + "] query, at least one field must be provided");
         }

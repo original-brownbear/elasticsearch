@@ -61,12 +61,12 @@ public class NodesHotThreadsResponse extends BaseNodesResponse<NodeHotThreads> {
     }
 
     @Override
-    protected List<NodeHotThreads> readNodesFrom(StreamInput in) throws IOException {
+    protected List<NodeHotThreads> readNodesFrom(StreamInput in) {
         return TransportAction.localOnly();
     }
 
     @Override
-    protected void writeNodesTo(StreamOutput out, List<NodeHotThreads> nodes) throws IOException {
+    protected void writeNodesTo(StreamOutput out, List<NodeHotThreads> nodes) {
         TransportAction.localOnly();
     }
 

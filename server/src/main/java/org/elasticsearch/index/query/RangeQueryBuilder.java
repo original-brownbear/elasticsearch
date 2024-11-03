@@ -527,7 +527,7 @@ public class RangeQueryBuilder extends AbstractQueryBuilder<RangeQueryBuilder> i
     }
 
     @Override
-    protected Query doToQuery(SearchExecutionContext context) throws IOException {
+    protected Query doToQuery(SearchExecutionContext context) {
         if (from == null && to == null) {
             /*
              * Open bounds on both side, we can rewrite to an exists query

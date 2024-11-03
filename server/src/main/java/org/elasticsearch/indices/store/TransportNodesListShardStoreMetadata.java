@@ -299,12 +299,12 @@ public class TransportNodesListShardStoreMetadata extends TransportNodesAction<
         }
 
         @Override
-        protected List<NodeStoreFilesMetadata> readNodesFrom(StreamInput in) throws IOException {
+        protected List<NodeStoreFilesMetadata> readNodesFrom(StreamInput in) {
             return TransportAction.localOnly();
         }
 
         @Override
-        protected void writeNodesTo(StreamOutput out, List<NodeStoreFilesMetadata> nodes) throws IOException {
+        protected void writeNodesTo(StreamOutput out, List<NodeStoreFilesMetadata> nodes) {
             TransportAction.localOnly();
         }
     }

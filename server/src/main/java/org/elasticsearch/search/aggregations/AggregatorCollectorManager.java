@@ -11,7 +11,6 @@ package org.elasticsearch.search.aggregations;
 
 import org.apache.lucene.search.CollectorManager;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -36,12 +35,12 @@ public class AggregatorCollectorManager implements CollectorManager<AggregatorCo
     }
 
     @Override
-    public AggregatorCollector newCollector() throws IOException {
+    public AggregatorCollector newCollector() {
         return collectorSupplier.get();
     }
 
     @Override
-    public Void reduce(Collection<AggregatorCollector> collectors) throws IOException {
+    public Void reduce(Collection<AggregatorCollector> collectors) {
         if (collectors.size() > 1) {
             // we execute this search using more than one slice. In order to keep memory requirements
             // low, we do a partial reduction here.

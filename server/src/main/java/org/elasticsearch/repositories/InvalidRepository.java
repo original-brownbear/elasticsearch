@@ -25,7 +25,6 @@ import org.elasticsearch.indices.recovery.RecoveryState;
 import org.elasticsearch.snapshots.SnapshotId;
 import org.elasticsearch.snapshots.SnapshotInfo;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.concurrent.Executor;
 import java.util.function.BooleanSupplier;
@@ -73,7 +72,7 @@ public class InvalidRepository extends AbstractLifecycleComponent implements Rep
     }
 
     @Override
-    public IndexMetadata getSnapshotIndexMetaData(RepositoryData repositoryData, SnapshotId snapshotId, IndexId index) throws IOException {
+    public IndexMetadata getSnapshotIndexMetaData(RepositoryData repositoryData, SnapshotId snapshotId, IndexId index) {
         throw createCreationException();
     }
 
@@ -168,22 +167,14 @@ public class InvalidRepository extends AbstractLifecycleComponent implements Rep
     }
 
     @Override
-    public void awaitIdle() {
-
-    }
+    public void awaitIdle() {}
 
     @Override
-    protected void doStart() {
-
-    }
+    protected void doStart() {}
 
     @Override
-    protected void doStop() {
-
-    }
+    protected void doStop() {}
 
     @Override
-    protected void doClose() throws IOException {
-
-    }
+    protected void doClose() {}
 }

@@ -37,12 +37,12 @@ public class NodesReloadSecureSettingsResponse extends BaseNodesResponse<NodesRe
     }
 
     @Override
-    protected List<NodesReloadSecureSettingsResponse.NodeResponse> readNodesFrom(StreamInput in) throws IOException {
+    protected List<NodesReloadSecureSettingsResponse.NodeResponse> readNodesFrom(StreamInput in) {
         return TransportAction.localOnly();
     }
 
     @Override
-    protected void writeNodesTo(StreamOutput out, List<NodesReloadSecureSettingsResponse.NodeResponse> nodes) throws IOException {
+    protected void writeNodesTo(StreamOutput out, List<NodesReloadSecureSettingsResponse.NodeResponse> nodes) {
         TransportAction.localOnly();
     }
 

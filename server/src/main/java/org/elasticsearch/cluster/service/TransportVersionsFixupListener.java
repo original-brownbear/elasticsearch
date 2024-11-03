@@ -119,7 +119,7 @@ public class TransportVersionsFixupListener implements ClusterStateListener {
 
     private static class TransportVersionUpdater implements ClusterStateTaskExecutor<NodeTransportVersionTask> {
         @Override
-        public ClusterState execute(BatchExecutionContext<NodeTransportVersionTask> context) throws Exception {
+        public ClusterState execute(BatchExecutionContext<NodeTransportVersionTask> context) {
             ClusterState.Builder builder = ClusterState.builder(context.initialState());
             boolean modified = false;
             for (var c : context.taskContexts()) {

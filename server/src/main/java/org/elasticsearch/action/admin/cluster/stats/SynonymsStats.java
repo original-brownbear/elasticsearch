@@ -77,7 +77,7 @@ public class SynonymsStats implements ToXContentObject, Writeable {
         return builder;
     }
 
-    protected void doXContent(XContentBuilder builder, Params params) throws IOException {
+    protected void doXContent(XContentBuilder builder, Params params) {
 
     }
 

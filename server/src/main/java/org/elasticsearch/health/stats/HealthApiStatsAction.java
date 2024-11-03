@@ -72,17 +72,17 @@ public class HealthApiStatsAction extends ActionType<HealthApiStatsAction.Respon
         }
 
         @Override
-        public void writeTo(StreamOutput out) throws IOException {
+        public void writeTo(StreamOutput out) {
             TransportAction.localOnly();
         }
 
         @Override
-        protected List<Node> readNodesFrom(StreamInput in) throws IOException {
+        protected List<Node> readNodesFrom(StreamInput in) {
             return TransportAction.localOnly();
         }
 
         @Override
-        protected void writeNodesTo(StreamOutput out, List<Node> nodes) throws IOException {
+        protected void writeNodesTo(StreamOutput out, List<Node> nodes) {
             TransportAction.localOnly();
         }
 

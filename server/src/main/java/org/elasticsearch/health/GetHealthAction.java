@@ -33,7 +33,6 @@ import org.elasticsearch.tasks.TaskId;
 import org.elasticsearch.transport.TransportService;
 import org.elasticsearch.xcontent.ToXContent;
 
-import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -94,7 +93,7 @@ public class GetHealthAction extends ActionType<GetHealthAction.Response> {
         }
 
         @Override
-        public void writeTo(StreamOutput out) throws IOException {
+        public void writeTo(StreamOutput out) {
             TransportAction.localOnly();
         }
 
@@ -180,7 +179,7 @@ public class GetHealthAction extends ActionType<GetHealthAction.Response> {
         }
 
         @Override
-        public void writeTo(StreamOutput out) throws IOException {
+        public void writeTo(StreamOutput out) {
             TransportAction.localOnly();
         }
     }

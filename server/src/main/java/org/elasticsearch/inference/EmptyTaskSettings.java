@@ -53,7 +53,7 @@ public record EmptyTaskSettings() implements TaskSettings {
     }
 
     @Override
-    public void writeTo(StreamOutput out) throws IOException {}
+    public void writeTo(StreamOutput out) {}
 
     @Override
     public TaskSettings updatedTaskSettings(Map<String, Object> newSettings) {

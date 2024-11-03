@@ -138,7 +138,7 @@ public class StoreHeartbeatService implements LeaderHeartbeatService {
         }
 
         @Override
-        protected void doRun() throws Exception {
+        protected void doRun() {
             if (heartbeatTask != HeartbeatTask.this) {
                 // already cancelled
                 return;

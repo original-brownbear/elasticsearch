@@ -126,7 +126,7 @@ public class TransportSimulateBulkAction extends TransportAbstractBulkAction {
         Executor executor,
         ActionListener<BulkResponse> listener,
         long relativeStartTimeNanos
-    ) throws IOException {
+    ) {
         assert bulkRequest instanceof SimulateBulkRequest
             : "TransportSimulateBulkAction should only ever be called with a SimulateBulkRequest but got a " + bulkRequest.getClass();
         final AtomicArray<BulkItemResponse> responses = new AtomicArray<>(bulkRequest.requests.size());

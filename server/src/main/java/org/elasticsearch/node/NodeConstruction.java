@@ -495,7 +495,7 @@ class NodeConstruction {
         return getSinglePlugin(TelemetryPlugin.class).map(p -> p.getTelemetryProvider(settings)).orElse(TelemetryProvider.NOOP);
     }
 
-    private ThreadPool createThreadPool(Settings settings, MeterRegistry meterRegistry) throws IOException {
+    private ThreadPool createThreadPool(Settings settings, MeterRegistry meterRegistry) {
         ThreadPool threadPool = new ThreadPool(
             settings,
             meterRegistry,

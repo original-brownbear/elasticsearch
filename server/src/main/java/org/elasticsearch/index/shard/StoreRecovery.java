@@ -264,7 +264,7 @@ public final class StoreRecovery {
                         }
 
                         @Override
-                        public void seek(long pos) throws IOException {
+                        public void seek(long pos) {
                             throw new UnsupportedOperationException("seeks are not supported");
                         }
 
@@ -274,12 +274,12 @@ public final class StoreRecovery {
                         }
 
                         @Override
-                        public IndexInput slice(String sliceDescription, long offset, long length) throws IOException {
+                        public IndexInput slice(String sliceDescription, long offset, long length) {
                             throw new UnsupportedOperationException("slices are not supported");
                         }
 
                         @Override
-                        public byte readByte() throws IOException {
+                        public byte readByte() {
                             throw new UnsupportedOperationException("use a buffer if you wanna perform well");
                         }
 

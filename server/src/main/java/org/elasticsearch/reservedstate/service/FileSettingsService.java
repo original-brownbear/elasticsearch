@@ -154,7 +154,7 @@ public class FileSettingsService extends MasterNodeFileWatchingService implement
     }
 
     @Override
-    protected void processInitialFileMissing() throws ExecutionException, InterruptedException, IOException {
+    protected void processInitialFileMissing() throws ExecutionException, InterruptedException {
         PlainActionFuture<ActionResponse.Empty> completion = new PlainActionFuture<>();
         logger.info("setting file [{}] not found, initializing [{}] as empty", watchedFile(), NAMESPACE);
         stateService.initEmpty(NAMESPACE, completion);

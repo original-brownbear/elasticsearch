@@ -61,7 +61,7 @@ public final class MinDocQuery extends Query {
     }
 
     @Override
-    public Query rewrite(IndexSearcher searcher) throws IOException {
+    public Query rewrite(IndexSearcher searcher) {
         IndexReader reader = searcher.getIndexReader();
         if (Objects.equals(reader.getContext().id(), readerId) == false) {
             return new MinDocQuery(minDoc, reader.getContext().id());
@@ -70,7 +70,7 @@ public final class MinDocQuery extends Query {
     }
 
     @Override
-    public Weight createWeight(IndexSearcher searcher, ScoreMode scoreMode, float boost) throws IOException {
+    public Weight createWeight(IndexSearcher searcher, ScoreMode scoreMode, float boost) {
         if (readerId == null) {
             throw new IllegalStateException("Rewrite first");
         } else if (Objects.equals(searcher.getIndexReader().getContext().id(), readerId) == false) {
@@ -79,7 +79,7 @@ public final class MinDocQuery extends Query {
         return new ConstantScoreWeight(this, boost) {
 
             @Override
-            public ScorerSupplier scorerSupplier(LeafReaderContext context) throws IOException {
+            public ScorerSupplier scorerSupplier(LeafReaderContext context) {
                 final int maxDoc = context.reader().maxDoc();
                 if (context.docBase + maxDoc <= minDoc) {
                     return null;
@@ -122,7 +122,7 @@ public final class MinDocQuery extends Query {
         }
 
         @Override
-        public int advance(int target) throws IOException {
+        public int advance(int target) {
             assert target > doc;
             if (doc == -1) {
                 // skip directly to minDoc

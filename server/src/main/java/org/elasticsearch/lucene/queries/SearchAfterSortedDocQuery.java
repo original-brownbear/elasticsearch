@@ -65,7 +65,7 @@ public class SearchAfterSortedDocQuery extends Query {
     }
 
     @Override
-    public Weight createWeight(IndexSearcher searcher, ScoreMode scoreMode, float boost) throws IOException {
+    public Weight createWeight(IndexSearcher searcher, ScoreMode scoreMode, float boost) {
         return new ConstantScoreWeight(this, 1.0f) {
             @Override
             public ScorerSupplier scorerSupplier(LeafReaderContext context) throws IOException {

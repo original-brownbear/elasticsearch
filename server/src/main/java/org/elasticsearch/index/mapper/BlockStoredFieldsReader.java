@@ -77,7 +77,7 @@ public abstract class BlockStoredFieldsReader implements BlockLoader.RowStrideRe
         }
 
         @Override
-        public RowStrideReader rowStrideReader(LeafReaderContext context) throws IOException {
+        public RowStrideReader rowStrideReader(LeafReaderContext context) {
             return new Bytes(field) {
                 @Override
                 protected BytesRef toBytesRef(Object v) {
@@ -159,7 +159,7 @@ public abstract class BlockStoredFieldsReader implements BlockLoader.RowStrideRe
         }
 
         @Override
-        public RowStrideReader rowStrideReader(LeafReaderContext context) throws IOException {
+        public RowStrideReader rowStrideReader(LeafReaderContext context) {
             return new Id();
         }
     }

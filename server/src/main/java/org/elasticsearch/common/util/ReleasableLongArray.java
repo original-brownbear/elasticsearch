@@ -66,7 +66,7 @@ public class ReleasableLongArray implements LongArray {
     }
 
     @Override
-    public void fillWith(StreamInput in) throws IOException {
+    public void fillWith(StreamInput in) {
         throw new UnsupportedOperationException();
     }
 

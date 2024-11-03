@@ -168,7 +168,7 @@ public abstract class SecureSetting<T> extends Setting<T> {
         }
 
         @Override
-        protected SecureString getSecret(SecureSettings secureSettings) throws GeneralSecurityException {
+        protected SecureString getSecret(SecureSettings secureSettings) {
             return secureSettings.getString(getKey());
         }
 

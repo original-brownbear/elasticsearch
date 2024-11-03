@@ -93,7 +93,7 @@ public class MatchNoneQueryBuilder extends AbstractQueryBuilder<MatchNoneQueryBu
     }
 
     @Override
-    protected Query doToQuery(SearchExecutionContext context) throws IOException {
+    protected Query doToQuery(SearchExecutionContext context) {
         if (rewriteReason != null) {
             return Queries.newMatchNoDocsQuery(rewriteReason);
         }

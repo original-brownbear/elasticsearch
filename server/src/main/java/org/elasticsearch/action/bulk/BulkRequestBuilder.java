@@ -125,7 +125,7 @@ public class BulkRequestBuilder extends ActionRequestLazyBuilder<BulkRequest, Bu
     /**
      * Adds a framed data in binary format
      */
-    public BulkRequestBuilder add(byte[] data, int from, int length, XContentType xContentType) throws Exception {
+    public BulkRequestBuilder add(byte[] data, int from, int length, XContentType xContentType) {
         framedData.add(new FramedData(data, from, length, null, xContentType));
         return this;
     }
@@ -133,8 +133,7 @@ public class BulkRequestBuilder extends ActionRequestLazyBuilder<BulkRequest, Bu
     /**
      * Adds a framed data in binary format
      */
-    public BulkRequestBuilder add(byte[] data, int from, int length, @Nullable String defaultIndex, XContentType xContentType)
-        throws Exception {
+    public BulkRequestBuilder add(byte[] data, int from, int length, @Nullable String defaultIndex, XContentType xContentType) {
         framedData.add(new FramedData(data, from, length, defaultIndex, xContentType));
         return this;
     }

@@ -556,7 +556,7 @@ public class IndicesAliasesRequest extends AcknowledgedRequest<IndicesAliasesReq
             return builder;
         }
 
-        public static AliasActions fromXContent(XContentParser parser) throws IOException {
+        public static AliasActions fromXContent(XContentParser parser) {
             return PARSER.apply(parser, null);
         }
 

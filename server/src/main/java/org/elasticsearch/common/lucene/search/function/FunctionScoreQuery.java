@@ -265,7 +265,7 @@ public class FunctionScoreQuery extends Query {
         final Weight[] filterWeights;
         final boolean needsScores;
 
-        CustomBoostFactorWeight(Query parent, Weight subQueryWeight, Weight[] filterWeights, boolean needsScores) throws IOException {
+        CustomBoostFactorWeight(Query parent, Weight subQueryWeight, Weight[] filterWeights, boolean needsScores) {
             super(parent);
             this.subQueryWeight = subQueryWeight;
             this.filterWeights = filterWeights;
@@ -421,7 +421,7 @@ public class FunctionScoreQuery extends Query {
             Bits[] docSets,
             CombineFunction scoreCombiner,
             boolean needsScores
-        ) throws IOException {
+        ) {
             super(scorer);
             this.scoreMode = scoreMode;
             this.functions = functions;
@@ -515,7 +515,7 @@ public class FunctionScoreQuery extends Query {
         }
 
         @Override
-        public float getMaxScore(int upTo) throws IOException {
+        public float getMaxScore(int upTo) {
             return Float.MAX_VALUE; // TODO: what would be a good upper bound?
         }
     }

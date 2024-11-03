@@ -1543,7 +1543,7 @@ public final class Settings implements ToXContentFragment, Writeable, Diffable<S
         }
 
         @Override
-        public void writeTo(StreamOutput out) throws IOException {
+        public void writeTo(StreamOutput out) {
             throw new IllegalStateException("Unsupported operation");
         }
     }

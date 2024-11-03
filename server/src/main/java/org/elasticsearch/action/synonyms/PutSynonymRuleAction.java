@@ -60,7 +60,7 @@ public class PutSynonymRuleAction extends ActionType<SynonymUpdateResponse> {
             this.synonymRule = new SynonymRule(in);
         }
 
-        public Request(String synonymsSetId, String synonymRuleId, BytesReference content, XContentType contentType) throws IOException {
+        public Request(String synonymsSetId, String synonymRuleId, BytesReference content, XContentType contentType) {
             this.synonymsSetId = synonymsSetId;
             try (XContentParser parser = XContentHelper.createParser(XContentParserConfiguration.EMPTY, content, contentType)) {
                 this.synonymRule = PARSER.apply(parser, synonymRuleId);

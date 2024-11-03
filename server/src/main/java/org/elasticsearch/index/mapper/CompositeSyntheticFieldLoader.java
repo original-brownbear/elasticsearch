@@ -199,7 +199,7 @@ public class CompositeSyntheticFieldLoader implements SourceLoader.SyntheticFiel
         }
 
         @Override
-        public DocValuesLoader docValuesLoader(LeafReader leafReader, int[] docIdsInLeaf) throws IOException {
+        public DocValuesLoader docValuesLoader(LeafReader leafReader, int[] docIdsInLeaf) {
             return null;
         }
 

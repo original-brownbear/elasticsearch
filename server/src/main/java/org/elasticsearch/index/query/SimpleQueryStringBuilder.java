@@ -404,7 +404,7 @@ public final class SimpleQueryStringBuilder extends AbstractQueryBuilder<SimpleQ
     }
 
     @Override
-    protected Query doToQuery(SearchExecutionContext context) throws IOException {
+    protected Query doToQuery(SearchExecutionContext context) {
         Settings newSettings = new Settings(settings);
         final Map<String, Float> resolvedFieldsAndWeights;
         boolean isAllField;

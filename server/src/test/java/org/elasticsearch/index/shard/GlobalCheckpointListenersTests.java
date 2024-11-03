@@ -21,7 +21,6 @@ import org.junit.After;
 import org.mockito.ArgumentCaptor;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -459,11 +458,7 @@ public class GlobalCheckpointListenersTests extends ESTestCase {
             for (int i = 0; i < numberOfIterations; i++) {
                 if (i > numberOfIterations / 2 && rarely() && closed.get() == false) {
                     closed.set(true);
-                    try {
-                        globalCheckpointListeners.close();
-                    } catch (final IOException e) {
-                        throw new UncheckedIOException(e);
-                    }
+                    globalCheckpointListeners.close();
                 }
                 if (rarely() && closed.get() == false) {
                     globalCheckpointListeners.globalCheckpointUpdated(globalCheckpoint.incrementAndGet());

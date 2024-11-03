@@ -281,37 +281,37 @@ public final class TermVectorsFields extends Fields {
                 }
 
                 @Override
-                public SeekStatus seekCeil(BytesRef text) throws IOException {
+                public SeekStatus seekCeil(BytesRef text) {
                     throw new UnsupportedOperationException();
                 }
 
                 @Override
-                public void seekExact(long ord) throws IOException {
+                public void seekExact(long ord) {
                     throw new UnsupportedOperationException("Seek is not supported");
                 }
 
                 @Override
-                public BytesRef term() throws IOException {
+                public BytesRef term() {
                     return spare.get();
                 }
 
                 @Override
-                public long ord() throws IOException {
+                public long ord() {
                     throw new UnsupportedOperationException("ordinals are not supported");
                 }
 
                 @Override
-                public int docFreq() throws IOException {
+                public int docFreq() {
                     return docFreq;
                 }
 
                 @Override
-                public long totalTermFreq() throws IOException {
+                public long totalTermFreq() {
                     return totalTermFrequency;
                 }
 
                 @Override
-                public PostingsEnum postings(PostingsEnum reuse, int flags) throws IOException {
+                public PostingsEnum postings(PostingsEnum reuse, int flags) {
                     final TermVectorPostingsEnum retVal = (reuse instanceof TermVectorPostingsEnum
                         ? (TermVectorPostingsEnum) reuse
                         : new TermVectorPostingsEnum());
@@ -325,7 +325,7 @@ public final class TermVectorsFields extends Fields {
                 }
 
                 @Override
-                public ImpactsEnum impacts(int flags) throws IOException {
+                public ImpactsEnum impacts(int flags) {
                     return new SlowImpactsEnum(postings(null, flags));
                 }
 
@@ -333,22 +333,22 @@ public final class TermVectorsFields extends Fields {
         }
 
         @Override
-        public long size() throws IOException {
+        public long size() {
             return numTerms;
         }
 
         @Override
-        public long getSumTotalTermFreq() throws IOException {
+        public long getSumTotalTermFreq() {
             return sumTotalTermFreq;
         }
 
         @Override
-        public long getSumDocFreq() throws IOException {
+        public long getSumDocFreq() {
             return sumDocFreq;
         }
 
         @Override
-        public int getDocCount() throws IOException {
+        public int getDocCount() {
             return docCount;
         }
 
@@ -400,7 +400,7 @@ public final class TermVectorsFields extends Fields {
         }
 
         @Override
-        public int nextDoc() throws IOException {
+        public int nextDoc() {
             return doc = (doc == -1 ? 0 : NO_MORE_DOCS);
         }
 
@@ -410,21 +410,21 @@ public final class TermVectorsFields extends Fields {
         }
 
         @Override
-        public int advance(int target) throws IOException {
+        public int advance(int target) {
             while (nextDoc() < target && doc != NO_MORE_DOCS) {
             }
             return doc;
         }
 
         @Override
-        public int freq() throws IOException {
+        public int freq() {
             return freq;
         }
 
         // call nextPosition once before calling this one
         // because else counter is not advanced
         @Override
-        public int startOffset() throws IOException {
+        public int startOffset() {
             assert curPos < freq && curPos >= 0;
             return hasOffsets ? startOffsets[curPos] : -1;
 
@@ -433,7 +433,7 @@ public final class TermVectorsFields extends Fields {
         @Override
         // can return -1 if posistions were not requested or
         // stored but offsets were stored and requested
-        public int nextPosition() throws IOException {
+        public int nextPosition() {
             assert curPos + 1 < freq;
             ++curPos;
             // this is kind of cheating but if you don't need positions
@@ -442,7 +442,7 @@ public final class TermVectorsFields extends Fields {
         }
 
         @Override
-        public BytesRef getPayload() throws IOException {
+        public BytesRef getPayload() {
             assert curPos < freq && curPos >= 0;
             if (hasPayloads) {
                 final BytesRefBuilder payload = payloads[curPos];
@@ -454,7 +454,7 @@ public final class TermVectorsFields extends Fields {
         }
 
         @Override
-        public int endOffset() throws IOException {
+        public int endOffset() {
             assert curPos < freq && curPos >= 0;
             return hasOffsets ? endOffsets[curPos] : -1;
         }

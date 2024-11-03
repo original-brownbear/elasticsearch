@@ -385,7 +385,7 @@ public abstract class DocumentParserContext {
      * Clones the current context to mark it as an array, if it's not already marked, or restore it if it's within a nested object.
      * Applies to synthetic source only.
      */
-    public final DocumentParserContext maybeCloneForArray(Mapper mapper) throws IOException {
+    public final DocumentParserContext maybeCloneForArray(Mapper mapper) {
         if (canAddIgnoredField()
             && mapper instanceof ObjectMapper
             && mapper instanceof NestedObjectMapper == false
@@ -402,7 +402,7 @@ public abstract class DocumentParserContext {
      * Creates a sub-context from the current {@link DocumentParserContext} to indicate that the source for the sub-context has been
      * recorded and avoid duplicate recording for parts of the sub-context. Applies to synthetic source only.
      */
-    public final DocumentParserContext cloneWithRecordedSource() throws IOException {
+    public final DocumentParserContext cloneWithRecordedSource() {
         if (canAddIgnoredField()) {
             DocumentParserContext subcontext = createChildContext(parent());
             subcontext.setRecordedSource();  // Avoids double-storing parts of the source for the same parser subtree.
@@ -879,7 +879,7 @@ public abstract class DocumentParserContext {
         }
 
         @Override
-        public Token nextToken() throws IOException {
+        public Token nextToken() {
             if (state == State.FIELD) {
                 state = State.VALUE;
                 return delegate().currentToken();
@@ -896,7 +896,7 @@ public abstract class DocumentParserContext {
         }
 
         @Override
-        public String currentName() throws IOException {
+        public String currentName() {
             return field;
         }
     }

@@ -26,7 +26,6 @@ import org.elasticsearch.node.NodeService;
 import org.elasticsearch.telemetry.metric.LongWithAttributes;
 import org.elasticsearch.telemetry.metric.MeterRegistry;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
@@ -733,7 +732,7 @@ public class NodeMetrics extends AbstractLifecycleComponent {
     }
 
     @Override
-    protected void doClose() throws IOException {
+    protected void doClose() {
         metrics.forEach(metric -> {
             try {
                 metric.close();

@@ -36,7 +36,6 @@ import org.elasticsearch.search.runtime.GeoPointScriptFieldDistanceFeatureQuery;
 import org.elasticsearch.search.runtime.GeoPointScriptFieldExistsQuery;
 import org.elasticsearch.search.runtime.GeoPointScriptFieldGeoShapeQuery;
 
-import java.io.IOException;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -208,7 +207,7 @@ public final class GeoPointScriptFieldType extends AbstractScriptFieldType<GeoPo
             }
 
             @Override
-            public List<Object> fetchValues(Source source, int doc, List<Object> ignoredValues) throws IOException {
+            public List<Object> fetchValues(Source source, int doc, List<Object> ignoredValues) {
                 script.runForDoc(doc);
                 if (script.count() == 0) {
                     return List.of();

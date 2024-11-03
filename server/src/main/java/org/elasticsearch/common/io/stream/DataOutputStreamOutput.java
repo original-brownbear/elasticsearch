@@ -32,7 +32,7 @@ public class DataOutputStreamOutput extends StreamOutput {
     }
 
     @Override
-    public void flush() throws IOException {
+    public void flush() {
         // nothing to do there...
     }
 

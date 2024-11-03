@@ -59,32 +59,32 @@ final class LocalShardSnapshot implements Closeable {
             }
 
             @Override
-            public void deleteFile(String name) throws IOException {
+            public void deleteFile(String name) {
                 throw new UnsupportedOperationException("this directory is read-only");
             }
 
             @Override
-            public void sync(Collection<String> names) throws IOException {
+            public void sync(Collection<String> names) {
                 throw new UnsupportedOperationException("this directory is read-only");
             }
 
             @Override
-            public void rename(String source, String dest) throws IOException {
+            public void rename(String source, String dest) {
                 throw new UnsupportedOperationException("this directory is read-only");
             }
 
             @Override
-            public IndexOutput createOutput(String name, IOContext context) throws IOException {
+            public IndexOutput createOutput(String name, IOContext context) {
                 throw new UnsupportedOperationException("this directory is read-only");
             }
 
             @Override
-            public IndexOutput createTempOutput(String prefix, String suffix, IOContext context) throws IOException {
+            public IndexOutput createTempOutput(String prefix, String suffix, IOContext context) {
                 throw new UnsupportedOperationException("this directory is read-only");
             }
 
             @Override
-            public Lock obtainLock(String name) throws IOException {
+            public Lock obtainLock(String name) {
                 /* we do explicitly a no-lock instance since we hold an index commit from a SnapshotDeletionPolicy so we
                  * can we certain that nobody messes with the files on disk. We also hold a ref on the store which means
                  * no external source will delete files either.*/
@@ -92,7 +92,7 @@ final class LocalShardSnapshot implements Closeable {
             }
 
             @Override
-            public void close() throws IOException {
+            public void close() {
                 throw new UnsupportedOperationException("nobody should close this directory wrapper");
             }
         };

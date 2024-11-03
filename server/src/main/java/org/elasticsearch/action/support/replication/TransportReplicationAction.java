@@ -757,7 +757,7 @@ public abstract class TransportReplicationAction<
         }
 
         @Override
-        protected void doRun() throws Exception {
+        protected void doRun() {
             setPhase(task, "replica");
             final String actualAllocationId = this.replica.routingEntry().allocationId().getId();
             if (actualAllocationId.equals(replicaRequest.getTargetAllocationID()) == false) {

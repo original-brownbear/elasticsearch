@@ -52,7 +52,6 @@ import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -209,7 +208,7 @@ public class TransportBulkAction extends TransportAbstractBulkAction {
         Executor executor,
         ActionListener<BulkResponse> listener,
         long relativeStartTimeNanos
-    ) throws IOException {
+    ) {
         assert (bulkRequest instanceof SimulateBulkRequest) == false
             : "TransportBulkAction should never be called with a SimulateBulkRequest";
         assert bulkRequest.getComponentTemplateSubstitutions().isEmpty()

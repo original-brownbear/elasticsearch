@@ -32,7 +32,6 @@ import org.elasticsearch.search.lookup.Source;
 import org.elasticsearch.search.lookup.SourceFilter;
 import org.elasticsearch.xcontent.XContentType;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -379,7 +378,7 @@ public class SourceFieldMapper extends MetadataFieldMapper {
     }
 
     @Override
-    public void preParse(DocumentParserContext context) throws IOException {
+    public void preParse(DocumentParserContext context) {
         BytesReference originalSource = context.sourceToParse().source();
         XContentType contentType = context.sourceToParse().getXContentType();
         final BytesReference adaptedSource = applyFilters(originalSource, contentType);
@@ -399,7 +398,7 @@ public class SourceFieldMapper extends MetadataFieldMapper {
     }
 
     @Nullable
-    public BytesReference applyFilters(@Nullable BytesReference originalSource, @Nullable XContentType contentType) throws IOException {
+    public BytesReference applyFilters(@Nullable BytesReference originalSource, @Nullable XContentType contentType) {
         if (stored() == false) {
             return null;
         }

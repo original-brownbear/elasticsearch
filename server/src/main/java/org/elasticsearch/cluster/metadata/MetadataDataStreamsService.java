@@ -335,19 +335,15 @@ public class MetadataDataStreamsService {
         var dataStream = validateDataStream(metadata, dataStreamName);
         var index = validateIndex(metadata, indexName);
 
-        try {
-            MetadataMigrateToDataStreamService.prepareBackingIndex(
-                builder,
-                metadata.index(index.getWriteIndex()),
-                dataStreamName,
-                mapperSupplier,
-                false,
-                failureStore,
-                nodeSettings
-            );
-        } catch (IOException e) {
-            throw new IllegalArgumentException("unable to prepare backing index", e);
-        }
+        MetadataMigrateToDataStreamService.prepareBackingIndex(
+            builder,
+            metadata.index(index.getWriteIndex()),
+            dataStreamName,
+            mapperSupplier,
+            false,
+            failureStore,
+            nodeSettings
+        );
 
         // add index to data stream
         if (failureStore) {

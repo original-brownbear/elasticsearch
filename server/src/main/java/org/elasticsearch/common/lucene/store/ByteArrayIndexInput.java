@@ -41,7 +41,7 @@ public class ByteArrayIndexInput extends IndexInput implements RandomAccessInput
     }
 
     @Override
-    public void close() throws IOException {}
+    public void close() {}
 
     @Override
     public long getFilePointer() {
@@ -88,7 +88,7 @@ public class ByteArrayIndexInput extends IndexInput implements RandomAccessInput
     }
 
     @Override
-    public IndexInput slice(String sliceDescription, long offset, long length) throws IOException {
+    public IndexInput slice(String sliceDescription, long offset, long length) {
         if (offset >= 0L && length >= 0L && offset + length <= this.length) {
             return new ByteArrayIndexInput(sliceDescription, bytes, this.offset + (int) offset, (int) length);
         } else {
@@ -123,7 +123,7 @@ public class ByteArrayIndexInput extends IndexInput implements RandomAccessInput
     }
 
     @Override
-    public short readShort() throws IOException {
+    public short readShort() {
         try {
             return (short) BitUtil.VH_LE_SHORT.get(bytes, pos);
         } finally {
@@ -132,7 +132,7 @@ public class ByteArrayIndexInput extends IndexInput implements RandomAccessInput
     }
 
     @Override
-    public int readInt() throws IOException {
+    public int readInt() {
         try {
             return (int) BitUtil.VH_LE_INT.get(bytes, pos);
         } finally {
@@ -141,7 +141,7 @@ public class ByteArrayIndexInput extends IndexInput implements RandomAccessInput
     }
 
     @Override
-    public long readLong() throws IOException {
+    public long readLong() {
         try {
             return (long) BitUtil.VH_LE_LONG.get(bytes, pos);
         } finally {

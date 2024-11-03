@@ -16,7 +16,6 @@ import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.core.Tuple;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -134,7 +133,7 @@ public class GlobalCheckpointListeners implements Closeable {
     }
 
     @Override
-    public synchronized void close() throws IOException {
+    public synchronized void close() {
         if (closed) {
             assert listeners.isEmpty() : listeners;
         }

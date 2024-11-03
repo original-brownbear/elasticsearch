@@ -376,7 +376,7 @@ public class TimeSeriesIdFieldMapper extends MetadataFieldMapper {
             return this;
         }
 
-        private void add(String fieldName, BytesReference encoded) throws IOException {
+        private void add(String fieldName, BytesReference encoded) {
             BytesRef name = new BytesRef(fieldName);
             List<BytesReference> values = dimensions.get(name);
             if (values == null) {

@@ -564,7 +564,7 @@ public class CompletionFieldMapper extends FieldMapper {
     }
 
     @Override
-    protected void parseCreateField(DocumentParserContext context) throws IOException {
+    protected void parseCreateField(DocumentParserContext context) {
         // no-op
     }
 

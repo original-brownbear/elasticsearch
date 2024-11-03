@@ -35,7 +35,7 @@ public class BytesReferenceIndexInput extends IndexInput {
     }
 
     @Override
-    public void close() throws IOException {}
+    public void close() {}
 
     @Override
     public long getFilePointer() {
@@ -73,7 +73,7 @@ public class BytesReferenceIndexInput extends IndexInput {
     }
 
     @Override
-    public IndexInput slice(String sliceDescription, long offset, long length) throws IOException {
+    public IndexInput slice(String sliceDescription, long offset, long length) {
         if (offset >= 0L && length >= 0L && offset + length <= bytesReference.length()) {
             return new BytesReferenceIndexInput(sliceDescription, bytesReference.slice((int) offset, (int) length));
         } else {

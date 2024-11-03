@@ -24,7 +24,7 @@ public final class DropProcessor extends AbstractProcessor {
     }
 
     @Override
-    public IngestDocument execute(final IngestDocument ingestDocument) throws Exception {
+    public IngestDocument execute(final IngestDocument ingestDocument) {
         return null;
     }
 

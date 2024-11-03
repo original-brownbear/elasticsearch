@@ -214,7 +214,7 @@ public class DataStreamTimestampFieldMapper extends MetadataFieldMapper {
     }
 
     @Override
-    public void postParse(DocumentParserContext context) throws IOException {
+    public void postParse(DocumentParserContext context) {
         if (enabled == false) {
             // not configured, so skip the validation
             return;

@@ -33,12 +33,12 @@ public class NodesUsageResponse extends BaseNodesResponse<NodeUsage> implements 
     }
 
     @Override
-    protected List<NodeUsage> readNodesFrom(StreamInput in) throws IOException {
+    protected List<NodeUsage> readNodesFrom(StreamInput in) {
         return TransportAction.localOnly();
     }
 
     @Override
-    protected void writeNodesTo(StreamOutput out, List<NodeUsage> nodes) throws IOException {
+    protected void writeNodesTo(StreamOutput out, List<NodeUsage> nodes) {
         TransportAction.localOnly();
     }
 

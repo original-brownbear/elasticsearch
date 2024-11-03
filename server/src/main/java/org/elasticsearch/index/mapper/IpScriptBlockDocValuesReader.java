@@ -31,7 +31,7 @@ public class IpScriptBlockDocValuesReader extends BlockDocValuesReader {
         }
 
         @Override
-        public AllReader reader(LeafReaderContext context) throws IOException {
+        public AllReader reader(LeafReaderContext context) {
             return new IpScriptBlockDocValuesReader(factory.newInstance(context));
         }
     }

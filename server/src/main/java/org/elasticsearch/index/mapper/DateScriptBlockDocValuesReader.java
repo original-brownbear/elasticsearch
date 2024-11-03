@@ -31,7 +31,7 @@ public class DateScriptBlockDocValuesReader extends BlockDocValuesReader {
         }
 
         @Override
-        public AllReader reader(LeafReaderContext context) throws IOException {
+        public AllReader reader(LeafReaderContext context) {
             return new DateScriptBlockDocValuesReader(factory.newInstance(context));
         }
     }

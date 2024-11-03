@@ -337,7 +337,7 @@ public class SpanNearQueryBuilder extends AbstractQueryBuilder<SpanNearQueryBuil
         }
 
         @Override
-        public Query toQuery(SearchExecutionContext context) throws IOException {
+        public Query toQuery(SearchExecutionContext context) {
             throw new UnsupportedOperationException();
         }
 

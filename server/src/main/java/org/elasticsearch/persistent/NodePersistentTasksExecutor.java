@@ -30,7 +30,7 @@ public class NodePersistentTasksExecutor {
             }
 
             @Override
-            protected void doRun() throws Exception {
+            protected void doRun() {
                 try {
                     executor.nodeOperation(task, params, state);
                 } catch (Exception ex) {

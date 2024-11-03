@@ -224,7 +224,7 @@ public class PrefixQueryBuilder extends AbstractQueryBuilder<PrefixQueryBuilder>
     }
 
     @Override
-    protected Query doToQuery(SearchExecutionContext context) throws IOException {
+    protected Query doToQuery(SearchExecutionContext context) {
         final int maxAllowedRegexLength = context.getIndexSettings().getMaxRegexLength();
         if (value.length() > maxAllowedRegexLength) {
             throw new IllegalArgumentException(

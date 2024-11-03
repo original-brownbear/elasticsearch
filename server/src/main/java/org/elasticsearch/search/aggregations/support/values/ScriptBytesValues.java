@@ -15,7 +15,6 @@ import org.elasticsearch.index.fielddata.SortedBinaryDocValues;
 import org.elasticsearch.index.fielddata.SortingBinaryDocValues;
 import org.elasticsearch.script.AggregationScript;
 
-import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.Collection;
 
@@ -41,7 +40,7 @@ public class ScriptBytesValues extends SortingBinaryDocValues implements ScorerA
     }
 
     @Override
-    public boolean advanceExact(int doc) throws IOException {
+    public boolean advanceExact(int doc) {
         script.setDocument(doc);
         final Object value = script.execute();
         if (value == null) {

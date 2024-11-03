@@ -63,7 +63,7 @@ public class TransportClearIndicesCacheAction extends TransportBroadcastByNodeAc
     }
 
     @Override
-    protected EmptyResult readShardResult(StreamInput in) throws IOException {
+    protected EmptyResult readShardResult(StreamInput in) {
         return EmptyResult.INSTANCE;
     }
 

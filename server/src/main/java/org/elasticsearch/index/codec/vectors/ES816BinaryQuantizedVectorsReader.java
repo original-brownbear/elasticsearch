@@ -405,7 +405,7 @@ public class ES816BinaryQuantizedVectorsReader extends FlatVectorsReader {
             return quantizedVectorValues.scorer(query);
         }
 
-        protected BinarizedByteVectorValues getQuantizedVectorValues() throws IOException {
+        protected BinarizedByteVectorValues getQuantizedVectorValues() {
             return quantizedVectorValues;
         }
     }

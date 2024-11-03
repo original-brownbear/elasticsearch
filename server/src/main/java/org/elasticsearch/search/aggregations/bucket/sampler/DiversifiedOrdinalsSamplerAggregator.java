@@ -136,7 +136,7 @@ public class DiversifiedOrdinalsSamplerAggregator extends SamplerAggregator {
                     }
 
                     @Override
-                    public long longValue() throws IOException {
+                    public long longValue() {
                         return value;
                     }
                 };

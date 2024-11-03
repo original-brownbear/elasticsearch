@@ -31,7 +31,7 @@ public class BooleanScriptBlockDocValuesReader extends BlockDocValuesReader {
         }
 
         @Override
-        public AllReader reader(LeafReaderContext context) throws IOException {
+        public AllReader reader(LeafReaderContext context) {
             return new BooleanScriptBlockDocValuesReader(factory.newInstance(context));
         }
     }

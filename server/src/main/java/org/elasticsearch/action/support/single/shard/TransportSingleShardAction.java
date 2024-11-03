@@ -249,7 +249,7 @@ public abstract class TransportSingleShardAction<Request extends SingleShardRequ
     private class TransportHandler implements TransportRequestHandler<Request> {
 
         @Override
-        public void messageReceived(Request request, final TransportChannel channel, Task task) throws Exception {
+        public void messageReceived(Request request, final TransportChannel channel, Task task) {
             // if we have a local operation, execute it on a thread since we don't spawn
             executeDirect(task, request, new ChannelActionListener<>(channel));
         }

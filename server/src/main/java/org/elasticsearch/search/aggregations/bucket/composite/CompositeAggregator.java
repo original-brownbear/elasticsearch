@@ -173,13 +173,13 @@ public final class CompositeAggregator extends BucketsAggregator implements Size
     }
 
     @Override
-    protected void doPreCollection() throws IOException {
+    protected void doPreCollection() {
         deferredCollectors = MultiBucketCollector.wrap(false, Arrays.asList(subAggregators));
         collectableSubAggregators = BucketCollector.NO_OP_BUCKET_COLLECTOR;
     }
 
     @Override
-    protected void doPostCollection() throws IOException {
+    protected void doPostCollection() {
         finishLeaf();
     }
 

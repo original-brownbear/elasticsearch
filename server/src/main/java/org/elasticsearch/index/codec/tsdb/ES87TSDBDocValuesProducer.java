@@ -216,7 +216,7 @@ public class ES87TSDBDocValuesProducer extends DocValuesProducer {
         }
 
         @Override
-        public int nextDoc() throws IOException {
+        public int nextDoc() {
             return advance(doc + 1);
         }
 
@@ -231,7 +231,7 @@ public class ES87TSDBDocValuesProducer extends DocValuesProducer {
         }
 
         @Override
-        public int advance(int target) throws IOException {
+        public int advance(int target) {
             if (target >= maxDoc) {
                 return doc = NO_MORE_DOCS;
             }
@@ -239,7 +239,7 @@ public class ES87TSDBDocValuesProducer extends DocValuesProducer {
         }
 
         @Override
-        public boolean advanceExact(int target) throws IOException {
+        public boolean advanceExact(int target) {
             doc = target;
             return true;
         }
@@ -602,32 +602,32 @@ public class ES87TSDBDocValuesProducer extends DocValuesProducer {
         }
 
         @Override
-        public BytesRef term() throws IOException {
+        public BytesRef term() {
             return term;
         }
 
         @Override
-        public long ord() throws IOException {
+        public long ord() {
             return ord;
         }
 
         @Override
-        public long totalTermFreq() throws IOException {
+        public long totalTermFreq() {
             return -1L;
         }
 
         @Override
-        public PostingsEnum postings(PostingsEnum reuse, int flags) throws IOException {
+        public PostingsEnum postings(PostingsEnum reuse, int flags) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public ImpactsEnum impacts(int flags) throws IOException {
+        public ImpactsEnum impacts(int flags) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public int docFreq() throws IOException {
+        public int docFreq() {
             throw new UnsupportedOperationException();
         }
     }
@@ -1008,12 +1008,12 @@ public class ES87TSDBDocValuesProducer extends DocValuesProducer {
                     }
 
                     @Override
-                    public int nextDoc() throws IOException {
+                    public int nextDoc() {
                         return advance(doc + 1);
                     }
 
                     @Override
-                    public int advance(int target) throws IOException {
+                    public int advance(int target) {
                         if (target >= maxDoc) {
                             return doc = NO_MORE_DOCS;
                         }
@@ -1099,12 +1099,12 @@ public class ES87TSDBDocValuesProducer extends DocValuesProducer {
                 }
 
                 @Override
-                public int nextDoc() throws IOException {
+                public int nextDoc() {
                     return advance(doc + 1);
                 }
 
                 @Override
-                public int advance(int target) throws IOException {
+                public int advance(int target) {
                     if (target >= maxDoc) {
                         return doc = NO_MORE_DOCS;
                     }
@@ -1260,7 +1260,7 @@ public class ES87TSDBDocValuesProducer extends DocValuesProducer {
                 int count;
 
                 @Override
-                public int nextDoc() throws IOException {
+                public int nextDoc() {
                     return advance(doc + 1);
                 }
 
@@ -1275,7 +1275,7 @@ public class ES87TSDBDocValuesProducer extends DocValuesProducer {
                 }
 
                 @Override
-                public int advance(int target) throws IOException {
+                public int advance(int target) {
                     if (target >= maxDoc) {
                         return doc = NO_MORE_DOCS;
                     }
@@ -1286,7 +1286,7 @@ public class ES87TSDBDocValuesProducer extends DocValuesProducer {
                 }
 
                 @Override
-                public boolean advanceExact(int target) throws IOException {
+                public boolean advanceExact(int target) {
                     start = addresses.get(target);
                     end = addresses.get(target + 1L);
                     count = (int) (end - start);

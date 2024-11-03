@@ -79,7 +79,7 @@ class DocumentLeafReader extends LeafReader {
     }
 
     @Override
-    public NumericDocValues getNumericDocValues(String field) throws IOException {
+    public NumericDocValues getNumericDocValues(String field) {
         checkField(field);
         List<Number> values = document.getFields()
             .stream()
@@ -92,7 +92,7 @@ class DocumentLeafReader extends LeafReader {
     }
 
     @Override
-    public BinaryDocValues getBinaryDocValues(String field) throws IOException {
+    public BinaryDocValues getBinaryDocValues(String field) {
         checkField(field);
         List<BytesRef> values = document.getFields()
             .stream()
@@ -105,7 +105,7 @@ class DocumentLeafReader extends LeafReader {
     }
 
     @Override
-    public SortedDocValues getSortedDocValues(String field) throws IOException {
+    public SortedDocValues getSortedDocValues(String field) {
         checkField(field);
         List<BytesRef> values = document.getFields()
             .stream()
@@ -118,7 +118,7 @@ class DocumentLeafReader extends LeafReader {
     }
 
     @Override
-    public SortedNumericDocValues getSortedNumericDocValues(String field) throws IOException {
+    public SortedNumericDocValues getSortedNumericDocValues(String field) {
         checkField(field);
         List<Number> values = document.getFields()
             .stream()
@@ -131,7 +131,7 @@ class DocumentLeafReader extends LeafReader {
     }
 
     @Override
-    public SortedSetDocValues getSortedSetDocValues(String field) throws IOException {
+    public SortedSetDocValues getSortedSetDocValues(String field) {
         checkField(field);
         List<BytesRef> values = document.getFields()
             .stream()
@@ -149,7 +149,7 @@ class DocumentLeafReader extends LeafReader {
     }
 
     @Override
-    public StoredFields storedFields() throws IOException {
+    public StoredFields storedFields() {
         return new StoredFields() {
             @Override
             public void document(int docID, StoredFieldVisitor visitor) throws IOException {
@@ -190,22 +190,22 @@ class DocumentLeafReader extends LeafReader {
     }
 
     @Override
-    public Terms terms(String field) throws IOException {
+    public Terms terms(String field) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public NumericDocValues getNormValues(String field) throws IOException {
+    public NumericDocValues getNormValues(String field) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public DocValuesSkipper getDocValuesSkipper(String s) throws IOException {
+    public DocValuesSkipper getDocValuesSkipper(String s) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public FloatVectorValues getFloatVectorValues(String field) throws IOException {
+    public FloatVectorValues getFloatVectorValues(String field) {
         throw new UnsupportedOperationException();
     }
 
@@ -220,12 +220,12 @@ class DocumentLeafReader extends LeafReader {
     }
 
     @Override
-    public PointValues getPointValues(String field) throws IOException {
+    public PointValues getPointValues(String field) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void checkIntegrity() throws IOException {
+    public void checkIntegrity() {
         throw new UnsupportedOperationException();
     }
 
@@ -245,7 +245,7 @@ class DocumentLeafReader extends LeafReader {
     }
 
     @Override
-    protected void doClose() throws IOException {
+    protected void doClose() {
         throw new UnsupportedOperationException();
     }
 
@@ -260,7 +260,7 @@ class DocumentLeafReader extends LeafReader {
     }
 
     @Override
-    public TermVectors termVectors() throws IOException {
+    public TermVectors termVectors() {
         throw new UnsupportedOperationException();
     }
 

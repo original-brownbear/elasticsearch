@@ -31,7 +31,7 @@ public class LongScriptBlockDocValuesReader extends BlockDocValuesReader {
         }
 
         @Override
-        public AllReader reader(LeafReaderContext context) throws IOException {
+        public AllReader reader(LeafReaderContext context) {
             return new LongScriptBlockDocValuesReader(factory.newInstance(context));
         }
     }

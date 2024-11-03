@@ -57,7 +57,7 @@ public enum GeometryParserFormat {
 
         @Override
         public Geometry fromXContent(GeometryValidator validator, boolean coerce, boolean rightOrientation, XContentParser parser)
-            throws IOException, ParseException {
+            throws IOException {
             if (parser.currentToken() == XContentParser.Token.VALUE_NULL) {
                 return null;
             }

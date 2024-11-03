@@ -65,7 +65,7 @@ public class UnmappedSignificantTerms extends InternalSignificantTerms<UnmappedS
     }
 
     @Override
-    protected void writeTermTypeInfoTo(StreamOutput out) throws IOException {
+    protected void writeTermTypeInfoTo(StreamOutput out) {
         // Nothing to write
     }
 

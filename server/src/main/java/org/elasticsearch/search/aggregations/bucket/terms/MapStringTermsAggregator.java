@@ -494,7 +494,7 @@ public final class MapStringTermsAggregator extends AbstractStringTermsAggregato
         }
 
         @Override
-        void updateBucket(StringTerms.Bucket spare, BytesKeyedBucketOrds.BucketOrdsEnum ordsEnum, long docCount) throws IOException {
+        void updateBucket(StringTerms.Bucket spare, BytesKeyedBucketOrds.BucketOrdsEnum ordsEnum, long docCount) {
             ordsEnum.readValue(spare.termBytes);
             spare.docCount = docCount;
             spare.bucketOrd = ordsEnum.ord();
@@ -606,7 +606,7 @@ public final class MapStringTermsAggregator extends AbstractStringTermsAggregato
         }
 
         @Override
-        void collectZeroDocEntriesIfNeeded(long owningBucketOrd, boolean excludeDeletedDocs) throws IOException {}
+        void collectZeroDocEntriesIfNeeded(long owningBucketOrd, boolean excludeDeletedDocs) {}
 
         @Override
         Supplier<SignificantStringTerms.Bucket> emptyBucketBuilder(long owningBucketOrd) {

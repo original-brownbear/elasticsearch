@@ -182,7 +182,7 @@ public class TransportUpdateDesiredNodesAction extends TransportMasterNodeAction
         }
 
         @Override
-        public ClusterState execute(BatchExecutionContext<UpdateDesiredNodesTask> batchExecutionContext) throws Exception {
+        public ClusterState execute(BatchExecutionContext<UpdateDesiredNodesTask> batchExecutionContext) {
             final var initialState = batchExecutionContext.initialState();
             final var initialDesiredNodes = DesiredNodesMetadata.fromClusterState(initialState).getLatestDesiredNodes();
             var desiredNodes = initialDesiredNodes;

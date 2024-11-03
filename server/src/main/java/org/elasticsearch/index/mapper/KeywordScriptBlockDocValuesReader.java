@@ -32,7 +32,7 @@ public class KeywordScriptBlockDocValuesReader extends BlockDocValuesReader {
         }
 
         @Override
-        public AllReader reader(LeafReaderContext context) throws IOException {
+        public AllReader reader(LeafReaderContext context) {
             return new KeywordScriptBlockDocValuesReader(factory.newInstance(context));
         }
     }

@@ -154,7 +154,7 @@ final class TransportKeepAlive implements Closeable {
         }
 
         @Override
-        protected void doRun() throws Exception {
+        protected void doRun() {
             if (isClosed) {
                 return;
             }

@@ -208,7 +208,7 @@ public class PlaceHolderFieldMapper extends FieldMapper {
         }
 
         @Override
-        public Query phrasePrefixQuery(TokenStream stream, int slop, int maxExpansions, SearchExecutionContext context) throws IOException {
+        public Query phrasePrefixQuery(TokenStream stream, int slop, int maxExpansions, SearchExecutionContext context) {
             throw new QueryShardException(context, fail("phrase prefix query"));
         }
 
@@ -287,7 +287,7 @@ public class PlaceHolderFieldMapper extends FieldMapper {
     }
 
     @Override
-    protected void parseCreateField(DocumentParserContext context) throws IOException {
+    protected void parseCreateField(DocumentParserContext context) {
         throw new IllegalArgumentException("can't parse value for placeholder field type");
     }
 

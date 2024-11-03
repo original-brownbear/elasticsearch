@@ -41,12 +41,12 @@ public class NodesInfoResponse extends BaseNodesResponse<NodeInfo> implements To
     }
 
     @Override
-    protected List<NodeInfo> readNodesFrom(StreamInput in) throws IOException {
+    protected List<NodeInfo> readNodesFrom(StreamInput in) {
         return TransportAction.localOnly();
     }
 
     @Override
-    protected void writeNodesTo(StreamOutput out, List<NodeInfo> nodes) throws IOException {
+    protected void writeNodesTo(StreamOutput out, List<NodeInfo> nodes) {
         TransportAction.localOnly();
     }
 

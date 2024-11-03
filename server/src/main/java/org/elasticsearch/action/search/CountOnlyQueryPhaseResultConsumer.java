@@ -70,7 +70,7 @@ class CountOnlyQueryPhaseResultConsumer extends SearchPhaseResults<SearchPhaseRe
     }
 
     @Override
-    public SearchPhaseController.ReducedQueryPhase reduce() throws Exception {
+    public SearchPhaseController.ReducedQueryPhase reduce() {
         SearchPhaseController.ReducedQueryPhase reducePhase = new SearchPhaseController.ReducedQueryPhase(
             new TotalHits(totalHits.sum(), relationAtomicReference.get()),
             0,

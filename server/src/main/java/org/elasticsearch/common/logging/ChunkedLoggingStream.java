@@ -92,7 +92,7 @@ public class ChunkedLoggingStream extends OutputStream {
     }
 
     @Override
-    public void write(int b) throws IOException {
+    public void write(int b) {
         assert closed == false;
         if (offset == CHUNK_SIZE) {
             flushBuffer();
@@ -103,7 +103,7 @@ public class ChunkedLoggingStream extends OutputStream {
     }
 
     @Override
-    public void write(byte[] b, int off, int len) throws IOException {
+    public void write(byte[] b, int off, int len) {
         assert closed == false;
         assert assertSafeBytes(b, off, len);
         while (len > 0) {
@@ -119,7 +119,7 @@ public class ChunkedLoggingStream extends OutputStream {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         if (closed == false) {
             closed = true;
             flushBuffer();

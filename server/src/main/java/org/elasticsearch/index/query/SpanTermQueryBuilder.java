@@ -75,7 +75,7 @@ public class SpanTermQueryBuilder extends BaseTermQueryBuilder<SpanTermQueryBuil
     }
 
     @Override
-    protected Query doToQuery(SearchExecutionContext context) throws IOException {
+    protected Query doToQuery(SearchExecutionContext context) {
         MappedFieldType mapper = context.getFieldType(fieldName);
         if (mapper == null) {
             return new SpanMatchNoDocsQuery(fieldName, "unmapped field: " + fieldName);

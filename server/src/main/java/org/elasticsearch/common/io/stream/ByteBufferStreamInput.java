@@ -247,12 +247,12 @@ public class ByteBufferStreamInput extends StreamInput {
     }
 
     @Override
-    public void reset() throws IOException {
+    public void reset() {
         buffer.reset();
     }
 
     @Override
-    public int available() throws IOException {
+    public int available() {
         return buffer.remaining();
     }
 
@@ -288,5 +288,5 @@ public class ByteBufferStreamInput extends StreamInput {
     }
 
     @Override
-    public void close() throws IOException {}
+    public void close() {}
 }

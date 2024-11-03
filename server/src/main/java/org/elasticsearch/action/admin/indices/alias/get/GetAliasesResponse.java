@@ -15,7 +15,6 @@ import org.elasticsearch.cluster.metadata.AliasMetadata;
 import org.elasticsearch.cluster.metadata.DataStreamAlias;
 import org.elasticsearch.common.io.stream.StreamOutput;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -39,7 +38,7 @@ public class GetAliasesResponse extends ActionResponse {
     }
 
     @Override
-    public void writeTo(StreamOutput out) throws IOException {
+    public void writeTo(StreamOutput out) {
         TransportAction.localOnly();
     }
 

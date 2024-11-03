@@ -297,7 +297,7 @@ public final class PersistentTasksClusterService implements ClusterStateListener
     ) {
         submitUnbatchedTask("unassign persistent task from any node", new ClusterStateUpdateTask() {
             @Override
-            public ClusterState execute(ClusterState currentState) throws Exception {
+            public ClusterState execute(ClusterState currentState) {
                 PersistentTasksCustomMetadata.Builder tasksInProgress = builder(currentState);
                 if (tasksInProgress.hasTask(taskId, taskAllocationId)) {
                     logger.trace("Unassigning task {} with allocation id {}", taskId, taskAllocationId);

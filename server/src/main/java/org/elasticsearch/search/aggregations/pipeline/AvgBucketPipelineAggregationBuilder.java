@@ -33,7 +33,7 @@ public class AvgBucketPipelineAggregationBuilder extends BucketMetricsPipelineAg
     }
 
     @Override
-    protected void innerWriteTo(StreamOutput out) throws IOException {
+    protected void innerWriteTo(StreamOutput out) {
         // Do nothing, no extra state to write to stream
     }
 

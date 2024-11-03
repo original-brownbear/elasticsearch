@@ -69,7 +69,7 @@ public class ScriptScoreFunction extends ScoreFunction {
 
         return new LeafScoreFunction() {
 
-            private double score(int docId, float subQueryScore, ScoreScript.ExplanationHolder holder) throws IOException {
+            private double score(int docId, float subQueryScore, ScoreScript.ExplanationHolder holder) {
                 leafScript.setDocument(docId);
                 scorer.score = subQueryScore;
                 double result = leafScript.execute(holder);
@@ -81,7 +81,7 @@ public class ScriptScoreFunction extends ScoreFunction {
             }
 
             @Override
-            public double score(int docId, float subQueryScore) throws IOException {
+            public double score(int docId, float subQueryScore) {
                 return score(docId, subQueryScore, null);
             }
 

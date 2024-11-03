@@ -24,8 +24,6 @@ public interface LongGauge extends Instrument, AutoCloseable {
         }
 
         @Override
-        public void close() throws Exception {
-
-        }
+        public void close() {}
     };
 }

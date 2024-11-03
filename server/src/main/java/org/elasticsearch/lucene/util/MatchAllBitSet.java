@@ -13,8 +13,6 @@ import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.util.BitSet;
 import org.apache.lucene.util.RamUsageEstimator;
 
-import java.io.IOException;
-
 /**
  * An optimized implementation of {@link BitSet} that matches all documents to reduce memory usage.
  */
@@ -91,7 +89,5 @@ public final class MatchAllBitSet extends BitSet {
     }
 
     @Override
-    public void or(DocIdSetIterator iter) throws IOException {
-
-    }
+    public void or(DocIdSetIterator iter) {}
 }

@@ -179,8 +179,7 @@ public abstract class TransportAbstractBulkAction extends HandledTransportAction
         });
     }
 
-    private boolean applyPipelines(Task task, BulkRequest bulkRequest, Executor executor, ActionListener<BulkResponse> listener)
-        throws IOException {
+    private boolean applyPipelines(Task task, BulkRequest bulkRequest, Executor executor, ActionListener<BulkResponse> listener) {
         boolean hasIndexRequestsWithPipelines = false;
         final Metadata metadata;
         Map<String, ComponentTemplate> componentTemplateSubstitutions = bulkRequest.getComponentTemplateSubstitutions();

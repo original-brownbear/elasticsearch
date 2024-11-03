@@ -117,7 +117,7 @@ abstract class GroupingDocValuesSelector<T> extends GroupSelector<T> {
                             }
 
                             @Override
-                            public long longValue() throws IOException {
+                            public long longValue() {
                                 return value;
                             }
 
@@ -129,7 +129,7 @@ abstract class GroupingDocValuesSelector<T> extends GroupSelector<T> {
         }
 
         @Override
-        public void setScorer(Scorable scorer) throws IOException {}
+        public void setScorer(Scorable scorer) {}
     }
 
     /**
@@ -238,7 +238,7 @@ abstract class GroupingDocValuesSelector<T> extends GroupSelector<T> {
         }
 
         @Override
-        public void setScorer(Scorable scorer) throws IOException {}
+        public void setScorer(Scorable scorer) {}
     }
 
     private static DocValuesType getDocValuesType(LeafReader in, String field) {

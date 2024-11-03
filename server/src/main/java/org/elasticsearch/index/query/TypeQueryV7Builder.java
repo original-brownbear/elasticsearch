@@ -62,7 +62,7 @@ public class TypeQueryV7Builder extends AbstractQueryBuilder<TypeQueryV7Builder>
     }
 
     @Override
-    protected void doWriteTo(StreamOutput out) throws IOException {}
+    protected void doWriteTo(StreamOutput out) {}
 
     @Override
     protected void doXContent(XContentBuilder builder, Params params) throws IOException {
@@ -73,7 +73,7 @@ public class TypeQueryV7Builder extends AbstractQueryBuilder<TypeQueryV7Builder>
     }
 
     @Override
-    protected Query doToQuery(SearchExecutionContext context) throws IOException {
+    protected Query doToQuery(SearchExecutionContext context) {
         return new MatchNoDocsQuery();
     }
 
@@ -87,7 +87,7 @@ public class TypeQueryV7Builder extends AbstractQueryBuilder<TypeQueryV7Builder>
         return 0;
     }
 
-    public static TypeQueryV7Builder fromXContent(XContentParser parser) throws IOException {
+    public static TypeQueryV7Builder fromXContent(XContentParser parser) {
         deprecationLogger.compatibleCritical("type_query", TYPES_DEPRECATION_MESSAGE);
         throw new ParsingException(parser.getTokenLocation(), TYPES_DEPRECATION_MESSAGE);
     }

@@ -128,7 +128,7 @@ public class ScriptQueryBuilder extends AbstractQueryBuilder<ScriptQueryBuilder>
     }
 
     @Override
-    protected Query doToQuery(SearchExecutionContext context) throws IOException {
+    protected Query doToQuery(SearchExecutionContext context) {
         if (context.allowExpensiveQueries() == false) {
             throw new ElasticsearchException(
                 "[script] queries cannot be executed when '" + ALLOW_EXPENSIVE_QUERIES.getKey() + "' is set to false."
@@ -181,7 +181,7 @@ public class ScriptQueryBuilder extends AbstractQueryBuilder<ScriptQueryBuilder>
         }
 
         @Override
-        public Weight createWeight(IndexSearcher searcher, ScoreMode scoreMode, float boost) throws IOException {
+        public Weight createWeight(IndexSearcher searcher, ScoreMode scoreMode, float boost) {
             return new ConstantScoreWeight(this, boost) {
 
                 @Override
@@ -191,7 +191,7 @@ public class ScriptQueryBuilder extends AbstractQueryBuilder<ScriptQueryBuilder>
                     TwoPhaseIterator twoPhase = new TwoPhaseIterator(approximation) {
 
                         @Override
-                        public boolean matches() throws IOException {
+                        public boolean matches() {
                             leafScript.setDocument(approximation.docID());
                             return leafScript.execute();
                         }

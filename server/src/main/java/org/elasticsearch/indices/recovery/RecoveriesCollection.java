@@ -306,7 +306,7 @@ public class RecoveriesCollection {
         }
 
         @Override
-        protected void doRun() throws Exception {
+        protected void doRun() {
             RecoveryTarget status = onGoingRecoveries.get(recoveryId);
             if (status == null) {
                 logger.trace("[monitor] no status found for [{}], shutting down", recoveryId);

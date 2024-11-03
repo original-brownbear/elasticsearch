@@ -246,7 +246,7 @@ public class IgnoredSourceFieldMapper extends MetadataFieldMapper {
             }
 
             @Override
-            public DocValuesLoader docValuesLoader(LeafReader leafReader, int[] docIdsInLeaf) throws IOException {
+            public DocValuesLoader docValuesLoader(LeafReader leafReader, int[] docIdsInLeaf) {
                 return null;
             }
 
@@ -256,9 +256,7 @@ public class IgnoredSourceFieldMapper extends MetadataFieldMapper {
             }
 
             @Override
-            public void write(XContentBuilder b) throws IOException {
-
-            }
+            public void write(XContentBuilder b) {}
 
             @Override
             public String fieldName() {

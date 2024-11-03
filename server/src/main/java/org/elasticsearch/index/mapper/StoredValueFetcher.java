@@ -15,7 +15,6 @@ import org.elasticsearch.search.lookup.LeafSearchLookup;
 import org.elasticsearch.search.lookup.SearchLookup;
 import org.elasticsearch.search.lookup.Source;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
@@ -41,7 +40,7 @@ public class StoredValueFetcher implements ValueFetcher {
     }
 
     @Override
-    public List<Object> fetchValues(Source source, int doc, List<Object> ignoredValues) throws IOException {
+    public List<Object> fetchValues(Source source, int doc, List<Object> ignoredValues) {
         leafSearchLookup.setDocument(doc);
         List<Object> values = leafSearchLookup.fields().get(fieldname).getValues();
         if (values == null) {

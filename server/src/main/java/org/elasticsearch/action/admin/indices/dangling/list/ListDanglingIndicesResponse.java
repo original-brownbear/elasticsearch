@@ -90,12 +90,12 @@ public class ListDanglingIndicesResponse extends BaseNodesResponse<NodeListDangl
     }
 
     @Override
-    protected List<NodeListDanglingIndicesResponse> readNodesFrom(StreamInput in) throws IOException {
+    protected List<NodeListDanglingIndicesResponse> readNodesFrom(StreamInput in) {
         return TransportAction.localOnly();
     }
 
     @Override
-    protected void writeNodesTo(StreamOutput out, List<NodeListDanglingIndicesResponse> nodes) throws IOException {
+    protected void writeNodesTo(StreamOutput out, List<NodeListDanglingIndicesResponse> nodes) {
         TransportAction.localOnly();
     }
 

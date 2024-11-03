@@ -21,8 +21,6 @@ import org.elasticsearch.xcontent.ParseField;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
-import java.io.IOException;
-
 public class CommonTermsQueryBuilder extends AbstractQueryBuilder<CommonTermsQueryBuilder> {
     private static final DeprecationLogger deprecationLogger = DeprecationLogger.getLogger(CommonTermsQueryBuilder.class);
     public static final String COMMON_TERMS_QUERY_DEPRECATION_MSG = "Common Terms Query usage is not supported. "
@@ -33,15 +31,15 @@ public class CommonTermsQueryBuilder extends AbstractQueryBuilder<CommonTermsQue
         .forRestApiVersion(RestApiVersion.equalTo(RestApiVersion.V_7));
 
     @Override
-    protected void doWriteTo(StreamOutput out) throws IOException {
+    protected void doWriteTo(StreamOutput out) {
         throw new UnsupportedOperationException("common_term_query is not meant to be serialized.");
     }
 
     @Override
-    protected void doXContent(XContentBuilder builder, Params params) throws IOException {}
+    protected void doXContent(XContentBuilder builder, Params params) {}
 
     @Override
-    protected Query doToQuery(SearchExecutionContext context) throws IOException {
+    protected Query doToQuery(SearchExecutionContext context) {
         return null;
     }
 
@@ -60,7 +58,7 @@ public class CommonTermsQueryBuilder extends AbstractQueryBuilder<CommonTermsQue
         return null;
     }
 
-    public static CommonTermsQueryBuilder fromXContent(XContentParser parser) throws IOException {
+    public static CommonTermsQueryBuilder fromXContent(XContentParser parser) {
         deprecationLogger.compatibleCritical("common_term_query", COMMON_TERMS_QUERY_DEPRECATION_MSG);
         throw new ParsingException(parser.getTokenLocation(), COMMON_TERMS_QUERY_DEPRECATION_MSG);
     }

@@ -28,12 +28,12 @@ public class NodesCapabilitiesResponse extends BaseNodesResponse<NodeCapability>
     }
 
     @Override
-    protected List<NodeCapability> readNodesFrom(StreamInput in) throws IOException {
+    protected List<NodeCapability> readNodesFrom(StreamInput in) {
         return TransportAction.localOnly();
     }
 
     @Override
-    protected void writeNodesTo(StreamOutput out, List<NodeCapability> nodes) throws IOException {
+    protected void writeNodesTo(StreamOutput out, List<NodeCapability> nodes) {
         TransportAction.localOnly();
     }
 

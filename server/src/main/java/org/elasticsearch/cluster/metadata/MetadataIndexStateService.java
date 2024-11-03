@@ -173,8 +173,7 @@ public class MetadataIndexStateService {
     private class AddBlocksToCloseExecutor extends SimpleBatchedExecutor<AddBlocksToCloseTask, Map<Index, ClusterBlock>> {
 
         @Override
-        public Tuple<ClusterState, Map<Index, ClusterBlock>> executeTask(AddBlocksToCloseTask task, ClusterState clusterState)
-            throws Exception {
+        public Tuple<ClusterState, Map<Index, ClusterBlock>> executeTask(AddBlocksToCloseTask task, ClusterState clusterState) {
             final Map<Index, ClusterBlock> blockedIndices = new HashMap<>(task.request.indices().length);
             var updatedClusterState = addIndexClosedBlocks(task.request.indices(), blockedIndices, clusterState);
             return Tuple.tuple(updatedClusterState, blockedIndices);
@@ -524,7 +523,7 @@ public class MetadataIndexStateService {
     private static class FinalizeBlocksExecutor extends SimpleBatchedExecutor<FinalizeBlocksTask, List<AddBlockResult>> {
 
         @Override
-        public Tuple<ClusterState, List<AddBlockResult>> executeTask(FinalizeBlocksTask task, ClusterState clusterState) throws Exception {
+        public Tuple<ClusterState, List<AddBlockResult>> executeTask(FinalizeBlocksTask task, ClusterState clusterState) {
             final Tuple<ClusterState, List<AddBlockResult>> finalizeResult = finalizeBlock(
                 clusterState,
                 task.blockedIndices,
@@ -580,7 +579,7 @@ public class MetadataIndexStateService {
         }
 
         @Override
-        protected void doRun() throws Exception {
+        protected void doRun() {
             final Map<Index, IndexResult> results = ConcurrentCollections.newConcurrentMap();
             final CountDown countDown = new CountDown(blockedIndices.size());
             final ClusterState state = clusterService.state();
@@ -711,7 +710,7 @@ public class MetadataIndexStateService {
         }
 
         @Override
-        protected void doRun() throws Exception {
+        protected void doRun() {
             final Map<Index, AddBlockResult> results = ConcurrentCollections.newConcurrentMap();
             final CountDown countDown = new CountDown(blockedIndices.size());
             final ClusterState state = clusterService.state();

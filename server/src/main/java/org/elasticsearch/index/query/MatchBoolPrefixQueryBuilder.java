@@ -350,7 +350,7 @@ public class MatchBoolPrefixQueryBuilder extends AbstractQueryBuilder<MatchBoolP
     }
 
     @Override
-    protected Query doToQuery(SearchExecutionContext context) throws IOException {
+    protected Query doToQuery(SearchExecutionContext context) {
         if (analyzer != null && context.getIndexAnalyzers().get(analyzer) == null) {
             throw new QueryShardException(context, "[" + NAME + "] analyzer [" + analyzer + "] not found");
         }

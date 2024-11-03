@@ -87,7 +87,7 @@ class ES815BitFlatVectorsFormat extends FlatVectorsFormat {
             VectorSimilarityFunction vectorSimilarityFunction,
             KnnVectorValues vectorValues,
             byte[] target
-        ) throws IOException {
+        ) {
             assert vectorValues instanceof ByteVectorValues;
             assert vectorSimilarityFunction == VectorSimilarityFunction.EUCLIDEAN;
             if (vectorValues instanceof ByteVectorValues byteVectorValues) {
@@ -104,7 +104,7 @@ class ES815BitFlatVectorsFormat extends FlatVectorsFormat {
             VectorSimilarityFunction similarityFunction,
             KnnVectorValues vectorValues,
             float[] target
-        ) throws IOException {
+        ) {
             throw new IllegalArgumentException("Unsupported vector type");
         }
     }

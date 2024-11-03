@@ -138,7 +138,7 @@ public class IdsQueryBuilder extends AbstractQueryBuilder<IdsQueryBuilder> {
     }
 
     @Override
-    protected Query doToQuery(SearchExecutionContext context) throws IOException {
+    protected Query doToQuery(SearchExecutionContext context) {
         MappedFieldType idField = context.getFieldType(IdFieldMapper.NAME);
         if (idField == null || ids.isEmpty()) {
             throw new IllegalStateException("Rewrite first");

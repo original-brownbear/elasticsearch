@@ -14,7 +14,6 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.QueryVisitor;
 
-import java.io.IOException;
 import java.util.Objects;
 
 /**
@@ -35,7 +34,7 @@ public class DateRangeIncludingNowQuery extends Query {
     }
 
     @Override
-    public Query rewrite(IndexSearcher searcher) throws IOException {
+    public Query rewrite(IndexSearcher searcher) {
         return in;
     }
 

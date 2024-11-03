@@ -108,7 +108,7 @@ public class FileWatcher extends AbstractResourceWatcher<FileChangesListener> {
         }
 
         @Override
-        void checkAndNotify() throws IOException {}
+        void checkAndNotify() {}
 
         @Override
         void onDirectoryDeleted() {}

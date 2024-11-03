@@ -77,7 +77,7 @@ public final class ByteArrayStreamInput extends StreamInput {
     }
 
     @Override
-    public long skip(long n) throws IOException {
+    public long skip(long n) {
         if (n <= 0L) {
             return 0L;
         }

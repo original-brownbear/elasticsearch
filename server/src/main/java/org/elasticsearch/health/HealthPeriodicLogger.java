@@ -35,7 +35,6 @@ import org.elasticsearch.telemetry.TelemetryProvider;
 import org.elasticsearch.telemetry.metric.LongGaugeMetric;
 import org.elasticsearch.telemetry.metric.MeterRegistry;
 
-import java.io.IOException;
 import java.time.Clock;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -281,7 +280,7 @@ public class HealthPeriodicLogger extends AbstractLifecycleComponent implements 
     }
 
     @Override
-    protected void doClose() throws IOException {
+    protected void doClose() {
         logger.debug("Periodic health logger is closing.");
         try {
             // The health API is expected to be a quick call, so we do not need a very long timeout

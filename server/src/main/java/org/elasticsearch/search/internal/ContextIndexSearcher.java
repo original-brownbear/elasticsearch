@@ -536,7 +536,7 @@ public class ContextIndexSearcher extends IndexSearcher implements Releasable {
         return collectionStatistics;
     }
 
-    public long docFreq(Term term, long docFreq) throws IOException {
+    public long docFreq(Term term, long docFreq) {
         TermStatistics termStatistics = termStatisticsFromDfs(term);
 
         if (termStatistics == null) {
@@ -545,7 +545,7 @@ public class ContextIndexSearcher extends IndexSearcher implements Releasable {
         return termStatistics.docFreq();
     }
 
-    public long totalTermFreq(Term term, long totalTermFreq) throws IOException {
+    public long totalTermFreq(Term term, long totalTermFreq) {
         TermStatistics termStatistics = termStatisticsFromDfs(term);
 
         if (termStatistics == null) {

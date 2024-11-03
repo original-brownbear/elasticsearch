@@ -31,7 +31,7 @@ public final class SourceFieldBlockLoader implements BlockLoader {
     }
 
     @Override
-    public RowStrideReader rowStrideReader(LeafReaderContext context) throws IOException {
+    public RowStrideReader rowStrideReader(LeafReaderContext context) {
         return new Source();
     }
 

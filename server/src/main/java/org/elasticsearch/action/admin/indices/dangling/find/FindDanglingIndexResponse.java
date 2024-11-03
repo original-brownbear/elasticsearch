@@ -16,7 +16,6 @@ import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 
-import java.io.IOException;
 import java.util.List;
 
 /**
@@ -34,12 +33,12 @@ public class FindDanglingIndexResponse extends BaseNodesResponse<NodeFindDanglin
     }
 
     @Override
-    protected List<NodeFindDanglingIndexResponse> readNodesFrom(StreamInput in) throws IOException {
+    protected List<NodeFindDanglingIndexResponse> readNodesFrom(StreamInput in) {
         return TransportAction.localOnly();
     }
 
     @Override
-    protected void writeNodesTo(StreamOutput out, List<NodeFindDanglingIndexResponse> nodes) throws IOException {
+    protected void writeNodesTo(StreamOutput out, List<NodeFindDanglingIndexResponse> nodes) {
         TransportAction.localOnly();
     }
 }

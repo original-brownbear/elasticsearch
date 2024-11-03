@@ -1070,7 +1070,7 @@ public class MoreLikeThisQueryBuilder extends AbstractQueryBuilder<MoreLikeThisQ
         }
     }
 
-    private static MultiTermVectorsResponse fetchResponse(Client client, Item[] items) throws IOException {
+    private static MultiTermVectorsResponse fetchResponse(Client client, Item[] items) {
         MultiTermVectorsRequest request = new MultiTermVectorsRequest();
         for (Item item : items) {
             request.add(item.toTermVectorsRequest());

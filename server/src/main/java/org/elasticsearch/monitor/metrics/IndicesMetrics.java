@@ -27,7 +27,6 @@ import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.telemetry.metric.LongWithAttributes;
 import org.elasticsearch.telemetry.metric.MeterRegistry;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
@@ -183,7 +182,7 @@ public class IndicesMetrics extends AbstractLifecycleComponent {
     }
 
     @Override
-    protected void doClose() throws IOException {
+    protected void doClose() {
         metrics.forEach(metric -> {
             try {
                 metric.close();

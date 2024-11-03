@@ -48,8 +48,7 @@ public class MultiMatchQueryParser extends MatchQueryParser {
         this.groupTieBreaker = tieBreaker;
     }
 
-    public Query parse(MultiMatchQueryBuilder.Type type, Map<String, Float> fieldNames, Object value, String minimumShouldMatch)
-        throws IOException {
+    public Query parse(MultiMatchQueryBuilder.Type type, Map<String, Float> fieldNames, Object value, String minimumShouldMatch) {
         boolean hasMappedField = fieldNames.keySet().stream().anyMatch(k -> context.getFieldType(k) != null);
         if (hasMappedField == false) {
             // all query fields are unmapped
@@ -83,7 +82,7 @@ public class MultiMatchQueryParser extends MatchQueryParser {
         Map<String, Float> fieldNames,
         Object value,
         String minimumShouldMatch
-    ) throws IOException {
+    ) {
         List<Query> queries = new ArrayList<>();
         for (String fieldName : fieldNames.keySet()) {
             if (context.getFieldType(fieldName) == null) {

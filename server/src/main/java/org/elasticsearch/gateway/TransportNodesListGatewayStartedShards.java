@@ -220,12 +220,12 @@ public class TransportNodesListGatewayStartedShards extends TransportNodesAction
         }
 
         @Override
-        protected List<NodeGatewayStartedShards> readNodesFrom(StreamInput in) throws IOException {
+        protected List<NodeGatewayStartedShards> readNodesFrom(StreamInput in) {
             return TransportAction.localOnly();
         }
 
         @Override
-        protected void writeNodesTo(StreamOutput out, List<NodeGatewayStartedShards> nodes) throws IOException {
+        protected void writeNodesTo(StreamOutput out, List<NodeGatewayStartedShards> nodes) {
             TransportAction.localOnly();
         }
     }

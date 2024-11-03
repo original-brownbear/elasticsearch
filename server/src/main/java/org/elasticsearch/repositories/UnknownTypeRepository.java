@@ -25,7 +25,6 @@ import org.elasticsearch.indices.recovery.RecoveryState;
 import org.elasticsearch.snapshots.SnapshotId;
 import org.elasticsearch.snapshots.SnapshotInfo;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.concurrent.Executor;
 import java.util.function.BooleanSupplier;
@@ -71,7 +70,7 @@ public class UnknownTypeRepository extends AbstractLifecycleComponent implements
     }
 
     @Override
-    public IndexMetadata getSnapshotIndexMetaData(RepositoryData repositoryData, SnapshotId snapshotId, IndexId index) throws IOException {
+    public IndexMetadata getSnapshotIndexMetaData(RepositoryData repositoryData, SnapshotId snapshotId, IndexId index) {
         throw createUnknownTypeException();
     }
 
@@ -181,7 +180,5 @@ public class UnknownTypeRepository extends AbstractLifecycleComponent implements
     }
 
     @Override
-    protected void doClose() throws IOException {
-
-    }
+    protected void doClose() {}
 }

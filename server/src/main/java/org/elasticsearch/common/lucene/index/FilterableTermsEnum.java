@@ -115,7 +115,7 @@ public class FilterableTermsEnum extends TermsEnum {
     }
 
     @Override
-    public BytesRef term() throws IOException {
+    public BytesRef term() {
         return current;
     }
 
@@ -184,52 +184,52 @@ public class FilterableTermsEnum extends TermsEnum {
     }
 
     @Override
-    public int docFreq() throws IOException {
+    public int docFreq() {
         return currentDocFreq;
     }
 
     @Override
-    public long totalTermFreq() throws IOException {
+    public long totalTermFreq() {
         return currentTotalTermFreq;
     }
 
     @Override
-    public void seekExact(long ord) throws IOException {
+    public void seekExact(long ord) {
         throw new UnsupportedOperationException(UNSUPPORTED_MESSAGE);
     }
 
     @Override
-    public void seekExact(BytesRef term, TermState state) throws IOException {
+    public void seekExact(BytesRef term, TermState state) {
         throw new UnsupportedOperationException(UNSUPPORTED_MESSAGE);
     }
 
     @Override
-    public TermState termState() throws IOException {
+    public TermState termState() {
         throw new UnsupportedOperationException(UNSUPPORTED_MESSAGE);
     }
 
     @Override
-    public SeekStatus seekCeil(BytesRef text) throws IOException {
+    public SeekStatus seekCeil(BytesRef text) {
         throw new UnsupportedOperationException(UNSUPPORTED_MESSAGE);
     }
 
     @Override
-    public long ord() throws IOException {
+    public long ord() {
         throw new UnsupportedOperationException(UNSUPPORTED_MESSAGE);
     }
 
     @Override
-    public PostingsEnum postings(PostingsEnum reuse, int flags) throws IOException {
+    public PostingsEnum postings(PostingsEnum reuse, int flags) {
         throw new UnsupportedOperationException(UNSUPPORTED_MESSAGE);
     }
 
     @Override
-    public ImpactsEnum impacts(int flags) throws IOException {
+    public ImpactsEnum impacts(int flags) {
         throw new UnsupportedOperationException(UNSUPPORTED_MESSAGE);
     }
 
     @Override
-    public BytesRef next() throws IOException {
+    public BytesRef next() {
         throw new UnsupportedOperationException(UNSUPPORTED_MESSAGE);
     }
 }

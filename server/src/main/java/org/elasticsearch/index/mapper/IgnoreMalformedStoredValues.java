@@ -99,7 +99,7 @@ public abstract class IgnoreMalformedStoredValues {
         }
 
         @Override
-        public void write(XContentBuilder b) throws IOException {}
+        public void write(XContentBuilder b) {}
 
         @Override
         public void reset() {}

@@ -48,7 +48,7 @@ public record EmptySecretSettings() implements SecretSettings {
     }
 
     @Override
-    public void writeTo(StreamOutput out) throws IOException {}
+    public void writeTo(StreamOutput out) {}
 
     @Override
     public SecretSettings newSecretSettings(Map<String, Object> newSecrets) {

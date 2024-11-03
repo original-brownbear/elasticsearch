@@ -295,7 +295,7 @@ public class QueryStringQueryParser extends QueryParser {
     }
 
     @Override
-    public Query getFieldQuery(String field, String queryText, boolean quoted) throws ParseException {
+    public Query getFieldQuery(String field, String queryText, boolean quoted) {
         if (field != null && EXISTS_FIELD.equals(field)) {
             return existsQuery(queryText);
         }
@@ -344,15 +344,13 @@ public class QueryStringQueryParser extends QueryParser {
                 queryBuilder.setAnalyzer(forceAnalyzer);
             }
             return queryBuilder.parse(type, fields, queryText, null);
-        } catch (IOException e) {
-            throw new ParseException(e.getMessage());
         } finally {
             queryBuilder.setAnalyzer(oldAnalyzer);
         }
     }
 
     @Override
-    protected Query getFieldQuery(String field, String queryText, int slop) throws ParseException {
+    protected Query getFieldQuery(String field, String queryText, int slop) {
         if (field != null && EXISTS_FIELD.equals(field)) {
             return existsQuery(queryText);
         }
@@ -375,8 +373,6 @@ public class QueryStringQueryParser extends QueryParser {
                 return null;
             }
             return applySlop(query, slop);
-        } catch (IOException e) {
-            throw new ParseException(e.getMessage());
         } finally {
             queryBuilder.setAnalyzer(oldAnalyzer);
             queryBuilder.setPhraseSlop(oldSlop);
@@ -384,8 +380,7 @@ public class QueryStringQueryParser extends QueryParser {
     }
 
     @Override
-    protected Query getRangeQuery(String field, String part1, String part2, boolean startInclusive, boolean endInclusive)
-        throws ParseException {
+    protected Query getRangeQuery(String field, String part1, String part2, boolean startInclusive, boolean endInclusive) {
         if ("*".equals(part1)) {
             part1 = null;
         }
@@ -456,7 +451,7 @@ public class QueryStringQueryParser extends QueryParser {
     }
 
     @Override
-    protected Query getFuzzyQuery(String field, String termStr, float minSimilarity) throws ParseException {
+    protected Query getFuzzyQuery(String field, String termStr, float minSimilarity) {
         Map<String, Float> fields = extractMultiFields(field, false);
         if (fields.isEmpty()) {
             return newUnmappedFieldQuery(field);
@@ -476,7 +471,7 @@ public class QueryStringQueryParser extends QueryParser {
         }
     }
 
-    private Query getFuzzyQuerySingle(String field, String termStr, int minSimilarity) throws ParseException {
+    private Query getFuzzyQuerySingle(String field, String termStr, int minSimilarity) {
         MappedFieldType currentFieldType = context.getFieldType(field);
         if (currentFieldType == null || currentFieldType.getTextSearchInfo() == TextSearchInfo.NONE) {
             return newUnmappedFieldQuery(field);

@@ -678,7 +678,7 @@ public enum MultiValueMode implements Writeable {
         final BitSet parentDocs,
         final DocIdSetIterator childDocs,
         int maxChildren
-    ) throws IOException {
+    ) {
         if (parentDocs == null || childDocs == null) {
             return FieldData.replaceMissing(FieldData.emptyNumericDouble(), missingValue);
         }

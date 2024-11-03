@@ -81,7 +81,7 @@ public interface SourceLoader {
         public Leaf leaf(LeafReader reader, int[] docIdsInLeaf) {
             return new Leaf() {
                 @Override
-                public Source source(LeafStoredFieldLoader storedFields, int docId) throws IOException {
+                public Source source(LeafStoredFieldLoader storedFields, int docId) {
                     return Source.fromBytes(storedFields.source());
                 }
 
@@ -264,7 +264,7 @@ public interface SourceLoader {
             }
 
             @Override
-            public DocValuesLoader docValuesLoader(LeafReader leafReader, int[] docIdsInLeaf) throws IOException {
+            public DocValuesLoader docValuesLoader(LeafReader leafReader, int[] docIdsInLeaf) {
                 return null;
             }
 

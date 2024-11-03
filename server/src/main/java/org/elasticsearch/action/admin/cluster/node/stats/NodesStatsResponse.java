@@ -19,7 +19,6 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.xcontent.ChunkedToXContent;
 import org.elasticsearch.xcontent.ToXContent;
 
-import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 
@@ -30,12 +29,12 @@ public class NodesStatsResponse extends BaseNodesXContentResponse<NodeStats> {
     }
 
     @Override
-    protected List<NodeStats> readNodesFrom(StreamInput in) throws IOException {
+    protected List<NodeStats> readNodesFrom(StreamInput in) {
         return TransportAction.localOnly();
     }
 
     @Override
-    protected void writeNodesTo(StreamOutput out, List<NodeStats> nodes) throws IOException {
+    protected void writeNodesTo(StreamOutput out, List<NodeStats> nodes) {
         TransportAction.localOnly();
     }
 

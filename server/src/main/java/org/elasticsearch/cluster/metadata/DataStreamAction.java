@@ -161,7 +161,7 @@ public class DataStreamAction implements Writeable, ToXContentObject {
         }
     }
 
-    public static DataStreamAction fromXContent(XContentParser parser) throws IOException {
+    public static DataStreamAction fromXContent(XContentParser parser) {
         return PARSER.apply(parser, null);
     }
 

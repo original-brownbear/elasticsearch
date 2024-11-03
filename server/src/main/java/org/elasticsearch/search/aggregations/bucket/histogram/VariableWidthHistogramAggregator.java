@@ -121,7 +121,7 @@ public class VariableWidthHistogramAggregator extends DeferableBucketAggregator 
         }
 
         @Override
-        InternalVariableWidthHistogram.Bucket buildBucket(int bucketOrd, InternalAggregations subAggregations) throws IOException {
+        InternalVariableWidthHistogram.Bucket buildBucket(int bucketOrd, InternalAggregations subAggregations) {
             InternalVariableWidthHistogram.Bucket bucket = getMergeBucketPhase().buildBucket(bucketOrd, subAggregations);
             return bucket;
         }

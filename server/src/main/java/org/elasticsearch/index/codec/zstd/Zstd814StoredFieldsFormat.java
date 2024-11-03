@@ -218,6 +218,6 @@ public final class Zstd814StoredFieldsFormat extends Lucene90CompressingStoredFi
         }
 
         @Override
-        public void close() throws IOException {}
+        public void close() {}
     }
 }

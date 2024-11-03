@@ -456,12 +456,12 @@ public final class XContentDataHelper {
         },
         NULL(NULL_ENCODING) {
             @Override
-            StoredField buildStoredField(String name, XContentParser parser) throws IOException {
+            StoredField buildStoredField(String name, XContentParser parser) {
                 return new StoredField(name, encode(parser));
             }
 
             @Override
-            byte[] encode(XContentParser parser) throws IOException {
+            byte[] encode(XContentParser parser) {
                 byte[] bytes = new byte[] { getEncoding() };
                 assertValidEncoding(bytes);
                 return bytes;
@@ -519,7 +519,7 @@ public final class XContentDataHelper {
         },
         VOID(VOID_ENCODING) {
             @Override
-            StoredField buildStoredField(String name, XContentParser parser) throws IOException {
+            StoredField buildStoredField(String name, XContentParser parser) {
                 return new StoredField(name, encode(parser));
             }
 
@@ -561,7 +561,7 @@ public final class XContentDataHelper {
 
         abstract void decodeAndWrite(XContentBuilder b, BytesRef r) throws IOException;
 
-        static byte[] encode(BigInteger n, Byte encoding) throws IOException {
+        static byte[] encode(BigInteger n, Byte encoding) {
             byte[] twosCompliment = n.toByteArray();
             byte[] encoded = new byte[1 + twosCompliment.length];
             encoded[0] = encoding;

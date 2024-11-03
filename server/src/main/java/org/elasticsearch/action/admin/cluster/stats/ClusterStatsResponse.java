@@ -109,17 +109,17 @@ public class ClusterStatsResponse extends BaseNodesResponse<ClusterStatsNodeResp
     }
 
     @Override
-    public void writeTo(StreamOutput out) throws IOException {
+    public void writeTo(StreamOutput out) {
         TransportAction.localOnly();
     }
 
     @Override
-    protected List<ClusterStatsNodeResponse> readNodesFrom(StreamInput in) throws IOException {
+    protected List<ClusterStatsNodeResponse> readNodesFrom(StreamInput in) {
         return TransportAction.localOnly();
     }
 
     @Override
-    protected void writeNodesTo(StreamOutput out, List<ClusterStatsNodeResponse> nodes) throws IOException {
+    protected void writeNodesTo(StreamOutput out, List<ClusterStatsNodeResponse> nodes) {
         TransportAction.localOnly();
     }
 

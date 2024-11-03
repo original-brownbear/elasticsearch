@@ -250,7 +250,7 @@ public final class ChecksumBlobStoreFormat<T> {
         }
 
         @Override
-        public void close() throws IOException {
+        public void close() {
             // not closing the wrapped stream
         }
 

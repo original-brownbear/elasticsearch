@@ -19,7 +19,6 @@ import org.elasticsearch.tasks.CancellableTask;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.tasks.TaskId;
 
-import java.io.IOException;
 import java.util.Map;
 
 public class GetAliasesRequest extends ActionRequest implements AliasesRequest {
@@ -41,7 +40,7 @@ public class GetAliasesRequest extends ActionRequest implements AliasesRequest {
     }
 
     @Override
-    public void writeTo(StreamOutput out) throws IOException {
+    public void writeTo(StreamOutput out) {
         TransportAction.localOnly();
     }
 

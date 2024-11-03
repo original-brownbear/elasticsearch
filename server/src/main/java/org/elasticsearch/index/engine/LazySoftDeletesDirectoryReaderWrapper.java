@@ -60,7 +60,7 @@ public final class LazySoftDeletesDirectoryReaderWrapper extends FilterDirectory
     }
 
     @Override
-    protected DirectoryReader doWrapDirectoryReader(DirectoryReader in) throws IOException {
+    protected DirectoryReader doWrapDirectoryReader(DirectoryReader in) {
         throw new UnsupportedOperationException();
     }
 

@@ -102,7 +102,7 @@ public class StatsAggregationBuilder extends ValuesSourceAggregationBuilder.Metr
     }
 
     @Override
-    public XContentBuilder doXContentBody(XContentBuilder builder, Params params) throws IOException {
+    public XContentBuilder doXContentBody(XContentBuilder builder, Params params) {
         return builder;
     }
 

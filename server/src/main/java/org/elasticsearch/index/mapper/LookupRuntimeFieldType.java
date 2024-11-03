@@ -225,7 +225,7 @@ public final class LookupRuntimeFieldType extends MappedFieldType {
         }
 
         @Override
-        public List<Object> fetchValues(Source source, int doc, List<Object> ignoredValues) throws IOException {
+        public List<Object> fetchValues(Source source, int doc, List<Object> ignoredValues) {
             assert false : "call #fetchDocumentField() instead";
             throw new UnsupportedOperationException("call #fetchDocumentField() instead");
         }

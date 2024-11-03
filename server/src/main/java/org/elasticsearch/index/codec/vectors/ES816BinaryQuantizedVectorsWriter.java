@@ -668,7 +668,7 @@ public class ES816BinaryQuantizedVectorsWriter extends FlatVectorsWriter {
         }
 
         @Override
-        public void finish() throws IOException {
+        public void finish() {
             if (finished) {
                 return;
             }
@@ -803,7 +803,7 @@ public class ES816BinaryQuantizedVectorsWriter extends FlatVectorsWriter {
             return dimension;
         }
 
-        public OffHeapBinarizedQueryVectorValues copy() throws IOException {
+        public OffHeapBinarizedQueryVectorValues copy() {
             return new OffHeapBinarizedQueryVectorValues(slice.clone(), dimension, size, vectorSimilarityFunction);
         }
 
@@ -864,27 +864,27 @@ public class ES816BinaryQuantizedVectorsWriter extends FlatVectorsWriter {
         }
 
         @Override
-        public float getCentroidDistance(int vectorOrd) throws IOException {
+        public float getCentroidDistance(int vectorOrd) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public float getVectorMagnitude(int vectorOrd) throws IOException {
+        public float getVectorMagnitude(int vectorOrd) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public float getOOQ(int targetOrd) throws IOException {
+        public float getOOQ(int targetOrd) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public float getNormOC(int targetOrd) throws IOException {
+        public float getNormOC(int targetOrd) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public float getODotC(int targetOrd) throws IOException {
+        public float getODotC(int targetOrd) {
             throw new UnsupportedOperationException();
         }
 
@@ -894,7 +894,7 @@ public class ES816BinaryQuantizedVectorsWriter extends FlatVectorsWriter {
         }
 
         @Override
-        public float[] getCentroid() throws IOException {
+        public float[] getCentroid() {
             return centroid;
         }
 
@@ -904,7 +904,7 @@ public class ES816BinaryQuantizedVectorsWriter extends FlatVectorsWriter {
         }
 
         @Override
-        public VectorScorer scorer(float[] target) throws IOException {
+        public VectorScorer scorer(float[] target) {
             throw new UnsupportedOperationException();
         }
 

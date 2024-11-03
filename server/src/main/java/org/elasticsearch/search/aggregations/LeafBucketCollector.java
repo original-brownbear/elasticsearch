@@ -30,7 +30,7 @@ public abstract class LeafBucketCollector implements LeafCollector {
      */
     public static final LeafBucketCollector NO_OP_COLLECTOR = new LeafBucketCollector() {
         @Override
-        public void setScorer(Scorable arg0) throws IOException {
+        public void setScorer(Scorable arg0) {
             // no-op
         }
 

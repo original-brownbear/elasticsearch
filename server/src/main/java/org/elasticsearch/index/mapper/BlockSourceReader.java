@@ -98,7 +98,7 @@ public abstract class BlockSourceReader implements BlockLoader.RowStrideReader {
         }
 
         @Override
-        public final ColumnAtATimeReader columnAtATimeReader(LeafReaderContext context) throws IOException {
+        public final ColumnAtATimeReader columnAtATimeReader(LeafReaderContext context) {
             return null;
         }
 
@@ -190,7 +190,7 @@ public abstract class BlockSourceReader implements BlockLoader.RowStrideReader {
         }
 
         @Override
-        protected RowStrideReader rowStrideReader(LeafReaderContext context, DocIdSetIterator iter) throws IOException {
+        protected RowStrideReader rowStrideReader(LeafReaderContext context, DocIdSetIterator iter) {
             return new BytesRefs(fetcher, iter);
         }
 
@@ -314,7 +314,7 @@ public abstract class BlockSourceReader implements BlockLoader.RowStrideReader {
         }
 
         @Override
-        public RowStrideReader rowStrideReader(LeafReaderContext context, DocIdSetIterator iter) throws IOException {
+        public RowStrideReader rowStrideReader(LeafReaderContext context, DocIdSetIterator iter) {
             return new Ints(fetcher, iter);
         }
 
@@ -398,7 +398,7 @@ public abstract class BlockSourceReader implements BlockLoader.RowStrideReader {
     public static LeafIteratorLookup lookupMatchingAll() {
         return new LeafIteratorLookup() {
             @Override
-            public DocIdSetIterator lookup(LeafReaderContext ctx) throws IOException {
+            public DocIdSetIterator lookup(LeafReaderContext ctx) {
                 return DocIdSetIterator.all(ctx.reader().maxDoc());
             }
 

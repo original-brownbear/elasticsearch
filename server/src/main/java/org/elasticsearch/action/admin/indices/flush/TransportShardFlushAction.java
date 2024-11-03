@@ -115,7 +115,7 @@ public class TransportShardFlushAction extends TransportReplicationAction<ShardF
         }
 
         @Override
-        public void writeTo(StreamOutput out) throws IOException {
+        public void writeTo(StreamOutput out) {
             assert false : "must not send pre_sync request from a new node";
             throw new UnsupportedOperationException("");
         }

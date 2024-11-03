@@ -252,7 +252,7 @@ public class LogConfigurator {
         final Set<FileVisitOption> options = EnumSet.of(FileVisitOption.FOLLOW_LINKS);
         Files.walkFileTree(configsPath, options, Integer.MAX_VALUE, new SimpleFileVisitor<Path>() {
             @Override
-            public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
+            public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) {
                 if (file.getFileName().toString().equals("log4j2.properties")) {
                     configurations.add((PropertiesConfiguration) factory.getConfiguration(context, file.toString(), file.toUri()));
                 }

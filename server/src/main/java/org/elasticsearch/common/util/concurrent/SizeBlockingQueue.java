@@ -135,13 +135,13 @@ public class SizeBlockingQueue<E> extends AbstractQueue<E> implements BlockingQu
     }
 
     @Override
-    public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
+    public boolean offer(E e, long timeout, TimeUnit unit) {
         // note, not used in ThreadPoolExecutor
         throw new IllegalStateException("offer with timeout not allowed on size queue");
     }
 
     @Override
-    public void put(E e) throws InterruptedException {
+    public void put(E e) {
         // note, not used in ThreadPoolExecutor
         throw new IllegalStateException("put not allowed on size queue");
     }

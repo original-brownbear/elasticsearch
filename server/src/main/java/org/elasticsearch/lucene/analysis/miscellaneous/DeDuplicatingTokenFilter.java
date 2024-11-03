@@ -63,7 +63,7 @@ public final class DeDuplicatingTokenFilter extends FilteringTokenFilter {
     }
 
     @Override
-    protected boolean accept() throws IOException {
+    protected boolean accept() {
         return emitDuplicates || seqAtt.getNumPriorUsesInASequence() < 1;
     }
 

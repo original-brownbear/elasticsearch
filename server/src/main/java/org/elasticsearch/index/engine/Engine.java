@@ -489,7 +489,7 @@ public abstract class Engine implements Closeable {
         public void lock() {}
 
         @Override
-        public void lockInterruptibly() throws InterruptedException {}
+        public void lockInterruptibly() {}
 
         @Override
         public boolean tryLock() {
@@ -497,7 +497,7 @@ public abstract class Engine implements Closeable {
         }
 
         @Override
-        public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
+        public boolean tryLock(long time, TimeUnit unit) {
             return true;
         }
 
