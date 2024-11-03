@@ -59,7 +59,6 @@ public abstract class RetrieverBuilder implements Rewriteable<RetrieverBuilder>,
     public static final ParseField NAME_FIELD = new ParseField("_name");
 
     protected static void declareBaseParserFields(
-        String name,
         AbstractObjectParser<? extends RetrieverBuilder, RetrieverParserContext> parser
     ) {
         parser.declareObjectArray(

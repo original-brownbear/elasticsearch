@@ -124,14 +124,6 @@ public final class PointInTimeBuilder implements Writeable, ToXContentFragment {
         return this;
     }
 
-    /**
-     * If specified, the search layer will keep this point in time around for at least the given keep-alive.
-     * Otherwise, the point in time will be kept around until the original keep alive elapsed.
-     */
-    public PointInTimeBuilder setKeepAlive(String keepAlive) {
-        return setKeepAlive(TimeValue.parseTimeValue(keepAlive, "keep_alive"));
-    }
-
     @Nullable
     public TimeValue getKeepAlive() {
         return keepAlive;
@@ -141,7 +133,7 @@ public final class PointInTimeBuilder implements Writeable, ToXContentFragment {
      * Returns {@code true} if the point in time is explicitly released when returning the response.
      */
     public boolean singleSession() {
-        return keepAlive != null && TimeValue.MINUS_ONE.equals(keepAlive);
+        return TimeValue.MINUS_ONE.equals(keepAlive);
     }
 
     @Override

@@ -530,11 +530,6 @@ class ExitableDirectoryReader extends FilterDirectoryReader {
         }
 
         @Override
-        public float[] vectorValue(int ord) throws IOException {
-            return in.vectorValue(ord);
-        }
-
-        @Override
         public int ordToDoc(int ord) {
             return in.ordToDoc(ord);
         }
@@ -565,10 +560,6 @@ class ExitableDirectoryReader extends FilterDirectoryReader {
             return createExitableIterator(in.iterator(), queryCancellation);
         }
 
-        @Override
-        public FloatVectorValues copy() throws IOException {
-            return in.copy();
-        }
     }
 
     private static KnnVectorValues.DocIndexIterator createExitableIterator(

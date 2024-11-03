@@ -67,19 +67,19 @@ public class SearchAfterBuilder implements ToXContentObject, Writeable {
         if (values.length == 0) {
             throw new IllegalArgumentException("Values must contains at least one value.");
         }
-        for (int i = 0; i < values.length; i++) {
-            if (values[i] == null) continue;
-            if (values[i] instanceof String) continue;
-            if (values[i] instanceof Text) continue;
-            if (values[i] instanceof Long) continue;
-            if (values[i] instanceof Integer) continue;
-            if (values[i] instanceof Short) continue;
-            if (values[i] instanceof Byte) continue;
-            if (values[i] instanceof Double) continue;
-            if (values[i] instanceof Float) continue;
-            if (values[i] instanceof Boolean) continue;
-            if (values[i] instanceof BigInteger) continue;
-            throw new IllegalArgumentException("Can't handle " + SEARCH_AFTER + " field value of type [" + values[i].getClass() + "]");
+        for (Object value : values) {
+            if (value == null) continue;
+            if (value instanceof String) continue;
+            if (value instanceof Text) continue;
+            if (value instanceof Long) continue;
+            if (value instanceof Integer) continue;
+            if (value instanceof Short) continue;
+            if (value instanceof Byte) continue;
+            if (value instanceof Double) continue;
+            if (value instanceof Float) continue;
+            if (value instanceof Boolean) continue;
+            if (value instanceof BigInteger) continue;
+            throw new IllegalArgumentException("Can't handle " + SEARCH_AFTER + " field value of type [" + value.getClass() + "]");
         }
         sortValues = new Object[values.length];
         System.arraycopy(values, 0, sortValues, 0, values.length);
@@ -275,11 +275,7 @@ public class SearchAfterBuilder implements ToXContentObject, Writeable {
 
     @Override
     public boolean equals(Object other) {
-        if ((other instanceof SearchAfterBuilder) == false) {
-            return false;
-        }
-        boolean value = Arrays.equals(sortValues, ((SearchAfterBuilder) other).sortValues);
-        return value;
+        return (other instanceof SearchAfterBuilder searchAfterBuilder) && Arrays.equals(sortValues, searchAfterBuilder.sortValues);
     }
 
     @Override

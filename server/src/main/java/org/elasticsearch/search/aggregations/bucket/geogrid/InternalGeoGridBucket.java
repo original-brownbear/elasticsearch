@@ -67,13 +67,7 @@ public abstract class InternalGeoGridBucket extends InternalMultiBucketAggregati
 
     @Override
     public int compareTo(InternalGeoGridBucket other) {
-        if (this.hashAsLong > other.hashAsLong) {
-            return 1;
-        }
-        if (this.hashAsLong < other.hashAsLong) {
-            return -1;
-        }
-        return 0;
+        return Long.compare(this.hashAsLong, other.hashAsLong);
     }
 
     @Override

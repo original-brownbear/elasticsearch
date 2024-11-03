@@ -62,7 +62,7 @@ public abstract class AbstractScriptFieldQuery<S extends AbstractFieldScript> ex
     }
 
     @Override
-    public Weight createWeight(IndexSearcher searcher, ScoreMode scoreMode, float boost) throws IOException {
+    public Weight createWeight(IndexSearcher searcher, ScoreMode scoreMode, float boost) {
         return new ConstantScoreWeight(this, boost) {
             @Override
             public boolean isCacheable(LeafReaderContext ctx) {
@@ -70,7 +70,7 @@ public abstract class AbstractScriptFieldQuery<S extends AbstractFieldScript> ex
             }
 
             @Override
-            public ScorerSupplier scorerSupplier(LeafReaderContext ctx) throws IOException {
+            public ScorerSupplier scorerSupplier(LeafReaderContext ctx) {
                 S scriptContext = scriptContextFunction.apply(ctx);
                 DocIdSetIterator approximation = DocIdSetIterator.all(ctx.reader().maxDoc());
                 Scorer scorer = new ConstantScoreScorer(score(), scoreMode, createTwoPhaseIterator(scriptContext, approximation));

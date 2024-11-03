@@ -107,7 +107,7 @@ public class ExactKnnQueryBuilder extends AbstractQueryBuilder<ExactKnnQueryBuil
     }
 
     @Override
-    protected Query doToQuery(SearchExecutionContext context) throws IOException {
+    protected Query doToQuery(SearchExecutionContext context) {
         final MappedFieldType fieldType = context.getFieldType(field);
         if (fieldType == null) {
             throw new IllegalArgumentException("field [" + field + "] does not exist in the mapping");
@@ -132,7 +132,7 @@ public class ExactKnnQueryBuilder extends AbstractQueryBuilder<ExactKnnQueryBuil
     }
 
     @Override
-    protected QueryBuilder doRewrite(QueryRewriteContext queryRewriteContext) throws IOException {
+    protected QueryBuilder doRewrite(QueryRewriteContext queryRewriteContext) {
         return this;
     }
 

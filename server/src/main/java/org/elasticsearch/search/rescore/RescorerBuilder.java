@@ -102,7 +102,7 @@ public abstract class RescorerBuilder<RB extends RescorerBuilder<RB>>
         }
 
         if (windowSize != null) {
-            rescorer.windowSize(windowSize.intValue());
+            rescorer.windowSize(windowSize);
         } else if (rescorer.isWindowSizeRequired()) {
             throw new ParsingException(parser.getTokenLocation(), "window_size is required for rescorer of type [" + rescorerType + "]");
         }
@@ -139,9 +139,7 @@ public abstract class RescorerBuilder<RB extends RescorerBuilder<RB>>
      * execute the rescore against a particular shard.
      */
     public final RescoreContext buildContext(SearchExecutionContext context) throws IOException {
-        if (isWindowSizeRequired()) {
-            assert windowSize != null;
-        }
+        assert isWindowSizeRequired() == false || windowSize != null;
         int finalWindowSize = windowSize == null ? DEFAULT_WINDOW_SIZE : windowSize;
 
         return innerBuildContext(finalWindowSize, context);

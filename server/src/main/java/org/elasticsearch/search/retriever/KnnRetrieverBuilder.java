@@ -89,7 +89,7 @@ public final class KnnRetrieverBuilder extends RetrieverBuilder {
         PARSER.declareInt(constructorArg(), K_FIELD);
         PARSER.declareInt(constructorArg(), NUM_CANDS_FIELD);
         PARSER.declareFloat(optionalConstructorArg(), VECTOR_SIMILARITY);
-        RetrieverBuilder.declareBaseParserFields(NAME, PARSER);
+        RetrieverBuilder.declareBaseParserFields(PARSER);
     }
 
     public static KnnRetrieverBuilder fromXContent(XContentParser parser, RetrieverParserContext context) throws IOException {
@@ -166,26 +166,23 @@ public final class KnnRetrieverBuilder extends RetrieverBuilder {
 
         if (queryVectorBuilder != null) {
             SetOnce<float[]> toSet = new SetOnce<>();
-            ctx.registerAsyncAction((c, l) -> {
-                queryVectorBuilder.buildVector(c, l.delegateFailureAndWrap((ll, v) -> {
-                    toSet.set(v);
-                    if (v == null) {
-                        ll.onFailure(
-                            new IllegalArgumentException(
-                                format(
-                                    "[%s] with name [%s] returned null query_vector",
-                                    QUERY_VECTOR_BUILDER_FIELD.getPreferredName(),
-                                    queryVectorBuilder.getWriteableName()
-                                )
+            ctx.registerAsyncAction((c, l) -> queryVectorBuilder.buildVector(c, l.delegateFailureAndWrap((ll, v) -> {
+                toSet.set(v);
+                if (v == null) {
+                    ll.onFailure(
+                        new IllegalArgumentException(
+                            format(
+                                "[%s] with name [%s] returned null query_vector",
+                                QUERY_VECTOR_BUILDER_FIELD.getPreferredName(),
+                                queryVectorBuilder.getWriteableName()
                             )
-                        );
-                        return;
-                    }
-                    ll.onResponse(null);
-                }));
-            });
-            var rewritten = new KnnRetrieverBuilder(this, () -> toSet.get(), null);
-            return rewritten;
+                        )
+                    );
+                    return;
+                }
+                ll.onResponse(null);
+            })));
+            return new KnnRetrieverBuilder(this, toSet::get, null);
         }
         return super.rewrite(ctx);
     }

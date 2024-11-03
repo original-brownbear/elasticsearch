@@ -118,8 +118,8 @@ public abstract class CompoundRetrieverBuilder<T extends CompoundRetrieverBuilde
             searchRequest.setPreFilterShardSize(Integer.MAX_VALUE);
             multiSearchRequest.add(searchRequest);
         }
-        ctx.registerAsyncAction((client, listener) -> {
-            client.execute(TransportMultiSearchAction.TYPE, multiSearchRequest, new ActionListener<>() {
+        ctx.registerAsyncAction(
+            (client, listener) -> client.execute(TransportMultiSearchAction.TYPE, multiSearchRequest, new ActionListener<>() {
                 @Override
                 public void onResponse(MultiSearchResponse items) {
                     List<ScoreDoc[]> topDocs = new ArrayList<>();
@@ -163,8 +163,8 @@ public abstract class CompoundRetrieverBuilder<T extends CompoundRetrieverBuilde
                 public void onFailure(Exception e) {
                     listener.onFailure(e);
                 }
-            });
-        });
+            })
+        );
 
         return new RankDocsRetrieverBuilder(
             rankWindowSize,

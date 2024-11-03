@@ -51,7 +51,6 @@ public final class ProfileWeight extends Weight {
             return null;
         }
 
-        final ProfileWeight weight = this;
         return new ScorerSupplier() {
 
             @Override

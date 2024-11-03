@@ -173,11 +173,7 @@ public abstract class SortBuilder<T extends SortBuilder<T>>
                 sort = true;
             } else {
                 SortField sortField = sortFields.get(0);
-                if (sortField.getType() == SortField.Type.SCORE && sortField.getReverse() == false) {
-                    sort = false;
-                } else {
-                    sort = true;
-                }
+                sort = sortField.getType() != SortField.Type.SCORE || sortField.getReverse();
             }
             if (sort) {
                 return Optional.of(

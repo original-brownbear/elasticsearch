@@ -38,7 +38,7 @@ public final class DocValuesSliceQuery extends SliceQuery {
     }
 
     @Override
-    public Weight createWeight(IndexSearcher searcher, ScoreMode scoreMode, float boost) throws IOException {
+    public Weight createWeight(IndexSearcher searcher, ScoreMode scoreMode, float boost) {
         return new ConstantScoreWeight(this, boost) {
 
             @Override

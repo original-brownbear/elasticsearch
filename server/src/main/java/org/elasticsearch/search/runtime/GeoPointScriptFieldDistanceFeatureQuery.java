@@ -25,7 +25,6 @@ import org.apache.lucene.util.SloppyMath;
 import org.elasticsearch.script.AbstractLongFieldScript;
 import org.elasticsearch.script.Script;
 
-import java.io.IOException;
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -80,7 +79,7 @@ public final class GeoPointScriptFieldDistanceFeatureQuery extends AbstractScrip
             }
 
             @Override
-            public ScorerSupplier scorerSupplier(LeafReaderContext context) throws IOException {
+            public ScorerSupplier scorerSupplier(LeafReaderContext context) {
                 Scorer scorer = new DistanceScorer(scriptContextFunction().apply(context), context.reader().maxDoc(), boost);
                 return new DefaultScorerSupplier(scorer);
             }
@@ -141,7 +140,7 @@ public final class GeoPointScriptFieldDistanceFeatureQuery extends AbstractScrip
         }
 
         @Override
-        public float score() throws IOException {
+        public float score() {
             if (script.count() == 0) {
                 return 0;
             }

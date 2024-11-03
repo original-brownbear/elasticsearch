@@ -144,7 +144,7 @@ public class KnnScoreDocQueryBuilder extends AbstractQueryBuilder<KnnScoreDocQue
     }
 
     @Override
-    protected Query doToQuery(SearchExecutionContext context) throws IOException {
+    protected Query doToQuery(SearchExecutionContext context) {
         int numDocs = scoreDocs.length;
         int[] docs = new int[numDocs];
         float[] scores = new float[numDocs];

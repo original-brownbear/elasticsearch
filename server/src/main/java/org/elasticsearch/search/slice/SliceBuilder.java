@@ -167,8 +167,7 @@ public class SliceBuilder implements Writeable, ToXContentObject {
     }
 
     public static SliceBuilder fromXContent(XContentParser parser) throws IOException {
-        SliceBuilder builder = PARSER.parse(parser, new SliceBuilder(), null);
-        return builder;
+        return PARSER.parse(parser, new SliceBuilder(), null);
     }
 
     @Override

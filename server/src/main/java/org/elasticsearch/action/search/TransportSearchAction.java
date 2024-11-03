@@ -313,12 +313,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
 
     @Override
     protected void doExecute(Task task, SearchRequest searchRequest, ActionListener<SearchResponse> listener) {
-        executeRequest(
-            (SearchTask) task,
-            searchRequest,
-            new SearchResponseActionListener((SearchTask) task, listener),
-            AsyncSearchActionProvider::new
-        );
+        executeRequest((SearchTask) task, searchRequest, new SearchResponseActionListener(listener), AsyncSearchActionProvider::new);
     }
 
     void executeRequest(
@@ -508,7 +503,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                 // We set the keep alive to -1 to indicate that we don't need the pit id in the response.
                 // This is needed since we delete the pit prior to sending the response so the id doesn't exist anymore.
                 source.pointInTimeBuilder(new PointInTimeBuilder(resp.getPointInTimeId()).setKeepAlive(TimeValue.MINUS_ONE));
-                var pitListener = new SearchResponseActionListener(task, listener) {
+                var pitListener = new SearchResponseActionListener(listener) {
                     @Override
                     public void onResponse(SearchResponse response) {
                         // we need to close the PIT first so we delay the release of the response to after the closing
@@ -1875,12 +1870,10 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
     }
 
     private class SearchResponseActionListener implements ActionListener<SearchResponse>, TelemetryListener {
-        private final SearchTask task;
         private final ActionListener<SearchResponse> listener;
         private final CCSUsage.Builder usageBuilder;
 
-        SearchResponseActionListener(SearchTask task, ActionListener<SearchResponse> listener) {
-            this.task = task;
+        SearchResponseActionListener(ActionListener<SearchResponse> listener) {
             this.listener = listener;
             if (listener instanceof SearchResponseActionListener srListener) {
                 usageBuilder = srListener.usageBuilder;

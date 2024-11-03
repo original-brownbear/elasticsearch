@@ -72,7 +72,7 @@ public class TextSimilarityRankRetrieverBuilder extends CompoundRetrieverBuilder
         PARSER.declareString(constructorArg(), FIELD_FIELD);
         PARSER.declareInt(optionalConstructorArg(), RANK_WINDOW_SIZE_FIELD);
 
-        RetrieverBuilder.declareBaseParserFields(TextSimilarityRankBuilder.NAME, PARSER);
+        RetrieverBuilder.declareBaseParserFields(PARSER);
     }
 
     public static TextSimilarityRankRetrieverBuilder fromXContent(XContentParser parser, RetrieverParserContext context)
