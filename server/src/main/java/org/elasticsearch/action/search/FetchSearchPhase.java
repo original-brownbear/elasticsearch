@@ -91,6 +91,7 @@ final class FetchSearchPhase extends SearchPhase {
 
     @Override
     public void run() {
+        //logger.info("running fetch phase");
         context.execute(new AbstractRunnable() {
 
             @Override
@@ -119,6 +120,7 @@ final class FetchSearchPhase extends SearchPhase {
         if (queryAndFetchOptimization) {
             assert assertConsistentWithQueryAndFetchOptimization();
             // query AND fetch optimization
+            //logger.info("query and fetch optimization");
             moveToNextPhase(searchPhaseShardResults, reducedQueryPhase);
         } else {
             ScoreDoc[] scoreDocs = reducedQueryPhase.sortedTopDocs().scoreDocs();
@@ -135,6 +137,7 @@ final class FetchSearchPhase extends SearchPhase {
     }
 
     private void innerRunFetch(ScoreDoc[] scoreDocs, int numShards, SearchPhaseController.ReducedQueryPhase reducedQueryPhase) {
+        //logger.info("inner run fetch");
         ArraySearchPhaseResults<FetchSearchResult> fetchResults = new ArraySearchPhaseResults<>(numShards);
         final List<Map<Integer, RankDoc>> rankDocsPerShard = false == shouldExplainRankScores(context.getRequest())
             ? null
@@ -147,6 +150,7 @@ final class FetchSearchPhase extends SearchPhase {
             fetchResults,
             docIdsToLoad.length, // we count down every shard in the result no matter if we got any results or not
             () -> {
+                //logger.info("moving to phase after fetch");
                 try (fetchResults) {
                     moveToNextPhase(fetchResults.getAtomicArray(), reducedQueryPhase);
                 }
@@ -154,12 +158,14 @@ final class FetchSearchPhase extends SearchPhase {
             context
         );
         for (int i = 0; i < docIdsToLoad.length; i++) {
+            //logger.info("doc no {}/{}", i, docIdsToLoad.length);
             List<Integer> entry = docIdsToLoad[i];
             RankDocShardInfo rankDocs = rankDocsPerShard == null || rankDocsPerShard.get(i).isEmpty()
                 ? null
                 : new RankDocShardInfo(rankDocsPerShard.get(i));
             SearchPhaseResult shardPhaseResult = searchPhaseShardResults.get(i);
             if (entry == null) { // no results for this shard ID
+                //logger.info("null entry for {}", i);
                 if (shardPhaseResult != null) {
                     // if we got some hits from this shard we have to release the context there
                     // we do this as we go since it will free up resources and passing on the request on the
@@ -169,7 +175,9 @@ final class FetchSearchPhase extends SearchPhase {
                 }
                 // in any case we count down this result since we don't talk to this shard anymore
                 counter.countDown();
+                //logger.info("counted down for {}", i);
             } else {
+                //logger.info("executing fetch for {}", i);
                 executeFetch(
                     shardPhaseResult,
                     counter,
@@ -177,6 +185,7 @@ final class FetchSearchPhase extends SearchPhase {
                     rankDocs,
                     (lastEmittedDocPerShard != null) ? lastEmittedDocPerShard[i] : null
                 );
+                //logger.info("started fetch for {}", i);
             }
         }
     }
@@ -219,6 +228,7 @@ final class FetchSearchPhase extends SearchPhase {
             @Override
             public void innerOnResponse(FetchSearchResult result) {
                 try {
+                    //logger.info("received response for {}", shardIndex);
                     progressListener.notifyFetchResult(shardIndex);
                     counter.onResult(result);
                 } catch (Exception e) {
@@ -272,6 +282,7 @@ final class FetchSearchPhase extends SearchPhase {
         context.executeNextPhase(this, () -> {
             var resp = SearchPhaseController.merge(context.getRequest().scroll() != null, reducedQueryPhase, fetchResultsArr);
             context.addReleasable(resp::decRef);
+            //logger.info("merged response");
             return nextPhaseFactory.apply(resp, searchPhaseShardResults);
         });
     }

@@ -9,6 +9,7 @@
 
 package org.elasticsearch.action.search;
 
+import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.util.CollectionUtil;
 import org.apache.lucene.util.SetOnce;
@@ -27,6 +28,7 @@ import org.elasticsearch.cluster.routing.GroupShardsIterator;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.util.concurrent.AtomicArray;
+import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.Releasables;
 import org.elasticsearch.index.shard.ShardId;
@@ -47,7 +49,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.Semaphore;
@@ -102,8 +103,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
     private final int expectedTotalOps;
     private final AtomicInteger totalOps = new AtomicInteger();
     private final int maxConcurrentRequestsPerNode;
-    private final Map<String, PendingExecutions> pendingExecutionsPerNode = new ConcurrentHashMap<>();
-    private final boolean throttleConcurrentRequests;
+    private final Map<String, PendingExecutions> pendingExecutionsPerNode;
     private final AtomicBoolean requestCancelled = new AtomicBoolean();
 
     private final List<Releasable> releasables = new ArrayList<>();
@@ -160,7 +160,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
         this.expectedTotalOps = shardsIts.totalSizeWith1ForEmpty();
         this.maxConcurrentRequestsPerNode = maxConcurrentRequestsPerNode;
         // in the case were we have less shards than maxConcurrentRequestsPerNode we don't need to throttle
-        this.throttleConcurrentRequests = maxConcurrentRequestsPerNode < shardsIts.size();
+        this.pendingExecutionsPerNode = maxConcurrentRequestsPerNode < shardsIts.size() ? null : ConcurrentCollections.newConcurrentMap();
         this.timeProvider = timeProvider;
         this.logger = logger;
         this.searchTransportService = searchTransportService;
@@ -210,7 +210,9 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
      * This is the main entry point for a search. This method starts the search execution of the initial phase.
      */
     public final void start() {
+        //logger.info("starting {}", this);
         if (getNumShards() == 0) {
+            //logger.info("no shards found responding");
             // no search shards to search on, bail with empty response
             // (it happens with search across _all with no indices around and consistent with broadcast operations)
             int trackTotalHitsUpTo = request.source() == null ? SearchContext.DEFAULT_TRACK_TOTAL_HITS_UP_TO
@@ -222,9 +224,12 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
                 withTotalHits ? SearchResponseSections.EMPTY_WITH_TOTAL_HITS : SearchResponseSections.EMPTY_WITHOUT_TOTAL_HITS,
                 new AtomicArray<>(0)
             );
+          //  logger.info("finished responding empty {}", this);
             return;
         }
+        //logger.info("execute start {}", this);
         executePhase(this);
+        //logger.info("finished execute {}", this);
     }
 
     @Override
@@ -251,6 +256,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
     }
 
     void skipShard(SearchShardIterator iterator) {
+        //logger.info("skipping shard {}", iterator);
         successfulOps.incrementAndGet();
         skippedOps.incrementAndGet();
         assert iterator.skip();
@@ -284,7 +290,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
     }
 
     protected void performPhaseOnShard(final int shardIndex, final SearchShardIterator shardIt, final SearchShardTarget shard) {
-        if (throttleConcurrentRequests) {
+        if (pendingExecutionsPerNode != null) {
             var pendingExecutions = pendingExecutionsPerNode.computeIfAbsent(
                 shard.getNodeId(),
                 n -> new PendingExecutions(maxConcurrentRequestsPerNode)
@@ -389,6 +395,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
                 return;
             }
             var nextPhase = nextPhaseSupplier.get();
+            //logger.info("now running {}" , nextPhase);
             if (logger.isTraceEnabled()) {
                 final String resultsFrom = results.getSuccessfulResults()
                     .map(r -> r.getSearchShardTarget().toString())
@@ -402,6 +409,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
                 );
             }
             executePhase(nextPhase);
+            //logger.info("ran {}" , nextPhase);
         }
     }
 
@@ -540,6 +548,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
     }
 
     private void onShardResultConsumed(Result result, SearchShardIterator shardIt) {
+        //logger.info("on result {} {}", result, shardIt);
         successfulOps.incrementAndGet();
         // clean a previous error on this shard group (note, this code will be serialized on the same shardIndex value level
         // so its ok concurrency wise to miss potentially the shard failures being created because of another failure
@@ -569,12 +578,15 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
         }
         final int xTotalOps = totalOps.addAndGet(remainingOpsOnIterator);
         if (xTotalOps == expectedTotalOps) {
+            //logger.info("phase done {}", this);
             onPhaseDone();
         } else if (xTotalOps > expectedTotalOps) {
             throw new AssertionError(
                 "unexpected higher total ops [" + xTotalOps + "] compared to expected [" + expectedTotalOps + "]",
                 new SearchPhaseExecutionException(getName(), "Shard failures", null, buildShardFailures())
             );
+        } else {
+            //logger.info("total ops {} out of {}", xTotalOps, expectedTotalOps);
         }
     }
 
@@ -642,10 +654,13 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
 
     @Override
     public void sendSearchResponse(SearchResponseSections internalSearchResponse, AtomicArray<SearchPhaseResult> queryResults) {
+
+        logger.info("sending search response");
         ShardSearchFailure[] failures = buildShardFailures();
         Boolean allowPartialResults = request.allowPartialSearchResults();
         assert allowPartialResults != null : "SearchRequest missing setting for allowPartialSearchResults";
         if (allowPartialResults == false && failures.length > 0) {
+            logger.info("phase failure");
             raisePhaseFailure(new SearchPhaseExecutionException("", "Shard failures", null, failures));
         } else {
             final String scrollId = request.scroll() != null ? TransportSearchHelper.buildScrollId(queryResults) : null;
@@ -661,7 +676,9 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
                     searchContextId = null;
                 }
             }
+            logger.info("sending real response");
             ActionListener.respondAndRelease(listener, buildSearchResponse(internalSearchResponse, failures, scrollId, searchContextId));
+            logger.info("sent real response");
         }
     }
 
@@ -763,6 +780,9 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
     protected abstract SearchPhase getNextPhase(SearchPhaseResults<Result> results, SearchPhaseContext context);
 
     private static final class PendingExecutions {
+
+        private static final Logger logger = LogManager.getLogger(PendingExecutions.class);
+
         private final Semaphore semaphore;
         private final LinkedTransferQueue<Consumer<Releasable>> queue = new LinkedTransferQueue<>();
 
@@ -773,8 +793,10 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
 
         void submit(Consumer<Releasable> task) {
             if (semaphore.tryAcquire()) {
+                logger.info("executing task {}", task);
                 executeAndRelease(task);
             } else {
+                logger.info("queuing task {}", task);
                 queue.add(task);
                 if (semaphore.tryAcquire()) {
                     task = pollNextTaskOrReleasePermit();
@@ -816,7 +838,10 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
         private Consumer<Releasable> pollNextTaskOrReleasePermit() {
             var task = queue.poll();
             if (task == null) {
+                logger.info("released");
                 semaphore.release();
+            } else {
+                logger.info("polled task {}", task);
             }
             return task;
         }

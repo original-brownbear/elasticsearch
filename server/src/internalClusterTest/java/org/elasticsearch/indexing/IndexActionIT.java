@@ -19,7 +19,6 @@ import org.elasticsearch.index.VersionType;
 import org.elasticsearch.index.mapper.DocumentParsingException;
 import org.elasticsearch.indices.InvalidIndexNameException;
 import org.elasticsearch.test.ESIntegTestCase;
-import org.elasticsearch.test.junit.annotations.TestIssueLogging;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,7 +39,7 @@ public class IndexActionIT extends ESIntegTestCase {
      * This test tries to simulate load while creating an index and indexing documents
      * while the index is being created.
      */
-    @Repeat(iterations = 100, useConstantSeed = true)
+    @Repeat(iterations = 300)
     public void testAutoGenerateIdNoDuplicates() throws Exception {
         int numberOfIterations = scaledRandomIntBetween(10, 50);
         Throwable firstError = null;

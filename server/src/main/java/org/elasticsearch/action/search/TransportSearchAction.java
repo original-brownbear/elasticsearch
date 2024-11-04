@@ -369,7 +369,11 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                     resolvedIndices,
                     clusterState,
                     SearchResponse.Clusters.EMPTY,
-                    searchPhaseProvider.apply(delegate)
+                    searchPhaseProvider.apply(
+                        delegate instanceof SearchResponseActionListener searchResponseActionListener
+                            ? searchResponseActionListener.listener
+                            : delegate
+                    )
                 );
             } else {
                 if (listener instanceof TelemetryListener tl) {
@@ -1499,6 +1503,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                 && task.getProgressListener() == SearchProgressListener.NOOP) {
                 task.setProgressListener(new CCSSingleCoordinatorSearchProgressListener());
             }
+            //logger.info("build new query result consumer");
             final SearchPhaseResults<SearchPhaseResult> queryResultConsumer = searchPhaseController.newSearchPhaseResults(
                 executor,
                 circuitBreaker,
@@ -1530,6 +1535,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                         clusters,
                         client
                     );
+                    //logger.info("built dfs");
                 } else {
                     assert searchRequest.searchType() == QUERY_THEN_FETCH : searchRequest.searchType();
                     searchPhase = new SearchQueryThenFetchAsyncAction(
@@ -1550,6 +1556,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                         clusters,
                         client
                     );
+                    //logger.info("built normal");
                 }
                 success = true;
                 return searchPhase;
@@ -1937,8 +1944,8 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                     extractCCSTelemetry(searchResponse);
                     recordTelemetry();
                 }
-            } catch (Exception e) {
-                onFailure(e);
+            } catch (Throwable e) {
+                onFailure(new RuntimeException(e));
                 return;
             }
             // This is last because we want to collect telemetry before returning the response.

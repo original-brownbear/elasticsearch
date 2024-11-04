@@ -94,6 +94,7 @@ class SearchQueryThenFetchAsyncAction extends AbstractSearchAsyncAction<SearchPh
         final SearchShardTarget shard,
         final SearchActionListener<SearchPhaseResult> listener
     ) {
+        //getLogger().info("execute on shard {}", shard);
         final Transport.Connection connection;
         try {
             connection = getConnection(shard.getClusterAlias(), shard.getNodeId());
@@ -112,6 +113,7 @@ class SearchQueryThenFetchAsyncAction extends AbstractSearchAsyncAction<SearchPh
 
     @Override
     protected void onShardResult(SearchPhaseResult result, SearchShardIterator shardIt) {
+//        getLogger().info("on shard result {}", result.getSearchShardTarget().getShardId());
         QuerySearchResult queryResult = result.queryResult();
         if (queryResult.isNull() == false
             // disable sort optims for scroll requests because they keep track of the last bottom doc locally (per shard)
@@ -131,6 +133,7 @@ class SearchQueryThenFetchAsyncAction extends AbstractSearchAsyncAction<SearchPh
             bottomSortCollector.consumeTopDocs(topDocs, queryResult.sortValueFormats());
         }
         super.onShardResult(result, shardIt);
+//        getLogger().info("after result {}", result.getSearchShardTarget().getShardId());
     }
 
     static SearchPhase nextPhase(
