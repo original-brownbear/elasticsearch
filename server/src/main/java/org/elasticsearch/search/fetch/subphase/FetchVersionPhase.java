@@ -20,6 +20,11 @@ import org.elasticsearch.search.fetch.StoredFieldsSpec;
 import java.io.IOException;
 
 public final class FetchVersionPhase implements FetchSubPhase {
+
+    public static final FetchVersionPhase INSTANCE = new FetchVersionPhase();
+
+    private FetchVersionPhase() {}
+
     @Override
     public FetchSubPhaseProcessor getProcessor(FetchContext context) {
         if (context.version() == false) {

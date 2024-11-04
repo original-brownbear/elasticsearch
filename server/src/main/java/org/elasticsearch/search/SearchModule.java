@@ -19,6 +19,7 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.RestApiVersion;
 import org.elasticsearch.index.query.AbstractQueryBuilder;
@@ -322,7 +323,17 @@ public class SearchModule {
 
     private final Map<String, Highlighter> highlighters;
 
-    private final List<FetchSubPhase> fetchSubPhases = new ArrayList<>();
+    private final List<FetchSubPhase> fetchSubPhases = CollectionUtils.arrayAsArrayList(
+        ExplainPhase.INSTANCE,
+        StoredFieldsPhase.INSTANCE,
+        FetchDocValuesPhase.INSTANCE,
+        ScriptFieldsPhase.INSTANCE,
+        FetchSourcePhase.INSTANCE,
+        FetchFieldsPhase.INSTANCE,
+        FetchVersionPhase.INSTANCE,
+        SeqNoPrimaryTermPhase.INSTANCE,
+        MatchedQueriesPhase.INSTANCE
+    );
 
     private final Settings settings;
     private final List<NamedWriteableRegistry.Entry> namedWriteables = new ArrayList<>();
@@ -363,7 +374,10 @@ public class SearchModule {
         registerQueryVectorBuilders(plugins);
         this.valuesSourceRegistry = registerAggregations(plugins);
         registerPipelineAggregations(plugins);
-        registerFetchSubPhases(plugins);
+        fetchSubPhases.add(new HighlightPhase(highlighters));
+        fetchSubPhases.add(FetchScorePhase.INSTANCE);
+        FetchPhaseConstructionContext context = new FetchPhaseConstructionContext(highlighters);
+        registerFromPlugin(plugins, p -> p.getFetchSubPhases(context), this::registerFetchSubPhase);
         registerSearchExts(plugins);
         registerIntervalsSourceProviders();
         requestCacheKeyDifferentiator = registerRequestCacheKeyDifferentiator(plugins);
@@ -1063,23 +1077,6 @@ public class SearchModule {
         namedWriteables.add(
             new NamedWriteableRegistry.Entry(QueryVectorBuilder.class, spec.getName().getPreferredName(), spec.getReader())
         );
-    }
-
-    private void registerFetchSubPhases(List<SearchPlugin> plugins) {
-        registerFetchSubPhase(new ExplainPhase());
-        registerFetchSubPhase(new StoredFieldsPhase());
-        registerFetchSubPhase(new FetchDocValuesPhase());
-        registerFetchSubPhase(new ScriptFieldsPhase());
-        registerFetchSubPhase(new FetchSourcePhase());
-        registerFetchSubPhase(new FetchFieldsPhase());
-        registerFetchSubPhase(new FetchVersionPhase());
-        registerFetchSubPhase(new SeqNoPrimaryTermPhase());
-        registerFetchSubPhase(new MatchedQueriesPhase());
-        registerFetchSubPhase(new HighlightPhase(highlighters));
-        registerFetchSubPhase(new FetchScorePhase());
-
-        FetchPhaseConstructionContext context = new FetchPhaseConstructionContext(highlighters);
-        registerFromPlugin(plugins, p -> p.getFetchSubPhases(context), this::registerFetchSubPhase);
     }
 
     private void registerSearchExts(List<SearchPlugin> plugins) {

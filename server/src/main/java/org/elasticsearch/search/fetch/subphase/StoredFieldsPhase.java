@@ -34,6 +34,10 @@ import java.util.stream.Collectors;
  */
 public class StoredFieldsPhase implements FetchSubPhase {
 
+    public static final FetchSubPhase INSTANCE = new StoredFieldsPhase();
+
+    private StoredFieldsPhase() {}
+
     /** Associates a field name with a mapped field type and whether or not it is a metadata field */
     private record StoredField(String name, MappedFieldType ft) {
 

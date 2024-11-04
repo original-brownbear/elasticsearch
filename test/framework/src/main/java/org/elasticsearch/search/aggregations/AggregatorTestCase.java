@@ -458,7 +458,7 @@ public abstract class AggregatorTestCase extends ESTestCase {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        when(ctx.fetchPhase()).thenReturn(new FetchPhase(Arrays.asList(new FetchSourcePhase(), new FetchDocValuesPhase())));
+        when(ctx.fetchPhase()).thenReturn(new FetchPhase(Arrays.asList(FetchSourcePhase.INSTANCE, FetchDocValuesPhase.INSTANCE)));
 
         /*
          * Use a QueryShardContext that doesn't contain nested documents so we

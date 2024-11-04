@@ -21,6 +21,11 @@ import org.elasticsearch.search.lookup.SourceFilter;
 import java.util.Map;
 
 public final class FetchSourcePhase implements FetchSubPhase {
+
+    public static final FetchSubPhase INSTANCE = new FetchSourcePhase();
+
+    private FetchSourcePhase() {}
+
     @Override
     public FetchSubPhaseProcessor getProcessor(FetchContext fetchContext) {
         FetchSourceContext fetchSourceContext = fetchContext.fetchSourceContext();

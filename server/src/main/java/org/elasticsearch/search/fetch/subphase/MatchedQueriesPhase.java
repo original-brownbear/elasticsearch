@@ -27,6 +27,11 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public final class MatchedQueriesPhase implements FetchSubPhase {
+
+    public static final FetchSubPhase INSTANCE = new MatchedQueriesPhase();
+
+    private MatchedQueriesPhase() {}
+
     @Override
     public FetchSubPhaseProcessor getProcessor(FetchContext context) throws IOException {
         Map<String, Query> namedQueries = new HashMap<>();

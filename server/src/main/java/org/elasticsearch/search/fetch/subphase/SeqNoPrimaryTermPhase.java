@@ -20,6 +20,11 @@ import org.elasticsearch.search.fetch.StoredFieldsSpec;
 import java.io.IOException;
 
 public final class SeqNoPrimaryTermPhase implements FetchSubPhase {
+
+    public static final FetchSubPhase INSTANCE = new SeqNoPrimaryTermPhase();
+
+    private SeqNoPrimaryTermPhase() {}
+
     @Override
     public FetchSubPhaseProcessor getProcessor(FetchContext context) {
         if (context.seqNoAndPrimaryTerm() == false) {

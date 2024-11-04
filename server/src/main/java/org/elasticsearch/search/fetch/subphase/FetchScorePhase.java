@@ -23,6 +23,11 @@ import org.elasticsearch.search.fetch.StoredFieldsSpec;
 import java.io.IOException;
 
 public class FetchScorePhase implements FetchSubPhase {
+
+    public static final FetchSubPhase INSTANCE = new FetchScorePhase();
+
+    private FetchScorePhase() {}
+
     @Override
     public FetchSubPhaseProcessor getProcessor(FetchContext context) throws IOException {
         if (context.fetchScores() == false) {

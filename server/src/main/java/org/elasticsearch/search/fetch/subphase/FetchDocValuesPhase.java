@@ -29,6 +29,11 @@ import java.util.List;
  * Specifying {@code "docvalue_fields": ["field1", "field2"]}
  */
 public final class FetchDocValuesPhase implements FetchSubPhase {
+
+    public static final FetchSubPhase INSTANCE = new FetchDocValuesPhase();
+
+    private FetchDocValuesPhase() {}
+
     @Override
     public FetchSubPhaseProcessor getProcessor(FetchContext context) {
         FetchDocValuesContext dvContext = context.docValuesContext();

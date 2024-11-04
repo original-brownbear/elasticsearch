@@ -24,6 +24,11 @@ import java.util.List;
  * Explains the scoring calculations for the top hits.
  */
 public final class ExplainPhase implements FetchSubPhase {
+
+    public static final FetchSubPhase INSTANCE = new ExplainPhase();
+
+    private ExplainPhase() {}
+
     @Override
     public FetchSubPhaseProcessor getProcessor(FetchContext context) {
         if (context.explain() == false) {

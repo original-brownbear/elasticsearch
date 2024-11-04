@@ -40,6 +40,10 @@ import java.util.Set;
  */
 public final class FetchFieldsPhase implements FetchSubPhase {
 
+    public static final FetchSubPhase INSTANCE = new FetchFieldsPhase();
+
+    private FetchFieldsPhase() {}
+
     private static final List<FieldAndFormat> DEFAULT_METADATA_FIELDS = List.of(
         new FieldAndFormat(IgnoredFieldMapper.NAME, null),
         new FieldAndFormat(RoutingFieldMapper.NAME, null),

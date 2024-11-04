@@ -18,24 +18,26 @@ import org.elasticsearch.search.fetch.subphase.StoredFieldsPhase;
 import org.elasticsearch.search.internal.SearchContext;
 import org.elasticsearch.test.ESTestCase;
 
+import java.io.IOException;
+
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class StoredFieldsSpecTests extends ESTestCase {
 
-    public void testDefaults() {
+    public void testDefaults() throws IOException {
         SearchSourceBuilder search = new SearchSourceBuilder();
         // defaults - return source and metadata fields
         FetchContext fc = new FetchContext(searchContext(search));
 
-        FetchSubPhaseProcessor sourceProcessor = new FetchSourcePhase().getProcessor(fc);
+        FetchSubPhaseProcessor sourceProcessor = FetchSourcePhase.INSTANCE.getProcessor(fc);
         assertNotNull(sourceProcessor);
         StoredFieldsSpec sourceSpec = sourceProcessor.storedFieldsSpec();
         assertTrue(sourceSpec.requiresSource());
         assertThat(sourceSpec.requiredStoredFields(), hasSize(0));
 
-        FetchSubPhaseProcessor storedFieldsProcessor = new StoredFieldsPhase().getProcessor(fc);
+        FetchSubPhaseProcessor storedFieldsProcessor = StoredFieldsPhase.INSTANCE.getProcessor(fc);
         assertNotNull(storedFieldsProcessor);
         StoredFieldsSpec storedFieldsSpec = storedFieldsProcessor.storedFieldsSpec();
         assertFalse(storedFieldsSpec.requiresSource());
@@ -46,21 +48,21 @@ public class StoredFieldsSpecTests extends ESTestCase {
         assertThat(merged.requiredStoredFields(), hasSize(0));
     }
 
-    public void testStoredFieldsDisabled() {
+    public void testStoredFieldsDisabled() throws IOException {
         SearchSourceBuilder search = new SearchSourceBuilder();
         search.storedField("_none_");
         FetchContext fc = new FetchContext(searchContext(search));
 
-        assertNull(new StoredFieldsPhase().getProcessor(fc));
-        assertNull(new FetchSourcePhase().getProcessor(fc));
+        assertNull(StoredFieldsPhase.INSTANCE.getProcessor(fc));
+        assertNull(FetchSourcePhase.INSTANCE.getProcessor(fc));
     }
 
-    public void testScriptFieldsEnableMetadata() {
+    public void testScriptFieldsEnableMetadata() throws IOException {
         SearchSourceBuilder search = new SearchSourceBuilder();
         search.scriptField("field", new Script("script"));
         FetchContext fc = new FetchContext(searchContext(search));
 
-        FetchSubPhaseProcessor subPhaseProcessor = new ScriptFieldsPhase().getProcessor(fc);
+        FetchSubPhaseProcessor subPhaseProcessor = ScriptFieldsPhase.INSTANCE.getProcessor(fc);
         assertNotNull(subPhaseProcessor);
         StoredFieldsSpec spec = subPhaseProcessor.storedFieldsSpec();
         assertFalse(spec.requiresSource());

@@ -25,6 +25,11 @@ import java.util.List;
 import java.util.Set;
 
 public final class ScriptFieldsPhase implements FetchSubPhase {
+
+    public static final FetchSubPhase INSTANCE = new ScriptFieldsPhase();
+
+    private ScriptFieldsPhase() {}
+
     @Override
     public FetchSubPhaseProcessor getProcessor(FetchContext context) {
         if (context.scriptFields() == null || context.scriptFields().fields().isEmpty()) {
