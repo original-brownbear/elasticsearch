@@ -136,16 +136,14 @@ public class TransportOpenPointInTimeAction extends HandledTransportAction<OpenP
                 r.getFailedShards(),
                 r.getSkippedShards()
             );
-        }), searchListener -> new OpenPointInTimePhase(request, searchListener));
+        }), new OpenPointInTimePhase(request));
     }
 
     private final class OpenPointInTimePhase implements TransportSearchAction.SearchPhaseProvider {
         private final OpenPointInTimeRequest pitRequest;
-        private final ActionListener<SearchResponse> listener;
 
-        OpenPointInTimePhase(OpenPointInTimeRequest pitRequest, ActionListener<SearchResponse> listener) {
+        OpenPointInTimePhase(OpenPointInTimeRequest pitRequest) {
             this.pitRequest = pitRequest;
-            this.listener = listener;
         }
 
         @Override
@@ -161,7 +159,8 @@ public class TransportOpenPointInTimeAction extends HandledTransportAction<OpenP
             Map<String, Float> concreteIndexBoosts,
             boolean preFilter,
             ThreadPool threadPool,
-            SearchResponse.Clusters clusters
+            SearchResponse.Clusters clusters,
+            ActionListener<SearchResponse> listener
         ) {
             // Note: remote shards are prefiltered via can match as part of search shards. They don't need additional pre-filtering and
             // that is signaled to the local can match through the SearchShardIterator#prefiltered flag. Local shards do need to go
@@ -191,7 +190,8 @@ public class TransportOpenPointInTimeAction extends HandledTransportAction<OpenP
                             clusterState,
                             aliasFilter,
                             concreteIndexBoosts,
-                            clusters
+                            clusters,
+                            searchResponseActionListener
                         ).start()
                     )
                 );
@@ -206,7 +206,8 @@ public class TransportOpenPointInTimeAction extends HandledTransportAction<OpenP
                     clusterState,
                     aliasFilter,
                     concreteIndexBoosts,
-                    clusters
+                    clusters,
+                    listener
                 );
             }
         }
@@ -221,7 +222,8 @@ public class TransportOpenPointInTimeAction extends HandledTransportAction<OpenP
             ClusterState clusterState,
             Map<String, AliasFilter> aliasFilter,
             Map<String, Float> concreteIndexBoosts,
-            SearchResponse.Clusters clusters
+            SearchResponse.Clusters clusters,
+            ActionListener<SearchResponse> listener
         ) {
             assert searchRequest.getMaxConcurrentShardRequests() == pitRequest.maxConcurrentShardRequests()
                 : searchRequest.getMaxConcurrentShardRequests() + " != " + pitRequest.maxConcurrentShardRequests();
@@ -257,16 +259,11 @@ public class TransportOpenPointInTimeAction extends HandledTransportAction<OpenP
                     SearchShardTarget shard,
                     SearchActionListener<SearchPhaseResult> phaseListener
                 ) {
-                    final ShardOpenReaderRequest shardRequest = new ShardOpenReaderRequest(
-                        shardIt.shardId(),
-                        shardIt.getOriginalIndices(),
-                        pitRequest.keepAlive()
-                    );
                     Transport.Connection connection = connectionLookup.apply(shardIt.getClusterAlias(), shard.getNodeId());
                     transportService.sendChildRequest(
                         connection,
                         OPEN_SHARD_READER_CONTEXT_NAME,
-                        shardRequest,
+                        new ShardOpenReaderRequest(shardIt.shardId(), shardIt.getOriginalIndices(), pitRequest.keepAlive()),
                         task,
                         new ActionListenerResponseHandler<>(
                             phaseListener,
