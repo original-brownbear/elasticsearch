@@ -285,7 +285,7 @@ public class TransportOpenPointInTimeAction extends HandledTransportAction<OpenP
                         }
 
                         @Override
-                        public void run() {
+                        protected void run() {
                             execute(new AbstractRunnable() {
                                 @Override
                                 public void onFailure(Exception e) {

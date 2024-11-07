@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 
 import static org.elasticsearch.action.search.TransportSearchHelper.parseScrollId;
 
-public final class ClearScrollController implements Runnable {
+public final class ClearScrollController {
     private final DiscoveryNodes nodes;
     private final SearchTransportService searchTransportService;
     private final RefCountingRunnable refs = new RefCountingRunnable(this::finish);
@@ -65,7 +65,6 @@ public final class ClearScrollController implements Runnable {
         }
     }
 
-    @Override
     public void run() {
         runner.run();
     }
@@ -101,7 +100,7 @@ public final class ClearScrollController implements Runnable {
             nodes,
             searchTransportService,
             listener.delegateFailureAndWrap((l, lookup) -> {
-                try {
+                try (refs) {
                     for (SearchContextIdForNode target : contextIds) {
                         final DiscoveryNode node = lookup.apply(target.getClusterAlias(), target.getNode());
                         if (node == null) {
@@ -122,8 +121,6 @@ public final class ClearScrollController implements Runnable {
                             }
                         }
                     }
-                } finally {
-                    refs.close();
                 }
             })
         );

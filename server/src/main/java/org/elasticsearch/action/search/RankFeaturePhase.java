@@ -71,7 +71,7 @@ public class RankFeaturePhase extends SearchPhase {
     }
 
     @Override
-    public void run() {
+    protected void run() {
         context.execute(new AbstractRunnable() {
             @Override
             protected void doRun() throws Exception {
@@ -179,22 +179,25 @@ public class RankFeaturePhase extends SearchPhase {
         RankFeaturePhaseRankCoordinatorContext rankFeaturePhaseRankCoordinatorContext,
         SearchPhaseController.ReducedQueryPhase reducedQueryPhase
     ) {
-        ThreadedActionListener<RankFeatureDoc[]> rankResultListener = new ThreadedActionListener<>(context, new ActionListener<>() {
-            @Override
-            public void onResponse(RankFeatureDoc[] docsWithUpdatedScores) {
-                RankFeatureDoc[] topResults = rankFeaturePhaseRankCoordinatorContext.rankAndPaginate(docsWithUpdatedScores);
-                SearchPhaseController.ReducedQueryPhase reducedRankFeaturePhase = newReducedQueryPhaseResults(
-                    reducedQueryPhase,
-                    topResults
-                );
-                moveToNextPhase(rankPhaseResults, reducedRankFeaturePhase);
-            }
+        ThreadedActionListener<RankFeatureDoc[]> rankResultListener = new ThreadedActionListener<>(
+            context::execute,
+            new ActionListener<>() {
+                @Override
+                public void onResponse(RankFeatureDoc[] docsWithUpdatedScores) {
+                    RankFeatureDoc[] topResults = rankFeaturePhaseRankCoordinatorContext.rankAndPaginate(docsWithUpdatedScores);
+                    SearchPhaseController.ReducedQueryPhase reducedRankFeaturePhase = newReducedQueryPhaseResults(
+                        reducedQueryPhase,
+                        topResults
+                    );
+                    moveToNextPhase(rankPhaseResults, reducedRankFeaturePhase);
+                }
 
-            @Override
-            public void onFailure(Exception e) {
-                context.onPhaseFailure(RankFeaturePhase.this, "Computing updated ranks for results failed", e);
+                @Override
+                public void onFailure(Exception e) {
+                    context.onPhaseFailure(RankFeaturePhase.this, "Computing updated ranks for results failed", e);
+                }
             }
-        });
+        );
         rankFeaturePhaseRankCoordinatorContext.computeRankScoresForGlobalResults(
             rankPhaseResults.getAtomicArray().asList().stream().map(SearchPhaseResult::rankFeatureResult).toList(),
             rankResultListener

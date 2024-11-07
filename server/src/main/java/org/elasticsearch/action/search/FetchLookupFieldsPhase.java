@@ -44,9 +44,7 @@ final class FetchLookupFieldsPhase extends SearchPhase {
         this.queryResults = queryResults;
     }
 
-    private record Cluster(String clusterAlias, List<SearchHit> hitsWithLookupFields, List<LookupField> lookupFields) {
-
-    }
+    private record Cluster(String clusterAlias, List<SearchHit> hitsWithLookupFields, List<LookupField> lookupFields) {}
 
     private static List<Cluster> groupLookupFieldsByClusterAlias(SearchHits searchHits) {
         final Map<String, List<SearchHit>> perClusters = new HashMap<>();
@@ -70,7 +68,7 @@ final class FetchLookupFieldsPhase extends SearchPhase {
     }
 
     @Override
-    public void run() {
+    protected void run() {
         final List<Cluster> clusters = groupLookupFieldsByClusterAlias(searchResponse.hits);
         if (clusters.isEmpty()) {
             context.sendSearchResponse(searchResponse, queryResults);

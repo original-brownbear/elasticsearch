@@ -18,13 +18,12 @@ import org.elasticsearch.search.SearchShardTarget;
 import org.elasticsearch.search.internal.ShardSearchContextId;
 import org.elasticsearch.transport.Transport;
 
-import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 
 /**
  * This class provide contextual state and access to resources across multiple search phases.
  */
-interface SearchPhaseContext extends Executor {
+interface SearchPhaseContext {
     // TODO maybe we can make this concrete later - for now we just implement this in the base class for all initial phases
 
     /**
@@ -127,4 +126,6 @@ interface SearchPhaseContext extends Executor {
      * Registers a {@link Releasable} that will be closed when the search request finishes or fails.
      */
     void addReleasable(Releasable releasable);
+
+    void execute(Runnable command);
 }

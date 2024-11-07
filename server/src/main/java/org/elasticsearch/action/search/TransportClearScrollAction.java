@@ -41,8 +41,7 @@ public class TransportClearScrollAction extends HandledTransportAction<ClearScro
 
     @Override
     protected void doExecute(Task task, ClearScrollRequest request, final ActionListener<ClearScrollResponse> listener) {
-        Runnable runnable = new ClearScrollController(request, listener, clusterService.state().nodes(), logger, searchTransportService);
-        runnable.run();
+        new ClearScrollController(request, listener, clusterService.state().nodes(), logger, searchTransportService).run();
     }
 
 }

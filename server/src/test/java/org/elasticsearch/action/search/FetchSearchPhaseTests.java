@@ -456,7 +456,7 @@ public class FetchSearchPhaseTests extends ESTestCase {
                 reducedQueryPhase,
                 (searchResponse, scrollId) -> new SearchPhase("test") {
                     @Override
-                    public void run() {
+                    protected void run() {
                         mockSearchPhaseContext.sendSearchResponse(searchResponse, null);
                         latch.countDown();
                     }
@@ -732,7 +732,7 @@ public class FetchSearchPhaseTests extends ESTestCase {
     ) {
         return (searchResponse, scrollId) -> new SearchPhase("test") {
             @Override
-            public void run() {
+            protected void run() {
                 mockSearchPhaseContext.sendSearchResponse(searchResponse, null);
             }
         };

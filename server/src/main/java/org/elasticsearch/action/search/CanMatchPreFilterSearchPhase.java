@@ -129,7 +129,7 @@ final class CanMatchPreFilterSearchPhase extends SearchPhase {
     }
 
     @Override
-    public void run() {
+    protected void run() {
         assert assertSearchCoordinationThread();
         checkNoMissingShards();
         runCoordinatorRewritePhase();

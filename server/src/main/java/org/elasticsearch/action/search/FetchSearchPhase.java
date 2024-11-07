@@ -90,7 +90,7 @@ final class FetchSearchPhase extends SearchPhase {
     }
 
     @Override
-    public void run() {
+    protected void run() {
         context.execute(new AbstractRunnable() {
 
             @Override
@@ -276,11 +276,9 @@ final class FetchSearchPhase extends SearchPhase {
         });
     }
 
-    private boolean shouldExplainRankScores(SearchRequest request) {
-        return request.source() != null
-            && request.source().explain() != null
-            && request.source().explain()
-            && request.source().rankBuilder() != null;
+    private static boolean shouldExplainRankScores(SearchRequest request) {
+        var source = request.source();
+        return source != null && source.explain() != null && source.explain() && source.rankBuilder() != null;
     }
 
 }

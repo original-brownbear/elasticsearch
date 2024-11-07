@@ -40,7 +40,7 @@ import static org.elasticsearch.core.Strings.format;
  * fan out to nodes and execute the query part of the scroll request. Subclasses can for instance
  * run separate fetch phases etc.
  */
-abstract class SearchScrollAsyncAction<T extends SearchPhaseResult> implements Runnable {
+abstract class SearchScrollAsyncAction<T extends SearchPhaseResult> {
     protected final Logger logger;
     protected final ActionListener<SearchResponse> listener;
     protected final ParsedScrollId scrollId;
@@ -134,14 +134,7 @@ abstract class SearchScrollAsyncAction<T extends SearchPhaseResult> implements R
                 }
                 connection = getConnection(target.getClusterAlias(), node);
             } catch (Exception ex) {
-                onShardFailure(
-                    "query",
-                    counter,
-                    target.getSearchContextId(),
-                    ex,
-                    null,
-                    () -> SearchScrollAsyncAction.this.moveToNextPhase(clusterNodeLookup)
-                );
+                onShardFailure("query", counter, target.getSearchContextId(), ex, null, () -> moveToNextPhase(clusterNodeLookup));
                 continue;
             }
             final InternalScrollSearchRequest internalRequest = internalScrollSearchRequest(target.getSearchContextId(), request);
@@ -186,14 +179,7 @@ abstract class SearchScrollAsyncAction<T extends SearchPhaseResult> implements R
 
                 @Override
                 public void onFailure(Exception t) {
-                    onShardFailure(
-                        "query",
-                        counter,
-                        target.getSearchContextId(),
-                        t,
-                        null,
-                        () -> SearchScrollAsyncAction.this.moveToNextPhase(clusterNodeLookup)
-                    );
+                    onShardFailure("query", counter, target.getSearchContextId(), t, null, () -> moveToNextPhase(clusterNodeLookup));
                 }
             };
             executeInitialPhase(connection, internalRequest, searchActionListener);
@@ -229,7 +215,7 @@ abstract class SearchScrollAsyncAction<T extends SearchPhaseResult> implements R
     ) {
         return new SearchPhase("fetch") {
             @Override
-            public void run() {
+            protected void run() {
                 sendResponse(queryPhase, fetchResults);
             }
         };

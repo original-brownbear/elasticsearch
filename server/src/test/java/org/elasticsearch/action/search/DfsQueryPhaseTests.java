@@ -141,7 +141,7 @@ public class DfsQueryPhaseTests extends ESTestCase {
         ) {
             DfsQueryPhase phase = new DfsQueryPhase(results.asList(), null, null, consumer, (response) -> new SearchPhase("test") {
                 @Override
-                public void run() throws IOException {
+                protected void run() {
                     responseRef.set(((QueryPhaseResultConsumer) response).results);
                 }
             }, mockSearchPhaseContext);
@@ -226,7 +226,7 @@ public class DfsQueryPhaseTests extends ESTestCase {
         ) {
             DfsQueryPhase phase = new DfsQueryPhase(results.asList(), null, null, consumer, (response) -> new SearchPhase("test") {
                 @Override
-                public void run() throws IOException {
+                protected void run() {
                     responseRef.set(((QueryPhaseResultConsumer) response).results);
                 }
             }, mockSearchPhaseContext);
@@ -313,7 +313,7 @@ public class DfsQueryPhaseTests extends ESTestCase {
         ) {
             DfsQueryPhase phase = new DfsQueryPhase(results.asList(), null, null, consumer, (response) -> new SearchPhase("test") {
                 @Override
-                public void run() throws IOException {
+                protected void run() {
                     responseRef.set(((QueryPhaseResultConsumer) response).results);
                 }
             }, mockSearchPhaseContext);

@@ -68,7 +68,7 @@ final class DfsQueryPhase extends SearchPhase {
     }
 
     @Override
-    public void run() {
+    protected void run() {
         // TODO we can potentially also consume the actual per shard results from the initial phase here in the aggregateDfs
         // to free up memory early
         final CountedCollector<SearchPhaseResult> counter = new CountedCollector<>(
