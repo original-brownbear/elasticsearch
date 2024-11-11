@@ -9,19 +9,16 @@
 package org.elasticsearch.action.search;
 
 import org.elasticsearch.cluster.routing.GroupShardsIterator;
-import org.elasticsearch.core.CheckedRunnable;
 import org.elasticsearch.search.SearchPhaseResult;
 import org.elasticsearch.search.SearchShardTarget;
 import org.elasticsearch.transport.Transport;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.Objects;
 
 /**
  * Base class for all individual search phases like collecting distributed frequencies, fetching documents, querying shards.
  */
-abstract class SearchPhase implements CheckedRunnable<IOException> {
+abstract class SearchPhase {
     private final String name;
 
     protected SearchPhase(String name) {
@@ -35,13 +32,7 @@ abstract class SearchPhase implements CheckedRunnable<IOException> {
         return name;
     }
 
-    public void start() {
-        try {
-            run();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
+    protected abstract void run();
 
     protected String missingShardsErrorMessage(StringBuilder missingShards) {
         return "Search rejected due to missing shards ["

@@ -229,7 +229,7 @@ abstract class SearchScrollAsyncAction<T extends SearchPhaseResult> implements R
     ) {
         return new SearchPhase("fetch") {
             @Override
-            public void run() {
+            protected void run() {
                 sendResponse(queryPhase, fetchResults);
             }
         };

@@ -51,7 +51,7 @@ final class ExpandSearchPhase extends SearchPhase {
     }
 
     @Override
-    public void run() {
+    protected void run() {
         if (isCollapseRequest() == false || searchHits.getHits().length == 0) {
             onPhaseDone();
         } else {

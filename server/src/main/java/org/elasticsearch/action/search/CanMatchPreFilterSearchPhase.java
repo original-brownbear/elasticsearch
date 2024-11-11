@@ -129,7 +129,7 @@ final class CanMatchPreFilterSearchPhase extends SearchPhase {
     }
 
     @Override
-    public void run() {
+    protected void run() {
         assert assertSearchCoordinationThread();
         runCoordinatorRewritePhase();
     }
@@ -370,7 +370,6 @@ final class CanMatchPreFilterSearchPhase extends SearchPhase {
         );
     }
 
-    @Override
     public void start() {
         if (getNumShards() == 0) {
             finishPhase();

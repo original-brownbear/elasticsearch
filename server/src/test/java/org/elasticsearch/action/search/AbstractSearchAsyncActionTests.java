@@ -213,9 +213,7 @@ public class AbstractSearchAsyncActionTests extends ESTestCase {
         AbstractSearchAsyncAction<SearchPhaseResult> action = createAction(searchRequest, phaseResults, listener, false, new AtomicLong());
         action.onPhaseFailure(new SearchPhase("test") {
             @Override
-            public void run() {
-
-            }
+            public void run() {}
         }, "message", null);
         assertThat(exception.get(), instanceOf(SearchPhaseExecutionException.class));
         SearchPhaseExecutionException searchPhaseExecutionException = (SearchPhaseExecutionException) exception.get();

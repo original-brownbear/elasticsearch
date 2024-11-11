@@ -74,7 +74,7 @@ final class FetchLookupFieldsPhase extends SearchPhase {
     }
 
     @Override
-    public void run() {
+    protected void run() {
         final List<Cluster> clusters = groupLookupFieldsByClusterAlias(searchResponse.hits);
         if (clusters.isEmpty()) {
             context.sendSearchResponse(searchResponse, queryResults);

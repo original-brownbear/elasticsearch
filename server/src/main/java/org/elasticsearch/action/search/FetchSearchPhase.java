@@ -90,7 +90,7 @@ final class FetchSearchPhase extends SearchPhase {
     }
 
     @Override
-    public void run() {
+    protected void run() {
         context.execute(new AbstractRunnable() {
 
             @Override
