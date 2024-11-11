@@ -37,6 +37,8 @@ import java.util.List;
  */
 public class RankFeaturePhase extends SearchPhase {
 
+    private static final String PHASE_NAME = "rank-feature";
+
     private static final Logger logger = LogManager.getLogger(RankFeaturePhase.class);
     private final AbstractSearchAsyncAction<?> context;
     final SearchPhaseResults<SearchPhaseResult> queryPhaseResults;
@@ -51,7 +53,7 @@ public class RankFeaturePhase extends SearchPhase {
         AbstractSearchAsyncAction<?> context,
         RankFeaturePhaseRankCoordinatorContext rankFeaturePhaseRankCoordinatorContext
     ) {
-        super("rank-feature");
+        super(PHASE_NAME);
         assert rankFeaturePhaseRankCoordinatorContext != null;
         this.rankFeaturePhaseRankCoordinatorContext = rankFeaturePhaseRankCoordinatorContext;
         if (context.getNumShards() != queryPhaseResults.getNumShards()) {
@@ -84,7 +86,7 @@ public class RankFeaturePhase extends SearchPhase {
 
             @Override
             public void onFailure(Exception e) {
-                context.onPhaseFailure(RankFeaturePhase.this, "", e);
+                context.onPhaseFailure(PHASE_NAME, "", e);
             }
         });
     }
@@ -139,7 +141,7 @@ public class RankFeaturePhase extends SearchPhase {
                     progressListener.notifyRankFeatureResult(shardIndex);
                     rankRequestCounter.onResult(response);
                 } catch (Exception e) {
-                    context.onPhaseFailure(RankFeaturePhase.this, "", e);
+                    context.onPhaseFailure(PHASE_NAME, "", e);
                 }
             }
 
@@ -194,7 +196,7 @@ public class RankFeaturePhase extends SearchPhase {
 
                 @Override
                 public void onFailure(Exception e) {
-                    context.onPhaseFailure(RankFeaturePhase.this, "Computing updated ranks for results failed", e);
+                    context.onPhaseFailure(PHASE_NAME, "Computing updated ranks for results failed", e);
                 }
             }
         );
@@ -239,6 +241,6 @@ public class RankFeaturePhase extends SearchPhase {
     }
 
     void moveToNextPhase(SearchPhaseResults<SearchPhaseResult> phaseResults, SearchPhaseController.ReducedQueryPhase reducedQueryPhase) {
-        context.executeNextPhase(this, () -> new FetchSearchPhase(phaseResults, aggregatedDfs, context, reducedQueryPhase));
+        context.executeNextPhase(PHASE_NAME, () -> new FetchSearchPhase(phaseResults, aggregatedDfs, context, reducedQueryPhase));
     }
 }

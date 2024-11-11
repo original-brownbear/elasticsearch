@@ -91,7 +91,7 @@ public class TransportSearchScrollAction extends HandledTransportAction<SearchSc
         };
         try {
             ParsedScrollId scrollId = parseScrollId(request.scrollId());
-            Runnable action = switch (scrollId.getType()) {
+            switch (scrollId.getType()) {
                 case QUERY_THEN_FETCH_TYPE -> new SearchScrollQueryThenFetchAsyncAction(
                     logger,
                     clusterService,
@@ -100,7 +100,7 @@ public class TransportSearchScrollAction extends HandledTransportAction<SearchSc
                     (SearchTask) task,
                     scrollId,
                     loggingAndMetrics
-                );
+                ).run();
                 case QUERY_AND_FETCH_TYPE -> // TODO can we get rid of this?
                     new SearchScrollQueryAndFetchAsyncAction(
                         logger,
@@ -110,10 +110,9 @@ public class TransportSearchScrollAction extends HandledTransportAction<SearchSc
                         (SearchTask) task,
                         scrollId,
                         loggingAndMetrics
-                    );
+                    ).run();
                 default -> throw new IllegalArgumentException("Scroll id type [" + scrollId.getType() + "] unrecognized");
-            };
-            action.run();
+            }
         } catch (Exception e) {
             listener.onFailure(e);
         }

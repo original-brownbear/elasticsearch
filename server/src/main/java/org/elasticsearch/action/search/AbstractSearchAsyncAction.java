@@ -341,7 +341,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
      * of the next phase. If there are no successful operations in the context when this method is executed the search is aborted and
      * a response is returned to the user indicating that all shards have failed.
      */
-    protected void executeNextPhase(SearchPhase currentPhase, Supplier<SearchPhase> nextPhaseSupplier) {
+    protected void executeNextPhase(String currentPhaseName, Supplier<SearchPhase> nextPhaseSupplier) {
         /* This is the main search phase transition where we move to the next phase. If all shards
          * failed or if there was a failure and partial results are not allowed, then we immediately
          * fail. Otherwise we continue to the next phase.
@@ -352,8 +352,8 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
             Throwable cause = shardSearchFailures.length == 0
                 ? null
                 : ElasticsearchException.guessRootCauses(shardSearchFailures[0].getCause())[0];
-            logger.debug(() -> "All shards failed for phase: [" + currentPhase.getName() + "]", cause);
-            onPhaseFailure(currentPhase, "all shards failed", cause);
+            logger.debug(() -> "All shards failed for phase: [" + currentPhaseName + "]", cause);
+            onPhaseFailure(currentPhaseName, "all shards failed", cause);
         } else {
             Boolean allowPartialResults = request.allowPartialSearchResults();
             assert allowPartialResults != null : "SearchRequest missing setting for allowPartialSearchResults";
@@ -365,9 +365,9 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
                         int numShardFailures = shardSearchFailures.length;
                         shardSearchFailures = ExceptionsHelper.groupBy(shardSearchFailures);
                         Throwable cause = ElasticsearchException.guessRootCauses(shardSearchFailures[0].getCause())[0];
-                        logger.debug(() -> format("%s shards failed for phase: [%s]", numShardFailures, currentPhase.getName()), cause);
+                        logger.debug(() -> format("%s shards failed for phase: [%s]", numShardFailures, currentPhaseName), cause);
                     }
-                    onPhaseFailure(currentPhase, "Partial shards failure", null);
+                    onPhaseFailure(currentPhaseName, "Partial shards failure", null);
                 } else {
                     int discrepancy = getNumShards() - successfulOps.get();
                     assert discrepancy > 0 : "discrepancy: " + discrepancy;
@@ -378,10 +378,10 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
                             successfulOps.get(),
                             skippedOps.get(),
                             getNumShards(),
-                            currentPhase.getName()
+                            currentPhaseName
                         );
                     }
-                    onPhaseFailure(currentPhase, "Partial shards failure (" + discrepancy + " shards unavailable)", null);
+                    onPhaseFailure(currentPhaseName, "Partial shards failure (" + discrepancy + " shards unavailable)", null);
                 }
                 return;
             }
@@ -392,7 +392,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
                     .collect(Collectors.joining(","));
                 logger.trace(
                     "[{}] Moving to next phase: [{}], based on results from: {} (cluster state version: {})",
-                    currentPhase.getName(),
+                    currentPhaseName,
                     nextPhase.getName(),
                     resultsFrom,
                     clusterStateVersion
@@ -409,7 +409,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
             if (logger.isDebugEnabled()) {
                 logger.debug(() -> format("Failed to execute [%s] while moving to [%s] phase", request, phase.getName()), e);
             }
-            onPhaseFailure(phase, "", e);
+            onPhaseFailure(phase.getName(), "", e);
         }
     }
 
@@ -682,12 +682,12 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
     /**
      * This method will communicate a fatal phase failure back to the user. In contrast to a shard failure
      * will this method immediately fail the search request and return the failure to the issuer of the request
-     * @param phase the phase that failed
+     * @param phaseName name of the phase that failed
      * @param msg an optional message
      * @param cause the cause of the phase failure
      */
-    public void onPhaseFailure(SearchPhase phase, String msg, Throwable cause) {
-        raisePhaseFailure(new SearchPhaseExecutionException(phase.getName(), msg, cause, buildShardFailures()));
+    public void onPhaseFailure(String phaseName, String msg, Throwable cause) {
+        raisePhaseFailure(new SearchPhaseExecutionException(phaseName, msg, cause, buildShardFailures()));
     }
 
     /**
@@ -732,7 +732,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
      * @see #onShardResult(SearchPhaseResult, SearchShardIterator)
      */
     final void onPhaseDone() {  // as a tribute to @kimchy aka. finishHim()
-        executeNextPhase(this, this::getNextPhase);
+        executeNextPhase(getName(), this::getNextPhase);
     }
 
     /**

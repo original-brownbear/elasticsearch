@@ -40,7 +40,7 @@ import static org.elasticsearch.core.Strings.format;
  * fan out to nodes and execute the query part of the scroll request. Subclasses can for instance
  * run separate fetch phases etc.
  */
-abstract class SearchScrollAsyncAction<T extends SearchPhaseResult> implements Runnable {
+abstract class SearchScrollAsyncAction<T extends SearchPhaseResult> {
     protected final Logger logger;
     protected final ActionListener<SearchResponse> listener;
     protected final ParsedScrollId scrollId;

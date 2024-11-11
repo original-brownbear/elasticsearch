@@ -39,6 +39,9 @@ import java.util.function.Function;
  * @see CountedCollector#onFailure(int, SearchShardTarget, Exception)
  */
 final class DfsQueryPhase extends SearchPhase {
+
+    private static final String PHASE_NAME = "dfs_query";
+
     private final SearchPhaseResults<SearchPhaseResult> queryResult;
     private final List<DfsSearchResult> searchResults;
     private final AggregatedDfs dfs;
@@ -56,7 +59,7 @@ final class DfsQueryPhase extends SearchPhase {
         Function<SearchPhaseResults<SearchPhaseResult>, SearchPhase> nextPhaseFactory,
         AbstractSearchAsyncAction<?> context
     ) {
-        super("dfs_query");
+        super(PHASE_NAME);
         this.progressListener = context.getTask().getProgressListener();
         this.queryResult = queryResult;
         this.searchResults = searchResults;
@@ -74,7 +77,7 @@ final class DfsQueryPhase extends SearchPhase {
         final CountedCollector<SearchPhaseResult> counter = new CountedCollector<>(
             queryResult,
             searchResults.size(),
-            () -> context.executeNextPhase(this, () -> nextPhaseFactory.apply(queryResult)),
+            () -> context.executeNextPhase(PHASE_NAME, () -> nextPhaseFactory.apply(queryResult)),
             context
         );
 
@@ -106,7 +109,7 @@ final class DfsQueryPhase extends SearchPhase {
                             response.setSearchProfileDfsPhaseResult(dfsResult.searchProfileDfsPhaseResult());
                             counter.onResult(response);
                         } catch (Exception e) {
-                            context.onPhaseFailure(DfsQueryPhase.this, "", e);
+                            context.onPhaseFailure(PHASE_NAME, "", e);
                         }
                     }
 

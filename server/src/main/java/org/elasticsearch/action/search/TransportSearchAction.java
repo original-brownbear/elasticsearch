@@ -59,6 +59,7 @@ import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.common.util.concurrent.CountDown;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.core.Predicates;
+import org.elasticsearch.core.Releasables;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexNotFoundException;
@@ -1298,7 +1299,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
             localShardIterators.size() + remoteShardIterators.size(),
             defaultPreFilterShardSize
         );
-        searchPhaseProvider.newSearchPhase(
+        searchPhaseProvider.runNewSearchPhase(
             task,
             searchRequest,
             asyncSearchExecutor,
@@ -1311,7 +1312,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
             preFilterSearchShards,
             threadPool,
             clusters
-        ).start();
+        );
     }
 
     Executor asyncSearchExecutor(final String[] indices) {
@@ -1415,7 +1416,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
     }
 
     interface SearchPhaseProvider {
-        SearchPhase newSearchPhase(
+        void runNewSearchPhase(
             SearchTask task,
             SearchRequest searchRequest,
             Executor executor,
@@ -1439,7 +1440,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
         }
 
         @Override
-        public SearchPhase newSearchPhase(
+        public void runNewSearchPhase(
             SearchTask task,
             SearchRequest searchRequest,
             Executor executor,
@@ -1456,7 +1457,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
             if (preFilter) {
                 // only for aggs we need to contact shards even if there are no matches
                 boolean requireAtLeastOneMatch = searchRequest.source() != null && searchRequest.source().aggregations() != null;
-                return new CanMatchPreFilterSearchPhase(
+                new CanMatchPreFilterSearchPhase(
                     logger,
                     searchTransportService,
                     connectionLookup,
@@ -1470,7 +1471,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                     requireAtLeastOneMatch,
                     searchService.getCoordinatorRewriteContextProvider(timeProvider::absoluteStartMillis),
                     listener.delegateFailureAndWrap(
-                        (l, iters) -> newSearchPhase(
+                        (l, iters) -> runNewSearchPhase(
                             task,
                             searchRequest,
                             executor,
@@ -1483,9 +1484,9 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                             false,
                             threadPool,
                             clusters
-                        ).start()
+                        )
                     )
-                );
+                ).start();
             }
             // for synchronous CCS minimize_roundtrips=false, use the CCSSingleCoordinatorSearchProgressListener
             // (AsyncSearchTask will not return SearchProgressListener.NOOP, since it uses its own progress listener
@@ -1495,7 +1496,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                 && task.getProgressListener() == SearchProgressListener.NOOP) {
                 task.setProgressListener(new CCSSingleCoordinatorSearchProgressListener());
             }
-            final SearchPhaseResults<SearchPhaseResult> queryResultConsumer = searchPhaseController.newSearchPhaseResults(
+            SearchPhaseResults<SearchPhaseResult> queryResultConsumer = searchPhaseController.newSearchPhaseResults(
                 executor,
                 circuitBreaker,
                 task::isCancelled,
@@ -1504,11 +1505,9 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                 shardIterators.size(),
                 exc -> searchTransportService.cancelSearchTask(task, "failed to merge result [" + exc.getMessage() + "]")
             );
-            boolean success = false;
             try {
-                final SearchPhase searchPhase;
                 if (searchRequest.searchType() == DFS_QUERY_THEN_FETCH) {
-                    searchPhase = new SearchDfsQueryThenFetchAsyncAction(
+                    var searchPhase = new SearchDfsQueryThenFetchAsyncAction(
                         logger,
                         namedWriteableRegistry,
                         searchTransportService,
@@ -1526,9 +1525,11 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                         clusters,
                         client
                     );
+                    queryResultConsumer = null;
+                    searchPhase.start();
                 } else {
                     assert searchRequest.searchType() == QUERY_THEN_FETCH : searchRequest.searchType();
-                    searchPhase = new SearchQueryThenFetchAsyncAction(
+                    var searchPhase = new SearchQueryThenFetchAsyncAction(
                         logger,
                         namedWriteableRegistry,
                         searchTransportService,
@@ -1546,13 +1547,11 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                         clusters,
                         client
                     );
+                    queryResultConsumer = null;
+                    searchPhase.start();
                 }
-                success = true;
-                return searchPhase;
             } finally {
-                if (success == false) {
-                    queryResultConsumer.close();
-                }
+                Releasables.close(queryResultConsumer);
             }
         }
     }
