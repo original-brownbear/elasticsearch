@@ -1168,7 +1168,7 @@ public class AbstractCoordinatorTestCase extends ESTestCase {
                     (s, p, r) -> {},
                     coordinationServices.getElectionStrategy(),
                     nodeHealthService,
-                    new NoneCircuitBreakerService(),
+                    NoneCircuitBreakerService.INSTANCE,
                     coordinationServices.getReconfigurator(),
                     coordinationServices.getLeaderHeartbeatService(),
                     coordinationServices.getPreVoteCollectorFactory(),

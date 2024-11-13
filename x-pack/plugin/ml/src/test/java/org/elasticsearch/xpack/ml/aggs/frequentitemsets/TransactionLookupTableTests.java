@@ -17,7 +17,7 @@ import org.elasticsearch.test.ESTestCase;
 public class TransactionLookupTableTests extends ESTestCase {
 
     static BigArrays mockBigArrays() {
-        return new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), new NoneCircuitBreakerService());
+        return new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), NoneCircuitBreakerService.INSTANCE);
     }
 
     public void testBasic() {

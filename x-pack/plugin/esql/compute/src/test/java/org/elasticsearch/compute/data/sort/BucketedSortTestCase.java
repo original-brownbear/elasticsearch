@@ -382,6 +382,6 @@ public abstract class BucketedSortTestCase<T extends Releasable, V extends Compa
     }
 
     protected final BigArrays bigArrays() {
-        return new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), new NoneCircuitBreakerService());
+        return new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), NoneCircuitBreakerService.INSTANCE);
     }
 }

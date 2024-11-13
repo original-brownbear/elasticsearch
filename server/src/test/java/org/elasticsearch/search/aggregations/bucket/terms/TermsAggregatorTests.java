@@ -1342,7 +1342,7 @@ public class TermsAggregatorTests extends AggregatorTestCase {
                 dir.close();
             }
             AggregationReduceContext ctx = new AggregationReduceContext.ForFinal(
-                new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), new NoneCircuitBreakerService()),
+                new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), NoneCircuitBreakerService.INSTANCE),
                 null,
                 () -> false,
                 aggregationBuilder,

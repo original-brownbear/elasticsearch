@@ -166,7 +166,7 @@ public class DriverContextTests extends ESTestCase {
 
         AssertingDriverContext() {
             super(
-                new MockBigArrays(PageCacheRecycler.NON_RECYCLING_INSTANCE, new NoneCircuitBreakerService()),
+                new MockBigArrays(PageCacheRecycler.NON_RECYCLING_INSTANCE, NoneCircuitBreakerService.INSTANCE),
                 TestBlockFactory.getNonBreakingInstance()
             );
         }

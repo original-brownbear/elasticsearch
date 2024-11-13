@@ -3600,7 +3600,7 @@ public class InternalEngineTests extends EngineTestCase {
             config.getExternalRefreshListener(),
             config.getInternalRefreshListener(),
             null,
-            new NoneCircuitBreakerService(),
+            NoneCircuitBreakerService.INSTANCE,
             () -> UNASSIGNED_SEQ_NO,
             () -> RetentionLeases.EMPTY,
             primaryTerm::get,
@@ -6410,7 +6410,7 @@ public class InternalEngineTests extends EngineTestCase {
                     public void afterRefresh(boolean didRefresh) {
 
                     }
-                }, null, () -> SequenceNumbers.NO_OPS_PERFORMED, new NoneCircuitBreakerService())
+                }, null, () -> SequenceNumbers.NO_OPS_PERFORMED, NoneCircuitBreakerService.INSTANCE)
             )
         ) {
             for (long seqNo = 0; seqNo <= maxSeqNo; seqNo++) {
@@ -7449,7 +7449,7 @@ public class InternalEngineTests extends EngineTestCase {
                     null,
                     globalCheckpoint::get,
                     () -> RetentionLeases.EMPTY,
-                    new NoneCircuitBreakerService(),
+                    NoneCircuitBreakerService.INSTANCE,
                     indexCommitListener
                 )
             )

@@ -150,12 +150,12 @@ public class InternalVariableWidthHistogramTests extends InternalMultiBucketAggr
         }
         InternalVariableWidthHistogram histogram = dummy_histogram.create(buckets);
 
-        MockBigArrays bigArrays = new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), new NoneCircuitBreakerService());
+        MockBigArrays bigArrays = new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), NoneCircuitBreakerService.INSTANCE);
         ScriptService mockScriptService = mockScriptService();
 
         MultiBucketConsumerService.MultiBucketConsumer bucketConsumer = new MultiBucketConsumerService.MultiBucketConsumer(
             DEFAULT_MAX_BUCKETS,
-            new NoneCircuitBreakerService().getBreaker(CircuitBreaker.REQUEST)
+            NoneCircuitBreakerService.INSTANCE.getBreaker(CircuitBreaker.REQUEST)
         );
         AggregationReduceContext context = new AggregationReduceContext.ForFinal(
             bigArrays,
@@ -207,12 +207,12 @@ public class InternalVariableWidthHistogramTests extends InternalMultiBucketAggr
         }
         InternalVariableWidthHistogram histogram = dummy_histogram.create(buckets);
 
-        MockBigArrays bigArrays = new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), new NoneCircuitBreakerService());
+        MockBigArrays bigArrays = new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), NoneCircuitBreakerService.INSTANCE);
         ScriptService mockScriptService = mockScriptService();
 
         MultiBucketConsumerService.MultiBucketConsumer bucketConsumer = new MultiBucketConsumerService.MultiBucketConsumer(
             DEFAULT_MAX_BUCKETS,
-            new NoneCircuitBreakerService().getBreaker(CircuitBreaker.REQUEST)
+            NoneCircuitBreakerService.INSTANCE.getBreaker(CircuitBreaker.REQUEST)
         );
         AggregationReduceContext context = new AggregationReduceContext.ForFinal(
             bigArrays,
@@ -300,12 +300,12 @@ public class InternalVariableWidthHistogramTests extends InternalMultiBucketAggr
         InternalVariableWidthHistogram histogram2 = dummy_histogram.create(buckets2);
         InternalVariableWidthHistogram histogram3 = dummy_histogram.create(buckets3);
 
-        MockBigArrays bigArrays = new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), new NoneCircuitBreakerService());
+        MockBigArrays bigArrays = new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), NoneCircuitBreakerService.INSTANCE);
         ScriptService mockScriptService = mockScriptService();
 
         MultiBucketConsumerService.MultiBucketConsumer bucketConsumer = new MultiBucketConsumerService.MultiBucketConsumer(
             DEFAULT_MAX_BUCKETS,
-            new NoneCircuitBreakerService().getBreaker(CircuitBreaker.REQUEST)
+            NoneCircuitBreakerService.INSTANCE.getBreaker(CircuitBreaker.REQUEST)
         );
         AggregationReduceContext context = new AggregationReduceContext.ForFinal(
             bigArrays,
@@ -359,12 +359,12 @@ public class InternalVariableWidthHistogramTests extends InternalMultiBucketAggr
         }
         InternalVariableWidthHistogram histogram = dummy_histogram.create(buckets);
 
-        MockBigArrays bigArrays = new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), new NoneCircuitBreakerService());
+        MockBigArrays bigArrays = new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), NoneCircuitBreakerService.INSTANCE);
         ScriptService mockScriptService = mockScriptService();
 
         MultiBucketConsumerService.MultiBucketConsumer bucketConsumer = new MultiBucketConsumerService.MultiBucketConsumer(
             DEFAULT_MAX_BUCKETS,
-            new NoneCircuitBreakerService().getBreaker(CircuitBreaker.REQUEST)
+            NoneCircuitBreakerService.INSTANCE.getBreaker(CircuitBreaker.REQUEST)
         );
         AggregationReduceContext context = new AggregationReduceContext.ForFinal(
             bigArrays,
@@ -423,12 +423,12 @@ public class InternalVariableWidthHistogramTests extends InternalMultiBucketAggr
         }
         InternalVariableWidthHistogram histogram = dummy_histogram.create(buckets);
 
-        MockBigArrays bigArrays = new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), new NoneCircuitBreakerService());
+        MockBigArrays bigArrays = new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), NoneCircuitBreakerService.INSTANCE);
         ScriptService mockScriptService = mockScriptService();
 
         MultiBucketConsumerService.MultiBucketConsumer bucketConsumer = new MultiBucketConsumerService.MultiBucketConsumer(
             DEFAULT_MAX_BUCKETS,
-            new NoneCircuitBreakerService().getBreaker(CircuitBreaker.REQUEST)
+            NoneCircuitBreakerService.INSTANCE.getBreaker(CircuitBreaker.REQUEST)
         );
         AggregationReduceContext context = new AggregationReduceContext.ForFinal(
             bigArrays,

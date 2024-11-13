@@ -20,7 +20,7 @@ import java.io.IOException;
 public class ReleasableBytesStreamOutputTests extends ESTestCase {
 
     public void testRelease() throws Exception {
-        MockBigArrays mockBigArrays = new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), new NoneCircuitBreakerService());
+        MockBigArrays mockBigArrays = new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), NoneCircuitBreakerService.INSTANCE);
         try (ReleasableBytesStreamOutput output = getRandomReleasableBytesStreamOutput(mockBigArrays)) {
             output.writeBoolean(randomBoolean());
         }

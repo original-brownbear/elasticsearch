@@ -54,7 +54,7 @@ public class InternalCardinalityTests extends InternalAggregationTestCase<Intern
     private InternalCardinality createTestInstance(String name, Map<String, Object> metadata, int precision) {
         HyperLogLogPlusPlus hllpp = new HyperLogLogPlusPlus(
             precision,
-            new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), new NoneCircuitBreakerService()),
+            new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), NoneCircuitBreakerService.INSTANCE),
             1
         );
         algos.add(hllpp);
@@ -97,7 +97,7 @@ public class InternalCardinalityTests extends InternalAggregationTestCase<Intern
             case 1 -> {
                 HyperLogLogPlusPlus newState = new HyperLogLogPlusPlus(
                     state.precision(),
-                    new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), new NoneCircuitBreakerService()),
+                    new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), NoneCircuitBreakerService.INSTANCE),
                     0
                 );
                 int values = between(0, 10);

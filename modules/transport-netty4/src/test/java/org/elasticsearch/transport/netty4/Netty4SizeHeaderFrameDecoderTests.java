@@ -64,7 +64,7 @@ public class Netty4SizeHeaderFrameDecoderTests extends ESTestCase {
             networkService,
             recycler,
             new NamedWriteableRegistry(Collections.emptyList()),
-            new NoneCircuitBreakerService(),
+            NoneCircuitBreakerService.INSTANCE,
             new SharedGroupFactory(settings)
         );
         nettyTransport.start();

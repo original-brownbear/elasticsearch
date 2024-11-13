@@ -46,7 +46,13 @@ public abstract class RestActionTestCase extends ESTestCase {
     public void setUpController() {
         threadPool = createThreadPool();
         verifyingClient = new VerifyingClient(threadPool);
-        controller = new RestController(null, verifyingClient, new NoneCircuitBreakerService(), new UsageService(), TelemetryProvider.NOOP);
+        controller = new RestController(
+            null,
+            verifyingClient,
+            NoneCircuitBreakerService.INSTANCE,
+            new UsageService(),
+            TelemetryProvider.NOOP
+        );
     }
 
     @After

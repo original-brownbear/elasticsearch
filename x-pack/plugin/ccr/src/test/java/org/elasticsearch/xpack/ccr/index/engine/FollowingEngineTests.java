@@ -244,7 +244,7 @@ public class FollowingEngineTests extends ESTestCase {
             Collections.emptyList(),
             Collections.emptyList(),
             null,
-            new NoneCircuitBreakerService(),
+            NoneCircuitBreakerService.INSTANCE,
             globalCheckpoint::longValue,
             () -> RetentionLeases.EMPTY,
             () -> primaryTerm.get(),

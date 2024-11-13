@@ -684,7 +684,7 @@ public class RollupResponseTranslationTests extends AggregatorTestCase {
         InternalAggregation unrolled = RollupResponseTranslator.unrollAgg(responses.get(1), null, null, 0);
 
         // Reduce the InternalDateHistogram response so we can fill buckets
-        BigArrays bigArrays = new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), new NoneCircuitBreakerService());
+        BigArrays bigArrays = new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), NoneCircuitBreakerService.INSTANCE);
         ScriptService scriptService = mock(ScriptService.class);
         AggregationReduceContext context = new AggregationReduceContext.ForFinal(
             bigArrays,

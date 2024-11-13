@@ -233,7 +233,7 @@ public abstract class InternalAggregationTestCase<T extends InternalAggregation>
         List<InternalAggregation> toReduce = new ArrayList<>();
         toReduce.addAll(inputs.toReduce());
         ScriptService mockScriptService = mockScriptService();
-        MockBigArrays bigArrays = new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), new NoneCircuitBreakerService());
+        MockBigArrays bigArrays = new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), NoneCircuitBreakerService.INSTANCE);
         if (randomBoolean() && toReduce.size() > 1) {
             // sometimes do a partial reduce
             if (supportsOutOfOrderReduce()) {
@@ -270,7 +270,7 @@ public abstract class InternalAggregationTestCase<T extends InternalAggregation>
         }
         MultiBucketConsumer bucketConsumer = new MultiBucketConsumer(
             DEFAULT_MAX_BUCKETS,
-            new NoneCircuitBreakerService().getBreaker(CircuitBreaker.REQUEST)
+            NoneCircuitBreakerService.INSTANCE.getBreaker(CircuitBreaker.REQUEST)
         );
         AggregationReduceContext context = new AggregationReduceContext.ForFinal(
             bigArrays,

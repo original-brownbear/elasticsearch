@@ -117,7 +117,7 @@ public class BytesRefHashTests extends ESTestCase {
     }
 
     private BigArrays mockBigArrays() {
-        return new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), new NoneCircuitBreakerService());
+        return new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), NoneCircuitBreakerService.INSTANCE);
     }
 
     private BigArrays mockBigArraysWithThrowingCircuitBreaker() {

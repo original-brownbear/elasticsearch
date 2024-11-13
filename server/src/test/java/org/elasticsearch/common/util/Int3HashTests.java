@@ -23,7 +23,7 @@ import static org.hamcrest.Matchers.equalTo;
 
 public class Int3HashTests extends ESTestCase {
     private BigArrays randombigArrays() {
-        return new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), new NoneCircuitBreakerService());
+        return new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), NoneCircuitBreakerService.INSTANCE);
     }
 
     private Int3Hash randomHash() {

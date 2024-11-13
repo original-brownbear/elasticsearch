@@ -60,7 +60,7 @@ public class BestDocsDeferringCollectorTests extends AggregatorTestCase {
 
         BestDocsDeferringCollector collector = new BestDocsDeferringCollector(
             numDocs,
-            new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), new NoneCircuitBreakerService()),
+            new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), NoneCircuitBreakerService.INSTANCE),
             bytes::addAndGet
         );
         Set<Integer> deferredCollectedDocIds = new HashSet<>();

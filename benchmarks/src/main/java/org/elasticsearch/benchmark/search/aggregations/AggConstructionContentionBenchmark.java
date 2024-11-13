@@ -116,7 +116,7 @@ public class AggConstructionContentionBenchmark {
                 List.of(),
                 clusterSettings
             );
-            case "noop" -> new NoneCircuitBreakerService();
+            case "noop" -> NoneCircuitBreakerService.INSTANCE;
             default -> throw new UnsupportedOperationException();
         };
         preallocateBreaker = breaker.equals("preallocate");

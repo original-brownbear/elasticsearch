@@ -108,7 +108,7 @@ public class TransportResyncReplicationActionTests extends ESTestCase {
                     new NetworkService(emptyList()),
                     PageCacheRecycler.NON_RECYCLING_INSTANCE,
                     new NamedWriteableRegistry(emptyList()),
-                    new NoneCircuitBreakerService(),
+                    NoneCircuitBreakerService.INSTANCE,
                     new SharedGroupFactory(Settings.EMPTY)
                 )
             ) {

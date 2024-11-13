@@ -797,7 +797,7 @@ public class RequestDispatcherTests extends ESAllocationTestCase {
                 new NetworkService(Collections.emptyList()),
                 PageCacheRecycler.NON_RECYCLING_INSTANCE,
                 new NamedWriteableRegistry(Collections.emptyList()),
-                new NoneCircuitBreakerService(),
+                NoneCircuitBreakerService.INSTANCE,
                 new SharedGroupFactory(Settings.EMPTY)
             );
             SetOnce<TransportInterceptor.AsyncSender> asyncSenderHolder = new SetOnce<>();

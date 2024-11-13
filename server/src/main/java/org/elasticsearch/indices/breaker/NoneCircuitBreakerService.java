@@ -19,7 +19,9 @@ public class NoneCircuitBreakerService extends CircuitBreakerService {
 
     private final CircuitBreaker breaker = new NoopCircuitBreaker(CircuitBreaker.FIELDDATA);
 
-    public NoneCircuitBreakerService() {
+    public static final NoneCircuitBreakerService INSTANCE = new NoneCircuitBreakerService();
+
+    protected NoneCircuitBreakerService() {
         super();
     }
 

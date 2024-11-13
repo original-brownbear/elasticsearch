@@ -76,7 +76,7 @@ public class FileBasedSeedHostsProviderTests extends ESTestCase {
             new NetworkService(Collections.emptyList()),
             PageCacheRecycler.NON_RECYCLING_INSTANCE,
             new NamedWriteableRegistry(Collections.emptyList()),
-            new NoneCircuitBreakerService(),
+            NoneCircuitBreakerService.INSTANCE,
             new SharedGroupFactory(Settings.EMPTY)
         ) {
             @Override

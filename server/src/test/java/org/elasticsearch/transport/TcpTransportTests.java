@@ -229,7 +229,7 @@ public class TcpTransportTests extends ESTestCase {
                 TransportVersion.current(),
                 testThreadPool,
                 new MockPageCacheRecycler(settings),
-                new NoneCircuitBreakerService(),
+                NoneCircuitBreakerService.INSTANCE,
                 writableRegistry(),
                 new NetworkService(Collections.emptyList())
             ) {

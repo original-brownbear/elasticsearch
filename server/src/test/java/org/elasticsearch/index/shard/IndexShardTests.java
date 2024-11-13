@@ -2851,7 +2851,7 @@ public class IndexShardTests extends IndexShardTestCase {
         IndexFieldDataService indexFieldDataService = new IndexFieldDataService(
             shard.indexSettings,
             indicesFieldDataCache,
-            new NoneCircuitBreakerService()
+            NoneCircuitBreakerService.INSTANCE
         );
         IndexFieldData.Global<?> ifd = indexFieldDataService.getForField(foo, FieldDataContext.noRuntimeFields("test"));
         FieldDataStats before = shard.fieldData().stats("foo");

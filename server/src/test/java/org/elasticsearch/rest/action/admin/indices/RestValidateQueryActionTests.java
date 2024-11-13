@@ -54,7 +54,7 @@ public class RestValidateQueryActionTests extends AbstractSearchTestCase {
     private RestController controller = new RestController(
         null,
         client,
-        new NoneCircuitBreakerService(),
+        NoneCircuitBreakerService.INSTANCE,
         usageService,
         TelemetryProvider.NOOP
     );

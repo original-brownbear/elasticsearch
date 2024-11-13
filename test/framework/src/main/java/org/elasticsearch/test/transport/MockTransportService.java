@@ -160,7 +160,7 @@ public class MockTransportService extends TransportService {
             new NetworkService(Collections.emptyList()),
             new MockPageCacheRecycler(settings),
             namedWriteableRegistry,
-            new NoneCircuitBreakerService(),
+            NoneCircuitBreakerService.INSTANCE,
             new SharedGroupFactory(settings)
         );
     }

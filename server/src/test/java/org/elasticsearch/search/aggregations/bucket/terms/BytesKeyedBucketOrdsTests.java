@@ -27,7 +27,10 @@ public class BytesKeyedBucketOrdsTests extends ESTestCase {
     private static final BytesRef SHIP_1 = new BytesRef("Just Read The Instructions");
     private static final BytesRef SHIP_2 = new BytesRef("Of Course I Still Love You");
 
-    private final MockBigArrays bigArrays = new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), new NoneCircuitBreakerService());
+    private final MockBigArrays bigArrays = new MockBigArrays(
+        new MockPageCacheRecycler(Settings.EMPTY),
+        NoneCircuitBreakerService.INSTANCE
+    );
 
     public void testExplicitCollectsFromSingleBucket() {
         collectsFromSingleBucketCase(BytesKeyedBucketOrds.build(bigArrays, CardinalityUpperBound.ONE));

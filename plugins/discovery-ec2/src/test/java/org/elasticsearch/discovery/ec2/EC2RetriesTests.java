@@ -56,7 +56,7 @@ public class EC2RetriesTests extends AbstractEC2MockAPITestCase {
                 networkService,
                 PageCacheRecycler.NON_RECYCLING_INSTANCE,
                 new NamedWriteableRegistry(Collections.emptyList()),
-                new NoneCircuitBreakerService(),
+                NoneCircuitBreakerService.INSTANCE,
                 new SharedGroupFactory(Settings.EMPTY)
             ),
             threadPool,

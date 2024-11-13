@@ -33,7 +33,7 @@ import static org.hamcrest.Matchers.notNullValue;
 
 public class BigArrayVectorTests extends SerializationTestCase {
 
-    final MockBigArrays bigArrays = new MockBigArrays(PageCacheRecycler.NON_RECYCLING_INSTANCE, new NoneCircuitBreakerService());
+    final MockBigArrays bigArrays = new MockBigArrays(PageCacheRecycler.NON_RECYCLING_INSTANCE, NoneCircuitBreakerService.INSTANCE);
 
     public void testBoolean() throws IOException {
         int positionCount = randomIntBetween(1, 16 * 1024);

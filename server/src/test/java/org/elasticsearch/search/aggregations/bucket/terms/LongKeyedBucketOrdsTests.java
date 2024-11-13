@@ -28,7 +28,10 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
 public class LongKeyedBucketOrdsTests extends ESTestCase {
-    private final MockBigArrays bigArrays = new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), new NoneCircuitBreakerService());
+    private final MockBigArrays bigArrays = new MockBigArrays(
+        new MockPageCacheRecycler(Settings.EMPTY),
+        NoneCircuitBreakerService.INSTANCE
+    );
 
     public void testExplicitCollectsFromSingleBucket() {
         collectsFromSingleBucketCase(LongKeyedBucketOrds.build(bigArrays, CardinalityUpperBound.ONE));

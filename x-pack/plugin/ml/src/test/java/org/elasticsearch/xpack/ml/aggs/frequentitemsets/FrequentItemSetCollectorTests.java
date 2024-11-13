@@ -25,7 +25,7 @@ import static org.hamcrest.Matchers.equalTo;
 public class FrequentItemSetCollectorTests extends ESTestCase {
 
     static BigArrays mockBigArrays() {
-        return new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), new NoneCircuitBreakerService());
+        return new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), NoneCircuitBreakerService.INSTANCE);
     }
 
     private HashBasedTransactionStore transactionStore = null;

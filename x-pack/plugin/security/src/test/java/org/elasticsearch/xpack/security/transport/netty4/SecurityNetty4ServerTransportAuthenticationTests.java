@@ -124,7 +124,7 @@ public class SecurityNetty4ServerTransportAuthenticationTests extends ESTestCase
             new NetworkService(List.of()),
             PageCacheRecycler.NON_RECYCLING_INSTANCE,
             new NamedWriteableRegistry(List.of()),
-            new NoneCircuitBreakerService(),
+            NoneCircuitBreakerService.INSTANCE,
             null,
             mock(SSLService.class),
             new SharedGroupFactory(remoteSettings),

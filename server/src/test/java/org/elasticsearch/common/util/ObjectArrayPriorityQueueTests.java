@@ -26,7 +26,7 @@ import java.util.Random;
 public class ObjectArrayPriorityQueueTests extends ESTestCase {
 
     private static BigArrays randombigArrays() {
-        return new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), new NoneCircuitBreakerService());
+        return new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), NoneCircuitBreakerService.INSTANCE);
     }
 
     private static class IntegerQueue extends ObjectArrayPriorityQueue<Integer> {

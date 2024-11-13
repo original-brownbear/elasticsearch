@@ -31,7 +31,7 @@ public class ChunkedBlobOutputStreamTests extends ESTestCase {
 
     @Override
     public void setUp() throws Exception {
-        bigArrays = new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), new NoneCircuitBreakerService());
+        bigArrays = new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), NoneCircuitBreakerService.INSTANCE);
         super.setUp();
     }
 

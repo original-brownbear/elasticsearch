@@ -116,7 +116,7 @@ public class NettyTransportMultiPortTests extends ESTestCase {
             new NetworkService(Collections.emptyList()),
             recycler,
             new NamedWriteableRegistry(Collections.emptyList()),
-            new NoneCircuitBreakerService(),
+            NoneCircuitBreakerService.INSTANCE,
             new SharedGroupFactory(settings)
         );
         transport.start();

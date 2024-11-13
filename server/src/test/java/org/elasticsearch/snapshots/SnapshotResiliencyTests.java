@@ -2240,7 +2240,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
                     .namedWriteableRegistry(namedWriteableRegistry)
                     .threadPool(threadPool)
                     .indexScopedSettings(indexScopedSettings)
-                    .circuitBreakerService(new NoneCircuitBreakerService())
+                    .circuitBreakerService(NoneCircuitBreakerService.INSTANCE)
                     .bigArrays(bigArrays)
                     .scriptService(scriptService)
                     .clusterService(clusterService)
@@ -2318,7 +2318,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
                     new RankFeatureShardPhase(),
                     new FetchPhase(Collections.emptyList()),
                     responseCollectorService,
-                    new NoneCircuitBreakerService(),
+                    NoneCircuitBreakerService.INSTANCE,
                     EmptySystemIndices.INSTANCE.getExecutorSelector(),
                     Tracer.NOOP
                 );
@@ -2481,7 +2481,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
                     TransportSearchAction.TYPE,
                     new TransportSearchAction(
                         threadPool,
-                        new NoneCircuitBreakerService(),
+                        NoneCircuitBreakerService.INSTANCE,
                         transportService,
                         searchService,
                         searchTransportService,
@@ -2687,7 +2687,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
                     rerouteService,
                     ElectionStrategy.DEFAULT_INSTANCE,
                     () -> new StatusInfo(HEALTHY, "healthy-info"),
-                    new NoneCircuitBreakerService(),
+                    NoneCircuitBreakerService.INSTANCE,
                     new Reconfigurator(clusterService.getSettings(), clusterService.getClusterSettings()),
                     LeaderHeartbeatService.NO_OP,
                     StatefulPreVoteCollector::new,

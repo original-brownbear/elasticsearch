@@ -294,7 +294,7 @@ public abstract class AggregatorTestCase extends ESTestCase {
             indexReader,
             createIndexSettings(),
             query,
-            new NoneCircuitBreakerService(),
+            NoneCircuitBreakerService.INSTANCE,
             AggregationBuilder.DEFAULT_PREALLOCATION * 5, // We don't know how many bytes to preallocate so we grab a hand full
             DEFAULT_MAX_BUCKETS,
             false,
@@ -524,8 +524,7 @@ public abstract class AggregatorTestCase extends ESTestCase {
         // First run it to find circuit breaker leaks on the aggregator
         runWithCrankyCircuitBreaker(indexSettings, searcher, aggTestConfig);
         // Second run it to the end
-        CircuitBreakerService breakerService = new NoneCircuitBreakerService();
-        return searchAndReduce(indexSettings, searcher, breakerService, aggTestConfig);
+        return searchAndReduce(indexSettings, searcher, NoneCircuitBreakerService.INSTANCE, aggTestConfig);
     }
 
     /**
@@ -681,7 +680,7 @@ public abstract class AggregatorTestCase extends ESTestCase {
             // now do the final reduce
             MultiBucketConsumer reduceBucketConsumer = new MultiBucketConsumer(
                 maxBucket,
-                new NoneCircuitBreakerService().getBreaker(CircuitBreaker.REQUEST)
+                NoneCircuitBreakerService.INSTANCE.getBreaker(CircuitBreaker.REQUEST)
             );
             AggregationReduceContext reduceContext = new AggregationReduceContext.ForFinal(
                 bigArraysForReduction,
@@ -702,7 +701,9 @@ public abstract class AggregatorTestCase extends ESTestCase {
             }
             return internalAgg;
         } finally {
-            Releasables.close(breakerService);
+            if (breakerService instanceof Releasable r) {
+                r.close();
+            }
         }
     }
 
@@ -835,12 +836,11 @@ public abstract class AggregatorTestCase extends ESTestCase {
         if (queryCachingPolicy != null) {
             searcher.setQueryCachingPolicy(queryCachingPolicy);
         }
-        CircuitBreakerService breakerService = new NoneCircuitBreakerService();
         AggregationContext context = createAggregationContext(
             searcher,
             createIndexSettings(),
             searcher.rewrite(query),
-            breakerService,
+            NoneCircuitBreakerService.INSTANCE,
             aggregationBuilder.bytesToPreallocate(),
             DEFAULT_MAX_BUCKETS,
             aggregationBuilder.isInSortOrderExecutionRequired(),

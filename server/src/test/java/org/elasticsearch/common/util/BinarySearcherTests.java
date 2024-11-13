@@ -20,7 +20,7 @@ import java.util.Arrays;
 public class BinarySearcherTests extends ESTestCase {
 
     private BigArrays randombigArrays() {
-        return new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), new NoneCircuitBreakerService());
+        return new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), NoneCircuitBreakerService.INSTANCE);
     }
 
     private BigArrays bigArrays;

@@ -589,12 +589,12 @@ public abstract class MapperServiceTestCase extends FieldTypeTestCase {
             @Override
             protected IndexFieldData<?> buildFieldData(MappedFieldType ft) {
                 return ft.fielddataBuilder(FieldDataContext.noRuntimeFields("test"))
-                    .build(new IndexFieldDataCache.None(), new NoneCircuitBreakerService());
+                    .build(new IndexFieldDataCache.None(), NoneCircuitBreakerService.INSTANCE);
             }
 
             @Override
             public BigArrays bigArrays() {
-                return new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), new NoneCircuitBreakerService());
+                return new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), NoneCircuitBreakerService.INSTANCE);
             }
 
             @Override
@@ -760,7 +760,7 @@ public abstract class MapperServiceTestCase extends FieldTypeTestCase {
             0,
             indexSettings,
             new BitsetFilterCache(indexSettings, BitsetFilterCache.Listener.NOOP),
-            (ft, fdc) -> ft.fielddataBuilder(fdc).build(new IndexFieldDataCache.None(), new NoneCircuitBreakerService()),
+            (ft, fdc) -> ft.fielddataBuilder(fdc).build(new IndexFieldDataCache.None(), NoneCircuitBreakerService.INSTANCE),
             mapperService,
             mapperService.mappingLookup(),
             similarityService,
@@ -789,7 +789,7 @@ public abstract class MapperServiceTestCase extends FieldTypeTestCase {
         Function<String, Set<String>> sourcePathsLookup
     ) {
         return (mft, lookupSource, fdo) -> mft.fielddataBuilder(new FieldDataContext("test", null, lookupSource, sourcePathsLookup, fdo))
-            .build(new IndexFieldDataCache.None(), new NoneCircuitBreakerService());
+            .build(new IndexFieldDataCache.None(), NoneCircuitBreakerService.INSTANCE);
     }
 
     protected RandomIndexWriter indexWriterForSyntheticSource(Directory directory) throws IOException {

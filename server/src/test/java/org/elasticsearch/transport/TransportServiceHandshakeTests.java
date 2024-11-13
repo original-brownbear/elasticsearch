@@ -77,7 +77,7 @@ public class TransportServiceHandshakeTests extends ESTestCase {
             new NetworkService(Collections.emptyList()),
             PageCacheRecycler.NON_RECYCLING_INSTANCE,
             new NamedWriteableRegistry(Collections.emptyList()),
-            new NoneCircuitBreakerService(),
+            NoneCircuitBreakerService.INSTANCE,
             new SharedGroupFactory(settings)
         );
         TransportService transportService = new MockTransportService(

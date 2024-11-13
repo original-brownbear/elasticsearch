@@ -35,7 +35,6 @@ import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.indices.TestIndexNameExpressionResolver;
-import org.elasticsearch.indices.breaker.CircuitBreakerService;
 import org.elasticsearch.indices.breaker.NoneCircuitBreakerService;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.tasks.Task;
@@ -72,7 +71,6 @@ import static org.hamcrest.Matchers.lessThanOrEqualTo;
 public class BroadcastReplicationTests extends ESTestCase {
 
     private static ThreadPool threadPool;
-    private static CircuitBreakerService circuitBreakerService;
     private ClusterService clusterService;
     private TransportService transportService;
     private TestBroadcastReplicationAction broadcastReplicationAction;
@@ -80,7 +78,6 @@ public class BroadcastReplicationTests extends ESTestCase {
     @BeforeClass
     public static void beforeClass() {
         threadPool = new TestThreadPool("BroadcastReplicationTests");
-        circuitBreakerService = new NoneCircuitBreakerService();
     }
 
     @Override
@@ -94,7 +91,7 @@ public class BroadcastReplicationTests extends ESTestCase {
             new NetworkService(Collections.emptyList()),
             PageCacheRecycler.NON_RECYCLING_INSTANCE,
             new NamedWriteableRegistry(Collections.emptyList()),
-            circuitBreakerService,
+            NoneCircuitBreakerService.INSTANCE,
             new SharedGroupFactory(Settings.EMPTY)
         );
         clusterService = createClusterService(threadPool);

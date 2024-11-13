@@ -54,7 +54,7 @@ public class FrozenEngineTests extends EngineTestCase {
                 listener,
                 null,
                 globalCheckpoint::get,
-                new NoneCircuitBreakerService()
+                NoneCircuitBreakerService.INSTANCE
             );
             try (InternalEngine engine = createEngine(config)) {
                 int numDocs = Math.min(10, addDocuments(globalCheckpoint, engine));
@@ -102,7 +102,7 @@ public class FrozenEngineTests extends EngineTestCase {
                 listener,
                 null,
                 globalCheckpoint::get,
-                new NoneCircuitBreakerService()
+                NoneCircuitBreakerService.INSTANCE
             );
             try (InternalEngine engine = createEngine(config)) {
                 int numDocs = Math.min(10, addDocuments(globalCheckpoint, engine));
@@ -154,7 +154,7 @@ public class FrozenEngineTests extends EngineTestCase {
                 listener,
                 null,
                 globalCheckpoint::get,
-                new NoneCircuitBreakerService()
+                NoneCircuitBreakerService.INSTANCE
             );
             try (InternalEngine engine = createEngine(config)) {
                 addDocuments(globalCheckpoint, engine);
@@ -313,7 +313,7 @@ public class FrozenEngineTests extends EngineTestCase {
                 listener,
                 null,
                 globalCheckpoint::get,
-                new NoneCircuitBreakerService()
+                NoneCircuitBreakerService.INSTANCE
             );
             try (InternalEngine engine = createEngine(config)) {
                 addDocuments(globalCheckpoint, engine);
@@ -362,7 +362,7 @@ public class FrozenEngineTests extends EngineTestCase {
                 null,
                 null,
                 globalCheckpoint::get,
-                new NoneCircuitBreakerService()
+                NoneCircuitBreakerService.INSTANCE
             );
             final int totalDocs;
             try (InternalEngine engine = createEngine(config)) {

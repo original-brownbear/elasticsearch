@@ -85,7 +85,7 @@ public class ScriptScoreBenchmark {
         Map.entry("n", new NumberFieldType("n", NumberType.LONG, false, false, true, true, null, Map.of(), null, false, null, null))
     );
     private final IndexFieldDataCache fieldDataCache = new IndexFieldDataCache.None();
-    private final CircuitBreakerService breakerService = new NoneCircuitBreakerService();
+    private final CircuitBreakerService breakerService = NoneCircuitBreakerService.INSTANCE;
     private final SearchLookup lookup = new SearchLookup(
         fieldTypes::get,
         (mft, lookup, fdo) -> mft.fielddataBuilder(FieldDataContext.noRuntimeFields("benchmark")).build(fieldDataCache, breakerService),

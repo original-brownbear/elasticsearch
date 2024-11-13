@@ -1307,7 +1307,7 @@ public class TransportReplicationActionTests extends ESTestCase {
             new NetworkService(Collections.emptyList()),
             PageCacheRecycler.NON_RECYCLING_INSTANCE,
             namedWriteableRegistry,
-            new NoneCircuitBreakerService(),
+            NoneCircuitBreakerService.INSTANCE,
             new SharedGroupFactory(Settings.EMPTY)
         );
         transportService = new MockTransportService(

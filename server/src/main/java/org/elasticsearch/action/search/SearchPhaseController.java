@@ -496,22 +496,23 @@ public final class SearchPhaseController {
         );
     }
 
+    private static final AggregationReduceContext.Builder SCROLL_REDUCE_CTX_BUILDER = new AggregationReduceContext.Builder() {
+        @Override
+        public AggregationReduceContext forPartialReduction() {
+            throw new UnsupportedOperationException("Scroll requests don't have aggs");
+        }
+
+        @Override
+        public AggregationReduceContext forFinalReduction() {
+            throw new UnsupportedOperationException("Scroll requests don't have aggs");
+        }
+    };
+
     /**
      * Reduces the given query results and consumes all aggregations and profile results.
      * @param queryResults a list of non-null query shard results
      */
     static ReducedQueryPhase reducedScrollQueryPhase(Collection<? extends SearchPhaseResult> queryResults) {
-        AggregationReduceContext.Builder aggReduceContextBuilder = new AggregationReduceContext.Builder() {
-            @Override
-            public AggregationReduceContext forPartialReduction() {
-                throw new UnsupportedOperationException("Scroll requests don't have aggs");
-            }
-
-            @Override
-            public AggregationReduceContext forFinalReduction() {
-                throw new UnsupportedOperationException("Scroll requests don't have aggs");
-            }
-        };
         final TopDocsStats topDocsStats = new TopDocsStats(SearchContext.TRACK_TOTAL_HITS_ACCURATE);
         final List<TopDocs> topDocs = new ArrayList<>();
         for (SearchPhaseResult sortedResult : queryResults) {
@@ -525,7 +526,7 @@ public final class SearchPhaseController {
                 topDocs.add(td.topDocs);
             }
         }
-        return reducedQueryPhase(queryResults, null, topDocs, topDocsStats, 0, true, aggReduceContextBuilder, null, true);
+        return reducedQueryPhase(queryResults, null, topDocs, topDocsStats, 0, true, SCROLL_REDUCE_CTX_BUILDER, null, true);
     }
 
     /**

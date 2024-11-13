@@ -168,7 +168,10 @@ public final class DocumentParser {
                     context.mappingLookup()::sourcePaths,
                     fto
                 )
-            ).build(new IndexFieldDataCache.None(), new NoneCircuitBreakerService()),
+            )
+                .build(
+                    new IndexFieldDataCache.None(),
+                    NoneCircuitBreakerService.INSTANCE),
             (ctx, doc) -> Source.fromBytes(context.sourceToParse().source())
         );
         // field scripts can be called both by the loop at the end of this method and via

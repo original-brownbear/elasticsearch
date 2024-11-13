@@ -308,7 +308,7 @@ public class InternalMultiTermsTests extends InternalAggregationTestCase<Interna
     }
 
     public void testReduceWithDoublePromotion() {
-        MockBigArrays bigArrays = new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), new NoneCircuitBreakerService());
+        MockBigArrays bigArrays = new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), NoneCircuitBreakerService.INSTANCE);
         ScriptService mockScriptService = mockScriptService();
         List<DocValueFormat> formats1 = List.of(DocValueFormat.RAW, UNSIGNED_LONG_SHIFTED, DocValueFormat.RAW);
         List<DocValueFormat> formats2 = List.of(DocValueFormat.RAW, DocValueFormat.RAW, DocValueFormat.RAW);

@@ -62,7 +62,6 @@ import org.elasticsearch.index.query.QueryRewriteContext;
 import org.elasticsearch.index.query.QueryShardException;
 import org.elasticsearch.index.query.Rewriteable;
 import org.elasticsearch.index.query.SearchExecutionContext;
-import org.elasticsearch.indices.breaker.CircuitBreakerService;
 import org.elasticsearch.indices.breaker.NoneCircuitBreakerService;
 import org.elasticsearch.xcontent.ConstructingObjectParser;
 import org.elasticsearch.xcontent.NamedXContentRegistry;
@@ -649,8 +648,7 @@ public class PercolateQueryBuilder extends AbstractQueryBuilder<PercolateQueryBu
                     )
                 );
                 IndexFieldDataCache cache = new IndexFieldDataCache.None();
-                CircuitBreakerService circuitBreaker = new NoneCircuitBreakerService();
-                return (IFD) builder.build(cache, circuitBreaker);
+                return (IFD) builder.build(cache, NoneCircuitBreakerService.INSTANCE);
             }
 
             @Override

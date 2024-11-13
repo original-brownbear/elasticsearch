@@ -37,7 +37,7 @@ public class ObjectObjectPagedHashMapTests extends ESTestCase {
             assertThat(ex.getMessage(), equalTo("cranky breaker"));
         }
         // then to the end
-        doTestDuel(mockBigArrays(new NoneCircuitBreakerService()));
+        doTestDuel(mockBigArrays(NoneCircuitBreakerService.INSTANCE));
     }
 
     private void doTestDuel(BigArrays bigArrays) {

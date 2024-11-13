@@ -21,7 +21,7 @@ import java.util.Set;
 
 public class LongHashTests extends ESTestCase {
     private BigArrays mockBigArrays() {
-        return new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), new NoneCircuitBreakerService());
+        return new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), NoneCircuitBreakerService.INSTANCE);
     }
 
     private LongHash randomHash() {

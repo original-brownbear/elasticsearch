@@ -33,7 +33,6 @@ import org.elasticsearch.index.fielddata.plain.PagedBytesIndexFieldData;
 import org.elasticsearch.index.fielddata.plain.SortedSetOrdinalsIndexFieldData;
 import org.elasticsearch.index.mapper.TextFieldMapper;
 import org.elasticsearch.index.shard.ShardId;
-import org.elasticsearch.indices.breaker.CircuitBreakerService;
 import org.elasticsearch.indices.breaker.NoneCircuitBreakerService;
 import org.elasticsearch.script.field.DelegateDocValuesField;
 import org.elasticsearch.script.field.ToScriptFieldFactory;
@@ -63,21 +62,20 @@ public class FieldDataCacheWithFieldSubsetReaderTests extends ESTestCase {
 
     @Before
     public void setup() throws Exception {
-        CircuitBreakerService circuitBreakerService = new NoneCircuitBreakerService();
         String name = "_field";
         indexFieldDataCache = new DummyAccountingFieldDataCache();
         sortedSetOrdinalsIndexFieldData = new SortedSetOrdinalsIndexFieldData(
             indexFieldDataCache,
             name,
             CoreValuesSourceType.KEYWORD,
-            circuitBreakerService,
+            NoneCircuitBreakerService.INSTANCE,
             MOCK_TO_SCRIPT_FIELD
         );
         pagedBytesIndexFieldData = new PagedBytesIndexFieldData(
             name,
             CoreValuesSourceType.KEYWORD,
             indexFieldDataCache,
-            circuitBreakerService,
+            NoneCircuitBreakerService.INSTANCE,
             TextFieldMapper.Defaults.FIELDDATA_MIN_FREQUENCY,
             TextFieldMapper.Defaults.FIELDDATA_MAX_FREQUENCY,
             TextFieldMapper.Defaults.FIELDDATA_MIN_SEGMENT_SIZE,

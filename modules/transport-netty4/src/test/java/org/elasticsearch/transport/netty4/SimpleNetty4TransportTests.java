@@ -66,7 +66,7 @@ public class SimpleNetty4TransportTests extends AbstractSimpleTransportTestCase 
             networkService,
             PageCacheRecycler.NON_RECYCLING_INSTANCE,
             namedWriteableRegistry,
-            new NoneCircuitBreakerService(),
+            NoneCircuitBreakerService.INSTANCE,
             new SharedGroupFactory(settings)
         ) {
             @Override

@@ -59,7 +59,7 @@ import static org.mockito.Mockito.mock;
 public final class SecurityNetty4HeaderSizeLimitTests extends ESTestCase {
 
     private final int maxHeaderSize = randomIntBetween(64, 128);
-    private final BigArrays bigarrays = new BigArrays(null, new NoneCircuitBreakerService(), CircuitBreaker.REQUEST);
+    private final BigArrays bigarrays = new BigArrays(null, NoneCircuitBreakerService.INSTANCE, CircuitBreaker.REQUEST);
     private final Settings settings = Settings.builder()
         .put("node.name", "SecurityNetty4HeaderSizeLimitTests")
         .put(RemoteClusterPortSettings.MAX_REQUEST_HEADER_SIZE.getKey(), maxHeaderSize + "b")
@@ -90,7 +90,7 @@ public final class SecurityNetty4HeaderSizeLimitTests extends ESTestCase {
             networkService,
             recycler,
             new NamedWriteableRegistry(Collections.emptyList()),
-            new NoneCircuitBreakerService(),
+            NoneCircuitBreakerService.INSTANCE,
             null,
             mock(SSLService.class),
             new SharedGroupFactory(settings),

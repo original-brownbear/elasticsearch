@@ -310,7 +310,7 @@ public abstract class BucketedSortTestCase<T extends BucketedSort> extends ESTes
     }
 
     protected BigArrays bigArrays() {
-        return new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), new NoneCircuitBreakerService());
+        return new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), NoneCircuitBreakerService.INSTANCE);
     }
 
     private Extra.Value extraValue(int extra, double sort) {

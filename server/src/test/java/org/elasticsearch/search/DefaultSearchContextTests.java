@@ -830,7 +830,7 @@ public class DefaultSearchContextTests extends MapperServiceTestCase {
                     new IndexFieldDataCache.None(),
                     "empty",
                     CoreValuesSourceType.KEYWORD,
-                    new NoneCircuitBreakerService(),
+                    NoneCircuitBreakerService.INSTANCE,
                     null
                 );
                 assertEquals(0, DefaultSearchContext.getFieldCardinality(high, reader));
@@ -867,7 +867,7 @@ public class DefaultSearchContextTests extends MapperServiceTestCase {
                     new IndexFieldDataCache.None(),
                     "non_existent",
                     CoreValuesSourceType.KEYWORD,
-                    new NoneCircuitBreakerService(),
+                    NoneCircuitBreakerService.INSTANCE,
                     null
                 );
                 assertEquals(0, DefaultSearchContext.getFieldCardinality(nonExistent, reader));
@@ -875,7 +875,7 @@ public class DefaultSearchContextTests extends MapperServiceTestCase {
                     new IndexFieldDataCache.None(),
                     "high",
                     CoreValuesSourceType.KEYWORD,
-                    new NoneCircuitBreakerService(),
+                    NoneCircuitBreakerService.INSTANCE,
                     null
                 );
                 assertEquals(numDocs, DefaultSearchContext.getFieldCardinality(high, reader));
@@ -883,7 +883,7 @@ public class DefaultSearchContextTests extends MapperServiceTestCase {
                     new IndexFieldDataCache.None(),
                     "low",
                     CoreValuesSourceType.KEYWORD,
-                    new NoneCircuitBreakerService(),
+                    NoneCircuitBreakerService.INSTANCE,
                     null
                 );
                 assertEquals(3, DefaultSearchContext.getFieldCardinality(low, reader));

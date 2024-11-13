@@ -311,7 +311,7 @@ public abstract class AbstractScriptFieldTypeTestCase extends MapperServiceTestC
             MappedFieldType ft = args.getArgument(0);
             MappedFieldType.FielddataOperation fdo = args.getArgument(1);
             return ft.fielddataBuilder(new FieldDataContext("test", null, context::lookup, context::sourcePath, fdo))
-                .build(new IndexFieldDataCache.None(), new NoneCircuitBreakerService());
+                .build(new IndexFieldDataCache.None(), NoneCircuitBreakerService.INSTANCE);
         });
         when(context.getMatchingFieldNames(any())).thenReturn(Set.of("dummy_field"));
         return context;

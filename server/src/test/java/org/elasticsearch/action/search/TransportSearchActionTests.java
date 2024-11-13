@@ -1755,7 +1755,7 @@ public class TransportSearchActionTests extends ESTestCase {
 
             TransportSearchAction action = new TransportSearchAction(
                 threadPool,
-                new NoneCircuitBreakerService(),
+                NoneCircuitBreakerService.INSTANCE,
                 transportService,
                 searchService,
                 new SearchTransportService(transportService, client, null),

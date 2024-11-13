@@ -501,7 +501,7 @@ public abstract class AbstractBuilderTestCase extends ESTestCase {
             );
             IndicesFieldDataCache indicesFieldDataCache = new IndicesFieldDataCache(nodeSettings, new IndexFieldDataCache.Listener() {
             });
-            indexFieldDataService = new IndexFieldDataService(idxSettings, indicesFieldDataCache, new NoneCircuitBreakerService());
+            indexFieldDataService = new IndexFieldDataService(idxSettings, indicesFieldDataCache, NoneCircuitBreakerService.INSTANCE);
             if (registerType) {
                 mapperService.merge(
                     "_doc",

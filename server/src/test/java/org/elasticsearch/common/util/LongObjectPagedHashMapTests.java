@@ -20,7 +20,7 @@ import java.util.Map;
 public class LongObjectPagedHashMapTests extends ESTestCase {
 
     private BigArrays mockBigArrays() {
-        return new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), new NoneCircuitBreakerService());
+        return new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), NoneCircuitBreakerService.INSTANCE);
     }
 
     public void testDuel() {

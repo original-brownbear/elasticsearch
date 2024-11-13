@@ -133,7 +133,7 @@ public class FieldDataCacheTests extends ESTestCase {
             indexFieldDataCache,
             fieldName,
             CoreValuesSourceType.KEYWORD,
-            new NoneCircuitBreakerService(),
+            NoneCircuitBreakerService.INSTANCE,
             MOCK_TO_SCRIPT_FIELD
         );
     }
@@ -143,7 +143,7 @@ public class FieldDataCacheTests extends ESTestCase {
             fieldName,
             CoreValuesSourceType.KEYWORD,
             indexFieldDataCache,
-            new NoneCircuitBreakerService(),
+            NoneCircuitBreakerService.INSTANCE,
             TextFieldMapper.Defaults.FIELDDATA_MIN_FREQUENCY,
             TextFieldMapper.Defaults.FIELDDATA_MAX_FREQUENCY,
             TextFieldMapper.Defaults.FIELDDATA_MIN_SEGMENT_SIZE,

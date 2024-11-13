@@ -79,7 +79,7 @@ public class TermsReduceBenchmark {
         public AggregationReduceContext forFinalReduction() {
             final MultiBucketConsumerService.MultiBucketConsumer bucketConsumer = new MultiBucketConsumerService.MultiBucketConsumer(
                 Integer.MAX_VALUE,
-                new NoneCircuitBreakerService().getBreaker(CircuitBreaker.REQUEST)
+                NoneCircuitBreakerService.INSTANCE.getBreaker(CircuitBreaker.REQUEST)
             );
             return new AggregationReduceContext.ForFinal(null, null, task, builder, bucketConsumer, PipelineAggregator.PipelineTree.EMPTY);
         }

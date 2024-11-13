@@ -126,7 +126,7 @@ public class SimpleSecurityNetty4ServerTransportTests extends AbstractSimpleTran
             networkService,
             PageCacheRecycler.NON_RECYCLING_INSTANCE,
             namedWriteableRegistry,
-            new NoneCircuitBreakerService(),
+            NoneCircuitBreakerService.INSTANCE,
             null,
             createSSLService(settings1),
             new SharedGroupFactory(settings1),

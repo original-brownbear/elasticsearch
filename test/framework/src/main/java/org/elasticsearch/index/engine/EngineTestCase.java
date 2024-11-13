@@ -754,7 +754,7 @@ public abstract class EngineTestCase extends ESTestCase {
             indexSort,
             globalCheckpointSupplier,
             retentionLeasesSupplier,
-            new NoneCircuitBreakerService(),
+            NoneCircuitBreakerService.INSTANCE,
             null
         );
     }

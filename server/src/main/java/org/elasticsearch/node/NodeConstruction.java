@@ -1454,10 +1454,9 @@ class NodeConstruction {
                 pluginBreakers.stream().map(Tuple::v2).toList(),
                 clusterSettings
             );
-            case "none" -> new NoneCircuitBreakerService();
+            case "none" -> NoneCircuitBreakerService.INSTANCE;
             default -> throw new IllegalArgumentException("Unknown circuit breaker type [" + type + "]");
         };
-        resourcesToClose.add(circuitBreakerService);
         modules.bindToInstance(CircuitBreakerService.class, circuitBreakerService);
 
         pluginBreakers.forEach(t -> {

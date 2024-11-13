@@ -36,7 +36,7 @@ import java.util.Map;
 public abstract class AbstractBytesReferenceTestCase extends ESTestCase {
 
     protected static final int PAGE_SIZE = PageCacheRecycler.BYTE_PAGE_SIZE;
-    protected final BigArrays bigarrays = new BigArrays(null, new NoneCircuitBreakerService(), CircuitBreaker.REQUEST);
+    protected final BigArrays bigarrays = new BigArrays(null, NoneCircuitBreakerService.INSTANCE, CircuitBreaker.REQUEST);
 
     public void testGet() throws IOException {
         int length = randomIntBetween(1, PAGE_SIZE * 3);

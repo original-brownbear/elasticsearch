@@ -200,8 +200,7 @@ public class IndexSortSettingsTests extends ESTestCase {
         IndexSortConfig config = indexSettings.getIndexSortConfig();
         assertTrue(config.hasIndexSort());
         IndicesFieldDataCache cache = new IndicesFieldDataCache(indexSettings.getSettings(), null);
-        NoneCircuitBreakerService circuitBreakerService = new NoneCircuitBreakerService();
-        IndexFieldDataService indexFieldDataService = new IndexFieldDataService(indexSettings, cache, circuitBreakerService);
+        IndexFieldDataService indexFieldDataService = new IndexFieldDataService(indexSettings, cache, NoneCircuitBreakerService.INSTANCE);
         return config.buildIndexSort(
             lookup::get,
             (ft, s) -> indexFieldDataService.getForField(

@@ -231,7 +231,7 @@ public class LookupFromIndexIT extends AbstractEsqlIntegTestCase {
      * Creates a {@link BigArrays} that tracks releases but doesn't throw circuit breaking exceptions.
      */
     private BigArrays bigArrays() {
-        return new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), new NoneCircuitBreakerService());
+        return new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), NoneCircuitBreakerService.INSTANCE);
     }
 
     /**

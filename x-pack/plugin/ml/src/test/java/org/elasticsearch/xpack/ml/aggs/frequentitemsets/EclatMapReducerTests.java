@@ -466,7 +466,7 @@ public class EclatMapReducerTests extends ESTestCase {
     }
 
     private static BigArrays mockBigArrays() {
-        return new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), new NoneCircuitBreakerService());
+        return new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), NoneCircuitBreakerService.INSTANCE);
     }
 
     private static Tuple<Field, List<Object>> mockOneField(Field field, String... fieldValues) {

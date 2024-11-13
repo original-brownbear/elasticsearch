@@ -116,7 +116,7 @@ public class DiscoveryModuleTests extends ESTestCase {
             gatewayMetaState,
             mock(RerouteService.class),
             null,
-            new NoneCircuitBreakerService(),
+            NoneCircuitBreakerService.INSTANCE,
             CompatibilityVersionsUtils.staticCurrent(),
             new FeatureService(List.of())
         );

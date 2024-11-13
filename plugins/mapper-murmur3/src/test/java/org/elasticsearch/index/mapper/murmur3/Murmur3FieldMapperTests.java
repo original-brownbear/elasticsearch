@@ -96,7 +96,7 @@ public class Murmur3FieldMapperTests extends MapperTestCase {
         ValueFetcher docValueFetcher = new DocValueFetcher(
             ft.docValueFormat(format, null),
             ft.fielddataBuilder(FieldDataContext.noRuntimeFields("test"))
-                .build(new IndexFieldDataCache.None(), new NoneCircuitBreakerService())
+                .build(new IndexFieldDataCache.None(), NoneCircuitBreakerService.INSTANCE)
         );
         SearchExecutionContext searchExecutionContext = mock(SearchExecutionContext.class);
         when(searchExecutionContext.isSourceEnabled()).thenReturn(true);

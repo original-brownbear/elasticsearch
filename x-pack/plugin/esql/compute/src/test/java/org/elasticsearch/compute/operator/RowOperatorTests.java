@@ -27,7 +27,7 @@ import static org.hamcrest.Matchers.equalTo;
 
 public class RowOperatorTests extends ESTestCase {
     final DriverContext driverContext = new DriverContext(
-        new MockBigArrays(PageCacheRecycler.NON_RECYCLING_INSTANCE, new NoneCircuitBreakerService()).withCircuitBreaking(),
+        new MockBigArrays(PageCacheRecycler.NON_RECYCLING_INSTANCE, NoneCircuitBreakerService.INSTANCE).withCircuitBreaking(),
         TestBlockFactory.getNonBreakingInstance()
     );
 

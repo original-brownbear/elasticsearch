@@ -178,7 +178,7 @@ public class BytesRefArrayTests extends ESTestCase {
     }
 
     private static BigArrays mockBigArrays() {
-        return new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), new NoneCircuitBreakerService());
+        return new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), NoneCircuitBreakerService.INSTANCE);
     }
 
     private void assertEquality(BytesRefArray original, BytesRefArray copy) {

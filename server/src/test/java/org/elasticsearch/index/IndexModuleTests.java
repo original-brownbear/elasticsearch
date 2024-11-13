@@ -80,7 +80,6 @@ import org.elasticsearch.indices.IndicesModule;
 import org.elasticsearch.indices.IndicesQueryCache;
 import org.elasticsearch.indices.TestIndexNameExpressionResolver;
 import org.elasticsearch.indices.analysis.AnalysisModule;
-import org.elasticsearch.indices.breaker.CircuitBreakerService;
 import org.elasticsearch.indices.breaker.NoneCircuitBreakerService;
 import org.elasticsearch.indices.cluster.IndicesClusterStateService.AllocatedIndices.IndexRemovalReason;
 import org.elasticsearch.indices.fielddata.cache.IndicesFieldDataCache;
@@ -157,7 +156,6 @@ public class IndexModuleTests extends ESTestCase {
     };
     private MapperRegistry mapperRegistry;
     private ThreadPool threadPool;
-    private CircuitBreakerService circuitBreakerService;
     private BigArrays bigArrays;
     private ScriptService scriptService;
     private ClusterService clusterService;
@@ -187,9 +185,8 @@ public class IndexModuleTests extends ESTestCase {
             emptyMap()
         );
         threadPool = new TestThreadPool("test");
-        circuitBreakerService = new NoneCircuitBreakerService();
         PageCacheRecycler pageCacheRecycler = new PageCacheRecycler(settings);
-        bigArrays = new BigArrays(pageCacheRecycler, circuitBreakerService, CircuitBreaker.REQUEST);
+        bigArrays = new BigArrays(pageCacheRecycler, NoneCircuitBreakerService.INSTANCE, CircuitBreaker.REQUEST);
         scriptService = new ScriptService(settings, Collections.emptyMap(), Collections.emptyMap(), () -> 1L);
         clusterService = ClusterServiceUtils.createClusterService(threadPool);
         nodeEnvironment = new NodeEnvironment(settings, environment);
@@ -210,7 +207,7 @@ public class IndexModuleTests extends ESTestCase {
             nodeEnvironment,
             parserConfig(),
             deleter,
-            circuitBreakerService,
+            NoneCircuitBreakerService.INSTANCE,
             bigArrays,
             threadPool,
             scriptService,

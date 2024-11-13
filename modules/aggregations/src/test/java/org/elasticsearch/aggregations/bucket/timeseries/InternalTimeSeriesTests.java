@@ -136,7 +136,7 @@ public class InternalTimeSeriesTests extends AggregationMultiBucketAggregationTe
             Map.of()
         );
         AggregationReduceContext context = new AggregationReduceContext.ForFinal(
-            new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), new NoneCircuitBreakerService()),
+            new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), NoneCircuitBreakerService.INSTANCE),
             mockScriptService(),
             () -> false,
             new TimeSeriesAggregationBuilder("ts"),

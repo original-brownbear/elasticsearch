@@ -149,7 +149,7 @@ public class RefreshListenersTests extends ESTestCase {
             Collections.singletonList(listeners),
             Collections.emptyList(),
             null,
-            new NoneCircuitBreakerService(),
+            NoneCircuitBreakerService.INSTANCE,
             () -> SequenceNumbers.NO_OPS_PERFORMED,
             () -> RetentionLeases.EMPTY,
             () -> primaryTerm,
