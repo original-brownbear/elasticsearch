@@ -1004,6 +1004,7 @@ class NodeConstruction {
             telemetryProvider.getTracer()
         );
         final ResponseCollectorService responseCollectorService = new ResponseCollectorService(clusterService);
+        modules.bindToInstance(ResponseCollectorService.class, responseCollectorService);
         final SearchResponseMetrics searchResponseMetrics = new SearchResponseMetrics(telemetryProvider.getMeterRegistry());
         final SearchTransportService searchTransportService = new SearchTransportService(
             transportService,
@@ -1101,7 +1102,6 @@ class NodeConstruction {
             bigArrays,
             searchModule.getRankFeatureShardPhase(),
             searchModule.getFetchPhase(),
-            responseCollectorService,
             circuitBreakerService,
             systemIndices.getExecutorSelector(),
             telemetryProvider.getTracer()
