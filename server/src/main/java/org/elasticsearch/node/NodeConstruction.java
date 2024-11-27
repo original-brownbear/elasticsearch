@@ -1101,7 +1101,6 @@ class NodeConstruction {
             threadPool,
             scriptService,
             bigArrays,
-            searchModule.getRankFeatureShardPhase(),
             searchModule.getFetchPhase(),
             circuitBreakerService,
             systemIndices.getExecutorSelector(),

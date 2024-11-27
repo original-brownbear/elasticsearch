@@ -23,7 +23,6 @@ import org.elasticsearch.search.fetch.FetchPhase;
 import org.elasticsearch.search.internal.ReaderContext;
 import org.elasticsearch.search.internal.SearchContext;
 import org.elasticsearch.search.internal.ShardSearchRequest;
-import org.elasticsearch.search.rank.feature.RankFeatureShardPhase;
 import org.elasticsearch.telemetry.tracing.Tracer;
 import org.elasticsearch.threadpool.ThreadPool;
 
@@ -82,7 +81,6 @@ public class MockSearchService extends SearchService {
         ThreadPool threadPool,
         ScriptService scriptService,
         BigArrays bigArrays,
-        RankFeatureShardPhase rankFeatureShardPhase,
         FetchPhase fetchPhase,
         CircuitBreakerService circuitBreakerService,
         ExecutorSelector executorSelector,
@@ -94,7 +92,6 @@ public class MockSearchService extends SearchService {
             threadPool,
             scriptService,
             bigArrays,
-            rankFeatureShardPhase,
             fetchPhase,
             circuitBreakerService,
             executorSelector,
