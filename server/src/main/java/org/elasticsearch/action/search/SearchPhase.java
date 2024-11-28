@@ -92,7 +92,11 @@ abstract class SearchPhase implements CheckedRunnable<IOException> {
         if (phaseResult != null
             && phaseResult.hasSearchContext()
             && context.getRequest().scroll() == null
-            && (context.isPartOfPointInTime(phaseResult.getContextId()) == false)) {
+            && (AbstractSearchAsyncAction.isPartOfPointInTime(
+                phaseResult.getContextId(),
+                context.getRequest(),
+                context.namedWriteableRegistry
+            ) == false)) {
             try {
                 context.getLogger().trace("trying to release search context [{}]", phaseResult.getContextId());
                 SearchShardTarget shardTarget = phaseResult.getSearchShardTarget();

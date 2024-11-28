@@ -33,7 +33,6 @@ import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.search.SearchContextMissingException;
 import org.elasticsearch.search.SearchPhaseResult;
 import org.elasticsearch.search.SearchShardTarget;
-import org.elasticsearch.search.builder.PointInTimeBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.internal.AliasFilter;
 import org.elasticsearch.search.internal.SearchContext;
@@ -71,7 +70,7 @@ import static org.elasticsearch.core.Strings.format;
 abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> extends SearchPhase {
     private static final float DEFAULT_INDEX_BOOST = 1.0f;
     private final Logger logger;
-    private final NamedWriteableRegistry namedWriteableRegistry;
+    final NamedWriteableRegistry namedWriteableRegistry;
     private final SearchTransportService searchTransportService;
     private final Executor executor;
     private final ActionListener<SearchResponse> listener;
@@ -621,10 +620,14 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
       * Checks if the given context id is part of the point in time of this search (if exists).
       * We should not release search contexts that belong to the point in time during or after searches.
     */
-    public boolean isPartOfPointInTime(ShardSearchContextId contextId) {
-        final PointInTimeBuilder pointInTimeBuilder = request.pointInTimeBuilder();
+    public static boolean isPartOfPointInTime(
+        ShardSearchContextId contextId,
+        SearchRequest request,
+        NamedWriteableRegistry namedWriteableRegistry
+    ) {
+        var pointInTimeBuilder = request.pointInTimeBuilder();
         if (pointInTimeBuilder != null) {
-            return request.pointInTimeBuilder().getSearchContextId(namedWriteableRegistry).contains(contextId);
+            return pointInTimeBuilder.getSearchContextId(namedWriteableRegistry).contains(contextId);
         } else {
             return false;
         }
@@ -707,7 +710,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
     private void raisePhaseFailure(SearchPhaseExecutionException exception) {
         results.getSuccessfulResults().forEach((entry) -> {
             // Do not release search contexts that are part of the point in time
-            if (entry.getContextId() != null && isPartOfPointInTime(entry.getContextId()) == false) {
+            if (entry.getContextId() != null && isPartOfPointInTime(entry.getContextId(), request, namedWriteableRegistry) == false) {
                 try {
                     SearchShardTarget searchShardTarget = entry.getSearchShardTarget();
                     Transport.Connection connection = getConnection(searchShardTarget.getClusterAlias(), searchShardTarget.getNodeId());
@@ -728,7 +731,8 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
       *
       */
     void sendReleaseSearchContext(ShardSearchContextId contextId, Transport.Connection connection, OriginalIndices originalIndices) {
-        assert isPartOfPointInTime(contextId) == false : "Must not release point in time context [" + contextId + "]";
+        assert isPartOfPointInTime(contextId, request, namedWriteableRegistry) == false
+            : "Must not release point in time context [" + contextId + "]";
         if (connection != null) {
             searchTransportService.sendFreeContext(connection, contextId, originalIndices);
         }

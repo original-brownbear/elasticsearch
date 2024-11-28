@@ -163,9 +163,4 @@ public final class MockSearchPhaseContext extends AbstractSearchAsyncAction<Sear
     public void sendReleaseSearchContext(ShardSearchContextId contextId, Transport.Connection connection, OriginalIndices originalIndices) {
         releasedSearchContexts.add(contextId);
     }
-
-    @Override
-    public boolean isPartOfPointInTime(ShardSearchContextId contextId) {
-        return false;
-    }
 }
