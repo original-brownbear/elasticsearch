@@ -79,16 +79,14 @@ public class SystemIndexMappingUpdateService implements ClusterStateListener {
 
     @Override
     public void clusterChanged(ClusterChangedEvent event) {
+        if (event.localNodeMaster() == false || (event.metadataChanged() == false && event.nodesChanged() == false)) {
+            return;
+        }
         final ClusterState state = event.state();
         if (state.blocks().hasGlobalBlock(GatewayService.STATE_NOT_RECOVERED_BLOCK)) {
             // wait until the gateway has recovered from disk, otherwise we may think we don't have some
             // indices but they may not have been restored from the cluster state on disk
             logger.debug("Waiting until state has been recovered");
-            return;
-        }
-
-        // If this node is not a master node, exit.
-        if (state.nodes().isLocalNodeElectedMaster() == false) {
             return;
         }
 
