@@ -22,6 +22,7 @@ import org.elasticsearch.action.admin.indices.rollover.MinPrimaryShardSizeCondit
 import org.elasticsearch.action.admin.indices.rollover.MinSizeCondition;
 import org.elasticsearch.action.admin.indices.rollover.OptimalShardCountCondition;
 import org.elasticsearch.action.resync.TransportResyncReplicationAction;
+import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.index.mapper.BinaryFieldMapper;
 import org.elasticsearch.index.mapper.BooleanFieldMapper;
@@ -348,7 +349,9 @@ public class IndicesModule extends AbstractModule {
 
     @Override
     protected void configure() {
-        bind(IndicesStore.class).asEagerSingleton();
+        if (DiscoveryNode.canContainData(settings)) {
+            bind(IndicesStore.class).asEagerSingleton();
+        }
         bind(IndicesClusterStateService.class).asEagerSingleton();
         bind(TransportResyncReplicationAction.class).asEagerSingleton();
         bind(PrimaryReplicaSyncer.class).asEagerSingleton();

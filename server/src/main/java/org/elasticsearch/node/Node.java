@@ -282,9 +282,13 @@ public class Node implements Closeable {
         }
         injector.getInstance(MappingUpdatedAction.class).setClient(client);
         injector.getInstance(IndicesService.class).start();
-        injector.getInstance(IndicesClusterStateService.class).start();
+        if (DiscoveryNode.canContainData(settings())) {
+            injector.getInstance(IndicesClusterStateService.class).start();
+        }
         injector.getInstance(SnapshotsService.class).start();
-        injector.getInstance(SnapshotShardsService.class).start();
+        if (DiscoveryNode.canContainData(settings())) {
+            injector.getInstance(SnapshotShardsService.class).start();
+        }
         injector.getInstance(RepositoriesService.class).start();
         injector.getInstance(SearchService.class).start();
         injector.getInstance(FsHealthService.class).start();
@@ -459,10 +463,14 @@ public class Node implements Closeable {
         stopIfStarted(HttpServerTransport.class);
 
         stopIfStarted(SnapshotsService.class);
-        stopIfStarted(SnapshotShardsService.class);
+        if (DiscoveryNode.canContainData(settings())) {
+            stopIfStarted(SnapshotShardsService.class);
+        }
         stopIfStarted(RepositoriesService.class);
         // stop any changes happening as a result of cluster state changes
-        stopIfStarted(IndicesClusterStateService.class);
+        if (DiscoveryNode.canContainData(settings())) {
+            stopIfStarted(IndicesClusterStateService.class);
+        }
         // close cluster coordinator early to not react to pings anymore.
         // This can confuse other nodes and delay things - mostly if we're the master and we're running tests.
         stopIfStarted(Coordinator.class);
@@ -519,14 +527,20 @@ public class Node implements Closeable {
         toClose.add(injector.getInstance(HttpServerTransport.class));
         toClose.add(() -> stopWatch.stop().start("snapshot_service"));
         toClose.add(injector.getInstance(SnapshotsService.class));
-        toClose.add(injector.getInstance(SnapshotShardsService.class));
+        if (DiscoveryNode.canContainData(settings())) {
+            toClose.add(injector.getInstance(SnapshotShardsService.class));
+        }
         toClose.add(injector.getInstance(RepositoriesService.class));
-        toClose.add(() -> stopWatch.stop().start("indices_cluster"));
-        toClose.add(injector.getInstance(IndicesClusterStateService.class));
+        if (DiscoveryNode.canContainData(settings())) {
+            toClose.add(() -> stopWatch.stop().start("indices_cluster"));
+            toClose.add(injector.getInstance(IndicesClusterStateService.class));
+        }
         toClose.add(() -> stopWatch.stop().start("indices"));
         toClose.add(injector.getInstance(IndicesService.class));
         // close filter/fielddata caches after indices
-        toClose.add(injector.getInstance(IndicesStore.class));
+        if (DiscoveryNode.canContainData(settings())) {
+            toClose.add(injector.getInstance(IndicesStore.class));
+        }
         toClose.add(injector.getInstance(PeerRecoverySourceService.class));
         toClose.add(() -> stopWatch.stop().start("cluster"));
         toClose.add(injector.getInstance(ClusterService.class));

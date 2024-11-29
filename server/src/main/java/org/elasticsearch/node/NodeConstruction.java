@@ -1024,13 +1024,6 @@ class NodeConstruction {
             actionModule.getActionFilters(),
             systemIndices
         );
-        SnapshotShardsService snapshotShardsService = new SnapshotShardsService(
-            settings,
-            clusterService,
-            repositoriesService,
-            transportService,
-            indicesService
-        );
 
         actionModule.getReservedClusterStateService().installStateHandler(new ReservedRepositoryAction(repositoriesService));
         actionModule.getReservedClusterStateService().installStateHandler(new ReservedPipelineAction());
@@ -1201,7 +1194,17 @@ class NodeConstruction {
             b.bind(HttpServerTransport.class).toInstance(httpServerTransport);
             b.bind(RepositoriesService.class).toInstance(repositoriesService);
             b.bind(SnapshotsService.class).toInstance(snapshotsService);
-            b.bind(SnapshotShardsService.class).toInstance(snapshotShardsService);
+            if (DiscoveryNode.canContainData(settings)) {
+                b.bind(SnapshotShardsService.class).toInstance(new SnapshotShardsService(
+                    settings,
+                    clusterService,
+                    repositoriesService,
+                    transportService,
+                    indicesService
+                ));
+            } else {
+                assert this != null;
+            }
             b.bind(RestoreService.class).toInstance(restoreService);
             b.bind(RerouteService.class).toInstance(rerouteService);
             b.bind(ShardLimitValidator.class).toInstance(shardLimitValidator);
