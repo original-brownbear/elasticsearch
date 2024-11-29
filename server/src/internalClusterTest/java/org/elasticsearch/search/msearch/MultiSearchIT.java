@@ -9,16 +9,20 @@
 
 package org.elasticsearch.search.msearch;
 
+import com.carrotsearch.randomizedtesting.annotations.Repeat;
+
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.TransportVersions;
 import org.elasticsearch.action.search.MultiSearchRequest;
 import org.elasticsearch.action.search.MultiSearchResponse.Item;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.DummyQueryBuilder;
 import org.elasticsearch.search.SearchService;
 import org.elasticsearch.test.ESIntegTestCase;
 import org.elasticsearch.test.TransportVersionUtils;
+import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.xcontent.XContentType;
 
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertFirstHit;
@@ -35,6 +39,7 @@ public class MultiSearchIT extends ESIntegTestCase {
         return Settings.builder()
             .put(super.nodeSettings(nodeOrdinal, otherSettings))
             .put(SearchService.CCS_VERSION_CHECK_SETTING.getKey(), "true")
+            .put(ThreadPool.ESTIMATED_TIME_INTERVAL_SETTING.getKey(), 0)
             .build();
     }
 
@@ -59,6 +64,38 @@ public class MultiSearchIT extends ESIntegTestCase {
                 assertHitCount(response.getResponses()[2].getResponse(), 2L);
                 assertFirstHit(response.getResponses()[0].getResponse(), hasId("1"));
                 assertFirstHit(response.getResponses()[1].getResponse(), hasId("2"));
+            }
+        );
+    }
+
+    @Repeat(iterations = 1000)
+    public void testSimpleMultiSearchWithTimeout() {
+        createIndex("test");
+        createIndex("test2");
+        ensureGreen();
+        indexRandom(true, "test", 1000);
+        indexRandom(true, "test2", 10);
+        refresh();
+        assertResponse(
+            client().prepareMultiSearch()
+                .add(
+                    prepareSearch("*").setTimeout(TimeValue.timeValueMillis(1L))
+                        .setAllowPartialSearchResults(true)
+                )
+                .add(
+                    prepareSearch("*").setTimeout(TimeValue.timeValueMillis(1L))
+                        .setAllowPartialSearchResults(true)
+                )
+                .add(
+                    prepareSearch("*").setTimeout(TimeValue.timeValueMillis(1L))
+                        .setAllowPartialSearchResults(true)
+                        .setQuery(QueryBuilders.matchAllQuery())
+                ),
+            response -> {
+                for (Item item : response) {
+                    assertNoFailures(item.getResponse());
+                }
+                assertThat(response.getResponses().length, equalTo(3));
             }
         );
     }
