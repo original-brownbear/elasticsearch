@@ -149,8 +149,11 @@ public class PersistedClusterStateService {
     private static final String OLDEST_INDEX_VERSION_KEY = "oldest_index_version";
     public static final String TYPE_FIELD_NAME = "type";
     public static final String GLOBAL_TYPE_NAME = "global";
+    private static final StringField GLOBAL_TYPEFIELD = new StringField(TYPE_FIELD_NAME, GLOBAL_TYPE_NAME, Field.Store.NO);
     public static final String INDEX_TYPE_NAME = "index";
+    private static final StringField INDEX_TYPE_FIELD = new StringField(TYPE_FIELD_NAME, INDEX_TYPE_NAME, Field.Store.NO);
     public static final String MAPPING_TYPE_NAME = "mapping";
+    private static final StringField MAPPING_TYPE_FIELD = new StringField(TYPE_FIELD_NAME, MAPPING_TYPE_NAME, Field.Store.NO);
     private static final String DATA_FIELD_NAME = "data";
     private static final String INDEX_UUID_FIELD_NAME = "index_uuid";
     private static final String MAPPING_HASH_FIELD_NAME = "mapping_hash";
@@ -1113,10 +1116,10 @@ public class PersistedClusterStateService {
                 (builder, params) -> builder.field("content", mappingMetadata.source().compressed()),
                 (((bytesRef, pageIndex, isLastPage) -> {
                     var document = Arrays.asList(
-                        new StringField(TYPE_FIELD_NAME, MAPPING_TYPE_NAME, Field.Store.NO),
+                        MAPPING_TYPE_FIELD,
                         new StringField(MAPPING_HASH_FIELD_NAME, key, Field.Store.YES),
                         new StoredField(PAGE_FIELD_NAME, pageIndex),
-                        isLastPageField(isLastPage),
+                        lastPageField(isLastPage),
                         new StoredField(DATA_FIELD_NAME, bytesRef)
                     );
                     for (MetadataIndexWriter metadataIndexWriter : metadataIndexWriters) {
@@ -1129,7 +1132,7 @@ public class PersistedClusterStateService {
         private static final StoredField LAST_PAGE_FIELD = new StoredField(LAST_PAGE_FIELD_NAME, 1);
         private static final StoredField NOT_LAST_PAGE_FIELD = new StoredField(LAST_PAGE_FIELD_NAME, 0);
 
-        private static StoredField isLastPageField(boolean isLastPage) {
+        private static StoredField lastPageField(boolean isLastPage) {
             return isLastPage ? LAST_PAGE_FIELD : NOT_LAST_PAGE_FIELD;
         }
 
@@ -1139,10 +1142,10 @@ public class PersistedClusterStateService {
             logger.trace("updating metadata for [{}]", indexMetadata.getIndex());
             writePages(indexMetadata, (bytesRef, pageIndex, isLastPage) -> {
                 var document = Arrays.asList(
-                    new StringField(TYPE_FIELD_NAME, INDEX_TYPE_NAME, Field.Store.NO),
+                    INDEX_TYPE_FIELD,
                     new StringField(INDEX_UUID_FIELD_NAME, indexUUID, Field.Store.YES),
                     new StoredField(PAGE_FIELD_NAME, pageIndex),
-                    isLastPageField(isLastPage),
+                    lastPageField(isLastPage),
                     new StoredField(DATA_FIELD_NAME, bytesRef)
                 );
                 if (pageIndex == 0) {
@@ -1162,9 +1165,9 @@ public class PersistedClusterStateService {
             logger.trace("updating global metadata doc");
             writePages(ChunkedToXContent.wrapAsToXContent(metadata), (bytesRef, pageIndex, isLastPage) -> {
                 var document = Arrays.asList(
-                    new StringField(TYPE_FIELD_NAME, GLOBAL_TYPE_NAME, Field.Store.NO),
+                    GLOBAL_TYPEFIELD,
                     new StoredField(PAGE_FIELD_NAME, pageIndex),
-                    isLastPageField(isLastPage),
+                    lastPageField(isLastPage),
                     new StoredField(DATA_FIELD_NAME, bytesRef)
                 );
                 for (MetadataIndexWriter metadataIndexWriter : metadataIndexWriters) {
