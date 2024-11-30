@@ -138,11 +138,6 @@ public class ReaderContext implements Releasable {
         return elapsed > keepAlive.get();
     }
 
-    // BWC
-    public ShardSearchRequest getShardSearchRequest(ShardSearchRequest other) {
-        return Objects.requireNonNull(other, "ShardSearchRequest must be sent back in a fetch request");
-    }
-
     public ScrollContext scrollContext() {
         return null;
     }

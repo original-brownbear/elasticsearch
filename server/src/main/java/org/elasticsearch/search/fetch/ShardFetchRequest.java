@@ -19,7 +19,6 @@ import org.elasticsearch.core.Nullable;
 import org.elasticsearch.search.RescoreDocIds;
 import org.elasticsearch.search.dfs.AggregatedDfs;
 import org.elasticsearch.search.internal.ShardSearchContextId;
-import org.elasticsearch.search.internal.ShardSearchRequest;
 import org.elasticsearch.search.rank.RankDocShardInfo;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.tasks.TaskId;
@@ -104,11 +103,6 @@ public class ShardFetchRequest extends TransportRequest {
     @Override
     public String getDescription() {
         return "id[" + contextId + "], size[" + docIds.length + "], lastEmittedDoc[" + lastEmittedDoc + "]";
-    }
-
-    @Nullable
-    public ShardSearchRequest getShardSearchRequest() {
-        return null;
     }
 
     @Nullable

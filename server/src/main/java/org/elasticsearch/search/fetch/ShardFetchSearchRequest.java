@@ -96,7 +96,6 @@ public class ShardFetchSearchRequest extends ShardFetchRequest implements Indice
         return originalIndices.indicesOptions();
     }
 
-    @Override
     public ShardSearchRequest getShardSearchRequest() {
         return shardSearchRequest;
     }

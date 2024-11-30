@@ -70,8 +70,7 @@ public final class LegacyReaderContext extends ReaderContext {
         return super.acquireSearcher(source);
     }
 
-    @Override
-    public ShardSearchRequest getShardSearchRequest(ShardSearchRequest other) {
+    public ShardSearchRequest getShardSearchRequest() {
         return shardSearchRequest;
     }
 
