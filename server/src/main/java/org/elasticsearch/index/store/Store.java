@@ -639,7 +639,7 @@ public class Store extends AbstractIndexShardComponent implements Closeable, Ref
     private static void failIfCorrupted(Directory directory) throws IOException {
         final String[] files = directory.listAll();
         List<CorruptIndexException> ex = new ArrayList<>();
-        for (String file : files) {
+        for (String file : directory.listAll()) {
             if (file.startsWith(CORRUPTED_MARKER_NAME_PREFIX)) {
                 try (ChecksumIndexInput input = directory.openChecksumInput(file)) {
                     CodecUtil.checkHeader(input, CODEC, CORRUPTED_MARKER_CODEC_VERSION, CORRUPTED_MARKER_CODEC_VERSION);

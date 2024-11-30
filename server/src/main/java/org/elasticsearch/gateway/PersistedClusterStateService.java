@@ -94,6 +94,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -813,11 +814,6 @@ public class PersistedClusterStateService {
             indexWriter.deleteAll();
         }
 
-        public void deleteGlobalMetadata() throws IOException {
-            this.logger.trace("deleting global metadata docs");
-            indexWriter.deleteDocuments(new Term(TYPE_FIELD_NAME, GLOBAL_TYPE_NAME));
-        }
-
         void deleteIndexMetadata(String indexUUID) throws IOException {
             this.logger.trace("removing metadata for [{}]", indexUUID);
             indexWriter.deleteDocuments(new Term(INDEX_UUID_FIELD_NAME, indexUUID));
@@ -871,9 +867,11 @@ public class PersistedClusterStateService {
         }
     }
 
+    private static final Term GLOBAL_TYPE_TERM = new Term(TYPE_FIELD_NAME, GLOBAL_TYPE_NAME);
+
     public static class Writer implements Closeable {
 
-        private final List<MetadataIndexWriter> metadataIndexWriters;
+        private final MetadataIndexWriter[] metadataIndexWriters;
         private final String nodeId;
         private final LongSupplier relativeTimeMillisSupplier;
         private final Supplier<TimeValue> slowWriteLoggingThresholdSupplier;
@@ -893,7 +891,7 @@ public class PersistedClusterStateService {
             @Nullable // if assertions disabled or we explicitly don't want to assert on commit in a test
             CheckedBiConsumer<Path, DirectoryReader, IOException> assertOnCommit
         ) {
-            this.metadataIndexWriters = metadataIndexWriters;
+            this.metadataIndexWriters = metadataIndexWriters.toArray(new MetadataIndexWriter[0]);
             this.nodeId = nodeId;
             this.relativeTimeMillisSupplier = relativeTimeMillisSupplier;
             this.slowWriteLoggingThresholdSupplier = slowWriteLoggingThresholdSupplier;
@@ -912,7 +910,7 @@ public class PersistedClusterStateService {
         }
 
         private void closeIfAnyIndexWriterHasTragedyOrIsClosed() {
-            if (metadataIndexWriters.stream()
+            if (Arrays.stream(metadataIndexWriters)
                 .map(writer -> writer.indexWriter)
                 .anyMatch(iw -> iw.getTragicException() != null || iw.isOpen() == false)) {
                 try {
@@ -1026,10 +1024,6 @@ public class PersistedClusterStateService {
             }
             final boolean updateGlobalMeta = Metadata.isGlobalStateEquals(previouslyWrittenMetadata, metadata) == false;
             if (updateGlobalMeta) {
-                for (MetadataIndexWriter metadataIndexWriter : metadataIndexWriters) {
-                    metadataIndexWriter.deleteGlobalMetadata();
-                }
-
                 addGlobalMetadataDocuments(metadata);
             }
 
@@ -1079,10 +1073,6 @@ public class PersistedClusterStateService {
                         numIndicesUpdated++;
                     }
 
-                    for (MetadataIndexWriter metadataIndexWriter : metadataIndexWriters) {
-                        metadataIndexWriter.deleteIndexMetadata(indexMetadata.getIndexUUID());
-                    }
-
                     addIndexMetadataDocuments(indexMetadata);
                 } else {
                     numIndicesUnchanged++;
@@ -1117,21 +1107,18 @@ public class PersistedClusterStateService {
             );
         }
 
-        private static int lastPageValue(boolean isLastPage) {
-            return isLastPage ? IS_LAST_PAGE : IS_NOT_LAST_PAGE;
-        }
-
         private void addMappingDocuments(String key, MappingMetadata mappingMetadata) throws IOException {
             logger.trace("writing mapping metadata with hash [{}]", key);
             writePages(
                 (builder, params) -> builder.field("content", mappingMetadata.source().compressed()),
                 (((bytesRef, pageIndex, isLastPage) -> {
-                    final Document document = new Document();
-                    document.add(new StringField(TYPE_FIELD_NAME, MAPPING_TYPE_NAME, Field.Store.NO));
-                    document.add(new StringField(MAPPING_HASH_FIELD_NAME, key, Field.Store.YES));
-                    document.add(new StoredField(PAGE_FIELD_NAME, pageIndex));
-                    document.add(new StoredField(LAST_PAGE_FIELD_NAME, lastPageValue(isLastPage)));
-                    document.add(new StoredField(DATA_FIELD_NAME, bytesRef));
+                    var document = Arrays.asList(
+                        new StringField(TYPE_FIELD_NAME, MAPPING_TYPE_NAME, Field.Store.NO),
+                        new StringField(MAPPING_HASH_FIELD_NAME, key, Field.Store.YES),
+                        new StoredField(PAGE_FIELD_NAME, pageIndex),
+                        isLastPageField(isLastPage),
+                        new StoredField(DATA_FIELD_NAME, bytesRef)
+                    );
                     for (MetadataIndexWriter metadataIndexWriter : metadataIndexWriters) {
                         metadataIndexWriter.indexWriter.addDocument(document);
                     }
@@ -1139,33 +1126,53 @@ public class PersistedClusterStateService {
             );
         }
 
+        private static final StoredField LAST_PAGE_FIELD = new StoredField(LAST_PAGE_FIELD_NAME, 1);
+        private static final StoredField NOT_LAST_PAGE_FIELD = new StoredField(LAST_PAGE_FIELD_NAME, 0);
+
+        private static StoredField isLastPageField(boolean isLastPage) {
+            return isLastPage ? LAST_PAGE_FIELD : NOT_LAST_PAGE_FIELD;
+        }
+
         private void addIndexMetadataDocuments(IndexMetadata indexMetadata) throws IOException {
             final String indexUUID = indexMetadata.getIndexUUID();
             assert indexUUID.equals(IndexMetadata.INDEX_UUID_NA_VALUE) == false;
             logger.trace("updating metadata for [{}]", indexMetadata.getIndex());
-            writePages(indexMetadata, ((bytesRef, pageIndex, isLastPage) -> {
-                final Document document = new Document();
-                document.add(new StringField(TYPE_FIELD_NAME, INDEX_TYPE_NAME, Field.Store.NO));
-                document.add(new StringField(INDEX_UUID_FIELD_NAME, indexUUID, Field.Store.YES));
-                document.add(new StoredField(PAGE_FIELD_NAME, pageIndex));
-                document.add(new StoredField(LAST_PAGE_FIELD_NAME, lastPageValue(isLastPage)));
-                document.add(new StoredField(DATA_FIELD_NAME, bytesRef));
-                for (MetadataIndexWriter metadataIndexWriter : metadataIndexWriters) {
-                    metadataIndexWriter.indexWriter.addDocument(document);
+            writePages(indexMetadata, (bytesRef, pageIndex, isLastPage) -> {
+                var document = Arrays.asList(
+                    new StringField(TYPE_FIELD_NAME, INDEX_TYPE_NAME, Field.Store.NO),
+                    new StringField(INDEX_UUID_FIELD_NAME, indexUUID, Field.Store.YES),
+                    new StoredField(PAGE_FIELD_NAME, pageIndex),
+                    isLastPageField(isLastPage),
+                    new StoredField(DATA_FIELD_NAME, bytesRef)
+                );
+                if (pageIndex == 0) {
+                    final Term indexTerm = new Term(INDEX_UUID_FIELD_NAME, indexUUID);
+                    for (MetadataIndexWriter metadataIndexWriter : metadataIndexWriters) {
+                        metadataIndexWriter.indexWriter.updateDocument(indexTerm, document);
+                    }
+                } else {
+                    for (MetadataIndexWriter metadataIndexWriter : metadataIndexWriters) {
+                        metadataIndexWriter.indexWriter.addDocument(document);
+                    }
                 }
-            }));
+            });
         }
 
         private void addGlobalMetadataDocuments(Metadata metadata) throws IOException {
             logger.trace("updating global metadata doc");
             writePages(ChunkedToXContent.wrapAsToXContent(metadata), (bytesRef, pageIndex, isLastPage) -> {
-                final Document document = new Document();
-                document.add(new StringField(TYPE_FIELD_NAME, GLOBAL_TYPE_NAME, Field.Store.NO));
-                document.add(new StoredField(PAGE_FIELD_NAME, pageIndex));
-                document.add(new StoredField(LAST_PAGE_FIELD_NAME, lastPageValue(isLastPage)));
-                document.add(new StoredField(DATA_FIELD_NAME, bytesRef));
+                var document = Arrays.asList(
+                    new StringField(TYPE_FIELD_NAME, GLOBAL_TYPE_NAME, Field.Store.NO),
+                    new StoredField(PAGE_FIELD_NAME, pageIndex),
+                    isLastPageField(isLastPage),
+                    new StoredField(DATA_FIELD_NAME, bytesRef)
+                );
                 for (MetadataIndexWriter metadataIndexWriter : metadataIndexWriters) {
-                    metadataIndexWriter.indexWriter.addDocument(document);
+                    if (pageIndex == 0) {
+                        metadataIndexWriter.indexWriter.updateDocument(GLOBAL_TYPE_TERM, document);
+                    } else {
+                        metadataIndexWriter.indexWriter.addDocument(document);
+                    }
                 }
             });
         }
