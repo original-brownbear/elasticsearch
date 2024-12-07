@@ -21,14 +21,14 @@ public abstract class SingleObjectCache<T> {
 
     private volatile T cached;
     private final Lock refreshLock = new ReentrantLock();
-    private final TimeValue refreshInterval;
+    private final long refreshIntervalMs;
     protected long lastRefreshTimestamp = 0;
 
     protected SingleObjectCache(TimeValue refreshInterval, T initialValue) {
         if (initialValue == null) {
             throw new IllegalArgumentException("initialValue must not be null");
         }
-        this.refreshInterval = refreshInterval;
+        this.refreshIntervalMs = refreshInterval.millis();
         cached = initialValue;
     }
 
@@ -67,10 +67,6 @@ public abstract class SingleObjectCache<T> {
      * Returns <code>true</code> iff the cache needs to be refreshed.
      */
     protected boolean needsRefresh() {
-        if (refreshInterval.millis() == 0) {
-            return true;
-        }
-        final long currentTime = System.currentTimeMillis();
-        return (currentTime - lastRefreshTimestamp) > refreshInterval.millis();
+        return refreshIntervalMs == 0 || (System.currentTimeMillis() - lastRefreshTimestamp) > refreshIntervalMs;
     }
 }
