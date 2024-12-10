@@ -20,13 +20,14 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.test.ESIntegTestCase;
 import org.elasticsearch.test.ESIntegTestCase.ClusterScope;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CountDownLatch;
 
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.instanceOf;
 
 @ClusterScope(scope = ESIntegTestCase.Scope.SUITE, numDataNodes = 2)
 public class RejectionActionIT extends ESIntegTestCase {
@@ -46,51 +47,36 @@ public class RejectionActionIT extends ESIntegTestCase {
         for (int i = 0; i < 10; i++) {
             prepareIndex("test").setId(Integer.toString(i)).setSource("field", "1").get();
         }
-
         int numberOfAsyncOps = randomIntBetween(200, 700);
-        final CountDownLatch latch = new CountDownLatch(numberOfAsyncOps);
-        final CopyOnWriteArrayList<Object> responses = new CopyOnWriteArrayList<>();
+        final List<ActionFuture<SearchResponse>> responseFutures = new ArrayList<>(numberOfAsyncOps);
         for (int i = 0; i < numberOfAsyncOps; i++) {
-            prepareSearch("test").setSearchType(SearchType.QUERY_THEN_FETCH)
-                .setQuery(QueryBuilders.matchQuery("field", "1"))
-                .execute(new LatchedActionListener<>(new ActionListener<SearchResponse>() {
-                    @Override
-                    public void onResponse(SearchResponse searchResponse) {
-                        responses.add(searchResponse);
-                    }
-
-                    @Override
-                    public void onFailure(Exception e) {
-                        responses.add(e);
-                    }
-                }, latch));
+            responseFutures.add(
+                prepareSearch("test").setSearchType(SearchType.QUERY_THEN_FETCH).setQuery(QueryBuilders.matchQuery("field", "1")).execute()
+            );
         }
-        latch.await();
 
-        // validate all responses
-        for (Object response : responses) {
-            if (response instanceof SearchResponse searchResponse) {
-                for (ShardSearchFailure failure : searchResponse.getShardFailures()) {
-                    assertThat(
-                        failure.reason().toLowerCase(Locale.ENGLISH),
-                        anyOf(containsString("cancelled"), containsString("rejected"))
-                    );
-                }
-            } else {
-                Exception t = (Exception) response;
+        // validate all responseFutures
+        for (ActionFuture<SearchResponse> f : responseFutures) {
+            final SearchResponse searchResponse;
+            try {
+                searchResponse = f.actionGet();
+            } catch (Exception t) {
                 Throwable unwrap = ExceptionsHelper.unwrapCause(t);
                 if (unwrap instanceof SearchPhaseExecutionException e) {
-                    for (ShardSearchFailure failure : e.shardFailures()) {
-                        assertThat(
-                            failure.reason().toLowerCase(Locale.ENGLISH),
-                            anyOf(containsString("cancelled"), containsString("rejected"))
-                        );
-                    }
-                } else if ((unwrap instanceof EsRejectedExecutionException) == false) {
-                    throw new AssertionError("unexpected failure", (Throwable) response);
+                    assertAllFailuresCancelledOrRejected(e.shardFailures());
+                } else {
+                    assertThat(unwrap, instanceOf(EsRejectedExecutionException.class));
                 }
+                continue;
             }
+            assertAllFailuresCancelledOrRejected(searchResponse.getShardFailures());
         }
-        assertThat(responses.size(), equalTo(numberOfAsyncOps));
+        assertThat(responseFutures.size(), equalTo(numberOfAsyncOps));
+    }
+
+    private static void assertAllFailuresCancelledOrRejected(ShardSearchFailure[] searchResponse) {
+        for (ShardSearchFailure failure : searchResponse) {
+            assertThat(failure.reason().toLowerCase(Locale.ENGLISH), anyOf(containsString("cancelled"), containsString("rejected")));
+        }
     }
 }
