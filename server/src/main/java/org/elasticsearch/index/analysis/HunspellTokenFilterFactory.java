@@ -12,7 +12,6 @@ import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.hunspell.Dictionary;
 import org.apache.lucene.analysis.hunspell.HunspellStemFilter;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.indices.analysis.HunspellService;
 
 import java.util.Locale;
@@ -23,7 +22,7 @@ public class HunspellTokenFilterFactory extends AbstractTokenFilterFactory {
     private final boolean dedup;
     private final boolean longestOnly;
 
-    public HunspellTokenFilterFactory(IndexSettings indexSettings, String name, Settings settings, HunspellService hunspellService) {
+    public HunspellTokenFilterFactory(String name, Settings settings, HunspellService hunspellService) {
         super(name);
 
         String locale = settings.get("locale", settings.get("language", settings.get("lang", null)));
@@ -47,10 +46,6 @@ public class HunspellTokenFilterFactory extends AbstractTokenFilterFactory {
 
     public boolean dedup() {
         return dedup;
-    }
-
-    public boolean longestOnly() {
-        return longestOnly;
     }
 
 }

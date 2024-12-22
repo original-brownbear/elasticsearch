@@ -13,7 +13,6 @@ import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.miscellaneous.ConditionalTokenFilter;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.IndexService.IndexCreationContext;
-import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.analysis.AbstractTokenFilterFactory;
 import org.elasticsearch.index.analysis.CharFilterFactory;
 import org.elasticsearch.index.analysis.TokenFilterFactory;
@@ -36,7 +35,7 @@ public class ScriptedConditionTokenFilterFactory extends AbstractTokenFilterFact
     private final AnalysisPredicateScript.Factory factory;
     private final List<String> filterNames;
 
-    ScriptedConditionTokenFilterFactory(IndexSettings indexSettings, String name, Settings settings, ScriptService scriptService) {
+    ScriptedConditionTokenFilterFactory(String name, Settings settings, ScriptService scriptService) {
         super(name);
 
         Settings scriptSettings = settings.getAsSettings("script");

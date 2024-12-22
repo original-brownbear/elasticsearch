@@ -9,10 +9,6 @@
 
 package org.elasticsearch.index.analysis;
 
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.env.Environment;
-import org.elasticsearch.index.IndexSettings;
-
 /**
  * Builds an analyzer for normalization that lowercases terms.
  */
@@ -20,7 +16,7 @@ public class LowercaseNormalizerProvider extends AbstractIndexAnalyzerProvider<L
 
     private final LowercaseNormalizer analyzer;
 
-    public LowercaseNormalizerProvider(IndexSettings indexSettings, Environment env, String name, Settings settings) {
+    public LowercaseNormalizerProvider(String name) {
         super(name);
         this.analyzer = new LowercaseNormalizer();
     }

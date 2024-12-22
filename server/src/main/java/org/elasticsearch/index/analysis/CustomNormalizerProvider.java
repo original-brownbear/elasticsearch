@@ -10,7 +10,6 @@
 package org.elasticsearch.index.analysis;
 
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.index.IndexSettings;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +26,7 @@ public final class CustomNormalizerProvider extends AbstractIndexAnalyzerProvide
 
     private CustomAnalyzer customAnalyzer;
 
-    public CustomNormalizerProvider(IndexSettings indexSettings, String name, Settings settings) {
+    public CustomNormalizerProvider(String name, Settings settings) {
         super(name);
         this.analyzerSettings = settings;
     }

@@ -13,7 +13,6 @@ import org.apache.lucene.analysis.CharArraySet;
 import org.apache.lucene.analysis.compound.CompoundWordTokenFilterBase;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.env.Environment;
-import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.analysis.AbstractTokenFilterFactory;
 import org.elasticsearch.index.analysis.Analysis;
 import org.elasticsearch.index.analysis.TokenFilterFactory;
@@ -29,7 +28,7 @@ public abstract class AbstractCompoundWordTokenFilterFactory extends AbstractTok
     protected final boolean onlyLongestMatch;
     protected final CharArraySet wordList;
 
-    protected AbstractCompoundWordTokenFilterFactory(IndexSettings indexSettings, Environment env, String name, Settings settings) {
+    protected AbstractCompoundWordTokenFilterFactory(Environment env, String name, Settings settings) {
         super(name);
 
         minWordSize = settings.getAsInt("min_word_size", CompoundWordTokenFilterBase.DEFAULT_MIN_WORD_SIZE);

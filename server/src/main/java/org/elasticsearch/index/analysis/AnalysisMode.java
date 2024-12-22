@@ -50,7 +50,7 @@ public enum AnalysisMode {
         }
     };
 
-    private String readableName;
+    private final String readableName;
 
     AnalysisMode(String name) {
         this.readableName = name;

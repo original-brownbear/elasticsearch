@@ -12,7 +12,6 @@ package org.elasticsearch.index.analysis;
 import org.apache.lucene.analysis.Analyzer;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.IndexService.IndexCreationContext;
-import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.mapper.TextFieldMapper;
 
 import java.util.Map;
@@ -29,7 +28,7 @@ public class CustomAnalyzerProvider extends AbstractIndexAnalyzerProvider<Analyz
 
     private Analyzer customAnalyzer;
 
-    public CustomAnalyzerProvider(IndexSettings indexSettings, String name, Settings settings) {
+    public CustomAnalyzerProvider(String name, Settings settings) {
         super(name);
         this.analyzerSettings = settings;
     }

@@ -9,10 +9,7 @@
 
 package org.elasticsearch.indices.analysis.wrappers;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.env.Environment;
 import org.elasticsearch.plugin.settings.BooleanSetting;
 import org.elasticsearch.plugin.settings.IntSetting;
 import org.elasticsearch.plugin.settings.ListSetting;
@@ -28,21 +25,18 @@ import java.util.function.Function;
 
 public class SettingsInvocationHandler implements InvocationHandler {
 
-    private static Logger LOGGER = LogManager.getLogger(SettingsInvocationHandler.class);
-    private Settings settings;
-    private Environment environment;
+    private final Settings settings;
 
-    public SettingsInvocationHandler(Settings settings, Environment environment) {
+    public SettingsInvocationHandler(Settings settings) {
         this.settings = settings;
-        this.environment = environment;
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public static <T> T create(Settings settings, Class<T> parameterType, Environment environment) {
+    public static <T> T create(Settings settings, Class<T> parameterType) {
         return (T) Proxy.newProxyInstance(
             parameterType.getClassLoader(),
             new Class[] { parameterType },
-            new SettingsInvocationHandler(settings, environment)
+            new SettingsInvocationHandler(settings)
         );
     }
 

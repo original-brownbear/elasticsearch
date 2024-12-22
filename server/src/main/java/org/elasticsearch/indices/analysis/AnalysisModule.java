@@ -11,7 +11,7 @@ package org.elasticsearch.indices.analysis;
 
 import org.apache.lucene.analysis.LowerCaseFilter;
 import org.apache.lucene.analysis.TokenStream;
-import org.elasticsearch.Version;
+import org.apache.lucene.analysis.standard.StandardTokenizer;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.NamedRegistry;
 import org.elasticsearch.common.logging.DeprecationCategory;
@@ -43,7 +43,6 @@ import org.elasticsearch.plugins.scanners.StablePluginsRegistry;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 import static java.util.Collections.unmodifiableMap;
@@ -53,6 +52,12 @@ import static org.elasticsearch.plugins.AnalysisPlugin.requiresAnalysisSettings;
  * Sets up {@link AnalysisRegistry}.
  */
 public final class AnalysisModule {
+
+    public static final Map<String, AnalysisProvider<AnalyzerProvider<?>>> NORMALIZERS = Map.of(
+        "lowercase",
+        (indexSettings, env, name, settings) -> new LowercaseNormalizerProvider(name)
+    );
+
     static {
         Settings build = Settings.builder()
             .put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current())
@@ -71,34 +76,18 @@ public final class AnalysisModule {
 
     public AnalysisModule(Environment environment, List<AnalysisPlugin> plugins, StablePluginsRegistry stablePluginRegistry)
         throws IOException {
-        NamedRegistry<AnalysisProvider<CharFilterFactory>> charFilters = setupCharFilters(plugins, stablePluginRegistry);
-        NamedRegistry<org.apache.lucene.analysis.hunspell.Dictionary> hunspellDictionaries = setupHunspellDictionaries(plugins);
-        hunspellService = new HunspellService(environment.settings(), environment, hunspellDictionaries.getRegistry());
-        NamedRegistry<AnalysisProvider<TokenFilterFactory>> tokenFilters = setupTokenFilters(
-            plugins,
-            hunspellService,
-            stablePluginRegistry
-        );
-        NamedRegistry<AnalysisProvider<TokenizerFactory>> tokenizers = setupTokenizers(plugins, stablePluginRegistry);
-        NamedRegistry<AnalysisProvider<AnalyzerProvider<?>>> analyzers = setupAnalyzers(plugins, stablePluginRegistry);
-        NamedRegistry<AnalysisProvider<AnalyzerProvider<?>>> normalizers = setupNormalizers(plugins);
-
-        Map<String, PreConfiguredCharFilter> preConfiguredCharFilters = setupPreConfiguredCharFilters(plugins);
-        Map<String, PreConfiguredTokenFilter> preConfiguredTokenFilters = setupPreConfiguredTokenFilters(plugins);
-        Map<String, PreConfiguredTokenizer> preConfiguredTokenizers = setupPreConfiguredTokenizers(plugins);
-        Map<String, PreBuiltAnalyzerProviderFactory> preConfiguredAnalyzers = setupPreBuiltAnalyzerProviderFactories(plugins);
-
+        hunspellService = new HunspellService(environment.settings(), environment, setupHunspellDictionaries(plugins));
         analysisRegistry = new AnalysisRegistry(
             environment,
-            charFilters.getRegistry(),
-            tokenFilters.getRegistry(),
-            tokenizers.getRegistry(),
-            analyzers.getRegistry(),
-            normalizers.getRegistry(),
-            preConfiguredCharFilters,
-            preConfiguredTokenFilters,
-            preConfiguredTokenizers,
-            preConfiguredAnalyzers
+            setupCharFilters(plugins, stablePluginRegistry),
+            setupTokenFilters(plugins, hunspellService, stablePluginRegistry),
+            setupTokenizers(plugins, stablePluginRegistry),
+            setupAnalyzers(plugins, stablePluginRegistry),
+            NORMALIZERS,
+            setupPreConfiguredCharFilters(plugins),
+            setupPreConfiguredTokenFilters(plugins),
+            setupPreConfiguredTokenizers(plugins),
+            setupPreBuiltAnalyzerProviderFactories(plugins)
         );
     }
 
@@ -110,24 +99,23 @@ public final class AnalysisModule {
         return analysisRegistry;
     }
 
-    private static NamedRegistry<AnalysisProvider<CharFilterFactory>> setupCharFilters(
+    private static Map<String, AnalysisProvider<CharFilterFactory>> setupCharFilters(
         List<AnalysisPlugin> plugins,
         StablePluginsRegistry stablePluginRegistry
     ) {
         NamedRegistry<AnalysisProvider<CharFilterFactory>> charFilters = new NamedRegistry<>("char_filter");
         charFilters.extractAndRegister(plugins, AnalysisPlugin::getCharFilters);
-
         charFilters.register(StableApiWrappers.oldApiForStableCharFilterFactory(stablePluginRegistry));
-        return charFilters;
+        return charFilters.getRegistry();
     }
 
-    public static NamedRegistry<org.apache.lucene.analysis.hunspell.Dictionary> setupHunspellDictionaries(List<AnalysisPlugin> plugins) {
+    public static Map<String, org.apache.lucene.analysis.hunspell.Dictionary> setupHunspellDictionaries(List<AnalysisPlugin> plugins) {
         NamedRegistry<org.apache.lucene.analysis.hunspell.Dictionary> hunspellDictionaries = new NamedRegistry<>("dictionary");
         hunspellDictionaries.extractAndRegister(plugins, AnalysisPlugin::getHunspellDictionaries);
-        return hunspellDictionaries;
+        return hunspellDictionaries.getRegistry();
     }
 
-    private static NamedRegistry<AnalysisProvider<TokenFilterFactory>> setupTokenFilters(
+    private static Map<String, AnalysisProvider<TokenFilterFactory>> setupTokenFilters(
         List<AnalysisPlugin> plugins,
         HunspellService hunspellService,
         StablePluginsRegistry stablePluginRegistry
@@ -135,39 +123,34 @@ public final class AnalysisModule {
         NamedRegistry<AnalysisProvider<TokenFilterFactory>> tokenFilters = new NamedRegistry<>("token_filter");
         tokenFilters.register("stop", StopTokenFilterFactory::new);
         // Add "standard" for old indices (bwc)
-        tokenFilters.register("standard", new AnalysisProvider<TokenFilterFactory>() {
-            @Override
-            public TokenFilterFactory get(IndexSettings indexSettings, Environment environment, String name, Settings settings) {
-                if (indexSettings.getIndexVersionCreated().before(IndexVersions.V_7_0_0)) {
-                    deprecationLogger.warn(
-                        DeprecationCategory.ANALYSIS,
-                        "standard_deprecation",
-                        "The [standard] token filter name is deprecated and will be removed in a future version."
-                    );
-                } else {
-                    throw new IllegalArgumentException("The [standard] token filter has been removed.");
-                }
-                return new AbstractTokenFilterFactory(name) {
-                    @Override
-                    public TokenStream create(TokenStream tokenStream) {
-                        return tokenStream;
-                    }
-                };
+        tokenFilters.register("standard", (indexSettings, environment, name, settings) -> {
+            if (indexSettings.getIndexVersionCreated().onOrAfter(IndexVersions.V_7_0_0)) {
+                throw new IllegalArgumentException("The [standard] token filter has been removed.");
             }
-
+            deprecationLogger.warn(
+                DeprecationCategory.ANALYSIS,
+                "standard_deprecation",
+                "The [standard] token filter name is deprecated and will be removed in a future version."
+            );
+            return new AbstractTokenFilterFactory(name) {
+                @Override
+                public TokenStream create(TokenStream tokenStream) {
+                    return tokenStream;
+                }
+            };
         });
         tokenFilters.register("shingle", ShingleTokenFilterFactory::new);
         tokenFilters.register(
             "hunspell",
             requiresAnalysisSettings(
-                (indexSettings, env, name, settings) -> new HunspellTokenFilterFactory(indexSettings, name, settings, hunspellService)
+                (indexSettings, env, name, settings) -> new HunspellTokenFilterFactory(name, settings, hunspellService)
             )
         );
 
         tokenFilters.extractAndRegister(plugins, AnalysisPlugin::getTokenFilters);
         tokenFilters.register(StableApiWrappers.oldApiForTokenFilterFactory(stablePluginRegistry));
 
-        return tokenFilters;
+        return tokenFilters.getRegistry();
     }
 
     static Map<String, PreBuiltAnalyzerProviderFactory> setupPreBuiltAnalyzerProviderFactories(List<AnalysisPlugin> plugins) {
@@ -180,7 +163,7 @@ public final class AnalysisModule {
         return unmodifiableMap(preConfiguredCharFilters.getRegistry());
     }
 
-    static Map<String, PreConfiguredCharFilter> setupPreConfiguredCharFilters(List<AnalysisPlugin> plugins) {
+    static Map<String, AnalysisProvider<CharFilterFactory>> setupPreConfiguredCharFilters(List<AnalysisPlugin> plugins) {
         NamedRegistry<PreConfiguredCharFilter> preConfiguredCharFilters = new NamedRegistry<>("pre-configured char_filter");
 
         // No char filter are available in lucene-core so none are built in to Elasticsearch core
@@ -193,7 +176,7 @@ public final class AnalysisModule {
         return unmodifiableMap(preConfiguredCharFilters.getRegistry());
     }
 
-    static Map<String, PreConfiguredTokenFilter> setupPreConfiguredTokenFilters(List<AnalysisPlugin> plugins) {
+    static Map<String, AnalysisProvider<TokenFilterFactory>> setupPreConfiguredTokenFilters(List<AnalysisPlugin> plugins) {
         NamedRegistry<PreConfiguredTokenFilter> preConfiguredTokenFilters = new NamedRegistry<>("pre-configured token_filter");
 
         // Add filters available in lucene-core
@@ -227,18 +210,12 @@ public final class AnalysisModule {
         return unmodifiableMap(preConfiguredTokenFilters.getRegistry());
     }
 
-    static Map<String, PreConfiguredTokenizer> setupPreConfiguredTokenizers(List<AnalysisPlugin> plugins) {
+    static Map<String, AnalysisProvider<TokenizerFactory>> setupPreConfiguredTokenizers(List<AnalysisPlugin> plugins) {
         NamedRegistry<PreConfiguredTokenizer> preConfiguredTokenizers = new NamedRegistry<>("pre-configured tokenizer");
 
         // Temporary shim to register old style pre-configured tokenizers
-        for (PreBuiltTokenizers tokenizer : PreBuiltTokenizers.values()) {
-            String name = tokenizer.name().toLowerCase(Locale.ROOT);
-            PreConfiguredTokenizer preConfigured = switch (tokenizer.getCachingStrategy()) {
-                case ONE -> PreConfiguredTokenizer.singleton(name, () -> tokenizer.create(Version.CURRENT));
-                default -> throw new UnsupportedOperationException("Caching strategy unsupported by temporary shim [" + tokenizer + "]");
-            };
-            preConfiguredTokenizers.register(name, preConfigured);
-        }
+        final String name = "standard";
+        preConfiguredTokenizers.register("name", PreConfiguredTokenizer.singleton(name, StandardTokenizer::new));
         for (AnalysisPlugin plugin : plugins) {
             for (PreConfiguredTokenizer tokenizer : plugin.getPreConfiguredTokenizers()) {
                 preConfiguredTokenizers.register(tokenizer.getName(), tokenizer);
@@ -248,7 +225,7 @@ public final class AnalysisModule {
         return unmodifiableMap(preConfiguredTokenizers.getRegistry());
     }
 
-    private static NamedRegistry<AnalysisProvider<TokenizerFactory>> setupTokenizers(
+    private static Map<String, AnalysisProvider<TokenizerFactory>> setupTokenizers(
         List<AnalysisPlugin> plugins,
         StablePluginsRegistry stablePluginRegistry
     ) {
@@ -256,10 +233,10 @@ public final class AnalysisModule {
         tokenizers.register("standard", StandardTokenizerFactory::new);
         tokenizers.extractAndRegister(plugins, AnalysisPlugin::getTokenizers);
         tokenizers.register(StableApiWrappers.oldApiForTokenizerFactory(stablePluginRegistry));
-        return tokenizers;
+        return tokenizers.getRegistry();
     }
 
-    private static NamedRegistry<AnalysisProvider<AnalyzerProvider<?>>> setupAnalyzers(
+    private static Map<String, AnalysisProvider<AnalyzerProvider<?>>> setupAnalyzers(
         List<AnalysisPlugin> plugins,
         StablePluginsRegistry stablePluginRegistry
     ) {
@@ -268,14 +245,7 @@ public final class AnalysisModule {
         analyzers.register("standard", StandardAnalyzerProvider::new);
         analyzers.extractAndRegister(plugins, AnalysisPlugin::getAnalyzers);
         analyzers.register(StableApiWrappers.oldApiForAnalyzerFactory(stablePluginRegistry));
-        return analyzers;
-    }
-
-    private static NamedRegistry<AnalysisProvider<AnalyzerProvider<?>>> setupNormalizers(List<AnalysisPlugin> plugins) {
-        NamedRegistry<AnalysisProvider<AnalyzerProvider<?>>> normalizers = new NamedRegistry<>("normalizer");
-        normalizers.register("lowercase", LowercaseNormalizerProvider::new);
-        // TODO: pluggability?
-        return normalizers;
+        return analyzers.getRegistry();
     }
 
     /**

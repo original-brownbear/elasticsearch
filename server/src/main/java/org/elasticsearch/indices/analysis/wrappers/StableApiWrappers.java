@@ -226,7 +226,7 @@ public class StableApiWrappers {
         Environment environment
     ) {
         if (settingsClass.getAnnotationsByType(AnalysisSettings.class).length > 0) {
-            return SettingsInvocationHandler.create(analysisSettings, settingsClass, environment);
+            return SettingsInvocationHandler.create(analysisSettings, settingsClass);
         }
 
         throw new IllegalArgumentException("Parameter is not instance of a class annotated with settings annotation.");

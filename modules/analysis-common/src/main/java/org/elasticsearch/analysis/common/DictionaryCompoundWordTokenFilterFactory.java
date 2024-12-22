@@ -23,7 +23,7 @@ import org.elasticsearch.index.IndexSettings;
 public class DictionaryCompoundWordTokenFilterFactory extends AbstractCompoundWordTokenFilterFactory {
 
     DictionaryCompoundWordTokenFilterFactory(IndexSettings indexSettings, Environment env, String name, Settings settings) {
-        super(indexSettings, env, name, settings);
+        super(env, name, settings);
     }
 
     @Override

@@ -33,7 +33,7 @@ public class HyphenationCompoundWordTokenFilterFactory extends AbstractCompoundW
     private final HyphenationTree hyphenationTree;
 
     HyphenationCompoundWordTokenFilterFactory(IndexSettings indexSettings, Environment env, String name, Settings settings) {
-        super(indexSettings, env, name, settings);
+        super(env, name, settings);
 
         String hyphenationPatternsPath = settings.get("hyphenation_patterns_path", null);
         if (hyphenationPatternsPath == null) {

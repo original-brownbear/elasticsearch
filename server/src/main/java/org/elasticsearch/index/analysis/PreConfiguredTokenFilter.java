@@ -86,28 +86,16 @@ public final class PreConfiguredTokenFilter extends PreConfiguredAnalysisCompone
         return new PreConfiguredTokenFilter(name, useFilterForMultitermQueries, true, CachingStrategy.INDEX, create);
     }
 
-    /**
-     * Create a pre-configured token filter that may vary based on the index version.
-     */
-    public static PreConfiguredTokenFilter indexVersion(
-        String name,
-        boolean useFilterForMultitermQueries,
-        boolean useFilterForParsingSynonyms,
-        BiFunction<TokenStream, IndexVersion, TokenStream> create
-    ) {
-        return new PreConfiguredTokenFilter(name, useFilterForMultitermQueries, useFilterForParsingSynonyms, CachingStrategy.INDEX, create);
-    }
-
     private final boolean useFilterForMultitermQueries;
     private final boolean allowForSynonymParsing;
     private final BiFunction<TokenStream, IndexVersion, TokenStream> create;
 
-    private PreConfiguredTokenFilter(
-        String name,
-        boolean useFilterForMultitermQueries,
-        boolean allowForSynonymParsing,
-        PreBuiltCacheFactory.CachingStrategy cache,
-        BiFunction<TokenStream, IndexVersion, TokenStream> create
+    public PreConfiguredTokenFilter(
+            String name,
+            boolean useFilterForMultitermQueries,
+            boolean allowForSynonymParsing,
+            PreBuiltCacheFactory.CachingStrategy cache,
+            BiFunction<TokenStream, IndexVersion, TokenStream> create
     ) {
         super(name, cache);
         this.useFilterForMultitermQueries = useFilterForMultitermQueries;

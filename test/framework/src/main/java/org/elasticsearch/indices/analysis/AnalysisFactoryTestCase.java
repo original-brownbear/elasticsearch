@@ -268,10 +268,7 @@ public abstract class AnalysisFactoryTestCase extends ESTestCase {
      */
     protected Map<String, Class<?>> getPreConfiguredTokenizers() {
         Map<String, Class<?>> tokenizers = new HashMap<>();
-        // TODO drop this temporary shim when all the old style tokenizers have been migrated to new style
-        for (PreBuiltTokenizers tokenizer : PreBuiltTokenizers.values()) {
-            tokenizers.put(tokenizer.name().toLowerCase(Locale.ROOT), null);
-        }
+        tokenizers.put("standard", null);
         return tokenizers;
     }
 

@@ -34,7 +34,7 @@ public class StemmerOverrideTokenFilterFactory extends AbstractTokenFilterFactor
         }
 
         StemmerOverrideFilter.Builder builder = new StemmerOverrideFilter.Builder(false);
-        parseRules(rules, builder, "=>");
+        parseRules(rules, builder);
         overrideMap = builder.build();
 
     }
@@ -44,9 +44,9 @@ public class StemmerOverrideTokenFilterFactory extends AbstractTokenFilterFactor
         return new StemmerOverrideFilter(tokenStream, overrideMap);
     }
 
-    static void parseRules(List<String> rules, StemmerOverrideFilter.Builder builder, String mappingSep) {
+    static void parseRules(List<String> rules, StemmerOverrideFilter.Builder builder) {
         for (String rule : rules) {
-            String[] sides = rule.split(mappingSep, -1);
+            String[] sides = rule.split("=>", -1);
             if (sides.length != 2) {
                 throw new RuntimeException("Invalid Keyword override Rule:" + rule);
             }

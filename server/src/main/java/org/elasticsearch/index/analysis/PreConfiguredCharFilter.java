@@ -10,7 +10,6 @@
 package org.elasticsearch.index.analysis;
 
 import org.apache.lucene.analysis.CharFilter;
-import org.apache.lucene.analysis.TokenFilter;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.indices.analysis.PreBuiltCacheFactory.CachingStrategy;
 
@@ -32,17 +31,6 @@ public class PreConfiguredCharFilter extends PreConfiguredAnalysisComponent<Char
             useFilterForMultitermQueries,
             (reader, version) -> create.apply(reader)
         );
-    }
-
-    /**
-     * Create a pre-configured char filter that may not vary at all, provide access to the index version
-     */
-    public static PreConfiguredCharFilter singletonWithVersion(
-        String name,
-        boolean useFilterForMultitermQueries,
-        BiFunction<Reader, IndexVersion, Reader> create
-    ) {
-        return new PreConfiguredCharFilter(name, CachingStrategy.ONE, useFilterForMultitermQueries, create);
     }
 
     /**
@@ -84,13 +72,6 @@ public class PreConfiguredCharFilter extends PreConfiguredAnalysisComponent<Char
         super(name, cache);
         this.useFilterForMultitermQueries = useFilterForMultitermQueries;
         this.create = create;
-    }
-
-    /**
-     * Can this {@link TokenFilter} be used in multi-term queries?
-     */
-    public boolean shouldUseFilterForMultitermQueries() {
-        return useFilterForMultitermQueries;
     }
 
     @Override

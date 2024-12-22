@@ -224,15 +224,21 @@ public class CommonAnalysisPlugin extends Plugin implements AnalysisPlugin, Scri
         filters.put("common_grams", requiresAnalysisSettings(CommonGramsTokenFilterFactory::new));
         filters.put(
             "condition",
-            requiresAnalysisSettings((i, e, n, s) -> new ScriptedConditionTokenFilterFactory(i, n, s, scriptServiceHolder.get()))
+            requiresAnalysisSettings((i, e, n, s) -> new ScriptedConditionTokenFilterFactory(n, s, scriptServiceHolder.get()))
         );
         filters.put("decimal_digit", DecimalDigitFilterFactory::new);
         filters.put("delimited_payload", DelimitedPayloadTokenFilterFactory::new);
         filters.put("dictionary_decompounder", requiresAnalysisSettings(DictionaryCompoundWordTokenFilterFactory::new));
         filters.put("dutch_stem", DutchStemTokenFilterFactory::new);
         filters.put("edge_ngram", EdgeNGramTokenFilterFactory::new);
-        filters.put("edgeNGram", (IndexSettings indexSettings, Environment environment, String name, Settings settings) -> {
-            return new EdgeNGramTokenFilterFactory(indexSettings, environment, name, settings) {
+        filters.put(
+            "edgeNGram",
+            (IndexSettings indexSettings, Environment environment, String name, Settings settings) -> new EdgeNGramTokenFilterFactory(
+                indexSettings,
+                environment,
+                name,
+                settings
+            ) {
                 @Override
                 public TokenStream create(TokenStream tokenStream) {
                     if (indexSettings.getIndexVersionCreated().onOrAfter(IndexVersions.V_8_0_0)) {
@@ -251,8 +257,8 @@ public class CommonAnalysisPlugin extends Plugin implements AnalysisPlugin, Scri
                     return super.create(tokenStream);
                 }
 
-            };
-        });
+            }
+        );
         filters.put("elision", requiresAnalysisSettings(ElisionTokenFilterFactory::new));
         filters.put("fingerprint", FingerprintTokenFilterFactory::new);
         filters.put("flatten_graph", FlattenGraphTokenFilterFactory::new);
@@ -272,8 +278,14 @@ public class CommonAnalysisPlugin extends Plugin implements AnalysisPlugin, Scri
         filters.put("min_hash", MinHashTokenFilterFactory::new);
         filters.put("multiplexer", MultiplexerTokenFilterFactory::new);
         filters.put("ngram", NGramTokenFilterFactory::new);
-        filters.put("nGram", (IndexSettings indexSettings, Environment environment, String name, Settings settings) -> {
-            return new NGramTokenFilterFactory(indexSettings, environment, name, settings) {
+        filters.put(
+            "nGram",
+            (IndexSettings indexSettings, Environment environment, String name, Settings settings) -> new NGramTokenFilterFactory(
+                indexSettings,
+                environment,
+                name,
+                settings
+            ) {
                 @Override
                 public TokenStream create(TokenStream tokenStream) {
                     if (indexSettings.getIndexVersionCreated().onOrAfter(IndexVersions.V_8_0_0)) {
@@ -292,8 +304,8 @@ public class CommonAnalysisPlugin extends Plugin implements AnalysisPlugin, Scri
                     return super.create(tokenStream);
                 }
 
-            };
-        });
+            }
+        );
         filters.put("pattern_capture", requiresAnalysisSettings(PatternCaptureGroupTokenFilterFactory::new));
         filters.put("pattern_replace", requiresAnalysisSettings(PatternReplaceTokenFilterFactory::new));
         filters.put("persian_normalization", PersianNormalizationFilterFactory::new);
@@ -301,7 +313,7 @@ public class CommonAnalysisPlugin extends Plugin implements AnalysisPlugin, Scri
         filters.put("porter_stem", PorterStemTokenFilterFactory::new);
         filters.put(
             "predicate_token_filter",
-            requiresAnalysisSettings((i, e, n, s) -> new PredicateTokenFilterScriptFactory(i, n, s, scriptServiceHolder.get()))
+            requiresAnalysisSettings((i, e, n, s) -> new PredicateTokenFilterScriptFactory(n, s, scriptServiceHolder.get()))
         );
         filters.put("remove_duplicates", RemoveDuplicatesTokenFilterFactory::new);
         filters.put("reverse", ReverseTokenFilterFactory::new);
@@ -461,9 +473,7 @@ public class CommonAnalysisPlugin extends Plugin implements AnalysisPlugin, Scri
 
     @Override
     public List<PreConfiguredCharFilter> getPreConfiguredCharFilters() {
-        List<PreConfiguredCharFilter> filters = new ArrayList<>();
-        filters.add(PreConfiguredCharFilter.singleton("html_strip", false, HTMLStripCharFilter::new));
-        return filters;
+        return List.of(PreConfiguredCharFilter.singleton("html_strip", false, HTMLStripCharFilter::new));
     }
 
     @Override
@@ -563,7 +573,7 @@ public class CommonAnalysisPlugin extends Plugin implements AnalysisPlugin, Scri
                 )
             )
         );
-        filters.add(PreConfiguredTokenFilter.indexVersion("word_delimiter_graph", false, false, (input, version) -> {
+        filters.add(new PreConfiguredTokenFilter("word_delimiter_graph", false, false, CachingStrategy.INDEX, (input, version) -> {
             boolean adjustOffsets = version.onOrAfter(IndexVersions.V_7_3_0);
             return new WordDelimiterGraphFilter(
                 input,
