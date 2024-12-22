@@ -91,11 +91,11 @@ public final class PreConfiguredTokenFilter extends PreConfiguredAnalysisCompone
     private final BiFunction<TokenStream, IndexVersion, TokenStream> create;
 
     public PreConfiguredTokenFilter(
-            String name,
-            boolean useFilterForMultitermQueries,
-            boolean allowForSynonymParsing,
-            PreBuiltCacheFactory.CachingStrategy cache,
-            BiFunction<TokenStream, IndexVersion, TokenStream> create
+        String name,
+        boolean useFilterForMultitermQueries,
+        boolean allowForSynonymParsing,
+        PreBuiltCacheFactory.CachingStrategy cache,
+        BiFunction<TokenStream, IndexVersion, TokenStream> create
     ) {
         super(name, cache);
         this.useFilterForMultitermQueries = useFilterForMultitermQueries;
