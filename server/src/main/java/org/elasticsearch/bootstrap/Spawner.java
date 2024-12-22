@@ -104,7 +104,7 @@ final class Spawner implements Closeable {
     private void startPumpThread(String componentName, String streamName, InputStream stream) {
         String loggerName = componentName + "-controller-" + streamName;
         final Logger logger = LogManager.getLogger(loggerName);
-        Thread t = new Thread(() -> {
+        Thread t = Thread.startVirtualThread(() -> {
             try (var br = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8))) {
                 String line;
                 while ((line = br.readLine()) != null) {
@@ -114,8 +114,8 @@ final class Spawner implements Closeable {
             } catch (IOException e) {
                 logger.error("error while reading " + streamName, e);
             }
-        }, loggerName + "-pump");
-        t.start();
+        });
+        t.setName(loggerName + "-pump");
         pumpThreads.add(t);
     }
 

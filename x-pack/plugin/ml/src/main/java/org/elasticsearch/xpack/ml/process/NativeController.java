@@ -92,20 +92,14 @@ public class NativeController implements MlController {
     }
 
     static void tailLogsInThread(CppLogMessageHandler cppLogHandler) {
-        final Thread logTailThread = new Thread(() -> {
+        Thread.ofVirtual().name("ml-cpp-log-tail-thread").start(() -> {
             try (CppLogMessageHandler h = cppLogHandler) {
                 h.tailStream();
             } catch (IOException e) {
                 LOGGER.error("Error tailing C++ controller logs", e);
             }
             LOGGER.info("Native controller process has stopped - no new native processes can be started");
-        }, "ml-cpp-log-tail-thread");
-        /*
-         * This thread is created on the main thread so would default to being a user thread which could prevent the JVM from exiting if
-         * this thread were to still be running during shutdown. As such, we mark it as a daemon thread.
-         */
-        logTailThread.setDaemon(true);
-        logTailThread.start();
+        });
     }
 
     public long getPid() throws TimeoutException {

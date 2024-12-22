@@ -16,6 +16,6 @@ public class RuntimeVersionFeature {
 
     @UpdateForV9(owner = UpdateForV9.Owner.CORE_INFRA) // Remove once we removed all references to SecurityManager in code
     public static boolean isSecurityManagerAvailable() {
-        return Runtime.version().feature() < 24;
+        return Runtime.version().feature() < 20;
     }
 }

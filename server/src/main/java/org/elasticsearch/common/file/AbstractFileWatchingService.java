@@ -171,8 +171,7 @@ public abstract class AbstractFileWatchingService extends AbstractLifecycleCompo
             throw new IllegalStateException("unable to launch a new watch service", e);
         }
 
-        watcherThread = new Thread(this::watcherThread, "elasticsearch[file-watcher[" + watchedFile + "]]");
-        watcherThread.start();
+        watcherThread = Thread.ofVirtual().name("elasticsearch[file-watcher[" + watchedFile + "]]").start(this::watcherThread);
     }
 
     protected final void watcherThread() {

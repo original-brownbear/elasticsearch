@@ -384,7 +384,7 @@ class Elasticsearch {
      * @param stdin Standard input for this process
      */
     private static void startCliMonitorThread(InputStream stdin) {
-        new Thread(() -> {
+        Thread.startVirtualThread(() -> {
             int msg = -1;
             try {
                 msg = stdin.read();
@@ -398,7 +398,7 @@ class Elasticsearch {
                     Bootstrap.exit(1);
                 }
             }
-        }, "elasticsearch-cli-monitor-thread").start();
+        }).setName("elasticsearch-cli-monitor-thread");
     }
 
     /**
