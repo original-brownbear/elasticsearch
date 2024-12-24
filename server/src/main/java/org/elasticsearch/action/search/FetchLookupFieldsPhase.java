@@ -45,6 +45,7 @@ final class FetchLookupFieldsPhase extends SearchPhase {
         super("fetch_lookup_fields");
         this.context = context;
         this.searchResponse = searchResponse;
+        searchResponse.mustIncRef();
         this.queryResults = queryResults;
     }
 
@@ -75,12 +76,16 @@ final class FetchLookupFieldsPhase extends SearchPhase {
 
     @Override
     public void run() {
-        final List<Cluster> clusters = groupLookupFieldsByClusterAlias(searchResponse.hits);
-        if (clusters.isEmpty()) {
-            context.sendSearchResponse(searchResponse, queryResults);
-            return;
+        try {
+            final List<Cluster> clusters = groupLookupFieldsByClusterAlias(searchResponse.hits);
+            if (clusters.isEmpty()) {
+                context.sendSearchResponse(searchResponse, queryResults);
+                return;
+            }
+            doRun(clusters);
+        } finally {
+            searchResponse.decRef();
         }
-        doRun(clusters);
     }
 
     private void doRun(List<Cluster> clusters) {
@@ -96,49 +101,51 @@ final class FetchLookupFieldsPhase extends SearchPhase {
                 multiSearchRequest.add(searchRequest);
             }
         }
-        context.getSearchTransport().sendExecuteMultiSearch(multiSearchRequest, context.getTask(), new ActionListener<>() {
-            @Override
-            public void onResponse(MultiSearchResponse items) {
-                Exception failure = null;
-                int index = 0;
-                for (Cluster cluster : clusters) {
-                    final Map<LookupField, List<Object>> lookupResults = Maps.newMapWithExpectedSize(cluster.lookupFields.size());
-                    for (LookupField lookupField : cluster.lookupFields) {
-                        final MultiSearchResponse.Item item = items.getResponses()[index];
-                        if (item.isFailure()) {
-                            failure = ExceptionsHelper.useOrSuppress(failure, item.getFailure());
-                        } else if (failure == null) {
-                            final List<Object> fetchedValues = new ArrayList<>();
-                            for (SearchHit rightHit : item.getResponse().getHits()) {
-                                final Map<String, List<Object>> fetchedFields = rightHit.getDocumentFields()
-                                    .values()
-                                    .stream()
-                                    .collect(Collectors.toMap(DocumentField::getName, DocumentField::getValues));
-                                if (fetchedFields.isEmpty() == false) {
-                                    fetchedValues.add(fetchedFields);
+        searchResponse.mustIncRef();
+        context.getSearchTransport()
+            .sendExecuteMultiSearch(multiSearchRequest, context.getTask(), ActionListener.runAfter(new ActionListener<>() {
+                @Override
+                public void onResponse(MultiSearchResponse items) {
+                    Exception failure = null;
+                    int index = 0;
+                    for (Cluster cluster : clusters) {
+                        final Map<LookupField, List<Object>> lookupResults = Maps.newMapWithExpectedSize(cluster.lookupFields.size());
+                        for (LookupField lookupField : cluster.lookupFields) {
+                            final MultiSearchResponse.Item item = items.getResponses()[index];
+                            if (item.isFailure()) {
+                                failure = ExceptionsHelper.useOrSuppress(failure, item.getFailure());
+                            } else if (failure == null) {
+                                final List<Object> fetchedValues = new ArrayList<>();
+                                for (SearchHit rightHit : item.getResponse().getHits()) {
+                                    final Map<String, List<Object>> fetchedFields = rightHit.getDocumentFields()
+                                        .values()
+                                        .stream()
+                                        .collect(Collectors.toMap(DocumentField::getName, DocumentField::getValues));
+                                    if (fetchedFields.isEmpty() == false) {
+                                        fetchedValues.add(fetchedFields);
+                                    }
                                 }
+                                lookupResults.put(lookupField, fetchedValues);
                             }
-                            lookupResults.put(lookupField, fetchedValues);
+                            index++;
                         }
-                        index++;
+                        if (failure == null) {
+                            for (SearchHit hit : cluster.hitsWithLookupFields) {
+                                hit.resolveLookupFields(lookupResults);
+                            }
+                        }
                     }
-                    if (failure == null) {
-                        for (SearchHit hit : cluster.hitsWithLookupFields) {
-                            hit.resolveLookupFields(lookupResults);
-                        }
+                    if (failure != null) {
+                        context.onPhaseFailure(FetchLookupFieldsPhase.this, "failed to fetch lookup fields", failure);
+                    } else {
+                        context.sendSearchResponse(searchResponse, queryResults);
                     }
                 }
-                if (failure != null) {
-                    context.onPhaseFailure(FetchLookupFieldsPhase.this, "failed to fetch lookup fields", failure);
-                } else {
-                    context.sendSearchResponse(searchResponse, queryResults);
-                }
-            }
 
-            @Override
-            public void onFailure(Exception e) {
-                context.onPhaseFailure(FetchLookupFieldsPhase.this, "failed to fetch lookup fields", e);
-            }
-        });
+                @Override
+                public void onFailure(Exception e) {
+                    context.onPhaseFailure(FetchLookupFieldsPhase.this, "failed to fetch lookup fields", e);
+                }
+            }, searchResponse::decRef));
     }
 }

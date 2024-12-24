@@ -23,7 +23,7 @@ import org.elasticsearch.search.collapse.CollapseBuilder;
 
 import java.util.Iterator;
 import java.util.List;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 /**
  * This search phase is an optional phase that will be executed once all hits are fetched from the shards that executes
@@ -32,13 +32,18 @@ import java.util.function.Supplier;
  */
 final class ExpandSearchPhase extends SearchPhase {
     private final AbstractSearchAsyncAction<?> context;
-    private final SearchHits searchHits;
-    private final Supplier<SearchPhase> nextPhase;
+    private final SearchResponseSections searchResponseSections;
+    private final Function<SearchResponseSections, SearchPhase> nextPhase;
 
-    ExpandSearchPhase(AbstractSearchAsyncAction<?> context, SearchHits searchHits, Supplier<SearchPhase> nextPhase) {
+    ExpandSearchPhase(
+        AbstractSearchAsyncAction<?> context,
+        SearchResponseSections searchResponseSections,
+        Function<SearchResponseSections, SearchPhase> nextPhase
+    ) {
         super("expand");
         this.context = context;
-        this.searchHits = searchHits;
+        this.searchResponseSections = searchResponseSections;
+        searchResponseSections.mustIncRef();
         this.nextPhase = nextPhase;
     }
 
@@ -52,7 +57,7 @@ final class ExpandSearchPhase extends SearchPhase {
 
     @Override
     public void run() {
-        if (isCollapseRequest() == false || searchHits.getHits().length == 0) {
+        if (isCollapseRequest() == false || searchResponseSections.hits().getHits().length == 0) {
             onPhaseDone();
         } else {
             doRun();
@@ -67,7 +72,7 @@ final class ExpandSearchPhase extends SearchPhase {
         if (collapseBuilder.getMaxConcurrentGroupRequests() > 0) {
             multiRequest.maxConcurrentSearchRequests(collapseBuilder.getMaxConcurrentGroupRequests());
         }
-        for (SearchHit hit : searchHits.getHits()) {
+        for (SearchHit hit : searchResponseSections.hits().getHits()) {
             BoolQueryBuilder groupQuery = new BoolQueryBuilder();
             Object collapseValue = hit.field(collapseBuilder.getField()).getValue();
             if (collapseValue != null) {
@@ -98,7 +103,7 @@ final class ExpandSearchPhase extends SearchPhase {
         }
         context.getSearchTransport().sendExecuteMultiSearch(multiRequest, context.getTask(), ActionListener.wrap(response -> {
             Iterator<MultiSearchResponse.Item> it = response.iterator();
-            for (SearchHit hit : searchHits.getHits()) {
+            for (SearchHit hit : searchResponseSections.hits().getHits()) {
                 for (InnerHitBuilder innerHitBuilder : innerHitBuilders) {
                     MultiSearchResponse.Item item = it.next();
                     if (item.isFailure()) {
@@ -123,7 +128,11 @@ final class ExpandSearchPhase extends SearchPhase {
     }
 
     private void phaseFailure(Exception ex) {
-        context.onPhaseFailure(this, "failed to expand hits", ex);
+        try {
+            context.onPhaseFailure(this, "failed to expand hits", ex);
+        } finally {
+            searchResponseSections.decRef();
+        }
     }
 
     private static SearchSourceBuilder buildExpandSearchSourceBuilder(InnerHitBuilder options, CollapseBuilder innerCollapseBuilder) {
@@ -168,6 +177,10 @@ final class ExpandSearchPhase extends SearchPhase {
     }
 
     private void onPhaseDone() {
-        context.executeNextPhase(this, nextPhase);
+        try {
+            context.executeNextPhase(this, () -> nextPhase.apply(searchResponseSections));
+        } finally {
+            searchResponseSections.decRef();
+        }
     }
 }

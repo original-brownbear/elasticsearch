@@ -57,8 +57,8 @@ final class FetchSearchPhase extends SearchPhase {
             reducedQueryPhase,
             (response, queryPhaseResults) -> new ExpandSearchPhase(
                 context,
-                response.hits,
-                () -> new FetchLookupFieldsPhase(context, response, queryPhaseResults)
+                response,
+                r -> new FetchLookupFieldsPhase(context, r, queryPhaseResults)
             )
         );
     }
@@ -220,10 +220,11 @@ final class FetchSearchPhase extends SearchPhase {
             public void innerOnResponse(FetchSearchResult result) {
                 try {
                     progressListener.notifyFetchResult(shardIndex);
-                    counter.onResult(result);
                 } catch (Exception e) {
                     context.onPhaseFailure(FetchSearchPhase.this, "", e);
+                    return;
                 }
+                counter.onResult(result);
             }
 
             @Override
@@ -271,8 +272,11 @@ final class FetchSearchPhase extends SearchPhase {
     ) {
         context.executeNextPhase(this, () -> {
             var resp = SearchPhaseController.merge(context.getRequest().scroll() != null, reducedQueryPhase, fetchResultsArr);
-            context.addReleasable(resp::decRef);
-            return nextPhaseFactory.apply(resp, searchPhaseShardResults);
+            try {
+                return nextPhaseFactory.apply(resp, searchPhaseShardResults);
+            } finally {
+                resp.decRef();
+            }
         });
     }
 

@@ -486,12 +486,19 @@ public class FetchSearchPhaseTests extends ESTestCase {
                 null,
                 mockSearchPhaseContext,
                 reducedQueryPhase,
-                (searchResponse, scrollId) -> new SearchPhase("test") {
-                    @Override
-                    public void run() {
-                        mockSearchPhaseContext.sendSearchResponse(searchResponse, null);
-                        latch.countDown();
-                    }
+                (searchResponse, scrollId) -> {
+                    searchResponse.mustIncRef();
+                    return new SearchPhase("test") {
+                        @Override
+                        public void run() {
+                            try {
+                                mockSearchPhaseContext.sendSearchResponse(searchResponse, null);
+                                latch.countDown();
+                            } finally {
+                                searchResponse.decRef();
+                            }
+                        }
+                    };
                 }
             );
             assertEquals("fetch", phase.getName());
@@ -762,11 +769,18 @@ public class FetchSearchPhaseTests extends ESTestCase {
     private static BiFunction<SearchResponseSections, AtomicArray<SearchPhaseResult>, SearchPhase> searchPhaseFactory(
         MockSearchPhaseContext mockSearchPhaseContext
     ) {
-        return (searchResponse, scrollId) -> new SearchPhase("test") {
-            @Override
-            public void run() {
-                mockSearchPhaseContext.sendSearchResponse(searchResponse, null);
-            }
+        return (searchResponse, scrollId) -> {
+            searchResponse.incRef();
+            return new SearchPhase("test") {
+                @Override
+                public void run() {
+                    try {
+                        mockSearchPhaseContext.sendSearchResponse(searchResponse, null);
+                    } finally {
+                        searchResponse.decRef();
+                    }
+                }
+            };
         };
     }
 
