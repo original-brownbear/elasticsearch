@@ -23,6 +23,7 @@ import org.elasticsearch.common.settings.Setting.Property;
 import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
+import org.elasticsearch.core.Suppliers;
 import org.elasticsearch.index.IndexMode;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.IndexVersion;
@@ -1084,7 +1085,7 @@ public abstract class FieldMapper extends Mapper {
             return new Parameter<>(
                 name,
                 updateable,
-                defaultValue == null ? () -> null : () -> defaultValue,
+                defaultValue == null ? Suppliers.nullSupplier() : () -> defaultValue,
                 (n, c, o) -> XContentMapValues.nodeStringValue(o),
                 initializer,
                 serializer,
@@ -1298,7 +1299,7 @@ public abstract class FieldMapper extends Mapper {
          * @return a script parameter
          */
         public static Parameter<Script> scriptParam(Function<FieldMapper, Script> initializer) {
-            return new FieldMapper.Parameter<>("script", false, () -> null, (n, c, o) -> {
+            return new FieldMapper.Parameter<>("script", false, Suppliers.nullSupplier(), (n, c, o) -> {
                 if (o == null) {
                     return null;
                 }

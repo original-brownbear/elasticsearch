@@ -21,6 +21,7 @@ import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
 import org.elasticsearch.core.CharArrays;
 import org.elasticsearch.core.IOUtils;
+import org.elasticsearch.core.Suppliers;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.xpack.core.security.authc.RealmConfig;
 import org.elasticsearch.xpack.core.security.authc.RealmSettings;
@@ -53,7 +54,7 @@ class LdapUserSearchSessionFactory extends PoolingSessionFactory {
             sslService,
             groupResolver(config),
             LdapUserSearchSessionFactorySettings.POOL_ENABLED,
-            config.getSetting(BIND_DN, () -> null),
+            config.getSetting(BIND_DN, Suppliers.nullSupplier()),
             () -> config.getSetting(BIND_DN, () -> config.getSetting(LdapUserSearchSessionFactorySettings.SEARCH_BASE_DN)),
             threadPool
         );

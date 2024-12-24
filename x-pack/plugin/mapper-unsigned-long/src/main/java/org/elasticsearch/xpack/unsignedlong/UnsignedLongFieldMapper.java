@@ -19,6 +19,7 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.Explicit;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.core.Suppliers;
 import org.elasticsearch.index.IndexMode;
 import org.elasticsearch.index.fielddata.FieldDataContext;
 import org.elasticsearch.index.fielddata.IndexFieldData;
@@ -113,7 +114,7 @@ public class UnsignedLongFieldMapper extends FieldMapper {
             this.nullValue = new Parameter<>(
                 "null_value",
                 false,
-                () -> null,
+                Suppliers.nullSupplier(),
                 (n, c, o) -> parseNullValueAsString(o),
                 m -> toType(m).nullValue,
                 XContentBuilder::field,

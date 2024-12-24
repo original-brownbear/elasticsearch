@@ -12,6 +12,7 @@ package org.elasticsearch.index.mapper.extras;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
+import org.elasticsearch.core.Suppliers;
 import org.elasticsearch.index.analysis.NamedAnalyzer;
 import org.elasticsearch.index.mapper.DocValueFetcher;
 import org.elasticsearch.index.mapper.DocumentParserContext;
@@ -47,11 +48,16 @@ public class TokenCountFieldMapper extends FieldMapper {
         private final Parameter<Boolean> hasDocValues = Parameter.docValuesParam(m -> toType(m).hasDocValues, true);
         private final Parameter<Boolean> store = Parameter.storeParam(m -> toType(m).store, false);
 
-        private final Parameter<NamedAnalyzer> analyzer = Parameter.analyzerParam("analyzer", true, m -> toType(m).analyzer, () -> null);
+        private final Parameter<NamedAnalyzer> analyzer = Parameter.analyzerParam(
+            "analyzer",
+            true,
+            m -> toType(m).analyzer,
+            Suppliers.nullSupplier()
+        );
         private final Parameter<Integer> nullValue = new Parameter<>(
             "null_value",
             false,
-            () -> null,
+            Suppliers.nullSupplier(),
             (n, c, o) -> o == null ? null : nodeIntegerValue(o),
             m -> toType(m).nullValue,
             XContentBuilder::field,

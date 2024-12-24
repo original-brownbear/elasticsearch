@@ -26,6 +26,7 @@ import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
+import org.elasticsearch.core.Suppliers;
 import org.elasticsearch.core.SuppressForbidden;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.ingest.IngestMetadata;
@@ -135,7 +136,7 @@ public class TransportDeleteTrainedModelAction extends AcknowledgedTransportMast
         );
 
         // setting waitForCompletion to false here so that we don't block waiting for an existing task to complete before returning it
-        getDownloadTaskInfo(mlClient, modelId, false, timeout, () -> null, taskListener);
+        getDownloadTaskInfo(mlClient, modelId, false, timeout, Suppliers.nullSupplier(), taskListener);
     }
 
     static List<String> getModelAliases(ClusterState clusterState, String modelId) {

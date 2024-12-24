@@ -18,6 +18,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
 import org.elasticsearch.common.xcontent.XContentHelper;
+import org.elasticsearch.core.Suppliers;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.xcontent.ObjectParser;
 import org.elasticsearch.xcontent.ParseField;
@@ -103,14 +104,14 @@ public final class ReportingAttachmentParser implements EmailAttachmentParser<Re
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
-        }, () -> null, ReportingAttachment.AUTH);
+        }, Suppliers.nullSupplier(), ReportingAttachment.AUTH);
         PARSER.declareObjectOrDefault(Builder::proxy, (p, s) -> {
             try {
                 return HttpProxy.parse(p);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
-        }, () -> null, ReportingAttachment.PROXY);
+        }, Suppliers.nullSupplier(), ReportingAttachment.PROXY);
         PAYLOAD_PARSER.declareString(KibanaReportingPayload::setPath, new ParseField("path"));
     }
 

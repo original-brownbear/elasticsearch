@@ -18,6 +18,7 @@ import org.elasticsearch.common.lucene.Lucene;
 import org.elasticsearch.common.util.concurrent.AtomicArray;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.core.Releasable;
+import org.elasticsearch.core.Suppliers;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.InternalAggregations;
@@ -53,7 +54,7 @@ class MutableSearchResponse implements Releasable {
      * We default to returning no aggs, this {@code -> null}. We'll replace
      * this as we receive updates on the search progress listener.
      */
-    private Supplier<InternalAggregations> reducedAggsSource = () -> null;
+    private Supplier<InternalAggregations> reducedAggsSource = Suppliers.nullSupplier();
     private int reducePhase;
     /**
      * The response produced by the search API. Once we receive it we stop

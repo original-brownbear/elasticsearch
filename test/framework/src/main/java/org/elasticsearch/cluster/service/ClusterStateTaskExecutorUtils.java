@@ -16,6 +16,7 @@ import org.elasticsearch.cluster.ClusterStateTaskListener;
 import org.elasticsearch.common.CheckedBiConsumer;
 import org.elasticsearch.core.CheckedConsumer;
 import org.elasticsearch.core.Releasable;
+import org.elasticsearch.core.Suppliers;
 
 import java.util.Collection;
 import java.util.function.Consumer;
@@ -66,7 +67,7 @@ public class ClusterStateTaskExecutorUtils {
     ) throws Exception {
         final var taskContexts = tasks.stream().map(TestTaskContext::new).toList();
         ClusterState resultingState = executor.execute(
-            new ClusterStateTaskExecutor.BatchExecutionContext<>(originalState, taskContexts, () -> null)
+            new ClusterStateTaskExecutor.BatchExecutionContext<>(originalState, taskContexts, Suppliers.nullSupplier())
         );
         assertNotNull(resultingState);
         boolean allSuccess = true;

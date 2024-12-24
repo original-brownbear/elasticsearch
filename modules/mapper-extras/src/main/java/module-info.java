@@ -14,4 +14,5 @@ module org.elasticsearch.mapper.extras {
     requires org.apache.lucene.core;
     requires org.apache.lucene.memory;
     requires org.apache.lucene.queries;
+    requires org.elasticsearch.base;
 }

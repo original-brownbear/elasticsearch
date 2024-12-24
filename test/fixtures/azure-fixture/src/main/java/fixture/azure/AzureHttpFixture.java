@@ -16,6 +16,7 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.ssl.KeyStoreUtil;
 import org.elasticsearch.common.ssl.PemUtils;
 import org.elasticsearch.core.Nullable;
+import org.elasticsearch.core.Suppliers;
 import org.elasticsearch.test.ESTestCase;
 import org.junit.rules.ExternalResource;
 
@@ -218,7 +219,7 @@ public class AzureHttpFixture extends ExternalResource {
                         new KeyManager[] {
                             KeyStoreUtil.createKeyManager(
                                 new Certificate[] { certificates.get(0) },
-                                PemUtils.readPrivateKey(copyResource(tmpdir, "azure-http-fixture.key"), () -> null),
+                                PemUtils.readPrivateKey(copyResource(tmpdir, "azure-http-fixture.key"), Suppliers.nullSupplier()),
                                 null
                             ) },
                         null,

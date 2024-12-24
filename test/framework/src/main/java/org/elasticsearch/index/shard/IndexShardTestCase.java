@@ -39,6 +39,7 @@ import org.elasticsearch.core.CheckedFunction;
 import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.Releasable;
+import org.elasticsearch.core.Suppliers;
 import org.elasticsearch.env.NodeEnvironment;
 import org.elasticsearch.index.CloseUtils;
 import org.elasticsearch.index.Index;
@@ -529,7 +530,7 @@ public abstract class IndexShardTestCase extends ESTestCase {
                 indexSettings,
                 shardPath,
                 store,
-                () -> null,
+                Suppliers.nullSupplier(),
                 indexCache,
                 mapperService,
                 similarityService,

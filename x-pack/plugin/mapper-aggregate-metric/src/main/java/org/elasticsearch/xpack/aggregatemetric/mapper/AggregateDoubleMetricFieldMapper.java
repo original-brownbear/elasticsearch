@@ -19,6 +19,7 @@ import org.elasticsearch.common.logging.DeprecationCategory;
 import org.elasticsearch.common.logging.DeprecationLogger;
 import org.elasticsearch.common.time.DateMathParser;
 import org.elasticsearch.common.util.BigArrays;
+import org.elasticsearch.core.Suppliers;
 import org.elasticsearch.index.IndexMode;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.fielddata.FieldDataContext;
@@ -155,13 +156,21 @@ public class AggregateDoubleMetricFieldMapper extends FieldMapper {
         /**
          * Set the default metric so that query operations are delegated to it.
          */
-        private final Parameter<Metric> defaultMetric = new Parameter<>(Names.DEFAULT_METRIC, false, () -> null, (n, c, o) -> {
-            try {
-                return Metric.valueOf(o.toString());
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Metric [" + o.toString() + "] is not supported.", e);
-            }
-        }, m -> toType(m).defaultMetric, XContentBuilder::field, Objects::toString);
+        private final Parameter<Metric> defaultMetric = new Parameter<>(
+            Names.DEFAULT_METRIC,
+            false,
+            Suppliers.nullSupplier(),
+            (n, c, o) -> {
+                try {
+                    return Metric.valueOf(o.toString());
+                } catch (IllegalArgumentException e) {
+                    throw new IllegalArgumentException("Metric [" + o.toString() + "] is not supported.", e);
+                }
+            },
+            m -> toType(m).defaultMetric,
+            XContentBuilder::field,
+            Objects::toString
+        );
 
         private final IndexVersion indexCreatedVersion;
         private final IndexMode indexMode;

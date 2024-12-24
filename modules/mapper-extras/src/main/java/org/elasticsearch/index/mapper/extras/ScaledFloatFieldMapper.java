@@ -18,6 +18,7 @@ import org.elasticsearch.common.Explicit;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
+import org.elasticsearch.core.Suppliers;
 import org.elasticsearch.index.IndexMode;
 import org.elasticsearch.index.fielddata.FieldData;
 import org.elasticsearch.index.fielddata.FieldDataContext;
@@ -91,7 +92,7 @@ public class ScaledFloatFieldMapper extends FieldMapper {
         private final Parameter<Double> scalingFactor = new Parameter<>(
             "scaling_factor",
             false,
-            () -> null,
+            Suppliers.nullSupplier(),
             (n, c, o) -> XContentMapValues.nodeDoubleValue(o),
             m -> toType(m).scalingFactor,
             XContentBuilder::field,
@@ -107,7 +108,7 @@ public class ScaledFloatFieldMapper extends FieldMapper {
         private final Parameter<Double> nullValue = new Parameter<>(
             "null_value",
             false,
-            () -> null,
+            Suppliers.nullSupplier(),
             (n, c, o) -> o == null ? null : XContentMapValues.nodeDoubleValue(o),
             m -> toType(m).nullValue,
             XContentBuilder::field,

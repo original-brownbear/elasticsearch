@@ -11,6 +11,7 @@ module org.elasticsearch.mapper.unsignedlong {
     requires org.apache.lucene.sandbox;
     requires org.elasticsearch.xcontent;
     requires org.elasticsearch.painless.spi;
+    requires org.elasticsearch.base;
 
     exports org.elasticsearch.xpack.unsignedlong; // for the painless script engine
 

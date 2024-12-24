@@ -22,6 +22,7 @@ import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.Nullable;
+import org.elasticsearch.core.Suppliers;
 import org.elasticsearch.features.NodeFeature;
 import org.elasticsearch.index.IndexMode;
 import org.elasticsearch.index.IndexSettings;
@@ -174,7 +175,7 @@ public class SourceFieldMapper extends MetadataFieldMapper {
             this.mode = new Parameter<>(
                 "mode",
                 true,
-                () -> null,
+                Suppliers.nullSupplier(),
                 (n, c, o) -> Mode.valueOf(o.toString().toUpperCase(Locale.ROOT)),
                 m -> toType(m).enabled.explicit() ? null : toType(m).mode,
                 (b, n, v) -> b.field(n, v.toString().toLowerCase(Locale.ROOT)),

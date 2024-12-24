@@ -56,6 +56,7 @@ import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.core.Nullable;
+import org.elasticsearch.core.Suppliers;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.index.mapper.NumberFieldMapper;
@@ -1254,7 +1255,7 @@ public class JobResultsProvider {
             ModelSnapshot.LENIENT_PARSER,
             result -> handler.accept(result.result == null ? null : new Result<>(result.index, result.result.build())),
             errorHandler,
-            () -> null
+            Suppliers.nullSupplier()
         );
     }
 
@@ -1765,7 +1766,7 @@ public class JobResultsProvider {
             ForecastRequestStats.LENIENT_PARSER,
             result -> handler.accept(result.result),
             errorHandler,
-            () -> null
+            Suppliers.nullSupplier()
         );
     }
 

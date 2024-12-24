@@ -15,6 +15,7 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.elasticsearch.common.lucene.Lucene;
+import org.elasticsearch.core.Suppliers;
 import org.elasticsearch.index.analysis.NamedAnalyzer;
 import org.elasticsearch.index.fielddata.FieldDataContext;
 import org.elasticsearch.index.fielddata.IndexFieldData;
@@ -59,7 +60,7 @@ public class RankFeatureFieldMapper extends FieldMapper {
         private final Parameter<Float> nullValue = new Parameter<>(
             "null_value",
             false,
-            () -> null,
+            Suppliers.nullSupplier(),
             (n, c, o) -> o == null ? null : objectToFloat(o),
             m -> ft(m).nullValue,
             XContentBuilder::field,

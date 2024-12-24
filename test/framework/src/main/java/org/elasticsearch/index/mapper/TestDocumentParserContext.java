@@ -12,6 +12,7 @@ package org.elasticsearch.index.mapper;
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.common.lucene.Lucene;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.core.Suppliers;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.xcontent.XContentParser;
 
@@ -60,7 +61,7 @@ public class TestDocumentParserContext extends DocumentParserContext {
                 s -> null,
                 IndexVersion.current(),
                 () -> TransportVersion.current(),
-                () -> null,
+                Suppliers.nullSupplier(),
                 null,
                 (type, name) -> Lucene.STANDARD_ANALYZER,
                 MapperTestCase.createIndexSettings(IndexVersion.current(), settings),

@@ -28,6 +28,7 @@ import org.elasticsearch.common.regex.Regex;
 import org.elasticsearch.common.time.DateMathParser;
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.core.Nullable;
+import org.elasticsearch.core.Suppliers;
 import org.elasticsearch.index.fielddata.FieldData;
 import org.elasticsearch.index.fielddata.FieldDataContext;
 import org.elasticsearch.index.fielddata.IndexFieldData;
@@ -80,7 +81,7 @@ public class ConstantKeywordFieldMapper extends FieldMapper {
 
         // This is defined as updateable because it can be updated once, from [null] to any value,
         // by a dynamic mapping update. Once it has been set, however, the value cannot be changed.
-        private final Parameter<String> value = new Parameter<>("value", true, () -> null, (n, c, o) -> {
+        private final Parameter<String> value = new Parameter<>("value", true, Suppliers.nullSupplier(), (n, c, o) -> {
             if (o instanceof Number == false && o instanceof CharSequence == false) {
                 throw new MapperParsingException("Property [value] on field [" + n + "] must be a number or a string, but got [" + o + "]");
             }

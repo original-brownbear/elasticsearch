@@ -31,6 +31,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.common.util.concurrent.ThrottledTaskRunner;
 import org.elasticsearch.core.Nullable;
+import org.elasticsearch.core.Suppliers;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.engine.Engine;
 import org.elasticsearch.index.seqno.SequenceNumbers;
@@ -332,7 +333,7 @@ public final class SnapshotShardsService extends AbstractLifecycleComponent impl
                                 ShardState.FAILED,
                                 shard.getValue().reason(),
                                 shard.getValue().generation(),
-                                () -> null
+                                Suppliers.nullSupplier()
                             );
                         }
                     } else {
@@ -692,7 +693,7 @@ public final class SnapshotShardsService extends AbstractLifecycleComponent impl
                                 snapshot.snapshot(),
                                 shardId,
                                 localShard.getValue().getShardSnapshotResult(),
-                                () -> null
+                                Suppliers.nullSupplier()
                             );
                         } else if (stage == Stage.FAILURE) {
                             // but we think the shard failed - we need to make new master know that the shard failed
@@ -708,7 +709,7 @@ public final class SnapshotShardsService extends AbstractLifecycleComponent impl
                                 ShardState.FAILED,
                                 indexShardSnapshotStatus.getFailure(),
                                 localShard.getValue().generation(),
-                                () -> null
+                                Suppliers.nullSupplier()
                             );
                         } else if (stage == Stage.PAUSED) {
                             // but we think the shard has paused - we need to make new master know that
@@ -722,7 +723,7 @@ public final class SnapshotShardsService extends AbstractLifecycleComponent impl
                                 ShardState.PAUSED_FOR_NODE_REMOVAL,
                                 indexShardSnapshotStatus.getFailure(),
                                 localShard.getValue().generation(),
-                                () -> null
+                                Suppliers.nullSupplier()
                             );
                         }
                     }

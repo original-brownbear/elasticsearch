@@ -20,6 +20,7 @@ import org.elasticsearch.common.geo.ShapeRelation;
 import org.elasticsearch.common.time.DateMathParser;
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.core.Nullable;
+import org.elasticsearch.core.Suppliers;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.query.SearchExecutionContext;
 import org.elasticsearch.script.CompositeFieldScript;
@@ -237,7 +238,7 @@ public abstract class AbstractScriptFieldType<LeafFactory> extends MappedFieldTy
         private final FieldMapper.Parameter<Script> script = new FieldMapper.Parameter<>(
             "script",
             true,
-            () -> null,
+            Suppliers.nullSupplier(),
             RuntimeField::parseScript,
             RuntimeField.initializerNotSupported(),
             XContentBuilder::field,

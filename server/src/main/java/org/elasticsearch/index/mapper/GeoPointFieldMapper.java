@@ -28,6 +28,7 @@ import org.elasticsearch.common.geo.SimpleVectorTileFormatter;
 import org.elasticsearch.common.unit.DistanceUnit;
 import org.elasticsearch.core.CheckedConsumer;
 import org.elasticsearch.core.CheckedFunction;
+import org.elasticsearch.core.Suppliers;
 import org.elasticsearch.geometry.Point;
 import org.elasticsearch.index.IndexMode;
 import org.elasticsearch.index.IndexVersion;
@@ -112,7 +113,7 @@ public class GeoPointFieldMapper extends AbstractPointGeometryFieldMapper<GeoPoi
             this.nullValue = nullValueParam(
                 m -> builder(m).nullValue.get(),
                 (n, c, o) -> parseNullValue(o, ignoreZValue.get().value(), ignoreMalformed.get().value()),
-                () -> null,
+                Suppliers.nullSupplier(),
                 XContentBuilder::field
             ).acceptsNull();
             this.scriptCompiler = Objects.requireNonNull(scriptCompiler);

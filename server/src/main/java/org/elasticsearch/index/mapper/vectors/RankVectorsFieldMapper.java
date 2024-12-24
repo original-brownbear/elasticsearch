@@ -17,6 +17,7 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.util.FeatureFlag;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
+import org.elasticsearch.core.Suppliers;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.fielddata.FieldDataContext;
 import org.elasticsearch.index.fielddata.IndexFieldData;
@@ -83,7 +84,7 @@ public class RankVectorsFieldMapper extends FieldMapper {
 
         // This is defined as updatable because it can be updated once, from [null] to a valid dim size,
         // by a dynamic mapping update. Once it has been set, however, the value cannot be changed.
-        private final Parameter<Integer> dims = new Parameter<>("dims", true, () -> null, (n, c, o) -> {
+        private final Parameter<Integer> dims = new Parameter<>("dims", true, Suppliers.nullSupplier(), (n, c, o) -> {
             if (o instanceof Integer == false) {
                 throw new MapperParsingException("Property [dims] on field [" + n + "] must be an integer but got [" + o + "]");
             }

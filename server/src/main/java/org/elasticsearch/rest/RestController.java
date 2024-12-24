@@ -33,6 +33,7 @@ import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.Releasables;
 import org.elasticsearch.core.RestApiVersion;
 import org.elasticsearch.core.Streams;
+import org.elasticsearch.core.Suppliers;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.http.HttpHeadersValidationException;
 import org.elasticsearch.http.HttpRouteStats;
@@ -647,7 +648,7 @@ public class RestController implements HttpServerTransport.Dispatcher {
     Iterator<MethodHandlers> getAllHandlers(@Nullable Map<String, String> requestParamsRef, String rawPath) {
         final Supplier<Map<String, String>> paramsSupplier;
         if (requestParamsRef == null) {
-            paramsSupplier = () -> null;
+            paramsSupplier = Suppliers.nullSupplier();
         } else {
             // Between retrieving the correct path, we need to reset the parameters,
             // otherwise parameters are parsed out of the URI that aren't actually handled.

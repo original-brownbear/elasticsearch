@@ -14,6 +14,7 @@ import org.elasticsearch.cluster.routing.allocation.allocator.DesiredBalance;
 import org.elasticsearch.cluster.routing.allocation.allocator.DesiredBalanceShardsAllocator;
 import org.elasticsearch.cluster.routing.allocation.allocator.ShardsAllocator;
 import org.elasticsearch.cluster.service.ClusterService;
+import org.elasticsearch.core.Suppliers;
 
 import java.util.Map;
 import java.util.function.Supplier;
@@ -36,7 +37,7 @@ public class AllocationStatsService {
         this.nodeAllocationStatsProvider = nodeAllocationStatsProvider;
         this.desiredBalanceSupplier = shardsAllocator instanceof DesiredBalanceShardsAllocator allocator
             ? allocator::getDesiredBalance
-            : () -> null;
+            : Suppliers.nullSupplier();
     }
 
     public Map<String, NodeAllocationStats> stats() {

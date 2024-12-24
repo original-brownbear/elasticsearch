@@ -33,6 +33,7 @@ import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.Releasables;
+import org.elasticsearch.core.Suppliers;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.features.FeatureService;
@@ -332,7 +333,7 @@ public class JoinHelper {
                     pendingJoinInfo.message = PENDING_JOIN_WAITING_APPLIER;
                     clusterApplier.onNewClusterState(
                         "joining " + destination.descriptionWithoutAttributes(),
-                        () -> null,
+                        Suppliers.nullSupplier(),
                         new ActionListener<>() {
                             @Override
                             public void onResponse(Void unused) {

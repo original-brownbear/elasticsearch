@@ -38,6 +38,7 @@ import org.elasticsearch.core.Assertions;
 import org.elasticsearch.core.CheckedFunction;
 import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.core.Nullable;
+import org.elasticsearch.core.Suppliers;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.env.NodeEnvironment;
 import org.elasticsearch.env.ShardLock;
@@ -241,7 +242,7 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
                         (fieldType, searchLookup) -> loadFielddata(fieldType, FieldDataContext.noRuntimeFields("index sort"))
                     );
             } else {
-                this.indexSortSupplier = () -> null;
+                this.indexSortSupplier = Suppliers.nullSupplier();
             }
             indexFieldData.setListener(new FieldDataCacheListener(this));
             this.warmer = new IndexWarmer(threadPool, indexFieldData, bitsetFilterCache.createListener(threadPool));
@@ -250,7 +251,7 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
             assert indexAnalyzers == null;
             this.mapperService = null;
             this.indexFieldData = null;
-            this.indexSortSupplier = () -> null;
+            this.indexSortSupplier = Suppliers.nullSupplier();
             this.bitsetFilterCache = null;
             this.warmer = null;
             this.indexCache = null;

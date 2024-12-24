@@ -17,6 +17,7 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
 import org.elasticsearch.core.Nullable;
+import org.elasticsearch.core.Suppliers;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.features.NodeFeature;
 import org.elasticsearch.index.IndexSettings;
@@ -140,7 +141,7 @@ public class SemanticTextFieldMapper extends FieldMapper implements InferenceFie
         private final Parameter<SemanticTextField.ModelSettings> modelSettings = new Parameter<>(
             MODEL_SETTINGS_FIELD,
             true,
-            () -> null,
+            Suppliers.nullSupplier(),
             (n, c, o) -> SemanticTextField.parseModelSettingsFromMap(o),
             mapper -> ((SemanticTextFieldType) mapper.fieldType()).modelSettings,
             XContentBuilder::field,

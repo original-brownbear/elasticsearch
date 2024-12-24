@@ -21,6 +21,7 @@ import org.elasticsearch.common.ParsingException;
 import org.elasticsearch.common.logging.DeprecationCategory;
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.common.util.Maps;
+import org.elasticsearch.core.Suppliers;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.IndexVersions;
 import org.elasticsearch.index.analysis.AnalyzerScope;
@@ -133,7 +134,7 @@ public class CompletionFieldMapper extends FieldMapper {
         private final Parameter<ContextMappings> contexts = new Parameter<>(
             "contexts",
             false,
-            () -> null,
+            Suppliers.nullSupplier(),
             (n, c, o) -> ContextMappings.load(o),
             m -> builder(m).contexts.get(),
             (b, n, c) -> {
