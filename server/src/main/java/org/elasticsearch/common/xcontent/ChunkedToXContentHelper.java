@@ -18,6 +18,8 @@ import java.util.Iterator;
 public enum ChunkedToXContentHelper {
     ;
 
+    public static final ToXContent END_OBJECT = (builder, params) -> builder.endObject();
+
     public static Iterator<ToXContent> startObject() {
         return Iterators.single(((builder, params) -> builder.startObject()));
     }
@@ -27,7 +29,7 @@ public enum ChunkedToXContentHelper {
     }
 
     public static Iterator<ToXContent> endObject() {
-        return Iterators.single(((builder, params) -> builder.endObject()));
+        return Iterators.single(END_OBJECT);
     }
 
     public static Iterator<ToXContent> startArray() {

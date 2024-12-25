@@ -20,6 +20,7 @@ import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.lucene.Lucene;
 import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
 import org.elasticsearch.common.xcontent.ChunkedToXContent;
+import org.elasticsearch.common.xcontent.ChunkedToXContentHelper;
 import org.elasticsearch.common.xcontent.ChunkedToXContentObject;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.RefCounted;
@@ -46,6 +47,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -386,13 +388,81 @@ public class SearchResponse extends ActionResponse implements ChunkedToXContentO
     }
 
     public Iterator<? extends ToXContent> innerToXContentChunked(ToXContent.Params params) {
-        return ChunkedToXContent.builder(params)
-            .append(SearchResponse.this::headerToXContent)
-            .append(clusters)
-            .append(hits)
-            .appendIfPresent(aggregations)
-            .appendIfPresent(suggest)
-            .appendIfPresent(profileResults);
+        return new Iterator<>() {
+            // 0 header
+            // 1 clusters
+            // 2 hits
+            // 3 aggregations
+            // 4 suggest
+            // 5 profileResults
+            // 6 done
+            private int step = 0;
+
+            private Iterator<? extends ToXContent> currentChild;
+
+            @Override
+            public boolean hasNext() {
+                return step < 6;
+            }
+
+            @Override
+            public ToXContent next() {
+                switch (step) {
+                    case 0 -> {
+                        step = 1;
+                        return SearchResponse.this::headerToXContent;
+                    }
+                    case 1 -> {
+                        step = 2;
+                        return clusters;
+                    }
+                    case 2 -> {
+                        if (currentChild == null) {
+                            currentChild = hits.toXContentChunked(params);
+                        }
+                        var next = currentChild.next();
+                        if (currentChild.hasNext() == false) {
+                            if (aggregations == null || aggregations.asList().isEmpty()) {
+                                afterAggs();
+                            } else {
+                                step = 3;
+                            }
+                            currentChild = null;
+                        }
+                        return next;
+                    }
+                    case 3 -> {
+                        if (currentChild == null) {
+                            currentChild = aggregations.iterator();
+                            return (b, p) -> b.startObject(InternalAggregations.AGGREGATIONS_FIELD);
+                        }
+                        if (currentChild.hasNext() == false) {
+                            afterAggs();
+                            currentChild = null;
+                            return ChunkedToXContentHelper.END_OBJECT;
+                        }
+                        return currentChild.next();
+                    }
+                    case 4 -> {
+                        step = profileResults == null ? 6 : 5;
+                        return suggest;
+                    }
+                    case 5 -> {
+                        step = 6;
+                        return profileResults;
+                    }
+                }
+                throw new NoSuchElementException();
+            }
+
+            private void afterAggs() {
+                if (suggest == null) {
+                    step = profileResults == null ? 6 : 5;
+                } else {
+                    step = 4;
+                }
+            }
+        };
     }
 
     public XContentBuilder headerToXContent(XContentBuilder builder, ToXContent.Params params) throws IOException {
