@@ -19,7 +19,6 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.lucene.Lucene;
 import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
-import org.elasticsearch.common.xcontent.ChunkedToXContent;
 import org.elasticsearch.common.xcontent.ChunkedToXContentHelper;
 import org.elasticsearch.common.xcontent.ChunkedToXContentObject;
 import org.elasticsearch.core.Nullable;
@@ -384,85 +383,11 @@ public class SearchResponse extends ActionResponse implements ChunkedToXContentO
     @Override
     public Iterator<? extends ToXContent> toXContentChunked(ToXContent.Params params) {
         assert hasReferences();
-        return ChunkedToXContent.builder(params).xContentObject(innerToXContentChunked(params));
+        return new ToInnerXContentIterator(params, true);
     }
 
     public Iterator<? extends ToXContent> innerToXContentChunked(ToXContent.Params params) {
-        return new Iterator<>() {
-            // 0 header
-            // 1 clusters
-            // 2 hits
-            // 3 aggregations
-            // 4 suggest
-            // 5 profileResults
-            // 6 done
-            private int step = 0;
-
-            private Iterator<? extends ToXContent> currentChild;
-
-            @Override
-            public boolean hasNext() {
-                return step < 6;
-            }
-
-            @Override
-            public ToXContent next() {
-                switch (step) {
-                    case 0 -> {
-                        step = 1;
-                        return SearchResponse.this::headerToXContent;
-                    }
-                    case 1 -> {
-                        step = 2;
-                        return clusters;
-                    }
-                    case 2 -> {
-                        if (currentChild == null) {
-                            currentChild = hits.toXContentChunked(params);
-                        }
-                        var next = currentChild.next();
-                        if (currentChild.hasNext() == false) {
-                            if (aggregations == null || aggregations.asList().isEmpty()) {
-                                afterAggs();
-                            } else {
-                                step = 3;
-                            }
-                            currentChild = null;
-                        }
-                        return next;
-                    }
-                    case 3 -> {
-                        if (currentChild == null) {
-                            currentChild = aggregations.iterator();
-                            return (b, p) -> b.startObject(InternalAggregations.AGGREGATIONS_FIELD);
-                        }
-                        if (currentChild.hasNext() == false) {
-                            afterAggs();
-                            currentChild = null;
-                            return ChunkedToXContentHelper.END_OBJECT;
-                        }
-                        return currentChild.next();
-                    }
-                    case 4 -> {
-                        step = profileResults == null ? 6 : 5;
-                        return suggest;
-                    }
-                    case 5 -> {
-                        step = 6;
-                        return profileResults;
-                    }
-                }
-                throw new NoSuchElementException();
-            }
-
-            private void afterAggs() {
-                if (suggest == null) {
-                    step = profileResults == null ? 6 : 5;
-                } else {
-                    step = 4;
-                }
-            }
-        };
+        return new ToInnerXContentIterator(params, false);
     }
 
     public XContentBuilder headerToXContent(XContentBuilder builder, ToXContent.Params params) throws IOException {
@@ -1228,5 +1153,98 @@ public class SearchResponse extends ActionResponse implements ChunkedToXContentO
             clusters,
             null
         );
+    }
+
+    private class ToInnerXContentIterator implements Iterator<ToXContent> {
+        private final ToXContent.Params params;
+        // 0 header
+        // 1 clusters
+        // 2 hits
+        // 3 aggregations
+        // 4 suggest
+        // 5 profileResults
+        // 6 done
+        private int step;
+
+        private Iterator<? extends ToXContent> currentChild;
+
+        private boolean wrapped;
+
+        ToInnerXContentIterator(ToXContent.Params params, boolean wrapped) {
+            this.params = params;
+            step = 0;
+            this.wrapped = wrapped;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return step < (wrapped ? 7 : 6);
+        }
+
+        @Override
+        public ToXContent next() {
+            switch (step) {
+                case 0 -> {
+                    step = 1;
+                    return wrapped
+                        ? (builder, p) -> SearchResponse.this.headerToXContent(builder.startObject(), p)
+                        : SearchResponse.this::headerToXContent;
+                }
+                case 1 -> {
+                    step = 2;
+                    return clusters;
+                }
+                case 2 -> {
+                    if (currentChild == null) {
+                        currentChild = hits.toXContentChunked(params);
+                    }
+                    var next = currentChild.next();
+                    if (currentChild.hasNext() == false) {
+                        if (aggregations == null || aggregations.asList().isEmpty()) {
+                            afterAggs();
+                        } else {
+                            step = 3;
+                        }
+                        currentChild = null;
+                    }
+                    return next;
+                }
+                case 3 -> {
+                    if (currentChild == null) {
+                        currentChild = aggregations.iterator();
+                        return (b, p) -> b.startObject(InternalAggregations.AGGREGATIONS_FIELD);
+                    }
+                    if (currentChild.hasNext() == false) {
+                        afterAggs();
+                        currentChild = null;
+                        return ChunkedToXContentHelper.END_OBJECT;
+                    }
+                    return currentChild.next();
+                }
+                case 4 -> {
+                    step = profileResults == null ? 6 : 5;
+                    return suggest;
+                }
+                case 5 -> {
+                    step = 6;
+                    return profileResults;
+                }
+                case 6 -> {
+                    if (wrapped) {
+                        step = 7;
+                        return ChunkedToXContentHelper.END_OBJECT;
+                    }
+                }
+            }
+            throw new NoSuchElementException();
+        }
+
+        private void afterAggs() {
+            if (suggest == null) {
+                step = profileResults == null ? 6 : 5;
+            } else {
+                step = 4;
+            }
+        }
     }
 }

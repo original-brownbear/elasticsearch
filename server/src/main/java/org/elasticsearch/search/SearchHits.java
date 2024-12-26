@@ -284,22 +284,37 @@ public final class SearchHits implements Writeable, ChunkedToXContent, RefCounte
     @Override
     public Iterator<? extends ToXContent> toXContentChunked(ToXContent.Params params) {
         assert hasReferences();
-        return ChunkedToXContent.builder(params).object(Fields.HITS, ob -> {
-            boolean totalHitAsInt = ob.params().paramAsBoolean(RestSearchAction.TOTAL_HITS_AS_INT_PARAM, false);
-            if (totalHitAsInt) {
-                ob.field(Fields.TOTAL, totalHits == null ? -1 : totalHits.value());
-            } else if (totalHits != null) {
-                ob.append((b, p) -> {
-                    b.startObject(Fields.TOTAL);
-                    b.field("value", totalHits.value());
-                    b.field("relation", totalHits.relation() == Relation.EQUAL_TO ? "eq" : "gte");
-                    return b.endObject();
-                });
+        return new Iterator<>() {
+
+            int step = 0;
+
+            @Override
+            public boolean hasNext() {
+                return step < hits.length + 2;
             }
 
-            ob.field(Fields.MAX_SCORE, Float.isNaN(maxScore) ? null : maxScore);
-            ob.array(Fields.HITS, Iterators.forArray(hits));
-        });
+            @Override
+            public ToXContent next() {
+                if (step == 0) {
+                    step = 1;
+                    return (builder, p) -> {
+                        boolean totalHitAsInt = p.paramAsBoolean(RestSearchAction.TOTAL_HITS_AS_INT_PARAM, false);
+                        builder.startObject(Fields.HITS);
+                        if (totalHitAsInt) {
+                            builder.field(Fields.TOTAL, totalHits == null ? -1 : totalHits.value());
+                        } else if (totalHits != null) {
+                            builder.startObject(Fields.TOTAL)
+                                .field("value", totalHits.value())
+                                .field("relation", totalHits.relation() == Relation.EQUAL_TO ? "eq" : "gte")
+                                .endObject();
+                        }
+                        return builder.field(Fields.MAX_SCORE, Float.isNaN(maxScore) ? null : maxScore).startArray(Fields.HITS);
+                    };
+                }
+                int idx = (step++) - 1;
+                return idx == hits.length ? (b, p) -> b.endArray().endObject() : hits[idx];
+            }
+        };
     }
 
     @Override
