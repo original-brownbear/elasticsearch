@@ -1168,7 +1168,7 @@ public class SearchResponse extends ActionResponse implements ChunkedToXContentO
 
         private Iterator<? extends ToXContent> currentChild;
 
-        private boolean wrapped;
+        private final boolean wrapped;
 
         ToInnerXContentIterator(ToXContent.Params params, boolean wrapped) {
             this.params = params;
@@ -1195,31 +1195,28 @@ public class SearchResponse extends ActionResponse implements ChunkedToXContentO
                     return clusters;
                 }
                 case 2 -> {
-                    if (currentChild == null) {
-                        currentChild = hits.toXContentChunked(params);
+                    var c = currentChild;
+                    if (c == null) {
+                        c = hits.toXContentChunked(params);
+                        currentChild = c;
                     }
-                    var next = currentChild.next();
-                    if (currentChild.hasNext() == false) {
-                        if (aggregations == null || aggregations.asList().isEmpty()) {
-                            afterAggs();
-                        } else {
-                            step = 3;
-                        }
-                        currentChild = null;
+                    var next = c.next();
+                    if (c.hasNext() == false) {
+                        afterHits();
                     }
                     return next;
                 }
                 case 3 -> {
-                    if (currentChild == null) {
-                        currentChild = aggregations.iterator();
-                        return (b, p) -> b.startObject(InternalAggregations.AGGREGATIONS_FIELD);
+                    var c = currentChild;
+                    if (c == null) {
+                        return initAggs();
                     }
-                    if (currentChild.hasNext() == false) {
+                    if (c.hasNext() == false) {
                         afterAggs();
                         currentChild = null;
                         return ChunkedToXContentHelper.END_OBJECT;
                     }
-                    return currentChild.next();
+                    return c.next();
                 }
                 case 4 -> {
                     step = profileResults == null ? 6 : 5;
@@ -1237,6 +1234,25 @@ public class SearchResponse extends ActionResponse implements ChunkedToXContentO
                 }
             }
             throw new NoSuchElementException();
+        }
+
+        private ToXContent initAggs() {
+            var aggsList = aggregations.asList();
+            if (aggsList.size() <= 1) {
+                afterAggs();
+                return aggregations;
+            }
+            currentChild = aggsList.iterator();
+            return (b, p) -> b.startObject(InternalAggregations.AGGREGATIONS_FIELD);
+        }
+
+        private void afterHits() {
+            if (aggregations == null) {
+                afterAggs();
+            } else {
+                step = 3;
+            }
+            currentChild = null;
         }
 
         private void afterAggs() {

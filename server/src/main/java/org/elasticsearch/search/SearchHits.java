@@ -24,6 +24,7 @@ import org.elasticsearch.core.SimpleRefCounted;
 import org.elasticsearch.rest.action.search.RestSearchAction;
 import org.elasticsearch.transport.LeakTracker;
 import org.elasticsearch.xcontent.ToXContent;
+import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
 import java.io.IOException;
@@ -284,6 +285,9 @@ public final class SearchHits implements Writeable, ChunkedToXContent, RefCounte
     @Override
     public Iterator<? extends ToXContent> toXContentChunked(ToXContent.Params params) {
         assert hasReferences();
+        if (hits.length <= 1) {
+            return Iterators.single((b, p) -> serializeHeader(b, p).xContentList(Fields.HITS, hits).endObject());
+        }
         return new Iterator<>() {
 
             int step = 0;
@@ -295,26 +299,32 @@ public final class SearchHits implements Writeable, ChunkedToXContent, RefCounte
 
             @Override
             public ToXContent next() {
-                if (step == 0) {
+                int s = step;
+                if (s == 0) {
                     step = 1;
-                    return (builder, p) -> {
-                        boolean totalHitAsInt = p.paramAsBoolean(RestSearchAction.TOTAL_HITS_AS_INT_PARAM, false);
-                        builder.startObject(Fields.HITS);
-                        if (totalHitAsInt) {
-                            builder.field(Fields.TOTAL, totalHits == null ? -1 : totalHits.value());
-                        } else if (totalHits != null) {
-                            builder.startObject(Fields.TOTAL)
-                                .field("value", totalHits.value())
-                                .field("relation", totalHits.relation() == Relation.EQUAL_TO ? "eq" : "gte")
-                                .endObject();
-                        }
-                        return builder.field(Fields.MAX_SCORE, Float.isNaN(maxScore) ? null : maxScore).startArray(Fields.HITS);
-                    };
+                    return (builder, p) -> serializeHeader(builder, p).startArray(Fields.HITS);
                 }
-                int idx = (step++) - 1;
-                return idx == hits.length ? (b, p) -> b.endArray().endObject() : hits[idx];
+                if (s == hits.length + 1) {
+                    step = Integer.MAX_VALUE;
+                    return (b, p) -> b.endArray().endObject();
+                }
+                step = s + 1;
+                return hits[s - 1];
             }
         };
+    }
+
+    private XContentBuilder serializeHeader(XContentBuilder builder, ToXContent.Params p) throws IOException {
+        builder.startObject(Fields.HITS);
+        if (p.paramAsBoolean(RestSearchAction.TOTAL_HITS_AS_INT_PARAM, false)) {
+            builder.field(Fields.TOTAL, totalHits == null ? -1 : totalHits.value());
+        } else if (totalHits != null) {
+            builder.startObject(Fields.TOTAL)
+                .field("value", totalHits.value())
+                .field("relation", totalHits.relation() == Relation.EQUAL_TO ? "eq" : "gte")
+                .endObject();
+        }
+        return builder.field(Fields.MAX_SCORE, Float.isNaN(maxScore) ? null : maxScore);
     }
 
     @Override
