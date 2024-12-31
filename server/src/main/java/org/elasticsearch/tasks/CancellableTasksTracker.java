@@ -92,16 +92,9 @@ public class CancellableTasksTracker<T> {
         final long taskId = task.getId();
         final T oldItem = byTaskId.remove(taskId);
         if (oldItem != null && task.getParentTaskId().isSet()) {
-            byParentTaskId.compute(task.getParentTaskId(), (taskKey, oldRequestIdMap) -> {
-                if (oldRequestIdMap == null) {
-                    return null;
-                }
-
+            byParentTaskId.computeIfPresent(task.getParentTaskId(), (taskKey, oldRequestIdMap) -> {
                 for (Long requestId : oldRequestIdMap.keySet()) {
-                    oldRequestIdMap.compute(requestId, (requestIdKey, oldValue) -> {
-                        if (oldValue == null) {
-                            return null;
-                        }
+                    oldRequestIdMap.computeIfPresent(requestId, (requestIdKey, oldValue) -> {
                         if (oldValue.length == 1) {
                             if (oldValue[0] == oldItem) {
                                 return null;
@@ -123,7 +116,7 @@ public class CancellableTasksTracker<T> {
                     });
                 }
 
-                if (oldRequestIdMap.keySet().isEmpty()) {
+                if (oldRequestIdMap.isEmpty()) {
                     return null;
                 }
 

@@ -64,7 +64,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -103,7 +102,7 @@ public class TransportService extends AbstractLifecycleComponent
         Setting.Property.Deprecated
     );
 
-    private final AtomicBoolean handleIncomingRequests = new AtomicBoolean();
+    private volatile boolean handleIncomingRequests;
     private final DelegatingTransportMessageListener messageListener = new DelegatingTransportMessageListener();
     protected final Transport transport;
     protected final ConnectionManager connectionManager;
@@ -432,8 +431,8 @@ public class TransportService extends AbstractLifecycleComponent
      * reject any incoming requests, including handshakes, by closing the connection.
      */
     public final void acceptIncomingRequests() {
-        final boolean startedWithThisCall = handleIncomingRequests.compareAndSet(false, true);
-        assert startedWithThisCall : "transport service was already accepting incoming requests";
+        assert handleIncomingRequests == false : "transport service was already accepting incoming requests";
+        handleIncomingRequests = true;
         logger.debug("now accepting incoming requests");
     }
 
@@ -1265,7 +1264,7 @@ public class TransportService extends AbstractLifecycleComponent
      */
     @Override
     public void onRequestReceived(long requestId, String action) {
-        if (handleIncomingRequests.get() == false) {
+        if (handleIncomingRequests == false) {
             throw new TransportNotReadyException();
         }
         if (tracerLog.isTraceEnabled() && shouldTraceAction(action)) {
