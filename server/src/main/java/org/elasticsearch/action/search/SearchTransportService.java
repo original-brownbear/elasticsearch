@@ -17,6 +17,7 @@ import org.elasticsearch.action.OriginalIndices;
 import org.elasticsearch.action.admin.cluster.node.tasks.cancel.CancelTasksRequest;
 import org.elasticsearch.action.admin.cluster.node.tasks.get.TransportGetTaskAction;
 import org.elasticsearch.action.support.ChannelActionListener;
+import org.elasticsearch.action.support.RefCountedResultListenableFuture;
 import org.elasticsearch.client.internal.OriginSettingClient;
 import org.elasticsearch.client.internal.node.NodeClient;
 import org.elasticsearch.cluster.node.DiscoveryNode;
@@ -436,11 +437,16 @@ public class SearchTransportService {
             QUERY_ACTION_NAME,
             EsExecutors.DIRECT_EXECUTOR_SERVICE,
             ShardSearchRequest::new,
-            (request, channel, task) -> searchService.executeQueryPhase(
-                request,
-                (SearchShardTask) task,
-                new ChannelActionListener<>(channel)
-            )
+            (request, channel, task) -> {
+                final RefCountedResultListenableFuture<SearchPhaseResult> listener = new RefCountedResultListenableFuture<>();
+                searchService.executeQueryPhase(request, (SearchShardTask) task, listener);
+                ActionListener<SearchPhaseResult> channelListener = new ChannelActionListener<>(channel);
+                switch (listener.state()) {
+                    case RefCountedResultListenableFuture.NORMAL -> ActionListener.respondAndRelease(channelListener, listener.result());
+                    case RefCountedResultListenableFuture.EXCEPTIONAL -> channelListener.onFailure(listener.error());
+                    default -> listener.addListener(channelListener);
+                }
+            }
         );
         TransportActionProxy.registerProxyActionWithDynamicResponseType(
             transportService,
