@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 /**
  * An action listener that delegates its results to another listener once
@@ -30,6 +31,13 @@ public final class GroupedActionListener<T> extends DelegatingActionListener<T, 
     private final AtomicInteger pos = new AtomicInteger();
     private final AtomicArray<T> results;
     private final AtomicReference<Exception> failure = new AtomicReference<>();
+
+    public static <T> ActionListener<T> wrap(ActionListener<T> delegate, int groupSize, Function<Collection<T>, T> reduceFn) {
+        if (groupSize == 1) {
+            return delegate;
+        }
+        return new GroupedActionListener<>(groupSize, delegate.safeMap(reduceFn));
+    }
 
     /**
      * Creates a new listener

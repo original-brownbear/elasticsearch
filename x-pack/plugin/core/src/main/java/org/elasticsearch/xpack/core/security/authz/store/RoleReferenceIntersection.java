@@ -37,17 +37,18 @@ public class RoleReferenceIntersection {
     }
 
     public void buildRole(BiConsumer<RoleReference, ActionListener<Role>> singleRoleBuilder, ActionListener<Role> roleActionListener) {
-        final GroupedActionListener<Role> roleGroupedActionListener = new GroupedActionListener<>(
+        final ActionListener<Role> roleGroupedActionListener = GroupedActionListener.wrap(
+            roleActionListener,
             roleReferences.size(),
-            roleActionListener.delegateFailureAndWrap((l, roles) -> {
+            roles -> {
                 assert false == roles.isEmpty();
                 final Iterator<Role> iterator = roles.stream().iterator();
                 Role finalRole = iterator.next();
                 while (iterator.hasNext()) {
                     finalRole = finalRole.limitedBy(iterator.next());
                 }
-                l.onResponse(finalRole);
-            })
+                return finalRole;
+            }
         );
 
         roleReferences.forEach(roleReference -> singleRoleBuilder.accept(roleReference, roleGroupedActionListener));

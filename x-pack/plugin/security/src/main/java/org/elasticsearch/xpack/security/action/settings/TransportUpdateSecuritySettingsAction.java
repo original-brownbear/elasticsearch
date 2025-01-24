@@ -101,11 +101,10 @@ public class TransportUpdateSecuritySettingsAction extends TransportMasterNodeAc
             )
         ).filter(Optional::isPresent).map(Optional::get).toList();
         if (settingsUpdateRequests.isEmpty() == false) {
-            ActionListener<AcknowledgedResponse> groupedListener = new GroupedActionListener<>(
+            ActionListener<AcknowledgedResponse> groupedListener = GroupedActionListener.wrap(
+                listener,
                 settingsUpdateRequests.size(),
-                ActionListener.wrap((responses) -> {
-                    listener.onResponse(AcknowledgedResponse.of(responses.stream().allMatch(AcknowledgedResponse::isAcknowledged)));
-                }, listener::onFailure)
+                responses -> AcknowledgedResponse.of(responses.stream().allMatch(AcknowledgedResponse::isAcknowledged))
             );
             settingsUpdateRequests.forEach(req -> updateSettingsService.updateSettings(req, groupedListener));
         } else {
