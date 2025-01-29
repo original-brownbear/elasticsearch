@@ -18,6 +18,7 @@ import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.index.IndexMode;
 import org.elasticsearch.indices.IndicesExpressionGrouper;
 import org.elasticsearch.license.XPackLicenseState;
+import org.elasticsearch.search.SearchResponseUtils;
 import org.elasticsearch.telemetry.metric.MeterRegistry;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.threadpool.TestThreadPool;
@@ -194,8 +195,28 @@ public class PlanExecutorMetricsTests extends ESTestCase {
     }
 
     private Map<String, Map<String, FieldCapabilities>> fields(String[] indices) {
-        FieldCapabilities fooField = new FieldCapabilities("foo", "integer", false, true, true, indices, null, null, Map.of());
-        FieldCapabilities barField = new FieldCapabilities("bar", "long", false, true, true, indices, null, null, Map.of());
+        FieldCapabilities fooField = SearchResponseUtils.buildFieldCapabilities(
+            "foo",
+            "integer",
+            false,
+            true,
+            true,
+            indices,
+            null,
+            null,
+            Map.of()
+        );
+        FieldCapabilities barField = SearchResponseUtils.buildFieldCapabilities(
+            "bar",
+            "long",
+            false,
+            true,
+            true,
+            indices,
+            null,
+            null,
+            Map.of()
+        );
         Map<String, Map<String, FieldCapabilities>> fields = new HashMap<>();
         fields.put(fooField.getName(), Map.of(fooField.getName(), fooField));
         fields.put(barField.getName(), Map.of(barField.getName(), barField));

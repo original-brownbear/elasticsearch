@@ -12,6 +12,7 @@ import org.elasticsearch.action.fieldcaps.FieldCapabilitiesResponse;
 import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchResponseUtils;
 import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.xpack.core.ml.dataframe.DataFrameAnalyticsConfig;
@@ -1715,7 +1716,17 @@ public class ExtractedFieldsDetectorTests extends ESTestCase {
             for (String type : types) {
                 caps.put(
                     type,
-                    new FieldCapabilities(field, type, isMetadataField, true, isAggregatable, null, null, null, Collections.emptyMap())
+                    SearchResponseUtils.buildFieldCapabilities(
+                        field,
+                        type,
+                        isMetadataField,
+                        true,
+                        isAggregatable,
+                        null,
+                        null,
+                        null,
+                        Collections.emptyMap()
+                    )
                 );
             }
             fieldCaps.put(field, caps);

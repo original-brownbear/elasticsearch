@@ -32,6 +32,7 @@ import org.elasticsearch.cluster.metadata.MappingMetadata;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.index.IndexVersion;
+import org.elasticsearch.search.SearchResponseUtils;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.xcontent.XContentParser;
@@ -800,6 +801,6 @@ public class DestinationIndexTests extends ESTestCase {
     }
 
     private static FieldCapabilities createFieldCapabilities(String field, String type) {
-        return new FieldCapabilities(field, type, false, true, true, null, null, null, Collections.emptyMap());
+        return SearchResponseUtils.buildFieldCapabilities(field, type, false, true, true, null, null, null, Collections.emptyMap());
     }
 }

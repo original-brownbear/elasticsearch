@@ -19,6 +19,7 @@ import org.elasticsearch.action.support.ActionTestUtils;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.index.query.TermQueryBuilder;
+import org.elasticsearch.search.SearchResponseUtils;
 import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.AggregatorFactories;
@@ -94,7 +95,10 @@ public class AggregationSchemaAndResultTests extends ESTestCase {
 
                     fieldCaps.put(
                         field,
-                        Collections.singletonMap(type, new FieldCapabilities(field, type, false, true, true, null, null, null, emptyMap()))
+                        Collections.singletonMap(
+                            type,
+                            SearchResponseUtils.buildFieldCapabilities(field, type, false, true, true, null, null, null, emptyMap())
+                        )
                     );
                 }
 

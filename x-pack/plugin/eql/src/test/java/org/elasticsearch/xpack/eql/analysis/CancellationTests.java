@@ -21,6 +21,7 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.breaker.NoopCircuitBreaker;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.search.SearchResponseUtils;
 import org.elasticsearch.tasks.TaskCancelHelper;
 import org.elasticsearch.tasks.TaskCancelledException;
 import org.elasticsearch.tasks.TaskId;
@@ -118,8 +119,18 @@ public class CancellationTests extends ESTestCase {
     }
 
     private Map<String, Map<String, FieldCapabilities>> fields(String[] indices) {
-        FieldCapabilities fooField = new FieldCapabilities("foo", "integer", false, true, true, indices, null, null, emptyMap());
-        FieldCapabilities categoryField = new FieldCapabilities(
+        FieldCapabilities fooField = SearchResponseUtils.buildFieldCapabilities(
+            "foo",
+            "integer",
+            false,
+            true,
+            true,
+            indices,
+            null,
+            null,
+            emptyMap()
+        );
+        FieldCapabilities categoryField = SearchResponseUtils.buildFieldCapabilities(
             "event.category",
             "keyword",
             false,
@@ -130,7 +141,17 @@ public class CancellationTests extends ESTestCase {
             null,
             emptyMap()
         );
-        FieldCapabilities timestampField = new FieldCapabilities("@timestamp", "date", false, true, true, indices, null, null, emptyMap());
+        FieldCapabilities timestampField = SearchResponseUtils.buildFieldCapabilities(
+            "@timestamp",
+            "date",
+            false,
+            true,
+            true,
+            indices,
+            null,
+            null,
+            emptyMap()
+        );
         Map<String, Map<String, FieldCapabilities>> fields = new HashMap<>();
         fields.put(fooField.getName(), singletonMap(fooField.getName(), fooField));
         fields.put(categoryField.getName(), singletonMap(categoryField.getName(), categoryField));

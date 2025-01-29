@@ -13,6 +13,7 @@ import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.Streams;
 import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.common.xcontent.XContentHelper;
+import org.elasticsearch.search.SearchResponseUtils;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.xcontent.XContentParser;
 import org.elasticsearch.xcontent.XContentParserConfiguration;
@@ -284,11 +285,21 @@ public class IndexResolverTests extends ESTestCase {
         Map<String, FieldCapabilities> multi = new HashMap<>();
         multi.put(
             "long",
-            new FieldCapabilities(fieldName, "long", false, true, true, new String[] { "one-index" }, null, null, Collections.emptyMap())
+            SearchResponseUtils.buildFieldCapabilities(
+                fieldName,
+                "long",
+                false,
+                true,
+                true,
+                new String[] { "one-index" },
+                null,
+                null,
+                Collections.emptyMap()
+            )
         );
         multi.put(
             "text",
-            new FieldCapabilities(
+            SearchResponseUtils.buildFieldCapabilities(
                 fieldName,
                 "text",
                 false,
@@ -400,7 +411,17 @@ public class IndexResolverTests extends ESTestCase {
             "_version",
             singletonMap(
                 "_index",
-                new FieldCapabilities("_version", "_version", true, false, false, null, null, null, Collections.emptyMap())
+                SearchResponseUtils.buildFieldCapabilities(
+                    "_version",
+                    "_version",
+                    true,
+                    false,
+                    false,
+                    null,
+                    null,
+                    null,
+                    Collections.emptyMap()
+                )
             )
         );
         assertTrue(mergedMappings("*", new String[] { "empty" }, versionFC).isValid());
@@ -547,7 +568,7 @@ public class IndexResolverTests extends ESTestCase {
         List<String> nonAggregatableIndices = new ArrayList<>();
 
         UpdateableFieldCapabilities(String name, String type, boolean isSearchable, boolean isAggregatable) {
-            super(name, type, false, isSearchable, isAggregatable, null, null, null, Collections.emptyMap());
+            super(name, type, false, isSearchable, isAggregatable, false, null, null, null, null, null, null, Collections.emptyMap());
         }
 
         @Override
@@ -599,7 +620,17 @@ public class IndexResolverTests extends ESTestCase {
         Map<String, FieldCapabilities> cap = new HashMap<>();
         cap.put(
             type,
-            new FieldCapabilities(name, type, isMetadataField, isSearchable, isAggregatable, null, null, null, Collections.emptyMap())
+            SearchResponseUtils.buildFieldCapabilities(
+                name,
+                type,
+                isMetadataField,
+                isSearchable,
+                isAggregatable,
+                null,
+                null,
+                null,
+                Collections.emptyMap()
+            )
         );
         fieldCaps.put(name, cap);
     }

@@ -55,6 +55,7 @@ import org.elasticsearch.plugins.MapperPlugin;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.plugins.SearchPlugin;
 import org.elasticsearch.search.DummyQueryBuilder;
+import org.elasticsearch.search.SearchResponseUtils;
 import org.elasticsearch.tasks.TaskInfo;
 import org.elasticsearch.test.ESIntegTestCase;
 import org.elasticsearch.test.MockLog;
@@ -218,7 +219,7 @@ public class FieldCapabilitiesIT extends ESIntegTestCase {
 
         assertTrue(distance.containsKey("double"));
         assertEquals(
-            new FieldCapabilities(
+            SearchResponseUtils.buildFieldCapabilities(
                 "distance",
                 "double",
                 false,
@@ -234,7 +235,17 @@ public class FieldCapabilitiesIT extends ESIntegTestCase {
 
         assertTrue(distance.containsKey("text"));
         assertEquals(
-            new FieldCapabilities("distance", "text", false, true, false, new String[] { "new_index" }, null, null, Collections.emptyMap()),
+            SearchResponseUtils.buildFieldCapabilities(
+                "distance",
+                "text",
+                false,
+                true,
+                false,
+                new String[] { "new_index" },
+                null,
+                null,
+                Collections.emptyMap()
+            ),
             distance.get("text")
         );
 
@@ -244,7 +255,17 @@ public class FieldCapabilitiesIT extends ESIntegTestCase {
 
         assertTrue(routeLength.containsKey("double"));
         assertEquals(
-            new FieldCapabilities("route_length_miles", "double", false, true, true, null, null, null, Collections.emptyMap()),
+            SearchResponseUtils.buildFieldCapabilities(
+                "route_length_miles",
+                "double",
+                false,
+                true,
+                true,
+                null,
+                null,
+                null,
+                Collections.emptyMap()
+            ),
             routeLength.get("double")
         );
     }
@@ -283,13 +304,23 @@ public class FieldCapabilitiesIT extends ESIntegTestCase {
 
         assertTrue(oldField.containsKey("long"));
         assertEquals(
-            new FieldCapabilities("old_field", "long", false, true, true, new String[] { "old_index" }, null, null, Collections.emptyMap()),
+            SearchResponseUtils.buildFieldCapabilities(
+                "old_field",
+                "long",
+                false,
+                true,
+                true,
+                new String[] { "old_index" },
+                null,
+                null,
+                Collections.emptyMap()
+            ),
             oldField.get("long")
         );
 
         assertTrue(oldField.containsKey("unmapped"));
         assertEquals(
-            new FieldCapabilities(
+            SearchResponseUtils.buildFieldCapabilities(
                 "old_field",
                 "unmapped",
                 false,
@@ -308,7 +339,7 @@ public class FieldCapabilitiesIT extends ESIntegTestCase {
 
         assertTrue(newField.containsKey("long"));
         assertEquals(
-            new FieldCapabilities("new_field", "long", false, true, true, null, null, null, Collections.emptyMap()),
+            SearchResponseUtils.buildFieldCapabilities("new_field", "long", false, true, true, null, null, null, Collections.emptyMap()),
             newField.get("long")
         );
     }
@@ -429,7 +460,7 @@ public class FieldCapabilitiesIT extends ESIntegTestCase {
 
             assertTrue(idField.containsKey("_id"));
             assertEquals(
-                new FieldCapabilities("_id", "_id", true, true, false, null, null, null, Collections.emptyMap()),
+                SearchResponseUtils.buildFieldCapabilities("_id", "_id", true, true, false, null, null, null, Collections.emptyMap()),
                 idField.get("_id")
             );
 
@@ -438,7 +469,7 @@ public class FieldCapabilitiesIT extends ESIntegTestCase {
 
             assertTrue(testField.containsKey("keyword"));
             assertEquals(
-                new FieldCapabilities("_test", "keyword", true, true, true, null, null, null, Collections.emptyMap()),
+                SearchResponseUtils.buildFieldCapabilities("_test", "keyword", true, true, true, null, null, null, Collections.emptyMap()),
                 testField.get("keyword")
             );
         }

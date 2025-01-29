@@ -11,6 +11,7 @@ import org.elasticsearch.action.fieldcaps.FieldCapabilities;
 import org.elasticsearch.action.fieldcaps.FieldCapabilitiesResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.search.SearchResponseUtils;
 import org.elasticsearch.test.ESTestCase;
 
 import java.util.Collections;
@@ -104,7 +105,7 @@ public class DocumentConversionUtilsTests extends ESTestCase {
     }
 
     private static FieldCapabilities createFieldCapabilities(String name, String type) {
-        return new FieldCapabilities(
+        return SearchResponseUtils.buildFieldCapabilities(
             name,
             type,
             false,

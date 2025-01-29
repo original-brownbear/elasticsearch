@@ -17,6 +17,7 @@ import org.elasticsearch.action.fieldcaps.FieldCapabilitiesRequest;
 import org.elasticsearch.action.fieldcaps.FieldCapabilitiesResponse;
 import org.elasticsearch.action.support.ActionTestUtils;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.search.SearchResponseUtils;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.AggregatorFactories;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
@@ -297,7 +298,7 @@ public class SchemaUtilTests extends ESTestCase {
     }
 
     private static FieldCapabilities createFieldCapabilities(String name, String type) {
-        return new FieldCapabilities(
+        return SearchResponseUtils.buildFieldCapabilities(
             name,
             type,
             false,

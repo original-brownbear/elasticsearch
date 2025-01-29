@@ -20,6 +20,7 @@ import org.elasticsearch.index.mapper.BooleanFieldMapper;
 import org.elasticsearch.index.mapper.KeywordFieldMapper;
 import org.elasticsearch.index.mapper.NumberFieldMapper;
 import org.elasticsearch.search.SearchModule;
+import org.elasticsearch.search.SearchResponseUtils;
 import org.elasticsearch.test.AbstractBWCSerializationTestCase;
 import org.elasticsearch.xcontent.DeprecationHandler;
 import org.elasticsearch.xcontent.NamedXContentRegistry;
@@ -582,6 +583,6 @@ public class ClassificationTests extends AbstractBWCSerializationTestCase<Classi
     }
 
     private static FieldCapabilities createFieldCapabilities(String field, String type) {
-        return new FieldCapabilities(field, type, false, true, true, null, null, null, Collections.emptyMap());
+        return SearchResponseUtils.buildFieldCapabilities(field, type, false, true, true, null, null, null, Collections.emptyMap());
     }
 }

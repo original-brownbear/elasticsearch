@@ -12,6 +12,7 @@ import org.apache.lucene.search.Explanation;
 import org.apache.lucene.search.TotalHits;
 import org.apache.lucene.util.SetOnce;
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.fieldcaps.FieldCapabilities;
 import org.elasticsearch.action.search.MultiSearchResponse;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
@@ -65,6 +66,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import static java.util.stream.Collectors.toMap;
 import static org.elasticsearch.common.xcontent.XContentParserUtils.ensureExpectedToken;
@@ -1064,5 +1066,49 @@ public enum SearchResponseUtils {
             );
         }
         return new ShardSearchFailure(exception, searchShardTarget);
+    }
+
+    /**
+     * Constructor for non-timeseries field caps. Useful for testing
+     * Constructor for a set of indices.
+     * @param name The name of the field
+     * @param type The type associated with the field.
+     * @param isMetadataField Whether this field is a metadata field.
+     * @param isSearchable Whether this field is indexed for search.
+     * @param isAggregatable Whether this field can be aggregated on.
+     * @param indices The list of indices where this field name is defined as {@code type},
+     *                or null if all indices have the same {@code type} for the field.
+     * @param nonSearchableIndices The list of indices where this field is not searchable,
+     *                             or null if the field is searchable in all indices.
+     * @param nonAggregatableIndices The list of indices where this field is not aggregatable,
+     *                               or null if the field is aggregatable in all indices.
+     * @param meta Merged metadata across indices.
+     */
+    public static FieldCapabilities buildFieldCapabilities(
+        String name,
+        String type,
+        boolean isMetadataField,
+        boolean isSearchable,
+        boolean isAggregatable,
+        String[] indices,
+        String[] nonSearchableIndices,
+        String[] nonAggregatableIndices,
+        Map<String, Set<String>> meta
+    ) {
+        return new FieldCapabilities(
+            name,
+            type,
+            isMetadataField,
+            isSearchable,
+            isAggregatable,
+            false,
+            null,
+            indices,
+            nonSearchableIndices,
+            nonAggregatableIndices,
+            null,
+            null,
+            meta
+        );
     }
 }

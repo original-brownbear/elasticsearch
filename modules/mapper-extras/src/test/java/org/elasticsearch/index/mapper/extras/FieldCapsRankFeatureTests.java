@@ -13,6 +13,7 @@ import org.elasticsearch.action.fieldcaps.FieldCapabilities;
 import org.elasticsearch.action.fieldcaps.FieldCapabilitiesResponse;
 import org.elasticsearch.action.support.ActiveShardCount;
 import org.elasticsearch.plugins.Plugin;
+import org.elasticsearch.search.SearchResponseUtils;
 import org.elasticsearch.test.ESIntegTestCase;
 import org.hamcrest.Matchers;
 import org.junit.Before;
@@ -60,7 +61,17 @@ public class FieldCapsRankFeatureTests extends ESIntegTestCase {
         assertEquals(1, fooRankField.size());
         assertThat(fooRankField, Matchers.hasKey("rank_feature"));
         assertEquals(
-            new FieldCapabilities("fooRank", "rank_feature", false, true, false, null, null, null, Collections.emptyMap()),
+            SearchResponseUtils.buildFieldCapabilities(
+                "fooRank",
+                "rank_feature",
+                false,
+                true,
+                false,
+                null,
+                null,
+                null,
+                Collections.emptyMap()
+            ),
             fooRankField.get("rank_feature")
         );
     }
@@ -80,7 +91,17 @@ public class FieldCapsRankFeatureTests extends ESIntegTestCase {
         assertEquals(1, fooRankField.size());
         assertThat(fooRankField, Matchers.hasKey("rank_feature"));
         assertEquals(
-            new FieldCapabilities("fooRank", "rank_feature", false, true, false, null, null, null, Collections.emptyMap()),
+            SearchResponseUtils.buildFieldCapabilities(
+                "fooRank",
+                "rank_feature",
+                false,
+                true,
+                false,
+                null,
+                null,
+                null,
+                Collections.emptyMap()
+            ),
             fooRankField.get("rank_feature")
         );
     }
@@ -99,7 +120,17 @@ public class FieldCapsRankFeatureTests extends ESIntegTestCase {
         assertEquals(1, fooRankField.size());
         assertThat(fooRankField, Matchers.hasKey("rank_feature"));
         assertEquals(
-            new FieldCapabilities("fooRank", "rank_feature", false, true, false, null, null, null, Collections.emptyMap()),
+            SearchResponseUtils.buildFieldCapabilities(
+                "fooRank",
+                "rank_feature",
+                false,
+                true,
+                false,
+                null,
+                null,
+                null,
+                Collections.emptyMap()
+            ),
             fooRankField.get("rank_feature")
         );
         assertThat(response.get(), Matchers.hasKey("barRank"));
@@ -108,7 +139,17 @@ public class FieldCapsRankFeatureTests extends ESIntegTestCase {
         assertEquals(1, barRankField.size());
         assertThat(barRankField, Matchers.hasKey("rank_feature"));
         assertEquals(
-            new FieldCapabilities("barRank", "rank_feature", false, true, false, null, null, null, Collections.emptyMap()),
+            SearchResponseUtils.buildFieldCapabilities(
+                "barRank",
+                "rank_feature",
+                false,
+                true,
+                false,
+                null,
+                null,
+                null,
+                Collections.emptyMap()
+            ),
             barRankField.get("rank_feature")
         );
     }
