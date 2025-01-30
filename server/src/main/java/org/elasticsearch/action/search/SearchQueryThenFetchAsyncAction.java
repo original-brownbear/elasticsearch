@@ -175,7 +175,6 @@ class SearchQueryThenFetchAsyncAction extends AbstractSearchAsyncAction<SearchPh
         if (bottomSortCollector.getBottomSortValues() != null) {
             request.setBottomSortValues(bottomSortCollector.getBottomSortValues());
         }
-        request.source().minScore()
         return request;
     }
 }
