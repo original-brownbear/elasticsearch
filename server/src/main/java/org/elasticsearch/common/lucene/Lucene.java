@@ -105,6 +105,7 @@ public class Lucene {
     );
 
     public static final ScoreDoc[] EMPTY_SCORE_DOCS = new ScoreDoc[0];
+    public static final SortField[] EMPTY_SORT_FIELD = new SortField[0];
 
     public static final TotalHits TOTAL_HITS_EQUAL_TO_ZERO = new TotalHits(0, TotalHits.Relation.EQUAL_TO);
     public static final TotalHits TOTAL_HITS_GREATER_OR_EQUAL_TO_ZERO = new TotalHits(0, TotalHits.Relation.GREATER_THAN_OR_EQUAL_TO);

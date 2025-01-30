@@ -587,12 +587,12 @@ public class ShardSearchRequest extends TransportRequest implements IndicesReque
             SearchSourceBuilder newSource = request.source() == null ? null : Rewriteable.rewrite(request.source(), ctx);
             AliasFilter newAliasFilter = Rewriteable.rewrite(request.getAliasFilter(), ctx);
             SearchExecutionContext searchExecutionContext = ctx.convertToSearchExecutionContext();
+            int trackTotalHitsUpTo = SearchRequest.resolveTrackTotalHitsUpTo(request.scroll, request.source);
             if (searchExecutionContext != null) {
                 final FieldSortBuilder primarySort = FieldSortBuilder.getPrimaryFieldSortOrNull(newSource);
                 if (primarySort != null && primarySort.isBottomSortShardDisjoint(searchExecutionContext, request.getBottomSortValues())) {
                     assert newSource != null : "source should contain a primary sort field";
                     newSource = newSource.shallowCopy();
-                    int trackTotalHitsUpTo = SearchRequest.resolveTrackTotalHitsUpTo(request.scroll, request.source);
                     if (trackTotalHitsUpTo == TRACK_TOTAL_HITS_DISABLED
                         && newSource.suggest() == null
                         && newSource.aggregations() == null) {

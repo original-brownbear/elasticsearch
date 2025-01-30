@@ -35,6 +35,7 @@ import org.apache.lucene.util.Bits;
 import org.apache.lucene.util.RoaringDocIdSet;
 import org.elasticsearch.ElasticsearchParseException;
 import org.elasticsearch.common.Rounding;
+import org.elasticsearch.common.lucene.Lucene;
 import org.elasticsearch.common.util.LongArray;
 import org.elasticsearch.core.Releasables;
 import org.elasticsearch.core.Strings;
@@ -307,7 +308,7 @@ public final class CompositeAggregator extends BucketsAggregator implements Size
                 break;
             }
         }
-        return sortFields.isEmpty() ? null : new Sort(sortFields.toArray(new SortField[0]));
+        return sortFields.isEmpty() ? null : new Sort(sortFields.toArray(Lucene.EMPTY_SORT_FIELD));
     }
 
     /**

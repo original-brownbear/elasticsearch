@@ -14,6 +14,7 @@ import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.Pruning;
 import org.apache.lucene.search.SortField;
 import org.apache.lucene.search.TopFieldDocs;
+import org.elasticsearch.core.Nullable;
 import org.elasticsearch.search.DocValueFormat;
 import org.elasticsearch.search.SearchSortValuesAndFormats;
 
@@ -53,8 +54,11 @@ class BottomSortValuesCollector {
         return bottomSortValues;
     }
 
-    synchronized void consumeTopDocs(TopFieldDocs topDocs, DocValueFormat[] sortValuesFormat) {
+    synchronized void consumeTopDocs(TopFieldDocs topDocs, @Nullable DocValueFormat[] sortValuesFormat) {
         totalHits += topDocs.totalHits.value();
+        if (sortValuesFormat == null) {
+            return;
+        }
         if (validateShardSortFields(topDocs.fields) == false) {
             return;
         }

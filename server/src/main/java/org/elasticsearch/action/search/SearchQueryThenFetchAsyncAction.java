@@ -16,6 +16,7 @@ import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.routing.GroupShardsIterator;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.common.lucene.Lucene;
 import org.elasticsearch.search.SearchPhaseResult;
 import org.elasticsearch.search.SearchShardTarget;
 import org.elasticsearch.search.dfs.AggregatedDfs;
@@ -111,17 +112,25 @@ class SearchQueryThenFetchAsyncAction extends AbstractSearchAsyncAction<SearchPh
             && getRequest().scroll() == null
             // top docs are already consumed if the query was cancelled or in error.
             && queryResult.hasConsumedTopDocs() == false
-            && queryResult.topDocs() != null
-            && queryResult.topDocs().topDocs.getClass() == TopFieldDocs.class) {
-            TopFieldDocs topDocs = (TopFieldDocs) queryResult.topDocs().topDocs;
-            if (bottomSortCollector == null) {
-                synchronized (this) {
-                    if (bottomSortCollector == null) {
-                        bottomSortCollector = new BottomSortValuesCollector(topDocsSize, topDocs.fields);
+            && queryResult.topDocs() != null) {
+            final TopFieldDocs topDocs;
+            if (queryResult.topDocs().topDocs.getClass() == TopFieldDocs.class) {
+                topDocs = (TopFieldDocs) queryResult.topDocs().topDocs;
+            } else if (trackTotalHitsUpTo != SearchContext.TRACK_TOTAL_HITS_ACCURATE) {
+                topDocs = new TopFieldDocs(queryResult.topDocs().topDocs.totalHits, Lucene.EMPTY_SCORE_DOCS, Lucene.EMPTY_SORT_FIELD);
+            } else {
+                topDocs = null;
+            }
+            if (topDocs != null) {
+                if (bottomSortCollector == null) {
+                    synchronized (this) {
+                        if (bottomSortCollector == null) {
+                            bottomSortCollector = new BottomSortValuesCollector(topDocsSize, topDocs.fields);
+                        }
                     }
                 }
+                bottomSortCollector.consumeTopDocs(topDocs, queryResult.sortValueFormats());
             }
-            bottomSortCollector.consumeTopDocs(topDocs, queryResult.sortValueFormats());
         }
         super.onShardResult(result, shardIt);
     }
@@ -149,15 +158,24 @@ class SearchQueryThenFetchAsyncAction extends AbstractSearchAsyncAction<SearchPh
             return request;
         }
 
+        var source = request.source();
         // disable tracking total hits if we already reached the required estimation.
-        if (trackTotalHitsUpTo != SearchContext.TRACK_TOTAL_HITS_ACCURATE && bottomSortCollector.getTotalHits() > trackTotalHitsUpTo) {
-            request.source(request.source().shallowCopy().trackTotalHits(false));
+        if (source != null && trackTotalHitsUpTo != SearchContext.TRACK_TOTAL_HITS_ACCURATE) {
+            request.source(
+                source.shallowCopy()
+                    .trackTotalHitsUpTo(
+                        Math.toIntExact(
+                            Math.max(trackTotalHitsUpTo - bottomSortCollector.getTotalHits(), SearchContext.TRACK_TOTAL_HITS_DISABLED)
+                        )
+                    )
+            );
         }
 
         // set the current best bottom field doc
         if (bottomSortCollector.getBottomSortValues() != null) {
             request.setBottomSortValues(bottomSortCollector.getBottomSortValues());
         }
+        request.source().minScore()
         return request;
     }
 }
