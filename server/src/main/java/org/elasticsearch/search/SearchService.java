@@ -607,7 +607,7 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
             request,
             maybeWrapListenerForStackTrace(listener, request.getChannelVersion(), threadPool).delegateFailure((l, orig) -> {
                 // check if we can shortcut the query phase entirely.
-                if (orig.canReturnNullResponseIfMatchNoDocs()) {
+                if (orig.canReturnNullResponseIfMatchNoDocs() && canRewriteToMatchNone(orig.source())) {
                     assert orig.scroll() == null;
                     ShardSearchRequest clone = new ShardSearchRequest(orig);
                     CanMatchContext canMatchContext = new CanMatchContext(
@@ -1892,9 +1892,15 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
         if (source == null || source.suggest() != null) {
             return false;
         }
-        if (source.subSearches().isEmpty()
-            || source.subSearches().stream().anyMatch(sqwb -> sqwb.getQueryBuilder() instanceof MatchAllQueryBuilder)) {
+        final var subSearches = source.subSearches();
+        final int subSearchCount = subSearches.size();
+        if (subSearchCount == 0) {
             return false;
+        }
+        for (int i = 0; i < subSearchCount; i++) {
+            if (subSearches.get(i).getQueryBuilder() instanceof MatchAllQueryBuilder) {
+                return false;
+            }
         }
         AggregatorFactories.Builder aggregations = source.aggregations();
         return aggregations == null || aggregations.mustVisitAllDocs() == false;
