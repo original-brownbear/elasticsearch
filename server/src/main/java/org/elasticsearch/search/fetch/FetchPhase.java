@@ -13,6 +13,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.search.TotalHits;
+import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.bytes.ReleasableBytesReference;
+import org.elasticsearch.core.Releasable;
 import org.elasticsearch.index.fieldvisitor.LeafStoredFieldLoader;
 import org.elasticsearch.index.fieldvisitor.StoredFieldLoader;
 import org.elasticsearch.index.mapper.IdLoader;
@@ -35,6 +38,7 @@ import org.elasticsearch.search.profile.Timer;
 import org.elasticsearch.search.rank.RankDoc;
 import org.elasticsearch.search.rank.RankDocShardInfo;
 import org.elasticsearch.tasks.TaskCancelledException;
+import org.elasticsearch.transport.LeakTracker;
 import org.elasticsearch.xcontent.XContentType;
 
 import java.io.IOException;
@@ -180,6 +184,13 @@ public final class FetchPhase {
                     fieldLookupProvider.setPreloadedStoredFieldValues(hit.hit().getId(), hit.loadedFields());
                     for (FetchSubPhaseProcessor processor : processors) {
                         processor.process(hit);
+                    }
+                    BytesReference sourceRef = hit.hit().getSourceRef();
+                    if (sourceRef != null && sourceRef instanceof ReleasableBytesReference == false) {
+                        hit.hit().sourceRef(new ReleasableBytesReference(sourceRef, LeakTracker.wrap(new Releasable() {
+                            @Override
+                            public void close() {}
+                        })));
                     }
                     success = true;
                     return hit.hit();

@@ -15,6 +15,7 @@ import org.elasticsearch.TransportVersions;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.common.compress.CompressorFactory;
 import org.elasticsearch.common.document.DocumentField;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -443,6 +444,7 @@ public final class SearchHit implements Writeable, ToXContentObject, RefCounted 
      * Sets representation, might be compressed....
      */
     public SearchHit sourceRef(BytesReference source) {
+        assert this.source instanceof ReleasableBytesReference == false;
         this.source = source;
         return this;
     }
