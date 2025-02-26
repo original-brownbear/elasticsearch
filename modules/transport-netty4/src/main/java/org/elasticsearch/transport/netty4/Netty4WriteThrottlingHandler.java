@@ -51,11 +51,24 @@ public final class Netty4WriteThrottlingHandler extends ChannelDuplexHandler {
         this.threadWatchdogActivityTracker = threadWatchdogActivityTracker;
     }
 
+    private long pendingWrites = 0L;
+
     @Override
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws IOException {
         final boolean startedActivity = threadWatchdogActivityTracker.maybeStartActivity();
         try {
             if (msg instanceof BytesReference reference) {
+                final int len = reference.length();
+                pendingWrites += len;
+                if (pendingWrites >= 64 * 1024 && ctx.channel().config().isAutoRead()) {
+                    ctx.channel().config().setAutoRead(false);
+                }
+                promise.addListener(future -> {
+                    pendingWrites -= len;
+                    if (pendingWrites < 64 * 1024 && ctx.channel().config().isAutoRead() == false) {
+                        ctx.channel().config().setAutoRead(true);
+                    }
+                });
                 if (reference.hasArray()) {
                     writeSingleByteBuf(
                         ctx,
