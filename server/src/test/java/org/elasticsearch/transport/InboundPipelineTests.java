@@ -236,8 +236,7 @@ public class InboundPipelineTests extends ESTestCase {
                 message = new OutboundMessage.Response(threadContext, new TestResponse(value), invalidVersion, requestId, false, null);
             }
 
-            final BytesReference reference = message.serialize(streamOutput);
-            try (ReleasableBytesReference releasable = ReleasableBytesReference.wrap(reference)) {
+            try (ReleasableBytesReference releasable = (ReleasableBytesReference) message.serialize(streamOutput)) {
                 expectThrows(IllegalStateException.class, () -> pipeline.handleBytes(new FakeTcpChannel(), releasable));
             }
 

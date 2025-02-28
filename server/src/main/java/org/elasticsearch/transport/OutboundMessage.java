@@ -20,7 +20,7 @@ import org.elasticsearch.common.io.stream.RecyclerBytesStreamOutput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
-import org.elasticsearch.core.RefCounted;
+import org.elasticsearch.core.Releasables;
 import org.elasticsearch.core.Streams;
 
 import java.io.IOException;
@@ -82,10 +82,13 @@ abstract class OutboundMessage extends NetworkMessage {
         }
         final BytesReference message = bytesStream.bytes();
         if (zeroCopyBuffer.length() == 0) {
-            reference = message;
+            reference = new ReleasableBytesReference(message, bytesStream);
         } else {
             zeroCopyBuffer.mustIncRef();
-            reference = new ReleasableBytesReference(CompositeBytesReference.of(message, zeroCopyBuffer), (RefCounted) zeroCopyBuffer);
+            reference = new ReleasableBytesReference(
+                CompositeBytesReference.of(message, zeroCopyBuffer),
+                Releasables.wrap(zeroCopyBuffer, bytesStream)
+            );
         }
 
         bytesStream.seek(0);

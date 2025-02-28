@@ -16,6 +16,7 @@ import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.TransportVersions;
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.support.SubscribableListener;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.bytes.ReleasableBytesReference;
@@ -85,7 +86,7 @@ final class OutboundHandler {
      *                 thread.
      */
     void sendBytes(TcpChannel channel, BytesReference bytes, ActionListener<Void> listener) {
-        internalSend(channel, bytes, null, listener);
+        internalSend(channel, bytes, null).addListener(listener);
     }
 
     /**
@@ -211,10 +212,10 @@ final class OutboundHandler {
                 Releasables.closeExpectNoException(onAfter);
             }
         }
-        final BytesReference message;
+        final ReleasableBytesReference message;
         boolean serializeSuccess = false;
         try {
-            message = networkMessage.serialize(byteStreamOutput);
+            message = (ReleasableBytesReference) networkMessage.serialize(byteStreamOutput);
             serializeSuccess = true;
         } catch (Exception e) {
             logger.warn(() -> "failed to serialize outbound message [" + networkMessage + "]", e);
@@ -225,75 +226,85 @@ final class OutboundHandler {
             }
         }
         responseStatsConsumer.addResponseStats(message.length());
-        internalSend(
-            channel,
-            message,
-            networkMessage,
-            ActionListener.releasing(
-                message instanceof ReleasableBytesReference r
-                    ? Releasables.wrap(byteStreamOutput, onAfter, r)
-                    : Releasables.wrap(byteStreamOutput, onAfter)
-            )
-        );
+        var future = internalSend(channel, message, networkMessage);
+        if (future.isDone()) {
+            Releasables.close(onAfter, message);
+        } else {
+            future.addListener(ActionListener.releasing(Releasables.wrap(onAfter, message)));
+        }
     }
 
-    private void internalSend(
-        TcpChannel channel,
-        BytesReference reference,
-        @Nullable OutboundMessage message,
-        ActionListener<Void> listener
-    ) {
+    private SubscribableListener<Void> internalSend(TcpChannel channel, BytesReference reference, @Nullable OutboundMessage message) {
         final long startTime = threadPool.rawRelativeTimeInMillis();
         channel.getChannelStats().markAccessed(startTime);
         final long messageSize = reference.length();
         TransportLogger.logOutboundMessage(channel, reference);
+        final SubscribableListener<Void> listenableFuture = new SubscribableListener<>();
         // stash thread context so that channel event loop is not polluted by thread context
         try (var ignored = threadPool.getThreadContext().newEmptyContext()) {
-            channel.sendMessage(reference, new ActionListener<>() {
+            channel.sendMessage(reference, listenableFuture);
+        } catch (RuntimeException ex) {
+            CloseableChannel.closeChannel(channel);
+            listenableFuture.onFailure(ex);
+        }
+        if (listenableFuture.isDone()) {
+            try {
+                listenableFuture.rawResult();
+            } catch (Exception e) {
+                handleSendFailure(e, channel, startTime, message, messageSize);
+                return listenableFuture;
+            }
+            handleSendSuccess(messageSize, startTime, message, channel);
+        } else {
+            listenableFuture.addListener(new ActionListener<>() {
                 @Override
                 public void onResponse(Void v) {
-                    statsTracker.markBytesWritten(messageSize);
-                    listener.onResponse(v);
-                    maybeLogSlowMessage(true);
+                    handleSendSuccess(messageSize, startTime, message, channel);
                 }
 
                 @Override
                 public void onFailure(Exception e) {
-                    final Level closeConnectionExceptionLevel = NetworkExceptionHelper.getCloseConnectionExceptionLevel(e, rstOnClose);
-                    if (closeConnectionExceptionLevel == Level.OFF) {
-                        logger.warn(() -> "send message failed [channel: " + channel + "]", e);
-                    } else if (closeConnectionExceptionLevel == Level.INFO && logger.isDebugEnabled() == false) {
-                        logger.info("send message failed [channel: {}]: {}", channel, e.getMessage());
-                    } else {
-                        logger.log(closeConnectionExceptionLevel, () -> "send message failed [channel: " + channel + "]", e);
-                    }
-                    listener.onFailure(e);
-                    maybeLogSlowMessage(false);
-                }
-
-                private void maybeLogSlowMessage(boolean success) {
-                    final long logThreshold = slowLogThresholdMs;
-                    if (logThreshold > 0) {
-                        final long took = threadPool.rawRelativeTimeInMillis() - startTime;
-                        handlingTimeTracker.addHandlingTime(took);
-                        if (took > logThreshold) {
-                            logger.warn(
-                                "sending transport message [{}] of size [{}] on [{}] took [{}ms] which is above the warn "
-                                    + "threshold of [{}ms] with success [{}]",
-                                message,
-                                messageSize,
-                                channel,
-                                took,
-                                logThreshold,
-                                success
-                            );
-                        }
-                    }
+                    handleSendFailure(e, channel, startTime, message, messageSize);
                 }
             });
-        } catch (RuntimeException ex) {
-            Releasables.closeExpectNoException(() -> listener.onFailure(ex), () -> CloseableChannel.closeChannel(channel));
-            throw ex;
+        }
+        return listenableFuture;
+    }
+
+    private void handleSendSuccess(long messageSize, long startTime, OutboundMessage message, TcpChannel channel) {
+        statsTracker.markBytesWritten(messageSize);
+        maybeLogSlowMessage(true, startTime, message, messageSize, channel);
+    }
+
+    private void handleSendFailure(Exception e, TcpChannel channel, long startTime, OutboundMessage message, long messageSize) {
+        final Level closeConnectionExceptionLevel = NetworkExceptionHelper.getCloseConnectionExceptionLevel(e, rstOnClose);
+        if (closeConnectionExceptionLevel == Level.OFF) {
+            logger.warn(() -> "send message failed [channel: " + channel + "]", e);
+        } else if (closeConnectionExceptionLevel == Level.INFO && logger.isDebugEnabled() == false) {
+            logger.info("send message failed [channel: {}]: {}", channel, e.getMessage());
+        } else {
+            logger.log(closeConnectionExceptionLevel, () -> "send message failed [channel: " + channel + "]", e);
+        }
+        maybeLogSlowMessage(false, startTime, message, messageSize, channel);
+    }
+
+    private void maybeLogSlowMessage(boolean success, long startTime, OutboundMessage message, long messageSize, TcpChannel channel) {
+        final long logThreshold = slowLogThresholdMs;
+        if (logThreshold > 0) {
+            final long took = threadPool.rawRelativeTimeInMillis() - startTime;
+            handlingTimeTracker.addHandlingTime(took);
+            if (took > logThreshold) {
+                logger.warn(
+                    "sending transport message [{}] of size [{}] on [{}] took [{}ms] which is above the warn "
+                        + "threshold of [{}ms] with success [{}]",
+                    message,
+                    messageSize,
+                    channel,
+                    took,
+                    logThreshold,
+                    success
+                );
+            }
         }
     }
 
