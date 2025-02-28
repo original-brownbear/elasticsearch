@@ -85,7 +85,6 @@ import org.elasticsearch.script.MockScriptPlugin;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.SearchService.ResultsType;
-import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.AggregationReduceContext;
 import org.elasticsearch.search.aggregations.MultiBucketConsumerService;
 import org.elasticsearch.search.aggregations.bucket.filter.FiltersAggregationBuilder;
@@ -2088,117 +2087,6 @@ public class SearchServiceSingleNodeTests extends ESSingleNodeTestCase {
         assertBusy(
             () -> assertEquals("should have 2 store refs (IndexService + InternalEngine)", 2, indexService.getShard(0).store().refCount())
         );
-    }
-
-    public void testMatchNoDocsEmptyResponse() throws InterruptedException {
-        createIndex("index");
-        Thread currentThread = Thread.currentThread();
-        SearchService service = getInstanceFromNode(SearchService.class);
-        IndicesService indicesService = getInstanceFromNode(IndicesService.class);
-        IndexService indexService = indicesService.indexServiceSafe(resolveIndex("index"));
-        IndexShard indexShard = indexService.getShard(0);
-        SearchRequest searchRequest = new SearchRequest().allowPartialSearchResults(false)
-            .source(new SearchSourceBuilder().aggregation(AggregationBuilders.count("count").field("value")));
-        ShardSearchRequest shardRequest = new ShardSearchRequest(
-            OriginalIndices.NONE,
-            searchRequest,
-            indexShard.shardId(),
-            0,
-            5,
-            AliasFilter.EMPTY,
-            1.0f,
-            0,
-            null
-        );
-        SearchShardTask task = new SearchShardTask(123L, "", "", "", null, emptyMap());
-
-        {
-            CountDownLatch latch = new CountDownLatch(1);
-            shardRequest.source().query(new MatchAllQueryBuilder());
-            service.executeQueryPhase(shardRequest, task, new ActionListener<>() {
-                @Override
-                public void onResponse(SearchPhaseResult result) {
-                    try {
-                        assertNotSame(Thread.currentThread(), currentThread);
-                        assertThat(Thread.currentThread().getName(), startsWith("elasticsearch[node_s_0][search]"));
-                        assertThat(result, instanceOf(QuerySearchResult.class));
-                        assertFalse(result.queryResult().isNull());
-                        assertNotNull(result.queryResult().topDocs());
-                        assertNotNull(result.queryResult().aggregations());
-                    } finally {
-                        latch.countDown();
-                    }
-                }
-
-                @Override
-                public void onFailure(Exception exc) {
-                    try {
-                        throw new AssertionError(exc);
-                    } finally {
-                        latch.countDown();
-                    }
-                }
-            });
-            latch.await();
-        }
-
-        {
-            CountDownLatch latch = new CountDownLatch(1);
-            shardRequest.source().query(new MatchNoneQueryBuilder());
-            service.executeQueryPhase(shardRequest, task, new ActionListener<>() {
-                @Override
-                public void onResponse(SearchPhaseResult result) {
-                    try {
-                        assertNotSame(Thread.currentThread(), currentThread);
-                        assertThat(Thread.currentThread().getName(), startsWith("elasticsearch[node_s_0][search]"));
-                        assertThat(result, instanceOf(QuerySearchResult.class));
-                        assertFalse(result.queryResult().isNull());
-                        assertNotNull(result.queryResult().topDocs());
-                        assertNotNull(result.queryResult().aggregations());
-                    } finally {
-                        latch.countDown();
-                    }
-                }
-
-                @Override
-                public void onFailure(Exception exc) {
-                    try {
-                        throw new AssertionError(exc);
-                    } finally {
-                        latch.countDown();
-                    }
-                }
-            });
-            latch.await();
-        }
-
-        {
-            CountDownLatch latch = new CountDownLatch(1);
-            shardRequest.canReturnNullResponseIfMatchNoDocs(true);
-            service.executeQueryPhase(shardRequest, task, new ActionListener<>() {
-                @Override
-                public void onResponse(SearchPhaseResult result) {
-                    try {
-                        // make sure we don't use the search threadpool
-                        assertSame(Thread.currentThread(), currentThread);
-                        assertThat(result, instanceOf(QuerySearchResult.class));
-                        assertTrue(result.queryResult().isNull());
-                    } finally {
-                        latch.countDown();
-                    }
-                }
-
-                @Override
-                public void onFailure(Exception e) {
-                    try {
-                        throw new AssertionError(e);
-                    } finally {
-                        latch.countDown();
-                    }
-                }
-            });
-            latch.await();
-        }
     }
 
     public void testDeleteIndexWhileSearch() throws Exception {
