@@ -434,8 +434,8 @@ public class SearchQueryThenFetchAsyncAction extends AbstractSearchAsyncAction<S
                             shardRoutings.getSearchContextId()
                         )
                     );
-                    var filterForAlias = aliasFilter.getOrDefault(indexUUID, AliasFilter.EMPTY);
-                    if (filterForAlias != AliasFilter.EMPTY) {
+                    var filterForAlias = aliasFilter.get(indexUUID);
+                    if (filterForAlias != null) {
                         perNodeRequest.aliasFilters.putIfAbsent(indexUUID, filterForAlias);
                     }
                 } else {
