@@ -122,7 +122,7 @@ public final class TaskId implements Writeable {
     @Override
     public int hashCode() {
         int result = nodeId.hashCode();
-        result = 31 * result + (int) (id ^ (id >>> 32));
+        result = 31 * result + Long.hashCode(id);
         return result;
     }
 }

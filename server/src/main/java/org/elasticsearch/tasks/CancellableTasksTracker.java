@@ -50,30 +50,33 @@ public class CancellableTasksTracker<T> {
     /**
      * Add an item for the given task. Should only be called once for each task, and {@code item} must be unique per task too.
      */
-    @SuppressWarnings("unchecked")
     public void put(Task task, long requestId, T item) {
-        final long taskId = task.getId();
-        if (task.getParentTaskId().isSet()) {
-            byParentTaskId.compute(task.getParentTaskId(), (taskKey, oldRequestIdMap) -> {
+        var parentTaskId = task.getParentTaskId();
+        if (parentTaskId.isSet()) {
+            byParentTaskId.compute(parentTaskId, (taskKey, oldRequestIdMap) -> {
                 if (oldRequestIdMap == null) {
                     oldRequestIdMap = ConcurrentCollections.newConcurrentMapWithAggressiveConcurrency();
+                    oldRequestIdMap.put(requestId, wrapInArray(item));
+                } else {
+                    oldRequestIdMap.compute(
+                        requestId,
+                        (requestIdKey, oldValue) -> oldValue == null ? wrapInArray(item) : ArrayUtils.append(oldValue, item)
+                    );
                 }
-
-                oldRequestIdMap.compute(requestId, (requestIdKey, oldValue) -> {
-                    if (oldValue == null) {
-                        final T[] newValue = (T[]) Array.newInstance(item.getClass(), 1);
-                        newValue[0] = item;
-                        return newValue;
-                    } else {
-                        return ArrayUtils.append(oldValue, item);
-                    }
-                });
 
                 return oldRequestIdMap;
             });
         }
+        final long taskId = task.getId();
         final T oldItem = byTaskId.put(taskId, item);
         assert oldItem == null : "duplicate entry for task [" + taskId + "]";
+    }
+
+    @SuppressWarnings("unchecked")
+    private T[] wrapInArray(T item) {
+        final T[] newValue = (T[]) Array.newInstance(item.getClass(), 1);
+        newValue[0] = item;
+        return newValue;
     }
 
     /**

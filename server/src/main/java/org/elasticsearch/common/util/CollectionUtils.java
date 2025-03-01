@@ -71,17 +71,21 @@ public class CollectionUtils {
      * Return a rotated view of the given list with the given distance.
      */
     public static <T> List<T> rotate(final List<T> list, int distance) {
-        if (list.isEmpty()) {
+        final int size = list.size();
+        if (size == 0) {
             return list;
         }
 
-        int d = distance % list.size();
+        int d = distance % size;
         if (d < 0) {
-            d += list.size();
+            d += size;
         }
 
         if (d == 0) {
             return list;
+        }
+        if (size == 2 && d == 1) {
+            return List.of(list.get(1), list.getFirst());
         }
 
         return new RotatedList<>(list, d);
@@ -170,9 +174,14 @@ public class CollectionUtils {
 
         @Override
         public T get(int index) {
+            return doGet(distance, in, index);
+        }
+
+        private static <T> T doGet(int distance, List<T> in, int index) {
             int idx = distance + index;
-            if (idx < 0 || idx >= in.size()) {
-                idx -= in.size();
+            int size = in.size();
+            if (idx < 0 || idx >= size) {
+                idx -= size;
             }
             return in.get(idx);
         }
