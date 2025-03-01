@@ -225,7 +225,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
         boolean hasBlocks = blocks.global().isEmpty() == false || blocks.indices(projectState.projectId()).isEmpty() == false;
         // Get a distinct set of index abstraction names present from the resolved expressions to help with the reverse resolution from
         // concrete index to the expression that produced it.
-        Set<String> indicesAndAliasesResources = indicesAndAliases.stream().map(ResolvedExpression::resource).collect(Collectors.toSet());
+        Set<String> indicesAndAliasesResources = null;
         for (String index : indices) {
             if (hasBlocks) {
                 blocks.indexBlockedRaiseException(projectState.projectId(), ClusterBlockLevel.READ, index);
@@ -240,11 +240,16 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                 indicesAndAliases
             );
             String[] finalIndices = Strings.EMPTY_ARRAY;
-            if (aliases == null
-                || aliases.length == 0
-                || indicesAndAliasesResources.contains(index)
-                || hasDataStreamRef(projectState.metadata(), indicesAndAliasesResources, index)) {
+            if (aliases == null || aliases.length == 0) {
                 finalIndices = new String[] { index };
+            } else {
+                if (indicesAndAliasesResources == null) {
+                    indicesAndAliasesResources = indicesAndAliases.stream().map(ResolvedExpression::resource).collect(Collectors.toSet());
+                }
+                if (indicesAndAliasesResources.contains(index)
+                    || hasDataStreamRef(projectState.metadata(), indicesAndAliasesResources, index)) {
+                    finalIndices = new String[] { index };
+                }
             }
             if (aliases != null) {
                 finalIndices = finalIndices.length == 0 ? aliases : ArrayUtils.concat(finalIndices, aliases);
