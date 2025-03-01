@@ -54,7 +54,6 @@ import java.util.Objects;
 import java.util.PriorityQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
-import java.util.stream.Collectors;
 
 /**
  * Context-aware extension of {@link IndexSearcher}.
@@ -247,21 +246,25 @@ public class ContextIndexSearcher extends IndexSearcher implements Releasable {
             throw new IllegalArgumentException("maxSliceNum must be >= 1 (got " + maxSliceNum + ")");
         }
         if (maxSliceNum == 1) {
-            return new LeafSlice[] {
-                new LeafSlice(
-                    new ArrayList<>(
-                        leaves.stream()
-                            .map(LeafReaderContextPartition::createForEntireSegment)
-                            .collect(Collectors.toCollection(ArrayList::new))
-                    )
-                ) };
+            return singleSlice(leaves);
         }
         // total number of documents to be searched
-        final int numDocs = leaves.stream().mapToInt(l -> l.reader().maxDoc()).sum();
+        int numDocs = 0;
+        for (int j = 0; j < leaves.size(); j++) {
+            numDocs += leaves.get(j).reader().maxDoc();
+        }
         // percentage of documents per slice, minimum 10%
         final double percentageDocsPerThread = Math.max(MINIMUM_DOCS_PERCENT_PER_SLICE, 1.0 / maxSliceNum);
         // compute slices
         return computeSlices(leaves, Math.max(minDocsPerSlice, (int) (percentageDocsPerThread * numDocs)));
+    }
+
+    private static LeafSlice[] singleSlice(List<LeafReaderContext> leaves) {
+        LeafReaderContextPartition[] leafReaderContextPartitions = new LeafReaderContextPartition[leaves.size()];
+        for (int i = 0; i < leaves.size(); i++) {
+            leafReaderContextPartitions[i] = (LeafReaderContextPartition.createForEntireSegment(leaves.get(i)));
+        }
+        return new LeafSlice[] { new LeafSlice(Arrays.asList(leafReaderContextPartitions)) };
     }
 
     private static LeafSlice[] computeSlices(List<LeafReaderContext> leaves, int minDocsPerSlice) {
@@ -302,11 +305,11 @@ public class ContextIndexSearcher extends IndexSearcher implements Releasable {
         for (List<LeafReaderContext> currentLeaf : queue) {
             // LeafSlice ctor reorders leaves so that leaves within a slice preserve the order they had within the IndexReader.
             // This is important given how Elasticsearch sorts leaves by descending @timestamp to get better query performance.
-            slices[upto++] = new LeafSlice(
-                currentLeaf.stream()
-                    .map(LeafReaderContextPartition::createForEntireSegment)
-                    .collect(Collectors.toCollection(ArrayList::new))
-            );
+            LeafReaderContextPartition[] leafReaderContextPartitions = new LeafReaderContextPartition[currentLeaf.size()];
+            for (int i = 0; i < currentLeaf.size(); i++) {
+                leafReaderContextPartitions[i] = LeafReaderContextPartition.createForEntireSegment(currentLeaf.get(i));
+            }
+            slices[upto++] = new LeafSlice(Arrays.asList(leafReaderContextPartitions));
         }
 
         return slices;
