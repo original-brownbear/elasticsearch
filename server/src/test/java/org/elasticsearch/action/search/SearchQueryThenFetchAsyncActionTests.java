@@ -28,6 +28,7 @@ import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.lucene.grouping.TopFieldGroups;
 import org.elasticsearch.search.DocValueFormat;
 import org.elasticsearch.search.SearchPhaseResult;
+import org.elasticsearch.search.SearchService;
 import org.elasticsearch.search.SearchShardTarget;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.collapse.CollapseBuilder;
@@ -88,6 +89,11 @@ public class SearchQueryThenFetchAsyncActionTests extends ESTestCase {
         AtomicBoolean canReturnNullResponse = new AtomicBoolean(false);
         var transportService = mock(TransportService.class);
         when(transportService.getLocalNode()).thenReturn(primaryNode);
+        when(transportService.getLocalNodeConnection()).thenReturn(
+            new SearchAsyncActionTests.MockConnection(DiscoveryNodeUtils.create("local"))
+        );
+        final SearchService searchService = mock(SearchService.class);
+        when(searchService.batchQueryPhase()).thenReturn(false);
         SearchTransportService searchTransportService = new SearchTransportService(transportService, null, null) {
             @Override
             public void sendExecuteQuery(
@@ -207,7 +213,7 @@ public class SearchQueryThenFetchAsyncActionTests extends ESTestCase {
                 task,
                 SearchResponse.Clusters.EMPTY,
                 null,
-                false
+                searchService
             ) {
                 @Override
                 protected SearchPhase getNextPhase() {

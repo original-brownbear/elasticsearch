@@ -90,6 +90,7 @@ public class SearchQueryThenFetchAsyncAction extends AbstractSearchAsyncAction<S
     private volatile BottomSortValuesCollector bottomSortCollector;
     private final Client client;
     private final boolean batchQueryPhase;
+    private final SearchService searchService;
 
     SearchQueryThenFetchAsyncAction(
         Logger logger,
@@ -108,7 +109,7 @@ public class SearchQueryThenFetchAsyncAction extends AbstractSearchAsyncAction<S
         SearchTask task,
         SearchResponse.Clusters clusters,
         Client client,
-        boolean batchQueryPhase
+        SearchService searchService
     ) {
         super(
             "query",
@@ -133,7 +134,8 @@ public class SearchQueryThenFetchAsyncAction extends AbstractSearchAsyncAction<S
         this.trackTotalHitsUpTo = request.resolveTrackTotalHitsUpTo();
         this.progressListener = task.getProgressListener();
         this.client = client;
-        this.batchQueryPhase = batchQueryPhase;
+        this.batchQueryPhase = searchService.batchQueryPhase();
+        this.searchService = searchService;
         // don't build the SearchShard list (can be expensive) if the SearchProgressListener won't use it
         if (progressListener != SearchProgressListener.NOOP) {
             notifyListShards(progressListener, clusters, request.source());
@@ -151,7 +153,13 @@ public class SearchQueryThenFetchAsyncAction extends AbstractSearchAsyncAction<S
             trackTotalHitsUpTo,
             super.buildShardSearchRequest(shardIt, listener.requestIndex)
         );
-        getSearchTransport().sendExecuteQuery(connection, request, getTask(), listener);
+        var searchTransport = getSearchTransport();
+        var task = getTask();
+        if (searchTransport.transportService().getLocalNodeConnection() == connection) {
+            searchService.executeQueryPhase(request, task, listener);
+            return;
+        }
+        searchTransport.sendExecuteQuery(connection, request, task, listener);
     }
 
     @Override
