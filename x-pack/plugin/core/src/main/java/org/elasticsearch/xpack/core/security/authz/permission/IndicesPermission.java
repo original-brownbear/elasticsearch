@@ -590,9 +590,10 @@ public final class IndicesPermission {
                                 roleQueriesByIndex.put(index, docPermissions);
                             }
 
-                            if (index.equals(resource.name) == false) {
-                                fieldPermissionsByIndex.put(resource.name, fieldPermissions);
-                                roleQueriesByIndex.put(resource.name, docPermissions);
+                            var name = resource.name;
+                            if (index.equals(name) == false) {
+                                fieldPermissionsByIndex.put(name, fieldPermissions);
+                                roleQueriesByIndex.put(name, docPermissions);
                             }
                         }
                     }
@@ -616,7 +617,7 @@ public final class IndicesPermission {
         for (String index : grantedResources) {
             final DocumentLevelPermissions permissions = roleQueriesByIndex.get(index);
             final DocumentPermissions documentPermissions;
-            if (permissions != null && permissions.isAllowAll() == false) {
+            if (permissions != null && DocumentLevelPermissions.ALLOW_ALL != permissions) {
                 documentPermissions = DocumentPermissions.filteredBy(permissions.queries);
             } else {
                 documentPermissions = DocumentPermissions.allowAll();
@@ -654,9 +655,8 @@ public final class IndicesPermission {
             for (Group group : groups) {
                 // the group covers the given index OR the given index is a backing index and the group covers the parent data stream
                 if (resource.checkIndex(group)) {
-                    boolean actionCheck = group.checkAction(action);
                     // If action is granted we don't have to check for BWC and can stop at first granting group.
-                    if (actionCheck) {
+                    if (group.checkAction(action)) {
                         granted = true;
                         break;
                     } else {
@@ -898,24 +898,18 @@ public final class IndicesPermission {
     private static class DocumentLevelPermissions {
 
         public static final DocumentLevelPermissions ALLOW_ALL = new DocumentLevelPermissions();
-        static {
-            ALLOW_ALL.allowAll = true;
-        }
-
         private Set<BytesReference> queries = null;
-        private boolean allowAll = false;
 
         private void addAll(Set<BytesReference> query) {
-            if (allowAll == false) {
-                if (queries == null) {
-                    queries = Sets.newHashSetWithExpectedSize(query.size());
+            if (this != ALLOW_ALL) {
+                var q = queries;
+                if (q == null) {
+                    queries = new HashSet<>(query);
+                } else {
+                    q.addAll(query);
                 }
-                queries.addAll(query);
             }
         }
 
-        private boolean isAllowAll() {
-            return allowAll;
-        }
     }
 }
