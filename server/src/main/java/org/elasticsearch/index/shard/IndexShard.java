@@ -4181,24 +4181,28 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
         markSearcherAccessed(); // move the shard into non-search idle
         final Translog.Location location = pendingRefreshLocation.get();
         if (location != null) {
-            addRefreshListener(location, (result) -> {
-                pendingRefreshLocation.compareAndSet(location, null);
-                listener.accept(true);
-            });
-            // trigger a refresh to avoid waiting for scheduledRefresh(...) to be invoked from index level refresh scheduler.
-            // (The if statement should avoid doing an additional refresh if scheduled refresh was invoked between getting
-            // the current refresh location and adding a refresh listener.)
-            if (location == pendingRefreshLocation.get()) {
-                // This method may be called from many different threads including transport_worker threads and
-                // a refresh can be a costly operation, so we should fork to a refresh thread to be safe:
-                threadPool.executor(ThreadPool.Names.REFRESH).execute(() -> {
-                    if (location == pendingRefreshLocation.get()) {
-                        getEngine().maybeRefresh("ensure-shard-search-active", new PlainActionFuture<>());
-                    }
-                });
-            }
+            waitForSearchShardActive(listener, location);
         } else {
             listener.accept(false);
+        }
+    }
+
+    private void waitForSearchShardActive(Consumer<Boolean> listener, Translog.Location location) {
+        addRefreshListener(location, (result) -> {
+            pendingRefreshLocation.compareAndSet(location, null);
+            listener.accept(true);
+        });
+        // trigger a refresh to avoid waiting for scheduledRefresh(...) to be invoked from index level refresh scheduler.
+        // (The if statement should avoid doing an additional refresh if scheduled refresh was invoked between getting
+        // the current refresh location and adding a refresh listener.)
+        if (location == pendingRefreshLocation.get()) {
+            // This method may be called from many different threads including transport_worker threads and
+            // a refresh can be a costly operation, so we should fork to a refresh thread to be safe:
+            threadPool.executor(ThreadPool.Names.REFRESH).execute(() -> {
+                if (location == pendingRefreshLocation.get()) {
+                    getEngine().maybeRefresh("ensure-shard-search-active", new PlainActionFuture<>());
+                }
+            });
         }
     }
 

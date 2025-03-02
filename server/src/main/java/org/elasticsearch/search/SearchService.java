@@ -26,6 +26,7 @@ import org.elasticsearch.action.search.CanMatchNodeRequest;
 import org.elasticsearch.action.search.CanMatchNodeResponse;
 import org.elasticsearch.action.search.SearchShardTask;
 import org.elasticsearch.action.search.SearchType;
+import org.elasticsearch.action.support.SubscribableListener;
 import org.elasticsearch.action.support.TransportActions;
 import org.elasticsearch.cluster.ProjectState;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver.ResolvedExpression;
@@ -312,7 +313,6 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
     private final BigArrays bigArrays;
 
     private final FetchPhase fetchPhase;
-    private final CircuitBreaker circuitBreaker;
     private volatile Executor searchExecutor;
     private volatile boolean enableQueryPhaseParallelCollection;
 
@@ -367,8 +367,11 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
         this.scriptService = scriptService;
         this.bigArrays = bigArrays;
         this.fetchPhase = fetchPhase;
-        circuitBreaker = circuitBreakerService.getBreaker(CircuitBreaker.REQUEST);
-        this.multiBucketConsumerService = new MultiBucketConsumerService(clusterService, settings, circuitBreaker);
+        this.multiBucketConsumerService = new MultiBucketConsumerService(
+            clusterService,
+            settings,
+            circuitBreakerService.getBreaker(CircuitBreaker.REQUEST)
+        );
         this.executorSelector = executorSelector;
         this.tracer = tracer;
 
@@ -582,7 +585,11 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
         final IndexShard shard = getShard(request);
         rewriteAndFetchShardRequest(shard, request, listener.delegateFailure((l, rewritten) -> {
             // fork the execution in the search thread pool
-            ensureAfterSeqNoRefreshed(shard, request, () -> executeDfsPhase(request, task), l);
+            if (request.waitForCheckpoint() <= UNASSIGNED_SEQ_NO) {
+                getExecutor(shard).execute(ActionRunnable.supplyAndDecRef(l, () -> executeDfsPhase(rewritten, task)));
+            } else {
+                ensureAfterSeqNoRefreshed(shard, rewritten, () -> executeDfsPhase(rewritten, task), l);
+            }
         }));
     }
 
@@ -625,11 +632,13 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
             listener.onFailure(e);
             return;
         }
-        rewriteAndFetchShardRequest(
-            shard,
-            request,
+        final SubscribableListener<ShardSearchRequest> rewritePromise = new SubscribableListener<>();
+        rewriteAndFetchShardRequest(shard, request, rewritePromise);
+        rewritePromise.addListener(
             maybeWrapListenerForStackTrace(listener, request.getChannelVersion(), threadPool).delegateFailure(
-                (l, orig) -> ensureAfterSeqNoRefreshed(shard, orig, () -> executeQueryPhase(orig, task), l)
+                request.waitForCheckpoint() <= UNASSIGNED_SEQ_NO
+                    ? (l, orig) -> getExecutor(shard).execute(ActionRunnable.supplyAndDecRef(l, () -> executeQueryPhase(orig, task)))
+                    : (l, orig) -> ensureAfterSeqNoRefreshed(shard, orig, () -> executeQueryPhase(orig, task), l)
             )
         );
     }
@@ -641,12 +650,8 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
         ActionListener<T> listener
     ) {
         final long waitForCheckpoint = request.waitForCheckpoint();
-        final Executor executor = getExecutor(shard);
         try {
-            if (waitForCheckpoint <= UNASSIGNED_SEQ_NO) {
-                runAsync(executor, executable, listener);
-                return;
-            }
+            assert waitForCheckpoint > UNASSIGNED_SEQ_NO;
             if (shard.indexSettings().getRefreshInterval().getMillis() <= 0) {
                 listener.onFailure(new IllegalArgumentException("Cannot use wait_for_checkpoints with [index.refresh_interval=-1]"));
                 return;
@@ -720,7 +725,7 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
                         if (timeoutTask != null) {
                             timeoutTask.cancel();
                         }
-                        runAsync(executor, executable, listener);
+                        runAsync(getExecutor(shard), executable, listener);
                     }
                 }
             });
@@ -762,40 +767,62 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
         ) {
             tracer.startTrace("executeQueryPhase", Map.of());
             final long afterQueryTime;
-            try (SearchOperationListenerExecutor executor = new SearchOperationListenerExecutor(context)) {
+            final long beforeQueryTime = System.nanoTime();
+            var operationsListener = context.indexShard().getSearchOperationListener();
+            operationsListener.onPreQueryPhase(context);
+            boolean success = false;
+            try {
                 loadOrExecuteQueryPhase(request, context);
                 if (context.queryResult().hasSearchContext() == false && readerContext.singleSession()) {
                     freeReaderContext(readerContext.id());
                 }
-                afterQueryTime = executor.success();
+                afterQueryTime = System.nanoTime();
+                operationsListener.onQueryPhase(context, afterQueryTime - beforeQueryTime);
+                success = true;
             } finally {
+                if (success == false) {
+                    operationsListener.onFailedQueryPhase(context);
+                }
                 tracer.stopTrace(task);
             }
-            if (request.numberOfShards() == 1 && (request.source() == null || request.source().rankBuilder() == null)) {
+            if (request.numberOfShards() == 1 && nullSourceOrNullRankBuilder(request)) {
                 // we already have query results, but we can run fetch at the same time
                 context.addFetchResult();
                 return executeFetchPhase(readerContext, context, afterQueryTime);
             } else {
-                // Pass the rescoreDocIds to the queryResult to send them the coordinating node and receive them back in the fetch phase.
-                // We also pass the rescoreDocIds to the LegacyReaderContext in case the search state needs to stay in the data node.
-                final RescoreDocIds rescoreDocIds = context.rescoreDocIds();
-                context.queryResult().setRescoreDocIds(rescoreDocIds);
-                readerContext.setRescoreDocIds(rescoreDocIds);
-                // inc-ref query result because we close the SearchContext that references it in this try-with-resources block
-                context.queryResult().incRef();
-                return context.queryResult();
+                return finishQueryPhase(context, readerContext);
             }
         } catch (Exception e) {
-            // execution exception can happen while loading the cache, strip it
-            if (e instanceof ExecutionException) {
-                e = (e.getCause() == null || e.getCause() instanceof Exception)
-                    ? (Exception) e.getCause()
-                    : new ElasticsearchException(e.getCause());
-            }
-            logger.trace("Query phase failed", e);
-            processFailure(readerContext, e);
-            throw e;
+            throw handleQueryPhaseFailure(e, readerContext);
         }
+    }
+
+    private static boolean nullSourceOrNullRankBuilder(ShardSearchRequest request) {
+        return request.source() == null || request.source().rankBuilder() == null;
+    }
+
+    private static QuerySearchResult finishQueryPhase(SearchContext context, ReaderContext readerContext) {
+        // Pass the rescoreDocIds to the queryResult to send them the coordinating node and receive them back in the fetch phase.
+        // We also pass the rescoreDocIds to the LegacyReaderContext in case the search state needs to stay in the data node.
+        final RescoreDocIds rescoreDocIds = context.rescoreDocIds();
+        var queryResult = context.queryResult();
+        queryResult.setRescoreDocIds(rescoreDocIds);
+        readerContext.setRescoreDocIds(rescoreDocIds);
+        // inc-ref query result because we close the SearchContext that references it in this try-with-resources block
+        queryResult.incRef();
+        return queryResult;
+    }
+
+    private Exception handleQueryPhaseFailure(Exception e, ReaderContext readerContext) {
+        // execution exception can happen while loading the cache, strip it
+        if (e instanceof ExecutionException) {
+            e = (e.getCause() == null || e.getCause() instanceof Exception)
+                ? (Exception) e.getCause()
+                : new ElasticsearchException(e.getCause());
+        }
+        logger.trace("Query phase failed", e);
+        processFailure(readerContext, e);
+        return e;
     }
 
     public void executeRankFeaturePhase(RankFeatureShardRequest request, SearchShardTask task, ActionListener<RankFeatureResult> listener) {
@@ -897,7 +924,7 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
             runAsync(getExecutor(readerContext.indexShard()), () -> {
                 readerContext.setAggregatedDfs(request.dfs());
                 try (
-                    SearchContext searchContext = createContext(readerContext, shardSearchRequest, task, ResultsType.QUERY, true);
+                    SearchContext searchContext = createContext(readerContext, rewritten, task, ResultsType.QUERY, true);
                     SearchOperationListenerExecutor executor = new SearchOperationListenerExecutor(searchContext)
                 ) {
                     searchContext.searcher().setAggregatedDfs(request.dfs());
