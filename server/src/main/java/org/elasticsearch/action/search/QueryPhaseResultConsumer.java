@@ -176,6 +176,9 @@ public class QueryPhaseResultConsumer extends ArraySearchPhaseResults<SearchPhas
     }
 
     public void addPartialResult(TopDocsStats topDocsStats, MergeResult mergeResult) {
+        if (mergeResult.reducedTopDocs.totalHits.value() == 0L && mergeResult.reducedAggs() == null && topDocsStats.totalHits == 0L) {
+            return;
+        }
         synchronized (batchedResults) {
             batchedResults.add(new Tuple<>(topDocsStats, mergeResult));
         }
