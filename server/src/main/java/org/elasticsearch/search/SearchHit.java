@@ -11,6 +11,7 @@ package org.elasticsearch.search;
 
 import org.apache.lucene.search.Explanation;
 import org.elasticsearch.ElasticsearchParseException;
+import org.elasticsearch.TransportVersion;
 import org.elasticsearch.TransportVersions;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesArray;
@@ -195,13 +196,14 @@ public final class SearchHit implements Writeable, ToXContentObject, RefCounted 
     public static SearchHit readFrom(StreamInput in, boolean pooled) throws IOException {
         final float score = in.readFloat();
         final int rank;
-        if (in.getTransportVersion().onOrAfter(TransportVersions.V_8_8_0)) {
+        final TransportVersion transportVersion = in.getTransportVersion();
+        if (transportVersion.onOrAfter(TransportVersions.V_8_8_0)) {
             rank = in.readVInt();
         } else {
             rank = NO_RANK;
         }
         final Text id = in.readOptionalText();
-        if (in.getTransportVersion().before(TransportVersions.V_8_0_0)) {
+        if (transportVersion.before(TransportVersions.V_8_0_0)) {
             in.readOptionalText();
         }
         final NestedIdentity nestedIdentity = in.readOptionalWriteable(NestedIdentity::new);
@@ -216,22 +218,18 @@ public final class SearchHit implements Writeable, ToXContentObject, RefCounted 
         if (in.readBoolean()) {
             explanation = readExplanation(in);
         }
-        final Map<String, DocumentField> documentFields = in.readMap(DocumentField::new);
-        final Map<String, DocumentField> metaFields = in.readMap(DocumentField::new);
+        final Map<String, DocumentField> documentFields = readFieldsMap(in);
+        final Map<String, DocumentField> metaFields = readFieldsMap(in);
         Map<String, HighlightField> highlightFields = in.readMapValues(HighlightField::new, HighlightField::name);
         highlightFields = highlightFields.isEmpty() ? null : unmodifiableMap(highlightFields);
 
         final SearchSortValues sortValues = SearchSortValues.readFrom(in);
 
         final Map<String, Float> matchedQueries;
-        if (in.getTransportVersion().onOrAfter(TransportVersions.V_8_8_0)) {
+        if (transportVersion.onOrAfter(TransportVersions.V_8_8_0)) {
             matchedQueries = in.readOrderedMap(StreamInput::readString, StreamInput::readFloat);
         } else {
-            int size = in.readVInt();
-            matchedQueries = Maps.newLinkedHashMapWithExpectedSize(size);
-            for (int i = 0; i < size; i++) {
-                matchedQueries.put(in.readString(), Float.NaN);
-            }
+            matchedQueries = bwcReadMatchedQueries(in);
         }
 
         final SearchShardTarget shardTarget = in.readOptionalWriteable(SearchShardTarget::new);
@@ -250,12 +248,7 @@ public final class SearchHit implements Writeable, ToXContentObject, RefCounted 
         int size = in.readVInt();
         if (size > 0) {
             innerHits = Maps.newMapWithExpectedSize(size);
-            for (int i = 0; i < size; i++) {
-                var key = in.readString();
-                var nestedHits = SearchHits.readFrom(in, pooled);
-                innerHits.put(key, nestedHits);
-                isPooled = isPooled || nestedHits.isPooled();
-            }
+            isPooled = collectInnerHits(in, pooled, size, innerHits, isPooled);
         } else {
             innerHits = null;
         }
@@ -281,6 +274,31 @@ public final class SearchHit implements Writeable, ToXContentObject, RefCounted 
             metaFields,
             isPooled ? null : ALWAYS_REFERENCED
         );
+    }
+
+    private static boolean collectInnerHits(StreamInput in, boolean pooled, int size, Map<String, SearchHits> innerHits, boolean isPooled)
+        throws IOException {
+        for (int i = 0; i < size; i++) {
+            var key = in.readString();
+            var nestedHits = SearchHits.readFrom(in, pooled);
+            innerHits.put(key, nestedHits);
+            isPooled = isPooled || nestedHits.isPooled();
+        }
+        return isPooled;
+    }
+
+    private static Map<String, DocumentField> readFieldsMap(StreamInput in) throws IOException {
+        return in.readMap(DocumentField::new);
+    }
+
+    private static Map<String, Float> bwcReadMatchedQueries(StreamInput in) throws IOException {
+        final Map<String, Float> matchedQueries;
+        int size = in.readVInt();
+        matchedQueries = Maps.newLinkedHashMapWithExpectedSize(size);
+        for (int i = 0; i < size; i++) {
+            matchedQueries.put(in.readString(), Float.NaN);
+        }
+        return matchedQueries;
     }
 
     public static SearchHit unpooled(int docId) {
