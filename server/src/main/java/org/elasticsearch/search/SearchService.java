@@ -48,6 +48,7 @@ import org.elasticsearch.common.util.concurrent.AbstractRunnable;
 import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
+import org.elasticsearch.common.util.concurrent.ListenableFuture;
 import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.core.RefCounted;
 import org.elasticsearch.core.Releasable;
@@ -565,10 +566,16 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
     public void executeDfsPhase(ShardSearchRequest request, SearchShardTask task, ActionListener<SearchPhaseResult> listener) {
         listener = maybeWrapListenerForStackTrace(listener, request.getChannelVersion(), threadPool);
         final IndexShard shard = getShard(request);
-        rewriteAndFetchShardRequest(shard, request, listener.delegateFailure((l, rewritten) -> {
-            // fork the execution in the search thread pool
-            ensureAfterSeqNoRefreshed(shard, request, () -> executeDfsPhase(request, task), l);
-        }));
+        var rewriteFuture = rewriteAndFetchShardRequest(shard, request);
+        if (rewriteFuture.isSuccess() == false) {
+            var rewritten = rewriteFuture.result();
+            ensureAfterSeqNoRefreshed(shard, rewritten, () -> executeDfsPhase(rewritten, task), listener);
+        } else {
+            rewriteFuture.addListener(listener.delegateFailure((l, rewritten) -> {
+                // fork the execution in the search thread pool
+                ensureAfterSeqNoRefreshed(shard, request, () -> executeDfsPhase(request, task), l);
+            }));
+        }
     }
 
     private DfsSearchResult executeDfsPhase(ShardSearchRequest request, SearchShardTask task) throws IOException {
@@ -604,32 +611,65 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
         assert request.canReturnNullResponseIfMatchNoDocs() == false || request.numberOfShards() > 1
             : "empty responses require more than one shard";
         final IndexShard shard = getShard(request);
-        rewriteAndFetchShardRequest(
-            shard,
-            request,
-            maybeWrapListenerForStackTrace(listener, request.getChannelVersion(), threadPool).delegateFailure((l, orig) -> {
-                // check if we can shortcut the query phase entirely.
-                if (orig.canReturnNullResponseIfMatchNoDocs()) {
-                    assert orig.scroll() == null;
-                    ShardSearchRequest clone = new ShardSearchRequest(orig);
-                    CanMatchContext canMatchContext = new CanMatchContext(
-                        clone,
-                        indicesService::indexServiceSafe,
-                        this::findReaderContext,
-                        defaultKeepAlive,
-                        maxKeepAlive
-                    );
-                    CanMatchShardResponse canMatchResp = canMatch(canMatchContext, false);
-                    if (canMatchResp.canMatch() == false) {
-                        l.onResponse(QuerySearchResult.nullInstance());
-                        return;
-                    }
+        final ListenableFuture<ShardSearchRequest> promise = rewriteAndFetchShardRequest(shard, request);
+        if (promise.isSuccess() == false) {
+            promise.addListener(
+                maybeWrapListenerForStackTrace(listener, request.getChannelVersion(), threadPool).delegateFailure(
+                    (l, orig) -> runQueryAfterRewrite(task, orig, shard).addListener(l.delegateFailure((ll, r) -> {
+                        try {
+                            ll.onResponse(r);
+                        } finally {
+                            r.decRef();
+                        }
+                    }))
+                )
+            );
+        } else {
+            var res = runQueryAfterRewrite(task, promise.result(), shard);
+            if (res.isSuccess()) {
+                var result = res.result();
+                try {
+                    listener.onResponse(result);
+                } finally {
+                    result.decRef();
                 }
-                // TODO: i think it makes sense to always do a canMatch here and
-                // return an empty response (not null response) in case canMatch is false?
-                ensureAfterSeqNoRefreshed(shard, orig, () -> executeQueryPhase(orig, task), l);
-            })
-        );
+            } else {
+                res.addListener(
+                    maybeWrapListenerForStackTrace(listener, request.getChannelVersion(), threadPool).delegateFailure((l, r) -> {
+                        try {
+                            l.onResponse(r);
+                        } finally {
+                            r.decRef();
+                        }
+                    })
+                );
+            }
+        }
+    }
+
+    private ListenableFuture<SearchPhaseResult> runQueryAfterRewrite(CancellableTask task, ShardSearchRequest orig, IndexShard shard) {
+        // check if we can shortcut the query phase entirely.
+        final ListenableFuture<SearchPhaseResult> future = new ListenableFuture<>();
+        if (orig.canReturnNullResponseIfMatchNoDocs()) {
+            assert orig.scroll() == null;
+            ShardSearchRequest clone = new ShardSearchRequest(orig);
+            CanMatchContext canMatchContext = new CanMatchContext(
+                clone,
+                indicesService::indexServiceSafe,
+                this::findReaderContext,
+                defaultKeepAlive,
+                maxKeepAlive
+            );
+            CanMatchShardResponse canMatchResp = canMatch(canMatchContext, false);
+            if (canMatchResp.canMatch() == false) {
+                future.onResponse(QuerySearchResult.nullInstance());
+                return future;
+            }
+        }
+        // TODO: i think it makes sense to always do a canMatch here and
+        // return an empty response (not null response) in case canMatch is false?
+        ensureAfterSeqNoRefreshed(shard, orig, () -> executeQueryPhase(orig, task), future);
+        return future;
     }
 
     private <T extends RefCounted> void ensureAfterSeqNoRefreshed(
@@ -743,7 +783,7 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
         CheckedSupplier<T, Exception> executable,
         ActionListener<T> listener
     ) {
-        executor.execute(ActionRunnable.supplyAndDecRef(listener, executable));
+        executor.execute(ActionRunnable.supply(listener, executable));
     }
 
     /**
@@ -801,6 +841,7 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
         final ReaderContext readerContext = findReaderContext(request.contextId(), request);
         final ShardSearchRequest shardSearchRequest = readerContext.getShardSearchRequest(request.getShardSearchRequest());
         final Releasable markAsUsed = readerContext.markAsUsed(getKeepAlive(shardSearchRequest));
+        final ListenableFuture<RankFeatureResult> future = new ListenableFuture<>();
         runAsync(getExecutor(readerContext.indexShard()), () -> {
             try (SearchContext searchContext = createContext(readerContext, shardSearchRequest, task, ResultsType.RANK_FEATURE, false)) {
                 int[] docIds = request.getDocIds();
@@ -820,7 +861,32 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
                 // we handle the failure in the failure listener below
                 throw e;
             }
-        }, wrapFailureListener(listener, readerContext, markAsUsed));
+        }, future);
+        waitForCompletion(listener, future, markAsUsed, readerContext);
+    }
+
+    private <T extends RefCounted> void waitForCompletion(
+        ActionListener<T> listener,
+        ListenableFuture<T> future,
+        Releasable markAsUsed,
+        ReaderContext readerContext
+    ) {
+        if (future.isSuccess()) {
+            var fetchResult = future.result();
+            try (markAsUsed) {
+                listener.onResponse(fetchResult);
+            } finally {
+                fetchResult.decRef();
+            }
+        } else {
+            future.addListener(wrapFailureListener(listener, readerContext, markAsUsed).delegateFailure((ll, r) -> {
+                try {
+                    ll.onResponse(r);
+                } finally {
+                    r.decRef();
+                }
+            }));
+        }
     }
 
     private QueryFetchSearchResult executeFetchPhase(ReaderContext reader, SearchContext context, long afterQueryTime) {
@@ -854,6 +920,7 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
             freeReaderContext(readerContext.id());
             throw e;
         }
+        final ListenableFuture<ScrollQuerySearchResult> future = new ListenableFuture<>();
         runAsync(getExecutor(readerContext.indexShard()), () -> {
             final ShardSearchRequest shardSearchRequest = readerContext.getShardSearchRequest(null);
             try (
@@ -872,7 +939,8 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
                 // we handle the failure in the failure listener below
                 throw e;
             }
-        }, wrapFailureListener(listener, readerContext, markAsUsed));
+        }, future);
+        waitForCompletion(listener, future, markAsUsed, readerContext);
     }
 
     /**
@@ -890,7 +958,7 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
         final ReaderContext readerContext = findReaderContext(request.contextId(), request.shardSearchRequest());
         final ShardSearchRequest shardSearchRequest = readerContext.getShardSearchRequest(request.shardSearchRequest());
         final Releasable markAsUsed = readerContext.markAsUsed(getKeepAlive(shardSearchRequest));
-        rewriteAndFetchShardRequest(readerContext.indexShard(), shardSearchRequest, listener.delegateFailure((l, rewritten) -> {
+        rewriteAndFetchShardRequest(readerContext.indexShard(), shardSearchRequest).addListener(listener.delegateFailure((l, rewritten) -> {
             // fork the execution in the search thread pool
             runAsync(getExecutor(readerContext.indexShard()), () -> {
                 readerContext.setAggregatedDfs(request.dfs());
@@ -921,7 +989,13 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
                     // we handle the failure in the failure listener below
                     throw e;
                 }
-            }, wrapFailureListener(l, readerContext, markAsUsed));
+            }, wrapFailureListener(l, readerContext, markAsUsed).delegateFailure((ll, r) -> {
+                try {
+                    ll.onResponse(r);
+                } finally {
+                    r.decRef();
+                }
+            }));
         }));
     }
 
@@ -952,6 +1026,7 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
             freeReaderContext(readerContext.id());
             throw e;
         }
+        final ListenableFuture<ScrollQueryFetchSearchResult> promise = new ListenableFuture<>();
         runAsync(getExecutor(readerContext.indexShard()), () -> {
             final ShardSearchRequest shardSearchRequest = readerContext.getShardSearchRequest(null);
             try (
@@ -972,45 +1047,60 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
                 // we handle the failure in the failure listener below
                 throw e;
             }
-        }, wrapFailureListener(listener, readerContext, markAsUsed));
+        }, promise);
+        waitForCompletion(listener, promise, markAsUsed, readerContext);
     }
 
     public void executeFetchPhase(ShardFetchRequest request, CancellableTask task, ActionListener<FetchSearchResult> listener) {
         final ReaderContext readerContext = findReaderContext(request.contextId(), request);
         final ShardSearchRequest shardSearchRequest = readerContext.getShardSearchRequest(request.getShardSearchRequest());
         final Releasable markAsUsed = readerContext.markAsUsed(getKeepAlive(shardSearchRequest));
-        rewriteAndFetchShardRequest(readerContext.indexShard(), shardSearchRequest, listener.delegateFailure((l, rewritten) -> {
-            runAsync(getExecutor(readerContext.indexShard()), () -> {
-                try (SearchContext searchContext = createContext(readerContext, rewritten, task, ResultsType.FETCH, false)) {
-                    if (request.lastEmittedDoc() != null) {
-                        searchContext.scrollContext().lastEmittedDoc = request.lastEmittedDoc();
-                    }
-                    searchContext.assignRescoreDocIds(readerContext.getRescoreDocIds(request.getRescoreDocIds()));
-                    searchContext.searcher().setAggregatedDfs(readerContext.getAggregatedDfs(request.getAggregatedDfs()));
-                    try (
-                        SearchOperationListenerExecutor executor = new SearchOperationListenerExecutor(
-                            searchContext,
-                            true,
-                            System.nanoTime()
-                        )
-                    ) {
-                        fetchPhase.execute(searchContext, request.docIds(), request.getRankDocks());
-                        if (readerContext.singleSession()) {
-                            freeReaderContext(request.contextId());
-                        }
-                        executor.success();
-                    }
-                    var fetchResult = searchContext.fetchResult();
-                    // inc-ref fetch result because we close the SearchContext that references it in this try-with-resources block
-                    fetchResult.incRef();
-                    return fetchResult;
-                } catch (Exception e) {
-                    assert TransportActions.isShardNotAvailableException(e) == false : new AssertionError(e);
-                    // we handle the failure in the failure listener below
-                    throw e;
+        final ListenableFuture<ShardSearchRequest> future = rewriteAndFetchShardRequest(readerContext.indexShard(), shardSearchRequest);
+        if (future.isSuccess()) {
+            forkAndFetch(request, task, listener, future.result(), readerContext, markAsUsed);
+            return;
+        }
+        future.addListener(
+            listener.delegateFailure((l, rewritten) -> forkAndFetch(request, task, l, rewritten, readerContext, markAsUsed))
+        );
+    }
+
+    private void forkAndFetch(
+        ShardFetchRequest request,
+        CancellableTask task,
+        ActionListener<FetchSearchResult> listener,
+        ShardSearchRequest rewritten,
+        ReaderContext readerContext,
+        Releasable markAsUsed
+    ) {
+        final ListenableFuture<FetchSearchResult> future = new ListenableFuture<>();
+        runAsync(getExecutor(readerContext.indexShard()), () -> {
+            try (SearchContext searchContext = createContext(readerContext, rewritten, task, ResultsType.FETCH, false)) {
+                if (request.lastEmittedDoc() != null) {
+                    searchContext.scrollContext().lastEmittedDoc = request.lastEmittedDoc();
                 }
-            }, wrapFailureListener(l, readerContext, markAsUsed));
-        }));
+                searchContext.assignRescoreDocIds(readerContext.getRescoreDocIds(request.getRescoreDocIds()));
+                searchContext.searcher().setAggregatedDfs(readerContext.getAggregatedDfs(request.getAggregatedDfs()));
+                try (
+                    SearchOperationListenerExecutor executor = new SearchOperationListenerExecutor(searchContext, true, System.nanoTime())
+                ) {
+                    fetchPhase.execute(searchContext, request.docIds(), request.getRankDocks());
+                    if (readerContext.singleSession()) {
+                        freeReaderContext(request.contextId());
+                    }
+                    executor.success();
+                }
+                var fetchResult = searchContext.fetchResult();
+                // inc-ref fetch result because we close the SearchContext that references it in this try-with-resources block
+                fetchResult.incRef();
+                return fetchResult;
+            } catch (Exception e) {
+                assert TransportActions.isShardNotAvailableException(e) == false : new AssertionError(e);
+                // we handle the failure in the failure listener below
+                throw e;
+            }
+        }, future);
+        waitForCompletion(listener, future, markAsUsed, readerContext);
     }
 
     protected void checkCancelled(CancellableTask task) {
@@ -1904,10 +1994,11 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
     }
 
     @SuppressWarnings("unchecked")
-    private void rewriteAndFetchShardRequest(IndexShard shard, ShardSearchRequest request, ActionListener<ShardSearchRequest> listener) {
+    private ListenableFuture<ShardSearchRequest> rewriteAndFetchShardRequest(IndexShard shard, ShardSearchRequest request) {
         // we also do rewrite on the coordinating node (TransportSearchService) but we also need to do it here.
         // AliasFilters and other things may need to be rewritten on the data node, but not per individual shard.
         // These are uncommon-cases, but we are very efficient doing the rewrite here.
+        final ListenableFuture<ShardSearchRequest> listener = new ListenableFuture<>();
         Rewriteable.rewriteAndFetch(
             request.getRewriteable(),
             indicesService.getDataRewriteContext(request::nowInMillis),
@@ -1915,6 +2006,7 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
                 ? listener.delegateFailureAndWrap((l, r) -> shard.ensureShardSearchActive(b -> l.onResponse(request)))
                 : listener.safeMap(r -> request)
         );
+        return listener;
     }
 
     /**
