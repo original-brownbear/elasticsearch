@@ -15,6 +15,7 @@ import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.common.util.concurrent.ListenableFuture;
 import org.elasticsearch.search.SearchPhaseResult;
 import org.elasticsearch.search.SearchShardTarget;
 import org.elasticsearch.search.dfs.AggregatedDfs;
@@ -94,8 +95,32 @@ class SearchQueryThenFetchAsyncAction extends AbstractSearchAsyncAction<SearchPh
         final Transport.Connection connection,
         final SearchActionListener<SearchPhaseResult> listener
     ) {
-        ShardSearchRequest request = rewriteShardSearchRequest(super.buildShardSearchRequest(shardIt, listener.requestIndex));
-        getSearchTransport().sendExecuteQuery(connection, request, getTask(), listener);
+        final ListenableFuture<SearchPhaseResult> resultFuture = new ListenableFuture<>();
+        getSearchTransport().sendExecuteQuery(
+            connection,
+            rewriteShardSearchRequest(super.buildShardSearchRequest(shardIt, listener.requestIndex)),
+            getTask(),
+            resultFuture.delegateFailure((l, r) -> {
+                r.incRef();
+                l.onResponse(r);
+            })
+        );
+        if (resultFuture.isSuccess()) {
+            var res = resultFuture.result();
+            try {
+                listener.onResponse(res);
+            } finally {
+                res.decRef();
+            }
+        } else {
+            resultFuture.addListener(listener.delegateFailure((l, r) -> {
+                try {
+                    l.onResponse(r);
+                } finally {
+                    r.decRef();
+                }
+            }));
+        }
     }
 
     @Override
