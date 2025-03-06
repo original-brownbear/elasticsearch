@@ -124,17 +124,23 @@ public class TransportExplainAction extends TransportSingleShardAction<ExplainRe
     }
 
     @Override
-    protected void asyncShardOperation(ExplainRequest request, ShardId shardId, ActionListener<ExplainResponse> listener)
-        throws IOException {
+    protected void asyncShardOperation(ExplainRequest request, ShardId shardId, ActionListener<ExplainResponse> listener) {
         IndexService indexService = searchService.getIndicesService().indexServiceSafe(shardId.getIndex());
         IndexShard indexShard = indexService.getShard(shardId.id());
-        indexShard.ensureShardSearchActive(b -> {
-            try {
-                super.asyncShardOperation(request, shardId, listener);
-            } catch (Exception ex) {
-                listener.onFailure(ex);
-            }
-        });
+        var active = indexShard.ensureShardSearchActive();
+        if (active.isSuccess()) {
+            doAsyncShardOperation(request, shardId, listener);
+        } else {
+            active.andThenAccept(ignored -> doAsyncShardOperation(request, shardId, listener));
+        }
+    }
+
+    private void doAsyncShardOperation(ExplainRequest request, ShardId shardId, ActionListener<ExplainResponse> listener) {
+        try {
+            super.asyncShardOperation(request, shardId, listener);
+        } catch (Exception ex) {
+            listener.onFailure(ex);
+        }
     }
 
     @Override

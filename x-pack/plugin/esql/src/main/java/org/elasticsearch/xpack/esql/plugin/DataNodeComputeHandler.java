@@ -344,13 +344,21 @@ final class DataNodeComputeHandler implements TransportRequestHandler<DataNodeRe
             })) {
                 for (IndexShard targetShard : targetShards) {
                     final Releasable ref = refs.acquire();
-                    targetShard.ensureShardSearchActive(await -> {
-                        try (ref) {
-                            if (await) {
-                                waitedForRefreshes.set(true);
-                            }
-                        }
-                    });
+                    var active = targetShard.ensureShardSearchActive();
+                    if (active.isSuccess()) {
+                        boolean await = active.result();
+                        releaseRef(await, ref, waitedForRefreshes);
+                    } else {
+                        active.andThenAccept(await -> releaseRef(await, ref, waitedForRefreshes));
+                    }
+                }
+            }
+        }
+
+        private static void releaseRef(Boolean await, Releasable ref, AtomicBoolean waitedForRefreshes) {
+            try (ref) {
+                if (await) {
+                    waitedForRefreshes.set(true);
                 }
             }
         }

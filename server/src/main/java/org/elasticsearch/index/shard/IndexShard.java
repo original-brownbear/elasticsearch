@@ -56,6 +56,7 @@ import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
+import org.elasticsearch.common.util.concurrent.ListenableFuture;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.core.Assertions;
 import org.elasticsearch.core.Booleans;
@@ -4174,16 +4175,17 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
      * {@link #scheduledRefresh(ActionListener)} to be invoked. If there is no pending refresh location registered the provided listener
      * will be invoked immediately.
      *
-     * @param listener the listener to invoke once the pending refresh location is visible. The listener will be called with
+     * @return a listener to invoke once the pending refresh location is visible. The listener will be called with
      *                 <code>true</code> if the listener was registered to wait for a refresh.
      */
-    public final void ensureShardSearchActive(Consumer<Boolean> listener) {
+    public final ListenableFuture<Boolean> ensureShardSearchActive() {
         markSearcherAccessed(); // move the shard into non-search idle
         final Translog.Location location = pendingRefreshLocation.get();
+        final ListenableFuture<Boolean> listener = new ListenableFuture<>();
         if (location != null) {
             addRefreshListener(location, (result) -> {
                 pendingRefreshLocation.compareAndSet(location, null);
-                listener.accept(true);
+                listener.onResponse(true);
             });
             // trigger a refresh to avoid waiting for scheduledRefresh(...) to be invoked from index level refresh scheduler.
             // (The if statement should avoid doing an additional refresh if scheduled refresh was invoked between getting
@@ -4198,8 +4200,9 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
                 });
             }
         } else {
-            listener.accept(false);
+            listener.onResponse(false);
         }
+        return listener;
     }
 
     /**

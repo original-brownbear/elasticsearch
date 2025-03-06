@@ -106,13 +106,20 @@ public class TransportTermVectorsAction extends TransportSingleShardAction<TermV
         if (request.realtime()) { // it's a realtime request which is not subject to refresh cycles
             super.asyncShardOperation(request, shardId, listener);
         } else {
-            indexShard.ensureShardSearchActive(b -> {
-                try {
-                    super.asyncShardOperation(request, shardId, listener);
-                } catch (Exception ex) {
-                    listener.onFailure(ex);
-                }
-            });
+            var active = indexShard.ensureShardSearchActive();
+            if (active.isSuccess()) {
+                doAsyncShardOperation(request, shardId, listener);
+            } else {
+                active.andThenAccept(ignored -> doAsyncShardOperation(request, shardId, listener));
+            }
+        }
+    }
+
+    private void doAsyncShardOperation(TermVectorsRequest request, ShardId shardId, ActionListener<TermVectorsResponse> listener) {
+        try {
+            super.asyncShardOperation(request, shardId, listener);
+        } catch (Exception ex) {
+            listener.onFailure(ex);
         }
     }
 

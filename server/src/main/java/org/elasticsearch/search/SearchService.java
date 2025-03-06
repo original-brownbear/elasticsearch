@@ -48,6 +48,7 @@ import org.elasticsearch.common.util.concurrent.AbstractRunnable;
 import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
+import org.elasticsearch.common.util.concurrent.ListenableFuture;
 import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.core.RefCounted;
 import org.elasticsearch.core.Releasable;
@@ -565,7 +566,7 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
     public void executeDfsPhase(ShardSearchRequest request, SearchShardTask task, ActionListener<SearchPhaseResult> listener) {
         listener = maybeWrapListenerForStackTrace(listener, request.getChannelVersion(), threadPool);
         final IndexShard shard = getShard(request);
-        rewriteAndFetchShardRequest(shard, request, listener.delegateFailure((l, rewritten) -> {
+        rewriteAndFetchShardRequest(shard, request).addListener(listener.delegateFailure((l, rewritten) -> {
             // fork the execution in the search thread pool
             ensureAfterSeqNoRefreshed(shard, request, () -> executeDfsPhase(request, task), l);
         }));
@@ -604,9 +605,7 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
         assert request.canReturnNullResponseIfMatchNoDocs() == false || request.numberOfShards() > 1
             : "empty responses require more than one shard";
         final IndexShard shard = getShard(request);
-        rewriteAndFetchShardRequest(
-            shard,
-            request,
+        rewriteAndFetchShardRequest(shard, request).addListener(
             maybeWrapListenerForStackTrace(listener, request.getChannelVersion(), threadPool).delegateFailure((l, orig) -> {
                 // check if we can shortcut the query phase entirely.
                 if (orig.canReturnNullResponseIfMatchNoDocs()) {
@@ -890,7 +889,7 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
         final ReaderContext readerContext = findReaderContext(request.contextId(), request.shardSearchRequest());
         final ShardSearchRequest shardSearchRequest = readerContext.getShardSearchRequest(request.shardSearchRequest());
         final Releasable markAsUsed = readerContext.markAsUsed(getKeepAlive(shardSearchRequest));
-        rewriteAndFetchShardRequest(readerContext.indexShard(), shardSearchRequest, listener.delegateFailure((l, rewritten) -> {
+        rewriteAndFetchShardRequest(readerContext.indexShard(), shardSearchRequest).addListener(listener.delegateFailure((l, rewritten) -> {
             // fork the execution in the search thread pool
             runAsync(getExecutor(readerContext.indexShard()), () -> {
                 readerContext.setAggregatedDfs(request.dfs());
@@ -979,7 +978,7 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
         final ReaderContext readerContext = findReaderContext(request.contextId(), request);
         final ShardSearchRequest shardSearchRequest = readerContext.getShardSearchRequest(request.getShardSearchRequest());
         final Releasable markAsUsed = readerContext.markAsUsed(getKeepAlive(shardSearchRequest));
-        rewriteAndFetchShardRequest(readerContext.indexShard(), shardSearchRequest, listener.delegateFailure((l, rewritten) -> {
+        rewriteAndFetchShardRequest(readerContext.indexShard(), shardSearchRequest).addListener(listener.delegateFailure((l, rewritten) -> {
             runAsync(getExecutor(readerContext.indexShard()), () -> {
                 try (SearchContext searchContext = createContext(readerContext, rewritten, task, ResultsType.FETCH, false)) {
                     if (request.lastEmittedDoc() != null) {
@@ -1115,30 +1114,42 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
         checkKeepAliveLimit(keepAlive.millis());
         final IndexService indexService = indicesService.indexServiceSafe(shardId.getIndex());
         final IndexShard shard = indexService.getShard(shardId.id());
+        var active = shard.ensureShardSearchActive();
+        if (active.isSuccess()) {
+            doOpenReaderContext(keepAlive, listener, indexService, shard);
+        } else {
+            active.andThenAccept(ignored -> doOpenReaderContext(keepAlive, listener, indexService, shard));
+        }
+    }
+
+    private void doOpenReaderContext(
+        TimeValue keepAlive,
+        ActionListener<ShardSearchContextId> listener,
+        IndexService indexService,
+        IndexShard shard
+    ) {
         final SearchOperationListener searchOperationListener = shard.getSearchOperationListener();
-        shard.ensureShardSearchActive(ignored -> {
-            Engine.SearcherSupplier searcherSupplier = null;
-            ReaderContext readerContext = null;
-            try {
-                searcherSupplier = shard.acquireSearcherSupplier();
-                final ShardSearchContextId id = new ShardSearchContextId(
-                    sessionId,
-                    idGenerator.incrementAndGet(),
-                    searcherSupplier.getSearcherId()
-                );
-                readerContext = new ReaderContext(id, indexService, shard, searcherSupplier, keepAlive.millis(), false);
-                final ReaderContext finalReaderContext = readerContext;
-                searcherSupplier = null; // transfer ownership to reader context
-                searchOperationListener.onNewReaderContext(readerContext);
-                readerContext.addOnClose(() -> searchOperationListener.onFreeReaderContext(finalReaderContext));
-                putReaderContext(readerContext);
-                readerContext = null;
-                listener.onResponse(finalReaderContext.id());
-            } catch (Exception exc) {
-                Releasables.closeWhileHandlingException(searcherSupplier, readerContext);
-                listener.onFailure(exc);
-            }
-        });
+        Engine.SearcherSupplier searcherSupplier = null;
+        ReaderContext readerContext = null;
+        try {
+            searcherSupplier = shard.acquireSearcherSupplier();
+            final ShardSearchContextId id = new ShardSearchContextId(
+                sessionId,
+                idGenerator.incrementAndGet(),
+                searcherSupplier.getSearcherId()
+            );
+            readerContext = new ReaderContext(id, indexService, shard, searcherSupplier, keepAlive.millis(), false);
+            final ReaderContext finalReaderContext = readerContext;
+            searcherSupplier = null; // transfer ownership to reader context
+            searchOperationListener.onNewReaderContext(readerContext);
+            readerContext.addOnClose(() -> searchOperationListener.onFreeReaderContext(finalReaderContext));
+            putReaderContext(readerContext);
+            readerContext = null;
+            listener.onResponse(finalReaderContext.id());
+        } catch (Exception exc) {
+            Releasables.closeWhileHandlingException(searcherSupplier, readerContext);
+            listener.onFailure(exc);
+        }
     }
 
     protected SearchContext createContext(
@@ -1904,17 +1915,24 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
     }
 
     @SuppressWarnings("unchecked")
-    private void rewriteAndFetchShardRequest(IndexShard shard, ShardSearchRequest request, ActionListener<ShardSearchRequest> listener) {
+    private ListenableFuture<ShardSearchRequest> rewriteAndFetchShardRequest(IndexShard shard, ShardSearchRequest request) {
         // we also do rewrite on the coordinating node (TransportSearchService) but we also need to do it here.
         // AliasFilters and other things may need to be rewritten on the data node, but not per individual shard.
         // These are uncommon-cases, but we are very efficient doing the rewrite here.
+        final ListenableFuture<ShardSearchRequest> listener = new ListenableFuture<>();
         Rewriteable.rewriteAndFetch(
             request.getRewriteable(),
             indicesService.getDataRewriteContext(request::nowInMillis),
-            request.readerId() == null
-                ? listener.delegateFailureAndWrap((l, r) -> shard.ensureShardSearchActive(b -> l.onResponse(request)))
-                : listener.safeMap(r -> request)
+            request.readerId() == null ? listener.delegateFailureAndWrap((l, r) -> {
+                var active = shard.ensureShardSearchActive();
+                if (active.isSuccess()) {
+                    l.onResponse(request);
+                } else {
+                    active.andThenAccept(ignored -> l.onResponse(request));
+                }
+            }) : listener.safeMap(r -> request)
         );
+        return listener;
     }
 
     /**

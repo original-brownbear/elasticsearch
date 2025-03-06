@@ -4041,7 +4041,7 @@ public class IndexShardTests extends IndexShardTestCase {
         assertBusy(() -> assertTrue(primary.isSearchIdle()));
         do {
             // now loop until we are fast enough... shouldn't take long
-            primary.ensureShardSearchActive(aBoolean -> {});
+            primary.ensureShardSearchActive().andThenAccept(aBoolean -> {});
             if (primary.isSearchIdle()) {
                 assertTrue(primary.searchIdleTime() >= tenMillis.millis());
             }
@@ -4093,7 +4093,7 @@ public class IndexShardTests extends IndexShardTestCase {
 
         // Make shard search active again and ensure previously index document is visible:
         long refreshesBefore = primary.refreshStats().getTotal();
-        primary.ensureShardSearchActive(registered -> { assertTrue(registered); });
+        primary.ensureShardSearchActive().andThenAccept(registered -> { assertTrue(registered); });
         assertBusy(() -> {
             assertFalse(primary.hasRefreshPending());
             assertThat(primary.refreshStats().getTotal(), equalTo(refreshesBefore + 1));
@@ -4111,7 +4111,7 @@ public class IndexShardTests extends IndexShardTestCase {
         // No documents were added and shard is search active so ensureShardSearchActive(...) should behave like a noop:
         assertFalse(primary.getEngine().refreshNeeded());
         CountDownLatch latch = new CountDownLatch(1);
-        primary.ensureShardSearchActive(registered -> {
+        primary.ensureShardSearchActive().andThenAccept(registered -> {
             assertFalse(registered);
             try (Engine.Searcher searcher = primary.acquireSearcher("test")) {
                 assertEquals(2, searcher.getIndexReader().numDocs());

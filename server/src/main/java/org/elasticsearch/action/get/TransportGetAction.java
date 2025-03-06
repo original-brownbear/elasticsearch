@@ -135,13 +135,20 @@ public class TransportGetAction extends TransportSingleShardAction<GetRequest, G
         if (request.realtime()) { // we are not tied to a refresh cycle here anyway
             asyncGet(request, shardId, listener);
         } else {
-            indexShard.ensureShardSearchActive(b -> {
-                try {
-                    asyncGet(request, shardId, listener);
-                } catch (Exception ex) {
-                    listener.onFailure(ex);
-                }
-            });
+            var active = indexShard.ensureShardSearchActive();
+            if (active.isSuccess()) {
+                doAsyncShardOperation(request, shardId, listener);
+            } else {
+                active.andThenAccept(ignored -> doAsyncShardOperation(request, shardId, listener));
+            }
+        }
+    }
+
+    private void doAsyncShardOperation(GetRequest request, ShardId shardId, ActionListener<GetResponse> listener) {
+        try {
+            asyncGet(request, shardId, listener);
+        } catch (Exception ex) {
+            listener.onFailure(ex);
         }
     }
 
