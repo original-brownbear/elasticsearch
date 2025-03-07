@@ -12,7 +12,9 @@ package org.elasticsearch.action.search;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.search.TopDocs;
+import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.search.SearchPhaseController.TopDocsStats;
+import org.elasticsearch.action.support.SubscribableListener;
 import org.elasticsearch.common.breaker.CircuitBreaker;
 import org.elasticsearch.common.breaker.CircuitBreakingException;
 import org.elasticsearch.common.io.stream.DelayableWriteable;
@@ -142,11 +144,11 @@ public class QueryPhaseResultConsumer extends ArraySearchPhaseResults<SearchPhas
     }
 
     @Override
-    public void consumeResult(SearchPhaseResult result, Runnable next) {
-        super.consumeResult(result, () -> {});
+    public SubscribableListener<Void> consumeResult(SearchPhaseResult result) {
+        super.consumeResult(result);
         QuerySearchResult querySearchResult = result.queryResult();
         progressListener.notifyQueryResult(querySearchResult.getShardIndex(), querySearchResult);
-        consume(querySearchResult, next);
+        return consume(querySearchResult);
     }
 
     @Override
@@ -347,10 +349,10 @@ public class QueryPhaseResultConsumer extends ArraySearchPhaseResults<SearchPhas
         return Math.round(1.5d * size - size);
     }
 
-    private void consume(QuerySearchResult result, Runnable next) {
+    private SubscribableListener<Void> consume(QuerySearchResult result) {
+        SubscribableListener<Void> res = SubscribableListener.DONE;
         if (hasFailure()) {
             result.consumeAll();
-            next.run();
         } else if (result.isNull()) {
             result.consumeAll();
             SearchShardTarget target = result.getSearchShardTarget();
@@ -358,10 +360,8 @@ public class QueryPhaseResultConsumer extends ArraySearchPhaseResults<SearchPhas
             synchronized (this) {
                 emptyResults.add(searchShard);
             }
-            next.run();
         } else {
             final long aggsSize = ramBytesUsedQueryResult(result);
-            boolean executeNextImmediately = true;
             boolean hasFailure = false;
             synchronized (this) {
                 if (hasFailure()) {
@@ -383,8 +383,8 @@ public class QueryPhaseResultConsumer extends ArraySearchPhaseResults<SearchPhas
                         int size = b.size() + (hasPartialReduce ? 1 : 0);
                         if (size >= batchReduceSize) {
                             hasPartialReduce = true;
-                            executeNextImmediately = false;
-                            MergeTask task = new MergeTask(b, aggsCurrentBufferSize, emptyResults, next);
+                            res = new SubscribableListener<>();
+                            MergeTask task = new MergeTask(b, aggsCurrentBufferSize, emptyResults, res);
                             b = buffer = new ArrayList<>();
                             emptyResults = new ArrayList<>();
                             aggsCurrentBufferSize = 0;
@@ -398,10 +398,8 @@ public class QueryPhaseResultConsumer extends ArraySearchPhaseResults<SearchPhas
             if (hasFailure) {
                 result.consumeAll();
             }
-            if (executeNextImmediately) {
-                next.run();
-            }
         }
+        return res;
     }
 
     private void releaseBuffer() {
@@ -489,7 +487,7 @@ public class QueryPhaseResultConsumer extends ArraySearchPhaseResults<SearchPhas
                             }
                         }
                     }
-                    Runnable r = mergeTask.consumeListener();
+                    ActionListener<Void> r = mergeTask.consumeListener();
                     synchronized (QueryPhaseResultConsumer.this) {
                         while (true) {
                             mergeTask = queue.poll();
@@ -504,7 +502,7 @@ public class QueryPhaseResultConsumer extends ArraySearchPhaseResults<SearchPhas
                         }
                     }
                     if (r != null) {
-                        r.run();
+                        r.onResponse(null);
                     }
                 }
             }
@@ -533,9 +531,9 @@ public class QueryPhaseResultConsumer extends ArraySearchPhaseResults<SearchPhas
         private final List<SearchShard> emptyResults;
         private List<QuerySearchResult> buffer;
         private final long aggsBufferSize;
-        private Runnable next;
+        private ActionListener<Void> next;
 
-        private MergeTask(List<QuerySearchResult> buffer, long aggsBufferSize, List<SearchShard> emptyResults, Runnable next) {
+        private MergeTask(List<QuerySearchResult> buffer, long aggsBufferSize, List<SearchShard> emptyResults, ActionListener<Void> next) {
             this.buffer = buffer;
             this.aggsBufferSize = aggsBufferSize;
             this.emptyResults = emptyResults;
@@ -548,8 +546,8 @@ public class QueryPhaseResultConsumer extends ArraySearchPhaseResults<SearchPhas
             return toRet;
         }
 
-        public synchronized Runnable consumeListener() {
-            Runnable n = next;
+        public synchronized ActionListener<Void> consumeListener() {
+            ActionListener<Void> n = next;
             next = null;
             return n;
         }
@@ -559,9 +557,9 @@ public class QueryPhaseResultConsumer extends ArraySearchPhaseResults<SearchPhas
             if (buffer != null) {
                 releaseAggs(buffer);
             }
-            Runnable next = consumeListener();
+            ActionListener<Void> next = consumeListener();
             if (next != null) {
-                next.run();
+                next.onResponse(null);
             }
         }
     }

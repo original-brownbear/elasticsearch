@@ -9,6 +9,7 @@
 
 package org.elasticsearch.action.search;
 
+import org.elasticsearch.action.support.SubscribableListener;
 import org.elasticsearch.common.util.concurrent.AtomicArray;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.search.SearchPhaseResult;
@@ -40,9 +41,9 @@ abstract class SearchPhaseResults<Result extends SearchPhaseResult> implements R
     /**
      * Consumes a single shard result
      * @param result the shards result
-     * @param next a {@link Runnable} that is executed when the response has been fully consumed
+     * @return subscribable listener that will be completed once the result is consumed
      */
-    abstract void consumeResult(Result result, Runnable next);
+    abstract SubscribableListener<Void> consumeResult(Result result);
 
     /**
      * Returns <code>true</code> iff a result if present for the given shard ID.

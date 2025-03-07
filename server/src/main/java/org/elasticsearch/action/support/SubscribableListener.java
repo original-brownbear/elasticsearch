@@ -113,7 +113,11 @@ public class SubscribableListener<T> implements ActionListener<T> {
     /**
      * Create a {@link SubscribableListener} which has already succeeded with the given result.
      */
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public static <T> SubscribableListener<T> newSucceeded(T result) {
+        if (result == null) {
+            return (SubscribableListener) DONE;
+        }
         return new SubscribableListener<>(new SuccessResult<>(result));
     }
 
@@ -586,4 +590,12 @@ public class SubscribableListener<T> implements ActionListener<T> {
     private Object compareAndExchangeState(Object expectedValue, Object newValue) {
         return VH_STATE_FIELD.compareAndExchange(this, expectedValue, newValue);
     }
+
+    public static final SubscribableListener<Void> DONE;
+
+    static {
+        DONE = new SubscribableListener<>();
+        DONE.onResponse(null);
+    }
+
 }

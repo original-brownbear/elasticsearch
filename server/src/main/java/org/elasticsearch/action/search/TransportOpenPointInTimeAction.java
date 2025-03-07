@@ -28,6 +28,7 @@ import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
+import org.elasticsearch.common.util.concurrent.ListenableFuture;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.injection.guice.Inject;
@@ -242,22 +243,24 @@ public class TransportOpenPointInTimeAction extends HandledTransportAction<OpenP
                 clusters
             ) {
                 @Override
-                protected void executePhaseOnShard(
+                protected ListenableFuture<ResultReference<SearchPhaseResult>> executePhaseOnShard(
                     SearchShardIterator shardIt,
-                    Transport.Connection connection,
-                    SearchActionListener<SearchPhaseResult> phaseListener
+                    int shardIndex,
+                    Transport.Connection connection
                 ) {
+                    ListenableFuture<ResultReference<SearchPhaseResult>> future = new ListenableFuture<>();
                     transportService.sendChildRequest(
                         connection,
                         OPEN_SHARD_READER_CONTEXT_NAME,
                         new ShardOpenReaderRequest(shardIt.shardId(), shardIt.getOriginalIndices(), pitRequest.keepAlive()),
                         task,
                         new ActionListenerResponseHandler<>(
-                            phaseListener,
+                            future.safeMap(ResultReference::new),
                             ShardOpenReaderResponse::new,
                             TransportResponseHandler.TRANSPORT_WORKER
                         )
                     );
+                    return future;
                 }
 
                 @Override

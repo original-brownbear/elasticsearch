@@ -12,6 +12,7 @@ package org.elasticsearch.action.search;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TotalHits;
+import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.common.lucene.search.TopDocsAndMaxScore;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.search.DocValueFormat;
@@ -53,7 +54,7 @@ public class CountOnlyQueryPhaseResultConsumerTests extends ESTestCase {
                 querySearchResult.topDocs(new TopDocsAndMaxScore(topDocs, Float.NaN), new DocValueFormat[0]);
                 querySearchResult.setSearchShardTarget(searchShardTarget);
                 querySearchResult.setShardIndex(i);
-                queryPhaseResultConsumer.consumeResult(querySearchResult, nextCounter::incrementAndGet);
+                queryPhaseResultConsumer.consumeResult(querySearchResult).addListener(ActionListener.running(nextCounter::incrementAndGet));
             }
 
             assertEquals(10, searchProgressListener.onQueryResult.get());
@@ -76,7 +77,7 @@ public class CountOnlyQueryPhaseResultConsumerTests extends ESTestCase {
                 QuerySearchResult querySearchResult = QuerySearchResult.nullInstance();
                 querySearchResult.setSearchShardTarget(searchShardTarget);
                 querySearchResult.setShardIndex(i);
-                queryPhaseResultConsumer.consumeResult(querySearchResult, nextCounter::incrementAndGet);
+                queryPhaseResultConsumer.consumeResult(querySearchResult).addListener(ActionListener.running(nextCounter::incrementAndGet));
             }
             var reducePhase = queryPhaseResultConsumer.reduce();
             assertEquals(0, reducePhase.totalHits().value());

@@ -12,6 +12,7 @@ import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TotalHits;
 import org.apache.lucene.util.BytesRef;
+import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.search.QueryPhaseResultConsumer;
 import org.elasticsearch.action.search.SearchPhaseController;
 import org.elasticsearch.action.search.SearchProgressListener;
@@ -197,8 +198,9 @@ public class TermsReduceBenchmark {
             exc -> {}
         );
         CountDownLatch latch = new CountDownLatch(shards.size());
+        ActionListener<Void> releasing = ActionListener.running(latch::countDown);
         for (int i = 0; i < shards.size(); i++) {
-            consumer.consumeResult(shards.get(i), () -> latch.countDown());
+            consumer.consumeResult(shards.get(i)).addListener(releasing);
         }
         latch.await();
         SearchPhaseController.ReducedQueryPhase phase = consumer.reduce();

@@ -98,7 +98,7 @@ public class RankFeaturePhaseTests extends ESTestCase {
                 int totalHits = randomIntBetween(2, 100);
                 final ScoreDoc[] shard1Docs = new ScoreDoc[] { new ScoreDoc(1, 10.0F), new ScoreDoc(2, 9.0F) };
                 populateQuerySearchResult(queryResult, totalHits, shard1Docs);
-                results.consumeResult(queryResult, () -> {});
+                results.consumeResult(queryResult);
                 // do not make an actual http request, but rather generate the response
                 // as if we would have read it from the RankFeatureShardPhase
                 mockSearchPhaseContext.searchTransport = new SearchTransportService(null, null, null) {
@@ -202,9 +202,9 @@ public class RankFeaturePhaseTests extends ESTestCase {
                 final ScoreDoc[] shard3Docs = new ScoreDoc[0];
                 populateQuerySearchResult(queryResultShard3, shard3Results, shard3Docs);
 
-                results.consumeResult(queryResultShard2, () -> {});
-                results.consumeResult(queryResultShard3, () -> {});
-                results.consumeResult(queryResultShard1, () -> {});
+                results.consumeResult(queryResultShard2);
+                results.consumeResult(queryResultShard3);
+                results.consumeResult(queryResultShard1);
 
                 // do not make an actual http request, but rather generate the response
                 // as if we would have read it from the RankFeatureShardPhase
@@ -322,8 +322,8 @@ public class RankFeaturePhaseTests extends ESTestCase {
                 final ScoreDoc[] shard2Docs = new ScoreDoc[] { new ScoreDoc(2, 9.0F) };
                 populateQuerySearchResult(queryResultShard2, shard2Results, shard2Docs);
 
-                results.consumeResult(queryResultShard2, () -> {});
-                results.consumeResult(queryResultShard1, () -> {});
+                results.consumeResult(queryResultShard2);
+                results.consumeResult(queryResultShard1);
 
                 // do not make an actual http request, but rather generate the response
                 // as if we would have read it from the RankFeatureShardPhase
@@ -416,7 +416,7 @@ public class RankFeaturePhaseTests extends ESTestCase {
                 int totalHits = randomIntBetween(2, 100);
                 final ScoreDoc[] shard1Docs = new ScoreDoc[] { new ScoreDoc(1, 10.0F), new ScoreDoc(2, 9.0F) };
                 populateQuerySearchResult(queryResult, totalHits, shard1Docs);
-                results.consumeResult(queryResult, () -> {});
+                results.consumeResult(queryResult);
 
                 // do not make an actual http request, but rather generate the response
                 // as if we would have read it from the RankFeatureShardPhase
@@ -546,9 +546,9 @@ public class RankFeaturePhaseTests extends ESTestCase {
                 final ScoreDoc[] shard3Docs = new ScoreDoc[0];
                 populateQuerySearchResult(queryResultShard3, shard3Results, shard3Docs);
 
-                results.consumeResult(queryResultShard2, () -> {});
-                results.consumeResult(queryResultShard3, () -> {});
-                results.consumeResult(queryResultShard1, () -> {});
+                results.consumeResult(queryResultShard2);
+                results.consumeResult(queryResultShard3);
+                results.consumeResult(queryResultShard1);
 
                 // do not make an actual http request, but rather generate the response
                 // as if we would have read it from the RankFeatureShardPhase
@@ -689,9 +689,9 @@ public class RankFeaturePhaseTests extends ESTestCase {
                 final ScoreDoc[] shard3Docs = new ScoreDoc[0];
                 populateQuerySearchResult(queryResultShard3, shard3Results, shard3Docs);
 
-                results.consumeResult(queryResultShard2, () -> {});
-                results.consumeResult(queryResultShard3, () -> {});
-                results.consumeResult(queryResultShard1, () -> {});
+                results.consumeResult(queryResultShard2);
+                results.consumeResult(queryResultShard3);
+                results.consumeResult(queryResultShard1);
 
                 // do not make an actual http request, but rather generate the response
                 // as if we would have read it from the RankFeatureShardPhase

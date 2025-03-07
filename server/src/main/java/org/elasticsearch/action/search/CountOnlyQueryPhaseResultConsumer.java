@@ -10,6 +10,7 @@
 package org.elasticsearch.action.search;
 
 import org.apache.lucene.search.TotalHits;
+import org.elasticsearch.action.support.SubscribableListener;
 import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.common.util.concurrent.AtomicArray;
 import org.elasticsearch.search.SearchPhaseResult;
@@ -47,21 +48,20 @@ class CountOnlyQueryPhaseResultConsumer extends SearchPhaseResults<SearchPhaseRe
     }
 
     @Override
-    public void consumeResult(SearchPhaseResult result, Runnable next) {
+    public SubscribableListener<Void> consumeResult(SearchPhaseResult result) {
         assert results.contains(result.getShardIndex()) == false : "shardIndex: " + result.getShardIndex() + " is already set";
         results.add(result.getShardIndex());
         progressListener.notifyQueryResult(result.getShardIndex(), result.queryResult());
         // We have an empty result, track that we saw it for this shard and continue;
         if (result.queryResult().isNull()) {
-            next.run();
-            return;
+            return SubscribableListener.DONE;
         }
         // set the relation to the first non-equal relation
         relationAtomicReference.compareAndSet(TotalHits.Relation.EQUAL_TO, result.queryResult().getTotalHits().relation());
         totalHits.add(result.queryResult().getTotalHits().value());
         terminatedEarly.compareAndSet(false, (result.queryResult().terminatedEarly() != null && result.queryResult().terminatedEarly()));
         timedOut.compareAndSet(false, result.queryResult().searchTimedOut());
-        next.run();
+        return SubscribableListener.DONE;
     }
 
     @Override

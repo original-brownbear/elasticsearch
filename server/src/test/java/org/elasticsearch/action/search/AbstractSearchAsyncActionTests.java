@@ -14,6 +14,7 @@ import org.elasticsearch.action.OriginalIndices;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.common.UUIDs;
+import org.elasticsearch.common.util.concurrent.ListenableFuture;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.query.MatchAllQueryBuilder;
@@ -96,11 +97,13 @@ public class AbstractSearchAsyncActionTests extends ESTestCase {
             }
 
             @Override
-            protected void executePhaseOnShard(
+            protected ListenableFuture<ResultReference<SearchPhaseResult>> executePhaseOnShard(
                 final SearchShardIterator shardIt,
-                final Transport.Connection shard,
-                final SearchActionListener<SearchPhaseResult> listener
-            ) {}
+                int shardIndex,
+                final Transport.Connection shard
+            ) {
+                return new ListenableFuture<>();
+            }
 
             @Override
             long buildTookInMillis() {
@@ -260,7 +263,7 @@ public class AbstractSearchAsyncActionTests extends ESTestCase {
             nodeLookups.add(Tuple.tuple(resultClusterAlias, resultNodeId));
             phaseResult.setSearchShardTarget(new SearchShardTarget(resultNodeId, resultShardId, resultClusterAlias));
             phaseResult.setShardIndex(i);
-            phaseResults.consumeResult(phaseResult, () -> {});
+            phaseResults.consumeResult(phaseResult);
         }
         return phaseResults;
     }

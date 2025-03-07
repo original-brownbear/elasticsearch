@@ -19,6 +19,7 @@ import org.elasticsearch.cluster.routing.RecoverySource;
 import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.routing.UnassignedInfo;
 import org.elasticsearch.common.UUIDs;
+import org.elasticsearch.common.util.concurrent.ListenableFuture;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.search.SearchHits;
@@ -115,24 +116,26 @@ public class SearchAsyncActionTests extends ESTestCase {
         ) {
 
             @Override
-            protected void executePhaseOnShard(
+            protected ListenableFuture<ResultReference<TestSearchPhaseResult>> executePhaseOnShard(
                 SearchShardIterator shardIt,
-                Transport.Connection connection,
-                SearchActionListener<TestSearchPhaseResult> listener
+                int shardIndex,
+                Transport.Connection connection
             ) {
                 seenShard.computeIfAbsent(shardIt.shardId(), (i) -> {
                     numRequests.incrementAndGet(); // only count this once per replica
                     return Boolean.TRUE;
                 });
 
+                final ListenableFuture<ResultReference<TestSearchPhaseResult>> future = new ListenableFuture<>();
                 new Thread(() -> {
                     TestSearchPhaseResult testSearchPhaseResult = new TestSearchPhaseResult(
                         new ShardSearchContextId(UUIDs.randomBase64UUID(), contextIdGenerator.incrementAndGet()),
                         connection.getNode()
                     );
-                    listener.onResponse(testSearchPhaseResult);
+                    future.onResponse(new ResultReference<>(testSearchPhaseResult));
 
                 }).start();
+                return future;
             }
 
             @Override
@@ -222,16 +225,17 @@ public class SearchAsyncActionTests extends ESTestCase {
             ) {
 
                 @Override
-                protected void executePhaseOnShard(
+                protected ListenableFuture<ResultReference<TestSearchPhaseResult>> executePhaseOnShard(
                     SearchShardIterator shardIt,
-                    Transport.Connection connection,
-                    SearchActionListener<TestSearchPhaseResult> listener
+                    int shardIndex,
+                    Transport.Connection connection
                 ) {
                     seenShard.computeIfAbsent(shardIt.shardId(), (i) -> {
                         numRequests.incrementAndGet(); // only count this once per shard copy
                         return Boolean.TRUE;
                     });
 
+                    final ListenableFuture<ResultReference<TestSearchPhaseResult>> future = new ListenableFuture<>();
                     new Thread(() -> {
                         safeAwait(awaitInitialRequests);
                         TestSearchPhaseResult testSearchPhaseResult = new TestSearchPhaseResult(
@@ -240,14 +244,15 @@ public class SearchAsyncActionTests extends ESTestCase {
                         );
                         try {
                             if (shardFailures[shardIt.shardId().id()]) {
-                                listener.onFailure(new RuntimeException());
+                                future.onFailure(new RuntimeException());
                             } else {
-                                listener.onResponse(testSearchPhaseResult);
+                                future.onResponse(new ResultReference<>(testSearchPhaseResult));
                             }
                         } finally {
                             testSearchPhaseResult.decRef();
                         }
                     }).start();
+                    return future;
                 }
 
                 @Override
@@ -338,10 +343,10 @@ public class SearchAsyncActionTests extends ESTestCase {
             ) {
 
                 @Override
-                protected void executePhaseOnShard(
+                protected ListenableFuture<ResultReference<TestSearchPhaseResult>> executePhaseOnShard(
                     SearchShardIterator shardIt,
-                    Transport.Connection connection,
-                    SearchActionListener<TestSearchPhaseResult> listener
+                    int shardIndex,
+                    Transport.Connection connection
                 ) {
                     var shardId = shardIt.shardId();
                     assertTrue("shard: " + shardId + " has been queried twice", testResponse.queried.add(shardId));
@@ -351,11 +356,7 @@ public class SearchAsyncActionTests extends ESTestCase {
                     );
                     Set<ShardSearchContextId> ids = nodeToContextMap.computeIfAbsent(connection.getNode(), (n) -> newConcurrentSet());
                     ids.add(testSearchPhaseResult.getContextId());
-                    if (randomBoolean()) {
-                        listener.onResponse(testSearchPhaseResult);
-                    } else {
-                        new Thread(() -> listener.onResponse(testSearchPhaseResult)).start();
-                    }
+                    return makeTestResult(testSearchPhaseResult);
                 }
 
                 @Override
@@ -393,6 +394,16 @@ public class SearchAsyncActionTests extends ESTestCase {
         } finally {
             testResponse.decRef();
         }
+    }
+
+    private static ListenableFuture<ResultReference<TestSearchPhaseResult>> makeTestResult(TestSearchPhaseResult testSearchPhaseResult) {
+        final ListenableFuture<ResultReference<TestSearchPhaseResult>> f = new ListenableFuture<>();
+        if (randomBoolean()) {
+            f.onResponse(new ResultReference<>(testSearchPhaseResult));
+        } else {
+            new Thread(() -> f.onResponse(new ResultReference<>(testSearchPhaseResult))).start();
+        }
+        return f;
     }
 
     public void testFanOutAndFail() throws InterruptedException {
@@ -467,10 +478,10 @@ public class SearchAsyncActionTests extends ESTestCase {
                 SearchResponse.Clusters.EMPTY
             ) {
                 @Override
-                protected void executePhaseOnShard(
+                protected ListenableFuture<ResultReference<TestSearchPhaseResult>> executePhaseOnShard(
                     SearchShardIterator shardIt,
-                    Transport.Connection connection,
-                    SearchActionListener<TestSearchPhaseResult> listener
+                    int shardIndex,
+                    Transport.Connection connection
                 ) {
                     var shardId = shardIt.shardId();
                     assertTrue("shard: " + shardId + " has been queried twice", response.queried.add(shardId));
@@ -485,11 +496,7 @@ public class SearchAsyncActionTests extends ESTestCase {
                         Set<ShardSearchContextId> ids = nodeToContextMap.computeIfAbsent(connection.getNode(), (n) -> newConcurrentSet());
                         ids.add(testSearchPhaseResult.getContextId());
                     }
-                    if (randomBoolean()) {
-                        listener.onResponse(testSearchPhaseResult);
-                    } else {
-                        new Thread(() -> listener.onResponse(testSearchPhaseResult)).start();
-                    }
+                    return makeTestResult(testSearchPhaseResult);
                 }
 
                 @Override
@@ -576,16 +583,17 @@ public class SearchAsyncActionTests extends ESTestCase {
             ) {
 
                 @Override
-                protected void executePhaseOnShard(
+                protected ListenableFuture<ResultReference<TestSearchPhaseResult>> executePhaseOnShard(
                     SearchShardIterator shardIt,
-                    Transport.Connection connection,
-                    SearchActionListener<TestSearchPhaseResult> listener
+                    int shardIndex,
+                    Transport.Connection connection
                 ) {
                     AtomicInteger retries = seenShard.computeIfAbsent(shardIt.shardId(), (i) -> {
                         numRequests.incrementAndGet(); // only count this once per shard copy
                         return new AtomicInteger(0);
                     });
                     int numRetries = retries.incrementAndGet();
+                    final ListenableFuture<ResultReference<TestSearchPhaseResult>> f = new ListenableFuture<>();
                     new Thread(() -> {
                         TestSearchPhaseResult testSearchPhaseResult = new TestSearchPhaseResult(
                             new ShardSearchContextId(UUIDs.randomBase64UUID(), contextIdGenerator.incrementAndGet()),
@@ -594,14 +602,15 @@ public class SearchAsyncActionTests extends ESTestCase {
                         try {
                             if (numRetries < shardIt.size()) {
                                 numFailReplicas.incrementAndGet();
-                                listener.onFailure(new RuntimeException());
+                                f.onFailure(new RuntimeException());
                             } else {
-                                listener.onResponse(testSearchPhaseResult);
+                                f.onResponse(new ResultReference<>(testSearchPhaseResult));
                             }
                         } finally {
                             testSearchPhaseResult.decRef();
                         }
                     }).start();
+                    return f;
                 }
 
                 @Override
@@ -674,12 +683,12 @@ public class SearchAsyncActionTests extends ESTestCase {
         ) {
 
             @Override
-            protected void executePhaseOnShard(
+            protected ListenableFuture<ResultReference<TestSearchPhaseResult>> executePhaseOnShard(
                 SearchShardIterator shardIt,
-                Transport.Connection connection,
-                SearchActionListener<TestSearchPhaseResult> listener
+                int shardIndex,
+                Transport.Connection connection
             ) {
-                assert false : "Expected to skip all shards";
+                throw new AssertionError("Expected to skip all shards");
             }
 
             @Override

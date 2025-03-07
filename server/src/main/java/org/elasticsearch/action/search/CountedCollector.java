@@ -8,6 +8,7 @@
  */
 package org.elasticsearch.action.search;
 
+import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.common.util.concurrent.CountDown;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.search.SearchPhaseResult;
@@ -46,7 +47,12 @@ final class CountedCollector<R extends SearchPhaseResult> {
      * Sets the result to the given array index and then runs {@link #countDown()}
      */
     void onResult(R result) {
-        resultConsumer.consumeResult(result, this::countDown);
+        var r = resultConsumer.consumeResult(result);
+        if (r.isSuccess()) {
+            countDown();
+        } else {
+            r.addListener(ActionListener.running(this::countDown));
+        }
     }
 
     /**

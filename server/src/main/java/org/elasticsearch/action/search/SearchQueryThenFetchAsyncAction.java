@@ -15,6 +15,7 @@ import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.common.util.concurrent.ListenableFuture;
 import org.elasticsearch.search.SearchPhaseResult;
 import org.elasticsearch.search.SearchShardTarget;
 import org.elasticsearch.search.dfs.AggregatedDfs;
@@ -89,13 +90,18 @@ class SearchQueryThenFetchAsyncAction extends AbstractSearchAsyncAction<SearchPh
         }
     }
 
-    protected void executePhaseOnShard(
+    protected ListenableFuture<ResultReference<SearchPhaseResult>> executePhaseOnShard(
         final SearchShardIterator shardIt,
-        final Transport.Connection connection,
-        final SearchActionListener<SearchPhaseResult> listener
+        int shardIndex,
+        final Transport.Connection connection
     ) {
-        ShardSearchRequest request = rewriteShardSearchRequest(super.buildShardSearchRequest(shardIt, listener.requestIndex));
-        getSearchTransport().sendExecuteQuery(connection, request, getTask(), listener);
+        ShardSearchRequest request = rewriteShardSearchRequest(super.buildShardSearchRequest(shardIt, shardIndex));
+        final ListenableFuture<ResultReference<SearchPhaseResult>> future = new ListenableFuture<>();
+        getSearchTransport().sendExecuteQuery(connection, request, getTask(), future.safeMap(r -> {
+            r.mustIncRef();
+            return new ResultReference<>(r);
+        }));
+        return future;
     }
 
     @Override

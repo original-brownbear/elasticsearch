@@ -17,6 +17,7 @@ import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.util.concurrent.AtomicArray;
+import org.elasticsearch.common.util.concurrent.ListenableFuture;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.Releasables;
 import org.elasticsearch.search.SearchPhaseResult;
@@ -144,13 +145,17 @@ public final class MockSearchPhaseContext extends AbstractSearchAsyncAction<Sear
     }
 
     @Override
-    protected void executePhaseOnShard(
+    protected ListenableFuture<ResultReference<SearchPhaseResult>> executePhaseOnShard(
         SearchShardIterator shardIt,
-        Transport.Connection shard,
-        SearchActionListener<SearchPhaseResult> listener
+        final int shardIndex,
+        Transport.Connection connection
     ) {
-        onShardResult(new SearchPhaseResult() {
-        });
+        final ListenableFuture<ResultReference<SearchPhaseResult>> future = new ListenableFuture<>();
+        final SearchPhaseResult res = new SearchPhaseResult() {
+        };
+        onShardResult(res);
+        future.onResponse(new ResultReference<>(res));
+        return future;
     }
 
     @Override

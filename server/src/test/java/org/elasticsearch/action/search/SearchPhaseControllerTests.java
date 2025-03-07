@@ -20,6 +20,7 @@ import org.apache.lucene.search.TotalHits;
 import org.apache.lucene.search.TotalHits.Relation;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.PriorityQueue;
+import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.search.SearchPhaseController.TopDocsStats;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.UUIDs;
@@ -627,7 +628,7 @@ public class SearchPhaseControllerTests extends ESTestCase {
                 int shardId = 2 + numEmptyResponses;
                 empty.setShardIndex(2 + numEmptyResponses);
                 empty.setSearchShardTarget(new SearchShardTarget("node", new ShardId("a", "b", shardId), null));
-                consumer.consumeResult(empty, latch::countDown);
+                consumer.consumeResult(empty).addListener(ActionListener.running(latch::countDown));
                 numEmptyResponses--;
             }
 
@@ -644,7 +645,7 @@ public class SearchPhaseControllerTests extends ESTestCase {
                 InternalAggregations aggs = InternalAggregations.from(singletonList(new Max("test", 1.0D, DocValueFormat.RAW, emptyMap())));
                 result.aggregations(aggs);
                 result.setShardIndex(0);
-                consumer.consumeResult(result, latch::countDown);
+                consumer.consumeResult(result).addListener(ActionListener.running(latch::countDown));
             } finally {
                 result.decRef();
             }
@@ -661,7 +662,7 @@ public class SearchPhaseControllerTests extends ESTestCase {
                 InternalAggregations aggs = InternalAggregations.from(singletonList(new Max("test", 3.0D, DocValueFormat.RAW, emptyMap())));
                 result.aggregations(aggs);
                 result.setShardIndex(2);
-                consumer.consumeResult(result, latch::countDown);
+                consumer.consumeResult(result).addListener(ActionListener.running(latch::countDown));
             } finally {
                 result.decRef();
             }
@@ -678,7 +679,7 @@ public class SearchPhaseControllerTests extends ESTestCase {
                 InternalAggregations aggs = InternalAggregations.from(singletonList(new Max("test", 2.0D, DocValueFormat.RAW, emptyMap())));
                 result.aggregations(aggs);
                 result.setShardIndex(1);
-                consumer.consumeResult(result, latch::countDown);
+                consumer.consumeResult(result).addListener(ActionListener.running(latch::countDown));
             } finally {
                 result.decRef();
             }
@@ -688,7 +689,7 @@ public class SearchPhaseControllerTests extends ESTestCase {
                     int shardId = 2 + numEmptyResponses;
                     result.setShardIndex(shardId);
                     result.setSearchShardTarget(new SearchShardTarget("node", new ShardId("a", "b", shardId), null));
-                    consumer.consumeResult(result, latch::countDown);
+                    consumer.consumeResult(result).addListener(ActionListener.running(latch::countDown));
                 } finally {
                     result.decRef();
                 }
@@ -767,7 +768,7 @@ public class SearchPhaseControllerTests extends ESTestCase {
                     result.aggregations(aggs);
                     result.setShardIndex(id);
                     result.size(1);
-                    consumer.consumeResult(result, latch::countDown);
+                    consumer.consumeResult(result).addListener(ActionListener.running(latch::countDown));
                 } finally {
                     result.decRef();
                 }
@@ -827,7 +828,7 @@ public class SearchPhaseControllerTests extends ESTestCase {
                     result.aggregations(aggs);
                     result.setShardIndex(i);
                     result.size(1);
-                    consumer.consumeResult(result, latch::countDown);
+                    consumer.consumeResult(result).addListener(ActionListener.running(latch::countDown));
                 } finally {
                     result.decRef();
                 }
@@ -888,7 +889,7 @@ public class SearchPhaseControllerTests extends ESTestCase {
                     );
                     result.setShardIndex(i);
                     result.size(1);
-                    consumer.consumeResult(result, latch::countDown);
+                    consumer.consumeResult(result).addListener(ActionListener.running(latch::countDown));
                 } finally {
                     result.decRef();
                 }
@@ -954,7 +955,7 @@ public class SearchPhaseControllerTests extends ESTestCase {
                     result.setShardIndex(i);
                     result.size(5);
                     result.from(5);
-                    consumer.consumeResult(result, latch::countDown);
+                    consumer.consumeResult(result).addListener(ActionListener.running(latch::countDown));
                 } finally {
                     result.decRef();
                 }
@@ -1009,7 +1010,7 @@ public class SearchPhaseControllerTests extends ESTestCase {
                     result.topDocs(new TopDocsAndMaxScore(topDocs, Float.NaN), docValueFormats);
                     result.setShardIndex(i);
                     result.size(size);
-                    consumer.consumeResult(result, latch::countDown);
+                    consumer.consumeResult(result).addListener(ActionListener.running(latch::countDown));
                 } finally {
                     result.decRef();
                 }
@@ -1066,7 +1067,7 @@ public class SearchPhaseControllerTests extends ESTestCase {
                     result.topDocs(new TopDocsAndMaxScore(topDocs, Float.NaN), docValueFormats);
                     result.setShardIndex(i);
                     result.size(size);
-                    consumer.consumeResult(result, latch::countDown);
+                    consumer.consumeResult(result).addListener(ActionListener.running(latch::countDown));
                 } finally {
                     result.decRef();
                 }
@@ -1163,7 +1164,7 @@ public class SearchPhaseControllerTests extends ESTestCase {
                     result.topDocs(new TopDocsAndMaxScore(Lucene.EMPTY_TOP_DOCS, Float.NaN), new DocValueFormat[0]);
                     result.setShardIndex(i);
                     result.size(0);
-                    consumer.consumeResult(result, latch::countDown);
+                    consumer.consumeResult(result).addListener(ActionListener.running(latch::countDown));
                 } finally {
                     result.decRef();
                 }
@@ -1274,7 +1275,7 @@ public class SearchPhaseControllerTests extends ESTestCase {
                         result.aggregations(aggs);
                         result.setShardIndex(id);
                         result.size(1);
-                        consumer.consumeResult(result, latch::countDown);
+                        consumer.consumeResult(result).addListener(ActionListener.running(latch::countDown));
                     } finally {
                         result.decRef();
                     }
@@ -1353,7 +1354,7 @@ public class SearchPhaseControllerTests extends ESTestCase {
                     result.aggregations(aggs);
                     result.setShardIndex(index);
                     result.size(1);
-                    consumer.consumeResult(result, latch::countDown);
+                    consumer.consumeResult(result).addListener(ActionListener.running(latch::countDown));
                 } finally {
                     result.decRef();
                 }
@@ -1413,7 +1414,7 @@ public class SearchPhaseControllerTests extends ESTestCase {
                     result.aggregations(null);
                     result.setShardIndex(index);
                     result.size(1);
-                    expectThrows(Exception.class, () -> consumer.consumeResult(result, () -> {}));
+                    expectThrows(Exception.class, () -> consumer.consumeResult(result));
                 } finally {
                     result.decRef();
                 }

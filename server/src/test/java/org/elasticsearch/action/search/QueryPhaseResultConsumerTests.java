@@ -12,6 +12,7 @@ package org.elasticsearch.action.search;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TotalHits;
+import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.common.breaker.CircuitBreaker;
 import org.elasticsearch.common.breaker.NoopCircuitBreaker;
 import org.elasticsearch.common.lucene.search.TopDocsAndMaxScore;
@@ -135,7 +136,8 @@ public class QueryPhaseResultConsumerTests extends ESTestCase {
                 querySearchResult.topDocs(new TopDocsAndMaxScore(topDocs, Float.NaN), new DocValueFormat[0]);
                 querySearchResult.setSearchShardTarget(searchShardTarget);
                 querySearchResult.setShardIndex(i);
-                queryPhaseResultConsumer.consumeResult(querySearchResult, partialReduceLatch::countDown);
+                queryPhaseResultConsumer.consumeResult(querySearchResult)
+                    .addListener(ActionListener.running(partialReduceLatch::countDown));
             }
 
             assertEquals(10, searchProgressListener.onQueryResult.get());

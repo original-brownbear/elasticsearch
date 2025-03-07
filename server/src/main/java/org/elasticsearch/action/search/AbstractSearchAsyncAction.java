@@ -26,6 +26,7 @@ import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.common.util.concurrent.AtomicArray;
+import org.elasticsearch.common.util.concurrent.ListenableFuture;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.Releasables;
 import org.elasticsearch.index.shard.ShardId;
@@ -247,43 +248,60 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
     }
 
     private void performPhaseOnShard(final int shardIndex, final SearchShardIterator shardIt, final SearchShardTarget shard) {
+        final Transport.Connection connection;
+        try {
+            connection = getConnection(shard.getClusterAlias(), shard.getNodeId());
+        } catch (Exception e) {
+            onShardFailure(shardIndex, shard, shardIt, e);
+            return;
+        }
+        final ListenableFuture<ResultReference<Result>> listenableFuture;
         if (throttleConcurrentRequests) {
             var pendingExecutions = pendingExecutionsPerNode.computeIfAbsent(
                 shard.getNodeId(),
                 n -> new PendingExecutions(maxConcurrentRequestsPerNode)
             );
-            pendingExecutions.submit(l -> doPerformPhaseOnShard(shardIndex, shardIt, shard, l));
+            listenableFuture = new ListenableFuture<>();
+            pendingExecutions.submit(l -> {
+                var res = executePhaseOnShard(shardIt, shardIndex, connection);
+                if (res.isSuccess()) {
+                    l.close();
+                    listenableFuture.onResponse(res.result());
+                } else {
+                    res.addListener(ActionListener.releasing(l));
+                    res.addListener(listenableFuture);
+                }
+            });
         } else {
-            doPerformPhaseOnShard(shardIndex, shardIt, shard, () -> {});
+            listenableFuture = executePhaseOnShard(shardIt, shardIndex, connection);
+        }
+        if (listenableFuture.isSuccess()) {
+            successfulShardResult(shardIndex, shardIt, shard, listenableFuture.result().consume());
+        } else {
+            listenableFuture.addListener(new ActionListener<>() {
+                @Override
+                public void onResponse(ResultReference<Result> result) {
+                    successfulShardResult(shardIndex, shardIt, shard, result.consume());
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    onShardFailure(shardIndex, shard, shardIt, e);
+                }
+            });
         }
     }
 
-    private void doPerformPhaseOnShard(int shardIndex, SearchShardIterator shardIt, SearchShardTarget shard, Releasable releasable) {
-        var shardListener = new SearchActionListener<Result>(shard, shardIndex) {
-            @Override
-            public void innerOnResponse(Result result) {
-                try {
-                    releasable.close();
-                    onShardResult(result);
-                } catch (Exception exc) {
-                    onShardFailure(shardIndex, shard, shardIt, exc);
-                }
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                releasable.close();
-                onShardFailure(shardIndex, shard, shardIt, e);
-            }
-        };
-        final Transport.Connection connection;
+    private void successfulShardResult(int shardIndex, SearchShardIterator shardIt, SearchShardTarget shard, Result r) {
         try {
-            connection = getConnection(shard.getClusterAlias(), shard.getNodeId());
-        } catch (Exception e) {
-            shardListener.onFailure(e);
-            return;
+            r.setSearchShardTarget(shard);
+            r.setShardIndex(shardIndex);
+            onShardResult(r);
+        } catch (Exception exc) {
+            onShardFailure(shardIndex, shard, shardIt, exc);
+        } finally {
+            r.decRef();
         }
-        executePhaseOnShard(shardIt, connection, shardListener);
     }
 
     private void failOnUnavailable(int shardIndex, SearchShardIterator shardIt) {
@@ -295,12 +313,11 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
      * Sends the request to the actual shard.
      * @param shardIt the shards iterator
      * @param connection to node that the shard is located on
-     * @param listener the listener to notify on response
      */
-    protected abstract void executePhaseOnShard(
+    protected abstract ListenableFuture<ResultReference<Result>> executePhaseOnShard(
         SearchShardIterator shardIt,
-        Transport.Connection connection,
-        SearchActionListener<Result> listener
+        int shardIndex,
+        Transport.Connection connection
     );
 
     /**
@@ -494,7 +511,12 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
         if (logger.isTraceEnabled()) {
             logger.trace("got first-phase result from {}", result != null ? result.getSearchShardTarget() : null);
         }
-        results.consumeResult(result, () -> onShardResultConsumed(result));
+        var r = results.consumeResult(result);
+        if (r.isSuccess()) {
+            onShardResultConsumed(result);
+        } else {
+            r.addListener(ActionListener.running(() -> onShardResultConsumed(result)));
+        }
     }
 
     private void onShardResultConsumed(Result result) {

@@ -131,7 +131,7 @@ public class FetchSearchPhaseTests extends ESTestCase {
                     QueryFetchSearchResult fetchSearchResult = QueryFetchSearchResult.of(queryResult, fetchResult);
                     try {
                         fetchSearchResult.setShardIndex(0);
-                        results.consumeResult(fetchSearchResult, () -> {});
+                        results.consumeResult(fetchSearchResult);
                     } finally {
                         fetchSearchResult.decRef();
                     }
@@ -207,7 +207,7 @@ public class FetchSearchPhaseTests extends ESTestCase {
                 queryResult.size(resultSetSize); // the size of the result set
                 queryResult.setShardIndex(0);
                 addProfiling(profiled, queryResult);
-                results.consumeResult(queryResult, () -> {});
+                results.consumeResult(queryResult);
 
             } finally {
                 queryResult.decRef();
@@ -226,7 +226,7 @@ public class FetchSearchPhaseTests extends ESTestCase {
                 queryResult.size(resultSetSize);
                 queryResult.setShardIndex(1);
                 addProfiling(profiled, queryResult);
-                results.consumeResult(queryResult, () -> {});
+                results.consumeResult(queryResult);
             } finally {
                 queryResult.decRef();
             }
@@ -319,7 +319,7 @@ public class FetchSearchPhaseTests extends ESTestCase {
                 queryResult.size(resultSetSize); // the size of the result set
                 queryResult.setShardIndex(0);
                 addProfiling(profiled, queryResult);
-                results.consumeResult(queryResult, () -> {});
+                results.consumeResult(queryResult);
             } finally {
                 queryResult.decRef();
             }
@@ -337,7 +337,7 @@ public class FetchSearchPhaseTests extends ESTestCase {
                 queryResult.size(resultSetSize);
                 queryResult.setShardIndex(1);
                 addProfiling(profiled, queryResult);
-                results.consumeResult(queryResult, () -> {});
+                results.consumeResult(queryResult);
             } finally {
                 queryResult.decRef();
             }
@@ -440,7 +440,7 @@ public class FetchSearchPhaseTests extends ESTestCase {
                     queryResult.size(resultSetSize); // the size of the result set
                     queryResult.setShardIndex(i);
                     addProfiling(profiled, queryResult);
-                    results.consumeResult(queryResult, () -> {});
+                    results.consumeResult(queryResult);
                 } finally {
                     queryResult.decRef();
                 }
@@ -561,7 +561,7 @@ public class FetchSearchPhaseTests extends ESTestCase {
                 queryResult.size(resultSetSize); // the size of the result set
                 queryResult.setShardIndex(0);
                 addProfiling(profiled, queryResult);
-                results.consumeResult(queryResult, () -> {});
+                results.consumeResult(queryResult);
             } finally {
                 queryResult.decRef();
             }
@@ -577,7 +577,7 @@ public class FetchSearchPhaseTests extends ESTestCase {
                 queryResult.size(resultSetSize);
                 queryResult.setShardIndex(1);
                 addProfiling(profiled, queryResult);
-                results.consumeResult(queryResult, () -> {});
+                results.consumeResult(queryResult);
             } finally {
                 queryResult.decRef();
             }
@@ -675,7 +675,7 @@ public class FetchSearchPhaseTests extends ESTestCase {
                 queryResult.size(resultSetSize); // the size of the result set
                 queryResult.setShardIndex(0);
                 addProfiling(profiled, queryResult);
-                results.consumeResult(queryResult, () -> {});
+                results.consumeResult(queryResult);
             } finally {
                 queryResult.decRef();
             }
@@ -693,7 +693,7 @@ public class FetchSearchPhaseTests extends ESTestCase {
                 queryResult.size(resultSetSize);
                 queryResult.setShardIndex(1);
                 addProfiling(profiled, queryResult);
-                results.consumeResult(queryResult, () -> {});
+                results.consumeResult(queryResult);
             } finally {
                 queryResult.decRef();
             }
