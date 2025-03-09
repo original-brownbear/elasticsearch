@@ -56,54 +56,61 @@ public final class ResizeRequestInterceptor implements RequestInterceptor {
         AuthorizationInfo authorizationInfo
     ) {
         if (requestInfo.getRequest() instanceof ResizeRequest request) {
-            final AuditTrail auditTrail = auditTrailService.get();
-            final boolean isDlsLicensed = DOCUMENT_LEVEL_SECURITY_FEATURE.checkWithoutTracking(licenseState);
-            final boolean isFlsLicensed = FIELD_LEVEL_SECURITY_FEATURE.checkWithoutTracking(licenseState);
-            if (dlsFlsEnabled && (isDlsLicensed || isFlsLicensed)) {
-                IndicesAccessControl indicesAccessControl = threadContext.getTransient(AuthorizationServiceField.INDICES_PERMISSIONS_KEY);
-                IndicesAccessControl.IndexAccessControl indexAccessControl = indicesAccessControl.getIndexPermissions(
-                    request.getSourceIndex()
+            return doIntercept(requestInfo, authorizationEngine, authorizationInfo, request);
+        } else {
+            return SubscribableListener.VOID_SUCCESS;
+        }
+    }
+
+    private SubscribableListener<Void> doIntercept(
+        RequestInfo requestInfo,
+        AuthorizationEngine authorizationEngine,
+        AuthorizationInfo authorizationInfo,
+        ResizeRequest request
+    ) {
+        if (dlsFlsEnabled
+            && (DOCUMENT_LEVEL_SECURITY_FEATURE.checkWithoutTracking(licenseState)
+                || FIELD_LEVEL_SECURITY_FEATURE.checkWithoutTracking(licenseState))) {
+            IndicesAccessControl indicesAccessControl = threadContext.getTransient(AuthorizationServiceField.INDICES_PERMISSIONS_KEY);
+            IndicesAccessControl.IndexAccessControl indexAccessControl = indicesAccessControl.getIndexPermissions(request.getSourceIndex());
+            if (indexAccessControl != null
+                && (indexAccessControl.getFieldPermissions().hasFieldLevelSecurity()
+                    || indexAccessControl.getDocumentPermissions().hasDocumentLevelPermissions())) {
+                return SubscribableListener.newFailed(
+                    new ElasticsearchSecurityException(
+                        "Resize requests are not allowed for users when "
+                            + "field or document level security is enabled on the source index",
+                        RestStatus.BAD_REQUEST
+                    )
                 );
-                if (indexAccessControl != null
-                    && (indexAccessControl.getFieldPermissions().hasFieldLevelSecurity()
-                        || indexAccessControl.getDocumentPermissions().hasDocumentLevelPermissions())) {
-                    return SubscribableListener.newFailed(
-                        new ElasticsearchSecurityException(
-                            "Resize requests are not allowed for users when "
-                                + "field or document level security is enabled on the source index",
-                            RestStatus.BAD_REQUEST
+            }
+        }
+
+        final AuditTrail auditTrail = auditTrailService.get();
+        final SubscribableListener<Void> listener = new SubscribableListener<>();
+        authorizationEngine.validateIndexPermissionsAreSubset(
+            requestInfo,
+            authorizationInfo,
+            Collections.singletonMap(request.getSourceIndex(), Collections.singletonList(request.getTargetIndexRequest().index())),
+            wrapPreservingContext(ActionListener.wrap(authzResult -> {
+                if (authzResult.isGranted()) {
+                    listener.onResponse(null);
+                } else {
+                    auditTrail.accessDenied(
+                        extractRequestId(threadContext),
+                        requestInfo.getAuthentication(),
+                        requestInfo.getAction(),
+                        request,
+                        authorizationInfo
+                    );
+                    listener.onFailure(
+                        Exceptions.authorizationError(
+                            "Resizing an index is not allowed when the target index " + "has more permissions than the source index"
                         )
                     );
                 }
-            }
-
-            final SubscribableListener<Void> listener = new SubscribableListener<>();
-            authorizationEngine.validateIndexPermissionsAreSubset(
-                requestInfo,
-                authorizationInfo,
-                Collections.singletonMap(request.getSourceIndex(), Collections.singletonList(request.getTargetIndexRequest().index())),
-                wrapPreservingContext(ActionListener.wrap(authzResult -> {
-                    if (authzResult.isGranted()) {
-                        listener.onResponse(null);
-                    } else {
-                        auditTrail.accessDenied(
-                            extractRequestId(threadContext),
-                            requestInfo.getAuthentication(),
-                            requestInfo.getAction(),
-                            request,
-                            authorizationInfo
-                        );
-                        listener.onFailure(
-                            Exceptions.authorizationError(
-                                "Resizing an index is not allowed when the target index " + "has more permissions than the source index"
-                            )
-                        );
-                    }
-                }, listener::onFailure), threadContext)
-            );
-            return listener;
-        } else {
-            return SubscribableListener.newSucceeded(null);
-        }
+            }, listener::onFailure), threadContext)
+        );
+        return listener;
     }
 }

@@ -103,6 +103,14 @@ public class SubscribableListener<T> implements ActionListener<T> {
     private static final Logger logger = LogManager.getLogger(SubscribableListener.class);
     private static final Object EMPTY = new Object();
 
+    public static final SubscribableListener<Void> VOID_SUCCESS;
+
+    static {
+        var voidSuccess = new SubscribableListener<Void>();
+        voidSuccess.onResponse(null);
+        VOID_SUCCESS = voidSuccess;
+    }
+
     /**
      * Create a {@link SubscribableListener} which is incomplete.
      */

@@ -48,12 +48,17 @@ abstract class FieldAndDocumentLevelSecurityRequestInterceptor implements Reques
         AuthorizationEngine authorizationEngine,
         AuthorizationInfo authorizationInfo
     ) {
-        final boolean isDlsLicensed = DOCUMENT_LEVEL_SECURITY_FEATURE.checkWithoutTracking(licenseState);
-        final boolean isFlsLicensed = FIELD_LEVEL_SECURITY_FEATURE.checkWithoutTracking(licenseState);
         if (requestInfo.getRequest() instanceof IndicesRequest indicesRequest
             && false == TransportActionProxy.isProxyAction(requestInfo.getAction())
-            && supports(indicesRequest)
-            && (isDlsLicensed || isFlsLicensed)) {
+            && supports(indicesRequest)) {
+            return doIntercept(indicesRequest);
+        }
+        return SubscribableListener.VOID_SUCCESS;
+    }
+
+    private SubscribableListener<Void> doIntercept(IndicesRequest indicesRequest) {
+        if (DOCUMENT_LEVEL_SECURITY_FEATURE.checkWithoutTracking(licenseState)
+            || FIELD_LEVEL_SECURITY_FEATURE.checkWithoutTracking(licenseState)) {
             final IndicesAccessControl indicesAccessControl = threadContext.getTransient(AuthorizationServiceField.INDICES_PERMISSIONS_KEY);
             final Map<String, IndicesAccessControl.IndexAccessControl> accessControlByIndex = new HashMap<>();
             for (String index : requestIndices(indicesRequest)) {
@@ -77,7 +82,7 @@ abstract class FieldAndDocumentLevelSecurityRequestInterceptor implements Reques
                 return listener;
             }
         }
-        return SubscribableListener.newSucceeded(null);
+        return SubscribableListener.VOID_SUCCESS;
     }
 
     abstract void disableFeatures(

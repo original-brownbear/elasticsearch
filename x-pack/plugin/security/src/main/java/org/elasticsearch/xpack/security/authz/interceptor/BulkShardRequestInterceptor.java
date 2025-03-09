@@ -47,40 +47,46 @@ public class BulkShardRequestInterceptor implements RequestInterceptor {
         AuthorizationEngine authzEngine,
         AuthorizationInfo authorizationInfo
     ) {
-        final boolean isDlsLicensed = DOCUMENT_LEVEL_SECURITY_FEATURE.checkWithoutTracking(licenseState);
-        final boolean isFlsLicensed = FIELD_LEVEL_SECURITY_FEATURE.checkWithoutTracking(licenseState);
-        if (requestInfo.getRequest() instanceof BulkShardRequest bulkShardRequest && (isDlsLicensed || isFlsLicensed)) {
-            IndicesAccessControl indicesAccessControl = threadContext.getTransient(AuthorizationServiceField.INDICES_PERMISSIONS_KEY);
-            // this uses the {@code BulkShardRequest#index()} because the {@code bulkItemRequest#index()}
-            // can still be an unresolved date math expression
-            IndicesAccessControl.IndexAccessControl indexAccessControl = indicesAccessControl.getIndexPermissions(bulkShardRequest.index());
-            // TODO replace if condition with assertion
-            if (indexAccessControl != null
-                && (indexAccessControl.getFieldPermissions().hasFieldLevelSecurity()
-                    || indexAccessControl.getDocumentPermissions().hasDocumentLevelPermissions())) {
-                for (BulkItemRequest bulkItemRequest : bulkShardRequest.items()) {
-                    boolean found = false;
-                    if (bulkItemRequest.request() instanceof UpdateRequest) {
-                        found = true;
-                        logger.trace("aborting bulk item update request for index [{}]", bulkShardRequest.index());
-                        bulkItemRequest.abort(
-                            bulkItemRequest.index(),
-                            new ElasticsearchSecurityException(
-                                "Can't execute a bulk "
-                                    + "item request with update requests embedded if field or document level security is enabled",
-                                RestStatus.BAD_REQUEST
-                            )
-                        );
-                    }
-                    if (found == false) {
-                        logger.trace(
-                            "intercepted bulk request for index [{}] without any update requests, continuing execution",
-                            bulkShardRequest.index()
-                        );
-                    }
+        if (requestInfo.getRequest() instanceof BulkShardRequest bulkShardRequest) {
+            doIntercept(bulkShardRequest);
+        }
+        return SubscribableListener.newSucceeded(null);
+    }
+
+    private void doIntercept(BulkShardRequest bulkShardRequest) {
+        if (DOCUMENT_LEVEL_SECURITY_FEATURE.checkWithoutTracking(licenseState) == false
+            && FIELD_LEVEL_SECURITY_FEATURE.checkWithoutTracking(licenseState) == false) {
+            return;
+        }
+        IndicesAccessControl indicesAccessControl = threadContext.getTransient(AuthorizationServiceField.INDICES_PERMISSIONS_KEY);
+        // this uses the {@code BulkShardRequest#index()} because the {@code bulkItemRequest#index()}
+        // can still be an unresolved date math expression
+        IndicesAccessControl.IndexAccessControl indexAccessControl = indicesAccessControl.getIndexPermissions(bulkShardRequest.index());
+        // TODO replace if condition with assertion
+        if (indexAccessControl != null
+            && (indexAccessControl.getFieldPermissions().hasFieldLevelSecurity()
+                || indexAccessControl.getDocumentPermissions().hasDocumentLevelPermissions())) {
+            for (BulkItemRequest bulkItemRequest : bulkShardRequest.items()) {
+                boolean found = false;
+                if (bulkItemRequest.request() instanceof UpdateRequest) {
+                    found = true;
+                    logger.trace("aborting bulk item update request for index [{}]", bulkShardRequest.index());
+                    bulkItemRequest.abort(
+                        bulkItemRequest.index(),
+                        new ElasticsearchSecurityException(
+                            "Can't execute a bulk "
+                                + "item request with update requests embedded if field or document level security is enabled",
+                            RestStatus.BAD_REQUEST
+                        )
+                    );
+                }
+                if (found == false) {
+                    logger.trace(
+                        "intercepted bulk request for index [{}] without any update requests, continuing execution",
+                        bulkShardRequest.index()
+                    );
                 }
             }
         }
-        return SubscribableListener.newSucceeded(null);
     }
 }

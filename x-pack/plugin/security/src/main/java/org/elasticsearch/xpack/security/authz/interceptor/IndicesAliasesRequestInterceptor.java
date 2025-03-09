@@ -60,72 +60,81 @@ public final class IndicesAliasesRequestInterceptor implements RequestIntercepto
         AuthorizationInfo authorizationInfo
     ) {
         if (requestInfo.getRequest() instanceof IndicesAliasesRequest request) {
-            final AuditTrail auditTrail = auditTrailService.get();
-            final boolean isDlsLicensed = DOCUMENT_LEVEL_SECURITY_FEATURE.checkWithoutTracking(licenseState);
-            final boolean isFlsLicensed = FIELD_LEVEL_SECURITY_FEATURE.checkWithoutTracking(licenseState);
-            IndicesAccessControl indicesAccessControl = threadContext.getTransient(AuthorizationServiceField.INDICES_PERMISSIONS_KEY);
-            if (dlsFlsEnabled && (isDlsLicensed || isFlsLicensed)) {
-                for (IndicesAliasesRequest.AliasActions aliasAction : request.getAliasActions()) {
-                    if (aliasAction.actionType() == IndicesAliasesRequest.AliasActions.Type.ADD) {
-                        for (String index : aliasAction.indices()) {
-                            IndicesAccessControl.IndexAccessControl indexAccessControl = indicesAccessControl.getIndexPermissions(index);
-                            if (indexAccessControl != null
-                                && (indexAccessControl.getFieldPermissions().hasFieldLevelSecurity()
-                                    || indexAccessControl.getDocumentPermissions().hasDocumentLevelPermissions())) {
-                                return SubscribableListener.newFailed(
-                                    new ElasticsearchSecurityException(
-                                        "Alias requests are not allowed for "
-                                            + "users who have field or document level security enabled on one of the indices",
-                                        RestStatus.BAD_REQUEST
-                                    )
-                                );
-                            }
+            return doIntercept(requestInfo, authorizationEngine, authorizationInfo, request);
+        } else {
+            return SubscribableListener.VOID_SUCCESS;
+        }
+    }
+
+    private SubscribableListener<Void> doIntercept(
+        RequestInfo requestInfo,
+        AuthorizationEngine authorizationEngine,
+        AuthorizationInfo authorizationInfo,
+        IndicesAliasesRequest request
+    ) {
+        IndicesAccessControl indicesAccessControl = threadContext.getTransient(AuthorizationServiceField.INDICES_PERMISSIONS_KEY);
+        if (dlsFlsEnabled
+            && (DOCUMENT_LEVEL_SECURITY_FEATURE.checkWithoutTracking(licenseState)
+                || FIELD_LEVEL_SECURITY_FEATURE.checkWithoutTracking(licenseState))) {
+            for (IndicesAliasesRequest.AliasActions aliasAction : request.getAliasActions()) {
+                if (aliasAction.actionType() == IndicesAliasesRequest.AliasActions.Type.ADD) {
+                    for (String index : aliasAction.indices()) {
+                        IndicesAccessControl.IndexAccessControl indexAccessControl = indicesAccessControl.getIndexPermissions(index);
+                        if (indexAccessControl != null
+                            && (indexAccessControl.getFieldPermissions().hasFieldLevelSecurity()
+                                || indexAccessControl.getDocumentPermissions().hasDocumentLevelPermissions())) {
+                            return SubscribableListener.newFailed(
+                                new ElasticsearchSecurityException(
+                                    "Alias requests are not allowed for "
+                                        + "users who have field or document level security enabled on one of the indices",
+                                    RestStatus.BAD_REQUEST
+                                )
+                            );
                         }
                     }
                 }
             }
-
-            Map<String, List<String>> indexToAliasesMap = request.getAliasActions()
-                .stream()
-                .filter(aliasAction -> aliasAction.actionType() == IndicesAliasesRequest.AliasActions.Type.ADD)
-                .flatMap(
-                    aliasActions -> Arrays.stream(aliasActions.indices())
-                        .map(indexName -> new Tuple<>(indexName, Arrays.asList(aliasActions.aliases())))
-                )
-                .collect(Collectors.toMap(Tuple::v1, Tuple::v2, (existing, toMerge) -> {
-                    List<String> list = new ArrayList<>(existing.size() + toMerge.size());
-                    list.addAll(existing);
-                    list.addAll(toMerge);
-                    return list;
-                }));
-            final SubscribableListener<Void> listener = new SubscribableListener<>();
-            authorizationEngine.validateIndexPermissionsAreSubset(
-                requestInfo,
-                authorizationInfo,
-                indexToAliasesMap,
-                wrapPreservingContext(ActionListener.wrap(authzResult -> {
-                    if (authzResult.isGranted()) {
-                        // do not audit success again
-                        listener.onResponse(null);
-                    } else {
-                        auditTrail.accessDenied(
-                            AuditUtil.extractRequestId(threadContext),
-                            requestInfo.getAuthentication(),
-                            requestInfo.getAction(),
-                            request,
-                            authorizationInfo
-                        );
-                        listener.onFailure(
-                            Exceptions.authorizationError(
-                                "Adding an alias is not allowed when the alias " + "has more permissions than any of the indices"
-                            )
-                        );
-                    }
-                }, listener::onFailure), threadContext)
-            );
-            return listener;
-        } else {
-            return SubscribableListener.newSucceeded(null);
         }
+
+        Map<String, List<String>> indexToAliasesMap = request.getAliasActions()
+            .stream()
+            .filter(aliasAction -> aliasAction.actionType() == IndicesAliasesRequest.AliasActions.Type.ADD)
+            .flatMap(
+                aliasActions -> Arrays.stream(aliasActions.indices())
+                    .map(indexName -> new Tuple<>(indexName, Arrays.asList(aliasActions.aliases())))
+            )
+            .collect(Collectors.toMap(Tuple::v1, Tuple::v2, (existing, toMerge) -> {
+                List<String> list = new ArrayList<>(existing.size() + toMerge.size());
+                list.addAll(existing);
+                list.addAll(toMerge);
+                return list;
+            }));
+        final AuditTrail auditTrail = auditTrailService.get();
+        final SubscribableListener<Void> listener = new SubscribableListener<>();
+        authorizationEngine.validateIndexPermissionsAreSubset(
+            requestInfo,
+            authorizationInfo,
+            indexToAliasesMap,
+            wrapPreservingContext(ActionListener.wrap(authzResult -> {
+                if (authzResult.isGranted()) {
+                    // do not audit success again
+                    listener.onResponse(null);
+                } else {
+                    auditTrail.accessDenied(
+                        AuditUtil.extractRequestId(threadContext),
+                        requestInfo.getAuthentication(),
+                        requestInfo.getAction(),
+                        request,
+                        authorizationInfo
+                    );
+                    listener.onFailure(
+                        Exceptions.authorizationError(
+                            "Adding an alias is not allowed when the alias " + "has more permissions than any of the indices"
+                        )
+                    );
+                }
+            }, listener::onFailure), threadContext)
+        );
+        return listener;
     }
 }

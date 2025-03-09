@@ -38,18 +38,17 @@ public class SearchRequestCacheDisablingInterceptor implements RequestIntercepto
         AuthorizationEngine authorizationEngine,
         AuthorizationEngine.AuthorizationInfo authorizationInfo
     ) {
-        final boolean isDlsLicensed = DOCUMENT_LEVEL_SECURITY_FEATURE.checkWithoutTracking(licenseState);
-        final boolean isFlsLicensed = FIELD_LEVEL_SECURITY_FEATURE.checkWithoutTracking(licenseState);
         if (requestInfo.getRequest() instanceof SearchRequest searchRequest
             && false == TransportActionProxy.isProxyAction(requestInfo.getAction())
             && hasRemoteIndices(searchRequest)
-            && (isDlsLicensed || isFlsLicensed)) {
+            && (DOCUMENT_LEVEL_SECURITY_FEATURE.checkWithoutTracking(licenseState)
+                || FIELD_LEVEL_SECURITY_FEATURE.checkWithoutTracking(licenseState))) {
             final IndicesAccessControl indicesAccessControl = threadContext.getTransient(AuthorizationServiceField.INDICES_PERMISSIONS_KEY);
             if (indicesAccessControl.getFieldAndDocumentLevelSecurityUsage() != IndicesAccessControl.DlsFlsUsage.NONE) {
                 searchRequest.requestCache(false);
             }
         }
-        return SubscribableListener.newSucceeded(null);
+        return SubscribableListener.VOID_SUCCESS;
     }
 
     // package private for test
