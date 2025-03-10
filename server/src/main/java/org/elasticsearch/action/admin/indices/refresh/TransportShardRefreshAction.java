@@ -69,7 +69,7 @@ public class TransportShardRefreshAction extends TransportReplicationAction<
             actionFilters,
             BasicReplicationRequest::new,
             ShardRefreshReplicaRequest::new,
-            threadPool.executor(ThreadPool.Names.REFRESH),
+            threadPool.refresh(),
             SyncGlobalCheckpointAfterOperation.DoNotSync,
             PrimaryActionExecution.RejectOnOverload,
             ReplicaActionExecution.SubjectToCircuitBreaker
@@ -83,7 +83,7 @@ public class TransportShardRefreshAction extends TransportReplicationAction<
             indicesService,
             threadPool
         );
-        this.refreshExecutor = transportService.getThreadPool().executor(ThreadPool.Names.REFRESH);
+        this.refreshExecutor = transportService.getThreadPool().refresh();
     }
 
     @Override

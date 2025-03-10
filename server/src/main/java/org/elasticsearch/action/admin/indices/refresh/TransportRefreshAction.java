@@ -22,7 +22,6 @@ import org.elasticsearch.cluster.project.ProjectResolver;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.injection.guice.Inject;
-import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
 
 import java.util.List;
@@ -54,7 +53,7 @@ public class TransportRefreshAction extends TransportBroadcastReplicationAction<
             actionFilters,
             indexNameExpressionResolver,
             TransportShardRefreshAction.TYPE,
-            transportService.getThreadPool().executor(ThreadPool.Names.REFRESH),
+            transportService.getThreadPool().refresh(),
             projectResolver
         );
     }

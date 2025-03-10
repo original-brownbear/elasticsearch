@@ -13,7 +13,6 @@ import org.elasticsearch.cluster.node.DiscoveryNodeUtils;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
-import org.elasticsearch.index.engine.InternalEngine;
 import org.elasticsearch.index.engine.InternalEngineFactory;
 import org.elasticsearch.index.shard.IndexShard;
 import org.elasticsearch.index.shard.IndexShardTestCase;
@@ -21,7 +20,6 @@ import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.indices.recovery.RecoveryState;
 import org.elasticsearch.threadpool.Scheduler.Cancellable;
 import org.elasticsearch.threadpool.ThreadPool;
-import org.elasticsearch.threadpool.ThreadPoolStats;
 import org.elasticsearch.xcontent.XContentType;
 
 import java.io.IOException;
@@ -32,7 +30,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -391,61 +388,4 @@ public class IndexingMemoryControllerTests extends IndexShardTestCase {
         closeShards(shard);
     }
 
-    ThreadPoolStats.Stats getRefreshThreadPoolStats() {
-        final ThreadPoolStats stats = threadPool.stats();
-        for (ThreadPoolStats.Stats s : stats) {
-            if (s.name().equals(ThreadPool.Names.REFRESH)) {
-                return s;
-            }
-        }
-        throw new AssertionError("refresh thread pool stats not found [" + stats + "]");
-    }
-
-    public void testSkipIfPendingAlready() throws Exception {
-        final CountDownLatch latch = new CountDownLatch(1);
-        IndexShard shard = newStartedShard(randomBoolean(), Settings.EMPTY, config -> new InternalEngine(config) {
-            @Override
-            public void writeIndexingBuffer() throws IOException {
-                safeAwait(latch);
-                super.writeIndexingBuffer();
-            }
-        });
-        final IndexingMemoryController controller = new IndexingMemoryController(
-            Settings.builder()
-                .put("indices.memory.interval", "200h") // disable it
-                .put("indices.memory.index_buffer_size", "1024b")
-                .build(),
-            threadPool,
-            Collections.singleton(shard)
-        ) {
-            @Override
-            protected long getIndexBufferRAMBytesUsed(IndexShard shard) {
-                return randomLongBetween(1025, 10 * 1024 * 1024);
-            }
-
-            @Override
-            protected long getShardWritingBytes(IndexShard shard) {
-                return 0L;
-            }
-        };
-        ThreadPoolStats.Stats beforeStats = getRefreshThreadPoolStats();
-        int iterations = randomIntBetween(1000, 2000);
-        for (int i = 0; i < iterations; i++) {
-            controller.forceCheck();
-        }
-        assertBusy(() -> {
-            ThreadPoolStats.Stats stats = getRefreshThreadPoolStats();
-            assertThat(stats.active(), greaterThanOrEqualTo(1));
-        });
-        latch.countDown();
-        assertBusy(() -> {
-            ThreadPoolStats.Stats stats = getRefreshThreadPoolStats();
-            assertThat(stats.queue(), equalTo(0));
-        });
-        ThreadPoolStats.Stats afterStats = getRefreshThreadPoolStats();
-        // The number of completed tasks should be in the order of the size of the refresh thread pool, way below the number of iterations,
-        // since we would not queue a shard to write its indexing buffer if it's already in the queue.
-        assertThat(afterStats.completed() - beforeStats.completed(), lessThan(100L));
-        closeShards(shard);
-    }
 }

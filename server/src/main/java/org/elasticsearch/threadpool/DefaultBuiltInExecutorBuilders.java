@@ -29,9 +29,10 @@ public class DefaultBuiltInExecutorBuilders implements BuiltInExecutorBuilders {
         final int halfProc = ThreadPool.halfAllocatedProcessors(allocatedProcessors);
         final int halfProcMaxAt5 = ThreadPool.halfAllocatedProcessorsMaxFive(allocatedProcessors);
         final int halfProcMaxAt10 = ThreadPool.halfAllocatedProcessorsMaxTen(allocatedProcessors);
-        final int genericThreadPoolMax = ThreadPool.boundedBy(4 * allocatedProcessors, 128, 512) + 1;
+        // TODO: remove (or refine) this temporary stateless custom refresh pool sizing once ES-7631 is solved.
+        final int refreshThreads = DiscoveryNode.isStateless(settings) ? allocatedProcessors : halfProcMaxAt10;
+        final int genericThreadPoolMax = ThreadPool.boundedBy(4 * allocatedProcessors, 128, 512) + 1 + refreshThreads;
         final double indexAutoscalingEWMA = WRITE_THREAD_POOLS_EWMA_ALPHA_SETTING.get(settings);
-
         Map<String, ExecutorBuilder> result = new HashMap<>();
         result.put(
             ThreadPool.Names.GENERIC,
@@ -109,12 +110,6 @@ public class DefaultBuiltInExecutorBuilders implements BuiltInExecutorBuilders {
         result.put(
             ThreadPool.Names.FLUSH,
             new ScalingExecutorBuilder(ThreadPool.Names.FLUSH, 1, halfProcMaxAt5, TimeValue.timeValueMinutes(5), false)
-        );
-        // TODO: remove (or refine) this temporary stateless custom refresh pool sizing once ES-7631 is solved.
-        final int refreshThreads = DiscoveryNode.isStateless(settings) ? allocatedProcessors : halfProcMaxAt10;
-        result.put(
-            ThreadPool.Names.REFRESH,
-            new ScalingExecutorBuilder(ThreadPool.Names.REFRESH, 1, refreshThreads, TimeValue.timeValueMinutes(5), false)
         );
         result.put(
             ThreadPool.Names.WARMER,

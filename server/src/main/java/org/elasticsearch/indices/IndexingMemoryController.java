@@ -219,7 +219,7 @@ public class IndexingMemoryController implements IndexingOperationListener, Clos
         for (IndexShard shard = pendingWriteIndexingBufferQueue.pollFirst(); shard != null; shard = pendingWriteIndexingBufferQueue
             .pollFirst()) {
             final IndexShard finalShard = shard;
-            threadPool.executor(ThreadPool.Names.REFRESH).execute(() -> {
+            threadPool.refresh().execute(() -> {
                 // Remove the shard from the set first, so that multiple threads can run writeIndexingBuffer concurrently on the same shard.
                 pendingWriteIndexingBufferSet.remove(finalShard);
                 finalShard.writeIndexingBuffer();

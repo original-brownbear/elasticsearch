@@ -990,7 +990,7 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
                 // it doesn't matter if we move from or to <code>-1</code> in both cases we want
                 // docs to become visible immediately. This also flushes all pending indexing / search requests
                 // that are waiting for a refresh.
-                threadPool.executor(ThreadPool.Names.REFRESH).execute(new AbstractRunnable() {
+                threadPool.refresh().execute(new AbstractRunnable() {
                     @Override
                     public void onFailure(Exception e) {
                         logger.warn("forced refresh failed after interval change", e);
@@ -1212,7 +1212,7 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
         AsyncRefreshTask(IndexService indexService) {
             super(
                 indexService,
-                indexService.threadPool.executor(ThreadPool.Names.REFRESH),
+                indexService.threadPool.refresh(),
                 indexService.getIndexSettings().getRefreshInterval()
             );
         }

@@ -22,7 +22,6 @@ import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.engine.Engine;
 import org.elasticsearch.index.shard.IndexShard;
 import org.elasticsearch.index.translog.Translog;
-import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportRequestOptions;
 import org.elasticsearch.transport.TransportService;
 
@@ -37,7 +36,7 @@ public class PostWriteRefresh {
 
     public PostWriteRefresh(final TransportService transportService) {
         this.transportService = transportService;
-        this.refreshExecutor = transportService.getThreadPool().executor(ThreadPool.Names.REFRESH);
+        this.refreshExecutor = transportService.getThreadPool().refresh();
     }
 
     public void refreshShard(

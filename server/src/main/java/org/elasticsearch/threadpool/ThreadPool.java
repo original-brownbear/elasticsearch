@@ -12,6 +12,7 @@ package org.elasticsearch.threadpool;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
@@ -95,7 +96,6 @@ public class ThreadPool implements ReportingService<ThreadPoolInfo>, Scheduler, 
          */
         public static final String MANAGEMENT = "management";
         public static final String FLUSH = "flush";
-        public static final String REFRESH = "refresh";
         public static final String WARMER = "warmer";
         public static final String SNAPSHOT = "snapshot";
         public static final String SNAPSHOT_META = "snapshot_meta";
@@ -152,7 +152,6 @@ public class ThreadPool implements ReportingService<ThreadPoolInfo>, Scheduler, 
         entry(Names.AUTO_COMPLETE, ThreadPoolType.FIXED),
         entry(Names.MANAGEMENT, ThreadPoolType.SCALING),
         entry(Names.FLUSH, ThreadPoolType.SCALING),
-        entry(Names.REFRESH, ThreadPoolType.SCALING),
         entry(Names.WARMER, ThreadPoolType.SCALING),
         entry(Names.SNAPSHOT, ThreadPoolType.SCALING),
         entry(Names.SNAPSHOT_META, ThreadPoolType.SCALING),
@@ -230,6 +229,7 @@ public class ThreadPool implements ReportingService<ThreadPoolInfo>, Scheduler, 
     );
 
     private final Executor clusterCoordination;
+    private final Executor refresh;
 
     /**
      * Defines and builds the many thread pools delineated in {@link Names}.
@@ -288,8 +288,16 @@ public class ThreadPool implements ReportingService<ThreadPoolInfo>, Scheduler, 
         );
         this.cachedTimeThread.start();
         this.relativeTimeInMillisSupplier = new RelativeTimeInMillisSupplier(cachedTimeThread);
-        var clusterCoordination = new ThrottledTaskRunner("cluster_coordination", 1, executors.get(Names.GENERIC).executor);
-        this.clusterCoordination = r -> clusterCoordination.enqueueTask(new ActionListener<>() {
+        // TODO: remove (or refine) this temporary stateless custom refresh pool sizing once ES-7631 is solved.
+        final int refreshThreads = DiscoveryNode.isStateless(settings)
+            ? allocatedProcessors
+            : ThreadPool.halfAllocatedProcessorsMaxTen(allocatedProcessors);
+        this.clusterCoordination = makeExecutor(new ThrottledTaskRunner("cluster_coordination", 1, executors.get(Names.GENERIC).executor));
+        this.refresh = makeExecutor(new ThrottledTaskRunner("refresh", refreshThreads, executors.get(Names.GENERIC).executor));
+    }
+
+    private static Executor makeExecutor(ThrottledTaskRunner clusterCoordination) {
+        return r -> clusterCoordination.enqueueTask(new ActionListener<>() {
             @Override
             public void onResponse(Releasable releasable) {
                 try (releasable) {
@@ -373,6 +381,7 @@ public class ThreadPool implements ReportingService<ThreadPoolInfo>, Scheduler, 
         this.threadContext = new ThreadContext(Settings.EMPTY);
         this.scheduler = null;
         this.clusterCoordination = null;
+        this.refresh = null;
     }
 
     @Override
@@ -455,6 +464,10 @@ public class ThreadPool implements ReportingService<ThreadPoolInfo>, Scheduler, 
 
     public Executor clusterCoordination() {
         return clusterCoordination;
+    }
+
+    public Executor refresh() {
+        return refresh;
     }
 
     /**

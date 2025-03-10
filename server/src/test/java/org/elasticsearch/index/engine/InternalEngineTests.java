@@ -135,7 +135,6 @@ import org.elasticsearch.indices.recovery.RecoverySettings;
 import org.elasticsearch.plugins.internal.XContentMeteringParserDecorator;
 import org.elasticsearch.test.IndexSettingsModule;
 import org.elasticsearch.test.index.IndexVersionUtils;
-import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.xcontent.XContentType;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -7117,7 +7116,7 @@ public class InternalEngineTests extends EngineTestCase {
                 if (randomBoolean()) {
                     engine.index(indexForDoc(createParsedDoc("id", null)));
                 }
-                threadPool.executor(ThreadPool.Names.REFRESH)
+                threadPool.refresh()
                     .execute(
                         () -> expectThrows(
                             AlreadyClosedException.class,
