@@ -2475,26 +2475,25 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
             boolean wasActive = active.getAndSet(false);
             if (wasActive) {
                 logger.debug("flushing shard on inactive");
-                threadPool.executor(ThreadPool.Names.FLUSH)
-                    .execute(() -> flush(new FlushRequest().waitIfOngoing(false).force(false), new ActionListener<>() {
-                        @Override
-                        public void onResponse(Boolean flushed) {
-                            if (flushed == false) {
-                                // In case an ongoing flush was detected, revert active flag so that a next flushOnIdle request
-                                // will retry (#87888)
-                                active.set(true);
-                            }
-                            periodicFlushMetric.inc();
+                threadPool.flush().execute(() -> flush(new FlushRequest().waitIfOngoing(false).force(false), new ActionListener<>() {
+                    @Override
+                    public void onResponse(Boolean flushed) {
+                        if (flushed == false) {
+                            // In case an ongoing flush was detected, revert active flag so that a next flushOnIdle request
+                            // will retry (#87888)
+                            active.set(true);
                         }
+                        periodicFlushMetric.inc();
+                    }
 
-                        @Override
-                        public void onFailure(Exception e) {
-                            if (state != IndexShardState.CLOSED) {
-                                active.set(true);
-                                logger.warn("failed to flush shard on inactive", e);
-                            }
+                    @Override
+                    public void onFailure(Exception e) {
+                        if (state != IndexShardState.CLOSED) {
+                            active.set(true);
+                            logger.warn("failed to flush shard on inactive", e);
                         }
-                    }));
+                    }
+                }));
             }
         }
     }
@@ -3951,7 +3950,7 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
                  */
                 if (shouldPeriodicallyFlush()) {
                     logger.debug("submitting async flush request");
-                    threadPool.executor(ThreadPool.Names.FLUSH).execute(() -> {
+                    threadPool.flush().execute(() -> {
                         flush(new FlushRequest(), new ActionListener<>() {
                             @Override
                             public void onResponse(Boolean flushed) {
@@ -3989,7 +3988,7 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
                             afterWriteOperation();
                         }
                     };
-                    threadPool.executor(ThreadPool.Names.FLUSH).execute(roll);
+                    threadPool.flush().execute(roll);
                 } else {
                     flushOrRollRunning.compareAndSet(true, false);
                 }

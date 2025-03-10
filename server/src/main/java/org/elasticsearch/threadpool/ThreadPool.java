@@ -95,7 +95,6 @@ public class ThreadPool implements ReportingService<ThreadPoolInfo>, Scheduler, 
          * Not a latency sensitive thread pool: some tasks may time be long-running; and the thread pool size is limited / relatively small.
          */
         public static final String MANAGEMENT = "management";
-        public static final String FLUSH = "flush";
         public static final String WARMER = "warmer";
         public static final String SNAPSHOT = "snapshot";
         public static final String SNAPSHOT_META = "snapshot_meta";
@@ -151,7 +150,6 @@ public class ThreadPool implements ReportingService<ThreadPoolInfo>, Scheduler, 
         entry(Names.SEARCH_COORDINATION, ThreadPoolType.FIXED),
         entry(Names.AUTO_COMPLETE, ThreadPoolType.FIXED),
         entry(Names.MANAGEMENT, ThreadPoolType.SCALING),
-        entry(Names.FLUSH, ThreadPoolType.SCALING),
         entry(Names.WARMER, ThreadPoolType.SCALING),
         entry(Names.SNAPSHOT, ThreadPoolType.SCALING),
         entry(Names.SNAPSHOT_META, ThreadPoolType.SCALING),
@@ -230,6 +228,7 @@ public class ThreadPool implements ReportingService<ThreadPoolInfo>, Scheduler, 
 
     private final Executor clusterCoordination;
     private final Executor refresh;
+    private final Executor flush;
 
     /**
      * Defines and builds the many thread pools delineated in {@link Names}.
@@ -294,6 +293,9 @@ public class ThreadPool implements ReportingService<ThreadPoolInfo>, Scheduler, 
             : ThreadPool.halfAllocatedProcessorsMaxTen(allocatedProcessors);
         this.clusterCoordination = makeExecutor(new ThrottledTaskRunner("cluster_coordination", 1, executors.get(Names.GENERIC).executor));
         this.refresh = makeExecutor(new ThrottledTaskRunner("refresh", refreshThreads, executors.get(Names.GENERIC).executor));
+        this.flush = makeExecutor(
+            new ThrottledTaskRunner("flush", halfAllocatedProcessorsMaxFive(allocatedProcessors), executors.get(Names.GENERIC).executor)
+        );
     }
 
     private static Executor makeExecutor(ThrottledTaskRunner clusterCoordination) {
@@ -382,6 +384,7 @@ public class ThreadPool implements ReportingService<ThreadPoolInfo>, Scheduler, 
         this.scheduler = null;
         this.clusterCoordination = null;
         this.refresh = null;
+        this.flush = null;
     }
 
     @Override
@@ -468,6 +471,10 @@ public class ThreadPool implements ReportingService<ThreadPoolInfo>, Scheduler, 
 
     public Executor refresh() {
         return refresh;
+    }
+
+    public Executor flush() {
+        return flush;
     }
 
     /**

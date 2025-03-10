@@ -31,7 +31,7 @@ public class DefaultBuiltInExecutorBuilders implements BuiltInExecutorBuilders {
         final int halfProcMaxAt10 = ThreadPool.halfAllocatedProcessorsMaxTen(allocatedProcessors);
         // TODO: remove (or refine) this temporary stateless custom refresh pool sizing once ES-7631 is solved.
         final int refreshThreads = DiscoveryNode.isStateless(settings) ? allocatedProcessors : halfProcMaxAt10;
-        final int genericThreadPoolMax = ThreadPool.boundedBy(4 * allocatedProcessors, 128, 512) + 1 + refreshThreads;
+        final int genericThreadPoolMax = ThreadPool.boundedBy(4 * allocatedProcessors, 128, 512) + 1 + refreshThreads + halfProcMaxAt5;
         final double indexAutoscalingEWMA = WRITE_THREAD_POOLS_EWMA_ALPHA_SETTING.get(settings);
         Map<String, ExecutorBuilder> result = new HashMap<>();
         result.put(
@@ -106,10 +106,6 @@ public class DefaultBuiltInExecutorBuilders implements BuiltInExecutorBuilders {
                 TimeValue.timeValueMinutes(5),
                 false
             )
-        );
-        result.put(
-            ThreadPool.Names.FLUSH,
-            new ScalingExecutorBuilder(ThreadPool.Names.FLUSH, 1, halfProcMaxAt5, TimeValue.timeValueMinutes(5), false)
         );
         result.put(
             ThreadPool.Names.WARMER,

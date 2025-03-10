@@ -52,7 +52,7 @@ public class DiskIoBufferPool {
 
     private static final String[] WRITE_OR_FLUSH_THREAD_NAMES = new String[] {
         "[" + ThreadPool.Names.WRITE + "]",
-        "[" + ThreadPool.Names.FLUSH + "]",
+        "[" + ThreadPool.Names.GENERIC + "]",
         "[" + ThreadPool.Names.SYSTEM_WRITE + "]",
         "[" + ThreadPool.Names.SYSTEM_CRITICAL_WRITE + "]" };
 

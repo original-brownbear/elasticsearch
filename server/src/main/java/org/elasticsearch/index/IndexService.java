@@ -1182,11 +1182,7 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
     static final class AsyncTranslogFSync extends BaseAsyncTask {
 
         AsyncTranslogFSync(IndexService indexService) {
-            super(
-                indexService,
-                indexService.threadPool.executor(ThreadPool.Names.FLUSH),
-                indexService.getIndexSettings().getTranslogSyncInterval()
-            );
+            super(indexService, indexService.threadPool.flush(), indexService.getIndexSettings().getTranslogSyncInterval());
         }
 
         @Override
@@ -1210,11 +1206,7 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
     static final class AsyncRefreshTask extends BaseAsyncTask {
 
         AsyncRefreshTask(IndexService indexService) {
-            super(
-                indexService,
-                indexService.threadPool.refresh(),
-                indexService.getIndexSettings().getRefreshInterval()
-            );
+            super(indexService, indexService.threadPool.refresh(), indexService.getIndexSettings().getRefreshInterval());
         }
 
         @Override

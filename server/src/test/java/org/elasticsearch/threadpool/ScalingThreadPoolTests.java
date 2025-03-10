@@ -112,7 +112,6 @@ public class ScalingThreadPoolTests extends ESThreadPoolTestCase {
         final Map<String, Function<Integer, Integer>> sizes = new HashMap<>();
         sizes.put(ThreadPool.Names.GENERIC, n -> ThreadPool.boundedBy(4 * n, 128, 512));
         sizes.put(ThreadPool.Names.MANAGEMENT, n -> ThreadPool.boundedBy(n, 1, 5));
-        sizes.put(ThreadPool.Names.FLUSH, ThreadPool::halfAllocatedProcessorsMaxFive);
         sizes.put(ThreadPool.Names.WARMER, ThreadPool::halfAllocatedProcessorsMaxFive);
         sizes.put(ThreadPool.Names.SNAPSHOT, ThreadPool::halfAllocatedProcessorsMaxFive);
         sizes.put(ThreadPool.Names.SNAPSHOT_META, n -> Math.min(n * 3, 50));

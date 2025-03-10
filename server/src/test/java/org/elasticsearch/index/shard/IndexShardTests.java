@@ -441,7 +441,7 @@ public class IndexShardTests extends IndexShardTestCase {
                 expectedThreadPoolName = ThreadPool.Names.GENERIC;
                 executorOnDelay = EsExecutors.DIRECT_EXECUTOR_SERVICE;
             } else {
-                expectedThreadPoolName = randomFrom(ThreadPool.Names.FLUSH, ThreadPool.Names.GENERIC, ThreadPool.Names.MANAGEMENT);
+                expectedThreadPoolName = randomFrom(ThreadPool.Names.GENERIC, ThreadPool.Names.MANAGEMENT);
                 executorOnDelay = threadPool.executor(expectedThreadPoolName);
             }
             indexShard.runUnderPrimaryPermit(() -> {
