@@ -172,7 +172,7 @@ public class CoordinationDiagnosticsService implements ClusterStateListener {
     ) {
         this.clusterService = clusterService;
         this.transportService = transportService;
-        this.clusterCoordinationExecutor = transportService.getThreadPool().executor(ThreadPool.Names.CLUSTER_COORDINATION);
+        this.clusterCoordinationExecutor = transportService.getThreadPool().clusterCoordination();
         this.coordinator = coordinator;
         this.masterHistoryService = masterHistoryService;
         this.nodeHasMasterLookupTimeframe = NODE_HAS_MASTER_LOOKUP_TIMEFRAME_SETTING.get(clusterService.getSettings());

@@ -29,7 +29,7 @@ public class DefaultBuiltInExecutorBuilders implements BuiltInExecutorBuilders {
         final int halfProc = ThreadPool.halfAllocatedProcessors(allocatedProcessors);
         final int halfProcMaxAt5 = ThreadPool.halfAllocatedProcessorsMaxFive(allocatedProcessors);
         final int halfProcMaxAt10 = ThreadPool.halfAllocatedProcessorsMaxTen(allocatedProcessors);
-        final int genericThreadPoolMax = ThreadPool.boundedBy(4 * allocatedProcessors, 128, 512);
+        final int genericThreadPoolMax = ThreadPool.boundedBy(4 * allocatedProcessors, 128, 512) + 1;
         final double indexAutoscalingEWMA = WRITE_THREAD_POOLS_EWMA_ALPHA_SETTING.get(settings);
 
         Map<String, ExecutorBuilder> result = new HashMap<>();
@@ -154,10 +154,6 @@ public class DefaultBuiltInExecutorBuilders implements BuiltInExecutorBuilders {
                 -1,
                 EsExecutors.TaskTrackingConfig.DO_NOT_TRACK
             )
-        );
-        result.put(
-            ThreadPool.Names.CLUSTER_COORDINATION,
-            new FixedExecutorBuilder(settings, ThreadPool.Names.CLUSTER_COORDINATION, 1, -1, EsExecutors.TaskTrackingConfig.DO_NOT_TRACK)
         );
         result.put(
             ThreadPool.Names.FETCH_SHARD_STORE,

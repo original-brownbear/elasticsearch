@@ -21,7 +21,6 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.injection.guice.Inject;
 import org.elasticsearch.tasks.Task;
-import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
 
 import java.io.IOException;
@@ -132,7 +131,7 @@ public class CoordinationDiagnosticsAction extends ActionType<CoordinationDiagno
                 transportService,
                 actionFilters,
                 CoordinationDiagnosticsAction.Request::new,
-                transportService.getThreadPool().executor(ThreadPool.Names.CLUSTER_COORDINATION)
+                transportService.getThreadPool().clusterCoordination()
             );
             this.coordinationDiagnosticsService = coordinationDiagnosticsService;
         }

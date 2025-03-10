@@ -87,7 +87,7 @@ public class ClusterFormationFailureHelper {
     ) {
         this.clusterFormationStateSupplier = clusterFormationStateSupplier;
         this.threadPool = threadPool;
-        this.clusterCoordinationExecutor = threadPool.executor(Names.CLUSTER_COORDINATION);
+        this.clusterCoordinationExecutor = threadPool.clusterCoordination();
         this.clusterFormationWarningTimeout = DISCOVERY_CLUSTER_FORMATION_WARNING_TIMEOUT_SETTING.get(settings);
         this.logLastFailedJoinAttempt = logLastFailedJoinAttempt;
     }

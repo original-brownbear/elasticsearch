@@ -26,7 +26,6 @@ import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.monitor.NodeHealthService;
 import org.elasticsearch.monitor.StatusInfo;
-import org.elasticsearch.threadpool.ThreadPool.Names;
 import org.elasticsearch.transport.ConnectTransportException;
 import org.elasticsearch.transport.NodeDisconnectedException;
 import org.elasticsearch.transport.ReceiveTimeoutTransportException;
@@ -340,7 +339,7 @@ public class LeaderChecker {
 
         void leaderFailed(Supplier<String> messageSupplier, Exception e) {
             if (isClosed.compareAndSet(false, true)) {
-                transportService.getThreadPool().executor(Names.CLUSTER_COORDINATION).execute(new AbstractRunnable() {
+                transportService.getThreadPool().clusterCoordination().execute(new AbstractRunnable() {
                     @Override
                     protected void doRun() {
                         leaderFailureListener.onLeaderFailure(messageSupplier, e);

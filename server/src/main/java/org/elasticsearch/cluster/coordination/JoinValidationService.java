@@ -34,7 +34,6 @@ import org.elasticsearch.core.RefCounted;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.node.NodeClosedException;
-import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.BytesTransportRequest;
 import org.elasticsearch.transport.NodeNotConnectedException;
 import org.elasticsearch.transport.Transport;
@@ -117,7 +116,7 @@ public class JoinValidationService {
         this.transportService = transportService;
         this.clusterStateSupplier = clusterStateSupplier;
         this.executeRefs = AbstractRefCounted.of(() -> execute(cacheClearer));
-        this.responseExecutor = transportService.getThreadPool().executor(ThreadPool.Names.CLUSTER_COORDINATION);
+        this.responseExecutor = transportService.getThreadPool().clusterCoordination();
 
         final var dataPaths = Environment.PATH_DATA_SETTING.get(settings);
         transportService.registerRequestHandler(
@@ -205,7 +204,7 @@ public class JoinValidationService {
     }
 
     private void runProcessor() {
-        transportService.getThreadPool().executor(ThreadPool.Names.CLUSTER_COORDINATION).execute(processor);
+        transportService.getThreadPool().clusterCoordination().execute(processor);
     }
 
     private final AbstractRunnable processor = new AbstractRunnable() {

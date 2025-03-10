@@ -102,7 +102,7 @@ public class PublicationTransportHandler {
         Function<PublishRequest, PublishWithJoinResponse> handlePublishRequest
     ) {
         this.transportService = transportService;
-        this.clusterCoordinationExecutor = transportService.getThreadPool().executor(ThreadPool.Names.CLUSTER_COORDINATION);
+        this.clusterCoordinationExecutor = transportService.getThreadPool().clusterCoordination();
         this.namedWriteableRegistry = namedWriteableRegistry;
         this.handlePublishRequest = handlePublishRequest;
 
@@ -420,7 +420,7 @@ public class PublicationTransportHandler {
                 final boolean isVotingOnlyNode = discoveryNodes.getLocalNode().getRoles().contains(DiscoveryNodeRole.VOTING_ONLY_NODE_ROLE);
                 logger.trace("handling cluster state version [{}] locally on [{}]", newStateVersion, destination);
                 transportService.getThreadPool()
-                    .executor(ThreadPool.Names.CLUSTER_COORDINATION)
+                    .clusterCoordination()
                     .execute(
                         transportService.getThreadPool()
                             .getThreadContext()

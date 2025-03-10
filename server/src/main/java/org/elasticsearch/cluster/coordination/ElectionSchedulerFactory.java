@@ -102,7 +102,7 @@ public class ElectionSchedulerFactory {
     public ElectionSchedulerFactory(Settings settings, Random random, ThreadPool threadPool) {
         this.random = random;
         this.threadPool = threadPool;
-        this.clusterCoordinationExecutor = threadPool.executor(Names.CLUSTER_COORDINATION);
+        this.clusterCoordinationExecutor = threadPool.clusterCoordination();
 
         initialTimeout = ELECTION_INITIAL_TIMEOUT_SETTING.get(settings);
         backoffTime = ELECTION_BACK_OFF_TIME_SETTING.get(settings);

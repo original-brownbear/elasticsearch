@@ -19,7 +19,6 @@ import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.monitor.NodeHealthService;
 import org.elasticsearch.monitor.StatusInfo;
-import org.elasticsearch.threadpool.ThreadPool.Names;
 import org.elasticsearch.transport.TransportException;
 import org.elasticsearch.transport.TransportResponseHandler;
 import org.elasticsearch.transport.TransportService;
@@ -56,7 +55,7 @@ public class StatefulPreVoteCollector extends PreVoteCollector {
         LeaderHeartbeatService leaderHeartbeatService
     ) {
         this.transportService = transportService;
-        this.clusterCoordinationExecutor = transportService.getThreadPool().executor(Names.CLUSTER_COORDINATION);
+        this.clusterCoordinationExecutor = transportService.getThreadPool().clusterCoordination();
         this.startElection = startElection;
         this.updateMaxTermSeen = updateMaxTermSeen;
         this.electionStrategy = electionStrategy;

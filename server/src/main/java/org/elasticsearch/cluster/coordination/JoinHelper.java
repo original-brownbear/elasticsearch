@@ -129,7 +129,7 @@ public class JoinHelper {
 
         transportService.registerRequestHandler(
             JOIN_ACTION_NAME,
-            transportService.getThreadPool().executor(Names.CLUSTER_COORDINATION),
+            transportService.getThreadPool().clusterCoordination(),
             false,
             false,
             JoinRequest::new,
@@ -141,7 +141,7 @@ public class JoinHelper {
 
         transportService.registerRequestHandler(
             START_JOIN_ACTION_NAME,
-            transportService.getThreadPool().executor(Names.CLUSTER_COORDINATION),
+            transportService.getThreadPool().clusterCoordination(),
             false,
             false,
             StartJoinRequest::new,

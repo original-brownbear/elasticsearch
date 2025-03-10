@@ -74,7 +74,6 @@ import org.elasticsearch.monitor.NodeHealthService;
 import org.elasticsearch.monitor.StatusInfo;
 import org.elasticsearch.threadpool.Scheduler;
 import org.elasticsearch.threadpool.ThreadPool;
-import org.elasticsearch.threadpool.ThreadPool.Names;
 import org.elasticsearch.transport.NodeDisconnectedException;
 import org.elasticsearch.transport.TransportRequestOptions;
 import org.elasticsearch.transport.TransportResponse.Empty;
@@ -223,7 +222,7 @@ public class Coordinator extends AbstractLifecycleComponent implements ClusterSt
     ) {
         this.settings = settings;
         this.transportService = transportService;
-        this.clusterCoordinationExecutor = transportService.getThreadPool().executor(Names.CLUSTER_COORDINATION);
+        this.clusterCoordinationExecutor = transportService.getThreadPool().clusterCoordination();
         this.masterService = masterService;
         this.allocationService = allocationService;
         this.onJoinValidators = NodeJoinExecutor.addBuiltInJoinValidators(onJoinValidators);
@@ -438,7 +437,6 @@ public class Coordinator extends AbstractLifecycleComponent implements ClusterSt
     }
 
     PublishWithJoinResponse handlePublishRequest(PublishRequest publishRequest) {
-        assert ThreadPool.assertCurrentThreadPool(Names.CLUSTER_COORDINATION);
         assert publishRequest.getAcceptedState().nodes().getLocalNode().equals(getLocalNode())
             : publishRequest.getAcceptedState().nodes().getLocalNode() + " != " + getLocalNode();
 
@@ -931,7 +929,7 @@ public class Coordinator extends AbstractLifecycleComponent implements ClusterSt
         leaderHeartbeatService.start(
             getLocalNode(),
             leaderTerm,
-            new ThreadedActionListener<>(transportService.getThreadPool().executor(Names.CLUSTER_COORDINATION), new ActionListener<>() {
+            new ThreadedActionListener<>(transportService.getThreadPool().clusterCoordination(), new ActionListener<>() {
                 @Override
                 public void onResponse(Long newTerm) {
                     assert newTerm != null && newTerm > leaderTerm : newTerm + " vs " + leaderTerm;
@@ -1468,7 +1466,7 @@ public class Coordinator extends AbstractLifecycleComponent implements ClusterSt
                 becomeCandidate("failed fetching latest stored state");
             }
             delegate.onFailure(e);
-        }), transportService.getThreadPool().executor(Names.CLUSTER_COORDINATION), null);
+        }), transportService.getThreadPool().clusterCoordination(), null);
     }
 
     @Nullable

@@ -11,6 +11,7 @@ package org.elasticsearch.threadpool;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
@@ -20,12 +21,15 @@ import org.elasticsearch.common.time.TimeProvider;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.SizeValue;
+import org.elasticsearch.common.util.concurrent.AbstractRunnable;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
 import org.elasticsearch.common.util.concurrent.EsRejectedExecutionHandler;
 import org.elasticsearch.common.util.concurrent.EsThreadPoolExecutor;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
+import org.elasticsearch.common.util.concurrent.ThrottledTaskRunner;
 import org.elasticsearch.core.Nullable;
+import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.ReportingService;
@@ -78,12 +82,6 @@ public class ThreadPool implements ReportingService<ThreadPoolInfo>, Scheduler, 
          * the other more specific thread pools where possible.
          */
         public static final String GENERIC = "generic";
-        /**
-         * Important management tasks that keep the cluster from falling apart.
-         * This thread pool ensures cluster coordination tasks do not get blocked by less critical tasks and can continue to make progress.
-         * This thread pool also defaults to a single thread, reducing contention on the Coordinator mutex.
-         */
-        public static final String CLUSTER_COORDINATION = "cluster_coordination";
         public static final String GET = "get";
         public static final String ANALYZE = "analyze";
         public static final String WRITE = "write";
@@ -146,7 +144,6 @@ public class ThreadPool implements ReportingService<ThreadPoolInfo>, Scheduler, 
 
     public static final Map<String, ThreadPoolType> THREAD_POOL_TYPES = Map.ofEntries(
         entry(Names.GENERIC, ThreadPoolType.SCALING),
-        entry(Names.CLUSTER_COORDINATION, ThreadPoolType.FIXED),
         entry(Names.GET, ThreadPoolType.FIXED),
         entry(Names.ANALYZE, ThreadPoolType.FIXED),
         entry(Names.WRITE, ThreadPoolType.FIXED),
@@ -232,6 +229,8 @@ public class ThreadPool implements ReportingService<ThreadPoolInfo>, Scheduler, 
         Setting.Property.NodeScope
     );
 
+    private final Executor clusterCoordination;
+
     /**
      * Defines and builds the many thread pools delineated in {@link Names}.
      *
@@ -289,6 +288,25 @@ public class ThreadPool implements ReportingService<ThreadPoolInfo>, Scheduler, 
         );
         this.cachedTimeThread.start();
         this.relativeTimeInMillisSupplier = new RelativeTimeInMillisSupplier(cachedTimeThread);
+        var clusterCoordination = new ThrottledTaskRunner("cluster_coordination", 1, executors.get(Names.GENERIC).executor);
+        this.clusterCoordination = r -> clusterCoordination.enqueueTask(new ActionListener<>() {
+            @Override
+            public void onResponse(Releasable releasable) {
+                try (releasable) {
+                    r.run();
+                }
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                if (r instanceof AbstractRunnable abstractRunnable) {
+                    abstractRunnable.onFailure(e);
+                }
+                // should be impossible, GENERIC pool doesn't reject anything
+                logger.error("unexpected failure running " + r, e);
+                assert false : new AssertionError("unexpected failure running " + r, e);
+            }
+        });
     }
 
     private static ArrayList<Instrument> setupMetrics(MeterRegistry meterRegistry, String name, ExecutorHolder holder) {
@@ -354,6 +372,7 @@ public class ThreadPool implements ReportingService<ThreadPoolInfo>, Scheduler, 
         this.slowSchedulerWarnThresholdNanos = 0L;
         this.threadContext = new ThreadContext(Settings.EMPTY);
         this.scheduler = null;
+        this.clusterCoordination = null;
     }
 
     @Override
@@ -432,6 +451,10 @@ public class ThreadPool implements ReportingService<ThreadPoolInfo>, Scheduler, 
      */
     public ExecutorService generic() {
         return executor(Names.GENERIC);
+    }
+
+    public Executor clusterCoordination() {
+        return clusterCoordination;
     }
 
     /**

@@ -85,7 +85,7 @@ public class AllocationActionMultiListenerTests extends ESTestCase {
         var start = new CountDownLatch(3);
         var threadPool = new TestThreadPool(getTestName());
 
-        threadPool.executor(ThreadPool.Names.CLUSTER_COORDINATION).submit(() -> {
+        threadPool.clusterCoordination().execute(() -> {
             start.countDown();
             awaitQuietly(start);
             for (int i = 0; i < count; i++) {

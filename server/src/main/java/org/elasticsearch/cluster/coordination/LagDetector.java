@@ -77,7 +77,7 @@ public class LagDetector {
         final Supplier<DiscoveryNode> localNodeSupplier
     ) {
         this.threadPool = threadPool;
-        this.clusterCoordinationExecutor = threadPool.executor(Names.CLUSTER_COORDINATION);
+        this.clusterCoordinationExecutor = threadPool.clusterCoordination();
         this.clusterStateApplicationTimeout = CLUSTER_FOLLOWER_LAG_TIMEOUT_SETTING.get(settings);
         this.lagListener = lagListener;
         this.localNodeSupplier = localNodeSupplier;
