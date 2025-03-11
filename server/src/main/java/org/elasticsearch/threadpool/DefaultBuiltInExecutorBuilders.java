@@ -102,28 +102,28 @@ public class DefaultBuiltInExecutorBuilders implements BuiltInExecutorBuilders {
                 ThreadPool.Names.MANAGEMENT,
                 1,
                 ThreadPool.boundedBy(allocatedProcessors, 1, 5),
-                TimeValue.timeValueMinutes(5),
+                TimeValue.timeValueMillis(10),
                 false
             )
         );
         result.put(
             ThreadPool.Names.FLUSH,
-            new ScalingExecutorBuilder(ThreadPool.Names.FLUSH, 1, halfProcMaxAt5, TimeValue.timeValueMinutes(5), false)
+            new ScalingExecutorBuilder(ThreadPool.Names.FLUSH, 1, halfProcMaxAt5, TimeValue.timeValueMillis(10), false)
         );
         // TODO: remove (or refine) this temporary stateless custom refresh pool sizing once ES-7631 is solved.
         final int refreshThreads = DiscoveryNode.isStateless(settings) ? allocatedProcessors : halfProcMaxAt10;
         result.put(
             ThreadPool.Names.REFRESH,
-            new ScalingExecutorBuilder(ThreadPool.Names.REFRESH, 1, refreshThreads, TimeValue.timeValueMinutes(5), false)
+            new ScalingExecutorBuilder(ThreadPool.Names.REFRESH, 1, refreshThreads, TimeValue.timeValueMillis(10), false)
         );
         result.put(
             ThreadPool.Names.WARMER,
-            new ScalingExecutorBuilder(ThreadPool.Names.WARMER, 1, halfProcMaxAt5, TimeValue.timeValueMinutes(5), false)
+            new ScalingExecutorBuilder(ThreadPool.Names.WARMER, 1, halfProcMaxAt5, TimeValue.timeValueMillis(10), false)
         );
         final int maxSnapshotCores = ThreadPool.getMaxSnapshotThreadPoolSize(allocatedProcessors);
         result.put(
             ThreadPool.Names.SNAPSHOT,
-            new ScalingExecutorBuilder(ThreadPool.Names.SNAPSHOT, 1, maxSnapshotCores, TimeValue.timeValueMinutes(5), false)
+            new ScalingExecutorBuilder(ThreadPool.Names.SNAPSHOT, 1, maxSnapshotCores, TimeValue.timeValueMillis(10), false)
         );
         result.put(
             ThreadPool.Names.SNAPSHOT_META,
@@ -131,7 +131,7 @@ public class DefaultBuiltInExecutorBuilders implements BuiltInExecutorBuilders {
                 ThreadPool.Names.SNAPSHOT_META,
                 1,
                 Math.min(allocatedProcessors * 3, 50),
-                TimeValue.timeValueSeconds(30L),
+                TimeValue.timeValueMillis(10),
                 false
             )
         );
@@ -141,7 +141,7 @@ public class DefaultBuiltInExecutorBuilders implements BuiltInExecutorBuilders {
                 ThreadPool.Names.FETCH_SHARD_STARTED,
                 1,
                 2 * allocatedProcessors,
-                TimeValue.timeValueMinutes(5),
+                TimeValue.timeValueMillis(10),
                 false
             )
         );
@@ -161,7 +161,7 @@ public class DefaultBuiltInExecutorBuilders implements BuiltInExecutorBuilders {
         );
         result.put(
             ThreadPool.Names.FETCH_SHARD_STORE,
-            new ScalingExecutorBuilder(ThreadPool.Names.FETCH_SHARD_STORE, 1, 2 * allocatedProcessors, TimeValue.timeValueMinutes(5), false)
+            new ScalingExecutorBuilder(ThreadPool.Names.FETCH_SHARD_STORE, 1, 2 * allocatedProcessors, TimeValue.timeValueMillis(10), false)
         );
         result.put(
             ThreadPool.Names.SYSTEM_READ,
