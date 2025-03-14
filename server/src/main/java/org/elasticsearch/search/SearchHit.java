@@ -514,9 +514,9 @@ public final class SearchHit implements Writeable, ToXContentObject, RefCounted 
     /*
     * Adds a new DocumentField to the map in case both parameters are not null.
     * */
-    public void setDocumentField(String fieldName, DocumentField field) {
-        if (fieldName == null || field == null) return;
-        this.documentFields.put(fieldName, field);
+    public void setDocumentField(DocumentField field) {
+        if (field == null) return;
+        this.documentFields.put(field.getName(), field);
     }
 
     public void addDocumentFields(Map<String, DocumentField> docFields, Map<String, DocumentField> metaFields) {

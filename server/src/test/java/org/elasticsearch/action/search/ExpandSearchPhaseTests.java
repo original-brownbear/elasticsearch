@@ -116,7 +116,7 @@ public class ExpandSearchPhaseTests extends ESTestCase {
                 };
 
                 SearchHit hit = new SearchHit(1, "ID");
-                hit.setDocumentField("someField", new DocumentField("someField", Collections.singletonList(collapseValue)));
+                hit.setDocumentField(new DocumentField("someField", Collections.singletonList(collapseValue)));
                 SearchHits hits = new SearchHits(new SearchHit[] { hit }, new TotalHits(1, TotalHits.Relation.EQUAL_TO), 1.0F);
                 try {
                     ExpandSearchPhase phase = newExpandSearchPhase(
@@ -185,9 +185,9 @@ public class ExpandSearchPhaseTests extends ESTestCase {
         };
 
         SearchHit hit1 = new SearchHit(1, "ID");
-        hit1.setDocumentField("someField", new DocumentField("someField", Collections.singletonList(collapseValue)));
+        hit1.setDocumentField(new DocumentField("someField", Collections.singletonList(collapseValue)));
         SearchHit hit2 = new SearchHit(2, "ID2");
-        hit2.setDocumentField("someField", new DocumentField("someField", Collections.singletonList(collapseValue)));
+        hit2.setDocumentField(new DocumentField("someField", Collections.singletonList(collapseValue)));
         SearchHits hits = new SearchHits(new SearchHit[] { hit1, hit2 }, new TotalHits(1, TotalHits.Relation.EQUAL_TO), 1.0F);
         try (SearchResponseSections searchResponseSections = new SearchResponseSections(hits, null, null, false, null, null, 1)) {
             ExpandSearchPhase phase = newExpandSearchPhase(mockSearchPhaseContext, searchResponseSections, null);
@@ -214,9 +214,9 @@ public class ExpandSearchPhaseTests extends ESTestCase {
             };
 
             SearchHit hit1 = new SearchHit(1, "ID");
-            hit1.setDocumentField("someField", new DocumentField("someField", Collections.singletonList(null)));
+            hit1.setDocumentField(new DocumentField("someField", Collections.singletonList(null)));
             SearchHit hit2 = new SearchHit(2, "ID2");
-            hit2.setDocumentField("someField", new DocumentField("someField", Collections.singletonList(null)));
+            hit2.setDocumentField(new DocumentField("someField", Collections.singletonList(null)));
             SearchHits hits = new SearchHits(new SearchHit[] { hit1, hit2 }, new TotalHits(1, TotalHits.Relation.EQUAL_TO), 1.0F);
             try {
                 ExpandSearchPhase phase = newExpandSearchPhase(
@@ -299,7 +299,7 @@ public class ExpandSearchPhaseTests extends ESTestCase {
                 .routing("baz");
 
             SearchHit hit = new SearchHit(1, "ID");
-            hit.setDocumentField("someField", new DocumentField("someField", Collections.singletonList("foo")));
+            hit.setDocumentField(new DocumentField("someField", Collections.singletonList("foo")));
             SearchHits hits = new SearchHits(new SearchHit[] { hit }, new TotalHits(1, TotalHits.Relation.EQUAL_TO), 1.0F);
             try (SearchResponseSections searchResponseSections = new SearchResponseSections(hits, null, null, false, null, null, 1)) {
                 ExpandSearchPhase phase = newExpandSearchPhase(mockSearchPhaseContext, searchResponseSections, null);
@@ -363,7 +363,7 @@ public class ExpandSearchPhaseTests extends ESTestCase {
                 .routing("baz");
 
             SearchHit hit = new SearchHit(1, "ID");
-            hit.setDocumentField("someField", new DocumentField("someField", Collections.singletonList("foo")));
+            hit.setDocumentField(new DocumentField("someField", Collections.singletonList("foo")));
             SearchHits hits = new SearchHits(new SearchHit[] { hit }, new TotalHits(1, TotalHits.Relation.EQUAL_TO), 1.0F);
             try (SearchResponseSections searchResponseSections = new SearchResponseSections(hits, null, null, false, null, null, 1)) {
                 ExpandSearchPhase phase = newExpandSearchPhase(mockSearchPhaseContext, searchResponseSections, new AtomicArray<>(0));
