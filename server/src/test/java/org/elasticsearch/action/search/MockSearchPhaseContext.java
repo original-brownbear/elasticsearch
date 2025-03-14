@@ -115,7 +115,7 @@ public final class MockSearchPhaseContext extends AbstractSearchAsyncAction<Sear
     }
 
     @Override
-    public void onShardFailure(int shardIndex, @Nullable SearchShardTarget shardTarget, Exception e) {
+    public void recordShardFailure(int shardIndex, @Nullable SearchShardTarget shardTarget, Exception e) {
         failures.add(new ShardSearchFailure(e, shardTarget));
         numSuccess.decrementAndGet();
     }

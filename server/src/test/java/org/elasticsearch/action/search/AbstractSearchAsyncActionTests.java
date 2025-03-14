@@ -178,7 +178,7 @@ public class AbstractSearchAsyncActionTests extends ESTestCase {
             ShardId failureShardId = new ShardId("index", "index-uuid", i);
             String failureClusterAlias = randomBoolean() ? null : randomAlphaOfLengthBetween(5, 10);
             String failureNodeId = randomAlphaOfLengthBetween(5, 10);
-            action.onShardFailure(
+            action.recordShardFailure(
                 i,
                 new SearchShardTarget(failureNodeId, failureShardId, failureClusterAlias),
                 new IllegalArgumentException()
