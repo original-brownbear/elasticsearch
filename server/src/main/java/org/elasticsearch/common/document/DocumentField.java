@@ -44,10 +44,10 @@ public class DocumentField implements Writeable, Iterable<Object> {
 
     public DocumentField(StreamInput in) throws IOException {
         name = in.readString();
-        values = in.readCollectionAsList(StreamInput::readGenericValue);
-        ignoredValues = in.readCollectionAsList(StreamInput::readGenericValue);
+        values = in.readCollectionAsImmutableList(StreamInput::readGenericValue);
+        ignoredValues = in.readCollectionAsImmutableList(StreamInput::readGenericValue);
         if (in.getTransportVersion().onOrAfter(TransportVersions.V_8_2_0)) {
-            lookupFields = in.readCollectionAsList(LookupField::new);
+            lookupFields = in.readCollectionAsImmutableList(LookupField::new);
         } else {
             lookupFields = List.of();
         }

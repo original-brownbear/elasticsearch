@@ -216,8 +216,15 @@ public final class SearchHit implements Writeable, ToXContentObject, RefCounted 
         if (in.readBoolean()) {
             explanation = readExplanation(in);
         }
-        final Map<String, DocumentField> documentFields = in.readMap(DocumentField::new);
-        final Map<String, DocumentField> metaFields = in.readMap(DocumentField::new);
+        final Map<String, DocumentField> documentFields;
+        final Map<String, DocumentField> metaFields;
+        if (in.getTransportVersion().onOrAfter(TransportVersions.COMPACT_DOC_VALUE_FIELDS)) {
+            documentFields = in.readMapValues(DocumentField::new, DocumentField::getName);
+            metaFields = in.readMapValues(DocumentField::new, DocumentField::getName);
+        } else {
+            documentFields = in.readMap(DocumentField::new);
+            metaFields = in.readMap(DocumentField::new);
+        }
         Map<String, HighlightField> highlightFields = in.readMapValues(HighlightField::new, HighlightField::name);
         highlightFields = highlightFields.isEmpty() ? null : unmodifiableMap(highlightFields);
 
@@ -322,8 +329,13 @@ public final class SearchHit implements Writeable, ToXContentObject, RefCounted 
             out.writeBoolean(true);
             writeExplanation(out, explanation);
         }
-        out.writeMap(documentFields, StreamOutput::writeWriteable);
-        out.writeMap(metaFields, StreamOutput::writeWriteable);
+        if (out.getTransportVersion().onOrAfter(TransportVersions.COMPACT_DOC_VALUE_FIELDS)) {
+            out.writeMapValues(documentFields);
+            out.writeMapValues(metaFields);
+        } else {
+            out.writeMap(documentFields, StreamOutput::writeWriteable);
+            out.writeMap(metaFields, StreamOutput::writeWriteable);
+        }
         if (highlightFields == null) {
             out.writeVInt(0);
         } else {
