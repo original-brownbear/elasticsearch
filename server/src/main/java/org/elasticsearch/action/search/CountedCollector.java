@@ -50,12 +50,12 @@ final class CountedCollector<R extends SearchPhaseResult> {
     }
 
     /**
-     * Escalates the failure via {@link AbstractSearchAsyncAction#onShardFailure(int, SearchShardTarget, Exception)}
+     * Escalates the failure via {@link AbstractSearchAsyncAction#recordShardFailure(int, SearchShardTarget, Exception)}
      * and then runs {@link #countDown()}
      */
     void onFailure(final int shardIndex, @Nullable SearchShardTarget shardTarget, Exception e) {
         try {
-            context.onShardFailure(shardIndex, shardTarget, e);
+            context.recordShardFailure(shardIndex, shardTarget, e);
         } finally {
             countDown();
         }

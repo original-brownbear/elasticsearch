@@ -400,31 +400,35 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
     private void onShardFailure(final int shardIndex, SearchShardTarget shard, final SearchShardIterator shardIt, Exception e) {
         // we always add the shard failure for a specific shard instance
         // we do make sure to clean it on a successful response from a shard
-        onShardFailure(shardIndex, shard, e);
         final SearchShardTarget nextShard = shardIt.nextOrNull();
         final boolean lastShard = nextShard == null;
         logger.debug(() -> format("%s: Failed to execute [%s] lastShard [%s]", shard, request, lastShard), e);
+        if (lastShard || TransportActions.isReadOverrideException(e)) {
+            recordShardFailure(shardIndex, shard, e);
+        }
         if (lastShard) {
-            if (request.allowPartialSearchResults() == false) {
-                if (requestCancelled.compareAndSet(false, true)) {
-                    try {
-                        searchTransportService.cancelSearchTask(task, "partial results are not allowed and at least one shard has failed");
-                    } catch (Exception cancelFailure) {
-                        logger.debug("Failed to cancel search request", cancelFailure);
-                    }
+            definitivelyFailShard(shardIndex, shard, e);
+        } else {
+            performPhaseOnShard(shardIndex, shardIt, nextShard);
+        }
+    }
+
+    private void definitivelyFailShard(int shardIndex, SearchShardTarget shard, Exception e) {
+        if (request.allowPartialSearchResults() == false) {
+            if (requestCancelled.compareAndSet(false, true)) {
+                try {
+                    searchTransportService.cancelSearchTask(task, "partial results are not allowed and at least one shard has failed");
+                } catch (Exception cancelFailure) {
+                    logger.debug("Failed to cancel search request", cancelFailure);
                 }
             }
-            onShardGroupFailure(shardIndex, shard, e);
         }
-        if (lastShard == false) {
-            performPhaseOnShard(shardIndex, shardIt, nextShard);
-        } else {
-            // count down outstanding shards, we're done with this shard as there's no more copies to try
-            final int outstanding = outstandingShards.decrementAndGet();
-            assert outstanding >= 0 : "outstanding: " + outstanding;
-            if (outstanding == 0) {
-                onPhaseDone();
-            }
+        onShardGroupFailure(shardIndex, shard, e);
+        // count down outstanding shards, we're done with this shard as there's no more copies to try
+        final int outstanding = outstandingShards.decrementAndGet();
+        assert outstanding >= 0 : "outstanding: " + outstanding;
+        if (outstanding == 0) {
+            onPhaseDone();
         }
     }
 
@@ -445,7 +449,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
      * @param shardTarget the shard target for this failure
      * @param e the failure reason
      */
-    void onShardFailure(final int shardIndex, SearchShardTarget shardTarget, Exception e) {
+    void recordShardFailure(final int shardIndex, SearchShardTarget shardTarget, Exception e) {
         if (TransportActions.isShardNotAvailableException(e)) {
             // Groups shard not available exceptions under a generic exception that returns a SERVICE_UNAVAILABLE(503)
             // temporary error.
@@ -466,14 +470,10 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
                 }
             }
             ShardSearchFailure failure = shardFailures.get(shardIndex);
-            if (failure == null) {
+            // the failure is already present, try and not override it with an exception that is less meaningless
+            // for example, getting illegal shard state
+            if (failure == null || TransportActions.isReadOverrideException(e) && e instanceof SearchContextMissingException == false) {
                 shardFailures.set(shardIndex, new ShardSearchFailure(e, shardTarget));
-            } else {
-                // the failure is already present, try and not override it with an exception that is less meaningless
-                // for example, getting illegal shard state
-                if (TransportActions.isReadOverrideException(e) && (e instanceof SearchContextMissingException == false)) {
-                    shardFailures.set(shardIndex, new ShardSearchFailure(e, shardTarget));
-                }
             }
 
             if (results.hasResult(shardIndex)) {
@@ -680,7 +680,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
 
     /**
      * Executed once all shard results have been received and processed
-     * @see #onShardFailure(int, SearchShardTarget, Exception)
+     * @see #recordShardFailure(int, SearchShardTarget, Exception)
      * @see #onShardResult(SearchPhaseResult)
      */
     private void onPhaseDone() {  // as a tribute to @kimchy aka. finishHim()
