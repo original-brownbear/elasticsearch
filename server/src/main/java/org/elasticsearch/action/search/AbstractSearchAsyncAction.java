@@ -10,7 +10,6 @@
 package org.elasticsearch.action.search;
 
 import org.apache.logging.log4j.Logger;
-import org.apache.lucene.util.SetOnce;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.TransportVersion;
@@ -83,7 +82,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
     private final TransportVersion minTransportVersion;
     private final Map<String, AliasFilter> aliasFilter;
     private final Map<String, Float> concreteIndexBoosts;
-    private final SetOnce<AtomicArray<ShardSearchFailure>> shardFailures = new SetOnce<>();
+    private volatile AtomicArray<ShardSearchFailure> shardFailures;
     private final Object shardFailuresMutex = new Object();
     private final AtomicBoolean hasShardResponse = new AtomicBoolean(false);
     private final AtomicInteger successfulOps;
@@ -150,7 +149,10 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
         this.executor = executor;
         this.request = request;
         this.task = task;
-        this.listener = ActionListener.runBefore(listener, () -> doneFuture.onResponse(null));
+        this.listener = ActionListener.runBefore(listener, () -> {
+            doneFuture.onResponse(null);
+            this.shardFailures = null;
+        });
         this.nodeIdToConnection = nodeIdToConnection;
         this.concreteIndexBoosts = concreteIndexBoosts;
         this.clusterStateVersion = clusterState.version();
@@ -385,7 +387,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
     }
 
     private ShardSearchFailure[] buildShardFailures() {
-        AtomicArray<ShardSearchFailure> shardFailures = this.shardFailures.get();
+        AtomicArray<ShardSearchFailure> shardFailures = this.shardFailures;
         if (shardFailures == null) {
             return ShardSearchFailure.EMPTY_ARRAY;
         }
@@ -458,14 +460,14 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
         // we don't aggregate shard on failures due to the internal cancellation,
         // but do keep the header counts right
         if ((requestCancelled.get() && isTaskCancelledException(e)) == false) {
-            AtomicArray<ShardSearchFailure> shardFailures = this.shardFailures.get();
+            AtomicArray<ShardSearchFailure> shardFailures = this.shardFailures;
             // lazily create shard failures, so we can early build the empty shard failure list in most cases (no failures)
             if (shardFailures == null) { // this is double checked locking but it's fine since SetOnce uses a volatile read internally
                 synchronized (shardFailuresMutex) {
-                    shardFailures = this.shardFailures.get(); // read again otherwise somebody else has created it?
+                    shardFailures = this.shardFailures; // read again otherwise somebody else has created it?
                     if (shardFailures == null) { // still null so we are the first and create a new instance
                         shardFailures = new AtomicArray<>(getNumShards());
-                        this.shardFailures.set(shardFailures);
+                        this.shardFailures = shardFailures;
                     }
                 }
             }
@@ -506,7 +508,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
         // clean a previous error on this shard group (note, this code will be serialized on the same shardIndex value level
         // so its ok concurrency wise to miss potentially the shard failures being created because of another failure
         // in the #addShardFailure, because by definition, it will happen on *another* shardIndex
-        AtomicArray<ShardSearchFailure> shardFailures = this.shardFailures.get();
+        AtomicArray<ShardSearchFailure> shardFailures = this.shardFailures;
         if (shardFailures != null) {
             shardFailures.set(result.getShardIndex(), null);
         }
@@ -609,6 +611,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
       */
     public void sendSearchResponse(SearchResponseSections internalSearchResponse, AtomicArray<SearchPhaseResult> queryResults) {
         ShardSearchFailure[] failures = buildShardFailures();
+        this.shardFailures = null;
         Boolean allowPartialResults = request.allowPartialSearchResults();
         assert allowPartialResults != null : "SearchRequest missing setting for allowPartialSearchResults";
         if (allowPartialResults == false && failures.length > 0) {
