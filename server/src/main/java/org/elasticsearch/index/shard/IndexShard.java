@@ -413,7 +413,7 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
         this.refreshFieldHasValueListener = new RefreshFieldHasValueListener();
         this.relativeTimeInNanosSupplier = relativeTimeInNanosSupplier;
         this.indexCommitListener = indexCommitListener;
-        this.fieldInfos = FieldInfos.EMPTY;
+        this.fieldInfos = null;
     }
 
     public ThreadPool getThreadPool() {
@@ -1020,7 +1020,10 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
     }
 
     public FieldInfos getFieldInfos() {
-        return fieldInfos;
+        if (fieldInfos == null) {
+            refreshFieldHasValueListener.afterRefresh(true);
+        }
+        return Objects.requireNonNullElse(fieldInfos, FieldInfos.EMPTY);
     }
 
     public static Engine.Index prepareIndex(
@@ -4114,7 +4117,7 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
 
         @Override
         public void afterRefresh(boolean didRefresh) {
-            if (enableFieldHasValue && (didRefresh || fieldInfos == FieldInfos.EMPTY)) {
+            if (enableFieldHasValue && (didRefresh || fieldInfos == null)) {
                 try (Engine.Searcher hasValueSearcher = getEngine().acquireSearcher("field_has_value")) {
                     setFieldInfos(FieldInfos.getMergedFieldInfos(hasValueSearcher.getIndexReader()));
                 } catch (AlreadyClosedException ignore) {

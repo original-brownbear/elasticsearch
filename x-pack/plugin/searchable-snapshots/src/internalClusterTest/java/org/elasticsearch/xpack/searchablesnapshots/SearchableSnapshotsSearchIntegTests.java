@@ -7,6 +7,7 @@
 
 package org.elasticsearch.xpack.searchablesnapshots;
 
+import org.elasticsearch.action.fieldcaps.FieldCapabilitiesResponse;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchType;
@@ -26,6 +27,7 @@ import static org.elasticsearch.index.IndexSettings.INDEX_SOFT_DELETES_SETTING;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertResponse;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
 
 public class SearchableSnapshotsSearchIntegTests extends BaseFrozenSearchableSnapshotsIntegTestCase {
 
@@ -125,5 +127,7 @@ public class SearchableSnapshotsSearchIntegTests extends BaseFrozenSearchableSna
             assertThat(searchResponse.getTotalShards(), equalTo(20));
             assertThat(searchResponse.getHits().getTotalHits().value(), equalTo(4L));
         });
+        FieldCapabilitiesResponse response = client().prepareFieldCaps(mountedIndices).setFields("*").setincludeEmptyFields(false).get();
+        assertThat(response.getField("keyword"), notNullValue());
     }
 }
