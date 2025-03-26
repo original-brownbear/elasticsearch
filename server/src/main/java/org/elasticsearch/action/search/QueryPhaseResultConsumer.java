@@ -243,6 +243,7 @@ public class QueryPhaseResultConsumer extends ArraySearchPhaseResults<SearchPhas
                 if (aggregatorsReducerContext != null) {
                     consumeAggs(result);
                 }
+                buffer.add(result);
                 var toConsume = buffer;
                 // add one if a partial merge is pending
                 int size = toConsume.size() + (hasPartialReduce ? 1 : 0);
@@ -254,13 +255,8 @@ public class QueryPhaseResultConsumer extends ArraySearchPhaseResults<SearchPhas
                         partialReduce(toConsume, numReducePhases);
                     } catch (Exception t) {
                         onMergeFailure(t);
-                        return;
-                    }
-                    if (hasFailure()) {
-                        return;
                     }
                 }
-                buffer.add(result);
             }
         }
     }
