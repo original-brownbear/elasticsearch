@@ -34,7 +34,6 @@ import org.elasticsearch.common.breaker.NoopCircuitBreaker;
 import org.elasticsearch.common.lucene.search.TopDocsAndMaxScore;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.AtomicArray;
-import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.IndexVersion;
@@ -95,8 +94,6 @@ public class FetchSearchPhaseTests extends ESTestCase {
         MockSearchPhaseContext mockSearchPhaseContext = new MockSearchPhaseContext(1);
         try (
             SearchPhaseResults<SearchPhaseResult> results = controller.newSearchPhaseResults(
-                EsExecutors.DIRECT_EXECUTOR_SERVICE,
-                new NoopCircuitBreaker(CircuitBreaker.REQUEST),
                 () -> false,
                 SearchProgressListener.NOOP,
                 mockSearchPhaseContext.getRequest(),
@@ -180,8 +177,6 @@ public class FetchSearchPhaseTests extends ESTestCase {
         SearchPhaseController controller = new SearchPhaseController((t, s) -> InternalAggregationTestCase.emptyReduceContextBuilder());
         try (
             SearchPhaseResults<SearchPhaseResult> results = controller.newSearchPhaseResults(
-                EsExecutors.DIRECT_EXECUTOR_SERVICE,
-                new NoopCircuitBreaker(CircuitBreaker.REQUEST),
                 () -> false,
                 SearchProgressListener.NOOP,
                 mockSearchPhaseContext.getRequest(),
@@ -293,8 +288,6 @@ public class FetchSearchPhaseTests extends ESTestCase {
         SearchPhaseController controller = new SearchPhaseController((t, s) -> InternalAggregationTestCase.emptyReduceContextBuilder());
         try (
             SearchPhaseResults<SearchPhaseResult> results = controller.newSearchPhaseResults(
-                EsExecutors.DIRECT_EXECUTOR_SERVICE,
-                new NoopCircuitBreaker(CircuitBreaker.REQUEST),
                 () -> false,
                 SearchProgressListener.NOOP,
                 mockSearchPhaseContext.getRequest(),
@@ -416,8 +409,6 @@ public class FetchSearchPhaseTests extends ESTestCase {
         MockSearchPhaseContext mockSearchPhaseContext = new MockSearchPhaseContext(numHits);
         try (
             SearchPhaseResults<SearchPhaseResult> results = controller.newSearchPhaseResults(
-                EsExecutors.DIRECT_EXECUTOR_SERVICE,
-                new NoopCircuitBreaker(CircuitBreaker.REQUEST),
                 () -> false,
                 SearchProgressListener.NOOP,
                 mockSearchPhaseContext.getRequest(),
@@ -535,8 +526,6 @@ public class FetchSearchPhaseTests extends ESTestCase {
         SearchPhaseController controller = new SearchPhaseController((t, s) -> InternalAggregationTestCase.emptyReduceContextBuilder());
         try (
             SearchPhaseResults<SearchPhaseResult> results = controller.newSearchPhaseResults(
-                EsExecutors.DIRECT_EXECUTOR_SERVICE,
-                new NoopCircuitBreaker(CircuitBreaker.REQUEST),
                 () -> false,
                 SearchProgressListener.NOOP,
                 mockSearchPhaseContext.getRequest(),
@@ -649,8 +638,6 @@ public class FetchSearchPhaseTests extends ESTestCase {
         SearchPhaseController controller = new SearchPhaseController((t, s) -> InternalAggregationTestCase.emptyReduceContextBuilder());
         try (
             SearchPhaseResults<SearchPhaseResult> results = controller.newSearchPhaseResults(
-                EsExecutors.DIRECT_EXECUTOR_SERVICE,
-                new NoopCircuitBreaker(CircuitBreaker.REQUEST),
                 () -> false,
                 SearchProgressListener.NOOP,
                 mockSearchPhaseContext.getRequest(),

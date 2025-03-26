@@ -12,8 +12,6 @@ package org.elasticsearch.action.search;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TotalHits;
-import org.elasticsearch.common.breaker.CircuitBreaker;
-import org.elasticsearch.common.breaker.NoopCircuitBreaker;
 import org.elasticsearch.common.lucene.search.TopDocsAndMaxScore;
 import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
@@ -113,8 +111,6 @@ public class QueryPhaseResultConsumerTests extends ESTestCase {
         try (
             QueryPhaseResultConsumer queryPhaseResultConsumer = new QueryPhaseResultConsumer(
                 searchRequest,
-                executor,
-                new NoopCircuitBreaker(CircuitBreaker.REQUEST),
                 searchPhaseController,
                 () -> false,
                 searchProgressListener,

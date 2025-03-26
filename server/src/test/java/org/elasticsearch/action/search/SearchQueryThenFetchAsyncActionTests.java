@@ -19,8 +19,6 @@ import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.node.DiscoveryNodeUtils;
-import org.elasticsearch.common.breaker.CircuitBreaker;
-import org.elasticsearch.common.breaker.NoopCircuitBreaker;
 import org.elasticsearch.common.lucene.search.TopDocsAndMaxScore;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.core.TimeValue;
@@ -176,8 +174,6 @@ public class SearchQueryThenFetchAsyncActionTests extends ESTestCase {
         try (
             QueryPhaseResultConsumer resultConsumer = new QueryPhaseResultConsumer(
                 searchRequest,
-                EsExecutors.DIRECT_EXECUTOR_SERVICE,
-                new NoopCircuitBreaker(CircuitBreaker.REQUEST),
                 controller,
                 task::isCancelled,
                 task.getProgressListener(),

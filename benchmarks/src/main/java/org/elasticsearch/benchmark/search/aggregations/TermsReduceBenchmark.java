@@ -17,7 +17,6 @@ import org.elasticsearch.action.search.SearchPhaseController;
 import org.elasticsearch.action.search.SearchProgressListener;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.common.breaker.CircuitBreaker;
-import org.elasticsearch.common.breaker.NoopCircuitBreaker;
 import org.elasticsearch.common.lucene.search.TopDocsAndMaxScore;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.shard.ShardId;
@@ -188,8 +187,6 @@ public class TermsReduceBenchmark {
         AtomicBoolean isCanceled = new AtomicBoolean();
         QueryPhaseResultConsumer consumer = new QueryPhaseResultConsumer(
             request,
-            executor,
-            new NoopCircuitBreaker(CircuitBreaker.REQUEST),
             controller,
             isCanceled::get,
             SearchProgressListener.NOOP,

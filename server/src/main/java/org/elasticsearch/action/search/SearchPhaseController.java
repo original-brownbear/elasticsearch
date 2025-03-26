@@ -19,7 +19,6 @@ import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TopFieldDocs;
 import org.apache.lucene.search.TotalHits;
 import org.apache.lucene.search.TotalHits.Relation;
-import org.elasticsearch.common.breaker.CircuitBreaker;
 import org.elasticsearch.common.lucene.Lucene;
 import org.elasticsearch.common.lucene.search.TopDocsAndMaxScore;
 import org.elasticsearch.common.util.Maps;
@@ -56,7 +55,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executor;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -652,8 +650,6 @@ public final class SearchPhaseController {
      * Returns a new {@link QueryPhaseResultConsumer} instance that reduces search responses incrementally.
      */
     SearchPhaseResults<SearchPhaseResult> newSearchPhaseResults(
-        Executor executor,
-        CircuitBreaker circuitBreaker,
         Supplier<Boolean> isCanceled,
         SearchProgressListener listener,
         SearchRequest request,
@@ -673,16 +669,7 @@ public final class SearchPhaseController {
             && request.resolveTrackTotalHitsUpTo() == SearchContext.TRACK_TOTAL_HITS_ACCURATE) {
             return new CountOnlyQueryPhaseResultConsumer(listener, numShards);
         }
-        return new QueryPhaseResultConsumer(
-            request,
-            executor,
-            circuitBreaker,
-            this,
-            isCanceled,
-            listener,
-            numShards,
-            onPartialMergeFailure
-        );
+        return new QueryPhaseResultConsumer(request, this, isCanceled, listener, numShards, onPartialMergeFailure);
     }
 
     public static final class TopDocsStats {

@@ -605,8 +605,6 @@ public class SearchPhaseControllerTests extends ESTestCase {
         request.setBatchedReduceSize(bufferSize);
         try (
             SearchPhaseResults<SearchPhaseResult> consumer = searchPhaseController.newSearchPhaseResults(
-                fixedExecutor,
-                new NoopCircuitBreaker(CircuitBreaker.REQUEST),
                 () -> false,
                 SearchProgressListener.NOOP,
                 request,
@@ -729,8 +727,6 @@ public class SearchPhaseControllerTests extends ESTestCase {
         request.setBatchedReduceSize(bufferSize);
         try (
             SearchPhaseResults<SearchPhaseResult> consumer = searchPhaseController.newSearchPhaseResults(
-                fixedExecutor,
-                new NoopCircuitBreaker(CircuitBreaker.REQUEST),
                 () -> false,
                 SearchProgressListener.NOOP,
                 request,
@@ -792,8 +788,6 @@ public class SearchPhaseControllerTests extends ESTestCase {
         request.setBatchedReduceSize(bufferSize);
         try (
             SearchPhaseResults<SearchPhaseResult> consumer = searchPhaseController.newSearchPhaseResults(
-                fixedExecutor,
-                new NoopCircuitBreaker(CircuitBreaker.REQUEST),
                 () -> false,
                 SearchProgressListener.NOOP,
                 request,
@@ -854,8 +848,6 @@ public class SearchPhaseControllerTests extends ESTestCase {
 
         try (
             SearchPhaseResults<SearchPhaseResult> consumer = searchPhaseController.newSearchPhaseResults(
-                fixedExecutor,
-                new NoopCircuitBreaker(CircuitBreaker.REQUEST),
                 () -> false,
                 SearchProgressListener.NOOP,
                 request,
@@ -920,8 +912,6 @@ public class SearchPhaseControllerTests extends ESTestCase {
         request.setBatchedReduceSize(randomIntBetween(2, 4));
         try (
             SearchPhaseResults<SearchPhaseResult> consumer = searchPhaseController.newSearchPhaseResults(
-                fixedExecutor,
-                new NoopCircuitBreaker(CircuitBreaker.REQUEST),
                 () -> false,
                 SearchProgressListener.NOOP,
                 request,
@@ -977,8 +967,6 @@ public class SearchPhaseControllerTests extends ESTestCase {
         request.setBatchedReduceSize(bufferSize);
         try (
             SearchPhaseResults<SearchPhaseResult> consumer = searchPhaseController.newSearchPhaseResults(
-                fixedExecutor,
-                new NoopCircuitBreaker(CircuitBreaker.REQUEST),
                 () -> false,
                 SearchProgressListener.NOOP,
                 request,
@@ -1032,8 +1020,6 @@ public class SearchPhaseControllerTests extends ESTestCase {
         request.setBatchedReduceSize(bufferSize);
         try (
             SearchPhaseResults<SearchPhaseResult> consumer = searchPhaseController.newSearchPhaseResults(
-                fixedExecutor,
-                new NoopCircuitBreaker(CircuitBreaker.REQUEST),
                 () -> false,
                 SearchProgressListener.NOOP,
                 request,
@@ -1090,8 +1076,6 @@ public class SearchPhaseControllerTests extends ESTestCase {
         request.setBatchedReduceSize(bufferSize);
         try (
             SearchPhaseResults<SearchPhaseResult> consumer = searchPhaseController.newSearchPhaseResults(
-                fixedExecutor,
-                new NoopCircuitBreaker(CircuitBreaker.REQUEST),
                 () -> false,
                 SearchProgressListener.NOOP,
                 request,
@@ -1236,8 +1220,6 @@ public class SearchPhaseControllerTests extends ESTestCase {
             };
             try (
                 SearchPhaseResults<SearchPhaseResult> consumer = searchPhaseController.newSearchPhaseResults(
-                    fixedExecutor,
-                    new NoopCircuitBreaker(CircuitBreaker.REQUEST),
                     () -> false,
                     progressListener,
                     request,
@@ -1318,8 +1300,6 @@ public class SearchPhaseControllerTests extends ESTestCase {
         }
         try (
             SearchPhaseResults<SearchPhaseResult> consumer = searchPhaseController.newSearchPhaseResults(
-                fixedExecutor,
-                circuitBreaker,
                 () -> false,
                 SearchProgressListener.NOOP,
                 request,
@@ -1381,8 +1361,6 @@ public class SearchPhaseControllerTests extends ESTestCase {
         AtomicBoolean hasConsumedFailure = new AtomicBoolean();
         try (
             SearchPhaseResults<SearchPhaseResult> consumer = searchPhaseController.newSearchPhaseResults(
-                fixedExecutor,
-                new NoopCircuitBreaker(CircuitBreaker.REQUEST),
                 () -> false,
                 SearchProgressListener.NOOP,
                 request,

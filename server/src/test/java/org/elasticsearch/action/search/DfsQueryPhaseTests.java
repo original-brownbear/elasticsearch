@@ -15,11 +15,8 @@ import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TotalHits;
 import org.apache.lucene.tests.store.MockDirectoryWrapper;
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.common.breaker.CircuitBreaker;
-import org.elasticsearch.common.breaker.NoopCircuitBreaker;
 import org.elasticsearch.common.lucene.search.TopDocsAndMaxScore;
 import org.elasticsearch.common.util.concurrent.AtomicArray;
-import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.TermQueryBuilder;
 import org.elasticsearch.index.shard.ShardId;
@@ -131,8 +128,6 @@ public class DfsQueryPhaseTests extends ESTestCase {
         mockSearchPhaseContext.searchTransport = searchTransportService;
         try (
             SearchPhaseResults<SearchPhaseResult> consumer = searchPhaseController.newSearchPhaseResults(
-                EsExecutors.DIRECT_EXECUTOR_SERVICE,
-                new NoopCircuitBreaker(CircuitBreaker.REQUEST),
                 () -> false,
                 SearchProgressListener.NOOP,
                 mockSearchPhaseContext.getRequest(),
@@ -212,8 +207,6 @@ public class DfsQueryPhaseTests extends ESTestCase {
         mockSearchPhaseContext.searchTransport = searchTransportService;
         try (
             SearchPhaseResults<SearchPhaseResult> consumer = searchPhaseController.newSearchPhaseResults(
-                EsExecutors.DIRECT_EXECUTOR_SERVICE,
-                new NoopCircuitBreaker(CircuitBreaker.REQUEST),
                 () -> false,
                 SearchProgressListener.NOOP,
                 mockSearchPhaseContext.getRequest(),
@@ -295,8 +288,6 @@ public class DfsQueryPhaseTests extends ESTestCase {
         mockSearchPhaseContext.searchTransport = searchTransportService;
         try (
             SearchPhaseResults<SearchPhaseResult> consumer = searchPhaseController.newSearchPhaseResults(
-                EsExecutors.DIRECT_EXECUTOR_SERVICE,
-                new NoopCircuitBreaker(CircuitBreaker.REQUEST),
                 () -> false,
                 SearchProgressListener.NOOP,
                 mockSearchPhaseContext.getRequest(),

@@ -1524,8 +1524,6 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                 task.setProgressListener(new CCSSingleCoordinatorSearchProgressListener());
             }
             final SearchPhaseResults<SearchPhaseResult> queryResultConsumer = searchPhaseController.newSearchPhaseResults(
-                executor,
-                circuitBreaker,
                 task::isCancelled,
                 task.getProgressListener(),
                 searchRequest,
