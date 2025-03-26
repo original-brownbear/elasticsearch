@@ -17,7 +17,6 @@ import org.elasticsearch.common.lucene.search.TopDocsAndMaxScore;
 import org.elasticsearch.core.Releasables;
 import org.elasticsearch.search.SearchPhaseResult;
 import org.elasticsearch.search.SearchService;
-import org.elasticsearch.search.SearchShardTarget;
 import org.elasticsearch.search.aggregations.AggregationReduceContext;
 import org.elasticsearch.search.aggregations.AggregatorsReducer;
 import org.elasticsearch.search.aggregations.InternalAggregations;
@@ -48,30 +47,25 @@ import static org.elasticsearch.action.search.SearchPhaseController.setShardInde
 public class QueryPhaseResultConsumer extends ArraySearchPhaseResults<SearchPhaseResult> {
 
     private final SearchProgressListener progressListener;
-    private final AggregationReduceContext.Builder aggReduceContextBuilder;
     private final QueryPhaseRankCoordinatorContext queryPhaseRankCoordinatorContext;
 
     private final int topNSize;
     private final boolean hasTopDocs;
-    private final boolean hasAggs;
-    private final boolean performFinalReduce;
 
     private final Consumer<Exception> onPartialMergeFailure;
 
     private final int batchReduceSize;
     private List<QuerySearchResult> buffer = new ArrayList<>();
-    private List<SearchShard> emptyResults = new ArrayList<>();
 
     private final AtomicReference<Exception> failure = new AtomicReference<>();
 
     private final TopDocsStats topDocsStats;
-    private List<SearchShard> processedShards;
     private TopDocs reducedTopDocs;
     private volatile boolean hasPartialReduce;
     private volatile int numReducePhases;
 
     private AggregatorsReducer aggregatorsReducer;
-    private AggregationReduceContext aggregatorsReducerContext;
+    private final AggregationReduceContext aggregatorsReducerContext;
 
     /**
      * Creates a {@link QueryPhaseResultConsumer} that incrementally reduces aggregation results
@@ -88,7 +82,6 @@ public class QueryPhaseResultConsumer extends ArraySearchPhaseResults<SearchPhas
         super(expectedResultSize);
         this.progressListener = progressListener;
         this.topNSize = getTopDocsSize(request);
-        this.performFinalReduce = request.isFinalReduce();
         this.onPartialMergeFailure = onPartialMergeFailure;
 
         SearchSourceBuilder source = request.source();
@@ -98,10 +91,17 @@ public class QueryPhaseResultConsumer extends ArraySearchPhaseResults<SearchPhas
             ? null
             : source.rankBuilder().buildQueryPhaseCoordinatorContext(size, from);
         this.hasTopDocs = (source == null || size != 0) && queryPhaseRankCoordinatorContext == null;
-        this.hasAggs = source != null && source.aggregations() != null;
-        this.aggReduceContextBuilder = hasAggs ? controller.getReduceContext(isCanceled, source.aggregations()) : null;
+        final boolean hasAggs = source != null && source.aggregations() != null;
         batchReduceSize = (hasAggs || hasTopDocs) ? Math.min(request.getBatchedReduceSize(), expectedResultSize) : expectedResultSize;
         topDocsStats = new TopDocsStats(request.resolveTrackTotalHitsUpTo());
+        if (hasAggs) {
+            var aggReduceContextBuilder = controller.getReduceContext(isCanceled, source.aggregations());
+            aggregatorsReducerContext = request.isFinalReduce()
+                ? aggReduceContextBuilder.forFinalReduction()
+                : aggReduceContextBuilder.forPartialReduction();
+        } else {
+            aggregatorsReducerContext = null;
+        }
     }
 
     @Override
@@ -156,12 +156,12 @@ public class QueryPhaseResultConsumer extends ArraySearchPhaseResults<SearchPhas
         }
         SearchPhaseController.ReducedQueryPhase reducePhase;
         final InternalAggregations aggs;
-        if (hasAggs) {
+        if (aggregatorsReducerContext != null) {
             // Add an estimate of the final reduce size
             var a = aggregatorsReducer.get();
             aggregatorsReducer.close();
             aggregatorsReducer = null;
-            aggs = performFinalReduce ? InternalAggregations.executeFinalReduce(aggregatorsReducerContext, a) : a;
+            aggs = aggregatorsReducerContext.isFinalReduce() ? InternalAggregations.executeFinalReduce(aggregatorsReducerContext, a) : a;
         } else {
             aggs = null;
         }
@@ -188,12 +188,7 @@ public class QueryPhaseResultConsumer extends ArraySearchPhaseResults<SearchPhas
 
     private static final Comparator<QuerySearchResult> RESULT_COMPARATOR = Comparator.comparingInt(QuerySearchResult::getShardIndex);
 
-    private void partialReduce(
-        List<QuerySearchResult> toConsume,
-        List<SearchShard> processedShards,
-        TopDocsStats topDocsStats,
-        int numReducePhases
-    ) {
+    private void partialReduce(List<QuerySearchResult> toConsume, int numReducePhases) {
         // ensure consistent ordering
         toConsume.sort(RESULT_COMPARATOR);
 
@@ -208,8 +203,6 @@ public class QueryPhaseResultConsumer extends ArraySearchPhaseResults<SearchPhas
         }
         for (QuerySearchResult result : toConsume) {
             topDocsStats.add(result.topDocs(), result.searchTimedOut(), result.terminatedEarly());
-            SearchShardTarget target = result.getSearchShardTarget();
-            processedShards.add(new SearchShard(target.getClusterAlias(), target.getShardId()));
             if (topDocsList != null) {
                 TopDocsAndMaxScore topDocs = result.consumeTopDocs();
                 setShardIndex(topDocs.topDocs, result.getShardIndex());
@@ -219,13 +212,14 @@ public class QueryPhaseResultConsumer extends ArraySearchPhaseResults<SearchPhas
         // we have to merge here in the same way we collect on a shard
         final TopDocs newTopDocs = topDocsList == null ? null : mergeTopDocs(topDocsList, topNSize, 0);
         if (progressListener != SearchProgressListener.NOOP) {
-            if (this.processedShards != null) {
-                processedShards.addAll(this.processedShards);
-            }
-            progressListener.notifyPartialReduce(processedShards, topDocsStats.getTotalHits(), InternalAggregations.EMPTY, numReducePhases);
+            progressListener.notifyPartialReduce(
+                SearchProgressListener.buildSearchShards(results.asList()),
+                topDocsStats.getTotalHits(),
+                InternalAggregations.EMPTY,
+                numReducePhases
+            );
         }
 
-        this.processedShards = processedShards;
         this.reducedTopDocs = newTopDocs;
     }
 
@@ -238,22 +232,15 @@ public class QueryPhaseResultConsumer extends ArraySearchPhaseResults<SearchPhas
     }
 
     private void consume(QuerySearchResult result) {
-        if (hasFailure()) {
+        if (hasFailure() || result.isNull()) {
             result.consumeAll();
-        } else if (result.isNull()) {
-            result.consumeAll();
-            SearchShardTarget target = result.getSearchShardTarget();
-            SearchShard searchShard = new SearchShard(target.getClusterAlias(), target.getShardId());
-            synchronized (this) {
-                emptyResults.add(searchShard);
-            }
         } else {
             synchronized (this) {
                 if (hasFailure()) {
                     result.consumeAll();
                     return;
                 }
-                if (hasAggs) {
+                if (aggregatorsReducerContext != null) {
                     consumeAggs(result);
                 }
                 var toConsume = buffer;
@@ -261,12 +248,10 @@ public class QueryPhaseResultConsumer extends ArraySearchPhaseResults<SearchPhas
                 int size = toConsume.size() + (hasPartialReduce ? 1 : 0);
                 if (size >= batchReduceSize) {
                     hasPartialReduce = true;
-                    var emptyResultsCopy = emptyResults;
                     buffer = new ArrayList<>();
-                    emptyResults = new ArrayList<>();
                     try {
                         ++numReducePhases;
-                        partialReduce(toConsume, emptyResultsCopy, topDocsStats, numReducePhases);
+                        partialReduce(toConsume, numReducePhases);
                     } catch (Exception t) {
                         onMergeFailure(t);
                         return;
@@ -284,13 +269,7 @@ public class QueryPhaseResultConsumer extends ArraySearchPhaseResults<SearchPhas
         try (var aggs = result.consumeAggs()) {
             var expanded = aggs.expand();
             if (aggregatorsReducer == null) {
-                aggregatorsReducer = new AggregatorsReducer(
-                    expanded,
-                    aggregatorsReducerContext = performFinalReduce
-                        ? aggReduceContextBuilder.forFinalReduction()
-                        : aggReduceContextBuilder.forPartialReduction(),
-                    results.length()
-                );
+                aggregatorsReducer = new AggregatorsReducer(expanded, aggregatorsReducerContext, results.length());
             }
             aggregatorsReducer.accept(expanded);
         }
@@ -302,6 +281,5 @@ public class QueryPhaseResultConsumer extends ArraySearchPhaseResults<SearchPhas
         }
         onPartialMergeFailure.accept(exc);
         reducedTopDocs = null;
-        processedShards = null;
     }
 }
