@@ -167,9 +167,14 @@ final class CanMatchPreFilterSearchPhase {
         if (matchedShardLevelRequests.isEmpty()) {
             finishPhase();
         } else {
-            // verify missing shards only for the shards that we hit for the query
-            checkNoMissingShards(matchedShardLevelRequests);
-            new Round(matchedShardLevelRequests).run();
+            if (SearchService.BATCHED_QUERY_PHASE_FEATURE_FLAG) {
+                matchedShardLevelRequests.sort(SearchShardIterator::compareTo);
+                listener.onResponse(matchedShardLevelRequests);
+            } else {
+                // verify missing shards only for the shards that we hit for the query
+                checkNoMissingShards(matchedShardLevelRequests);
+                new Round(matchedShardLevelRequests).run();
+            }
         }
     }
 
