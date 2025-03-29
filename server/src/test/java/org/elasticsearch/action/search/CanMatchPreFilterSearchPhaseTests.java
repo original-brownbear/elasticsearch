@@ -43,6 +43,7 @@ import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.index.shard.ShardLongFieldRange;
 import org.elasticsearch.indices.DateFieldRangeInfo;
 import org.elasticsearch.search.CanMatchShardResponse;
+import org.elasticsearch.search.SearchService;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.terms.SignificantTermsAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -101,7 +102,7 @@ public class CanMatchPreFilterSearchPhaseTests extends ESTestCase {
     }
 
     public void testFilterShards() throws InterruptedException {
-
+        assumeFalse("no actual can_match if batched execution is active", SearchService.BATCHED_QUERY_PHASE_FEATURE_FLAG);
         final TransportSearchAction.SearchTimeProvider timeProvider = new TransportSearchAction.SearchTimeProvider(
             0,
             System.nanoTime(),
@@ -188,6 +189,8 @@ public class CanMatchPreFilterSearchPhaseTests extends ESTestCase {
     }
 
     public void testFilterWithFailure() throws InterruptedException {
+        assumeFalse("no actual can_match if batched execution is active", SearchService.BATCHED_QUERY_PHASE_FEATURE_FLAG);
+
         final TransportSearchAction.SearchTimeProvider timeProvider = new TransportSearchAction.SearchTimeProvider(
             0,
             System.nanoTime(),
@@ -279,6 +282,8 @@ public class CanMatchPreFilterSearchPhaseTests extends ESTestCase {
     }
 
     public void testSortShards() throws InterruptedException {
+        assumeFalse("no actual can_match if batched execution is active", SearchService.BATCHED_QUERY_PHASE_FEATURE_FLAG);
+
         final TransportSearchAction.SearchTimeProvider timeProvider = new TransportSearchAction.SearchTimeProvider(
             0,
             System.nanoTime(),
@@ -640,6 +645,7 @@ public class CanMatchPreFilterSearchPhaseTests extends ESTestCase {
     }
 
     public void testCoordinatorCanMatchFilteringThatCanBeSkippedUsingBothTimestamps() throws Exception {
+        assumeFalse("no actual can_match if batched execution is active", SearchService.BATCHED_QUERY_PHASE_FEATURE_FLAG);
         Index dataStreamIndex1 = new Index(".ds-twoTimestamps0001", UUIDs.base64UUID());
         Index dataStreamIndex2 = new Index(".ds-twoTimestamps0002", UUIDs.base64UUID());
         DataStream dataStream = DataStreamTestHelper.newInstance("mydata", List.of(dataStreamIndex1, dataStreamIndex2));
@@ -724,6 +730,8 @@ public class CanMatchPreFilterSearchPhaseTests extends ESTestCase {
     }
 
     public void testCanMatchFilteringOnCoordinatorParsingFails() throws Exception {
+        assumeFalse("no actual can_match if batched execution is active", SearchService.BATCHED_QUERY_PHASE_FEATURE_FLAG);
+
         Index dataStreamIndex1 = new Index(".ds-mydata0001", UUIDs.base64UUID());
         Index dataStreamIndex2 = new Index(".ds-mydata0002", UUIDs.base64UUID());
         DataStream dataStream = DataStreamTestHelper.newInstance("mydata", List.of(dataStreamIndex1, dataStreamIndex2));
@@ -763,6 +771,8 @@ public class CanMatchPreFilterSearchPhaseTests extends ESTestCase {
     }
 
     public void testCanMatchFilteringOnCoordinatorThatCanNotBeSkipped() throws Exception {
+        assumeFalse("no actual can_match if batched execution is active", SearchService.BATCHED_QUERY_PHASE_FEATURE_FLAG);
+
         // Generate indices
         Index dataStreamIndex1 = new Index(".ds-mydata0001", UUIDs.base64UUID());
         Index dataStreamIndex2 = new Index(".ds-mydata0002", UUIDs.base64UUID());
@@ -817,6 +827,7 @@ public class CanMatchPreFilterSearchPhaseTests extends ESTestCase {
     }
 
     public void testCanMatchFilteringOnCoordinatorWithTimestampAndEventIngestedThatCanNotBeSkipped() throws Exception {
+        assumeFalse("no actual can_match if batched execution is active", SearchService.BATCHED_QUERY_PHASE_FEATURE_FLAG);
         // Generate indices
         Index dataStreamIndex1 = new Index(".ds-mydata0001", UUIDs.base64UUID());
         Index dataStreamIndex2 = new Index(".ds-mydata0002", UUIDs.base64UUID());
@@ -884,6 +895,8 @@ public class CanMatchPreFilterSearchPhaseTests extends ESTestCase {
     }
 
     public void testCanMatchFilteringOnCoordinator_withSignificantTermsAggregation_withDefaultBackgroundFilter() throws Exception {
+        assumeFalse("no actual can_match if batched execution is active", SearchService.BATCHED_QUERY_PHASE_FEATURE_FLAG);
+
         Index index1 = new Index("index1", UUIDs.base64UUID());
         Index index2 = new Index("index2", UUIDs.base64UUID());
         Index index3 = new Index("index3", UUIDs.base64UUID());
@@ -951,6 +964,8 @@ public class CanMatchPreFilterSearchPhaseTests extends ESTestCase {
     }
 
     public void testCanMatchFilteringOnCoordinator_withSignificantTermsAggregation_withSuggest() throws Exception {
+        assumeFalse("no actual can_match if batched execution is active", SearchService.BATCHED_QUERY_PHASE_FEATURE_FLAG);
+
         Index index1 = new Index("index1", UUIDs.base64UUID());
         Index index2 = new Index("index2", UUIDs.base64UUID());
         Index index3 = new Index("index3", UUIDs.base64UUID());
@@ -981,6 +996,8 @@ public class CanMatchPreFilterSearchPhaseTests extends ESTestCase {
     }
 
     public void testCanMatchFilteringOnCoordinator_withSignificantTermsAggregation_withSuggest_withTwoTimestamps() throws Exception {
+        assumeFalse("no actual can_match if batched execution is active", SearchService.BATCHED_QUERY_PHASE_FEATURE_FLAG);
+
         Index index1 = new Index("index1", UUIDs.base64UUID());
         Index index2 = new Index("index2", UUIDs.base64UUID());
         Index index3 = new Index("index3", UUIDs.base64UUID());
@@ -1018,6 +1035,7 @@ public class CanMatchPreFilterSearchPhaseTests extends ESTestCase {
     }
 
     public void testCanMatchFilteringOnCoordinatorThatCanBeSkippedTsdb() throws Exception {
+        assumeFalse("no actual can_match if batched execution is active", SearchService.BATCHED_QUERY_PHASE_FEATURE_FLAG);
         DataStream dataStream1;
         {
             Index index1 = new Index(".ds-ds10001", UUIDs.base64UUID());
