@@ -32,6 +32,7 @@ import org.elasticsearch.index.shard.IndexLongFieldRange;
 import org.elasticsearch.index.shard.ShardLongFieldRange;
 import org.elasticsearch.plugins.EnginePlugin;
 import org.elasticsearch.plugins.Plugin;
+import org.elasticsearch.search.SearchService;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.test.AbstractMultiClustersTestCase;
 import org.elasticsearch.test.transport.MockTransportService;
@@ -144,6 +145,7 @@ public class CCSCanMatchIT extends AbstractMultiClustersTestCase {
     }
 
     public void testCanMatchOnTimeRange() throws Exception {
+        assumeFalse("no actual can_match if batched execution is active", SearchService.BATCHED_QUERY_PHASE_FEATURE_FLAG);
         long timestamp = randomLongBetween(10_000_000, 50_000_000);
         int oldLocalNumShards = randomIntBetween(1, 5);
         createIndexAndIndexDocs(LOCAL_CLUSTER, "local_old_index", oldLocalNumShards, timestamp - 10_000, true);

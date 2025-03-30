@@ -170,8 +170,7 @@ final class CanMatchPreFilterSearchPhase {
             // verify missing shards only for the shards that we hit for the query
             checkNoMissingShards(matchedShardLevelRequests);
             if (SearchService.BATCHED_QUERY_PHASE_FEATURE_FLAG) {
-                matchedShardLevelRequests.sort(SearchShardIterator::compareTo);
-                listener.onResponse(matchedShardLevelRequests);
+                finishPhase();
             } else {
                 new Round(matchedShardLevelRequests).run();
             }
