@@ -1108,6 +1108,7 @@ public class CanMatchPreFilterSearchPhaseTests extends ESTestCase {
     }
 
     public void testCanMatchFilteringOnCoordinatorWithMissingShards() throws Exception {
+        assumeFalse("no actual can_match if batched execution is active", SearchService.BATCHED_QUERY_PHASE_FEATURE_FLAG);
         // we'll test that we're executing _tier coordinator rewrite for indices (data stream backing or regular) without any @timestamp
         // or event.ingested fields
         // for both data stream backing and regular indices we'll have one index in hot and one UNASSIGNED (targeting warm though).

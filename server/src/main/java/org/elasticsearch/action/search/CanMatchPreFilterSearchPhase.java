@@ -159,21 +159,21 @@ final class CanMatchPreFilterSearchPhase {
                 }
             }
             if (canMatch) {
-                matchedShardLevelRequests.add(searchShardIterator);
+                if (SearchService.BATCHED_QUERY_PHASE_FEATURE_FLAG) {
+                    consumeResult(true, request);
+                } else {
+                    matchedShardLevelRequests.add(searchShardIterator);
+                }
             } else {
                 consumeResult(false, request);
             }
         }
-        if (matchedShardLevelRequests.isEmpty()) {
+        if (SearchService.BATCHED_QUERY_PHASE_FEATURE_FLAG || matchedShardLevelRequests.isEmpty()) {
             finishPhase();
         } else {
             // verify missing shards only for the shards that we hit for the query
             checkNoMissingShards(matchedShardLevelRequests);
-            if (SearchService.BATCHED_QUERY_PHASE_FEATURE_FLAG) {
-                finishPhase();
-            } else {
-                new Round(matchedShardLevelRequests).run();
-            }
+            new Round(matchedShardLevelRequests).run();
         }
     }
 
