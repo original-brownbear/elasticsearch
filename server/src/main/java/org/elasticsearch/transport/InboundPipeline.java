@@ -95,8 +95,11 @@ public class InboundPipeline implements Releasable {
             try {
                 statsTracker.markMessageReceived();
                 messageHandler.accept(channel, aggregated);
+                aggregated = null;
             } finally {
-                aggregated.decRef();
+                if (aggregated != null) {
+                    aggregated.close();
+                }
             }
         } else {
             assert aggregator.isAggregating();
