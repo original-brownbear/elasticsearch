@@ -51,7 +51,12 @@ public class Netty4MessageInboundHandler extends ChannelInboundHandlerAdapter {
         Netty4TcpChannel channel = ctx.channel().attr(Netty4Transport.CHANNEL_KEY).get();
         activityTracker.startActivity();
         try {
-            pipeline.handleBytes(channel, Netty4Utils.toReleasableBytesReference(buffer));
+            if (buffer.readableBytes() == 6) {
+                buffer.release();
+                pipeline.messageHandler.accept(channel, InboundPipeline.PING_MESSAGE);
+            } else {
+                pipeline.handleBytes(channel, Netty4Utils.toReleasableBytesReference(buffer));
+            }
         } finally {
             activityTracker.stopActivity();
         }

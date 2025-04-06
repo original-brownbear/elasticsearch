@@ -9,28 +9,26 @@
 
 package org.elasticsearch.transport;
 
-import org.elasticsearch.common.bytes.CompositeBytesReference;
 import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.core.CheckedConsumer;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.Releasables;
 
 import java.io.IOException;
-import java.util.ArrayDeque;
 import java.util.function.BiConsumer;
 import java.util.function.LongSupplier;
 
 public class InboundPipeline implements Releasable {
 
-    private static final InboundMessage PING_MESSAGE = new InboundMessage(null, true);
+    public static final InboundMessage PING_MESSAGE = new InboundMessage(null, true);
 
     private final LongSupplier relativeTimeInMillis;
     private final StatsTracker statsTracker;
     private final InboundDecoder decoder;
     private final InboundAggregator aggregator;
-    private final BiConsumer<TcpChannel, InboundMessage> messageHandler;
+    public final BiConsumer<TcpChannel, InboundMessage> messageHandler;
     private Exception uncaughtException;
-    private final ArrayDeque<ReleasableBytesReference> pending = new ArrayDeque<>(2);
+
     private boolean isClosed = false;
 
     public InboundPipeline(
@@ -50,7 +48,7 @@ public class InboundPipeline implements Releasable {
     @Override
     public void close() {
         isClosed = true;
-        Releasables.closeExpectNoException(decoder, aggregator, () -> Releasables.close(pending), pending::clear);
+        Releasables.closeExpectNoException(decoder, aggregator);
     }
 
     public void handleBytes(TcpChannel channel, ReleasableBytesReference reference) throws IOException {
@@ -65,40 +63,24 @@ public class InboundPipeline implements Releasable {
                 reference.close();
                 return;
             }
-            pending.add(reference);
-            doHandleBytes(channel);
+            doHandleBytes(reference, channel);
         } catch (Exception e) {
             uncaughtException = e;
             throw e;
         }
     }
 
-    private void doHandleBytes(TcpChannel channel) throws IOException {
+    private void doHandleBytes(ReleasableBytesReference bytesReference, TcpChannel channel) throws IOException {
+        CheckedConsumer<Object, IOException> decodeConsumer = f -> forwardFragment(channel, f);
         do {
-            CheckedConsumer<Object, IOException> decodeConsumer = f -> forwardFragment(channel, f);
-            int bytesDecoded = decoder.decode(pending.peekFirst(), decodeConsumer);
-            if (bytesDecoded == 0 && pending.size() > 1) {
-                final ReleasableBytesReference[] bytesReferences = new ReleasableBytesReference[pending.size()];
-                int index = 0;
-                for (ReleasableBytesReference pendingReference : pending) {
-                    bytesReferences[index] = pendingReference.retain();
-                    ++index;
-                }
-                try (
-                    ReleasableBytesReference toDecode = new ReleasableBytesReference(
-                        CompositeBytesReference.of(bytesReferences),
-                        () -> Releasables.closeExpectNoException(bytesReferences)
-                    )
-                ) {
-                    bytesDecoded = decoder.decode(toDecode, decodeConsumer);
-                }
-            }
+            int bytesDecoded = decoder.decode(bytesReference, decodeConsumer);
             if (bytesDecoded != 0) {
-                releasePendingBytes(bytesDecoded);
+                bytesReference = bytesReference.slice(bytesDecoded, bytesReference.length() - bytesDecoded);
             } else {
+                bytesReference.close();
                 break;
             }
-        } while (pending.isEmpty() == false);
+        } while (true);
     }
 
     private void forwardFragment(TcpChannel channel, Object fragment) throws IOException {
@@ -107,9 +89,6 @@ public class InboundPipeline implements Releasable {
         } else if (fragment instanceof Compression.Scheme) {
             assert aggregator.isAggregating();
             aggregator.updateCompressionScheme((Compression.Scheme) fragment);
-        } else if (fragment == InboundDecoder.PING) {
-            assert aggregator.isAggregating() == false;
-            messageHandler.accept(channel, PING_MESSAGE);
         } else if (fragment == InboundDecoder.END_CONTENT) {
             assert aggregator.isAggregating();
             InboundMessage aggregated = aggregator.finishAggregation();
@@ -131,18 +110,4 @@ public class InboundPipeline implements Releasable {
         aggregator.headerReceived(header);
     }
 
-    private void releasePendingBytes(int bytesConsumed) {
-        int bytesToRelease = bytesConsumed;
-        while (bytesToRelease != 0) {
-            try (ReleasableBytesReference reference = pending.pollFirst()) {
-                assert reference != null;
-                if (bytesToRelease < reference.length()) {
-                    pending.addFirst(reference.retainedSlice(bytesToRelease, reference.length() - bytesToRelease));
-                    bytesToRelease -= bytesToRelease;
-                } else {
-                    bytesToRelease -= reference.length();
-                }
-            }
-        }
-    }
 }

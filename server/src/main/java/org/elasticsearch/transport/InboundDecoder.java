@@ -27,7 +27,6 @@ import java.io.StreamCorruptedException;
 
 public class InboundDecoder implements Releasable {
 
-    static final Object PING = new Object();
     static final Object END_CONTENT = new Object();
 
     private final Recycler<BytesRef> recycler;
@@ -69,28 +68,20 @@ public class InboundDecoder implements Releasable {
             int messageLength = TcpTransport.readMessageLength(reference);
             if (messageLength == -1) {
                 return 0;
-            } else if (messageLength == 0) {
-                fragmentConsumer.accept(PING);
-                return 6;
             } else {
                 int headerBytesToRead = headerBytesToRead(reference, maxHeaderSize);
-                if (headerBytesToRead == 0) {
-                    return 0;
-                } else {
-                    totalNetworkSize = messageLength + TcpHeader.BYTES_REQUIRED_FOR_MESSAGE_SIZE;
-
-                    Header header = readHeader(messageLength, reference, channelType);
-                    bytesConsumed += headerBytesToRead;
-                    if (header.isCompressed()) {
-                        isCompressed = true;
-                    }
-                    fragmentConsumer.accept(header);
-
-                    if (isDone()) {
-                        finishMessage(fragmentConsumer);
-                    }
-                    return headerBytesToRead;
+                totalNetworkSize = messageLength + TcpHeader.BYTES_REQUIRED_FOR_MESSAGE_SIZE;
+                Header header = readHeader(messageLength, reference, channelType);
+                bytesConsumed += headerBytesToRead;
+                if (header.isCompressed()) {
+                    isCompressed = true;
                 }
+                fragmentConsumer.accept(header);
+
+                if (isDone()) {
+                    finishMessage(fragmentConsumer);
+                }
+                return headerBytesToRead;
             }
         } else {
             if (isCompressed && decompressor == null) {
@@ -161,27 +152,15 @@ public class InboundDecoder implements Releasable {
     }
 
     private static int headerBytesToRead(BytesReference reference, ByteSizeValue maxHeaderSize) throws StreamCorruptedException {
-        if (reference.length() < TcpHeader.BYTES_REQUIRED_FOR_VERSION) {
-            return 0;
+        int variableHeaderSize = reference.getInt(TcpHeader.VARIABLE_HEADER_SIZE_POSITION);
+        if (variableHeaderSize < 0) {
+            throw new StreamCorruptedException("invalid negative variable header size: " + variableHeaderSize);
         }
-
-        if (reference.length() <= TcpHeader.HEADER_SIZE) {
-            return 0;
-        } else {
-            int variableHeaderSize = reference.getInt(TcpHeader.VARIABLE_HEADER_SIZE_POSITION);
-            if (variableHeaderSize < 0) {
-                throw new StreamCorruptedException("invalid negative variable header size: " + variableHeaderSize);
-            }
-            int totalHeaderSize = TcpHeader.HEADER_SIZE + variableHeaderSize;
-            if (totalHeaderSize > maxHeaderSize.getBytes()) {
-                throw new StreamCorruptedException("header size [" + totalHeaderSize + "] exceeds limit of [" + maxHeaderSize + "]");
-            }
-            if (totalHeaderSize > reference.length()) {
-                return 0;
-            } else {
-                return totalHeaderSize;
-            }
+        int totalHeaderSize = TcpHeader.HEADER_SIZE + variableHeaderSize;
+        if (totalHeaderSize > maxHeaderSize.getBytes()) {
+            throw new StreamCorruptedException("header size [" + totalHeaderSize + "] exceeds limit of [" + maxHeaderSize + "]");
         }
+        return totalHeaderSize;
     }
 
     private static Header readHeader(int networkMessageSize, BytesReference bytesReference, ChannelType channelType) throws IOException {
